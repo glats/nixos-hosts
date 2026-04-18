@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # nixos-build - Helper to build NixOS configuration from main repo or worktree
 # Auto-detects if in worktree and uses correct flake path
-# Automatically updates gentle-ai and engram versions before rebuild
+# Auto-detects hostname for multi-host configuration
 
 set -euo pipefail
 
@@ -44,42 +44,26 @@ if [[ "$COMMAND" == "help" ]] || [[ "$COMMAND" == "-h" ]] || [[ "$COMMAND" == "-
   echo "Usage: nixos-build [command]"
   echo ""
   echo "Commands:"
-  echo "  switch     Build and activate (default) - auto-updates gentle-ai/engram"
-  echo "  upgrade    Build and upgrade - auto-updates gentle-ai/engram"
+  echo "  switch     Build and activate (default)"
+  echo "  upgrade    Build and upgrade"
   echo "  dry        Dry-activate (show changes only)"
   echo "  check      Validate flake"
   echo "  build      Dry-build only"
   echo ""
-  echo "Auto-detects worktree:"
-  echo "  - Main repo: uses /etc/nixos"
-  echo "  - Worktree: uses current directory"
+  echo "Auto-detects:"
+  echo "  - Hostname: selects correct nixosConfiguration"
+  echo "  - Worktree: uses current directory (else /etc/nixos)"
   exit 0
 fi
 
 case "$COMMAND" in
   switch)
-    echo "> Checking for package updates..."
-    # Always use main nixos repo for updates, not worktrees
-    NIXOS_ROOT="${HOME}/.nixos"
-    if command -v update-gentle-ai >/dev/null 2>&1; then
-      update-gentle-ai "$NIXOS_ROOT" || true
-    elif [ -f "$NIXOS_ROOT/bin/update-gentle-ai" ]; then
-      "$NIXOS_ROOT/bin/update-gentle-ai" "$NIXOS_ROOT" || true
-    fi
     echo ""
     echo "> Building NixOS configuration (switch)..."
     echo "> Using flake: $FLAKE_PATH#$HOSTNAME"
     sudo nixos-rebuild switch --flake "$FLAKE_PATH#$HOSTNAME"
     ;;
   upgrade)
-    echo "> Checking for package updates..."
-    # Always use main nixos repo for updates, not worktrees
-    NIXOS_ROOT="${HOME}/.nixos"
-    if command -v update-gentle-ai >/dev/null 2>&1; then
-      update-gentle-ai "$NIXOS_ROOT" || true
-    elif [ -f "$NIXOS_ROOT/bin/update-gentle-ai" ]; then
-      "$NIXOS_ROOT/bin/update-gentle-ai" "$NIXOS_ROOT" || true
-    fi
     echo ""
     echo "> Building NixOS configuration (upgrade)..."
     echo "> Using flake: $FLAKE_PATH#$HOSTNAME"
