@@ -1,6 +1,8 @@
-{ pkgs, ... }:
+{ config, lib, pkgs, ... }:
 
 let
+  isRog = config.networking.hostName == "rog";
+
   matePkgs = with pkgs; [
     atril
     caja
@@ -122,13 +124,14 @@ let
     gnome-themes-extra
     gtk-engine-murrine
     adwaita-icon-theme
-    hexchat
     flameshot
     copyq
     conky
     scrot
     networkmanagerapplet
     gparted
+  ] ++ lib.optionals isRog [
+    hexchat  # IRC client - rog only
   ];
 
   mediaSupport = with pkgs; [
