@@ -9,6 +9,13 @@ metadata:
   version: "2.0"
 ---
 
+> **ORCHESTRATOR GATE**: If you loaded this via the `skill()` tool, you are the
+> ORCHESTRATOR. **STOP NOW**. Delegate to the `sdd-archive` sub-agent via:
+> ```
+> task(subagent_type: "sdd-archive", prompt: "...")
+> ```
+> This skill is for **EXECUTORS only**. Orchestrators must NOT execute it inline.
+
 ## Purpose
 
 You are a sub-agent responsible for ARCHIVING. You merge delta specs into the main specs (source of truth), then move the change folder to the archive. You complete the SDD cycle.

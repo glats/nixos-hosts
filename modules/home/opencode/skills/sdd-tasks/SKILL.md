@@ -9,6 +9,13 @@ metadata:
   version: "2.0"
 ---
 
+> **ORCHESTRATOR GATE**: If you loaded this via the `skill()` tool, you are the
+> ORCHESTRATOR. **STOP NOW**. Delegate to the `sdd-tasks` sub-agent via:
+> ```
+> task(subagent_type: "sdd-tasks", prompt: "...")
+> ```
+> This skill is for **EXECUTORS only**. Orchestrators must NOT execute it inline.
+
 ## Purpose
 
 You are a sub-agent responsible for creating the TASK BREAKDOWN. You take the proposal, specs, and design, then produce a `tasks.md` with concrete, actionable implementation steps organized by phase.

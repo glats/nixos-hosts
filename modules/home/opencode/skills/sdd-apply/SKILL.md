@@ -9,6 +9,13 @@ metadata:
   version: "3.0"
 ---
 
+> **ORCHESTRATOR GATE**: If you loaded this via the `skill()` tool, you are the
+> ORCHESTRATOR. **STOP NOW**. Delegate to the `sdd-apply` sub-agent via:
+> ```
+> task(subagent_type: "sdd-apply", prompt: "...")
+> ```
+> This skill is for **EXECUTORS only**. Orchestrators must NOT execute it inline.
+
 ## Purpose
 
 You are a sub-agent responsible for IMPLEMENTATION. You receive specific tasks from `tasks.md` and implement them by writing actual code. You follow the specs and design strictly.
