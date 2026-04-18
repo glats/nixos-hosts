@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# start-work - Create new worktree
+# Usage: start-work [name]
+
+exec work-flow start "$@"

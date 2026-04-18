@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# abort-work - Discard worktree and all changes
+# Usage: abort-work
+
+exec work-flow abort "$@"

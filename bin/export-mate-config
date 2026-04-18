@@ -1,0 +1,184 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Export MATE dconf configuration to Nix format
+# This script exports dconf settings from /org/mate/ and updates mate.nix
+# Usage: export-mate-config
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+OUTPUT_FILE="$REPO_ROOT/modules/home/mate.nix"
+
+if ! command -v dconf >/dev/null 2>&1; then
+  echo "Error: dconf command not found" >&2
+  exit 1
+fi
+
+echo "> Exporting MATE dconf configuration..."
+
+# Create temporary file
+TEMP_FILE=$(mktemp)
+trap "rm -f $TEMP_FILE" EXIT
+
+# Write header
+cat > "$TEMP_FILE" << 'HEADER'
+{ config, lib, pkgs, ... }:
+
+{
+  dconf.settings = {
+HEADER
+
+# Export and convert dconf settings
+dconf dump /org/mate/ | while IFS= read -r line || [ -n "$line" ]; do
+  # Skip empty lines between sections
+  if [ -z "$line" ]; then
+    continue
+  fi
+  
+  # Check if it's a section header [path]
+  if [[ "$line" =~ ^\[(.*)\]$ ]]; then
+    path="${BASH_REMATCH[1]}"
+    # Close previous block if not first
+    if [ -n "${CURRENT_PATH:-}" ]; then
+      echo "    };" >> "$TEMP_FILE"
+      echo "" >> "$TEMP_FILE"
+    fi
+    CURRENT_PATH="$path"
+    echo "    \"org/mate/$path\" = {" >> "$TEMP_FILE"
+    
+  # Check if it's a key=value pair
+  elif [[ "$line" =~ ^([^=]+)=(.*)$ ]]; then
+    key="${BASH_REMATCH[1]}"
+    value="${BASH_REMATCH[2]}"
+    
+    # Trim whitespace from key
+    key=$(echo "$key" | xargs)
+    
+    # Convert value based on type
+    if [[ "$value" =~ ^\[(.*)\]$ ]]; then
+      # Array value - convert from ['a', 'b'] to [ "a" "b" ]
+      array_content="${BASH_REMATCH[1]}"
+      # Remove single quotes, replace with double quotes, remove commas
+      array_content=$(echo "$array_content" | sed "s/'/\"/g" | tr ',' '\n' | sed 's/^ *//' | sed 's/ *$//' | tr '\n' ' ' | sed 's/  */ /g')
+      value="[ $array_content ]"
+    elif [[ "$value" =~ ^true$|^false$ ]]; then
+      # Boolean - keep as is
+      :
+    elif [[ "$value" =~ ^[0-9]+$ ]]; then
+      # Integer - keep as is
+      :
+    else
+      # String - remove outer quotes and add double quotes
+      value=$(echo "$value" | sed "s/^'//;s/'$//")
+      value="\"$value\""
+    fi
+    
+    echo "      $key = $value;" >> "$TEMP_FILE"
+  fi
+done
+
+# Close last dconf block
+echo "    };" >> "$TEMP_FILE"
+
+# Add autostart section
+cat >> "$TEMP_FILE" << 'AUTOSTART'
+  };
+
+  xdg.configFile = {
+    "autostart/gpaste.desktop".text = ''
+      [Desktop Entry]
+      Name=GPaste
+      Comment=Clipboard Manager
+      Icon=edit-paste
+      Exec=${pkgs.gpaste}/bin/gpaste-client start
+      Terminal=false
+      Type=Application
+      Categories=GTK;GNOME;Application;Utility;
+      OnlyShowIn=MATE;
+      X-MATE-Autostart-enabled=true
+    '';
+
+    "autostart/conky.desktop".text = ''
+      [Desktop Entry]
+      Type=Application
+      Name=conky
+      Exec=${pkgs.conky}/bin/conky --daemonize --pause=1
+      StartupNotify=false
+      Terminal=false
+      Icon=conky-logomark-violet
+      Categories=System;Monitor;
+      OnlyShowIn=MATE;
+      X-MATE-Autostart-enabled=true
+    '';
+
+    "autostart/io.github.Hexchat.desktop".text = ''
+      [Desktop Entry]
+      Name=HexChat
+      GenericName=IRC Client
+      Comment=Chat with other people online
+      Keywords=IM;Chat;
+      Exec=${pkgs.hexchat}/bin/hexchat --existing %U
+      Icon=io.github.Hexchat
+      Terminal=false
+      Type=Application
+      Categories=GTK;Network;IRCClient;
+      StartupNotify=true
+      StartupWMClass=Hexchat
+      MimeType=x-scheme-handler:irc;x-scheme-handler:ircs;
+      OnlyShowIn=MATE;
+      X-MATE-Autostart-enabled=true
+    '';
+
+    "autostart/ulauncher.desktop".text = ''
+      [Desktop Entry]
+      Name=Ulauncher
+      Comment=Application launcher for Linux
+      GenericName=Launcher
+      Categories=GNOME;GTK;Utility;
+      Exec=env GDK_BACKEND=x11 ${pkgs.ulauncher}/bin/ulauncher --hide-window
+      Icon=ulauncher
+      Terminal=false
+      Type=Application
+      OnlyShowIn=MATE;
+      X-MATE-Autostart-enabled=true
+    '';
+
+    "autostart/org.flameshot.Flameshot.desktop".text = ''
+      [Desktop Entry]
+      Name=Flameshot
+      GenericName=Screenshot tool
+      Comment=Powerful yet simple to use screenshot software.
+      Keywords=flameshot;screenshot;capture;shutter;
+      Exec=${pkgs.flameshot}/bin/flameshot
+      Icon=org.flameshot.Flameshot
+      Terminal=false
+      Type=Application
+      Categories=Graphics;
+      StartupNotify=false
+      StartupWMClass=flameshot
+      OnlyShowIn=MATE;
+      X-MATE-Autostart-enabled=true
+    '';
+  };
+}
+AUTOSTART
+
+# Copy temp file to output
+cp "$TEMP_FILE" "$OUTPUT_FILE"
+
+echo "> Formatting with nixfmt..."
+if command -v nixfmt >/dev/null 2>&1; then
+  nixfmt "$OUTPUT_FILE"
+elif command -v nixpkgs-fmt >/dev/null 2>&1; then
+  nixpkgs-fmt "$OUTPUT_FILE"
+fi
+
+echo "> Validating configuration..."
+cd "$REPO_ROOT"
+if nix flake check 2>&1 | tail -10; then
+  echo "> Success! Configuration exported to $OUTPUT_FILE"
+  echo "> Apply with: home-manager switch --flake '/home/glats/.nixos#glats@rog'"
+else
+  echo "Warning: Validation failed, please check the output above"
+  exit 1
+fi

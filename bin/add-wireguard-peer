@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(dirname "$SCRIPT_DIR")"
+HOST=$(hostname)
+
+cd "$REPO_ROOT"
+
+if [[ $# -ne 1 ]]; then
+  echo "Usage: $0 <peer-name>" >&2
+  echo "Example: $0 tablet" >&2
+  exit 2
+fi
+
+PEER_NAME="$1"
+SECRET_FILE="secrets/wireguard/peer-${PEER_NAME}-psk"
+
+if [[ -f "$SECRET_FILE" ]]; then
+  echo "Error: Secret file already exists: $SECRET_FILE" >&2
+  exit 1
+fi
+
+mkdir -p secrets/wireguard
+
+PRESHARED_KEY=$(wg genpsk)
+echo "$PRESHARED_KEY" > "$SECRET_FILE"
+chmod 600 "$SECRET_FILE"
+
+echo "> Created preshared key: $SECRET_FILE"
+
+echo ""
+echo "=== Next steps ==="
+echo ""
+echo "1. On the CLIENT device, generate keys:"
+echo "   wg genkey | tee privatekey | wg pubkey > publickey"
+echo ""
+echo "2. Read the public key and add this peer to modules/wireguard.nix:"
+echo ""
+cat << 'TEMPLATE'
+      {
+        # PEER_NAME
+        publicKey = "REPLACE_WITH_CLIENT_PUBLIC_KEY";
+        presharedKeyFile = "/home/glats/.nixos/secrets/wireguard/peer-PEER_NAME-psk";
+        allowedIPs = [ "10.13.13.N/32" ];  # Replace N with next available IP (7, 8, etc)
+      }
+TEMPLATE
+echo ""
+echo "3. Rebuild: sudo nixos-rebuild switch --flake '/etc/nixos#${HOST}'"
+echo ""
+echo "4. On the CLIENT, create the tunnel config with the private key and connect"

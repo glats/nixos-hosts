@@ -1,0 +1,12 @@
+keys:
+  - &admin_glats age1j4mxejwmktekgf24sju92ryayh5jlmv4ldxj62e2srwghpkpuujscct9lt
+  - &host_rog age1hhneed7kklvpzctqqml6dklcnkh9xfdta3mxyq70s30d63095dcscdhk5m
+  - &host_thinkcentre age1uhv0z8e04q2385wlrn0vgd237ts2exea375yr4yeqwx5v9zgw9esdg3rsn
+
+creation_rules:
+  - path_regex: secrets/[^/]+\.(yaml|json|env|ini)$
+    key_groups:
+      - age:
+          - *admin_glats
+          - *host_rog
+          - *host_thinkcentre
