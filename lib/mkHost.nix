@@ -1,4 +1,4 @@
-{ inputs, ... }:
+{ inputs, self, ... }:
 
 let
   mkHost = { hostname
@@ -7,7 +7,7 @@ let
   }:
   inputs.nixpkgs.lib.nixosSystem {
     inherit system;
-    specialArgs = { inherit inputs; };
+    specialArgs = { inherit inputs self; };
     modules = [
       # Host-specific configuration
       ../hosts/${hostname}
@@ -21,8 +21,13 @@ let
       # Overlays for custom packages
       {
         nixpkgs.overlays = [
-          (import ../modules/core/overlays.nix { self = inputs.self; })
+          (import ../modules/core/overlays.nix { inherit self inputs; })
         ];
+      }
+
+      # Pasar inputs a home-manager para que opencode.nix pueda acceder a gentle-ai-src
+      {
+        home-manager.extraSpecialArgs = { inherit inputs; };
       }
     ] ++ extraModules;
   };
