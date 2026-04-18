@@ -1,5 +1,21 @@
 {
   "nodes": {
+    "asus-fan-control-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1771353901,
+        "narHash": "sha256-jMIS7cJqh+2YQzGbluZ3nq3G+YEmIRycH6WyMAapvZI=",
+        "owner": "dominiksalvet",
+        "repo": "asus-fan-control",
+        "rev": "d027982431361e2e7593d83ee19f737572c18a71",
+        "type": "github"
+      },
+      "original": {
+        "owner": "dominiksalvet",
+        "repo": "asus-fan-control",
+        "type": "github"
+      }
+    },
     "base16-schemes": {
       "flake": false,
       "locked": {
@@ -13,6 +29,22 @@
       "original": {
         "owner": "tinted-theming",
         "repo": "base16-schemes",
+        "type": "github"
+      }
+    },
+    "gentle-ai-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1776468202,
+        "narHash": "sha256-8VW03TIcCxnkeFY61SOtkMaEwg4pb7qvgR7TEgdfZ1E=",
+        "owner": "Gentleman-Programming",
+        "repo": "gentle-ai",
+        "rev": "c72f7e8477cdec9fc84488fb2d622f058eb66f3e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Gentleman-Programming",
+        "repo": "gentle-ai",
         "type": "github"
       }
     },
@@ -87,11 +119,47 @@
         "type": "github"
       }
     },
+    "nvim-config": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1776049188,
+        "narHash": "sha256-7CUGbV9DibuERk0s7uwSDAzwMzz05XkX1wqRwmyTEpc=",
+        "owner": "j1cs",
+        "repo": "nvim",
+        "rev": "b1892b256e14cc5cae2f00578762b1aecbf663e0",
+        "type": "github"
+      },
+      "original": {
+        "owner": "j1cs",
+        "repo": "nvim",
+        "type": "github"
+      }
+    },
+    "pipewire-module-xrdp-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1774344537,
+        "narHash": "sha256-t3xtbvPVRnkyJOJka6sYoyk1bw/ddd9+xfs+eMh+95Y=",
+        "owner": "neutrinolabs",
+        "repo": "pipewire-module-xrdp",
+        "rev": "a6e268b17093f8aab4e0fed9dcb23eaf87f7101c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "neutrinolabs",
+        "repo": "pipewire-module-xrdp",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
+        "asus-fan-control-src": "asus-fan-control-src",
+        "gentle-ai-src": "gentle-ai-src",
         "home-manager": "home-manager",
         "nix-colors": "nix-colors",
         "nixpkgs": "nixpkgs",
+        "nvim-config": "nvim-config",
+        "pipewire-module-xrdp-src": "pipewire-module-xrdp-src",
         "sops-nix": "sops-nix"
       }
     },

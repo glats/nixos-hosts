@@ -1,12 +1,16 @@
-{ config, pkgs, ... }:
+{ config, pkgs, inputs, ... }:
 
 let
   opencodeConfigDir = "${config.home.homeDirectory}/.config/opencode";
   fireworksKeyPath = config.sops.secrets."opencode/fireworks_api_key".path;
+  
+  # Referencia al gentle-ai-src desde los inputs del flake
+  gentle-ai-src = inputs.gentle-ai-src;
 in
 
 {
-  # SDD structure (skills, commands, plugins, PERSONA.md) from gentle-ai
+  # SDD structure (skills, commands, plugins) - LOCAL por ahora
+  # TODO: Migrar a upstream cuando gentle-ai-src tenga caveman completo
   home.file.".config/opencode/PERSONA.md".source = ./opencode/PERSONA.md;
   home.file.".config/opencode/skills".source = ./opencode/skills;
   home.file.".config/opencode/commands".source = ./opencode/commands;
