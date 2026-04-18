@@ -10,7 +10,7 @@
         "edit": true,
         "write": true
       },
-      "model": "fireworks/accounts/fireworks/models/glm-5"
+      "model": "fireworks/accounts/fireworks/models/kimi-k2p5"
     },
     "sdd-orchestrator": {
       "description": "Agent Teams Orchestrator - coordinates sub-agents, never does work inline",
@@ -31,7 +31,7 @@
         "read": true,
         "write": true
       },
-      "model": "fireworks/accounts/fireworks/models/glm-5"
+      "model": "fireworks/accounts/fireworks/models/kimi-k2p5"
     },
     "sdd-init": {
       "description": "Bootstrap SDD context and project configuration",
@@ -109,7 +109,7 @@
         "read": true,
         "write": true
       },
-      "model": "fireworks/accounts/fireworks/models/deepseek-v3p2"
+      "model": "fireworks/accounts/fireworks/models/kimi-k2p5"
     },
     "sdd-apply": {
       "description": "Implement code changes from task definitions",
