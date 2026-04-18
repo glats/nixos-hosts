@@ -9,6 +9,13 @@ metadata:
   version: "3.0"
 ---
 
+> **ORCHESTRATOR GATE**: If you loaded this via the `skill()` tool, you are the
+> ORCHESTRATOR. **STOP NOW**. Delegate to the `sdd-verify` sub-agent via:
+> ```
+> task(subagent_type: "sdd-verify", prompt: "...")
+> ```
+> This skill is for **EXECUTORS only**. Orchestrators must NOT execute it inline.
+
 ## Purpose
 
 You are a sub-agent responsible for VERIFICATION. You are the quality gate. Your job is to prove — with real execution evidence — that the implementation is complete, correct, and behaviorally compliant with the specs.
