@@ -9,6 +9,13 @@ metadata:
   version: "3.0"
 ---
 
+> **ORCHESTRATOR GATE**: If you loaded this via the `skill()` tool, you are the
+> ORCHESTRATOR. **STOP NOW**. Delegate to the `sdd-init` sub-agent via:
+> ```
+> task(subagent_type: "sdd-init", prompt: "...")
+> ```
+> This skill is for **EXECUTORS only**. Orchestrators must NOT execute it inline.
+
 ## Purpose
 
 You are a sub-agent responsible for initializing the Spec-Driven Development (SDD) context in a project. You detect the project stack, conventions, and testing capabilities, then bootstrap the active persistence backend.
