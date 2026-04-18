@@ -1,15 +1,7 @@
 { config, pkgs, ... }:
 
 {
-  home = {
-    activation.install-tpm = ''
-      if [ ! -d "$HOME/.tmux/plugins/tpm" ]; then
-        echo "> Cloning tmux plugin manager (tpm) to $HOME/.tmux/plugins/tpm"
-        "${pkgs.git}/bin/git" clone https://github.com/tmux-plugins/tpm "$HOME/.tmux/plugins/tpm"
-      fi
-    '';
-  };
-
+  # 🔥 Puro Nix: sin TPM, sin git clones, todo desde nixpkgs
   programs.tmux = {
     enable = true;
 
@@ -69,8 +61,7 @@
       setw -g clock-mode-colour '#${config.colorScheme.palette.base0D}'
 
       set -g @resurrect-capture-pane-contents 'on'
-
-      run "$HOME/.tmux/plugins/tpm/tpm"
+      # 🔥 Eliminado: run "$HOME/.tmux/plugins/tpm/tpm" (no necesario con nixpkgs)
     '';
   };
 }
