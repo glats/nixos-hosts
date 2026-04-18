@@ -1,6 +1,11 @@
 { config, lib, pkgs, ... }:
 
 let
+  isRog = config.networking.hostName == "rog";
+  
+  # Network interface per host
+  netInterface = if isRog then "enp3s0" else "enp0s31f6";
+
   colors = {
     primary = config.colorScheme.palette.base0D;
     secondary = config.colorScheme.palette.base0E;
@@ -203,17 +208,21 @@ let
 
     ''${voffset 60}
     ''${goto 40}''${color #${colors.dark}}STORAGE''${color}''${goto 440}''${color #${colors.tertiary}}NETWORK''${color}''${goto 840}''${color #${colors.primary}}TOP PROCESSES''${color}
-    ''${goto 40}''${color #${colors.light}}root:''${goto 140}''${color} ''${fs_used /}/''${fs_size /}''${goto 440}''${color #${colors.light}}Interface:''${goto 540}''${color} ''${if_up enp3s0}enp3s0''${else}''${if_up wlp2s0}wlp2s0''${else}offline''${endif}''${endif}''${goto 840}''${color lightgrey}Name''${goto 990}CPU%''${goto 1060}MEM%
-    ''${goto 40}''${color #${colors.dark}}''${fs_bar 5,200 /}''${color}''${goto 440}''${color #${colors.light}}Up:''${goto 540}''${color} ''${if_up enp3s0}''${upspeed enp3s0}''${else}''${if_up wlp2s0}''${upspeed wlp2s0}''${else}0''${endif}''${endif}''${goto 840}''${color #${colors.light}}''${top name 1}''${goto 990}''${top cpu 1}%''${goto 1060}''${top mem 1}%
-    ''${goto 40}''${color #${colors.light}}home:''${goto 140}''${color} ''${fs_used /home}/''${fs_size /home}''${goto 440}''${color #${colors.light}}Down:''${goto 540}''${color} ''${if_up enp3s0}''${downspeed enp3s0}''${else}''${if_up wlp2s0}''${downspeed wlp2s0}''${else}0''${endif}''${endif}''${goto 840}''${color #${colors.light}}''${top name 2}''${goto 990}''${top cpu 2}%''${goto 1060}''${top mem 2}%
-    ''${goto 40}''${color #${colors.secondary}}''${fs_bar 5,200 /home}''${color}''${goto 440}''${color #${colors.light}}IP:''${goto 540}''${color} ''${if_up enp3s0}''${addr enp3s0}''${else}''${if_up wlp2s0}''${addr wlp2s0}''${else}n/a''${endif}''${endif}''${goto 840}''${color #${colors.light}}''${top name 3}''${goto 990}''${top cpu 3}%''${goto 1060}''${top mem 3}%
-    ''${goto 40}''${color #${colors.light}}archlinux:''${goto 140}''${color} ''${fs_used /run/media/archlinux}/''${fs_size /run/media/archlinux}''${goto 440}''${color #${colors.light}}SSID:''${goto 540}''${color} ''${if_up wlp2s0}''${wireless_essid wlp2s0}''${else}wired''${endif}''${goto 840}''${color #${colors.light}}''${top name 4}''${goto 990}''${top cpu 4}%''${goto 1060}''${top mem 4}%
-    ''${goto 40}''${color #${colors.dark}}''${fs_bar 5,200 /run/media/archlinux}''${color}''${goto 840}''${color #${colors.light}}''${top name 5}''${goto 990}''${top cpu 5}%''${goto 1060}''${top mem 5}%
+    ''${goto 40}''${color #${colors.light}}root:''${goto 140}''${color} ''${fs_used /}/''${fs_size /}''${goto 440}''${color #${colors.light}}Interface:''${goto 540}''${color} ''${if_up ${netInterface}}${netInterface}''${else}''${if_up wlp2s0}wlp2s0''${else}offline''${endif}''${endif}''${goto 840}''${color lightgrey}Name''${goto 990}CPU%''${goto 1060}MEM%
+    ''${goto 40}''${color #${colors.dark}}''${fs_bar 5,200 /}''${color}''${goto 440}''${color #${colors.light}}Up:''${goto 540}''${color} ''${if_up ${netInterface}}''${upspeed ${netInterface}}''${else}''${if_up wlp2s0}''${upspeed wlp2s0}''${else}0''${endif}''${endif}''${goto 840}''${color #${colors.light}}''${top name 1}''${goto 990}''${top cpu 1}%''${goto 1060}''${top mem 1}%
+    ''${goto 40}''${color #${colors.light}}home:''${goto 140}''${color} ''${fs_used /home}/''${fs_size /home}''${goto 440}''${color #${colors.light}}Down:''${goto 540}''${color} ''${if_up ${netInterface}}''${downspeed ${netInterface}}''${else}''${if_up wlp2s0}''${downspeed wlp2s0}''${else}0''${endif}''${endif}''${goto 840}''${color #${colors.light}}''${top name 2}''${goto 990}''${top cpu 2}%''${goto 1060}''${top mem 2}%
+    ''${goto 40}''${color #${colors.secondary}}''${fs_bar 5,200 /home}''${color}''${goto 440}''${color #${colors.light}}IP:''${goto 540}''${color} ''${if_up ${netInterface}}''${addr ${netInterface}}''${else}''${if_up wlp2s0}''${addr wlp2s0}''${else}n/a''${endif}''${endif}''${goto 840}''${color #${colors.light}}''${top name 3}''${goto 990}''${top cpu 3}%''${goto 1060}''${top mem 3}%
+    ''${goto 40}''${color #${colors.light}}boot:''${goto 140}''${color} ''${fs_used /boot}/''${fs_size /boot}''${goto 440}''${color #${colors.light}}SSID:''${goto 540}''${color} ''${if_up wlp2s0}''${wireless_essid wlp2s0}''${else}wired''${endif}''${goto 840}''${color #${colors.light}}''${top name 4}''${goto 990}''${top cpu 4}%''${goto 1060}''${top mem 4}%
+    ''${goto 40}''${color #${colors.dark}}''${fs_bar 5,200 /boot}''${color}''${goto 840}''${color #${colors.light}}''${top name 5}''${goto 990}''${top cpu 5}%''${goto 1060}''${top mem 5}%
+    ''${goto 40}''${color #${colors.light}}IO:''${goto 140}''${color} ''${diskio} R:''${diskio_read} W:''${diskio_write}
+    ''${lib.optionalString isRog ''
+    ''${goto 40}''${color #${colors.light}}archlinux:''${goto 140}''${color} ''${fs_used /run/media/archlinux}/''${fs_size /run/media/archlinux}
+    ''${goto 40}''${color #${colors.dark}}''${fs_bar 5,200 /run/media/archlinux}''${color}
     ''${goto 40}''${color #${colors.light}}library:''${goto 140}''${color} ''${fs_used /run/media/library}/''${fs_size /run/media/library}
     ''${goto 40}''${color #${colors.secondary}}''${fs_bar 5,200 /run/media/library}''${color}
     ''${goto 40}''${color #${colors.light}}stuff:''${goto 140}''${color} ''${fs_used /run/media/stuff}/''${fs_size /run/media/stuff}
     ''${goto 40}''${color #${colors.dark}}''${fs_bar 5,200 /run/media/stuff}''${color}
-    ''${goto 40}''${color #${colors.light}}IO:''${goto 140}''${color} ''${diskio} R:''${diskio_read} W:''${diskio_write}
+    ''}
     ]]
   '';
 
