@@ -1,0 +1,148 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+REPO_ROOT="/home/glats/.nixos"
+WORKTREES_DIR="$REPO_ROOT/.worktrees"
+
+usage() {
+  echo "Usage: $(basename "$0") <command> [options]"
+  echo ""
+  echo "Commands:"
+  echo "  init              Initialize main repo and worktrees structure"
+  echo "  new [name]        Create new worktree (auto-generates name if not provided)"
+  echo "  list              List all worktrees"
+  echo "  clean [name]      Remove a worktree (removes all if no name provided)"
+  echo "  prune             Remove merged/stale worktrees"
+  echo ""
+  echo "Examples:"
+  echo "  $(basename "$0") new                    # Creates worktree with auto-name"
+  echo "  $(basename "$0") new feature-xrdp       # Creates worktree 'feature-xrdp'"
+  exit 1
+}
+
+init_repo() {
+  echo "> Initializing git worktree workflow..."
+  
+  cd "$REPO_ROOT"
+  
+  if ! git rev-parse --git-dir > /dev/null 2>&1; then
+    echo "Error: Not a git repository"
+    exit 1
+  fi
+  
+  mkdir -p "$WORKTREES_DIR"
+  
+  # Create main branch if doesn't exist
+  if ! git show-ref --verify --quiet refs/heads/main; then
+    git checkout -b main 2>/dev/null || true
+  fi
+  
+  # Add basic .gitignore for worktrees
+  if ! grep -q "^.worktrees/" .gitignore 2>/dev/null; then
+    echo ".worktrees/" >> .gitignore
+    git add .gitignore
+  fi
+  
+  echo "> Worktree workflow initialized!"
+  echo "> Worktrees location: $WORKTREES_DIR"
+}
+
+generate_worktree_name() {
+  local date_part=$(date +%Y%m%d-%H%M%S)
+  local random_part=$(cat /dev/urandom | tr -dc 'a-z0-9' | head -c 6)
+  echo "agent-${date_part}-${random_part}"
+}
+
+new_worktree() {
+  local name="${1:-}"
+  
+  if [[ -z "$name" ]]; then
+    name=$(generate_worktree_name)
+    echo "> Auto-generated worktree name: $name"
+  fi
+  
+  local worktree_path="$WORKTREES_DIR/$name"
+  
+  if [[ -d "$worktree_path" ]]; then
+    echo "Error: Worktree '$name' already exists at $worktree_path"
+    exit 1
+  fi
+  
+  cd "$REPO_ROOT"
+  
+  # Create branch and worktree
+  git branch "$name" 2>/dev/null || true
+  git worktree add "$worktree_path" "$name"
+  
+  # Add worktree-specific .gitignore
+  echo ".worktrees/" > "$worktree_path/.gitignore"
+  
+  echo "> Created worktree: $name"
+  echo "> Location: $worktree_path"
+  echo "> Branch: $name"
+  echo ""
+  echo "To use this worktree with opencode:"
+  echo "  cd $worktree_path"
+  echo "  opencode"
+}
+
+list_worktrees() {
+  echo "> Active worktrees:"
+  git -C "$REPO_ROOT" worktree list
+}
+
+clean_worktree() {
+  local name="${1:-}"
+  
+  if [[ -z "$name" ]]; then
+    echo "> Removing all worktrees..."
+    cd "$REPO_ROOT"
+    for wt in $(git worktree list --porcelain | grep "worktree " | grep "$WORKTREES_DIR" | cut -d' ' -f2); do
+      local wt_name=$(basename "$wt")
+      echo "  Removing: $wt_name"
+      git worktree remove "$wt" --force 2>/dev/null || rm -rf "$wt"
+      git branch -D "$wt_name" 2>/dev/null || true
+    done
+    echo "> All worktrees removed"
+  else
+    local worktree_path="$WORKTREES_DIR/$name"
+    if [[ ! -d "$worktree_path" ]]; then
+      echo "Error: Worktree '$name' not found"
+      exit 1
+    fi
+    
+    cd "$REPO_ROOT"
+    echo "> Removing worktree: $name"
+    git worktree remove "$worktree_path" --force 2>/dev/null || rm -rf "$worktree_path"
+    git branch -D "$name" 2>/dev/null || true
+    echo "> Worktree removed"
+  fi
+}
+
+prune_worktrees() {
+  echo "> Pruning stale worktrees..."
+  cd "$REPO_ROOT"
+  git worktree prune
+  echo "> Done"
+}
+
+case "${1:-}" in
+  init)
+    init_repo
+    ;;
+  new)
+    new_worktree "${2:-}"
+    ;;
+  list)
+    list_worktrees
+    ;;
+  clean)
+    clean_worktree "${2:-}"
+    ;;
+  prune)
+    prune_worktrees
+    ;;
+  *)
+    usage
+    ;;
+esac

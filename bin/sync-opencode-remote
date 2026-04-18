@@ -1,0 +1,118 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Sync OpenCode configuration to remote host
+# Usage: sync-opencode-remote [host] [api_key]
+#   host: defaults to 172.16.0.12
+#   api_key: SiliconFlow API key (or set SILICONFLOW_API_KEY env var)
+
+REMOTE_HOST="${1:-172.16.0.12}"
+API_KEY="${2:-${SILICONFLOW_API_KEY:-}}"
+REMOTE_USER="glats"
+REMOTE_DIR="/home/${REMOTE_USER}/.config/opencode"
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+if [ -z "$API_KEY" ]; then
+  echo -e "${RED}Error: API key required${NC}"
+  echo "Usage: $0 [host] [api_key]"
+  echo "   or: SILICONFLOW_API_KEY=xxx $0"
+  exit 1
+fi
+
+echo -e "${BLUE}========================================${NC}"
+echo -e "${BLUE}  Sync OpenCode to ${REMOTE_HOST}${NC}"
+echo -e "${BLUE}========================================${NC}\n"
+
+# Get script directory (repo root)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+OPENCODE_SRC="${SCRIPT_DIR}/modules/home/opencode"
+
+# Check source exists
+if [ ! -d "$OPENCODE_SRC" ]; then
+  echo -e "${RED}Error: OpenCode source not found at ${OPENCODE_SRC}${NC}"
+  exit 1
+fi
+
+# Step 1: Create opencode.json with API key injected
+echo -e "${BLUE}[1/5] Generating opencode.json with API key...${NC}"
+TEMP_DIR=$(mktemp -d)
+trap "rm -rf $TEMP_DIR" EXIT
+
+sed "s|SILICONFLOW_API_KEY_PLACEHOLDER|${API_KEY}|g" \
+  "${OPENCODE_SRC}/opencode.json.base" > "${TEMP_DIR}/opencode.json"
+
+echo -e "${GREEN}✓ opencode.json generated${NC}\n"
+
+# Step 2: Ensure remote directory exists
+echo -e "${BLUE}[2/5] Creating remote directory structure...${NC}"
+ssh "${REMOTE_HOST}" "mkdir -p ${REMOTE_DIR}/{skills,commands,plugins}"
+
+# Step 3: Sync configuration files
+echo -e "${BLUE}[3/5] Syncing configuration files...${NC}"
+rsync -avz --delete \
+  "${TEMP_DIR}/opencode.json" \
+  "${REMOTE_HOST}:${REMOTE_DIR}/"
+
+rsync -avz --delete \
+  "${OPENCODE_SRC}/PERSONA.md" \
+  "${OPENCODE_SRC}/skills/" \
+  "${OPENCODE_SRC}/commands/" \
+  "${OPENCODE_SRC}/plugins/" \
+  "${REMOTE_HOST}:${REMOTE_DIR}/"
+
+echo -e "${GREEN}✓ Configuration synced${NC}\n"
+
+# Step 4: Install engram binary for ARM64
+echo -e "${BLUE}[4/5] Installing engram (ARM64)...${NC}"
+ENGRAM_VERSION=$(curl -s https://api.github.com/repos/Gentleman-Programming/engram/releases/latest | grep '"tag_name"' | cut -d'"' -f4 | sed 's/^v//')
+ENGRAM_URL="https://github.com/Gentleman-Programming/engram/releases/download/v${ENGRAM_VERSION}/engram_${ENGRAM_VERSION}_linux_arm64.tar.gz"
+
+ssh "${REMOTE_HOST}" "
+  set -e
+  cd /tmp
+  curl -sSL '${ENGRAM_URL}' | tar xz
+  mkdir -p ~/bin
+  mv engram ~/bin/
+  chmod +x ~/bin/engram
+  
+  # Add to PATH if not already
+  if ! grep -q 'export PATH=\"\$HOME/bin:\$PATH\"' ~/.profile 2>/dev/null; then
+    echo 'export PATH=\"\$HOME/bin:\$PATH\"' >> ~/.profile
+  fi
+"
+
+echo -e "${GREEN}✓ engram v${ENGRAM_VERSION} installed to ~/bin/engram${NC}\n"
+
+# Step 5: Verify configuration
+echo -e "${BLUE}[5/5] Verifying installation...${NC}"
+ssh "${REMOTE_HOST}" "
+  echo '--- opencode.json ---'
+  jq '.agent.neutral.model, .mcp | keys' ${REMOTE_DIR}/opencode.json 2>/dev/null || cat ${REMOTE_DIR}/opencode.json | head -20
+  
+  echo ''
+  echo '--- Skills ---'
+  ls ${REMOTE_DIR}/skills/ | wc -l
+  
+  echo ''
+  echo '--- Commands ---'
+  ls ${REMOTE_DIR}/commands/
+  
+  echo ''
+  echo '--- engram ---'
+  ~/bin/engram version 2>/dev/null || echo 'engram installed at ~/bin/engram'
+"
+
+echo ""
+echo -e "${GREEN}========================================${NC}"
+echo -e "${GREEN}✓ Sync complete!${NC}"
+echo -e "${GREEN}========================================${NC}"
+echo ""
+echo "Next steps on ${REMOTE_HOST}:"
+echo "  1. Add ~/bin to PATH: source ~/.profile"
+echo "  2. Run opencode in your project directory"
+echo "  3. MCP nixos requires Docker (already available)"

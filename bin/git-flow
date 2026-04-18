@@ -1,0 +1,380 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+REPO_ROOT="/home/glats/.nixos"
+WORKTREES_DIR="$REPO_ROOT/.worktrees"
+SCRIPT_NAME=$(basename "$0")
+
+# Detect main branch (main or master)
+get_main_branch() {
+  if git -C "$REPO_ROOT" show-ref --verify --quiet refs/heads/main; then
+    echo "main"
+  elif git -C "$REPO_ROOT" show-ref --verify --quiet refs/heads/master; then
+    echo "master"
+  else
+    echo ""
+  fi
+}
+
+MAIN_BRANCH=$(get_main_branch)
+
+usage() {
+  echo "Usage: $SCRIPT_NAME <command> [options]"
+  echo ""
+  echo "Commands:"
+  echo "  init                    Initialize main repo and worktrees structure"
+  echo "  start [name]            Create new worktree and enter it"
+  echo "  done [message]          Commit changes, merge to main, cleanup worktree"
+  echo "  discard                 Discard all changes and remove worktree + branch"
+  echo "  status                  Show current worktree status"
+  echo "  list                    List all worktrees"
+  echo "  clean [name]            Remove worktree (all if no name)"
+  echo ""
+  echo "Workflow:"
+  echo "  1. $SCRIPT_NAME start my-feature    # Create and enter worktree"
+  echo "  2. Work on your changes..."
+  echo "  3. $SCRIPT_NAME done                # Commit, merge, cleanup"
+  echo "     OR"
+  echo "  3. $SCRIPT_NAME discard             # Throw everything away"
+  exit 1
+}
+
+get_current_worktree_name() {
+  git -C "$REPO_ROOT" worktree list --porcelain | \
+    grep "worktree $WORKTREES_DIR" | \
+    while read -r line; do
+      wt_path=$(echo "$line" | cut -d' ' -f2)
+      if [[ "$wt_path" == "$PWD" ]]; then
+        basename "$wt_path"
+        return
+      fi
+    done
+  return 1
+}
+
+get_current_branch() {
+  git symbolic-ref --short HEAD 2>/dev/null || echo ""
+}
+
+init_repo() {
+  echo "> Initializing git worktree workflow..."
+  
+  cd "$REPO_ROOT"
+  
+  if ! git rev-parse --git-dir > /dev/null 2>&1; then
+    echo "Error: Not a git repository"
+    exit 1
+  fi
+  
+  mkdir -p "$WORKTREES_DIR"
+  
+  # Detect or create main branch
+  if [[ -z "$MAIN_BRANCH" ]]; then
+    # No main or master, create main
+    git checkout -b main 2>/dev/null || true
+    MAIN_BRANCH="main"
+    echo "> Created main branch"
+  else
+    echo "> Using main branch: $MAIN_BRANCH"
+  fi
+  
+  # Add basic .gitignore for worktrees
+  if ! grep -q "^.worktrees/" .gitignore 2>/dev/null; then
+    echo ".worktrees/" >> .gitignore
+    git add .gitignore 2>/dev/null || true
+  fi
+  
+  echo "> Worktree workflow initialized!"
+  echo "> Worktrees location: $WORKTREES_DIR"
+}
+
+generate_worktree_name() {
+  local date_part=$(date +%Y%m%d-%H%M%S)
+  local random_part=$(cat /dev/urandom | tr -dc 'a-z0-9' | head -c 6)
+  echo "agent-${date_part}-${random_part}"
+}
+
+start_worktree() {
+  local name="${1:-}"
+  
+  # Ensure main branch is detected
+  if [[ -z "$MAIN_BRANCH" ]]; then
+    echo "Error: No main branch (main or master) found"
+    echo "  Initialize the repo first with: git-flow init"
+    exit 1
+  fi
+  
+  if [[ -z "$name" ]]; then
+    name=$(generate_worktree_name)
+    echo "> Auto-generated worktree name: $name"
+  fi
+  
+  local worktree_path="$WORKTREES_DIR/$name"
+  
+  if [[ -d "$worktree_path" ]]; then
+    echo "Error: Worktree '$name' already exists"
+    echo "Use: cd $worktree_path"
+    exit 1
+  fi
+  
+  cd "$REPO_ROOT"
+  
+  # Create branch from main branch
+  git branch "$name" "$MAIN_BRANCH" 2>/dev/null || git branch "$name" 2>/dev/null || true
+  
+  # Create worktree
+  git worktree add "$worktree_path" "$name"
+  
+  # Add worktree-specific .gitignore
+  echo ".worktrees/" > "$worktree_path/.gitignore"
+  
+  echo ""
+  echo "====================================="
+  echo "> Created worktree: $name"
+  echo "> Location: $worktree_path"
+  echo "> Branch: $name (from $MAIN_BRANCH)"
+  echo ""
+  echo "To enter the worktree:"
+  echo "  cd $worktree_path"
+  echo ""
+  echo "When done:"
+  echo "  git-flow done 'mensaje del commit'     # Para guardar cambios"
+  echo "  git-flow discard                       # Para descartar todo"
+  echo "====================================="
+  echo ""
+}
+
+done_worktree() {
+  local commit_msg="${1:-}"
+  local current_branch=$(get_current_branch)
+  
+  if [[ -z "$current_branch" ]]; then
+    echo "Error: Not in a git repository or no branch found"
+    exit 1
+  fi
+  
+  if [[ "$current_branch" == "main" ]] || [[ "$current_branch" == "master" ]]; then
+    echo "Error: Cannot run 'done' from main/master branch"
+    echo "This command is meant to be run from a worktree"
+    exit 1
+  fi
+  
+  # Check if we're inside a worktree
+  if [[ ! "$PWD" == $WORKTREES_DIR* ]]; then
+    echo "Error: Not inside a worktree directory"
+    echo "Current: $PWD"
+    echo "Worktrees are in: $WORKTREES_DIR"
+    exit 1
+  fi
+  
+  local wt_name=$(basename "$PWD")
+  local wt_path="$PWD"
+  
+  # Ensure main branch is detected
+  if [[ -z "$MAIN_BRANCH" ]]; then
+    echo "Error: No main branch (main or master) found"
+    exit 1
+  fi
+  
+  echo "> Finalizing worktree: $wt_name"
+  echo ""
+  
+  # Check for changes
+  if [[ -z "$(git -C "$wt_path" status --porcelain)" ]]; then
+    # Check if there are commits not in main branch
+    local ahead_commits=$(git -C "$wt_path" log "$MAIN_BRANCH..$current_branch" --oneline 2>/dev/null || echo "")
+    if [[ -z "$ahead_commits" ]]; then
+      echo "! No changes to commit"
+      echo "  Removing empty worktree..."
+      cd "$REPO_ROOT"
+      git worktree remove "$wt_path" --force 2>/dev/null || rm -rf "$wt_path"
+      git branch -D "$current_branch" 2>/dev/null || true
+      echo "> Worktree removed (no changes)"
+      return
+    else
+      echo "> Found existing commits not merged to $MAIN_BRANCH:"
+      echo "$ahead_commits" | head -5
+      echo ""
+    fi
+  fi
+  
+  # Stage all changes
+  echo "> Staging changes..."
+  git -C "$wt_path" add -A
+  
+  # Get commit message
+  if [[ -z "$commit_msg" ]]; then
+    echo ""
+    echo "Enter commit message (press Ctrl+C to cancel):"
+    read -r commit_msg
+  fi
+  
+  if [[ -z "$commit_msg" ]]; then
+    commit_msg="Changes from worktree $wt_name"
+  fi
+  
+  # Commit
+  echo "> Committing: $commit_msg"
+  git -C "$wt_path" commit -m "$commit_msg"
+  
+  # Go to main repo and merge
+  echo "> Merging to $MAIN_BRANCH..."
+  cd "$REPO_ROOT"
+  git checkout "$MAIN_BRANCH"
+  git merge --no-ff "$current_branch" -m "Merge worktree: $wt_name
+
+$commit_msg" || {
+    echo "! Merge failed - worktree preserved"
+    echo "  Branch '$current_branch' still exists with your changes"
+    echo "  Fix conflicts manually and merge: git merge $current_branch"
+    exit 1
+  }
+  
+  # Clean up worktree
+  echo "> Cleaning up worktree..."
+  git worktree remove "$wt_path" --force 2>/dev/null || rm -rf "$wt_path"
+  git branch -D "$current_branch" 2>/dev/null || true
+  
+  echo ""
+  echo "====================================="
+  echo "> DONE! Changes merged to $MAIN_BRANCH"
+  echo "> Worktree cleaned up"
+  echo "====================================="
+  echo ""
+  
+  # Show recent commits
+  git log --oneline -3
+}
+
+discard_worktree() {
+  local current_branch=$(get_current_branch)
+  
+  if [[ -z "$current_branch" ]]; then
+    echo "Error: Not in a git repository"
+    exit 1
+  fi
+  
+  if [[ "$current_branch" == "main" ]] || [[ "$current_branch" == "master" ]]; then
+    echo "Error: Cannot discard main/master branch"
+    exit 1
+  fi
+  
+  if [[ ! "$PWD" =~ ^$WORKTREES_DIR ]]; then
+    echo "Error: Not inside a worktree directory"
+    exit 1
+  fi
+  
+  local wt_name=$(basename "$PWD")
+  local wt_path="$PWD"
+  
+  echo "! WARNING: This will discard ALL changes in worktree '$wt_name'"
+  echo "  Changes will be lost forever!"
+  echo ""
+  echo -n "Type 'discard' to confirm: "
+  read -r confirm
+  
+  if [[ "$confirm" != "discard" ]]; then
+    echo "Cancelled."
+    exit 0
+  fi
+  
+  echo "> Discarding worktree '$wt_name'..."
+  
+  # Remove worktree
+  cd "$REPO_ROOT"
+  git worktree remove "$wt_path" --force 2>/dev/null || rm -rf "$wt_path"
+  git branch -D "$current_branch" 2>/dev/null || true
+  
+  echo "> Worktree and branch discarded"
+  echo "> All changes have been lost (as requested)"
+}
+
+status_worktree() {
+  local current_branch=$(get_current_branch)
+  
+  if [[ -z "$current_branch" ]]; then
+    echo "Not in a git repository"
+    exit 1
+  fi
+  
+  echo "> Current branch: $current_branch"
+  
+  if [[ "$PWD" =~ ^$WORKTREES_DIR ]]; then
+    local wt_name=$(basename "$PWD")
+    echo "> Worktree: $wt_name"
+  else
+    echo "> Worktree: (none - in main repo)"
+  fi
+  
+  echo ""
+  echo "> Git status:"
+  git -C "$PWD" status --short
+  
+  if [[ -n "$(git -C "$PWD" status --porcelain)" ]]; then
+    echo ""
+    echo "> Uncommitted changes detected"
+    echo "  Run 'git-flow done [message]' to save and merge"
+    echo "  Run 'git-flow discard' to throw away"
+  fi
+}
+
+list_worktrees() {
+  echo "> Active worktrees:"
+  git -C "$REPO_ROOT" worktree list
+}
+
+clean_worktree() {
+  local name="${1:-}"
+  
+  if [[ -z "$name" ]]; then
+    echo "> Removing all worktrees..."
+    cd "$REPO_ROOT"
+    for wt in $(git worktree list --porcelain | grep "worktree " | grep "$WORKTREES_DIR" | cut -d' ' -f2); do
+      local wt_name=$(basename "$wt")
+      echo "  Removing: $wt_name"
+      git worktree remove "$wt" --force 2>/dev/null || rm -rf "$wt"
+      git branch -D "$wt_name" 2>/dev/null || true
+    done
+    echo "> All worktrees removed"
+  else
+    local worktree_path="$WORKTREES_DIR/$name"
+    if [[ ! -d "$worktree_path" ]]; then
+      echo "Error: Worktree '$name' not found"
+      exit 1
+    fi
+    
+    cd "$REPO_ROOT"
+    echo "> Removing worktree: $name"
+    git worktree remove "$worktree_path" --force 2>/dev/null || rm -rf "$worktree_path"
+    git branch -D "$name" 2>/dev/null || true
+    echo "> Worktree removed"
+  fi
+}
+
+# Main
+case "${1:-}" in
+  init)
+    init_repo
+    ;;
+  start)
+    start_worktree "${2:-}"
+    ;;
+  done)
+    done_worktree "${2:-}"
+    ;;
+  discard)
+    discard_worktree
+    ;;
+  status)
+    status_worktree
+    ;;
+  list)
+    list_worktrees
+    ;;
+  clean)
+    clean_worktree "${2:-}"
+    ;;
+  *)
+    usage
+    ;;
+esac

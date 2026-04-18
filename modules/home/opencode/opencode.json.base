@@ -1,0 +1,238 @@
+{
+  "agent": {
+    "neutral": {
+      "description": "Senior Architect mentor - helpful first, challenging when it matters",
+      "mode": "primary",
+      "prompt": "{file:./PERSONA.md}",
+      "tools": {
+        "bash": true,
+        "read": true,
+        "edit": true,
+        "write": true
+      },
+      "model": "fireworks/accounts/fireworks/models/glm-5"
+    },
+    "sdd-orchestrator": {
+      "description": "Agent Teams Orchestrator - coordinates sub-agents, never does work inline",
+      "mode": "primary",
+      "permission": {
+        "task": {
+          "*": "deny",
+          "sdd-*": "allow"
+        }
+      },
+      "prompt": "# Agent Teams Lite — Orchestrator Instructions\n\nBind this to the dedicated `sdd-orchestrator` agent or rule only. Do NOT apply it to executor phase agents such as `sdd-apply` or `sdd-verify`.\n\n## Agent Teams Orchestrator\n\nYou are a COORDINATOR, not an executor. Maintain one thin conversation thread, delegate ALL real work to sub-agents, synthesize results.\n\n### Delegation Rules\n\nCore principle: **does this inflate my context without need?** If yes → delegate. If no → do it inline.\n\n| Action | Inline | Delegate |\n|--------|--------|----------|\n| Read to decide/verify (1-3 files) | ✅ | — |\n| Read to explore/understand (4+ files) | — | ✅ |\n| Read as preparation for writing | — | ✅ together with the write |\n| Write atomic (one file, mechanical, you already know what) | ✅ | — |\n| Write with analysis (multiple files, new logic) | — | ✅ |\n| Bash for state (git, gh) | ✅ | — |\n| Bash for execution (test, build, install) | — | ✅ |\n\ndelegate (async) is the default for delegated work. Use task (sync) only when you need the result before your next action.\n\nAnti-patterns — these ALWAYS inflate context without need:\n- Reading 4+ files to \"understand\" the codebase inline → delegate an exploration\n- Writing a feature across multiple files inline → delegate\n- Running tests or builds inline → delegate\n- Reading files as preparation for edits, then editing → delegate the whole thing together\n\n## SDD Workflow (Spec-Driven Development)\n\nSDD is the structured planning layer for substantial changes.\n\n### Artifact Store Policy\n\n- `engram` — default when available; persistent memory across sessions\n- `openspec` — file-based artifacts; use only when user explicitly requests\n- `hybrid` — both backends; cross-session recovery + local files; more tokens per op\n- `none` — return results inline only; recommend enabling engram or openspec\n\n### Commands\n\nSkills (appear in autocomplete):\n- `/sdd-init` → initialize SDD context; detects stack, conventions\n- `/sdd-explore` → investigate codebase/ideas\n- `/sdd-propose` → create change proposal\n- `/sdd-spec` → detailed requirements\n- `/sdd-design` → technical design\n- `/sdd-tasks` → implementation tasks\n- `/sdd-apply` → execute implementation\n- `/sdd-verify` → validate changes\n- `/sdd-archive` → archive completed change\n\nPlugins (background):\n- `/sdd-onboard` → guided full SDD cycle\n\n### Workflow Phases\n\n```\nexplore → propose → spec → design → tasks → apply → verify → archive\n```\n\nUse this workflow when the user requests something substantial:\n- New features\n- Refactors\n- Architecture changes\n- Bug fixes requiring investigation\n\nSkip SDD for trivial changes (typos, one-liners).\n\n### Entry Points\n\nStart SDD when user says things like:\n- \"Add feature X\"\n- \"Refactor Y\"\n- \"Fix this bug\" (complex)\n- \"How should we approach...\"\n\nCommands automatically:\n1. Delegate to appropriate phase agent\n2. Wait for result\n3. Synthesize: \"✅ [Phase] complete. Key findings: ...\"\n4. Recommend next phase or ask user preference\n\n## Tool Rules\n\n- task() — synchronous; block until sub-agent returns result; use when you need the output before next step\n- delegate() — asynchronous; fire-and-forget; use when you don't need immediate result; default for most work\n- read multiple files in parallel when possible\n- NEVER do exploration inline (4+ files) — always delegate\n- NEVER write multiple files inline — delegate",
+      "tools": {
+        "bash": true,
+        "delegate": true,
+        "delegation_list": true,
+        "delegation_read": true,
+        "edit": true,
+        "read": true,
+        "write": true
+      },
+      "model": "fireworks/accounts/fireworks/models/glm-5"
+    },
+    "sdd-init": {
+      "description": "Bootstrap SDD context and project configuration",
+      "hidden": true,
+      "mode": "subagent",
+      "prompt": "You are an SDD executor for the init phase, not the orchestrator. Do this phase's work yourself. Do NOT delegate, Do NOT call task/delegate, and Do NOT launch sub-agents. Read your skill file at ~/.config/opencode/skills/sdd-init/SKILL.md and follow it exactly.",
+      "tools": {
+        "bash": true,
+        "edit": true,
+        "read": true,
+        "write": true
+      },
+      "model": "fireworks/accounts/fireworks/models/kimi-k2p5"
+    },
+    "sdd-explore": {
+      "description": "Investigate codebase and think through ideas",
+      "hidden": true,
+      "mode": "subagent",
+      "prompt": "You are an SDD executor for the explore phase, not the orchestrator. Do this phase's work yourself. Do NOT delegate, Do NOT call task/delegate, and Do NOT launch sub-agents. Read your skill file at ~/.config/opencode/skills/sdd-explore/SKILL.md and follow it exactly.",
+      "tools": {
+        "bash": true,
+        "edit": true,
+        "read": true,
+        "write": true
+      },
+      "model": "fireworks/accounts/fireworks/models/kimi-k2p5"
+    },
+    "sdd-propose": {
+      "description": "Create change proposals from explorations",
+      "hidden": true,
+      "mode": "subagent",
+      "prompt": "You are an SDD executor for the propose phase, not the orchestrator. Do this phase's work yourself. Do NOT delegate, Do NOT call task/delegate, and Do NOT launch sub-agents. Read your skill file at ~/.config/opencode/skills/sdd-propose/SKILL.md and follow it exactly.",
+      "tools": {
+        "bash": true,
+        "edit": true,
+        "read": true,
+        "write": true
+      },
+      "model": "fireworks/accounts/fireworks/models/glm-5"
+    },
+    "sdd-spec": {
+      "description": "Write detailed specifications from proposals",
+      "hidden": true,
+      "mode": "subagent",
+      "prompt": "You are an SDD executor for the spec phase, not the orchestrator. Do this phase's work yourself. Do NOT delegate, Do NOT call task/delegate, and Do NOT launch sub-agents. Read your skill file at ~/.config/opencode/skills/sdd-spec/SKILL.md and follow it exactly.",
+      "tools": {
+        "bash": true,
+        "edit": true,
+        "read": true,
+        "write": true
+      },
+      "model": "fireworks/accounts/fireworks/models/deepseek-v3p2"
+    },
+    "sdd-design": {
+      "description": "Create technical design from proposals",
+      "hidden": true,
+      "mode": "subagent",
+      "prompt": "You are an SDD executor for the design phase, not the orchestrator. Do this phase's work yourself. Do NOT delegate, Do NOT call task/delegate, and Do NOT launch sub-agents. Read your skill file at ~/.config/opencode/skills/sdd-design/SKILL.md and follow it exactly.",
+      "tools": {
+        "bash": true,
+        "edit": true,
+        "read": true,
+        "write": true
+      },
+      "model": "fireworks/accounts/fireworks/models/glm-5"
+    },
+    "sdd-tasks": {
+      "description": "Break down specs and designs into implementation tasks",
+      "hidden": true,
+      "mode": "subagent",
+      "prompt": "You are an SDD executor for the tasks phase, not the orchestrator. Do this phase's work yourself. Do NOT delegate, Do NOT call task/delegate, and Do NOT launch sub-agents. Read your skill file at ~/.config/opencode/skills/sdd-tasks/SKILL.md and follow it exactly.",
+      "tools": {
+        "bash": true,
+        "edit": true,
+        "read": true,
+        "write": true
+      },
+      "model": "fireworks/accounts/fireworks/models/deepseek-v3p2"
+    },
+    "sdd-apply": {
+      "description": "Implement code changes from task definitions",
+      "hidden": true,
+      "mode": "subagent",
+      "prompt": "You are an SDD executor for the apply phase, not the orchestrator. Do this phase's work yourself. Do NOT delegate, Do NOT call task/delegate, and Do NOT launch sub-agents. Read your skill file at ~/.config/opencode/skills/sdd-apply/SKILL.md and follow it exactly.",
+      "tools": {
+        "bash": true,
+        "edit": true,
+        "read": true,
+        "write": true
+      },
+      "model": "fireworks/accounts/fireworks/models/deepseek-v3p2"
+    },
+    "sdd-verify": {
+      "description": "Validate implementation against specs",
+      "hidden": true,
+      "mode": "subagent",
+      "prompt": "You are an SDD executor for the verify phase, not the orchestrator. Do this phase's work yourself. Do NOT delegate, Do NOT call task/delegate, and Do NOT launch sub-agents. Read your skill file at ~/.config/opencode/skills/sdd-verify/SKILL.md and follow it exactly.",
+      "tools": {
+        "bash": true,
+        "edit": true,
+        "read": true,
+        "write": true
+      },
+      "model": "fireworks/accounts/fireworks/models/glm-5"
+    },
+    "sdd-archive": {
+      "description": "Archive completed change artifacts",
+      "hidden": true,
+      "mode": "subagent",
+      "prompt": "You are an SDD executor for the archive phase, not the orchestrator. Do this phase's work yourself. Do NOT delegate, Do NOT call task/delegate, and Do NOT launch sub-agents. Read your skill file at ~/.config/opencode/skills/sdd-archive/SKILL.md and follow it exactly.",
+      "tools": {
+        "bash": true,
+        "edit": true,
+        "read": true,
+        "write": true
+      },
+      "model": "fireworks/accounts/fireworks/models/kimi-k2p5"
+    },
+    "sdd-onboard": {
+      "description": "Guide user through a complete SDD cycle using their real codebase",
+      "hidden": true,
+      "mode": "subagent",
+      "prompt": "You are an SDD executor for the onboard phase, not the orchestrator. Do this phase's work yourself. Do NOT delegate, Do NOT call task/delegate, and Do NOT launch sub-agents. Read your skill file at ~/.config/opencode/skills/sdd-onboard/SKILL.md and follow it exactly.",
+      "tools": {
+        "bash": true,
+        "edit": true,
+        "read": true,
+        "write": true
+      },
+      "model": "fireworks/accounts/fireworks/models/kimi-k2p5"
+    }
+  },
+  "mcp": {
+    "nixos": {
+      "type": "local",
+      "command": [
+        "docker",
+        "run",
+        "--rm",
+        "-i",
+        "ghcr.io/utensils/mcp-nixos"
+      ],
+      "enabled": true
+    },
+    "context7": {
+      "enabled": true,
+      "type": "remote",
+      "url": "https://mcp.context7.com/mcp"
+    },
+    "engram": {
+      "command": [
+        "engram",
+        "mcp",
+        "--tools=agent"
+      ],
+      "type": "local",
+      "enabled": true
+    }
+  },
+  "permission": {
+    "external_directory": {
+      "/**": "allow"
+    },
+    "bash": {
+      "*": "allow",
+      "git commit *": "ask",
+      "git push": "ask",
+      "git push *": "ask",
+      "git push --force *": "ask",
+      "git rebase *": "ask",
+      "git reset --hard *": "ask"
+    },
+    "read": {
+      "*": "allow",
+      "**/.env": "deny",
+      "**/.env.*": "deny",
+      "**/credentials.json": "deny",
+      "**/secrets/**": "deny",
+      "*.env": "deny",
+      "*.env.*": "deny"
+    }
+  },
+  "provider": {
+    "fireworks": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Fireworks AI",
+      "options": {
+        "baseURL": "https://api.fireworks.ai/inference/v1",
+        "apiKey": "FIREWORKS_API_KEY_PLACEHOLDER"
+      },
+      "models": {
+        "accounts/fireworks/models/glm-5": {
+          "name": "GLM 5"
+        },
+        "accounts/fireworks/models/kimi-k2p5": {
+          "name": "Kimi K2.5"
+        },
+        "accounts/fireworks/models/deepseek-v3p2": {
+          "name": "DeepSeek V3.2"
+        }
+      }
+    }
+  }
+}
