@@ -130,8 +130,7 @@ let
     scrot
     networkmanagerapplet
     gparted
-  ] ++ lib.optionals isRog [
-    hexchat  # IRC client - rog only
+    hexchat  # IRC client
   ];
 
   mediaSupport = with pkgs; [
