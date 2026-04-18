@@ -42,6 +42,7 @@ let
     wget
     fastfetch
     htop
+    btop
     jq
     lsd
     util-linux
