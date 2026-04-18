@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# Opencode worktree workflow
+# Usage: oc-wt [name]
+# Creates worktree and opens opencode directly
+
+set -euo pipefail
+
+REPO_ROOT="/home/glats/.nixos"
+WORKTREE_NAME=""
+
+# Parse arguments
+for arg in "$@"; do
+  if [[ -z "$WORKTREE_NAME" && "$arg" != -* ]]; then
+    WORKTREE_NAME="$arg"
+  fi
+done
+
+# Initialize if needed
+if [[ ! -d "$REPO_ROOT/.worktrees" ]]; then
+  echo "> First run: initializing worktree workflow..."
+  "$REPO_ROOT/bin/git-flow" init
+fi
+
+# Create worktree (with or without name)
+echo "> Creating worktree..."
+if [[ -n "$WORKTREE_NAME" ]]; then
+  "$REPO_ROOT/bin/git-flow" start "$WORKTREE_NAME"
+else
+  "$REPO_ROOT/bin/git-flow" start
+  # Auto-detect name
+  WORKTREE_NAME=$(git -C "$REPO_ROOT" worktree list --porcelain 2>/dev/null | \
+    grep "worktree $REPO_ROOT/.worktrees/" | \
+    tail -1 | \
+    sed "s|worktree $REPO_ROOT/.worktrees/||")
+fi
+
+WORKTREE_PATH="$REPO_ROOT/.worktrees/$WORKTREE_NAME"
+
+echo ""
+echo "====================================="
+echo "> Worktree created: $WORKTREE_NAME"
+echo "> Path: $WORKTREE_PATH"
+echo "> Opening opencode..."
+echo "====================================="
+echo ""
+echo "When done in opencode:"
+echo "  Type: /exit"
+echo "  Then run: git-flow done 'your message'"
+echo "  Or: git-flow discard"
+echo ""
+
+# Change to worktree and open opencode
+cd "$WORKTREE_PATH"
+opencode

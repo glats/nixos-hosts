@@ -1,0 +1,125 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Auto-update script for gentle-ai and engram packages
+# Checks GitHub API for new versions and updates .nix files automatically
+
+GITHUB_API_URL="https://api.github.com"
+GENTLE_AI_REPO="Gentleman-Programming/gentle-ai"
+ENGRAM_REPO="Gentleman-Programming/engram"
+
+# Color codes
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+fetch_latest_release() {
+  local repo=$1
+  curl -s "${GITHUB_API_URL}/repos/${repo}/releases/latest" \
+    | grep -E '"tag_name"' \
+    | head -1 \
+    | cut -d'"' -f4 \
+    | sed 's/^v//'
+}
+
+get_current_version() {
+  local pkg=$1
+  grep "version = " "$pkg" | head -1 | cut -d'"' -f2
+}
+
+update_package() {
+  local pkg_file=$1
+  local repo=$2
+  local pkg_name=$(basename "${pkg_file%/*}")
+  
+  echo -e "${BLUE}Checking ${pkg_name}...${NC}"
+  
+  current_version=$(get_current_version "$pkg_file")
+  latest_version=$(fetch_latest_release "$repo" 2>/dev/null || echo "$current_version")
+  
+  if [ "$latest_version" = "$current_version" ]; then
+    echo -e "${GREEN}✓ ${pkg_name} is up to date (v${current_version})${NC}\n"
+    return 0
+  fi
+  
+  echo -e "${YELLOW}⚠️  Updating ${pkg_name}: v${current_version} → v${latest_version}${NC}"
+  
+  # Download tarball and calculate hash
+  download_url="https://github.com/${repo}/releases/download/v${latest_version}/${pkg_name}_${latest_version}_linux_amd64.tar.gz"
+  
+  echo -e "${BLUE}  Calculating SHA256...${NC}"
+  sha256=$(nix-prefetch-url --unpack "$download_url" 2>/dev/null)
+  
+  if [ -z "$sha256" ]; then
+    echo -e "${RED}✗ Failed to calculate hash${NC}\n"
+    return 1
+  fi
+  
+  # Convert nix-base32 → SRI format (sha256-<base64>)
+  nix_sha256=$(nix hash convert --hash-algo sha256 --to sri "$sha256" 2>/dev/null)
+  
+  if [ -z "$nix_sha256" ]; then
+    echo -e "${RED}✗ Failed to convert hash to SRI format${NC}\n"
+    return 1
+  fi
+  
+  # Update version
+  sed -i 's/version = "[^"]*"/version = "'$latest_version'"/' "$pkg_file"
+  
+  # Update sha256
+  sed -i 's|sha256 = "sha256-[^"]*"|sha256 = "'$nix_sha256'"|' "$pkg_file"
+  
+  echo -e "${GREEN}✓ Updated ${pkg_name} to v${latest_version}${NC}\n"
+  
+  return 0
+}
+
+main() {
+  echo -e "${BLUE}========================================${NC}"
+  echo -e "${BLUE}  gentle-ai & engram Auto-Update${NC}"
+  echo -e "${BLUE}========================================${NC}\n"
+  
+  local nixos_dir="${1:-.}"
+  local gentle_ai_pkg="${nixos_dir}/pkgs/gentle-ai/default.nix"
+  local engram_pkg="${nixos_dir}/pkgs/engram/default.nix"
+  
+  if [ ! -f "$gentle_ai_pkg" ] || [ ! -f "$engram_pkg" ]; then
+    echo -e "${RED}Error: Package files not found${NC}"
+    echo "  gentle-ai: $gentle_ai_pkg"
+    echo "  engram: $engram_pkg"
+    exit 1
+  fi
+  
+  local updated=0
+  
+  if update_package "$gentle_ai_pkg" "$GENTLE_AI_REPO"; then
+    if [ "$(get_current_version "$gentle_ai_pkg")" != "$(fetch_latest_release "$GENTLE_AI_REPO")" ] 2>/dev/null; then
+      :
+    else
+      updated=$((updated + 1))
+    fi
+  fi
+  
+  if update_package "$engram_pkg" "$ENGRAM_REPO"; then
+    if [ "$(get_current_version "$engram_pkg")" != "$(fetch_latest_release "$ENGRAM_REPO")" ] 2>/dev/null; then
+      :
+    else
+      updated=$((updated + 1))
+    fi
+  fi
+  
+  echo -e "${BLUE}========================================${NC}"
+  
+  if [ $updated -gt 0 ]; then
+    echo -e "${GREEN}Updates applied. Files are ready for rebuild.${NC}\n"
+    # Stage changes for next rebuild
+    cd "$nixos_dir"
+    git add pkgs/gentle-ai/default.nix pkgs/engram/default.nix 2>/dev/null || true
+  else
+    echo -e "${GREEN}All packages are up to date.${NC}\n"
+  fi
+}
+
+main "$@"

@@ -1,0 +1,154 @@
+#!/usr/bin/env bash
+# sops-rotate-keys - Script to rotate or regenerate sops-nix age keys
+# Usage: ./bin/sops-rotate-keys [admin|host|all]
+
+set -euo pipefail
+
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SOPS_DIR="$HOME/.config/sops/age"
+HOST_KEY="/etc/ssh/ssh_host_ed25519_key.pub"
+HOST=$(hostname)
+
+echo "> sops-nix key rotation tool"
+echo "> Repository: $REPO_DIR"
+echo ""
+
+show_help() {
+  echo "Usage: $0 [command]"
+  echo ""
+  echo "Commands:"
+  echo "  admin     Regenerate admin age key (for editing secrets)"
+  echo "  host      Update host key (if SSH host key changed)"
+  echo "  all       Rotate both admin and host keys"
+  echo "  recover   Show recovery instructions if you lost your keys"
+  echo ""
+  echo "Examples:"
+  echo "  $0 admin   # If you deleted ~/.config/sops/age/keys.txt"
+  echo "  $0 host    # If SSH host key was regenerated"
+  echo "  $0 all     # Complete rotation (you'll need to re-encrypt all secrets)"
+}
+
+regenerate_admin_key() {
+  echo "> Regenerating admin age key..."
+  
+  if [[ -f "$SOPS_DIR/keys.txt" ]]; then
+    echo "> Backing up old key to $SOPS_DIR/keys.txt.bak.$(date +%Y%m%d)"
+    cp "$SOPS_DIR/keys.txt" "$SOPS_DIR/keys.txt.bak.$(date +%Y%m%d)"
+  fi
+  
+  mkdir -p "$SOPS_DIR"
+  
+  echo "> Generating new age key..."
+  age-keygen -o "$SOPS_DIR/keys.txt"
+  
+  echo "> New admin public key:"
+  age-keygen -y "$SOPS_DIR/keys.txt"
+  echo ""
+  echo "> IMPORTANT: Update .sops.yaml with the new admin key above"
+  echo "> Then run: cd $REPO_DIR && sops updatekeys secrets/secrets.yaml"
+}
+
+update_host_key() {
+  echo "> Getting current host SSH key..."
+  
+  if [[ ! -f "$HOST_KEY" ]]; then
+    echo "ERROR: Host SSH key not found at $HOST_KEY"
+    exit 1
+  fi
+  
+  echo "> Current host SSH key:"
+  cat "$HOST_KEY"
+  echo ""
+  
+  echo "> Converting to age public key..."
+  local host_age_key
+  host_age_key=$(ssh-to-age -i "$HOST_KEY")
+  echo "age public key: $host_age_key"
+  echo ""
+  echo "> IMPORTANT: Update .sops.yaml with the new host key above"
+  echo "> Then run: cd $REPO_DIR && sops updatekeys secrets/secrets.yaml"
+}
+
+show_recovery() {
+  cat << 'EOF'
+================================================================================
+SOPS-NIX KEY RECOVERY GUIDE
+================================================================================
+
+SCENARIO 1: Lost admin key (~/.config/sops/age/keys.txt deleted)
+-----------------------------------------------------------------
+1. If you have the host key working (system can still boot/decrypt):
+   - Copy /var/lib/sops-nix/key.txt to your admin location:
+     sudo cp /var/lib/sops-nix/key.txt ~/.config/sops/age/keys.txt
+     sudo chown $USER:$USER ~/.config/sops/age/keys.txt
+     chmod 600 ~/.config/sops/age/keys.txt
+   
+2. If both keys are lost, you must recreate all secrets from scratch:
+   - Generate new admin key: ./bin/sops-rotate-keys admin
+   - Get new host key: ./bin/sops-rotate-keys host  
+   - Update .sops.yaml with both new keys
+   - Recreate secrets/secrets.yaml with new values
+   - Rebuild: sudo nixos-rebuild switch --flake '/home/glats/.nixos#${HOST}'
+
+SCENARIO 2: SSH host key regenerated
+-------------------------------------
+1. Get the new host age key: ./bin/sops-rotate-keys host
+2. Update .sops.yaml
+3. Re-encrypt secrets: sops updatekeys secrets/secrets.yaml
+4. Commit changes: git add .sops.yaml secrets/secrets.yaml && git commit
+5. Rebuild system: sudo nixos-rebuild switch --flake '/home/glats/.nixos#${HOST}'
+
+SCENARIO 3: Adding a new host to the configuration
+--------------------------------------------------
+1. On the new host, get its SSH host key:
+   ssh-to-age -i /etc/ssh/ssh_host_ed25519_key.pub
+
+2. Add the new key to .sops.yaml under keys:
+   - &host_newname age1xxxxxxxxxx...
+
+3. Add it to the creation_rules key_groups
+
+4. Re-encrypt for new host:
+   sops updatekeys secrets/secrets.yaml
+
+5. Commit and push
+
+IMPORTANT NOTES
+---------------
+- The admin key is for YOU to edit secrets (kept in ~/.config/sops/age/)
+- The host key is for the SYSTEM to decrypt at boot (derived from SSH host key)
+- Never commit the admin private key! It's in ~/.config/sops/age/ (outside repo)
+- The encrypted secrets/secrets.yaml is safe to commit
+- Always backup your ~/.config/sops/age/keys.txt to your password manager!
+
+================================================================================
+EOF
+}
+
+case "${1:-help}" in
+  admin)
+    regenerate_admin_key
+    ;;
+  host)
+    update_host_key
+    ;;
+  all)
+    regenerate_admin_key
+    echo ""
+    update_host_key
+    echo ""
+    echo "> Now update .sops.yaml with both new keys, then run:"
+    echo "> sops updatekeys secrets/secrets.yaml"
+    ;;
+  recover)
+    show_recovery
+    ;;
+  help|--help|-h)
+    show_help
+    ;;
+  *)
+    echo "Unknown command: $1"
+    show_help
+    exit 1
+    ;;
+esac

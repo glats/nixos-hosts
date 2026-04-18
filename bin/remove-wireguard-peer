@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(dirname "$SCRIPT_DIR")"
+HOST=$(hostname)
+
+cd "$REPO_ROOT"
+
+if [[ $# -ne 1 ]]; then
+  echo "Usage: $0 <peer-name>" >&2
+  echo "Example: $0 tablet" >&2
+  exit 2
+fi
+
+PEER_NAME="$1"
+SECRET_FILE="secrets/wireguard/peer-${PEER_NAME}-psk"
+MODULE_FILE="modules/wireguard.nix"
+BACKUP_DIR="secrets/wireguard/.removed"
+
+if [[ ! -f "$SECRET_FILE" ]]; then
+  echo "Error: Peer '$PEER_NAME' not found (no secret file: $SECRET_FILE)" >&2
+  exit 1
+fi
+
+if ! grep -q "# $PEER_NAME" "$MODULE_FILE" 2>/dev/null; then
+  echo "Error: Peer '$PEER_NAME' not found in $MODULE_FILE" >&2
+  exit 1
+fi
+
+echo "> Found peer '$PEER_NAME'"
+echo "> Creating backup of $MODULE_FILE"
+cp "$MODULE_FILE" "${MODULE_FILE}.backup.$(date +%Y%m%d_%H%M%S)"
+
+mkdir -p "$BACKUP_DIR"
+echo "> Moving secret file to $BACKUP_DIR/"
+mv "$SECRET_FILE" "$BACKUP_DIR/"
+
+echo "> Removing peer from $MODULE_FILE"
+
+awk -v peer="# $PEER_NAME" '
+  /^      \{/{ block=$0; getline; block=block "\n" $0; 
+    if ($0 ~ peer) { 
+      while(getline && /^      \}/) continue; 
+      next 
+    } 
+    print block; 
+    next 
+  }
+  { print }
+' "$MODULE_FILE" > "${MODULE_FILE}.tmp" && mv "${MODULE_FILE}.tmp" "$MODULE_FILE"
+
+echo ""
+echo "=== Peer '$PEER_NAME' removed ==="
+echo ""
+echo "Changes made:"
+echo "  - Secret moved to: $BACKUP_DIR/peer-${PEER_NAME}-psk"
+echo "  - Module updated: $MODULE_FILE"
+echo "  - Backup created: ${MODULE_FILE}.backup.*"
+echo ""
+echo "Next steps:"
+echo "  1. Review changes: git diff modules/wireguard.nix"
+echo "  2. Rebuild: sudo nixos-rebuild switch --flake '/etc/nixos#${HOST}'"
+echo "  3. Client device will lose VPN access immediately after rebuild"
+echo ""
+echo "To undo: restore the backup file and move the secret back from $BACKUP_DIR/"

@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# Opencode worktree entrypoint - simplified flow
+# Creates a worktree and provides helpful aliases
+
+set -euo pipefail
+
+REPO_ROOT="/home/glats/.nixos"
+
+# Initialize if needed
+if [[ ! -d "$REPO_ROOT/.worktrees" ]]; then
+  echo "> First run: initializing worktree workflow..."
+  "$REPO_ROOT/bin/git-flow" init
+fi
+
+# Create new worktree with auto-generated name
+echo "> Creating new worktree for this opencode session..."
+"$REPO_ROOT/bin/git-flow" start
+
+# Extract the worktree name from the output (last created)
+WORKTREE_NAME=$(git -C "$REPO_ROOT" worktree list --porcelain 2>/dev/null | \
+  grep "worktree $REPO_ROOT/.worktrees/" | \
+  tail -1 | \
+  sed "s|worktree $REPO_ROOT/.worktrees/||")
+
+if [[ -z "$WORKTREE_NAME" ]]; then
+  echo "Error: Failed to create worktree"
+  exit 1
+fi
+
+WORKTREE_PATH="$REPO_ROOT/.worktrees/$WORKTREE_NAME"
+
+echo ""
+echo "====================================="
+echo "> ENTERING WORKTREE: $WORKTREE_NAME"
+echo "> Path: $WORKTREE_PATH"
+echo ""
+echo "AVAILABLE COMMANDS:"
+echo "  done [msg]     - Commit changes, merge to main, cleanup"
+echo "  discard        - Throw away all changes and remove worktree"
+echo "  status         - Show current status"
+echo "====================================="
+echo ""
+
+# Create aliases in current shell
+alias done='git-flow done'
+alias discard='git-flow discard'
+alias status='git-flow status'
+
+# Export for opencode context
+export WORKTREE_NAME
+export WORKTREE_PATH
+export REPO_ROOT
+
+# Change to worktree and start shell with aliases
+cd "$WORKTREE_PATH"
+
+# Start a new bash shell with the aliases
+exec bash --rcfile <(echo '
+  source ~/.bashrc 2>/dev/null || true
+  alias done="git-flow done"
+  alias discard="git-flow discard"  
+  alias status="git-flow status"
+  echo "Aliases loaded: done, discard, status"
+')

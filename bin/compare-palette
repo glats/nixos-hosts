@@ -1,0 +1,141 @@
+#!/usr/bin/env bash
+# Palette comparison across terminal apps
+# Run in any truecolor terminal (Ghostty, Kitty, MATE Terminal)
+
+set -euo pipefail
+
+# hex (#rrggbb or rrggbb) → sets R G B globals
+rgb() {
+  local hex="${1#\#}"
+  R=$((16#${hex:0:2}))
+  G=$((16#${hex:2:2}))
+  B=$((16#${hex:4:2}))
+}
+
+# print a colored swatch with the hex value as label
+swatch() {
+  local hex="${1#\#}"
+  rgb "$hex"
+  local lum=$(( (R * 299 + G * 587 + B * 114) / 1000 ))
+  local fg_r=255 fg_g=255 fg_b=255
+  (( lum > 145 )) && fg_r=0 && fg_g=0 && fg_b=0
+  printf "\e[48;2;%d;%d;%dm\e[38;2;%d;%d;%dm #%s \e[0m" \
+    "$R" "$G" "$B" "$fg_r" "$fg_g" "$fg_b" "$hex"
+}
+
+# separator line
+sep() { printf "  %s\n" "────────────────────────────────────────────────────────────────────────"; }
+
+# ── palette definitions ──────────────────────────────────────────────────────
+
+# nix-colors (theme.nix) — source of truth
+NC_00="000000"; NC_01="0a0a0a"; NC_02="505050"; NC_03="8a8a8a"
+NC_04="a0a0a0"; NC_05="dddddd"; NC_06="d0d0d0"; NC_07="ffffff"
+NC_08="cc0403"; NC_09="f2201f"; NC_0A="cecb00"; NC_0B="19cb00"
+NC_0C="0dcdcd"; NC_0D="0d73cc"; NC_0E="cb1ed1"; NC_0F="ff6600"
+
+# terminal color slots (0–15)
+# normals 0–8 and slot 15: identical in all apps (from nix-colors)
+NORM=(
+  "$NC_00" "$NC_08" "$NC_0B" "$NC_0A"
+  "$NC_0D" "$NC_0E" "$NC_0C" "$NC_05"
+  "$NC_03"
+)
+
+# nix-colors brights (9–14): reuse palette, no separate bright variant
+NIX_BRIGHT=("$NC_09" "$NC_0B" "$NC_0A" "$NC_0D" "$NC_0E" "$NC_0C")
+
+# MATE terminal brights 9–14 (hardcoded in mate.nix, decoded from RRRRGGGGBBBB)
+MATE_BRIGHT=("ff2211" "22ff00" "ffff00" "1188ff" "ff22ff" "11ffff")
+
+# Ghostty + Kitty brights 9–14 (identical in both, hardcoded)
+GK_BRIGHT=("f2201f" "23fd00" "fffd00" "1a8fff" "fd28ff" "14ffff")
+
+ROLES=(
+  "black" "red" "green" "yellow"
+  "blue" "magenta" "cyan" "white"
+  "bright black"
+  "bright red" "bright green" "bright yellow"
+  "bright blue" "bright magenta" "bright cyan"
+  "bright white"
+)
+
+# ── header ───────────────────────────────────────────────────────────────────
+
+printf "\n"
+printf "  \e[1mPalette Comparison\e[0m\n"
+printf "\n"
+printf "  \e[32m✅ fully on nix-colors:\e[0m  conky  rofi  btop  tmux\n"
+printf "  \e[33m⚠️  brights hardcoded:\e[0m   MATE terminal  Ghostty  Kitty  kmscon (not set)\n"
+printf "\n"
+sep
+printf "  \e[1m%-3s  %-14s   %-12s   %-12s   %-12s\e[0m\n" \
+  "#" "role" "nix-colors" "MATE term" "Ghostty/Kitty"
+sep
+
+# ── normals 0–8 (all identical) ───────────────────────────────────────────────
+
+printf "\n  \e[2mNormals — same in all apps:\e[0m\n\n"
+
+for i in $(seq 0 8); do
+  printf "  \e[2m%2d\e[0m  %-14s   " "$i" "${ROLES[$i]}"
+  swatch "${NORM[$i]}"
+  printf "   \e[2m(all equal)\e[0m"
+  printf "\n"
+done
+
+# ── brights 9–14 (the interesting part) ──────────────────────────────────────
+
+printf "\n"
+sep
+printf "\n  \e[1mBrights 9–14 — here's the difference:\e[0m\n\n"
+printf "  \e[1m%-3s  %-14s   %-12s   %-12s   %-12s\e[0m\n" \
+  "#" "role" "nix-colors" "MATE term" "Ghostty/Kitty"
+printf "\n"
+
+for i in $(seq 0 5); do
+  idx=$((i + 9))
+  nc="${NIX_BRIGHT[$i]}"
+  mate="${MATE_BRIGHT[$i]}"
+  gk="${GK_BRIGHT[$i]}"
+
+  printf "  %2d  %-14s   " "$idx" "${ROLES[$idx]}"
+  swatch "$nc"
+  printf "   "
+  swatch "$mate"
+  printf "   "
+  swatch "$gk"
+
+  # flag if all three differ
+  if [[ "$nc" != "$mate" && "$nc" != "$gk" && "$mate" != "$gk" ]]; then
+    printf "   \e[31m← all differ\e[0m"
+  elif [[ "$nc" == "$mate" && "$nc" == "$gk" ]]; then
+    printf "   \e[32m← equal\e[0m"
+  elif [[ "$mate" == "$gk" ]]; then
+    printf "   \e[33m← MATE≠nix, Ghostty=MATE\e[0m"
+  fi
+  printf "\n"
+done
+
+# ── slot 15 ──────────────────────────────────────────────────────────────────
+
+printf "\n"
+printf "  \e[2m15  %-14s   \e[0m" "bright white"
+swatch "$NC_07"
+printf "   \e[2m(all equal)\e[0m\n"
+
+# ── decision guide ────────────────────────────────────────────────────────────
+
+printf "\n"
+sep
+printf "\n  \e[1mQué implica cada opción:\e[0m\n\n"
+printf "  \e[1m1. nix-colors puro\e[0m    → brights = mismos que normals. Bold text: sin \"pop\" extra.\n"
+printf "  \e[2m                       Ventaja: un solo lugar para cambiar todo (theme.nix).\e[0m\n\n"
+printf "  \e[1m2. MATE brights\e[0m       → más saturados/neón. Bold se distingue del texto normal.\n"
+printf "  \e[2m                       Hoy: MATE y Ghostty/Kitty son levemente distintos entre sí.\e[0m\n\n"
+printf "  \e[1m3. Ghostty/Kitty brights\e[0m → igual que opción 2, mismos valores en esas dos apps.\n"
+printf "  \e[2m                           Llevar MATE a estos valores = sync perfecto de los tres.\e[0m\n\n"
+printf "  \e[1m4. Definir brights en theme.nix\e[0m → extendés el palette con base17–base1B.\n"
+printf "  \e[2m                                   Máximo control, un solo source of truth.\e[0m\n\n"
+sep
+printf "\n"

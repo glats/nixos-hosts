@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# finish-work - Commit changes and merge to main
+# Usage: finish-work [message]
+
+exec work-flow finish "$@"

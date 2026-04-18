@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# list-work - List all worktrees
+# Usage: list-work
+
+exec work-flow list "$@"
