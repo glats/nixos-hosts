@@ -76,5 +76,6 @@ in
     imagemagick
     lua5_1
     luarocks
+    icu  # Required for .NET-based LSPs like marksman
   ];
 }
