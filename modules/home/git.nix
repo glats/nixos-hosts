@@ -7,6 +7,9 @@
     signing.format = "openpgp";
     settings = {
       credential.helper = "store --file=${config.sops.secrets.git-credentials.path}";
+      core.editor = "nvim -u NONE";
+      core.pager = "delta";
+      delta.enable = true;
     };
   };
 
