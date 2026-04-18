@@ -1,0 +1,36 @@
+# Nix build artifacts
+result
+result-*
+
+# Nix eval/cache
+.direnv/
+.envrc
+
+# Secret key files (not the encrypted sops store)
+*.key
+*.pem
+*.secret
+*.agekey
+.env
+.env.*
+credentials.json
+
+# Git worktrees
+.worktrees/
+
+# Editor/IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+
+# Logs
+*.log
+
+# Temp
+tmp/
+temp/
