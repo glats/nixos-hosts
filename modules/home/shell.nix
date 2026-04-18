@@ -41,11 +41,10 @@
       gcl = "git clone --recursive";
       gadd = "git add --all";
       ga = "git add";
-      glog = "git log --topo-order --pretty=format:%C(auto)%h%d %s %C(8)%cr %C(bold blue)%an";
+      glog = "git log --topo-order --pretty=format:%C\(auto\)%h%d %s %C\(8\)%cr %C\(bold blue\)%an";
       gl = "git pull";
       glr = "git pull --rebase";
       gp = "git push";
-      gpo = "git push origin \"$(git-branch-current)\"";
       "gc!" = "gc --amend";
       "gcn!" = "gc! --no-edit";
       "gca!" = "gca --amend";
@@ -80,6 +79,8 @@
       gitNewBranchHotfix() { git checkout -b hotfix/$1 }
 
       gaa() { git add -A :/ "$@" }
+
+      gpo() { git push origin "$(git branch --show-current)" "$@" }
 
       code-work() {
         local repo_root="/home/glats/.nixos"
