@@ -38,6 +38,7 @@ let
   cliTools = with pkgs; [
     fzf
     bat
+    delta
     curl
     wget
     fastfetch
