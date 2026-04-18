@@ -20,6 +20,16 @@ in
           TERM = "xterm-256color";
         };
       };
+      oneplus5-ip = {
+        host = "172.16.0.12";
+        hostname = "172.16.0.12";
+        user = "glats";
+        identityFile = "${sshDir}/oneplus5";
+        identitiesOnly = true;
+        setEnv = {
+          TERM = "xterm-256color";
+        };
+      };
       thinkcentre-local = {
         host = "thinkcentre.local";
         hostname = "thinkcentre.local";
