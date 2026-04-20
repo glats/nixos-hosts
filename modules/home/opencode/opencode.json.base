@@ -31,7 +31,7 @@
         "read": true,
         "write": true
       },
-      "model": "fireworks/accounts/fireworks/models/kimi-k2p5"
+      "model": "fireworks/accounts/fireworks/models/deepseek-v3p2"
     },
     "sdd-init": {
       "description": "Bootstrap SDD context and project configuration",
@@ -109,7 +109,7 @@
         "read": true,
         "write": true
       },
-      "model": "fireworks/accounts/fireworks/models/kimi-k2p5"
+      "model": "fireworks/accounts/fireworks/models/deepseek-v3p2"
     },
     "sdd-apply": {
       "description": "Implement code changes from task definitions",
@@ -135,7 +135,7 @@
         "read": true,
         "write": true
       },
-      "model": "fireworks/accounts/fireworks/models/glm-5"
+      "model": "fireworks/accounts/fireworks/models/deepseek-v3p2"
     },
     "sdd-archive": {
       "description": "Archive completed change artifacts",
