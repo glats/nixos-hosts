@@ -13,6 +13,7 @@ in
     useUserPackages = true;
     extraSpecialArgs = {
       inherit inputs;
+      hostName = config.networking.hostName;
     };
     users.glats = {
       imports = [
