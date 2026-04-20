@@ -45,9 +45,14 @@ stdenvNoCC.mkDerivation {
     cp $src/gentle-ai-tui $out/bin/
     chmod +x $out/bin/gentle-ai-tui
     
-    cp $src/export-mate-config $out/bin/
+cp $src/export-mate-config $out/bin/
     chmod +x $out/bin/export-mate-config
-    
+
+    cp $src/sync-gentle-ai $out/bin/
+    chmod +x $out/bin/sync-gentle-ai
+
+    cp $src/add_github_secret.sh $out/bin/ 2>/dev/null || true
+
     # Create symlinks for convenience
     ln -s $out/bin/git-flow $out/bin/git-worktree-flow
   '';
