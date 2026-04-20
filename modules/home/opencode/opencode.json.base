@@ -165,6 +165,11 @@
     }
   },
   "mcp": {
+    "github": {
+      "type": "local",
+      "command": ["github-mcp-server", "stdio"],
+      "enabled": true
+    },
     "nixos": {
       "type": "local",
       "command": [

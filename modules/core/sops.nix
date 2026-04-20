@@ -14,6 +14,12 @@ in
     neededForUsers = true;
   };
 
+  sops.secrets."github/pat" = {
+    owner = "glats";
+    group = "users";
+    mode = "0400";
+  };
+
   # Rog-only secrets
   sops.secrets."wireguard/server_private_key" = lib.mkIf isRog { };
   sops.secrets."wireguard/peer_oneplus9_psk" = lib.mkIf isRog { };

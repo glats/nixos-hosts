@@ -10,6 +10,7 @@
     ./fileshelter.nix
     ./flaresolverr.nix
     ./ftp.nix
+    ./github-mcp-server.nix
     ./gonic.nix
     ./guacamole.nix
     ./jellyfin.nix
