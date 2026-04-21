@@ -12,9 +12,8 @@ in
 
 {
   # OpenCode configuration structure
-  # NOTE: Uses derivation from pkgs/gentle-ai-assets for most files
-  # PERSONA.md is local to allow custom rules
-  home.file.".config/opencode/PERSONA.md".source = ./opencode/PERSONA.md;
+  # Uses derivation from pkgs/gentle-ai-assets (now with local rule overrides merged)
+  home.file.".config/opencode/PERSONA.md".source = "${gentle-ai-assets}/share/gentle-ai/opencode/persona-gentleman.md";
   home.file.".config/opencode/AGENTS.md".source = "${gentle-ai-assets}/share/gentle-ai/AGENTS.md";
   home.file.".config/opencode/skills".source = "${gentle-ai-assets}/share/gentle-ai/skills";
   home.file.".config/opencode/commands".source = "${gentle-ai-assets}/share/gentle-ai/opencode/commands";
