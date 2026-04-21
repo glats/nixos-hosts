@@ -1,4 +1,4 @@
-{ lib, stdenvNoCC, gentle-ai-src, writeText }:
+{ lib, stdenvNoCC, gentle-ai-src, writeText, extraSkills ? null }:
 
 let
   # Nuestras reglas locales que se agregarán al principio
@@ -97,6 +97,12 @@ stdenvNoCC.mkDerivation {
     # Copiar skills de la raíz (los nuevos/agregados por usuarios)
     if [ -d $src/skills ]; then
       cp -r $src/skills/* $out/share/gentle-ai/skills/ 2>/dev/null || true
+    fi
+
+    # Copiar skills extra locales (ej: caveman)
+    if [ -n "${extraSkills}" ] && [ -d ${extraSkills} ]; then
+      mkdir -p $out/share/gentle-ai/skills
+      cp -r ${extraSkills}/* $out/share/gentle-ai/skills/ 2>/dev/null || true
     fi
   '';
 
