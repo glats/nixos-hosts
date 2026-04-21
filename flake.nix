@@ -56,7 +56,7 @@
       nixos-scripts = pkgs.callPackage ./pkgs/nixos-scripts { };
       gentle-ai = pkgs.callPackage ./pkgs/gentle-ai { };
       engram = pkgs.callPackage ./pkgs/engram { };
-      gentle-ai-assets = pkgs.callPackage ./pkgs/gentle-ai-assets { inherit gentle-ai-src; writeText = pkgs.writeText; };
+      gentle-ai-assets = pkgs.callPackage ./pkgs/gentle-ai-assets { inherit gentle-ai-src; writeText = pkgs.writeText; extraSkills = ./modules/home/opencode/skills; };
     in
     {
       packages.${system} = {
