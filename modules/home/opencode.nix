@@ -11,10 +11,10 @@ let
 in
 
 {
-  # OpenCode configuration structure from gentle-ai upstream
-  # NOTE: Uses derivation from pkgs/gentle-ai-assets instead of local files
-  # This ensures we get the exact upstream assets in a reproducible way
-  home.file.".config/opencode/PERSONA.md".source = "${gentle-ai-assets}/share/gentle-ai/opencode/persona-gentleman.md";
+  # OpenCode configuration structure
+  # NOTE: Uses derivation from pkgs/gentle-ai-assets for most files
+  # PERSONA.md is local to allow custom rules
+  home.file.".config/opencode/PERSONA.md".source = ./opencode/PERSONA.md;
   home.file.".config/opencode/AGENTS.md".source = "${gentle-ai-assets}/share/gentle-ai/AGENTS.md";
   home.file.".config/opencode/skills".source = "${gentle-ai-assets}/share/gentle-ai/skills";
   home.file.".config/opencode/commands".source = "${gentle-ai-assets}/share/gentle-ai/opencode/commands";
