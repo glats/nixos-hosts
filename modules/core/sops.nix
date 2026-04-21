@@ -39,4 +39,23 @@ in
   };
 
   sops.secrets."guacamole/env" = lib.mkIf isRog { };
+
+  # OpenCode API keys
+  sops.secrets."opencode/fireworks_api_key" = {
+    owner = "glats";
+    group = "users";
+    mode = "0400";
+  };
+
+  sops.secrets."opencode/deepinfra_api_key" = {
+    owner = "glats";
+    group = "users";
+    mode = "0400";
+  };
+
+  sops.secrets."opencode/anthropic_api_key" = {
+    owner = "glats";
+    group = "users";
+    mode = "0400";
+  };
 }

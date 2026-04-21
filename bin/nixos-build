@@ -29,13 +29,16 @@ check_gentle_ai_updates() {
   
   # Run check silently, capture output
   local check_output
-  if ! check_output=$("$sync_script" --check 2>&1); then
+  if ! check_output=$("$sync_script" --check "$REPO_ROOT" 2>&1); then
     return 0  # If check fails, ignore silently
   fi
   
   # Check if there are changes (look for "Total changes:" with number > 0)
-  if echo "$check_output" | grep -q "Total changes:.*[^0]"; then
-    local changes=$(echo "$check_output" | grep "Total changes:" | sed 's/.*Total changes:.*[^0-9]\([0-9]\+\).*/\1/')
+  # Extract the number from the output (handling ANSI color codes)
+  local changes=$(echo "$check_output" | grep "Total changes:" | sed 's/.*Total changes:[[:space:]]*[[:cntrl:]]*\[[0-9;]*m*\([0-9]\+\).*/\1/')
+  
+  # Only warn if there are actual changes (number > 0)
+  if [[ -n "$changes" && "$changes" -gt 0 ]]; then
     echo ""
     echo "⚠️  WARNING: gentle-ai upstream has $changes pending configuration changes"
     echo ""

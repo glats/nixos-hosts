@@ -131,7 +131,7 @@ let
     scrot
     networkmanagerapplet
     gparted
-    hexchat  # IRC client
+    hexchat # IRC client
   ];
 
   mediaSupport = with pkgs; [

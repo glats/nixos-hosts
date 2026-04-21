@@ -19,7 +19,7 @@
     # 🔥 NUEVO: gentle-ai upstream (para skills, commands, plugins)
     gentle-ai-src = {
       url = "github:Gentleman-Programming/gentle-ai";
-      flake = false;  # No es un flake, es repo normal
+      flake = false; # No es un flake, es repo normal
     };
 
     # 🔥 NUEVO: asus-fan-control upstream
@@ -46,8 +46,8 @@
       inherit (import ./lib/mkHost.nix { inherit inputs self; }) mkHost;
 
       system = "x86_64-linux";
-      overlay = import ./modules/core/overlays.nix { 
-        inherit self inputs;  # Pasar inputs para los nuevos src
+      overlay = import ./modules/core/overlays.nix {
+        inherit self inputs; # Pasar inputs para los nuevos src
       };
       pkgsFor = s: import nixpkgs { system = s; overlays = [ overlay ]; };
       pkgs = pkgsFor system;
@@ -56,10 +56,11 @@
       nixos-scripts = pkgs.callPackage ./pkgs/nixos-scripts { };
       gentle-ai = pkgs.callPackage ./pkgs/gentle-ai { };
       engram = pkgs.callPackage ./pkgs/engram { };
+      gentle-ai-assets = pkgs.callPackage ./pkgs/gentle-ai-assets { inherit gentle-ai-src; };
     in
     {
       packages.${system} = {
-        inherit nixos-scripts gentle-ai engram;
+        inherit nixos-scripts gentle-ai engram gentle-ai-assets;
       };
 
       checks.${system} = { };

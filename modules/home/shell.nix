@@ -70,6 +70,8 @@
     };
 
     sessionVariables = {
+      VISUAL = "nvim";
+      EDITOR = "nvim";
       LESS = "-g -i -M -R -S -w -X -z4";
       DOTNET_ROOT = "${pkgs.dotnet-sdk_8}/share/dotnet";
       PATH = "$HOME/.nixos/bin:$PATH";

@@ -347,6 +347,32 @@
         '';
       };
 
+      "maquiroot.glats.org" = {
+        useACMEHost = "glats.org";
+        forceSSL = true;
+        root = "/srv/glats/nginx/maquiroot";
+
+        locations."/" = {
+          tryFiles = "$uri $uri/ /index.html";
+          extraConfig = ''
+            autoindex on;
+            autoindex_exact_size on;
+            autoindex_localtime on;
+            autoindex_format html;
+          '';
+        };
+
+        extraConfig = ''
+          # Security headers
+          add_header X-Content-Type-Options nosniff always;
+          add_header X-Frame-Options DENY always;
+
+          # Large file support for rootfs tarballs (3-4GB)
+          client_max_body_size 0;
+          proxy_request_buffering off;
+        '';
+      };
+
       # ============================================================
       # ARR Stack Services
       # ============================================================
