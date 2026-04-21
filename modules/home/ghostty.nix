@@ -6,6 +6,7 @@
     settings = {
       theme = "nix-colors";
       font-family = "CaskaydiaCove Nerd Font";
+      font-size = 11;
       font-feature = "+liga";
       background-opacity = 0.8;
       maximize = true;

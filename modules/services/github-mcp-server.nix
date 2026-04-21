@@ -27,7 +27,7 @@ in
 
   environment.systemPackages = [
     github-mcp-server-wrapped
-    pkgs.github-mcp-server  # Also install original for reference
+    pkgs.github-mcp-server # Also install original for reference
   ];
 
   # Ensure sops secret is available

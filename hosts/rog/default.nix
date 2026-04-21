@@ -5,8 +5,8 @@
     ./hardware-configuration.nix
     ../../modules/core
     ../../modules/hardware
-    ../../modules/hardware/nvidia.nix      # Rog-specific: GTX 1050
-    ../../modules/hardware/asus-fan-control.nix  # Rog-specific: ASUS laptop
+    ../../modules/hardware/nvidia.nix # Rog-specific: GTX 1050
+    ../../modules/hardware/asus-fan-control.nix # Rog-specific: ASUS laptop
     ../../modules/desktop
     ../../modules/services
     ../../modules/virtualisation
