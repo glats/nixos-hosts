@@ -28,6 +28,42 @@ BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
+# Pattern to ignore when comparing skills (ORCHESTRATOR GATE)
+ORCHESTRATOR_GATE_PATTERN='ORCHESTRATOR GATE'
+
+# Function to compare files ignoring orchestrator gates and whitespace
+files_equal_ignore_gates() {
+  local file1="$1"
+  local file2="$2"
+  
+  # Create temporary files without orchestrator gate lines
+  local tmp1=$(mktemp)
+  local tmp2=$(mktemp)
+  
+  # Remove orchestrator gate lines (case-insensitive)
+  grep -v -i "$ORCHESTRATOR_GATE_PATTERN" "$file1" > "$tmp1"
+  grep -v -i "$ORCHESTRATOR_GATE_PATTERN" "$file2" > "$tmp2"
+  
+  # Compare the filtered files, ignoring whitespace and blank lines
+  if diff -w -B -q "$tmp1" "$tmp2" > /dev/null 2>&1; then
+    rm -f "$tmp1" "$tmp2"
+    return 0
+  else
+    # DEBUG: show filtered diff for first few lines
+    if [[ -n "${DEBUG_SYNC:-}" ]]; then
+      echo "DEBUG: files differ after removing ORCHESTRATOR GATE"
+      echo "--- filtered $file1"
+      head -30 "$tmp1"
+      echo "--- filtered $file2"
+      head -30 "$tmp2"
+      echo "--- diff -u"
+      diff -u "$tmp1" "$tmp2" | head -50
+    fi
+    rm -f "$tmp1" "$tmp2"
+    return 1
+  fi
+}
+
 # Temporary directory setup
 TEMP_DIR=$(mktemp -d)
 trap "rm -rf $TEMP_DIR" EXIT
@@ -86,16 +122,24 @@ echo -e "${BLUE}========================================${NC}"
 echo ""
 
 # Custom skills that should NOT be overwritten (local additions)
-CUSTOM_SKILLS=("nix-search" "caveman" "caveman-commit" "caveman-review")
+CUSTOM_SKILLS=("nix-search" "caveman" "caveman-commit" "caveman-review"
+               "sdd-apply" "sdd-archive" "sdd-design" "sdd-explore"
+               "sdd-init" "sdd-onboard" "sdd-propose" "sdd-spec"
+               "sdd-tasks" "sdd-verify")
 
 # Function to check if a skill is custom
 is_custom_skill() {
     local skill="$1"
+    # Match exact custom skills
     for custom in "${CUSTOM_SKILLS[@]}"; do
         if [[ "$skill" == "$custom" ]]; then
             return 0
         fi
     done
+    # Match any skill starting with sdd- (SDD phase skills)
+    if [[ "$skill" == sdd-* ]]; then
+        return 0
+    fi
     return 1
 }
 
@@ -142,7 +186,7 @@ if check_source "$SKILLS_SRC" "Skills"; then
                 echo -e "  ${GREEN}NEW${NC}  $skill_name"
                 NEW_SKILLS+=("$skill_name")
                 CHANGES=$((CHANGES + 1))
-            elif ! diff -q "$skill_file" "$dst_file" > /dev/null 2>&1; then
+            elif ! files_equal_ignore_gates "$skill_file" "$dst_file"; then
                 echo -e "  ${YELLOW}DIFF${NC} $skill_name"
                 UPDATED_SKILLS+=("$skill_name")
                 CHANGES=$((CHANGES + 1))
@@ -167,7 +211,7 @@ if [[ -d "$SHARED_SRC" ]]; then
         if [[ ! -f "$dst_file" ]]; then
             echo -e "  ${GREEN}NEW${NC}  _shared/$filename"
             CHANGES=$((CHANGES + 1))
-        elif ! diff -q "$shared_file" "$dst_file" > /dev/null 2>&1; then
+        elif ! files_equal_ignore_gates "$shared_file" "$dst_file"; then
             echo -e "  ${YELLOW}DIFF${NC} _shared/$filename"
             CHANGES=$((CHANGES + 1))
         fi
@@ -196,7 +240,7 @@ if check_source "$COMMANDS_SRC" "Commands"; then
             echo -e "  ${GREEN}NEW${NC}  $cmd_name"
             UPDATED_COMMANDS+=("$cmd_name")
             CHANGES=$((CHANGES + 1))
-        elif ! diff -q "$cmd_file" "$dst_file" > /dev/null 2>&1; then
+        elif ! files_equal_ignore_gates "$cmd_file" "$dst_file"; then
             echo -e "  ${YELLOW}DIFF${NC} $cmd_name"
             UPDATED_COMMANDS+=("$cmd_name")
             CHANGES=$((CHANGES + 1))
@@ -226,7 +270,7 @@ if check_source "$PLUGINS_SRC" "Plugins"; then
             echo -e "  ${GREEN}NEW${NC}  $plugin_name"
             UPDATED_PLUGINS+=("$plugin_name")
             CHANGES=$((CHANGES + 1))
-        elif ! diff -q "$plugin_file" "$dst_file" > /dev/null 2>&1; then
+        elif ! files_equal_ignore_gates "$plugin_file" "$dst_file"; then
             echo -e "  ${YELLOW}DIFF${NC} $plugin_name"
             UPDATED_PLUGINS+=("$plugin_name")
             CHANGES=$((CHANGES + 1))

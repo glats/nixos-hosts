@@ -2,10 +2,11 @@
 
 let
   # Select conky config based on hostname
-  conkyModule = if config.networking.hostName == "rog" then
-    ../home/conky-rog.nix
-  else
-    ../home/conky-thinkcentre.nix;
+  conkyModule =
+    if config.networking.hostName == "rog" then
+      ../home/conky-rog.nix
+    else
+      ../home/conky-thinkcentre.nix;
 in
 {
   home-manager = {
