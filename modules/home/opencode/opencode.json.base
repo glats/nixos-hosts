@@ -36,7 +36,7 @@
         "read": true,
         "write": true
       },
-      "model": "deepinfra/moonshotai/Kimi-K2.5"
+      "model": "openai/gpt-5"
     },
     "sdd-init": {
       "description": "Bootstrap SDD context and project configuration",
@@ -391,6 +391,31 @@
         "claude-sonnet-4-6": {
           "name": "Claude Sonnet 4.6",
           "context": 200000
+        }
+      }
+    },
+    "openai": {
+      "npm": "@ai-sdk/openai",
+      "name": "OpenAI",
+      "options": {
+        "apiKey": "OPENAI_API_KEY_PLACEHOLDER"
+      },
+      "models": {
+        "gpt-5": {
+          "name": "GPT-5",
+          "context": 128000
+        },
+        "gpt-5-mini": {
+          "name": "GPT-5 Mini",
+          "context": 128000
+        },
+        "gpt-4o": {
+          "name": "GPT-4o",
+          "context": 128000
+        },
+        "gpt-4o-mini": {
+          "name": "GPT-4o Mini",
+          "context": 128000
         }
       }
     }

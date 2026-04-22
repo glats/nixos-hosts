@@ -5,6 +5,7 @@ let
   fireworksKeyPath = config.sops.secrets."opencode/fireworks_api_key".path;
   deepinfraKeyPath = config.sops.secrets."opencode/deepinfra_api_key".path;
   anthropicKeyPath = config.sops.secrets."opencode/anthropic_api_key".path;
+  openaiKeyPath = config.sops.secrets."opencode/openai_api_key".path;
 
   # Assets from gentle-ai upstream (via derivation)
   gentle-ai-assets = pkgs.gentle-ai-assets;
@@ -38,6 +39,7 @@ in
     FIREWORKS_KEY=$(${pkgs.coreutils}/bin/cat ${fireworksKeyPath})
     DEEPINFRA_KEY=$(${pkgs.coreutils}/bin/cat ${deepinfraKeyPath})
     ANTHROPIC_KEY=$(${pkgs.coreutils}/bin/cat ${anthropicKeyPath})
+    OPENAI_KEY=$(${pkgs.coreutils}/bin/cat ${openaiKeyPath})
 
     # Sync from base and inject the API keys
     _i "Syncing opencode.json from base configuration"
@@ -45,6 +47,7 @@ in
     ${pkgs.gnused}/bin/sed -i "s|FIREWORKS_API_KEY_PLACEHOLDER|$FIREWORKS_KEY|g" ${opencodeConfigDir}/opencode.json
     ${pkgs.gnused}/bin/sed -i "s|DEEPINFRA_API_KEY_PLACEHOLDER|$DEEPINFRA_KEY|g" ${opencodeConfigDir}/opencode.json
     ${pkgs.gnused}/bin/sed -i "s|ANTHROPIC_API_KEY_PLACEHOLDER|$ANTHROPIC_KEY|g" ${opencodeConfigDir}/opencode.json
+    ${pkgs.gnused}/bin/sed -i "s|OPENAI_API_KEY_PLACEHOLDER|$OPENAI_KEY|g" ${opencodeConfigDir}/opencode.json
     ${pkgs.coreutils}/bin/chmod u+rw ${opencodeConfigDir}/opencode.json
   '';
 
