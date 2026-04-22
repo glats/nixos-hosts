@@ -15,4 +15,8 @@
   sops.secrets."opencode/anthropic_api_key" = {
     mode = "0600";
   };
+
+  sops.secrets."opencode/openai_api_key" = {
+    mode = "0600";
+  };
 }
