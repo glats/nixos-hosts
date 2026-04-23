@@ -32,6 +32,7 @@ in
         ../home/ghostty.nix
         ../home/kitty.nix
         ../home/opencode.nix
+        ../home/opencode-profile.nix
         ../home/chrome-apps.nix
         ../home/ssh.nix
         ../home/sops.nix
