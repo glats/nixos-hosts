@@ -1,4 +1,4 @@
-{ config, lib, pkgs, hostName, ... }:
+{ config, lib, ... }:
 
 let
   # gnome-terminal palette uses #RRGGBB:RRGGBB:... format
@@ -69,17 +69,6 @@ in
     "org/cinnamon/desktop/screensaver" = {
       lock-enabled = false;
       idle-activation-enabled = false;
-    };
-
-    # Rofi launcher — Ctrl+Space (same as MATE)
-    "org/cinnamon/desktop/keybindings" = {
-      custom-list = [ "custom0" ];
-    };
-
-    "org/cinnamon/desktop/keybindings/custom-keybindings/custom0" = {
-      name = "rofi";
-      command = "${pkgs.rofi}/bin/rofi -show drun";
-      binding = [ "<Control>space" ];
     };
 
     # Nemo file manager

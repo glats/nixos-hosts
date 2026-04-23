@@ -1,4 +1,4 @@
-{ config, lib, pkgs, hostName, ... }:
+{ config, lib, ... }:
 
 let
   hexToRgb = hex:
@@ -46,11 +46,7 @@ in
       "panel-background-rgba" = "rgba(${hexToRgb config.colorScheme.palette.base00},1.0)";
     };
 
-    # Keyboard shortcut — Ctrl+Space → rofi (same as MATE)
-    "xfce4-keyboard-shortcuts" = {
-      "/commands/custom/<Control>space" = "${pkgs.rofi}/bin/rofi -show drun";
     };
-  };
 
   xdg.configFile = {
     # Disable xfce4-screensaver in xrdp sessions
