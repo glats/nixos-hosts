@@ -57,11 +57,17 @@
       gentle-ai = pkgs.callPackage ./pkgs/gentle-ai { };
       engram = pkgs.callPackage ./pkgs/engram { };
       gentle-ai-assets = pkgs.callPackage ./pkgs/gentle-ai-assets { inherit gentle-ai-src; writeText = pkgs.writeText; extraSkills = ./modules/home/opencode/skills; };
+
+      # Library functions for external use (non-NixOS portability)
+      opencode-config-lib = import ./pkgs/opencode-config { inherit (pkgs) lib writeText; };
     in
     {
       packages.${system} = {
         inherit nixos-scripts gentle-ai engram gentle-ai-assets;
       };
+
+      # Reusable library functions for other flakes
+      lib.opencode-config = opencode-config-lib;
 
       checks.${system} = { };
 

@@ -1,4 +1,5 @@
 {
+  "_comment": "DEPRECATED: This file is kept for backward compatibility during migration. Use the modular Nix configuration in modules/home/opencode/ instead. This file will be removed after migration period.",
   "agent": {
     "neutral": {
       "description": "Senior Architect mentor - helpful first, challenging when it matters",
@@ -127,7 +128,7 @@
         "read": true,
         "write": true
       },
-      "model": "deepinfra/Qwen/Qwen3-Coder-480B-A35B-Instruct-Turbo"
+      "model": "deepinfra/moonshotai/Kimi-K2.5"
     },
     "sdd-verify": {
       "description": "Validate implementation against specs",
