@@ -26,11 +26,39 @@ let
       -width 25 \
       -lines 3)
 
+    mkdir -p "$HOME/.local/state"
+
+    case "$CHOICE" in
+      MATE)
+        LOG_FILE="$HOME/.local/state/xrdp-mate.log"
+        ;;
+      XFCE)
+        LOG_FILE="$HOME/.local/state/xrdp-xfce.log"
+        ;;
+      Cinnamon)
+        LOG_FILE="$HOME/.local/state/xrdp-cinnamon.log"
+        ;;
+      *)
+        CHOICE="MATE"
+        LOG_FILE="$HOME/.local/state/xrdp-mate.log"
+        ;;
+    esac
+
+    {
+      echo
+      echo "===== $(date) ====="
+      echo "choice=$CHOICE"
+      echo "user=$USER"
+      echo "display=$DISPLAY"
+    } >> "$LOG_FILE"
+
+    exec >> "$LOG_FILE" 2>&1
+    set -x
+
     case "$CHOICE" in
       MATE)      exec ${pkgs.mate-session-manager}/bin/mate-session ;;
       XFCE)      exec ${pkgs.xfce4-session}/bin/xfce4-session ;;
       Cinnamon)  exec ${pkgs.cinnamon-session}/bin/cinnamon-session ;;
-      *)         exec ${pkgs.mate-session-manager}/bin/mate-session ;;
     esac
   '';
 in
