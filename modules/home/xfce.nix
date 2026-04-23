@@ -23,7 +23,8 @@ in
       "color-bold" = "#${config.colorScheme.palette.base05}";
       "color-cursor" = "#${config.colorScheme.palette.base05}";
       "color-bold-is-bright" = false;
-      "background-mode" = "none";
+      "background-mode" = "transparent";
+      "background-darkness" = 0.92139737991266379;
       "font-name" = "CaskaydiaCove Nerd Font 11";
       "misc-menubar-default" = false;
       "misc-toolbar-default" = false;
