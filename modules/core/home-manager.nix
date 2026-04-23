@@ -25,6 +25,8 @@ in
         ../home/tmux.nix
         ../home/neovim.nix
         ../home/mate.nix
+        ../home/xfce.nix
+        ../home/cinnamon.nix
         ../home/rofi.nix
         conkyModule
         ../home/git.nix
