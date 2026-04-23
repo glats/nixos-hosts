@@ -24,12 +24,14 @@ let
       runtimeDir = "${config.home.homeDirectory}/.config/${runtimeCfg.dir}";
 
       # Filter MCPs based on toggles
-      enabledMcps = lib.filterAttrs (name: mcp:
-        (name == "github" && cfg.mcpToggles.github) ||
-        (name == "nixos" && cfg.mcpToggles.nixos) ||
-        (name == "context7" && cfg.mcpToggles.context7) ||
-        (name == "engram" && cfg.mcpToggles.engram)
-      ) cfg.mcps;
+      enabledMcps = lib.filterAttrs
+        (name: mcp:
+          (name == "github" && cfg.mcpToggles.github) ||
+          (name == "nixos" && cfg.mcpToggles.nixos) ||
+          (name == "context7" && cfg.mcpToggles.context7) ||
+          (name == "engram" && cfg.mcpToggles.engram)
+        )
+        cfg.mcps;
 
       # Generate JSON file with placeholder API keys; activation script will
       # replace them with real secret values in the mutable runtime file.
@@ -207,9 +209,9 @@ in
     (mkIf (config.home.opencode.enable && config.home.opencode.legacyFallback) {
       warnings = [
         ("OpenCode: New declarative module is enabled with legacyFallback=true. " +
-         "This is the migration state. After testing with runtime='lab', " +
-         "switch to runtime='stable' and eventually set legacyFallback=false. " +
-         "See home.opencode.runtime description for full migration steps.")
+          "This is the migration state. After testing with runtime='lab', " +
+          "switch to runtime='stable' and eventually set legacyFallback=false. " +
+          "See home.opencode.runtime description for full migration steps.")
       ];
     })
 

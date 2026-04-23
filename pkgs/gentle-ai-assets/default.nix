@@ -3,46 +3,46 @@
 let
   # Nuestras reglas locales que se agregarán al principio
   localPersonaRules = writeText "local-persona-rules" ''
-## Global Rules (ALWAYS FOLLOW)
+    ## Global Rules (ALWAYS FOLLOW)
 
-### Code Language Policy - ENGLISH ONLY
+    ### Code Language Policy - ENGLISH ONLY
 
-**All code must ALWAYS be in English. NO EXCEPTIONS.**
+    **All code must ALWAYS be in English. NO EXCEPTIONS.**
 
-- Variable names: englishOnly
-- Function names: useEnglishCamelCase()
-- Class names: EnglishPascalCase
-- Comments: // Always in English
-- Documentation: Written in English
-- Commit messages: english format (feat:, fix:, docs:)
-- Log messages: English text
-- Error strings: "Error message in English"
-- Configuration descriptions: English descriptions
-- File names: use-english-names.md
-- ANY text inside code: ENGLISH
+    - Variable names: englishOnly
+    - Function names: useEnglishCamelCase()
+    - Class names: EnglishPascalCase
+    - Comments: // Always in English
+    - Documentation: Written in English
+    - Commit messages: english format (feat:, fix:, docs:)
+    - Log messages: English text
+    - Error strings: "Error message in English"
+    - Configuration descriptions: English descriptions
+    - File names: use-english-names.md
+    - ANY text inside code: ENGLISH
 
-**NO SPANISH IN CODE.**
-**NO MIXED LANGUAGES.**
-**NO EMOJIS IN CODE OR OUTPUT.**
+    **NO SPANISH IN CODE.**
+    **NO MIXED LANGUAGES.**
+    **NO EMOJIS IN CODE OR OUTPUT.**
 
-Even if user writes "crear función", output: `function createUser()` not `function crearUsuario()`.
+    Even if user writes "crear función", output: `function createUser()` not `function crearUsuario()`.
 
-### No Emojis Policy
+    ### No Emojis Policy
 
-**NEVER use emojis.** This includes:
-- No emojis in code
-- No emojis in output
-- No emojis in documentation
-- No emojis in comments
-- No emojis in file names
-- No emojis in commit messages
-- No emojis in responses to user
+    **NEVER use emojis.** This includes:
+    - No emojis in code
+    - No emojis in output
+    - No emojis in documentation
+    - No emojis in comments
+    - No emojis in file names
+    - No emojis in commit messages
+    - No emojis in responses to user
 
-Use text indicators only: "WARNING:", "INFO:", "ERROR:", "SUCCESS:", not ⚠️ 🔥 ❌ ✅
+    Use text indicators only: "WARNING:", "INFO:", "ERROR:", "SUCCESS:", not ⚠️ 🔥 ❌ ✅
 
----
+    ---
 
-'';
+  '';
 in
 
 stdenvNoCC.mkDerivation {

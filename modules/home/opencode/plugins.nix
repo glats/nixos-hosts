@@ -38,7 +38,7 @@ with lib;
   # Declare activePlugins as an option so it can be set in config
   options.home.opencode.activePlugins = mkOption {
     type = types.attrsOf types.bool;
-    default = {};
+    default = { };
     description = ''
       Computed set of active plugins. This is automatically populated
       based on the plugin enable settings.
