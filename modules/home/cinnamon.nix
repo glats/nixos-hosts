@@ -95,7 +95,7 @@ in
       bold-color-same-as-fg = true;
       cursor-colors-set = true;
       cursor-background-color = "#${config.colorScheme.palette.base05}";
-      use-theme-colors = false;
+      "use-theme-colors" = false;
       use-system-font = false;
       font-name = "CaskaydiaCove Nerd Font 11";
       palette = palette;
