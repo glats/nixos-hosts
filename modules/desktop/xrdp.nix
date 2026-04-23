@@ -11,18 +11,21 @@ let
   '';
 
   # Rofi session picker — shown on xrdp login before launching a DE.
-  # Uses the user's rofi theme from home-manager if available,
-  # otherwise falls back to rofi's built-in default theme.
+  # Uses icon specs so rofi shows the DE logo next to each choice.
+  # Papirus has: mate-desktop, start-here-xfce
+  # Cinnamon icon comes from the cinnamon package itself.
   # Per-user override: create ~/startwm.sh to bypass the picker entirely.
   sessionPicker = pkgs.writeShellScript "xrdp-session-picker" ''
     ${xrdpPreamble}
 
-    CHOICE=$(printf '%s\n' MATE XFCE Cinnamon | ${pkgs.rofi}/bin/rofi \
+    CHOICE=$(printf 'MATE\0icon\x1fmate-desktop\nXFCE\0icon\x1fstart-here-xfce\nCinnamon\0icon\x1f${pkgs.cinnamon}/share/icons/hicolor/scalable/apps/cinnamon.svg' | \
+      ${pkgs.rofi}/bin/rofi \
       -dmenu \
       -i \
       -p "Desktop" \
       -font "Sans 14" \
       -show-icons \
+      -icon-theme "Papirus-Dark" \
       -width 25 \
       -lines 3)
 
