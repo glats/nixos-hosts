@@ -38,34 +38,27 @@ in
   # Data in /srv/glats/guacamole/
   # Properties file generated at runtime from sops secrets (see generateProperties)
 
-  # Ensure guacamole podman network exists before containers start
-  # Podman networks are NOT declarative - we create them imperatively via systemd
-  # This avoids issues with JSON network configs and orphaned interfaces
-  systemd.services.podman-network-guacamole = {
-    description = "Podman network for Guacamole";
+  # Ensure guacamole docker network exists before containers start
+  # Docker networks are created imperatively via systemd — idempotent.
+  # Requires docker daemon to be up (after docker.service).
+  systemd.services.docker-network-guacamole = {
+    description = "Docker network for Guacamole";
+    after = [ "docker.service" ];
+    requires = [ "docker.service" ];
     before = [
-      "podman-guacamoledb.service"
-      "podman-guacamoled.service"
-      "podman-guacamole.service"
+      "docker-guacamoledb.service"
+      "docker-guacamoled.service"
+      "docker-guacamole.service"
     ];
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
       ExecStart = pkgs.writeShellScript "create-guacamole-network" ''
-        # Clean up any orphaned interface from previous failed attempts
-        if ${pkgs.iproute2}/bin/ip link show podman1 2>/dev/null | grep -q "10.89.0"; then
-          echo "Cleaning up orphaned podman1 interface..."
-          ${pkgs.iproute2}/bin/ip link delete podman1 2>/dev/null || true
-        fi
-
-        # Remove any broken network config that might interfere
-        rm -f /etc/containers/networks/guacamole.json 2>/dev/null || true
-
         # Check if network exists, create if not
-        if ! ${pkgs.podman}/bin/podman network ls --format '{{.Name}}' 2>/dev/null | grep -q "^guacamole$"; then
-          echo "Creating guacamole podman network..."
-          ${pkgs.podman}/bin/podman network create \
+        if ! ${pkgs.docker}/bin/docker network ls --format '{{.Name}}' 2>/dev/null | grep -q "^guacamole$"; then
+          echo "Creating guacamole docker network..."
+          ${pkgs.docker}/bin/docker network create \
             --driver bridge \
             --subnet 10.89.0.0/24 \
             --gateway 10.89.0.1 \
@@ -153,25 +146,25 @@ in
   };
 
   # Ensure all guacamole containers wait for the network
-  systemd.services.podman-guacamoledb = {
-    after = [ "podman-network-guacamole.service" ];
-    requires = [ "podman-network-guacamole.service" ];
+  systemd.services.docker-guacamoledb = {
+    after = [ "docker-network-guacamole.service" ];
+    requires = [ "docker-network-guacamole.service" ];
   };
 
-  systemd.services.podman-guacamoled = {
-    after = [ "podman-network-guacamole.service" ];
-    requires = [ "podman-network-guacamole.service" ];
+  systemd.services.docker-guacamoled = {
+    after = [ "docker-network-guacamole.service" ];
+    requires = [ "docker-network-guacamole.service" ];
   };
 
   # Generate guacamole.properties before starting the web container
-  systemd.services.podman-guacamole = {
+  systemd.services.docker-guacamole = {
     after = [
-      "podman-guacamoledb.service"
-      "podman-guacamoled.service"
+      "docker-guacamoledb.service"
+      "docker-guacamoled.service"
     ];
     requires = [
-      "podman-guacamoledb.service"
-      "podman-guacamoled.service"
+      "docker-guacamoledb.service"
+      "docker-guacamoled.service"
     ];
     serviceConfig = {
       ExecStartPre = [
