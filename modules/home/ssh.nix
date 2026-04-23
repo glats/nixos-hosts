@@ -40,6 +40,16 @@ in
           TERM = "xterm-256color";
         };
       };
+      mact2-local = {
+        host = "mact2.local";
+        hostname = "mact2.local";
+        user = "jcuzmar";
+        identityFile = "${sshDir}/mact2";
+        identitiesOnly = true;
+        setEnv = {
+          TERM = "xterm-256color";
+        };
+      };
       rog-local = {
         host = "rog.local";
         hostname = "rog.local";
