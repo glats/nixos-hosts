@@ -13,23 +13,25 @@ let
   # keyPaths: attrset mapping provider names to secret file paths
   # This function reads the actual key values from sops-encrypted files
   resolveProviderKeys = providers: keyPaths:
-    lib.mapAttrs (
-      name: cfg:
-      let
-        secretPath = keyPaths.${name} or null;
-      in
-      cfg
-      // {
-        options = cfg.options // {
-          apiKey =
-            if secretPath != null then
-              # Read actual key from secret file at build time
-              builtins.readFile secretPath
-            else
-              cfg.options.apiKey or "KEY_NOT_CONFIGURED";
-        };
-      }
-    ) providers;
+    lib.mapAttrs
+      (
+        name: cfg:
+          let
+            secretPath = keyPaths.${name} or null;
+          in
+          cfg
+          // {
+            options = cfg.options // {
+              apiKey =
+                if secretPath != null then
+                # Read actual key from secret file at build time
+                  builtins.readFile secretPath
+                else
+                  cfg.options.apiKey or "KEY_NOT_CONFIGURED";
+            };
+          }
+      )
+      providers;
 
   # Generate final opencode.json from structured configuration
   # agents: attrset of agent definitions
@@ -37,11 +39,11 @@ let
   # mcps: attrset of MCP server configurations
   # permissions: attrset of permission rules
   generateOpencodeJson =
-    {
-      agents ? { },
-      providers ? { },
-      mcps ? { },
-      permissions ? { },
+    { agents ? { }
+    , providers ? { }
+    , mcps ? { }
+    , permissions ? { }
+    ,
     }:
     writeText "opencode.json" (
       builtins.toJSON {
@@ -58,12 +60,12 @@ let
   # 2. Resolve API keys from secret paths
   # 3. Generate final JSON
   generateOpencodeJsonWithSecrets =
-    {
-      agents ? { },
-      providers ? { },
-      mcps ? { },
-      permissions ? { },
-      providerSecretPaths ? { },
+    { agents ? { }
+    , providers ? { }
+    , mcps ? { }
+    , permissions ? { }
+    , providerSecretPaths ? { }
+    ,
     }:
     let
       resolvedProviders = resolveProviderKeys providers providerSecretPaths;
@@ -78,10 +80,10 @@ let
   # platformOverlay: Layer 2 - platform-specific transformations
   # localOverlay: Layer 3 - user customizations and host-specific settings
   assembleConfig =
-    {
-      base ? { },
-      platformOverlay ? { },
-      localOverlay ? { },
+    { base ? { }
+    , platformOverlay ? { }
+    , localOverlay ? { }
+    ,
     }:
     {
       agents = mergeAgents (mergeAgents (base.agents or { }) (platformOverlay.agents or { })) (localOverlay.agents or { });
@@ -126,10 +128,12 @@ let
   # Generate plugin references for opencode.json
   # activePlugins: list of enabled plugin names
   generatePluginRefs = activePlugins:
-    map (name: {
-      name = name;
-      enabled = true;
-    }) activePlugins;
+    map
+      (name: {
+        name = name;
+        enabled = true;
+      })
+      activePlugins;
 
 in
 {

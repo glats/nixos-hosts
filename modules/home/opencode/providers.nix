@@ -214,7 +214,7 @@ in
   # These are set in config section to avoid infinite recursion
   options.home.opencode.providerSecrets = mkOption {
     type = types.attrsOf types.str;
-    default = {};
+    default = { };
     description = ''
       Paths to sops-encrypted API keys for each provider.
       These paths are used at build time to inject actual key values.
