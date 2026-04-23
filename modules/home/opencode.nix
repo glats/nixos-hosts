@@ -117,7 +117,7 @@ let
         fi
       '';
 
-      home.activation."setupOpencodeSecrets-${runtimeCfg.label}" = config.lib.dag.entryAfter [ "writeBoundary" ] ''
+      home.activation."setupOpencodeSecrets-${runtimeCfg.label}" = config.lib.dag.entryAfter [ "sops-nix" ] ''
         runtime_dir="${runtimeDir}"
         config_file="$runtime_dir/opencode.json"
 
