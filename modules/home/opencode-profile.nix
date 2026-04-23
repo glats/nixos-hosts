@@ -6,7 +6,7 @@
     runtime = "stable";
     legacyFallback = false;
 
-    agentOverrides.sdd-orchestrator.model = "openai/gpt-5.4";
+    agentOverrides.sdd-orchestrator.model = "deepinfra/zai-org/GLM-5.1";
 
     plugins = {
       backgroundAgents.enable = true;
