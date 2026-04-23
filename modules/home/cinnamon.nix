@@ -1,44 +1,67 @@
 { config, lib, pkgs, hostName, ... }:
 
 let
-  hexToRgb = hex:
-    let
-      r = lib.substring 0 2 hex;
-      g = lib.substring 2 2 hex;
-      b = lib.substring 4 2 hex;
-      toDec = h: lib.fromHexString h;
-    in
-    "rgb(${toString (toDec r)},${toString (toDec g)},${toString (toDec b)})";
+  # gnome-terminal palette uses #RRGGBB:RRGGBB:... format
+  palette = builtins.concatStringsSep ":" [
+    "#${config.colorScheme.palette.base00}"
+    "#${config.colorScheme.palette.base08}"
+    "#${config.colorScheme.palette.base0B}"
+    "#${config.colorScheme.palette.base0A}"
+    "#${config.colorScheme.palette.base0D}"
+    "#${config.colorScheme.palette.base0E}"
+    "#${config.colorScheme.palette.base0C}"
+    "#${config.colorScheme.palette.base05}"
+    "#${config.colorScheme.palette.base03}"
+    "#${config.colorScheme.palette.base09}"
+    "#${config.colorScheme.palette.brightGreen}"
+    "#${config.colorScheme.palette.brightYellow}"
+    "#${config.colorScheme.palette.brightBlue}"
+    "#${config.colorScheme.palette.brightMagenta}"
+    "#${config.colorScheme.palette.brightCyan}"
+    "#${config.colorScheme.palette.base07}"
+  ];
 in
 {
   # Cinnamon uses dconf for settings (same as MATE/GNOME)
-  # GTK theme is shared via theme.nix
+  # GTK theme shared via theme.nix, Qt via theme.nix
 
   dconf.settings = {
+    # Desktop background
     "org/cinnamon/desktop/background" = {
       color-shading-type = "solid";
       picture-filename = "";
       picture-options = "none";
-      primary-color = "${hexToRgb config.colorScheme.palette.base00}";
-      secondary-color = "${hexToRgb config.colorScheme.palette.base00}";
+      primary-color = "#${config.colorScheme.palette.base00}";
+      secondary-color = "#${config.colorScheme.palette.base00}";
     };
 
+    # Interface theme
     "org/cinnamon/desktop/interface" = {
       gtk-theme = config.gtk.theme.name;
       icon-theme = "Papirus-Dark";
       cursor-theme = "mate-black";
       font-name = "Sans 10";
+      document-font-name = "Sans 10";
+      monospace-font-name = "CaskaydiaCove Nerd Font 11";
     };
 
+    # Window manager (muffin)
     "org/cinnamon/desktop/wm/preferences" = {
       button-layout = "menu:minimize,maximize,close";
       theme = config.gtk.theme.name;
+      action-double-click-titlebar = "toggle_maximize";
     };
 
+    # Keyboard and mouse
     "org/cinnamon/desktop/peripherals/keyboard" = {
       numlock-state = true;
     };
 
+    "org/cinnamon/desktop/peripherals/mouse" = {
+      cursor-theme = "mate-black";
+    };
+
+    # Session and screensaver (xrdp: disable)
     "org/cinnamon/desktop/session" = {
       idle-delay = 0;
     };
@@ -47,41 +70,56 @@ in
       lock-enabled = false;
       idle-activation-enabled = false;
     };
+
+    # Rofi launcher — Ctrl+Space (same as MATE)
+    "org/cinnamon/desktop/keybindings" = {
+      custom-list = [ "custom0" ];
+    };
+
+    "org/cinnamon/desktop/keybindings/custom-keybindings/custom0" = {
+      name = "rofi";
+      command = "${pkgs.rofi}/bin/rofi -show drun";
+      binding = [ "<Control>space" ];
+    };
+
+    # Nemo file manager
+    "org/nemo/preferences" = {
+      show-hidden-files = false;
+      show-location-entry = true;
+      default-folder-viewer = "list-view";
+      thumbnail-limit = 104857600; # 100MB
+    };
+
+    "org/nemo/window-state" = {
+      geometry = "800x550";
+      maximized = false;
+      start-with-sidebar = true;
+      start-with-status-bar = true;
+      start-with-toolbar = true;
+    };
+
+    # gnome-terminal color profile matching Glats palette
+    "org/gnome/terminal/legacy/profiles/:/b1defddd-5273-4a7e-b257-7a06eb8714e3" = {
+      visible-name = "Default";
+      foreground-color = "#${config.colorScheme.palette.base05}";
+      background-color = "#${config.colorScheme.palette.base00}";
+      bold-color-same-as-fg = true;
+      cursor-colors-set = true;
+      cursor-background-color = "#${config.colorScheme.palette.base05}";
+      use-theme-colors = false;
+      use-system-font = false;
+      font-name = "CaskaydiaCove Nerd Font 11";
+      palette = palette;
+      scrolling-mode = "normal";
+      default-show-menubar = false;
+    };
+
+    "org/gnome/terminal/legacy/profiles:" = {
+      list = [ "b1defddd-5273-4a7e-b257-7a06eb8714e3" ];
+    };
   };
 
   xdg.configFile = {
-    # CopyQ clipboard manager
-    "autostart/copyq.desktop".text = ''
-      [Desktop Entry]
-      Name=CopyQ
-      Comment=Clipboard Manager with Advanced Features
-      Icon=copyq
-      Exec=${pkgs.copyq}/bin/copyq
-      Terminal=false
-      Type=Application
-      Categories=GTK;Utility;
-      OnlyShowIn=X-Cinnamon;
-      X-GNOME-Autostart-enabled=true
-    '';
-
-    # Flameshot screenshot tool - use X11 legacy path for xrdp compatibility
-    "autostart/org.flameshot.Flameshot.desktop".text = ''
-      [Desktop Entry]
-      Name=Flameshot
-      GenericName=Screenshot tool
-      Comment=Powerful yet simple to use screenshot software.
-      Keywords=flameshot;screenshot;capture;shutter;
-      Exec=${pkgs.flameshot}/bin/flameshot
-      Icon=org.flameshot.Flameshot
-      Terminal=false
-      Type=Application
-      Categories=Graphics;
-      StartupNotify=false
-      StartupWMClass=flameshot
-      OnlyShowIn=X-Cinnamon;
-      X-GNOME-Autostart-enabled=true
-    '';
-
     # Disable cinnamon-screensaver in xrdp sessions
     "autostart/cinnamon-screensaver.desktop".text = ''
       [Desktop Entry]
@@ -105,24 +143,6 @@ in
       Type=Application
       OnlyShowIn=X-Cinnamon;
       Hidden=true
-    '';
-  } // lib.optionalAttrs (hostName == "rog") {
-    "autostart/io.github.Hexchat.desktop".text = ''
-      [Desktop Entry]
-      Name=HexChat
-      GenericName=IRC Client
-      Comment=Chat with other people online
-      Keywords=IM;Chat;
-      Exec=${pkgs.hexchat}/bin/hexchat --existing %U
-      Icon=io.github.Hexchat
-      Terminal=false
-      Type=Application
-      Categories=GTK;Network;IRCClient;
-      StartupNotify=true
-      StartupWMClass=Hexchat
-      MimeType=x-scheme-handler/irc;x-scheme-handler:ircs;
-      OnlyShowIn=X-Cinnamon;
-      X-GNOME-Autostart-enabled=true
     '';
   };
 }
