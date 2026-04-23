@@ -29,8 +29,8 @@
     "d /srv/glats/jellyseerr/config 0755 root root -"
   ];
 
-  # Ensure directory exists before podman tries to mount it
-  systemd.services."podman-jellyseerr".preStart = ''
+  # Ensure directory exists before docker tries to mount it
+  systemd.services."docker-jellyseerr".preStart = ''
     mkdir -p /srv/glats/jellyseerr/config
     chmod 755 /srv/glats/jellyseerr /srv/glats/jellyseerr/config
   '';

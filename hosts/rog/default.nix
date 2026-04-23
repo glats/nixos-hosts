@@ -73,14 +73,14 @@
   # Usar mkForce para override los defaults del módulo oci-containers
   systemd.services.nginx.serviceConfig.TimeoutStartSec = lib.mkForce "300";
   systemd.services."acme-glats.org".serviceConfig.TimeoutStartSec = lib.mkForce "300";
-  systemd.services."podman-guacamoledb".serviceConfig.TimeoutStartSec = lib.mkForce "300";
-  systemd.services."podman-jellyfin".serviceConfig.TimeoutStartSec = lib.mkForce "300";
-  systemd.services."podman-jellyseerr".serviceConfig.TimeoutStartSec = lib.mkForce "300";
+  systemd.services."docker-guacamoledb".serviceConfig.TimeoutStartSec = lib.mkForce "300";
+  systemd.services."docker-jellyfin".serviceConfig.TimeoutStartSec = lib.mkForce "300";
+  systemd.services."docker-jellyseerr".serviceConfig.TimeoutStartSec = lib.mkForce "300";
 
   # Prevenir restart loops que consumen tiempo durante switch
   # Usar mkForce porque nginx ya define este valor
   systemd.services.nginx.startLimitIntervalSec = lib.mkForce 0;
-  systemd.services."podman-jellyfin".startLimitIntervalSec = lib.mkForce 0;
-  systemd.services."podman-guacamoledb".startLimitIntervalSec = lib.mkForce 0;
-  systemd.services."podman-jellyseerr".startLimitIntervalSec = lib.mkForce 0;
+  systemd.services."docker-jellyfin".startLimitIntervalSec = lib.mkForce 0;
+  systemd.services."docker-guacamoledb".startLimitIntervalSec = lib.mkForce 0;
+  systemd.services."docker-jellyseerr".startLimitIntervalSec = lib.mkForce 0;
 }
