@@ -195,6 +195,16 @@ in
 
     "org/mate/power-manager" = {
       button-power = "interactive";
+      button-lid-ac = "suspend";
+      button-lid-battery = "suspend";
+      button-suspend = "suspend";
+    };
+
+    "org/mate/screenshot" = {
+      border-effect = "none";
+      delay = 0;
+      include-border = true;
+      include-pointer = true;
     };
 
     "org/mate/screensaver" = {
