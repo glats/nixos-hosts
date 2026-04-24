@@ -58,4 +58,10 @@ in
     group = "users";
     mode = "0400";
   };
+
+  sops.secrets."opencode/openai_api_key" = {
+    owner = "glats";
+    group = "users";
+    mode = "0400";
+  };
 }
