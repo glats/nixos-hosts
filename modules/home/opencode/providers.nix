@@ -14,7 +14,7 @@ let
       };
       models = {
         "accounts/fireworks/models/kimi-k2p6" = {
-          name = "Kimi K2.6;";
+          name = "Kimi K2.6";
         };
         "accounts/fireworks/models/glm-5p1" = {
           name = "GLM 5.1";
