@@ -6,7 +6,8 @@
     runtime = "stable";
     legacyFallback = false;
 
-    agentOverrides.sdd-orchestrator.model = "deepinfra/moonshotai/Kimi-K2.5";
+    # Model override - uses Fireworks by default (change to deepinfra or remove to customize)
+    agentOverrides.sdd-orchestrator.model = "fireworks/accounts/fireworks/models/kimi-k2p6";
 
     plugins = {
       backgroundAgents.enable = true;
