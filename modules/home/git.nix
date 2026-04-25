@@ -1,4 +1,4 @@
-{ config, ... }:
+{ config, lib, ... }:
 
 {
   programs.git = {
@@ -6,14 +6,9 @@
     # Explicitly set signing format to silence home-manager warning (legacy default)
     signing.format = "openpgp";
     settings = {
-      credential.helper = "store --file=${config.sops.secrets.git-credentials.path}";
       core.editor = "nvim -u NONE";
       core.pager = "delta";
       delta.enable = true;
     };
-  };
-
-  sops.secrets.git-credentials = {
-    mode = "0600";
   };
 }
