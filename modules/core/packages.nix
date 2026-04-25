@@ -128,11 +128,13 @@ let
     adwaita-icon-theme
     flameshot
     copyq
+    gpaste
     conky
     scrot
     networkmanagerapplet
     gparted
     hexchat # IRC client
+    devilspie2
   ];
 
   mediaSupport = with pkgs; [

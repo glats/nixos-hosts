@@ -1,4 +1,4 @@
-{ config, lib, ... }:
+{ config, lib, pkgs, ... }:
 
 let
   # gnome-terminal palette uses #RRGGBB:RRGGBB:... format
@@ -43,6 +43,9 @@ in
       font-name = "Sans 10";
       document-font-name = "Sans 10";
       monospace-font-name = "CaskaydiaCove Nerd Font 11";
+      buttons-have-icons = true;
+      menus-have-icons = true;
+      gtk-color-scheme = "visited_link_color:#${config.colorScheme.palette.base0E}";
     };
 
     # Window manager (muffin)
@@ -106,9 +109,18 @@ in
     "org/gnome/terminal/legacy/profiles:" = {
       list = [ "b1defddd-5273-4a7e-b257-7a06eb8714e3" ];
     };
+
+    # GPaste clipboard manager
+    "org/gnome/GPaste" = {
+      show-history = true;
+      sync-clipboard-to-primary = true;
+      track-changes = true;
+      max-history-size = 50;
+      save-history = true;
+    };
   };
 
-  xdg.configFile = {
+xdg.configFile = {
     # Disable cinnamon-screensaver in xrdp sessions
     "autostart/cinnamon-screensaver.desktop".text = ''
       [Desktop Entry]
@@ -121,7 +133,7 @@ in
       Hidden=true
     '';
 
-    # Disable power manager in xrdp sessions
+    # Disable cinnamon-power-manager in xrdp sessions
     "autostart/cinnamon-power-manager.desktop".text = ''
       [Desktop Entry]
       Name=Power Manager
@@ -133,5 +145,51 @@ in
       OnlyShowIn=X-Cinnamon;
       Hidden=true
     '';
+
+    # devilspie2 autostart for Cinnamon
+    "autostart/devilspie2.desktop".text = ''
+      [Desktop Entry]
+      Type=Application
+      Name=Devil's Pie II
+      Comment=Window manipulation daemon
+      Exec=devilspie2
+      Terminal=false
+      Type=Application
+      OnlyShowIn=X-Cinnamon;
+    '';
+
+    # GPaste clipboard manager autostart for Cinnamon
+    "autostart/gpaste-daemon.desktop".text = ''
+      [Desktop Entry]
+      Type=Application
+      Name=GPaste
+      Comment=Clipboard management daemon
+      Exec=${pkgs.gpaste}/libexec/gpaste/gpaste-daemon
+      Terminal=false
+      OnlyShowIn=X-Cinnamon;
+      X-Cinnamon-Autostart-phase=Panel;
+    '';
   };
+
+  xdg.dataFile."applications/xrdp-back-to-picker.desktop".text = ''
+    [Desktop Entry]
+    Name=Back to Session Picker
+    Comment=Log out and return to XRDP session picker
+    Exec=${pkgs.nixos-scripts}/bin/xrdp-back-to-picker
+    Icon=system-log-out
+    Type=Application
+    Terminal=false
+    Categories=System;
+    OnlyShowIn=X-Cinnamon;
+  '';
+
+  # devilspie2 script for gnome-terminal transparency - use activation to create a real file
+  home.activation.setupDevilspie2 = config.lib.dag.entryAfter [ "writeBoundary" ] ''
+        mkdir -p "${config.home.homeDirectory}/.config/devilspie2"
+        ${pkgs.coreutils}/bin/tee "${config.home.homeDirectory}/.config/devilspie2/terminal-opacity.lua" > /dev/null << 'EOF'
+    if (get_window_class() == "gnome-terminal-server") then
+      set_window_opacity(0.92)
+    end
+    EOF
+  '';
 }
