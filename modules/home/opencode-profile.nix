@@ -6,7 +6,7 @@
     runtime = "stable";
     legacyFallback = false;
 
-    agentOverrides.sdd-orchestrator.model = "opencode/nemotron-3-super-free";
+    agentOverrides.sdd-orchestrator.model = "deepinfra/moonshotai/Kimi-K2.5";
 
     plugins = {
       backgroundAgents.enable = true;

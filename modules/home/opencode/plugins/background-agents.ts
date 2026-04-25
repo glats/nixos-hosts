@@ -23,10 +23,9 @@ import * as os from "node:os"
 import * as path from "node:path"
 import { stat } from "node:fs/promises"
 import { type Plugin, type ToolContext, tool } from "@opencode-ai/plugin"
-import { createOpencodeClient } from "@opencode-ai/sdk"
+import type { createOpencodeClient } from "@opencode-ai/sdk"
 import type { Event, Message, Part, TextPart } from "@opencode-ai/sdk"
-import ung from "unique-names-generator"
-const { adjectives, animals, colors, uniqueNamesGenerator } = ung
+import { uniqueNamesGenerator, adjectives, animals, colors } from "unique-names-generator"
 
 // ==========================================
 // INLINED: kdco-primitives/types
@@ -308,9 +307,6 @@ interface DelegationProgress {
 
 const MAX_RUN_TIME_MS = 15 * 60 * 1000 // 15 minutes
 
-// Abort type for retry classification
-type AbortType = "timeout" | "error" | "cancelled" | null
-
 interface Delegation {
   id: string // Human-readable ID (e.g., "swift-amber-falcon")
   sessionID: string
@@ -328,9 +324,6 @@ interface Delegation {
   title?: string
   description?: string
   result?: string
-  // Retry tracking for orchestrator retry decisions
-  abortType?: AbortType
-  retryCount: number
 }
 
 interface DelegateInput {
@@ -617,7 +610,6 @@ class DelegationManager {
         toolCalls: 0,
         lastUpdate: new Date(),
       },
-      retryCount: 0,
     }
 
     await this.debugLog(`Created delegation ${delegation.id}`)
@@ -673,7 +665,6 @@ class DelegationManager {
         delegation.status = "error"
         delegation.error = error.message
         delegation.completedAt = new Date()
-        delegation.abortType = this.classifyAbort("error")
         this.persistOutput(delegation, `Error: ${error.message}`)
         this.notifyParent(delegation)
       })
@@ -693,7 +684,6 @@ class DelegationManager {
     delegation.status = "timeout"
     delegation.completedAt = new Date()
     delegation.error = `Delegation timed out after ${MAX_RUN_TIME_MS / 1000}s`
-    delegation.abortType = this.classifyAbort("timeout")
 
     // Try to cancel the session
     try {
@@ -741,7 +731,6 @@ class DelegationManager {
 
     delegation.status = "complete"
     delegation.completedAt = new Date()
-    delegation.abortType = this.classifyAbort("complete")
 
     // Get the result
     const result = await this.getResult(delegation)
@@ -843,8 +832,6 @@ ${description}
 **Status:** ${delegation.status}
 **Started:** ${delegation.startedAt.toISOString()}
 **Completed:** ${delegation.completedAt?.toISOString() || "N/A"}
-**RetryCount:** ${delegation.retryCount ?? 0}
-**AbortType:** ${delegation.abortType ?? "N/A"}
 
 ---
 
@@ -882,13 +869,9 @@ ${description}
       }
 
       // Always send the completed delegation notification first (compact — full result is on disk)
-      const abortType = delegation.abortType ?? "N/A"
-      const retryEligible = this.canRetry(delegation)
       const completionNotification = `[TASK NOTIFICATION]
 ID: ${delegation.id}
 Status: ${statusText}
-AbortType: ${abortType}
-RetryEligible: ${retryEligible}
 Use delegation_read(id) to retrieve the full result.`
 
       await this.client.session.prompt({
@@ -1058,7 +1041,6 @@ Use delegation_read(id) to retrieve the full result.`
         }
         delegation.status = "cancelled"
         delegation.completedAt = new Date()
-        delegation.abortType = this.classifyAbort("cancelled")
       }
       this.delegations.delete(delegationId)
     }
@@ -1112,45 +1094,6 @@ Use delegation_read(id) to retrieve the full result.`
 
   /**
    * Get recent completed delegations for compaction injection
-   */
-  async getRecentCompletedDelegations(
-    sessionID: string,
-    limit: number = 10,
-  ): Promise<DelegationListItem[]> {
-    const all = await this.listDelegations(sessionID)
-    return all.filter((d) => d.status !== "running").slice(-limit)
-  }
-
-  /**
-   * Classify a delegation status into an AbortType for retry decisions
-   */
-  private classifyAbort(status: Delegation["status"]): AbortType {
-    switch (status) {
-      case "timeout":
-        return "timeout"
-      case "error":
-        return "error"
-      case "cancelled":
-        return "cancelled"
-      case "complete":
-      case "running":
-      default:
-        return null
-    }
-  }
-
-  /**
-   * Determine if a delegation is eligible for retry
-   * Returns true only when retryCount &lt; 1 and abortType !== null
-   */
-  canRetry(delegation: Delegation): boolean {
-    const currentRetryCount = delegation.retryCount ?? 0
-    const abortType = delegation.abortType ?? null
-    return currentRetryCount &lt; 1 &amp;&amp; abortType !== null
-  }
-
-  /**
-   * Log debug messages
    */
   async getRecentCompletedDelegations(
     sessionID: string,
