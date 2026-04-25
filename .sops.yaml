@@ -1,10 +1,38 @@
+# SOPS configuration for multi-host NixOS configuration
+# Keys:
+#   - admin_glats: User key for personal secrets (stored in ~/.config/sops/age/keys.txt)
+#   - host_rog: System key for rog host (stored in /var/lib/sops-nix/key.txt)
+#   - host_thinkcentre: System key for thinkcentre host (stored in /var/lib/sops-nix/key.txt)
+
 keys:
   - &admin_glats age1j4mxejwmktekgf24sju92ryayh5jlmv4ldxj62e2srwghpkpuujscct9lt
-  - &host_rog age1hhneed7kklvpzctqqml6dklcnkh9xfdta3mxyq70s30d63095dcscdhk5m
+  - &host_rog age1q46qlf4kt0pc255nrl4r24m5hnvqwqf9wd8n6206f0zg95v6993qvd9cr8
   - &host_thinkcentre age1uhv0z8e04q2385wlrn0vgd237ts2exea375yr4yeqwx5v9zgw9esdg3rsn
 
 creation_rules:
-  - path_regex: secrets/[^/]+\.(yaml|json|env|ini)$
+  # User secrets (API keys, personal tokens) - accessible on any host via user key
+  - path_regex: secrets/user/.+
+    key_groups:
+      - age:
+          - *admin_glats
+
+  # Shared system secrets (common across hosts)
+  - path_regex: secrets/shared/.+
+    key_groups:
+      - age:
+          - *host_rog
+          - *host_thinkcentre
+
+  # Host-specific system secrets
+  - path_regex: secrets/system/.+
+    key_groups:
+      - age:
+          - *admin_glats
+          - *host_rog
+          - *host_thinkcentre
+
+  # Legacy file (fallback for backwards compatibility)
+  - path_regex: secrets/secrets.yaml
     key_groups:
       - age:
           - *admin_glats
