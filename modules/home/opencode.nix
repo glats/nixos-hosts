@@ -76,7 +76,13 @@ let
             "theme": "system"
           }
         '';
-        # Plugin files are copied by activation script below, not as symlinks
+        ".config/${runtimeCfg.dir}/plugins/engram.ts" = mkIf cfg.plugins.engram.enable {
+          source = ./opencode/plugins/engram.ts;
+        };
+        ".config/${runtimeCfg.dir}/plugins/background-agents.ts" = mkIf cfg.plugins.backgroundAgents.enable {
+          source = ./opencode/plugins/background-agents.ts;
+          force = true;
+        };
       };
 
       home.activation."setupOpencodePluginRuntime-${runtimeCfg.label}" = config.lib.dag.entryAfter [ "writeBoundary" ] ''
@@ -86,25 +92,29 @@ let
           exit 0
         fi
 
-        export HOME="${config.home.homeDirectory}"
-        ${pkgs.nodejs}/bin/npm install --prefix "$runtime_dir" --no-save \
-          @opencode-ai/plugin@1.4.11 \
-          @opencode-ai/sdk@1.4.11 \
-          unique-names-generator@^4.7.1 >/dev/null 2>&1 || true
+        if [ -f "$runtime_dir/plugins/background-agents.ts" ] || [ -f "$runtime_dir/plugins/engram.ts" ]; then
+          export HOME="${config.home.homeDirectory}"
+          ${pkgs.nodejs}/bin/npm install --prefix "$runtime_dir" --no-save \
+            @opencode-ai/plugin@1.4.11 \
+            @opencode-ai/sdk@1.4.11 \
+            unique-names-generator@^4.7.1 >/dev/null 2>&1 || true
 
-        mkdir -p "$runtime_dir/plugins"
+          mkdir -p "$runtime_dir/plugins"
 
-        ${lib.optionalString cfg.plugins.engram.enable ''
-          if [ -f "${./opencode/plugins/engram.ts}" ]; then
-            ${pkgs.coreutils}/bin/cp -f "${./opencode/plugins/engram.ts}" "$runtime_dir/plugins/engram.ts"
+          if [ -L "$runtime_dir/plugins/background-agents.ts" ]; then
+            tmp_bg="$runtime_dir/plugins/.background-agents.ts.tmp"
+            ${pkgs.coreutils}/bin/cp --dereference "$runtime_dir/plugins/background-agents.ts" "$tmp_bg"
+            ${pkgs.coreutils}/bin/rm -f "$runtime_dir/plugins/background-agents.ts"
+            ${pkgs.coreutils}/bin/mv "$tmp_bg" "$runtime_dir/plugins/background-agents.ts"
           fi
-        ''}
-        
-        ${lib.optionalString cfg.plugins.backgroundAgents.enable ''
-          if [ -f "${./opencode/plugins/background-agents.ts}" ]; then
-            ${pkgs.coreutils}/bin/cp -f "${./opencode/plugins/background-agents.ts}" "$runtime_dir/plugins/background-agents.ts"
+
+          if [ -L "$runtime_dir/plugins/engram.ts" ]; then
+            tmp_engram="$runtime_dir/plugins/.engram.ts.tmp"
+            ${pkgs.coreutils}/bin/cp --dereference "$runtime_dir/plugins/engram.ts" "$tmp_engram"
+            ${pkgs.coreutils}/bin/rm -f "$runtime_dir/plugins/engram.ts"
+            ${pkgs.coreutils}/bin/mv "$tmp_engram" "$runtime_dir/plugins/engram.ts"
           fi
-        ''}
+        fi
       '';
 
       home.activation."setupOpencodeSecrets-${runtimeCfg.label}" = config.lib.dag.entryAfter [ "sops-nix" ] ''
