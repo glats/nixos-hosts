@@ -3,11 +3,33 @@
 {
   imports = [
     ./hardware-configuration.nix
-    ../../modules/core
-    ../../modules/hardware
-    ../../modules/desktop
-    ../../modules/virtualisation
-    ../../modules/networking
+
+    # Base (transversal modules)
+    ../../modules/base/cachix.nix
+    ../../modules/base/home-manager.nix
+    ../../modules/base/logind.nix
+    ../../modules/base/nix.nix
+    ../../modules/base/packages.nix
+    ../../modules/base/polkit.nix
+    ../../modules/base/shutdown-fix.nix
+    ../../modules/base/sops.nix
+    ../../modules/base/users.nix
+    ../../modules/base/zsh.nix
+
+    # Desktop
+    ../../modules/desktop/fonts.nix
+    ../../modules/desktop/i18n.nix
+    ../../modules/desktop/kmscon.nix
+    ../../modules/features/desktop/xrdp.nix
+
+    # Virtualisation
+    ../../modules/virtualisation/docker.nix
+
+    # Networking
+    ../../modules/networking/avahi.nix
+    ../../modules/networking/firewall.nix
+    ../../modules/networking/openssh.nix
+    ../../modules/networking/wol.nix
   ];
 
   boot = {

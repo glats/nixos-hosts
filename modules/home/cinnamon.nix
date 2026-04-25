@@ -120,7 +120,7 @@ in
     };
   };
 
-xdg.configFile = {
+  xdg.configFile = {
     # Disable cinnamon-screensaver in xrdp sessions
     "autostart/cinnamon-screensaver.desktop".text = ''
       [Desktop Entry]

@@ -22,7 +22,7 @@ let
         # Overlays for custom packages
         {
           nixpkgs.overlays = [
-            (import ../modules/core/overlays.nix { inherit self inputs; })
+            (import ../modules/base/overlays.nix { inherit self inputs; })
           ];
         }
 
