@@ -3,11 +3,30 @@
 with lib;
 
 let
-  # Toggle: Use Copilot aggressive (free) vs Intermedia (balanced cost)
-  # Set home.opencode.useCopilotAggressive = false to use Intermedia
-  useCopilotAggressive = config.home.opencode.useCopilotAggressive or true;
+  # Toggle: Use Fireworks aggressive vs Copilot aggressive vs Intermedia
+  # Default: useFireworks = true -> Fireworks models
+  # Set useCopilotAggressive = true to use Copilot/DeepInfra mix
+  # Set useIntermedia = true to use DeepInfra only (paid)
+  useFireworks = config.home.opencode.useFireworks or true;
+  useCopilotAggressive = config.home.opencode.useCopilotAggressive or false;
+  useIntermedia = config.home.opencode.useIntermedia or false;
 
-  # Model configurations
+  # FIREWORKS: User specified models
+  # Default enabled (useFireworks = true)
+  # Requires: fireworks_api_key in secrets
+  modelsFireworks = {
+    sdd-orchestrator = "accounts/fireworks/models/kimi-k2p6";
+    sdd-init = "github-copilot/claude-haiku-4.5";
+    sdd-explore = "github-copilot/gemini-3.1-pro-preview";
+    sdd-propose = "accounts/fireworks/models/glm-5p1";
+    sdd-spec = "github-copilot/gpt-4.1";
+    sdd-design = "accounts/fireworks/models/kimi-k2p6";
+    sdd-tasks = "github-copilot/gpt-5.4-mini";
+    sdd-apply = "accounts/fireworks/models/minimax-m2p7";
+    sdd-verify = "github-copilot/gemini-3.1-pro-preview";
+    sdd-archive = "github-copilot/claude-haiku-4.5";
+  };
+
   # AGRESIVA: Uses Copilot free models (~$0.75/flujo)
   # Requires: /connect -> GitHub Copilot (OAuth device flow)
   # Validated against GitHub Copilot docs and OpenCode integration
@@ -38,8 +57,11 @@ let
     sdd-archive = "deepinfra/zai-org/GLM-4.7-Flash";
   };
 
-  # Select model set based on toggle
-  models = if useCopilotAggressive then modelsAggressive else modelsIntermedia;
+  # Select model set based on toggles (priority: Intermedia > Aggressive > Fireworks)
+  # FIREWORKS is default when all false
+  models = if useIntermedia then modelsIntermedia
+    else if useCopilotAggressive then modelsAggressive
+    else modelsFireworks;
 
   # Default agents from upstream (converted from JSON structure to Nix attrset)
   # This is static data - no config references allowed here
@@ -413,13 +435,30 @@ let
   };
 in
 {
-  options.home.opencode.useCopilotAggressive = mkOption {
+  options.home.opencode.useFireworks = mkOption {
     type = types.bool;
     default = true;
     description = ''
-      Use Copilot free models aggressively (AGRESIVA mode: ~$0.75/flujo).
-      When false, uses INTERMEDIA mode with DeepInfra paid models (~$5.75/flujo).
-      Set to false if Copilot models underperform.
+      Use Fireworks AI models by default (deepinfra -> fireworks, keep Copilot).
+      Requires: fireworks_api_key in secrets.
+    '';
+  };
+
+  options.home.opencode.useCopilotAggressive = mkOption {
+    type = types.bool;
+    default = false;
+    description = ''
+      Use Copilot aggressive mode: DeepInfra + GitHub Copilot mix (original).
+      Overrides useFireworks when true.
+    '';
+  };
+
+  options.home.opencode.useIntermedia = mkOption {
+    type = types.bool;
+    default = false;
+    description = ''
+      Use Intermedia mode: All DeepInfra paid models (~$5.75/flujo).
+      Overrides useFireworks and useCopilotAggressive when true.
     '';
   };
 
