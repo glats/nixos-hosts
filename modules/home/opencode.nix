@@ -81,6 +81,7 @@ let
         };
         ".config/${runtimeCfg.dir}/plugins/background-agents.ts" = mkIf cfg.plugins.backgroundAgents.enable {
           source = ./opencode/plugins/background-agents.ts;
+          force = true;
         };
         ".config/${runtimeCfg.dir}/plugins/.keep".text = "# Plugins directory\n";
       };
