@@ -195,6 +195,57 @@ let
         };
       };
     };
+
+    github-copilot = {
+      npm = "@opencode-ai/github-copilot";
+      name = "GitHub Copilot";
+      options = {
+        # OAuth-based authentication via /connect command
+        # No static API key required - user authenticates interactively
+        # Run: /connect -> GitHub Copilot -> Authorize at github.com/login/device
+      };
+      models = {
+        # Anthropic models
+        "claude-haiku-4.5" = {
+          name = "Claude Haiku 4.5";
+          context = 200000;
+        };
+        "claude-opus-4.6" = {
+          name = "Claude Opus 4.6";
+          context = 200000;
+        };
+        "claude-sonnet-4.6" = {
+          name = "Claude Sonnet 4.6";
+          context = 200000;
+        };
+        # OpenAI models
+        "gpt-4.1" = {
+          name = "GPT-4.1";
+          context = 256000;
+        };
+        "gpt-5.4" = {
+          name = "GPT-5.4";
+          context = 256000;
+        };
+        "gpt-5.4-mini" = {
+          name = "GPT-5.4 Mini";
+          context = 256000;
+        };
+        "gpt-5.3-codex" = {
+          name = "GPT-5.3 Codex";
+          context = 256000;
+        };
+        # Google models
+        "gemini-2.5-flash" = {
+          name = "Gemini 2.5 Flash";
+          context = 1000000;
+        };
+        "gemini-2.5-pro" = {
+          name = "Gemini 2.5 Pro";
+          context = 1000000;
+        };
+      };
+    };
   };
 in
 {

@@ -6,7 +6,7 @@
     runtime = "stable";
     legacyFallback = false;
 
-    agentOverrides.sdd-orchestrator.model = "deepinfra/zai-org/GLM-5.1";
+    agentOverrides.sdd-orchestrator.model = "opencode/nemotron-3-super-free";
 
     plugins = {
       backgroundAgents.enable = true;

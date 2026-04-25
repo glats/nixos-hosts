@@ -3,6 +3,44 @@
 with lib;
 
 let
+  # Toggle: Use Copilot aggressive (free) vs Intermedia (balanced cost)
+  # Set home.opencode.useCopilotAggressive = false to use Intermedia
+  useCopilotAggressive = config.home.opencode.useCopilotAggressive or true;
+
+  # Model configurations
+  # AGRESIVA: Uses Copilot free models (~$0.75/flujo)
+  # Requires: /connect -> GitHub Copilot (OAuth device flow)
+  # Validated against GitHub Copilot docs and OpenCode integration
+  modelsAggressive = {
+    sdd-orchestrator = "deepinfra/moonshotai/Kimi-K2.5";
+    sdd-init = "github-copilot/claude-haiku-4.5";
+    sdd-explore = "github-copilot/gemini-3.1-pro-preview";
+    sdd-propose = "deepinfra/zai-org/GLM-5.1";
+    sdd-spec = "github-copilot/gpt-4.1";
+    sdd-design = "deepinfra/moonshotai/Kimi-K2.5";
+    sdd-tasks = "github-copilot/gpt-5.4-mini";
+    sdd-apply = "deepinfra/MiniMaxAI/MiniMax-M2.5";
+    sdd-verify = "github-copilot/gemini-3.1-pro-preview";
+    sdd-archive = "github-copilot/claude-haiku-4.5";
+  };
+
+  # INTERMEDIA: All DeepInfra paid models (~$5.75/flujo)
+  modelsIntermedia = {
+    sdd-orchestrator = "deepinfra/moonshotai/Kimi-K2.5";
+    sdd-init = "deepinfra/stepfun-ai/Step-3.5-Flash";
+    sdd-explore = "deepinfra/stepfun-ai/Step-3.5-Flash";
+    sdd-propose = "deepinfra/zai-org/GLM-5.1";
+    sdd-spec = "deepinfra/Qwen/Qwen3.6-35B-A3B";
+    sdd-design = "deepinfra/moonshotai/Kimi-K2.5";
+    sdd-tasks = "deepinfra/stepfun-ai/Step-3.5-Flash";
+    sdd-apply = "deepinfra/MiniMaxAI/MiniMax-M2.5";
+    sdd-verify = "deepinfra/Qwen/Qwen3.6-35B-A3B";
+    sdd-archive = "deepinfra/zai-org/GLM-4.7-Flash";
+  };
+
+  # Select model set based on toggle
+  models = if useCopilotAggressive then modelsAggressive else modelsIntermedia;
+
   # Default agents from upstream (converted from JSON structure to Nix attrset)
   # This is static data - no config references allowed here
   upstreamOrchestratorPrompt = ''
@@ -29,6 +67,38 @@ let
     - Use `delegate` only for background work you do NOT need immediately.
     - Do NOT mix `task` and `delegate` for the same exploration objective.
     - If a `task` returns empty or unusable output, retry AT MOST ONCE with a clearer prompt. After that, report the failure clearly instead of spawning redundant delegations.
+
+    Retry Decision Tree:
+    - Check notification for `AbortType` and `RetryEligible` fields
+    - If `RetryEligible: true` AND `AbortType` is "timeout" or "error":
+      - Retry once with same agent/prompt
+      - Increment retryCount before retry attempt
+      - Enforce hard max of 1 retry per delegation
+    - If `RetryEligible: false` OR `AbortType` is "cancelled":
+      - Do NOT retry; report failure to user
+    - After 1 retry, if still failing: report failure, do not retry again
+
+    ### Retry Decision Tree (Concrete)
+
+    When you receive a delegation notification:
+    1. Read `AbortType` and `RetryEligible` from the notification
+    2. If `RetryEligible: true`:
+       - Retry once with the same agent and prompt
+       - The delegation system automatically increments retryCount
+       - Mark retry-exhausted delegations as terminal (do not retry again)
+    3. If `RetryEligible: false` OR `retryCount >= 1`:
+       - Escalate to human user with the failure reason
+    4. Use `delegation_read(id)` to retrieve the full result after retry
+
+    Example notification format:
+    ```
+    [TASK NOTIFICATION]
+    ID: elegant-blue-tiger
+    Status: timeout
+    AbortType: timeout
+    RetryEligible: true
+    Use delegation_read(id) to retrieve the full result.
+    ```
 
     ### Delegation Rules
 
@@ -198,7 +268,7 @@ let
         read = true;
         write = true;
       };
-      model = "openai/gpt-5.4";
+      model = models.sdd-orchestrator;
     };
 
     sdd-init = {
@@ -212,7 +282,7 @@ let
         read = true;
         write = true;
       };
-      model = "deepinfra/Qwen/Qwen3.5-35B-A3B";
+      model = models.sdd-init;
     };
 
     sdd-explore = {
@@ -226,7 +296,7 @@ let
         read = true;
         write = true;
       };
-      model = "deepinfra/Qwen/Qwen3.6-35B-A3B";
+      model = models.sdd-explore;
     };
 
     sdd-propose = {
@@ -240,7 +310,7 @@ let
         read = true;
         write = true;
       };
-      model = "deepinfra/moonshotai/Kimi-K2.5";
+      model = models.sdd-propose;
     };
 
     sdd-spec = {
@@ -254,7 +324,7 @@ let
         read = true;
         write = true;
       };
-      model = "deepinfra/Qwen/Qwen3.6-35B-A3B";
+      model = models.sdd-spec;
     };
 
     sdd-design = {
@@ -268,7 +338,7 @@ let
         read = true;
         write = true;
       };
-      model = "deepinfra/moonshotai/Kimi-K2.5";
+      model = models.sdd-design;
     };
 
     sdd-tasks = {
@@ -282,7 +352,7 @@ let
         read = true;
         write = true;
       };
-      model = "deepinfra/Qwen/Qwen3.6-35B-A3B";
+      model = models.sdd-tasks;
     };
 
     sdd-apply = {
@@ -296,7 +366,7 @@ let
         read = true;
         write = true;
       };
-      model = "deepinfra/moonshotai/Kimi-K2.5";
+      model = models.sdd-apply;
     };
 
     sdd-verify = {
@@ -310,7 +380,7 @@ let
         read = true;
         write = true;
       };
-      model = "deepinfra/Qwen/Qwen3.6-35B-A3B";
+      model = models.sdd-verify;
     };
 
     sdd-archive = {
@@ -324,7 +394,7 @@ let
         read = true;
         write = true;
       };
-      model = "deepinfra/Qwen/Qwen3.5-35B-A3B";
+      model = models.sdd-archive;
     };
 
     sdd-onboard = {
@@ -343,6 +413,16 @@ let
   };
 in
 {
+  options.home.opencode.useCopilotAggressive = mkOption {
+    type = types.bool;
+    default = true;
+    description = ''
+      Use Copilot free models aggressively (AGRESIVA mode: ~$0.75/flujo).
+      When false, uses INTERMEDIA mode with DeepInfra paid models (~$5.75/flujo).
+      Set to false if Copilot models underperform.
+    '';
+  };
+
   options.home.opencode.agentOverrides = mkOption {
     type = types.attrsOf (types.submodule {
       freeformType = types.attrs;

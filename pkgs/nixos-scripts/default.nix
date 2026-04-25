@@ -48,6 +48,9 @@ stdenvNoCC.mkDerivation {
     cp $src/export-mate-config $out/bin/
         chmod +x $out/bin/export-mate-config
 
+        cp $src/xrdp-back-to-picker $out/bin/
+        chmod +x $out/bin/xrdp-back-to-picker
+
         cp $src/sync-gentle-ai $out/bin/
         chmod +x $out/bin/sync-gentle-ai
 
