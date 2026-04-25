@@ -13,15 +13,9 @@ let
         apiKey = "FIREWORKS_API_KEY_PLACEHOLDER";
       };
       models = {
-        "accounts/fireworks/models/glm-5" = {
-          name = "GLM 5";
-        };
-        "accounts/fireworks/models/kimi-k2p5" = {
-          name = "Kimi K2.5";
-        };
-        "accounts/fireworks/models/deepseek-v3p2" = {
-          name = "DeepSeek V3.2";
-        };
+        "accounts/fireworks/models/kimi-k2p6" = { };
+        "accounts/fireworks/models/glm-5p1" = { };
+        "accounts/fireworks/models/minimax-m2p7" = { };
       };
     };
 
