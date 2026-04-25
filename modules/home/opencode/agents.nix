@@ -59,7 +59,8 @@ let
 
   # Select model set based on toggles (priority: Intermedia > Aggressive > Fireworks)
   # FIREWORKS is default when all false
-  models = if useIntermedia then modelsIntermedia
+  models =
+    if useIntermedia then modelsIntermedia
     else if useCopilotAggressive then modelsAggressive
     else modelsFireworks;
 

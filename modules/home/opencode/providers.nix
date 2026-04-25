@@ -13,9 +13,15 @@ let
         apiKey = "FIREWORKS_API_KEY_PLACEHOLDER";
       };
       models = {
-        "accounts/fireworks/models/kimi-k2p6" = { };
-        "accounts/fireworks/models/glm-5p1" = { };
-        "accounts/fireworks/models/minimax-m2p7" = { };
+        "accounts/fireworks/models/kimi-k2p6" = {
+          name = "Kimi K2.6;";
+        };
+        "accounts/fireworks/models/glm-5p1" = {
+          name = "GLM 5.1";
+        };
+        "accounts/fireworks/models/minimax-m2p7" = {
+          name = "MiniMax M2.7";
+        };
       };
     };
 
@@ -29,115 +35,87 @@ let
       models = {
         "zai-org/GLM-5" = {
           name = "GLM 5";
-          context = 128000;
         };
         "zai-org/GLM-5.1" = {
           name = "GLM 5.1";
-          context = 128000;
         };
         "zai-org/GLM-4.7-Flash" = {
           name = "GLM 4.7 Flash";
-          context = 128000;
         };
         "moonshotai/Kimi-K2.5" = {
           name = "Kimi K2.5";
-          context = 256000;
         };
         "Qwen/Qwen3-Max" = {
           name = "Qwen3 Max";
-          context = 250000;
         };
         "Qwen/Qwen3-Max-Thinking" = {
           name = "Qwen3 Max Thinking";
-          context = 250000;
         };
         "Qwen/Qwen3.5-397B-A17B" = {
           name = "Qwen3.5 397B A17B";
-          context = 262000;
         };
         "Qwen/Qwen3.5-122B-A10B" = {
           name = "Qwen3.5 122B A10B";
-          context = 262000;
         };
         "Qwen/Qwen3.5-35B-A3B" = {
           name = "Qwen3.5 35B A3B";
-          context = 262000;
         };
         "Qwen/Qwen3.5-27B" = {
           name = "Qwen3.5 27B";
-          context = 262000;
         };
         "Qwen/Qwen3.5-4B" = {
           name = "Qwen3.5 4B";
-          context = 262000;
         };
         "Qwen/Qwen3.5-2B" = {
           name = "Qwen3.5 2B";
-          context = 262000;
         };
         "Qwen/Qwen3.5-0.8B" = {
           name = "Qwen3.5 0.8B";
-          context = 262000;
         };
         "Qwen/Qwen3.6-35B-A3B" = {
           name = "Qwen3.6 35B A3B";
-          context = 262000;
         };
         "Qwen/Qwen3-Coder-480B-A35B-Instruct-Turbo" = {
           name = "Qwen3 Coder 480B";
-          context = 262000;
         };
         "deepseek-ai/DeepSeek-V3.2" = {
           name = "DeepSeek V3.2";
-          context = 128000;
         };
         "deepseek-ai/DeepSeek-V3.2-Exp" = {
           name = "DeepSeek V3.2 Exp";
-          context = 128000;
         };
         "deepseek-ai/DeepSeek-V3" = {
           name = "DeepSeek V3";
-          context = 128000;
         };
         "deepseek-ai/DeepSeek-V3.1" = {
           name = "DeepSeek V3.1";
-          context = 128000;
         };
         "stepfun-ai/Step-3.5-Flash" = {
           name = "Step 3.5 Flash";
-          context = 256000;
         };
         "MiniMaxAI/MiniMax-M2.5" = {
           name = "MiniMax M2.5";
-          context = 8192000;
         };
         "nvidia/NVIDIA-Nemotron-3-Super-120B-A12B" = {
           name = "Nemotron 3 Super 120B";
-          context = 256000;
         };
         "nvidia/Nemotron-3-Nano-30B-A3B" = {
           name = "Nemotron 3 Nano 30B";
-          context = 256000;
         };
         "google/gemma-4-26B-A4B-it" = {
           name = "Gemma 4 26B A4B";
-          context = 262000;
         };
         "google/gemma-4-31B-it" = {
           name = "Gemma 4 31B";
-          context = 262000;
         };
         "google/gemini-2.5-flash" = {
           name = "Gemini 2.5 Flash";
-          context = 1000000;
         };
         "google/gemini-1.5-flash" = {
           name = "Gemini 1.5 Flash";
-          context = 1000000;
         };
         "google/gemini-1.5-flash-8b" = {
           name = "Gemini 1.5 Flash 8B";
-          context = 1000000;
         };
       };
     };
@@ -151,19 +129,15 @@ let
       models = {
         "claude-4-sonnet-20250514" = {
           name = "Claude 4 Sonnet";
-          context = 200000;
         };
         "claude-4-opus-20250514" = {
           name = "Claude 4 Opus";
-          context = 200000;
         };
         "claude-3-haiku" = {
           name = "Claude 3 Haiku";
-          context = 200000;
         };
         "claude-sonnet-4-6" = {
           name = "Claude Sonnet 4.6";
-          context = 200000;
         };
       };
     };
@@ -177,15 +151,12 @@ let
       models = {
         "gpt-5.4" = {
           name = "GPT-5.4";
-          context = 256000;
         };
         "gpt-5.4-mini" = {
           name = "GPT-5.4 Mini";
-          context = 256000;
         };
         "gpt-5.4-nano" = {
           name = "GPT-5.4 Nano";
-          context = 256000;
         };
       };
     };
@@ -202,41 +173,32 @@ let
         # Anthropic models
         "claude-haiku-4.5" = {
           name = "Claude Haiku 4.5";
-          context = 200000;
         };
         "claude-opus-4.6" = {
           name = "Claude Opus 4.6";
-          context = 200000;
         };
         "claude-sonnet-4.6" = {
           name = "Claude Sonnet 4.6";
-          context = 200000;
         };
         # OpenAI models
         "gpt-4.1" = {
           name = "GPT-4.1";
-          context = 256000;
         };
         "gpt-5.4" = {
           name = "GPT-5.4";
-          context = 256000;
         };
         "gpt-5.4-mini" = {
           name = "GPT-5.4 Mini";
-          context = 256000;
         };
         "gpt-5.3-codex" = {
           name = "GPT-5.3 Codex";
-          context = 256000;
         };
         # Google models
         "gemini-2.5-flash" = {
           name = "Gemini 2.5 Flash";
-          context = 1000000;
         };
         "gemini-2.5-pro" = {
           name = "Gemini 2.5 Pro";
-          context = 1000000;
         };
       };
     };
