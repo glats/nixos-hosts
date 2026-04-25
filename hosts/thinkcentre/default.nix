@@ -25,6 +25,9 @@
     # Virtualisation
     ../../modules/virtualisation/docker.nix
 
+    # Services
+    ../../modules/features/services/github-mcp-server.nix
+
     # Networking
     ../../modules/networking/avahi.nix
     ../../modules/networking/firewall.nix

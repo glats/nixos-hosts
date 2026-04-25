@@ -83,7 +83,6 @@ let
           source = ./opencode/plugins/background-agents.ts;
           force = true;
         };
-        ".config/${runtimeCfg.dir}/plugins/.keep".text = "# Plugins directory\n";
       };
 
       home.activation."setupOpencodePluginRuntime-${runtimeCfg.label}" = config.lib.dag.entryAfter [ "writeBoundary" ] ''
