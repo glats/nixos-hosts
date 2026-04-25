@@ -4,7 +4,7 @@ let
   isRog = config.networking.hostName == "rog";
 in
 {
-  sops.defaultSopsFile = ../../secrets/secrets.yaml;
+  sops.defaultSopsFile = ../../secrets/system/passwords.yaml;
   sops.age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
   sops.age.keyFile = "/var/lib/sops-nix/key.txt";
   sops.age.generateKey = true;
@@ -40,28 +40,9 @@ in
 
   sops.secrets."guacamole/env" = lib.mkIf isRog { };
 
-  # OpenCode API keys
-  sops.secrets."opencode/fireworks_api_key" = {
+  sops.secrets."git-credentials" = lib.mkIf isRog {
     owner = "glats";
     group = "users";
-    mode = "0400";
-  };
-
-  sops.secrets."opencode/deepinfra_api_key" = {
-    owner = "glats";
-    group = "users";
-    mode = "0400";
-  };
-
-  sops.secrets."opencode/anthropic_api_key" = {
-    owner = "glats";
-    group = "users";
-    mode = "0400";
-  };
-
-  sops.secrets."opencode/openai_api_key" = {
-    owner = "glats";
-    group = "users";
-    mode = "0400";
+    mode = "0600";
   };
 }
