@@ -3,14 +3,59 @@
 {
   imports = [
     ./hardware-configuration.nix
-    ../../modules/core
-    ../../modules/hardware
-    ../../modules/hardware/nvidia.nix # Rog-specific: GTX 1050
-    ../../modules/hardware/asus-fan-control.nix # Rog-specific: ASUS laptop
-    ../../modules/desktop
-    ../../modules/services
-    ../../modules/virtualisation
-    ../../modules/networking
+
+    # Base (transversal modules)
+    ../../modules/base/cachix.nix
+    ../../modules/base/home-manager.nix
+    ../../modules/base/logind.nix
+    ../../modules/base/nix.nix
+    ../../modules/base/packages.nix
+    ../../modules/base/polkit.nix
+    ../../modules/base/shutdown-fix.nix
+    ../../modules/base/sops.nix
+    ../../modules/base/users.nix
+    ../../modules/base/zsh.nix
+
+    # Hardware (rog-specific)
+    ../../modules/hardware/nvidia.nix
+    ../../modules/hardware/asus-fan-control.nix
+
+    # Desktop
+    ../../modules/desktop/fonts.nix
+    ../../modules/desktop/i18n.nix
+    ../../modules/desktop/kmscon.nix
+    ../../modules/features/desktop/xrdp.nix
+
+    # Services
+    ../../modules/features/services/arr-stack.nix
+    ../../modules/features/services/cobalt.nix
+    ../../modules/features/services/code-server.nix
+    ../../modules/features/services/ddclient.nix
+    ../../modules/features/services/dozzle.nix
+    ../../modules/features/services/fileshelter.nix
+    ../../modules/features/services/flaresolverr.nix
+    ../../modules/features/services/ftp.nix
+    ../../modules/features/services/github-mcp-server.nix
+    ../../modules/features/services/gonic.nix
+    ../../modules/features/services/guacamole.nix
+    ../../modules/features/services/jellyfin.nix
+    ../../modules/features/services/nginx.nix
+    ../../modules/features/services/ollama.nix
+    ../../modules/features/services/qbittorrent.nix
+    ../../modules/features/services/samba.nix
+    ../../modules/features/services/seerr.nix
+    ../../modules/features/services/wetty.nix
+    ../../modules/features/services/wireguard.nix
+
+    # Virtualisation
+    ../../modules/virtualisation/docker.nix
+    ../../modules/virtualisation/libvirt.nix
+
+    # Networking
+    ../../modules/networking/avahi.nix
+    ../../modules/networking/firewall.nix
+    ../../modules/networking/openssh.nix
+    ../../modules/networking/wol.nix
   ];
 
   boot = {

@@ -1,13 +1,5 @@
 { config, lib, pkgs, inputs, ... }:
 
-let
-  # Select conky config based on hostname
-  conkyModule =
-    if config.networking.hostName == "rog" then
-      ../home/conky-rog.nix
-    else
-      ../home/conky-thinkcentre.nix;
-in
 {
   home-manager = {
     useGlobalPkgs = true;
@@ -28,7 +20,6 @@ in
         ../home/xfce.nix
         ../home/cinnamon.nix
         ../home/rofi.nix
-        conkyModule
         ../home/git.nix
         ../home/gh.nix
         ../home/ghostty.nix
