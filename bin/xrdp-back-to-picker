@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+# xrdp-back-to-picker - Logout and return to XRDP session picker
+# Usage: xrdp-back-to-picker
+#
+# Logs out from MATE, Cinnamon, or XFCE session to return to the XRDP session picker.
+# Detects the desktop environment automatically or via command line argument.
+
+set -euo pipefail
+
+# Check if running in XRDP session
+if [ -z "${XRDP_SESSION:-}" ]; then
+    echo "Error: This script must be run in an XRDP session." >&2
+    echo "Set XRDP_SESSION=1 before running this script." >&2
+    exit 1
+fi
+
+# Detect desktop environment
+detect_de() {
+    # First try DESKTOP_SESSION environment variable
+    if [ -n "${DESKTOP_SESSION:-}" ]; then
+        case "$DESKTOP_SESSION" in
+            mate)
+                echo "mate"
+                return 0
+                ;;
+            cinnamon)
+                echo "cinnamon"
+                return 0
+                ;;
+            xfce|xce|xfce4)
+                echo "xfce"
+                return 0
+                ;;
+        esac
+    fi
+
+    # Fallback: check running processes
+    if pgrep -x "cinnamon" >/dev/null 2>&1; then
+        echo "cinnamon"
+        return 0
+    elif pgrep -x "mate-panel" >/dev/null 2>&1; then
+        echo "mate"
+        return 0
+    elif pgrep -x "xfce4-panel" >/dev/null 2>&1; then
+        echo "xfce"
+        return 0
+    fi
+
+    # Unknown DE
+    echo ""
+    return 1
+}
+
+DE=$(detect_de) || true
+
+if [ -z "$DE" ]; then
+    echo "Error: Could not detect desktop environment." >&2
+    echo "Supported: MATE, Cinnamon, XFCE" >&2
+    exit 1
+fi
+
+# Show confirmation dialog
+if ! command -v zenity >/dev/null 2>&1; then
+    echo "Error: zenity is required for confirmation dialog." >&2
+    exit 1
+fi
+
+zenity --question \
+    --title="Return to Session Picker" \
+    --text="Log out and return to the session picker?" \
+    --default-cancel \
+    --ok-label="Yes" \
+    --cancel-label="No" \
+    || exit 0  # User cancelled
+
+# Execute DE-specific logout command
+case "$DE" in
+    mate)
+        if ! command -v mate-session-save >/dev/null 2>&1; then
+            echo "Error: mate-session-save not found." >&2
+            exit 1
+        fi
+        mate-session-save --logout
+        ;;
+    cinnamon)
+        if ! command -v cinnamon-session-quit >/dev/null 2>&1; then
+            echo "Error: cinnamon-session-quit not found." >&2
+            exit 1
+        fi
+        cinnamon-session-quit --logout --force
+        ;;
+    xfce)
+        if ! command -v xfce4-session-logout >/dev/null 2>&1; then
+            echo "Error: xfce4-session-logout not found." >&2
+            exit 1
+        fi
+        xfce4-session-logout --logout
+        ;;
+    *)
+        echo "Error: Unsupported desktop environment: $DE" >&2
+        exit 1
+        ;;
+esac
