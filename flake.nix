@@ -46,7 +46,7 @@
       inherit (import ./lib/mkHost.nix { inherit inputs self; }) mkHost;
 
       system = "x86_64-linux";
-      overlay = import ./modules/core/overlays.nix {
+      overlay = import ./modules/base/overlays.nix {
         inherit self inputs; # Pasar inputs para los nuevos src
       };
       pkgsFor = s: import nixpkgs { system = s; overlays = [ overlay ]; };
