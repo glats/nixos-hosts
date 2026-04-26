@@ -29,7 +29,8 @@ let
           (name == "github" && cfg.mcpToggles.github) ||
           (name == "nixos" && cfg.mcpToggles.nixos) ||
           (name == "context7" && cfg.mcpToggles.context7) ||
-          (name == "engram" && cfg.mcpToggles.engram)
+          (name == "engram" && cfg.mcpToggles.engram) ||
+          (name == "exa" && cfg.mcpToggles.exa)
         )
         cfg.mcps;
 
