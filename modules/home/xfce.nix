@@ -53,7 +53,7 @@ in
       "backdrop/screen0/monitor0/workspace0/last-image" = "";
       "backdrop/screen0/monitor0/workspace0/image-style" = 0; # none
       "backdrop/screen0/monitor0/workspace0/color-style" = 0; # solid color
-      "backdrop/screen0/monitor0/workspace0/rgba1" = "rgba(${hexToRgb config.colorScheme.palette.base00},1.0)";
+      "backdrop/screen0/monitor0/workspace0/rgba1" = "rgba(0,0,0,1.0)";
     };
 
     # GTK color scheme settings (match MATE's visited_link_color, buttons-have-icons, menus-have-icons)

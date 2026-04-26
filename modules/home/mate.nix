@@ -68,9 +68,9 @@ in
     "org/mate/desktop/background" = {
       color-shading-type = "solid";
       picture-filename = "";
-      picture-options = "wallpaper";
-      primary-color = "${hexToRgb config.colorScheme.palette.base00}";
-      secondary-color = "rgb(60,143,37)";
+      picture-options = "none";
+      primary-color = "#000000";
+      secondary-color = "#000000";
       show-desktop-icons = false;
     };
 
@@ -271,18 +271,6 @@ in
       X-MATE-Autostart-enabled=true
     '';
 
-    "autostart/conky.desktop".text = ''
-      [Desktop Entry]
-      Type=Application
-      Name=conky
-      Exec=${pkgs.conky}/bin/conky --daemonize --pause=1
-      StartupNotify=false
-      Terminal=false
-      Icon=conky-logomark-violet
-      Categories=System;Monitor;
-      OnlyShowIn=MATE;
-      X-MATE-Autostart-enabled=true
-    '';
 
     "autostart/org.flameshot.Flameshot.desktop".text = ''
       [Desktop Entry]

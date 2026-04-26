@@ -30,7 +30,8 @@
         ../home/ssh.nix
         ../home/sops.nix
         inputs.sops-nix.homeManagerModules.sops
-      ];
+      ] ++ lib.optional (config.networking.hostName == "rog") ../home/conky-rog.nix
+      ++ lib.optional (config.networking.hostName == "thinkcentre") ../home/conky-thinkcentre.nix;
     };
   };
 }
