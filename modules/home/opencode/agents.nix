@@ -11,30 +11,30 @@ let
   useCopilot = config.home.opencode.useCopilot or false;
   useIntermedia = config.home.opencode.useIntermedia or false;
 
-  #modelsFireworks = {
-  #  sdd-orchestrator = "accounts/fireworks/models/kimi-k2p6";
-  #  sdd-init = "accounts/fireworks/models/minimax-m2p7";
-  #  sdd-explore = "accounts/fireworks/models/deepseek-v3p2";
-  #  sdd-propose = "accounts/fireworks/models/glm-5p1";
-  #  sdd-spec = "accounts/fireworks/models/kimi-k2p6";
-  #  sdd-design = "accounts/fireworks/models/kimi-k2p6";
-  #  sdd-tasks = "accounts/fireworks/models/minimax-m2p7";
-  #  sdd-apply = "accounts/fireworks/models/minimax-m2p7";
-  #  sdd-verify = "accounts/fireworks/models/deepseek-v3p2";
-  #  sdd-archive = "accounts/fireworks/models/minimax-m2p7";
-  #};
   modelsFireworks = {
     sdd-orchestrator = "fireworks/accounts/fireworks/models/kimi-k2p6";
-    sdd-init = "github-copilot/claude-haiku-4.5";
-    sdd-explore = "github-copilot/gemini-3.1-pro-preview";
+    sdd-init = "fireworks/accounts/fireworks/models/minimax-m2p7";
+    sdd-explore = "fireworks/accounts/fireworks/models/deepseek-v3p2";
     sdd-propose = "fireworks/accounts/fireworks/models/glm-5p1";
-    sdd-spec = "github-copilot/gpt-4.1";
+    sdd-spec = "fireworks/accounts/fireworks/models/kimi-k2p6";
     sdd-design = "fireworks/accounts/fireworks/models/kimi-k2p6";
-    sdd-tasks = "github-copilot/gpt-5.4-mini";
+    sdd-tasks = "fireworks/accounts/fireworks/models/minimax-m2p7";
     sdd-apply = "fireworks/accounts/fireworks/models/minimax-m2p7";
-    sdd-verify = "github-copilot/gemini-3.1-pro-preview";
-    sdd-archive = "github-copilot/claude-haiku-4.5";
+    sdd-verify = "fireworks/accounts/fireworks/models/deepseek-v3p2";
+    sdd-archive = "fireworks/accounts/fireworks/models/minimax-m2p7";
   };
+  #modelsFireworks = {
+  #  sdd-orchestrator = "fireworks/accounts/fireworks/models/kimi-k2p6";
+  #  sdd-init = "github-copilot/claude-haiku-4.5";
+  #  sdd-explore = "github-copilot/gemini-3.1-pro-preview";
+  #  sdd-propose = "fireworks/accounts/fireworks/models/glm-5p1";
+  #  sdd-spec = "github-copilot/gpt-4.1";
+  #  sdd-design = "fireworks/accounts/fireworks/models/kimi-k2p6";
+  #  sdd-tasks = "github-copilot/gpt-5.4-mini";
+  #  sdd-apply = "fireworks/accounts/fireworks/models/minimax-m2p7";
+  #  sdd-verify = "github-copilot/gemini-3.1-pro-preview";
+  #  sdd-archive = "github-copilot/claude-haiku-4.5";
+  #};
 
   deepinfraGithubCopilot = {
     sdd-orchestrator = "deepinfra/moonshotai/Kimi-K2.5";
