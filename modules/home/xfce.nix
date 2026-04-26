@@ -47,15 +47,6 @@ in
       "panel-background-rgba" = "rgba(${hexToRgb config.colorScheme.palette.base00},1.0)";
     };
 
-    # Desktop background color (solid black from nix-colors)
-    "xfce4-desktop" = {
-      "desktop-icons/style" = 0; # none
-      "backdrop/screen0/monitor0/workspace0/last-image" = "";
-      "backdrop/screen0/monitor0/workspace0/image-style" = 0; # none
-      "backdrop/screen0/monitor0/workspace0/color-style" = 0; # solid color
-      "backdrop/screen0/monitor0/workspace0/rgba1" = "rgba(0,0,0,1.0)";
-    };
-
     # GTK color scheme settings (match MATE's visited_link_color, buttons-have-icons, menus-have-icons)
     "xsettings" = {
       "Gtk/ColorScheme" = "visited_link_color:#${config.colorScheme.palette.base0E}";
