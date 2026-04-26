@@ -28,6 +28,12 @@ let
       command = [ "engram" "mcp" "--tools=agent" ];
       enabled = true;
     };
+
+    exa = {
+      type = "remote";
+      url = "https://mcp.exa.ai/mcp";
+      enabled = true;
+    };
   };
 in
 {
@@ -76,6 +82,11 @@ in
       type = types.bool;
       default = true;
       description = "Enable Engram MCP server";
+    };
+    exa = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Enable Exa Search MCP server";
     };
   };
 }

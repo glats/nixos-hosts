@@ -96,4 +96,16 @@ in
       Hidden=true
     '';
   };
+
+  xdg.dataFile."applications/xrdp-back-to-picker.desktop".text = ''
+    [Desktop Entry]
+    Name=Back to Session Picker
+    Comment=Log out and return to XRDP session picker
+    Exec=sh -c "XRDP_SESSION=1 ${pkgs.nixos-scripts}/bin/xrdp-back-to-picker"
+    Icon=system-log-out
+    Type=Application
+    Terminal=false
+    Categories=System;
+    OnlyShowIn=XFCE;
+  '';
 }

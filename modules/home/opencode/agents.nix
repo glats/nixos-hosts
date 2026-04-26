@@ -3,17 +3,26 @@
 with lib;
 
 let
-  # Toggle: Use Fireworks aggressive vs Copilot aggressive vs Intermedia
+  # Toggle: Use Fireworks vs Copilot vs Intermedia
   # Default: useFireworks = true -> Fireworks models
-  # Set useCopilotAggressive = true to use Copilot/DeepInfra mix
+  # Set useCopilot = true to use Copilot/DeepInfra mix
   # Set useIntermedia = true to use DeepInfra only (paid)
   useFireworks = config.home.opencode.useFireworks or true;
-  useCopilotAggressive = config.home.opencode.useCopilotAggressive or false;
+  useCopilot = config.home.opencode.useCopilot or false;
   useIntermedia = config.home.opencode.useIntermedia or false;
 
-  # FIREWORKS: User specified models
-  # Default enabled (useFireworks = true)
-  # Requires: fireworks_api_key in secrets
+  #modelsFireworks = {
+  #  sdd-orchestrator = "accounts/fireworks/models/kimi-k2p6";
+  #  sdd-init = "accounts/fireworks/models/minimax-m2p7";
+  #  sdd-explore = "accounts/fireworks/models/deepseek-v3p2";
+  #  sdd-propose = "accounts/fireworks/models/glm-5p1";
+  #  sdd-spec = "accounts/fireworks/models/kimi-k2p6";
+  #  sdd-design = "accounts/fireworks/models/kimi-k2p6";
+  #  sdd-tasks = "accounts/fireworks/models/minimax-m2p7";
+  #  sdd-apply = "accounts/fireworks/models/minimax-m2p7";
+  #  sdd-verify = "accounts/fireworks/models/deepseek-v3p2";
+  #  sdd-archive = "accounts/fireworks/models/minimax-m2p7";
+  #};
   modelsFireworks = {
     sdd-orchestrator = "fireworks/accounts/fireworks/models/kimi-k2p6";
     sdd-init = "github-copilot/claude-haiku-4.5";
@@ -27,10 +36,7 @@ let
     sdd-archive = "github-copilot/claude-haiku-4.5";
   };
 
-  # AGRESIVA: Uses Copilot free models (~$0.75/flujo)
-  # Requires: /connect -> GitHub Copilot (OAuth device flow)
-  # Validated against GitHub Copilot docs and OpenCode integration
-  modelsAggressive = {
+  deepinfraGithubCopilot = {
     sdd-orchestrator = "deepinfra/moonshotai/Kimi-K2.5";
     sdd-init = "github-copilot/claude-haiku-4.5";
     sdd-explore = "github-copilot/gemini-3.1-pro-preview";
@@ -43,7 +49,6 @@ let
     sdd-archive = "github-copilot/claude-haiku-4.5";
   };
 
-  # INTERMEDIA: All DeepInfra paid models (~$5.75/flujo)
   modelsIntermedia = {
     sdd-orchestrator = "deepinfra/moonshotai/Kimi-K2.5";
     sdd-init = "deepinfra/stepfun-ai/Step-3.5-Flash";
@@ -57,11 +62,11 @@ let
     sdd-archive = "deepinfra/zai-org/GLM-4.7-Flash";
   };
 
-  # Select model set based on toggles (priority: Intermedia > Aggressive > Fireworks)
+  # Select model set based on toggles (priority: Intermedia > Copilot > Fireworks)
   # FIREWORKS is default when all false
   models =
     if useIntermedia then modelsIntermedia
-    else if useCopilotAggressive then modelsAggressive
+    else if useCopilot then deepinfraGithubCopilot
     else modelsFireworks;
 
   # Default agents from upstream (converted from JSON structure to Nix attrset)
@@ -445,11 +450,11 @@ in
     '';
   };
 
-  options.home.opencode.useCopilotAggressive = mkOption {
+  options.home.opencode.useCopilot = mkOption {
     type = types.bool;
     default = false;
     description = ''
-      Use Copilot aggressive mode: DeepInfra + GitHub Copilot mix (original).
+      Use Copilot mode: DeepInfra + GitHub Copilot mix.
       Overrides useFireworks when true.
     '';
   };
@@ -459,14 +464,15 @@ in
     default = false;
     description = ''
       Use Intermedia mode: All DeepInfra paid models (~$5.75/flujo).
-      Overrides useFireworks and useCopilotAggressive when true.
+      Overrides useFireworks and useCopilot when true.
     '';
   };
 
   options.home.opencode.agentOverrides = mkOption {
-    type = types.attrsOf (types.submodule {
-      freeformType = types.attrs;
-    });
+    type = types.attrsOf
+      (types.submodule {
+        freeformType = types.attrs;
+      });
     default = { };
     description = ''
       Per-agent overrides merged on top of the default OpenCode agent set.

@@ -22,6 +22,9 @@ let
         "accounts/fireworks/models/minimax-m2p7" = {
           name = "MiniMax M2.7";
         };
+        "accounts/fireworks/models/deepseek-v3p2" = {
+          name = "DeepSeek V3.2";
+        };
       };
     };
 
