@@ -31,8 +31,8 @@ in
       color-shading-type = "solid";
       picture-filename = "";
       picture-options = "none";
-      primary-color = "#${config.colorScheme.palette.base00}";
-      secondary-color = "#${config.colorScheme.palette.base00}";
+      primary-color = "#000000";
+      secondary-color = "#000000";
     };
 
     # Interface theme

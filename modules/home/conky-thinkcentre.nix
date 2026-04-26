@@ -246,11 +246,8 @@ in
     Name=Conky
     Comment=System monitor for X
     Categories=System;Monitor;
-    OnlyShowIn=MATE;
     Exec=${conkyLauncher}
     Icon=utilities-system-monitor
     Terminal=false
-    X-MATE-Autostart-enabled=true
-    X-MATE-Autostart-Delay=2
   '';
 }
