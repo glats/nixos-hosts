@@ -175,7 +175,7 @@ in
     [Desktop Entry]
     Name=Back to Session Picker
     Comment=Log out and return to XRDP session picker
-    Exec=${pkgs.nixos-scripts}/bin/xrdp-back-to-picker
+    Exec=sh -c "XRDP_SESSION=1 ${pkgs.nixos-scripts}/bin/xrdp-back-to-picker"
     Icon=system-log-out
     Type=Application
     Terminal=false
