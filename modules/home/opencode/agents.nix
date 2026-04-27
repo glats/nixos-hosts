@@ -14,18 +14,18 @@ let
   useIntermedia = config.home.opencode.useIntermedia or false;
 
 modelsOpencodeGo = {
-    sdd-orchestrator = "opencode-go/glm-5.1";
+    sdd-orchestrator = "opencode-go/kimi-k2.5";
     sdd-init = "opencode-go/glm-5";
     sdd-explore = "opencode-go/minimax-m2.7";
     sdd-propose = "opencode-go/glm-5.1";
-    sdd-spec = "opencode-go/kimi-k2.6";
+    sdd-spec = "opencode-go/kimi-k2.5";
     sdd-design = "opencode-go/kimi-k2.5";
     sdd-tasks = "opencode-go/minimax-m2.7";
     sdd-apply = "opencode-go/minimax-m2.5";
     sdd-verify = "opencode-go/kimi-k2.5";
     sdd-archive = "opencode-go/qwen3.6-plus";
     sdd-onboard = "opencode-go/qwen3.5-plus";
-    neutral = "opencode-go/glm-5";
+    neutral = "opencode-go/glm-5"5
   };
 
   modelsFireworks = {
