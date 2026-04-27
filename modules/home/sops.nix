@@ -11,4 +11,5 @@
   sops.secrets."opencode/anthropic_api_key" = { };
   sops.secrets."opencode/openai_api_key" = { };
   sops.secrets."opencode/siliconflow_api_key" = { };
+  sops.secrets."opencode/opencode_go_api_key" = { };
 }
