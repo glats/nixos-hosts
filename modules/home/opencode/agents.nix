@@ -3,17 +3,13 @@
 with lib;
 
 let
-  # Toggle: Use Fireworks vs Copilot vs Intermedia vs OpenCode Go
-  # Default: useOpencodeGo = true -> OpenCode Go models (NEW - curated, reliable)
-  # Set useFireworks = true to use Fireworks AI (legacy default)
-  # Set useCopilot = true to use Copilot/DeepInfra mix
-  # Set useIntermedia = true to use DeepInfra only (paid)
-  useOpencodeGo = config.home.opencode.useOpencodeGo or true;
-  useFireworks = config.home.opencode.useFireworks or false;
-  useCopilot = config.home.opencode.useCopilot or false;
-  useIntermedia = config.home.opencode.useIntermedia or false;
+  # Binary toggle: OpenCode Go (default) vs GitHub Copilot
+  # OpenCode Go uses OAuth via /connect command - no static API key needed
+  # GitHub Copilot also uses OAuth via /connect command - no static API key needed
+  useGithubCopilot = config.home.opencode.useGithubCopilot or false;
 
-modelsOpencodeGo = {
+  # OpenCode Go models (default - curated, reliable open coding models)
+  modelsOpencodeGo = {
     sdd-orchestrator = "opencode-go/kimi-k2.5";
     sdd-init = "opencode-go/glm-5";
     sdd-explore = "opencode-go/minimax-m2.7";
@@ -25,61 +21,27 @@ modelsOpencodeGo = {
     sdd-verify = "opencode-go/kimi-k2.5";
     sdd-archive = "opencode-go/qwen3.6-plus";
     sdd-onboard = "opencode-go/qwen3.5-plus";
-    neutral = "opencode-go/glm-5"5
+    neutral = "opencode-go/glm-5";
   };
 
-  modelsFireworks = {
-    sdd-orchestrator = "fireworks/accounts/fireworks/models/kimi-k2p6";
-    sdd-init = "fireworks/accounts/fireworks/models/minimax-m2p7";
-    sdd-explore = "fireworks/accounts/fireworks/models/deepseek-v3p2";
-    sdd-propose = "fireworks/accounts/fireworks/models/glm-5p1";
-    sdd-spec = "fireworks/accounts/fireworks/models/kimi-k2p6";
-    sdd-design = "fireworks/accounts/fireworks/models/kimi-k2p6";
-    sdd-tasks = "fireworks/accounts/fireworks/models/minimax-m2p7";
-    sdd-apply = "fireworks/accounts/fireworks/models/minimax-m2p7";
-    sdd-verify = "fireworks/accounts/fireworks/models/deepseek-v3p2";
-    sdd-archive = "fireworks/accounts/fireworks/models/minimax-m2p7";
-    sdd-onboard = "deepinfra/Qwen/Qwen3.6-35B-A3B";
-    neutral = "deepinfra/moonshotai/Kimi-K2.5";
-  };
-
-  deepinfraGithubCopilot = {
-    sdd-orchestrator = "deepinfra/moonshotai/Kimi-K2.5";
+  # GitHub Copilot models (alternative - requires /connect authorization)
+  modelsGithubCopilot = {
+    sdd-orchestrator = "github-copilot/gpt-4.1";
     sdd-init = "github-copilot/claude-haiku-4.5";
     sdd-explore = "github-copilot/gemini-3.1-pro-preview";
-    sdd-propose = "deepinfra/zai-org/GLM-5.1";
+    sdd-propose = "github-copilot/gpt-4.1";
     sdd-spec = "github-copilot/gpt-4.1";
-    sdd-design = "deepinfra/moonshotai/Kimi-K2.5";
+    sdd-design = "github-copilot/gpt-4.1";
     sdd-tasks = "github-copilot/gpt-5.4-mini";
-    sdd-apply = "deepinfra/MiniMaxAI/MiniMax-M2.5";
+    sdd-apply = "github-copilot/gemini-3.1-pro-preview";
     sdd-verify = "github-copilot/gemini-3.1-pro-preview";
     sdd-archive = "github-copilot/claude-haiku-4.5";
-    sdd-onboard = "deepinfra/Qwen/Qwen3.6-35B-A3B";
-    neutral = "deepinfra/moonshotai/Kimi-K2.5";
+    sdd-onboard = "github-copilot/gpt-4.1";
+    neutral = "github-copilot/gpt-4.1";
   };
 
-  modelsIntermedia = {
-    sdd-orchestrator = "deepinfra/moonshotai/Kimi-K2.5";
-    sdd-init = "deepinfra/stepfun-ai/Step-3.5-Flash";
-    sdd-explore = "deepinfra/stepfun-ai/Step-3.5-Flash";
-    sdd-propose = "deepinfra/zai-org/GLM-5.1";
-    sdd-spec = "deepinfra/Qwen/Qwen3.6-35B-A3B";
-    sdd-design = "deepinfra/moonshotai/Kimi-K2.5";
-    sdd-tasks = "deepinfra/stepfun-ai/Step-3.5-Flash";
-    sdd-apply = "deepinfra/MiniMaxAI/MiniMax-M2.5";
-    sdd-verify = "deepinfra/Qwen/Qwen3.6-35B-A3B";
-    sdd-archive = "deepinfra/zai-org/GLM-4.7-Flash";
-    sdd-onboard = "deepinfra/Qwen/Qwen3.6-35B-A3B";
-    neutral = "deepinfra/moonshotai/Kimi-K2.5";
-  };
-
-  # Select model set based on toggles (priority: OpenCode Go > Intermedia > Copilot > Fireworks)
-  # OPENCODE GO is default when all false (or when useOpencodeGo = true explicitly)
-  models =
-    if useOpencodeGo then modelsOpencodeGo
-    else if useIntermedia then modelsIntermedia
-    else if useCopilot then deepinfraGithubCopilot
-    else modelsFireworks;
+  # Select model set based on toggle (default: OpenCode Go)
+  models = if useGithubCopilot then modelsGithubCopilot else modelsOpencodeGo;
 
   # Default agents from upstream (converted from JSON structure to Nix attrset)
   # This is static data - no config references allowed here
@@ -453,41 +415,16 @@ modelsOpencodeGo = {
   };
 in
 {
-  options.home.opencode.useOpencodeGo = mkOption {
-    type = types.bool;
-    default = true;
-    description = ''
-      Use OpenCode Go models for all agents. This is the default and recommended provider.
-      Provides curated, reliable access to 14 high-quality open coding models.
-      Configure API key via /connect in OpenCode TUI.
-      Overrides all other toggles when true.
-    '';
-  };
-
-  options.home.opencode.useFireworks = mkOption {
+  options.home.opencode.useGithubCopilot = mkOption {
     type = types.bool;
     default = false;
     description = ''
-      Use Fireworks AI models.
-      Requires: fireworks_api_key in secrets.
-    '';
-  };
-
-  options.home.opencode.useCopilot = mkOption {
-    type = types.bool;
-    default = false;
-    description = ''
-      Use Copilot mode: DeepInfra + GitHub Copilot mix.
-      Overrides useFireworks when true.
-    '';
-  };
-
-  options.home.opencode.useIntermedia = mkOption {
-    type = types.bool;
-    default = false;
-    description = ''
-      Use Intermedia mode: All DeepInfra paid models (~$5.75/flujo).
-      Overrides useFireworks and useCopilot when true.
+      Use GitHub Copilot models instead of OpenCode Go.
+      When false (default): Uses OpenCode Go models (opencode-go/*).
+      When true: Uses GitHub Copilot models (github-copilot/*).
+      
+      Both providers use OAuth authentication via the /connect command in OpenCode TUI.
+      No static API keys are required for either provider.
     '';
   };
 
