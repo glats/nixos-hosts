@@ -34,11 +34,10 @@ let
         )
         cfg.mcps;
 
-      # Generate JSON file with placeholder API keys; activation script will
-      # replace them with real secret values in the mutable runtime file.
+      # Generate JSON file with empty providers (OAuth via /connect)
       jsonFile = opencodeLib.generateOpencodeJson {
         agents = cfg.agents;
-        providers = cfg.providers;
+        providers = { };  # OAuth-based providers - no static config needed
         mcps = enabledMcps;
         permissions = cfg.permissions;
       };
@@ -108,47 +107,11 @@ let
           @opencode-ai/sdk@1.4.11 \
           unique-names-generator@^4.7.1 >/dev/null 2>&1 || true
       '';
-
-      home.activation."setupOpencodeSecrets-${runtimeCfg.label}" = config.lib.dag.entryAfter [ "sops-nix" ] ''
-        runtime_dir="${runtimeDir}"
-        config_file="$runtime_dir/opencode.json"
-
-        if [ ! -e "$config_file" ]; then
-          exit 0
-        fi
-
-        tmp_json="$runtime_dir/.opencode.json.tmp"
-        ${pkgs.coreutils}/bin/cp --dereference "$config_file" "$tmp_json"
-
-        if [ -f "${cfg.providerSecrets.fireworks or ""}" ]; then
-          FIREWORKS_KEY=$(${pkgs.coreutils}/bin/cat "${cfg.providerSecrets.fireworks or ""}")
-          ${pkgs.gnused}/bin/sed -i "s|FIREWORKS_API_KEY_PLACEHOLDER|$FIREWORKS_KEY|g" "$tmp_json"
-        fi
-
-        if [ -f "${cfg.providerSecrets.deepinfra or ""}" ]; then
-          DEEPINFRA_KEY=$(${pkgs.coreutils}/bin/cat "${cfg.providerSecrets.deepinfra or ""}")
-          ${pkgs.gnused}/bin/sed -i "s|DEEPINFRA_API_KEY_PLACEHOLDER|$DEEPINFRA_KEY|g" "$tmp_json"
-        fi
-
-        if [ -f "${cfg.providerSecrets.anthropic or ""}" ]; then
-          ANTHROPIC_KEY=$(${pkgs.coreutils}/bin/cat "${cfg.providerSecrets.anthropic or ""}")
-          ${pkgs.gnused}/bin/sed -i "s|ANTHROPIC_API_KEY_PLACEHOLDER|$ANTHROPIC_KEY|g" "$tmp_json"
-        fi
-
-        if [ -f "${cfg.providerSecrets.openai or ""}" ]; then
-          OPENAI_KEY=$(${pkgs.coreutils}/bin/cat "${cfg.providerSecrets.openai or ""}")
-          ${pkgs.gnused}/bin/sed -i "s|OPENAI_API_KEY_PLACEHOLDER|$OPENAI_KEY|g" "$tmp_json"
-        fi
-
-        ${pkgs.coreutils}/bin/rm -f "$config_file"
-        ${pkgs.coreutils}/bin/mv "$tmp_json" "$config_file"
-      '';
     };
 in
 {
   imports = [
     ./opencode/agents.nix
-    ./opencode/providers.nix
     ./opencode/mcps.nix
     ./opencode/permissions.nix
     ./opencode/plugins.nix
