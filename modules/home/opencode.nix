@@ -140,11 +140,6 @@ let
           ${pkgs.gnused}/bin/sed -i "s|OPENAI_API_KEY_PLACEHOLDER|$OPENAI_KEY|g" "$tmp_json"
         fi
 
-        if [ -f "${cfg.providerSecrets.opencode-go or ""}" ]; then
-          OPENCODE_GO_KEY=$(${pkgs.coreutils}/bin/cat "${cfg.providerSecrets.opencode-go or ""}")
-          ${pkgs.gnused}/bin/sed -i "s|OPENCODE_GO_API_KEY_PLACEHOLDER|$OPENCODE_GO_KEY|g" "$tmp_json"
-        fi
-
         ${pkgs.coreutils}/bin/rm -f "$config_file"
         ${pkgs.coreutils}/bin/mv "$tmp_json" "$config_file"
       '';
