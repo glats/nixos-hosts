@@ -34,3 +34,6 @@ credentials.json
 # Temp
 tmp/
 temp/
+
+# Backup
+backup/
