@@ -7,7 +7,7 @@
     legacyFallback = false;
 
     # Default model for neutral agent (built-in OpenCode Go)
-    agentOverrides.neutral.model = "opencode-go/glm-5";
+    agentOverrides.neutral.model = "opencode-go/kimi-k2.5";
 
     plugins = {
       backgroundAgents.enable = true;
