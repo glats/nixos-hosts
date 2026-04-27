@@ -1,4 +1,9 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 {
   imports = [
@@ -17,6 +22,7 @@
     ../../modules/base/zsh.nix
 
     # Hardware (rog-specific)
+    ../../modules/hardware/default.nix
     ../../modules/hardware/nvidia.nix
     ../../modules/hardware/asus-fan-control.nix
 
@@ -103,13 +109,29 @@
   fileSystems."/run/media/stuff" = {
     device = "/dev/disk/by-uuid/ec889a15-ee5a-4b41-b3a0-60b16257026a";
     fsType = "xfs";
-    options = [ "rw" "relatime" "attr2" "inode64" "logbufs=8" "logbsize=32k" "noquota" ];
+    options = [
+      "rw"
+      "relatime"
+      "attr2"
+      "inode64"
+      "logbufs=8"
+      "logbsize=32k"
+      "noquota"
+    ];
   };
 
   fileSystems."/run/media/archlinux" = {
     device = "/dev/disk/by-uuid/3188527d-b895-460a-b754-c396b876d8bf";
     fsType = "xfs";
-    options = [ "rw" "relatime" "attr2" "inode64" "logbufs=8" "logbsize=32k" "noquota" ];
+    options = [
+      "rw"
+      "relatime"
+      "attr2"
+      "inode64"
+      "logbufs=8"
+      "logbsize=32k"
+      "noquota"
+    ];
   };
 
   system.stateVersion = "24.11";

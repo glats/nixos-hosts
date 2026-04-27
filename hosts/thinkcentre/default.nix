@@ -1,8 +1,16 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 {
   imports = [
     ./hardware-configuration.nix
+
+    # Hardware
+    ../../modules/hardware/default.nix
 
     # Base (transversal modules)
     ../../modules/base/cachix.nix
