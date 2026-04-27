@@ -269,6 +269,9 @@ let
         edit = true;
         read = true;
         write = true;
+        mem_search = true;
+        mem_save = true;
+        mem_get_observation = true;
       };
       model = models.sdd-orchestrator;
     };
@@ -283,6 +286,9 @@ let
         edit = true;
         read = true;
         write = true;
+        mem_search = true;
+        mem_save = true;
+        mem_get_observation = true;
       };
       model = models.sdd-init;
     };
@@ -297,6 +303,9 @@ let
         edit = true;
         read = true;
         write = true;
+        mem_search = true;
+        mem_save = true;
+        mem_get_observation = true;
       };
       model = models.sdd-explore;
     };
@@ -311,6 +320,9 @@ let
         edit = true;
         read = true;
         write = true;
+        mem_search = true;
+        mem_save = true;
+        mem_get_observation = true;
       };
       model = models.sdd-propose;
     };
@@ -325,6 +337,9 @@ let
         edit = true;
         read = true;
         write = true;
+        mem_search = true;
+        mem_save = true;
+        mem_get_observation = true;
       };
       model = models.sdd-spec;
     };
@@ -339,6 +354,9 @@ let
         edit = true;
         read = true;
         write = true;
+        mem_search = true;
+        mem_save = true;
+        mem_get_observation = true;
       };
       model = models.sdd-design;
     };
@@ -353,6 +371,9 @@ let
         edit = true;
         read = true;
         write = true;
+        mem_search = true;
+        mem_save = true;
+        mem_get_observation = true;
       };
       model = models.sdd-tasks;
     };
@@ -367,6 +388,9 @@ let
         edit = true;
         read = true;
         write = true;
+        mem_search = true;
+        mem_save = true;
+        mem_get_observation = true;
       };
       model = models.sdd-apply;
     };
@@ -381,6 +405,9 @@ let
         edit = true;
         read = true;
         write = true;
+        mem_search = true;
+        mem_save = true;
+        mem_get_observation = true;
       };
       model = models.sdd-verify;
     };
@@ -395,6 +422,9 @@ let
         edit = true;
         read = true;
         write = true;
+        mem_search = true;
+        mem_save = true;
+        mem_get_observation = true;
       };
       model = models.sdd-archive;
     };
@@ -409,6 +439,9 @@ let
         edit = true;
         read = true;
         write = true;
+        mem_search = true;
+        mem_save = true;
+        mem_get_observation = true;
       };
       model = models.sdd-onboard;
     };
