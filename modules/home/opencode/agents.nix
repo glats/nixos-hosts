@@ -3,13 +3,30 @@
 with lib;
 
 let
-  # Toggle: Use Fireworks vs Copilot vs Intermedia
-  # Default: useFireworks = true -> Fireworks models
+  # Toggle: Use Fireworks vs Copilot vs Intermedia vs OpenCode Go
+  # Default: useOpencodeGo = true -> OpenCode Go models (NEW - curated, reliable)
+  # Set useFireworks = true to use Fireworks AI (legacy default)
   # Set useCopilot = true to use Copilot/DeepInfra mix
   # Set useIntermedia = true to use DeepInfra only (paid)
-  useFireworks = config.home.opencode.useFireworks or true;
+  useOpencodeGo = config.home.opencode.useOpencodeGo or true;
+  useFireworks = config.home.opencode.useFireworks or false;
   useCopilot = config.home.opencode.useCopilot or false;
   useIntermedia = config.home.opencode.useIntermedia or false;
+
+  modelsOpencodeGo = {
+    sdd-orchestrator = "opencode-go/glm-5.1";
+    sdd-init = "opencode-go/glm-5";
+    sdd-explore = "opencode-go/deepseek-v4-pro";
+    sdd-propose = "opencode-go/glm-5.1";
+    sdd-spec = "opencode-go/kimi-k2.6";
+    sdd-design = "opencode-go/kimi-k2.5";
+    sdd-tasks = "opencode-go/minimax-m2.7";
+    sdd-apply = "opencode-go/minimax-m2.5";
+    sdd-verify = "opencode-go/deepseek-v4-flash";
+    sdd-archive = "opencode-go/qwen3.6-plus";
+    sdd-onboard = "opencode-go/qwen3.5-plus";
+    neutral = "opencode-go/glm-5";
+  };
 
   modelsFireworks = {
     sdd-orchestrator = "fireworks/accounts/fireworks/models/kimi-k2p6";
@@ -22,19 +39,9 @@ let
     sdd-apply = "fireworks/accounts/fireworks/models/minimax-m2p7";
     sdd-verify = "fireworks/accounts/fireworks/models/deepseek-v3p2";
     sdd-archive = "fireworks/accounts/fireworks/models/minimax-m2p7";
+    sdd-onboard = "deepinfra/Qwen/Qwen3.6-35B-A3B";
+    neutral = "deepinfra/moonshotai/Kimi-K2.5";
   };
-  #modelsFireworks = {
-  #  sdd-orchestrator = "fireworks/accounts/fireworks/models/kimi-k2p6";
-  #  sdd-init = "github-copilot/claude-haiku-4.5";
-  #  sdd-explore = "github-copilot/gemini-3.1-pro-preview";
-  #  sdd-propose = "fireworks/accounts/fireworks/models/glm-5p1";
-  #  sdd-spec = "github-copilot/gpt-4.1";
-  #  sdd-design = "fireworks/accounts/fireworks/models/kimi-k2p6";
-  #  sdd-tasks = "github-copilot/gpt-5.4-mini";
-  #  sdd-apply = "fireworks/accounts/fireworks/models/minimax-m2p7";
-  #  sdd-verify = "github-copilot/gemini-3.1-pro-preview";
-  #  sdd-archive = "github-copilot/claude-haiku-4.5";
-  #};
 
   deepinfraGithubCopilot = {
     sdd-orchestrator = "deepinfra/moonshotai/Kimi-K2.5";
@@ -47,6 +54,8 @@ let
     sdd-apply = "deepinfra/MiniMaxAI/MiniMax-M2.5";
     sdd-verify = "github-copilot/gemini-3.1-pro-preview";
     sdd-archive = "github-copilot/claude-haiku-4.5";
+    sdd-onboard = "deepinfra/Qwen/Qwen3.6-35B-A3B";
+    neutral = "deepinfra/moonshotai/Kimi-K2.5";
   };
 
   modelsIntermedia = {
@@ -60,12 +69,15 @@ let
     sdd-apply = "deepinfra/MiniMaxAI/MiniMax-M2.5";
     sdd-verify = "deepinfra/Qwen/Qwen3.6-35B-A3B";
     sdd-archive = "deepinfra/zai-org/GLM-4.7-Flash";
+    sdd-onboard = "deepinfra/Qwen/Qwen3.6-35B-A3B";
+    neutral = "deepinfra/moonshotai/Kimi-K2.5";
   };
 
-  # Select model set based on toggles (priority: Intermedia > Copilot > Fireworks)
-  # FIREWORKS is default when all false
+  # Select model set based on toggles (priority: OpenCode Go > Intermedia > Copilot > Fireworks)
+  # OPENCODE GO is default when all false (or when useOpencodeGo = true explicitly)
   models =
-    if useIntermedia then modelsIntermedia
+    if useOpencodeGo then modelsOpencodeGo
+    else if useIntermedia then modelsIntermedia
     else if useCopilot then deepinfraGithubCopilot
     else modelsFireworks;
 
@@ -273,7 +285,7 @@ let
         delegation_list = true;
         delegation_read = true;
       };
-      model = "deepinfra/moonshotai/Kimi-K2.5";
+      model = models.neutral;
     };
 
     sdd-orchestrator = {
@@ -436,16 +448,27 @@ let
         read = true;
         write = true;
       };
-      model = "deepinfra/Qwen/Qwen3.6-35B-A3B";
+      model = models.sdd-onboard;
     };
   };
 in
 {
-  options.home.opencode.useFireworks = mkOption {
+  options.home.opencode.useOpencodeGo = mkOption {
     type = types.bool;
     default = true;
     description = ''
-      Use Fireworks AI models by default (deepinfra -> fireworks, keep Copilot).
+      Use OpenCode Go models for all agents. This is the default and recommended provider.
+      Provides curated, reliable access to 14 high-quality open coding models.
+      Requires: opencode_go_api_key in secrets.
+      Overrides all other toggles when true.
+    '';
+  };
+
+  options.home.opencode.useFireworks = mkOption {
+    type = types.bool;
+    default = false;
+    description = ''
+      Use Fireworks AI models.
       Requires: fireworks_api_key in secrets.
     '';
   };
