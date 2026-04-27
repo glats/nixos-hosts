@@ -11,13 +11,13 @@ let
   # OpenCode Go models (default - curated, reliable open coding models)
   modelsOpencodeGo = {
     sdd-orchestrator = "opencode-go/kimi-k2.5";
-    sdd-init = "opencode-go/glm-5.1";
+    sdd-init = "opencode-go/minimax-m2.7";
     sdd-explore = "opencode-go/deepseek-v4-flash";
     sdd-propose = "opencode-go/kimi-k2.5";
     sdd-spec = "opencode-go/qwen3.6-plus";
     sdd-design = "opencode-go/glm-5.1";
     sdd-tasks = "opencode-go/deepseek-v4-pro";
-    sdd-apply = "opencode-go/minimax-m2.5";
+    sdd-apply = "opencode-go/minimax-m2.7";
     sdd-verify = "opencode-go/glm-5.1";
     sdd-archive = "opencode-go/mimo-v2.5-pro";
     sdd-onboard = "opencode-go/mimo-v2.5-pro";
