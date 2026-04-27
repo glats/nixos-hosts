@@ -13,16 +13,16 @@ let
   useCopilot = config.home.opencode.useCopilot or false;
   useIntermedia = config.home.opencode.useIntermedia or false;
 
-  modelsOpencodeGo = {
+modelsOpencodeGo = {
     sdd-orchestrator = "opencode-go/glm-5.1";
     sdd-init = "opencode-go/glm-5";
-    sdd-explore = "opencode-go/deepseek-v4-pro";
+    sdd-explore = "opencode-go/minimax-m2.7";
     sdd-propose = "opencode-go/glm-5.1";
     sdd-spec = "opencode-go/kimi-k2.6";
     sdd-design = "opencode-go/kimi-k2.5";
     sdd-tasks = "opencode-go/minimax-m2.7";
     sdd-apply = "opencode-go/minimax-m2.5";
-    sdd-verify = "opencode-go/deepseek-v4-flash";
+    sdd-verify = "opencode-go/kimi-k2.5";
     sdd-archive = "opencode-go/qwen3.6-plus";
     sdd-onboard = "opencode-go/qwen3.5-plus";
     neutral = "opencode-go/glm-5";
@@ -459,7 +459,7 @@ in
     description = ''
       Use OpenCode Go models for all agents. This is the default and recommended provider.
       Provides curated, reliable access to 14 high-quality open coding models.
-      Requires: opencode_go_api_key in secrets.
+      Configure API key via /connect in OpenCode TUI.
       Overrides all other toggles when true.
     '';
   };

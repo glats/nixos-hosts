@@ -205,59 +205,6 @@ let
         };
       };
     };
-
-    opencode-go = {
-      npm = "@ai-sdk/openai-compatible";
-      name = "OpenCode Go";
-      options = {
-        baseURL = "https://opencode.ai/zen/go/v1/chat/completions";
-        apiKey = "OPENCODE_GO_API_KEY_PLACEHOLDER";
-      };
-      models = {
-        "opencode-go/glm-5" = {
-          name = "GLM 5";
-        };
-        "opencode-go/glm-5.1" = {
-          name = "GLM 5.1";
-        };
-        "opencode-go/glm-4.7-flash" = {
-          name = "GLM 4.7 Flash";
-        };
-        "opencode-go/kimi-k2.5" = {
-          name = "Kimi K2.5";
-        };
-        "opencode-go/kimi-k2.6" = {
-          name = "Kimi K2.6";
-        };
-        "opencode-go/minimax-m2.5" = {
-          name = "MiniMax M2.5";
-        };
-        "opencode-go/minimax-m2.7" = {
-          name = "MiniMax M2.7";
-        };
-        "opencode-go/deepseek-v3" = {
-          name = "DeepSeek V3";
-        };
-        "opencode-go/deepseek-v3.1" = {
-          name = "DeepSeek V3.1";
-        };
-        "opencode-go/deepseek-v3.2" = {
-          name = "DeepSeek V3.2";
-        };
-        "opencode-go/qwen3-max" = {
-          name = "Qwen3 Max";
-        };
-        "opencode-go/qwen3.5-35b-a3b" = {
-          name = "Qwen3.5 35B A3B";
-        };
-        "opencode-go/qwen3.6-35b-a3b" = {
-          name = "Qwen3.6 35B A3B";
-        };
-        "opencode-go/qwen3-coder-480b" = {
-          name = "Qwen3 Coder 480B";
-        };
-      };
-    };
   };
 in
 {
@@ -290,6 +237,5 @@ in
     deepinfra = config.sops.secrets."opencode/deepinfra_api_key".path or "/run/secrets/opencode/deepinfra_api_key";
     anthropic = config.sops.secrets."opencode/anthropic_api_key".path or "/run/secrets/opencode/anthropic_api_key";
     openai = config.sops.secrets."opencode/openai_api_key".path or "/run/secrets/opencode/openai_api_key";
-    opencode-go = config.sops.secrets."opencode/opencode_go_api_key".path or "/run/secrets/opencode/opencode_go_api_key";
   };
 }
