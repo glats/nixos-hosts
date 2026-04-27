@@ -16,8 +16,4 @@
   security.pam.services.xrdp-sesman.enableGnomeKeyring = true;
   security.pam.services.sshd.enableGnomeKeyring = true;
 
-  # Environment variables so apps can find the keyring
-  environment.sessionVariables = {
-    SSH_AUTH_SOCK = "/run/user/1000/keyring/ssh";
-  };
 }
