@@ -67,4 +67,20 @@
   };
 
   system.stateVersion = "25.05";
+
+  # Proveedor de modelos LLM para OpenCode (SDD agents)
+  # Por defecto: OpenCode Go (useOpencodeGo = true)
+  # Descomenta UNA de las siguientes para cambiar de proveedor:
+  #
+  # Opción 1: Fireworks AI (modelos open source optimizados)
+  # home.opencode.useFireworks = true;
+  # home.opencode.useOpencodeGo = false;
+  #
+  # Opción 2: GitHub Copilot + DeepInfra (mixto)
+  # home.opencode.useCopilot = true;
+  # home.opencode.useOpencodeGo = false;
+  #
+  # Opción 3: DeepInfra solamente (modelos pagados)
+  # home.opencode.useIntermedia = true;
+  # home.opencode.useOpencodeGo = false;
 }
