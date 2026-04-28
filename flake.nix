@@ -19,7 +19,7 @@
     # gentle-ai upstream (for skills, commands, plugins)
     # Must match version in pkgs/gentle-ai/default.nix
     gentle-ai-src = {
-      url = "github:Gentleman-Programming/gentle-ai/v1.21.0";
+      url = "github:Gentleman-Programming/gentle-ai/v1.24.1";
       flake = false; # No es un flake, es repo normal
     };
 
