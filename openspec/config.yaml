@@ -1,0 +1,56 @@
+schema: spec-driven
+
+context: |
+  Tech stack: Nix Flakes, NixOS, Home Manager, sops-nix
+  Architecture: Multi-host configuration (rog, thinkcentre) with modular design
+    - Core modules: nix, users, packages, zsh, sops, cachix, home-manager, polkit, logind, overlays
+    - Hardware: nvidia (rog), asus-fan-control (rog), keyring
+    - Desktop: mate-xrdp, fonts, kmscon, i18n
+    - Services: nginx, jellyfin, gonic, samba, code-server, guacamole, wetty, fileshelter, cobalt, dozzle, ftp, ollama, searx, ddclient, wireguard
+    - Virtualisation: docker, libvirt
+    - Networking: openssh, avahi, firewall, wol
+    - Home modules: base, neovim, opencode, shell, tmux, conky (per-host)
+  Build system: nixos-rebuild, nix flake check, format-nix (nixfmt)
+  CI/VCS: GitHub, git worktrees
+  Secrets: sops-nix (encrypted)
+  Conventions:
+    - Host configs in hosts/{hostname}/default.nix
+    - Modules in modules/{category}/ with category/default.nix re-exports
+    - overlays.nix imported via flake.nix, NOT in module imports
+    - Hardware configs auto-generated (DO NOT EDIT)
+    - All code in English
+
+strict_tdd: false
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes (e.g., service migrations)
+    - Identify affected hosts (rog, thinkcentre, or both)
+    - Validate syntax before proposing
+  specs:
+    - Use Given/When/Then format for configuration scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+  design:
+    - Include module dependencies and import order
+    - Document NixOS module-specific decisions (options, mkForce, mkDefault, mkMerge)
+  tasks:
+    - Group by category (core, hardware, desktop, services, etc.)
+    - Keep tasks focused on single modules or host-specific customizations
+  apply:
+    - Follow existing code patterns and module conventions
+    - Validate with 'nix flake check' before finalizing
+    - Use nixfmt for formatting (run 'format-nix' before commit)
+  verify:
+    - Validate Nix syntax: nix flake check
+    - Compare implementation against spec scenarios
+    - Test multi-host consistency where applicable
+  archive:
+    - Document any host-specific customizations made
+    - Flag breaking changes or config migrations
+
+testing:
+  strict_tdd: true
+  note: |
+    Strict TDD Mode enabled — All SDD changes require test-first workflow.
+    Run `nix flake check` and `format-nix` after making changes.
+    Use sdd-init to verify strict_tdd mode is active.
