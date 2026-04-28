@@ -35,15 +35,16 @@
     "gentle-ai-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1777275116,
-        "narHash": "sha256-xh53xsISZi8Vs+s8Lk+jJ5gjjMnTAR6gbjWoTTmpxwo=",
+        "lastModified": 1776463951,
+        "narHash": "sha256-UxZROP/FuM6mXeSgIuzqPMBWTFxwNcwQFstew6rtPsw=",
         "owner": "Gentleman-Programming",
         "repo": "gentle-ai",
-        "rev": "52cb3d14a375bb3c68f12fc3663f900381659dfa",
+        "rev": "f64c3174b8d06abc569d92ca7b309af13ee9233f",
         "type": "github"
       },
       "original": {
         "owner": "Gentleman-Programming",
+        "ref": "v1.21.0",
         "repo": "gentle-ai",
         "type": "github"
       }

@@ -37,7 +37,7 @@ let
       # Generate JSON file with empty providers (OAuth via /connect)
       jsonFile = opencodeLib.generateOpencodeJson {
         agents = cfg.agents;
-        providers = { };  # OAuth-based providers - no static config needed
+        providers = { }; # OAuth-based providers - no static config needed
         mcps = enabledMcps;
         permissions = cfg.permissions;
       };
@@ -97,7 +97,7 @@ let
           ${pkgs.coreutils}/bin/cp -f "${./opencode/plugins/engram.ts}" "$runtime_dir/plugins/engram.ts"
         ''}
         ${lib.optionalString cfg.plugins.backgroundAgents.enable ''
-          ${pkgs.coreutils}/bin/cp -f "${./opencode/plugins/background-agents.ts}" "$runtime_dir/plugins/background-agents.ts"
+          ${pkgs.coreutils}/bin/cp -f "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/plugins/background-agents.ts" "$runtime_dir/plugins/background-agents.ts"
         ''}
 
         # Install npm dependencies for plugins
