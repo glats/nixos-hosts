@@ -7,54 +7,51 @@ stdenvNoCC.mkDerivation {
   src = ../../bin;
 
   installPhase = ''
-        mkdir -p $out/bin
+    mkdir -p $out/bin
     
-        # Install worktree workflow scripts
-        cp $src/work-flow $out/bin/
-        chmod +x $out/bin/work-flow
+    # Install worktree workflow scripts
+    cp $src/work-flow $out/bin/
+    chmod +x $out/bin/work-flow
     
-        cp $src/start-work $out/bin/
-        chmod +x $out/bin/start-work
+    cp $src/start-work $out/bin/
+    chmod +x $out/bin/start-work
     
-        cp $src/finish-work $out/bin/
-        chmod +x $out/bin/finish-work
+    cp $src/finish-work $out/bin/
+    chmod +x $out/bin/finish-work
     
-        cp $src/abort-work $out/bin/
-        chmod +x $out/bin/abort-work
+    cp $src/abort-work $out/bin/
+    chmod +x $out/bin/abort-work
     
-        cp $src/list-work $out/bin/
-        chmod +x $out/bin/list-work
+    cp $src/list-work $out/bin/
+    chmod +x $out/bin/list-work
     
-        # Install git workflow scripts
-        cp $src/git-flow $out/bin/
-        chmod +x $out/bin/git-flow
+    # Install git workflow scripts
+    cp $src/git-flow $out/bin/
+    chmod +x $out/bin/git-flow
     
-        cp $src/oc-wt $out/bin/
-        chmod +x $out/bin/oc-wt
+    cp $src/oc-wt $out/bin/
+    chmod +x $out/bin/oc-wt
     
-        # Install utility scripts
-        cp $src/format-nix $out/bin/
-        chmod +x $out/bin/format-nix
+    # Install utility scripts
+    cp $src/format-nix $out/bin/
+    chmod +x $out/bin/format-nix
     
-        cp $src/nixos-build $out/bin/
-        chmod +x $out/bin/nixos-build
+    cp $src/nixos-build $out/bin/
+    chmod +x $out/bin/nixos-build
     
-        cp $src/update-gentle-ai $out/bin/
-        chmod +x $out/bin/update-gentle-ai
-    
-        cp $src/gentle-ai-tui $out/bin/
-        chmod +x $out/bin/gentle-ai-tui
+    cp $src/update-gentle-ai $out/bin/
+    chmod +x $out/bin/update-gentle-ai
     
     cp $src/export-mate-config $out/bin/
-        chmod +x $out/bin/export-mate-config
+    chmod +x $out/bin/export-mate-config
 
-        cp $src/xrdp-back-to-picker $out/bin/
-        chmod +x $out/bin/xrdp-back-to-picker
+    cp $src/xrdp-back-to-picker $out/bin/
+    chmod +x $out/bin/xrdp-back-to-picker
 
-        cp $src/add_github_secret.sh $out/bin/ 2>/dev/null || true
+    cp $src/add_github_secret.sh $out/bin/ 2>/dev/null || true
 
-        # Create symlinks for convenience
-        ln -s $out/bin/git-flow $out/bin/git-worktree-flow
+    # Create symlinks for convenience
+    ln -s $out/bin/git-flow $out/bin/git-worktree-flow
   '';
 
   meta = with lib; {

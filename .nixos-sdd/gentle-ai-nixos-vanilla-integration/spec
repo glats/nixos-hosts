@@ -1,0 +1,138 @@
+# Delta Spec: gentle-ai-nixos-vanilla-integration
+
+## Domain: version-sync
+
+### Requirement: Version Pinning
+
+The system MUST pin `gentle-ai-src` flake input to a specific git tag that matches the binary version in `pkgs/gentle-ai/default.nix`. The pin MUST be explicit (not a branch reference) and documented with a comment explaining the version relationship.
+
+#### Scenario: Versions match
+
+- GIVEN `pkgs/gentle-ai/default.nix` declares `version = "1.21.0"`
+- WHEN `flake.nix` defines `gentle-ai-src` input
+- THEN the input URL references tag `v1.21.0` explicitly
+- AND a comment documents the version correspondence
+
+#### Scenario: Version mismatch detected
+
+- GIVEN binary version is `1.21.0` but `gentle-ai-src` points to tag `v1.20.0`
+- WHEN user runs `nix build .#gentle-ai-assets`
+- THEN the build succeeds but version mismatch is visible in derivation metadata
+- AND documentation describes how to detect and resolve this
+
+#### Scenario: Update workflow execution
+
+- GIVEN a new gentle-ai release v1.22.0 exists
+- WHEN user follows the documented update workflow
+- THEN `pkgs/gentle-ai/default.nix` version is updated to `1.22.0`
+- AND `flake.nix` gentle-ai-src URL is updated to `v1.22.0`
+- AND `nix flake lock` is run to update the lock file
+- AND `nix build .#gentle-ai-assets` succeeds
+
+### Requirement: Update Workflow Documentation
+
+The system MUST provide documented steps for updating gentle-ai that cover: checking the latest release, updating the binary version, updating the flake input tag, updating the lock file, and rebuilding.
+
+#### Scenario: User follows update steps
+
+- GIVEN the update workflow documentation exists
+- WHEN user executes each step in order
+- THEN both binary and assets are at the same version
+- AND `nix flake check` passes
+
+---
+
+## Domain: vanilla-derivation
+
+### Requirement: Vanilla Asset Copy
+
+The system MUST provide a `vanilla.nix` derivation that copies all upstream gentle-ai assets without any local modifications. This includes: AGENTS.md, opencode assets (skills, commands, plugins, persona, opencode.json template), root-level skills, and agent-specific configurations (claude, cursor, etc.).
+
+#### Scenario: Vanilla build contains only upstream files
+
+- GIVEN `vanilla.nix` is built with `nix build .#gentle-ai-assets-vanilla`
+- WHEN the output directory is inspected
+- THEN no `localPersonaRules` content is present in any file
+- AND no `extraSkills` from `modules/home/opencode/skills` are present
+- AND all files match upstream source exactly
+
+#### Scenario: All upstream skills present
+
+- GIVEN upstream repo contains 16 skills in `internal/assets/skills/`
+- WHEN vanilla derivation is built
+- THEN all 16 skills are copied to `$out/share/gentle-ai/skills/`
+- AND skill directory structure is preserved
+
+#### Scenario: All upstream commands present
+
+- GIVEN upstream repo contains 10 commands
+- WHEN vanilla derivation is built
+- THEN all 10 commands are present in the output
+- AND command files are unmodified from upstream
+
+#### Scenario: TDD strict files included
+
+- GIVEN upstream repo contains `strict-tdd.md` and `strict-tdd-verify.md`
+- WHEN vanilla derivation is built
+- THEN both files are present in the output
+- AND file contents match upstream exactly
+
+#### Scenario: No local modifications applied
+
+- GIVEN vanilla.nix is evaluated
+- WHEN the derivation is inspected
+- THEN `localPersonaRules` parameter does not exist
+- AND `extraSkills` parameter does not exist
+- AND `installPhase` contains only `cp` operations, no `cat` concatenation or `substituteInPlace`
+
+---
+
+## Domain: integration
+
+### Requirement: Flake Integration
+
+The system MUST update `flake.nix` to reference the vanilla derivation and ensure all existing functionality continues to work. The `gentle-ai-assets` package MUST build successfully and include TDD strict files.
+
+#### Scenario: Flake check passes
+
+- GIVEN flake.nix is updated with vanilla derivation
+- WHEN `nix flake check` is run
+- THEN the command exits with code 0
+- AND no warnings about undefined inputs or packages
+
+#### Scenario: Assets build succeeds
+
+- GIVEN flake.nix references vanilla derivation
+- WHEN `nix build .#gentle-ai-assets` is run
+- THEN the build completes successfully
+- AND output contains expected upstream assets
+
+#### Scenario: TDD strict files present in build
+
+- GIVEN vanilla derivation includes TDD strict files
+- WHEN `nix build .#gentle-ai-assets` completes
+- THEN `strict-tdd.md` is present in output
+- AND `strict-tdd-verify.md` is present in output
+
+---
+
+## Domain: documentation
+
+### Requirement: Vanilla vs NixOS Comparison
+
+The system MUST document which files are identical between vanilla and the current NixOS setup, and which files receive local modifications. The documentation MUST list all upstream assets included in vanilla.
+
+#### Scenario: Comparison document exists
+
+- GIVEN documentation is written
+- WHEN user reads it
+- THEN a table lists files identical between vanilla and NixOS
+- AND a table lists files modified by NixOS (e.g., persona-gentleman.md with local rules prepended)
+- AND a list shows all 16 upstream skills included in vanilla
+
+#### Scenario: Update workflow documented
+
+- GIVEN documentation exists
+- WHEN user needs to update gentle-ai
+- THEN step-by-step instructions are available
+- AND commands to verify version sync are included
