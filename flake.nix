@@ -40,9 +40,20 @@
       url = "github:j1cs/nvim";
       flake = false;
     };
+
+    # TUI plugins for OpenCode
+    sub-agent-statusline = {
+      url = "github:Joaquinvesapa/sub-agent-statusline";
+      flake = false;
+    };
+
+    sdd-engram-plugin = {
+      url = "github:j0k3r-dev-rgl/sdd-engram-plugin";
+      flake = false;
+    };
   };
 
-  outputs = inputs@{ self, nixpkgs, home-manager, sops-nix, nix-colors, gentle-ai-src, asus-fan-control-src, pipewire-module-xrdp-src, ... }:
+  outputs = inputs@{ self, nixpkgs, home-manager, sops-nix, nix-colors, gentle-ai-src, asus-fan-control-src, pipewire-module-xrdp-src, nvim-config, sub-agent-statusline, sdd-engram-plugin, ... }:
     let
       inherit (import ./lib/mkHost.nix { inherit inputs self; }) mkHost;
 

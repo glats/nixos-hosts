@@ -34,6 +34,14 @@ let
         )
         cfg.mcps;
 
+      # TUI plugins to install
+      tuiPluginsToInstall = lib.filterAttrs
+        (name: enabled: enabled)
+        {
+          "opencode-subagent-statusline@0.4.1" = cfg.tuiPlugins.subAgentStatusline.enable;
+          "opencode-sdd-engram-manage@1.2.0" = cfg.tuiPlugins.sddEngramManage.enable;
+        };
+
       # Generate JSON file with empty providers (OAuth via /connect)
       jsonFile = opencodeLib.generateOpencodeJson {
         agents = cfg.agents;
@@ -70,12 +78,11 @@ let
             bun.lock
           '';
         };
-        ".config/${runtimeCfg.dir}/tui.json".text = ''
-          {
-            "$schema": "https://opencode.ai/tui.json",
-            "theme": "system"
-          }
-        '';
+        ".config/${runtimeCfg.dir}/tui.json".text = builtins.toJSON {
+          "$schema" = "https://opencode.ai/tui.json";
+          theme = "system";
+          plugins = lib.attrNames (lib.filterAttrs (n: v: v) tuiPluginsToInstall);
+        };
         # Plugin .ts files are copied by activation script below, not as symlinks
       };
 
@@ -106,6 +113,16 @@ let
           @opencode-ai/plugin@1.4.11 \
           @opencode-ai/sdk@1.4.11 \
           unique-names-generator@^4.7.1 >/dev/null 2>&1 || true
+
+        # Install TUI plugins based on enabled options
+        ${lib.optionalString cfg.tuiPlugins.subAgentStatusline.enable ''
+          ${pkgs.nodejs}/bin/npm install --prefix "$runtime_dir" --no-save \
+            opencode-subagent-statusline@0.4.1 >/dev/null 2>&1 || true
+        ''}
+        ${lib.optionalString cfg.tuiPlugins.sddEngramManage.enable ''
+          ${pkgs.nodejs}/bin/npm install --prefix "$runtime_dir" --no-save \
+            opencode-sdd-engram-manage@1.2.0 >/dev/null 2>&1 || true
+        ''}
       '';
     };
 in

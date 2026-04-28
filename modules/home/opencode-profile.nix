@@ -13,5 +13,10 @@
       backgroundAgents.enable = true;
       engram.enable = true;
     };
+
+    tuiPlugins = {
+      subAgentStatusline.enable = true;
+      sddEngramManage.enable = true;
+    };
   };
 }
