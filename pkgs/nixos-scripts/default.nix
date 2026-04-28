@@ -51,9 +51,6 @@ stdenvNoCC.mkDerivation {
         cp $src/xrdp-back-to-picker $out/bin/
         chmod +x $out/bin/xrdp-back-to-picker
 
-        cp $src/sync-gentle-ai $out/bin/
-        chmod +x $out/bin/sync-gentle-ai
-
         cp $src/add_github_secret.sh $out/bin/ 2>/dev/null || true
 
         # Create symlinks for convenience
