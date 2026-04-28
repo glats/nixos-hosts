@@ -16,9 +16,10 @@
 
     nix-colors.url = "github:misterio77/nix-colors";
 
-    # 🔥 NUEVO: gentle-ai upstream (para skills, commands, plugins)
+    # gentle-ai upstream (for skills, commands, plugins)
+    # Must match version in pkgs/gentle-ai/default.nix
     gentle-ai-src = {
-      url = "github:Gentleman-Programming/gentle-ai";
+      url = "github:Gentleman-Programming/gentle-ai/v1.21.0";
       flake = false; # No es un flake, es repo normal
     };
 
@@ -56,14 +57,21 @@
       nixos-scripts = pkgs.callPackage ./pkgs/nixos-scripts { };
       gentle-ai = pkgs.callPackage ./pkgs/gentle-ai { };
       engram = pkgs.callPackage ./pkgs/engram { };
-      gentle-ai-assets = pkgs.callPackage ./pkgs/gentle-ai-assets { inherit gentle-ai-src; writeText = pkgs.writeText; extraSkills = ./modules/home/opencode/skills; };
+      gentle-ai-assets-vanilla = pkgs.callPackage ./pkgs/gentle-ai-assets/vanilla.nix {
+        inherit gentle-ai-src;
+      };
+      gentle-ai-assets = pkgs.callPackage ./pkgs/gentle-ai-assets/default.nix {
+        inherit (pkgs) writeText;
+        vanilla = gentle-ai-assets-vanilla;
+        extraSkills = ./modules/home/opencode/skills;
+      };
 
       # Library functions for external use (non-NixOS portability)
       opencode-config-lib = import ./pkgs/opencode-config { inherit (pkgs) lib writeText; };
     in
     {
       packages.${system} = {
-        inherit nixos-scripts gentle-ai engram gentle-ai-assets;
+        inherit nixos-scripts gentle-ai engram gentle-ai-assets-vanilla gentle-ai-assets;
       };
 
       # Reusable library functions for other flakes

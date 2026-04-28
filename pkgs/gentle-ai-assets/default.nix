@@ -1,4 +1,4 @@
-{ lib, stdenvNoCC, gentle-ai-src, writeText, extraSkills ? null }:
+{ lib, stdenvNoCC, writeText, vanilla, extraSkills ? null }:
 
 let
   # Nuestras reglas locales que se agregarán al principio
@@ -47,67 +47,54 @@ in
 
 stdenvNoCC.mkDerivation {
   pname = "gentle-ai-assets";
-  version = gentle-ai-src.rev or "unstable";
+  version = vanilla.version or "unstable";
 
-  src = gentle-ai-src;
+  # No src needed — we build on top of vanilla
+  dontUnpack = true;
+
+  buildPhase = ''
+    echo "Layering gentle-ai assets on top of vanilla..."
+  '';
 
   installPhase = ''
-    mkdir -p $out/share/gentle-ai
+    # Work in a temp directory to avoid permission issues
+    TEMP_DIR=$(mktemp -d)
+    chmod 755 "$TEMP_DIR"
 
-    # Copiar AGENTS.md principal
-    if [ -f $src/AGENTS.md ]; then
-      cp $src/AGENTS.md $out/share/gentle-ai/
+    # Copy vanilla's CONTENTS (share/gentle-ai/*) to temp
+    for item in ${vanilla}/share/gentle-ai/*; do
+      # Copy and make writable
+      cp -r "$item" "$TEMP_DIR/"
+      chmod -R u+w "$TEMP_DIR/$(basename "$item")"
+    done
+
+    # Prepend local persona rules to persona-gentleman.md
+    if [ -f "$TEMP_DIR/opencode/persona-gentleman.md" ]; then
+      cat ${localPersonaRules} "$TEMP_DIR/opencode/persona-gentleman.md" > "$TEMP_DIR/opencode/persona-gentleman.md.new"
+      mv "$TEMP_DIR/opencode/persona-gentleman.md.new" "$TEMP_DIR/opencode/persona-gentleman.md"
     fi
 
-    # Copiar assets embebidos de OpenCode (excepto PERSONA.md que se combina después)
-    if [ -d $src/internal/assets/opencode ]; then
-      mkdir -p $out/share/gentle-ai/opencode
-      # Copiar todo excepto persona-gentleman.md
-      for file in $src/internal/assets/opencode/*; do
-        if [ "$(basename "$file")" != "persona-gentleman.md" ]; then
-          cp -r "$file" $out/share/gentle-ai/opencode/
-        fi
+    # Overlay local skills on top of vanilla skills
+    if [ -n "${extraSkills}" ] && [ -d "${extraSkills}" ]; then
+      for skill_dir in ${extraSkills}/*; do
+        skill_name=$(basename "$skill_dir")
+        # Remove existing if present (read-only from vanilla copy)
+        rm -rf "$TEMP_DIR/skills/$skill_name" 2>/dev/null || true
+        # Copy new version
+        cp -r "$skill_dir" "$TEMP_DIR/skills/"
+        chmod -R u+w "$TEMP_DIR/skills/$skill_name"
       done
     fi
 
-    # Combinar PERSONA.md: reglas locales + upstream
-    mkdir -p $out/share/gentle-ai/opencode
-    if [ -f $src/internal/assets/opencode/persona-gentleman.md ]; then
-      # Prependear reglas locales al PERSONA.md del upstream
-      cat ${localPersonaRules} $src/internal/assets/opencode/persona-gentleman.md > $out/share/gentle-ai/opencode/persona-gentleman.md
-    else
-      # Si no existe upstream, usar solo reglas locales
-      cp ${localPersonaRules} $out/share/gentle-ai/opencode/persona-gentleman.md
-    fi
+    # Move to final destination
+    mkdir -p $out/share/gentle-ai
+    cp -r "$TEMP_DIR/"* $out/share/gentle-ai/
 
-    # Copiar skills
-    if [ -d $src/internal/assets/skills ]; then
-      mkdir -p $out/share/gentle-ai/skills
-      cp -r $src/internal/assets/skills/* $out/share/gentle-ai/skills/
-    fi
-
-    # Copiar configuraciones para otros agentes (opcional)
-    for dir in claude cursor windsurf gemini codex kimi qwen kiro; do
-      if [ -d $src/internal/assets/$dir ]; then
-        mkdir -p $out/share/gentle-ai/$dir
-        cp -r $src/internal/assets/$dir/* $out/share/gentle-ai/$dir/
-      fi
-    done
-
-    # Copiar skills de la raíz (los nuevos/agregados por usuarios)
-    if [ -d $src/skills ]; then
-      cp -r $src/skills/* $out/share/gentle-ai/skills/ 2>/dev/null || true
-    fi
-
-    # Copiar skills extra locales (ej: caveman)
-    if [ -n "${extraSkills}" ] && [ -d ${extraSkills} ]; then
-      mkdir -p $out/share/gentle-ai/skills
-      cp -r ${extraSkills}/* $out/share/gentle-ai/skills/ 2>/dev/null || true
-    fi
+    rm -rf "$TEMP_DIR"
   '';
 
   meta = with lib; {
-    description = "Gentle AI configuration assets for various AI coding agents (with local rule overrides)";
+    description = "Gentle AI configuration assets with local rule overrides";
     homepage = "https://github.com/Gentleman-Programming/gentle-ai";
     license = licenses.mit;
     platforms = platforms.all;
