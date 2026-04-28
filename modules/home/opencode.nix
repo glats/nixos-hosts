@@ -150,48 +150,11 @@ in
         - stable: Use ~/.config/opencode/ (default, production)
         - lab: Use ~/.config/opencode-lab/ (experimental, isolated)
         - both: Generate both configurations simultaneously
-
-        Migration Guide:
-        1. Start with `runtime = "lab"` to test without affecting production
-        2. Test: `OPENCODE_CONFIG_DIR=~/.config/opencode-lab opencode`
-        3. Once satisfied, switch to `runtime = "stable"` (replaces legacy)
-        4. Disable legacy fallback: `legacyFallback = false`
-      '';
-    };
-
-    legacyFallback = mkOption {
-      type = types.bool;
-      default = true;
-      description = ''
-        Enable legacy fallback during migration period.
-
-        When true (default), both the new declarative module AND the legacy
-        activation-script module can coexist. The legacy module provides a
-        rollback path if issues are encountered.
-
-        Migration steps:
-        1. Set `enable = true` and `runtime = "lab"` to test new module
-        2. Verify lab runtime works: `OPENCODE_CONFIG_DIR=~/.config/opencode-lab opencode`
-        3. Switch to `runtime = "stable"` (replaces ~/.config/opencode/)
-        4. After 2 weeks of stable operation, set `legacyFallback = false`
-        5. Eventually remove `legacyFallback` option entirely
-
-        To rollback: Switch imports from `opencode.nix` back to `opencode-legacy.nix`
       '';
     };
   };
 
   config = mkMerge [
-    # Migration warning when new module is enabled with legacy fallback
-    (mkIf (config.home.opencode.enable && config.home.opencode.legacyFallback) {
-      warnings = [
-        ("OpenCode: New declarative module is enabled with legacyFallback=true. " +
-          "This is the migration state. After testing with runtime='lab', " +
-          "switch to runtime='stable' and eventually set legacyFallback=false. " +
-          "See home.opencode.runtime description for full migration steps.")
-      ];
-    })
-
     # Main configuration
     (mkIf config.home.opencode.enable {
       home.packages = with pkgs; [ gentle-ai engram ];
