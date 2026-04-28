@@ -106,7 +106,7 @@ let
 
         # Copy plugin files from nix store (not symlinks)
         ${lib.optionalString cfg.plugins.engram.enable ''
-          ${pkgs.coreutils}/bin/cp -f "${./opencode/plugins/engram.ts}" "$runtime_dir/plugins/engram.ts"
+          ${pkgs.coreutils}/bin/cp -f "${pkgs.engram-assets}/share/engram/opencode/plugins/engram.ts" "$runtime_dir/plugins/engram.ts"
         ''}
         ${lib.optionalString cfg.plugins.backgroundAgents.enable ''
           ${pkgs.coreutils}/bin/cp -f "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/plugins/background-agents.ts" "$runtime_dir/plugins/background-agents.ts"

@@ -51,9 +51,16 @@
       url = "github:j0k3r-dev-rgl/sdd-engram-plugin";
       flake = false;
     };
+
+    # engram upstream (for OpenCode plugin)
+    # Must match version in pkgs/engram/default.nix
+    engram-src = {
+      url = "github:Gentleman-Programming/engram/v1.14.6";
+      flake = false;
+    };
   };
 
-  outputs = inputs@{ self, nixpkgs, home-manager, sops-nix, nix-colors, gentle-ai-src, asus-fan-control-src, pipewire-module-xrdp-src, nvim-config, sub-agent-statusline, sdd-engram-plugin, ... }:
+  outputs = inputs@{ self, nixpkgs, home-manager, sops-nix, nix-colors, gentle-ai-src, asus-fan-control-src, pipewire-module-xrdp-src, nvim-config, sub-agent-statusline, sdd-engram-plugin, engram-src, ... }:
     let
       inherit (import ./lib/mkHost.nix { inherit inputs self; }) mkHost;
 
@@ -76,13 +83,20 @@
         vanilla = gentle-ai-assets-vanilla;
         extraSkills = ./modules/home/opencode/skills;
       };
+      engram-assets-vanilla = pkgs.callPackage ./pkgs/engram-assets/vanilla.nix {
+        inherit engram-src;
+      };
+      engram-assets = pkgs.callPackage ./pkgs/engram-assets/default.nix {
+        inherit engram;
+        vanilla = engram-assets-vanilla;
+      };
 
       # Library functions for external use (non-NixOS portability)
       opencode-config-lib = import ./pkgs/opencode-config { inherit (pkgs) lib writeText; };
     in
     {
       packages.${system} = {
-        inherit nixos-scripts gentle-ai engram gentle-ai-assets-vanilla gentle-ai-assets;
+        inherit nixos-scripts gentle-ai engram gentle-ai-assets-vanilla gentle-ai-assets engram-assets-vanilla engram-assets;
       };
 
       # Reusable library functions for other flakes

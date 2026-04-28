@@ -32,6 +32,23 @@
         "type": "github"
       }
     },
+    "engram-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1777375125,
+        "narHash": "sha256-gL464ftrM59vvp8YmfOD5n/Xvp/ybT3F4Usy8QELZmo=",
+        "owner": "Gentleman-Programming",
+        "repo": "engram",
+        "rev": "3687c2f82ded4735beab80d915cb8136a54cef63",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Gentleman-Programming",
+        "ref": "v1.14.6",
+        "repo": "engram",
+        "type": "github"
+      }
+    },
     "gentle-ai-src": {
       "flake": false,
       "locked": {
@@ -155,6 +172,7 @@
     "root": {
       "inputs": {
         "asus-fan-control-src": "asus-fan-control-src",
+        "engram-src": "engram-src",
         "gentle-ai-src": "gentle-ai-src",
         "home-manager": "home-manager",
         "nix-colors": "nix-colors",
