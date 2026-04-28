@@ -35,6 +35,31 @@ with lib;
     };
   };
 
+  # TUI Plugins submodule
+  options.home.opencode.tuiPlugins = mkOption {
+    type = types.submodule {
+      options = {
+        subAgentStatusline = {
+          enable = mkEnableOption "sub-agent-statusline TUI plugin";
+        };
+        sddEngramManage = {
+          enable = mkEnableOption "sdd-engram-manage TUI plugin";
+        };
+      };
+    };
+    default = {
+      subAgentStatusline.enable = false;
+      sddEngramManage.enable = false;
+    };
+    description = ''
+      TUI plugins for OpenCode.
+      
+      These plugins extend the OpenCode TUI with additional features:
+      - subAgentStatusline: Sub-agent status visualization in the TUI footer
+      - sddEngramManage: SDD engram management commands in TUI
+    '';
+  };
+
   # Declare activePlugins as an option so it can be set in config
   options.home.opencode.activePlugins = mkOption {
     type = types.attrsOf types.bool;

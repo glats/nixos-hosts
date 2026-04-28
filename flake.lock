@@ -161,7 +161,25 @@
         "nixpkgs": "nixpkgs",
         "nvim-config": "nvim-config",
         "pipewire-module-xrdp-src": "pipewire-module-xrdp-src",
-        "sops-nix": "sops-nix"
+        "sdd-engram-plugin": "sdd-engram-plugin",
+        "sops-nix": "sops-nix",
+        "sub-agent-statusline": "sub-agent-statusline"
+      }
+    },
+    "sdd-engram-plugin": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1777263986,
+        "narHash": "sha256-bHGh4xWSiOW0yLYm2eUIHsEOzoLO5zqLJKi4IFdyHBA=",
+        "owner": "j0k3r-dev-rgl",
+        "repo": "sdd-engram-plugin",
+        "rev": "4478b2845e7de64c729429b0c1cdf98441910d53",
+        "type": "github"
+      },
+      "original": {
+        "owner": "j0k3r-dev-rgl",
+        "repo": "sdd-engram-plugin",
+        "type": "github"
       }
     },
     "sops-nix": {
@@ -181,6 +199,22 @@
       "original": {
         "owner": "Mic92",
         "repo": "sops-nix",
+        "type": "github"
+      }
+    },
+    "sub-agent-statusline": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1777240412,
+        "narHash": "sha256-nh8g3J6DjivcTZ3SNJM5AASk2CIFzR2mg5XIXMbiM28=",
+        "owner": "Joaquinvesapa",
+        "repo": "sub-agent-statusline",
+        "rev": "4597eaee9906db380bff45b1638f5bd8e27979d9",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Joaquinvesapa",
+        "repo": "sub-agent-statusline",
         "type": "github"
       }
     }
