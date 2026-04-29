@@ -26,14 +26,14 @@ The vanilla derivation MUST copy all upstream plugins from `internal/assets/open
 
 ### Requirement: Local Plugins Only for Non-Upstream Functionality
 
-Local plugins MUST only exist for functionality that does NOT exist upstream. If a plugin exists upstream, the upstream version MUST be used. If an upstream plugin has a bug, the fix MUST be contributed upstream via PR rather than maintained as a local override.
+Local plugins MUST only exist for functionality that does NOT exist upstream. If a plugin exists upstream, the upstream version MUST be used. If an upstream plugin has a bug, the fix MUST be contributed upstream via PR rather than maintained as a local override. The engram plugin (`engram.ts`) now comes from the upstream `engram-src` flake input via the `engram-assets` derivation, NOT from a local file.
 
-#### Scenario: engram.ts is the only local plugin
+#### Scenario: engram.ts comes from upstream via nix store
 
-- GIVEN `engram.ts` does not exist in upstream `gentle-ai-src`
-- WHEN the activation script runs
-- THEN `engram.ts` is copied from the local `modules/home/opencode/plugins/` directory
-- AND no other local plugin files are copied
+- GIVEN `engram.ts` exists in upstream `engram-src` at `plugin/opencode/engram.ts`
+- WHEN the activation script runs with `cfg.plugins.engram.enable = true`
+- THEN `engram.ts` is copied from `${pkgs.engram-assets}/share/engram/opencode/plugins/engram.ts`
+- AND no local `modules/home/opencode/plugins/engram.ts` file exists
 
 #### Scenario: Upstream plugin bug is fixed upstream
 
@@ -44,7 +44,7 @@ Local plugins MUST only exist for functionality that does NOT exist upstream. If
 
 ### Requirement: Nix Store Path for Upstream Plugins
 
-The `opencode.nix` home activation script MUST copy upstream plugins from the nix store path `${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/plugins/` instead of hardcoded local file paths.
+The `opencode.nix` home activation script MUST copy upstream plugins from the nix store path instead of hardcoded local file paths. This includes both `gentle-ai-assets` plugins (from `${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/plugins/`) and `engram.ts` (from `${pkgs.engram-assets}/share/engram/opencode/plugins/engram.ts`).
 
 #### Scenario: Activation copies upstream plugins from nix store
 
@@ -53,18 +53,18 @@ The `opencode.nix` home activation script MUST copy upstream plugins from the ni
 - THEN it reads from `${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/plugins/`
 - AND it does NOT reference `${./opencode/plugins/...}` paths for upstream plugins
 
-#### Scenario: engram.ts copied from local path as special case
+#### Scenario: Activation copies engram from nix store
 
 - GIVEN `cfg.plugins.engram.enable = true`
 - WHEN the activation script runs
-- THEN it copies `engram.ts` from the local `${./opencode/plugins/engram.ts}` path
-- AND the file is placed in `$runtime_dir/plugins/engram.ts`
+- THEN it copies `engram.ts` from `${pkgs.engram-assets}/share/engram/opencode/plugins/engram.ts`
+- AND it does NOT reference `${./opencode/plugins/engram.ts}`
 
 #### Scenario: Disabled plugin is not copied
 
-- GIVEN `cfg.plugins.backgroundAgents.enable = false`
+- GIVEN `cfg.plugins.backgroundAgents.enable = false` OR `cfg.plugins.engram.enable = false`
 - WHEN the activation script runs
-- THEN `background-agents.ts` is NOT copied to the runtime directory
+- THEN the disabled plugin is NOT copied to the runtime directory
 - AND no error occurs
 
 ### Requirement: Plugin Directory Structure
