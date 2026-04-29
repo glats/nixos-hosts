@@ -9,7 +9,8 @@ let
   useGithubCopilot = config.home.opencode.useGithubCopilot or false;
 
   # OpenCode Go models (default - curated, reliable open coding models)
-  modelsOpencodeGo = {
+  #modelsOpencodeGo = {
+  modelsGithubCopilot = {
     sdd-orchestrator = "opencode-go/kimi-k2.5";
     sdd-init = "opencode-go/minimax-m2.7";
     sdd-explore = "opencode-go/deepseek-v4-flash";
@@ -25,7 +26,8 @@ let
   };
 
   # GitHub Copilot models (alternative - requires /connect authorization)
-  modelsGithubCopilot = {
+  #modelsGithubCopilot = {
+  modelsOpencodeGo = {
     sdd-orchestrator = "github-copilot/gpt-4.1";
     sdd-init = "github-copilot/claude-haiku-4.5";
     sdd-explore = "github-copilot/gemini-3.1-pro-preview";
