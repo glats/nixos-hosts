@@ -26,7 +26,7 @@ stdenvNoCC.mkDerivation {
     # Substitute ENGRAM_BIN default with nix store path
     if [ -f "$TEMP_DIR/opencode/plugins/engram.ts" ]; then
       substituteInPlace "$TEMP_DIR/opencode/plugins/engram.ts" \
-        --replace "ENGRAM_BIN ?? Bun.which(\"engram\") ?? \"/usr/local/bin/engram\"" \
+        --replace "ENGRAM_BIN ?? \"engram\"" \
                   "ENGRAM_BIN ?? \"${engram}/bin/engram\""
     fi
 

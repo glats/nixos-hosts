@@ -23,19 +23,16 @@
       flake = false; # No es un flake, es repo normal
     };
 
-    # 🔥 NUEVO: asus-fan-control upstream
     asus-fan-control-src = {
       url = "github:dominiksalvet/asus-fan-control";
       flake = false;
     };
 
-    # 🔥 NUEVO: pipewire-module-xrdp upstream
     pipewire-module-xrdp-src = {
       url = "github:neutrinolabs/pipewire-module-xrdp";
       flake = false;
     };
 
-    # 🔥 NUEVO: nvim config
     nvim-config = {
       url = "github:j1cs/nvim";
       flake = false;
