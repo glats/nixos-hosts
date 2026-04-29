@@ -49,3 +49,9 @@ secrets/                      # sops-nix (encrypted)
 | `nixpkgs` | `nixos-unstable` | Packages |
 | `home-manager` | `master` | User config |
 | `sops-nix` | github | Secrets |
+
+## OpenCode Agent Prompts & Rules
+- **IDENTITY.md**: Contains agent identity, tone, and communication style.
+- **SYSTEM_RULES.md**: Contains operational rules, memory protocols, and skill triggers.
+- **Runtime Pattern**: Prompts are dynamically composed at runtime using `{file:./IDENTITY.md}` and `{file:./SYSTEM_RULES.md}`.
+- **Legacy Fallback**: A generated `PERSONA.md` remains available for compatibility with legacy systems.

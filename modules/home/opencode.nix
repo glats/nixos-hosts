@@ -61,7 +61,13 @@ let
           force = true;
           source = jsonFile;
         };
-        ".config/${runtimeCfg.dir}/PERSONA.md".source = "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/persona-gentleman.md";
+        ".config/${runtimeCfg.dir}/IDENTITY.md".source = ./opencode/IDENTITY.md;
+        ".config/${runtimeCfg.dir}/SYSTEM_RULES.md".source = ./opencode/SYSTEM_RULES.md;
+        ".config/${runtimeCfg.dir}/PERSONA.md".text = ''
+          ${builtins.readFile ./opencode/IDENTITY.md}
+          
+          ${builtins.readFile ./opencode/SYSTEM_RULES.md}
+        '';
         ".config/${runtimeCfg.dir}/AGENTS.md".source = "${pkgs.gentle-ai-assets}/share/gentle-ai/AGENTS.md";
         ".config/${runtimeCfg.dir}/skills".source = "${pkgs.gentle-ai-assets}/share/gentle-ai/skills";
         ".config/${runtimeCfg.dir}/commands".source = "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/commands";
