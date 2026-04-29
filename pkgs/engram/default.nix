@@ -6,7 +6,7 @@ stdenvNoCC.mkDerivation rec {
 
   src = fetchurl {
     url = "https://github.com/Gentleman-Programming/engram/releases/download/v${version}/engram_${version}_linux_amd64.tar.gz";
-    sha256 = "sha256-4YempR/4F5yBf3t5eZLHUq5x/JQ6xum2R0U1J5X9K8Y=";
+    sha256 = "sha256-mVkRIqDdYeqZC/ryNlMMeIwye3eqHFC+6Oi6jr2AaoA=";
   };
 
   sourceRoot = ".";
