@@ -93,6 +93,8 @@ let
     ffmpeg
     avahi
     tcpdump
+    lazygit
+    lazydocker
   ];
 
   devTooling = with pkgs; [
@@ -135,6 +137,7 @@ let
     gparted
     hexchat # IRC client
     devilspie2
+    warp-terminal
   ];
 
   mediaSupport = with pkgs; [

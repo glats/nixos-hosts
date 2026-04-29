@@ -1,10 +1,13 @@
-{ lib, stdenvNoCC, engram-src }:
+{ lib, stdenv, engram-src }:
 
-stdenvNoCC.mkDerivation {
+stdenv.mkDerivation {
   pname = "engram-assets-vanilla";
   version = engram-src.rev or "unstable";
 
   src = engram-src;
+
+  dontConfigure = true;
+  dontBuild = true;
 
   installPhase = ''
     mkdir -p $out/share/engram/opencode/plugins
