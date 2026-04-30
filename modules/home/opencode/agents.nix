@@ -48,8 +48,8 @@ let
     if providersConfig.activeProvider != null
     then agentModels // { neutral = getModelForPhase "neutral" providersConfig.activeProvider; }
     else
-      # No active provider - this is an error condition
-      # Check activeProviderName in providers.nix
+    # No active provider - this is an error condition
+    # Check activeProviderName in providers.nix
       throw "No active provider found. Check activeProviderName in modules/home/opencode/providers.nix";
 
   # Default agents from upstream (converted from JSON structure to Nix attrset)
