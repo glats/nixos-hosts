@@ -16,7 +16,7 @@
 }:
 
 let
-  # CAMBIA AQUÍ el proveedor activo / CHANGE ACTIVE PROVIDER HERE
+  # CHANGE ACTIVE PROVIDER HERE
   activeProviderName = "opencode-go";
 
   # All 3 providers (all valid Nix - pick via activeProviderName)
