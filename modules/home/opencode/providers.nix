@@ -9,6 +9,7 @@
 # Example:
 #   activeProviderName = "github-copilot";
 #   activeProviderName = "github-copilot-student";
+#   activeProviderName = "nvidia";
 #
 # =============================================================================
 
@@ -17,9 +18,9 @@
 
 let
   # CHANGE ACTIVE PROVIDER HERE
-  activeProviderName = "opencode-go";
+  activeProviderName = "nvidia";
 
-  # All 3 providers (all valid Nix - pick via activeProviderName)
+  # All providers (all valid Nix - pick via activeProviderName)
   providers = [
     # =========================================================================
     # BLOCK 1: opencode-go (DEFAULT)
@@ -81,6 +82,27 @@ let
         sdd-archive = "github-copilot/claude-haiku-4.5";
         sdd-onboard = "github-copilot/gpt-4.1";
         neutral = "github-copilot/gpt-4.1";
+      };
+    }
+
+    # =========================================================================
+    # BLOCK 4: nvidia (NVIDIA NIM cloud inference)
+    # =========================================================================
+    {
+      name = "nvidia";
+      phases = {
+        sdd-orchestrator = "nvidia/z-ai/glm-5.1";
+        sdd-init = "nvidia/minimaxai/minimax-m2.7";
+        sdd-explore = "nvidia/deepseek-ai/deepseek-v4-flash";
+        sdd-propose = "nvidia/z-ai/glm-5.1";
+        sdd-spec = "nvidia/deepseek-ai/deepseek-v4-pro";
+        sdd-design = "nvidia/z-ai/glm-5.1";
+        sdd-tasks = "nvidia/deepseek-ai/deepseek-v4-pro";
+        sdd-apply = "nvidia/minimaxai/minimax-m2.7";
+        sdd-verify = "nvidia/z-ai/glm-5.1";
+        sdd-archive = "nvidia/minimaxai/minimax-m2.7";
+        sdd-onboard = "nvidia/minimaxai/minimax-m2.7";
+        neutral = "nvidia/z-ai/glm-5.1";
       };
     }
   ];

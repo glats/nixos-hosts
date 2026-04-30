@@ -45,10 +45,29 @@ let
       };
       tuiPluginsToInstall = lib.filterAttrs (name: cfg: cfg.enable) tuiPluginsConfig;
 
+      # NVIDIA NIM provider block for opencode.json
+      # apiKey uses OpenCode's {env:VAR} syntax — resolved at runtime, never stored in Nix store
+      nvidiaProvider = {
+        nvidia = {
+          npm = "@ai-sdk/openai-compatible";
+          name = "NVIDIA NIM";
+          options = {
+            baseURL = "https://integrate.api.nvidia.com/v1";
+            apiKey = "{env:NVIDIA_API_KEY}";
+          };
+          models = {
+            "z-ai/glm-5.1" = { name = "GLM 5.1"; };
+            "minimaxai/minimax-m2.7" = { name = "MiniMax M2.7"; };
+            "deepseek-ai/deepseek-v4-flash" = { name = "DeepSeek V4 Flash"; };
+            "deepseek-ai/deepseek-v4-pro" = { name = "DeepSeek V4 Pro"; };
+          };
+        };
+      };
+
       # Generate JSON file with empty providers (OAuth via /connect)
       jsonFile = opencodeLib.generateOpencodeJson {
         agents = cfg.agents;
-        providers = { }; # OAuth-based providers - no static config needed
+        providers = nvidiaProvider;
         mcps = enabledMcps;
         permissions = cfg.permissions;
       };
@@ -157,6 +176,14 @@ in
         gentle-ai
         engram
       ];
+
+      # Export NVIDIA API key from sops secret file at shell startup
+      # Required for OpenCode's {env:NVIDIA_API_KEY} provider resolution
+      programs.zsh.initContent = lib.mkAfter ''
+        if [ -f "${config.sops.secrets."opencode/nvidia_api_key".path}" ]; then
+          export NVIDIA_API_KEY="$(cat ${config.sops.secrets."opencode/nvidia_api_key".path})"
+        fi
+      '';
     })
 
     # Single runtime configuration
