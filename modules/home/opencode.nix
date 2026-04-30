@@ -1,47 +1,36 @@
-{
-  config,
-  lib,
-  pkgs,
-  inputs,
-  ...
+{ config
+, lib
+, pkgs
+, inputs
+, ...
 }:
 
 with lib;
 
 let
+  # Import centralized provider configuration
+  providers = import ./providers.nix { inherit lib; };
+
   # Pure library functions - no config references
   opencodeLib = import ../../pkgs/opencode-config {
     inherit lib;
     writeText = pkgs.writeText;
   };
 
-  # Static runtime configs
-  runtimeConfigs = {
-    stable = {
-      dir = "opencode";
-      label = "stable";
-    };
-    lab = {
-      dir = "opencode-lab";
-      label = "lab";
-    };
+  # Single runtime configuration
+  runtimeConfig = {
+    dir = "opencode";
+    label = "default";
   };
 
-  # Helper to generate config for a specific runtime
+  # Helper to generate config for the runtime
   mkRuntimeConfig =
-    cfg: runtimeName: runtimeCfg:
+    cfg: runtimeCfg:
     let
       runtimeDir = "${config.home.homeDirectory}/.config/${runtimeCfg.dir}";
 
-      # Filter MCPs based on toggles
-      enabledMcps = lib.filterAttrs (
-        name: mcp:
-        (name == "github" && cfg.mcpToggles.github)
-        || (name == "nixos" && cfg.mcpToggles.nixos)
-        || (name == "context7" && cfg.mcpToggles.context7)
-        || (name == "engram" && cfg.mcpToggles.engram)
-        || (name == "exa" && cfg.mcpToggles.exa)
-      ) cfg.mcps;
+      # Filter MCPs based on enabled field in each MCP config
+      enabledMcps = lib.filterAttrs (name: mcp: mcp.enabled or false) cfg.mcps;
 
       # TUI plugins configuration (name -> version)
       tuiPluginsConfig = {
@@ -159,21 +148,6 @@ in
 
   options.home.opencode = {
     enable = mkEnableOption "OpenCode configuration with declarative JSON generation";
-
-    runtime = mkOption {
-      type = types.enum [
-        "stable"
-        "lab"
-        "both"
-      ];
-      default = "stable";
-      description = ''
-        Runtime mode for OpenCode:
-        - stable: Use ~/.config/opencode/ (default, production)
-        - lab: Use ~/.config/opencode-lab/ (experimental, isolated)
-        - both: Generate both configurations simultaneously
-      '';
-    };
   };
 
   config = mkMerge [
@@ -185,16 +159,9 @@ in
       ];
     })
 
-    # Stable runtime configuration
-    (mkIf (
-      config.home.opencode.enable
-      && (config.home.opencode.runtime == "stable" || config.home.opencode.runtime == "both")
-    ) (mkRuntimeConfig config.home.opencode "stable" runtimeConfigs.stable))
-
-    # Lab runtime configuration
-    (mkIf (
-      config.home.opencode.enable
-      && (config.home.opencode.runtime == "lab" || config.home.opencode.runtime == "both")
-    ) (mkRuntimeConfig config.home.opencode "lab" runtimeConfigs.lab))
+    # Single runtime configuration
+    (mkIf config.home.opencode.enable (
+      mkRuntimeConfig config.home.opencode runtimeConfig
+    ))
   ];
 }
