@@ -75,10 +75,17 @@
 
   system.stateVersion = "25.05";
 
-  # OpenCode LLM provider configuration (SDD agents)
-  # Default: OpenCode Go (useGithubCopilot = false)
-  # Both providers use OAuth via /connect command - no API keys needed
+  # OpenCode LLM provider configuration is managed centrally in
+  # modules/home/opencode/providers.nix
   #
-  # To use GitHub Copilot instead:
-  # home.opencode.useGithubCopilot = true;
+  # To change provider or model:
+  # 1. Edit providers.nix to enable/disable providers or change models per phase
+  # 2. The first enabled provider in the list becomes the primary provider
+  # 3. Both providers use OAuth via /connect command - no API keys needed
+  #
+  # Example - to enable GitHub Copilot:
+  # providers = [
+  #   { name = "github-copilot"; enabled = true; phases = { ... }; }
+  #   { name = "opencode-go"; enabled = false; ... }
+  # ];
 }

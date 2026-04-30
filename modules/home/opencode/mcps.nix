@@ -60,33 +60,4 @@ in
       }
     '';
   };
-
-  # MCP-specific toggles for per-host control
-  options.home.opencode.mcpToggles = {
-    github = mkOption {
-      type = types.bool;
-      default = true;
-      description = "Enable GitHub MCP server";
-    };
-    nixos = mkOption {
-      type = types.bool;
-      default = true;
-      description = "Enable NixOS MCP server (requires Docker)";
-    };
-    context7 = mkOption {
-      type = types.bool;
-      default = true;
-      description = "Enable Context7 MCP server";
-    };
-    engram = mkOption {
-      type = types.bool;
-      default = true;
-      description = "Enable Engram MCP server";
-    };
-    exa = mkOption {
-      type = types.bool;
-      default = true;
-      description = "Enable Exa Search MCP server";
-    };
-  };
 }

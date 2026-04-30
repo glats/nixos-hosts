@@ -1,54 +1,56 @@
-{
-  config,
-  lib,
-  pkgs,
-  ...
+{ config
+, lib
+, pkgs
+, ...
 }:
 
 with lib;
 
 let
-  # Binary toggle: OpenCode Go (default) vs GitHub Copilot
-  # OpenCode Go uses OAuth via /connect command - no static API key needed
-  # GitHub Copilot also uses OAuth via /connect command - no static API key needed
-  useGithubCopilot = config.home.opencode.useGithubCopilot or false;
+  # Import centralized provider configuration
+  providersConfig = import ./providers.nix { inherit lib; };
 
-  # OpenCode Go models (default - curated, reliable open coding models)
-  #modelsOpencodeGo = {
-  modelsGithubCopilot = {
-    sdd-orchestrator = "opencode-go/kimi-k2.5";
-    sdd-init = "opencode-go/minimax-m2.7";
-    sdd-explore = "opencode-go/deepseek-v4-flash";
-    sdd-propose = "opencode-go/kimi-k2.5";
-    sdd-spec = "opencode-go/qwen3.6-plus";
-    sdd-design = "opencode-go/glm-5.1";
-    sdd-tasks = "opencode-go/deepseek-v4-pro";
-    sdd-apply = "opencode-go/minimax-m2.7";
-    sdd-verify = "opencode-go/glm-5.1";
-    sdd-archive = "opencode-go/mimo-v2.5-pro";
-    sdd-onboard = "opencode-go/mimo-v2.5-pro";
-    neutral = "opencode-go/kimi-k2.5";
-  };
+  # Get model for a specific phase from a provider entry
+  getModelForPhase = phase: provider: provider.phases.${phase} or null;
 
-  # GitHub Copilot models (alternative - requires /connect authorization)
-  #modelsGithubCopilot = {
-  modelsOpencodeGo = {
-    sdd-orchestrator = "github-copilot/gpt-4.1";
-    sdd-init = "github-copilot/claude-haiku-4.5";
-    sdd-explore = "github-copilot/gemini-3.1-pro-preview";
-    sdd-propose = "github-copilot/gpt-4.1";
-    sdd-spec = "github-copilot/gpt-4.1";
-    sdd-design = "github-copilot/gpt-4.1";
-    sdd-tasks = "github-copilot/gpt-5.4-mini";
-    sdd-apply = "github-copilot/gemini-3.1-pro-preview";
-    sdd-verify = "github-copilot/gemini-3.1-pro-preview";
-    sdd-archive = "github-copilot/claude-haiku-4.5";
-    sdd-onboard = "github-copilot/gpt-4.1";
-    neutral = "github-copilot/gpt-4.1";
-  };
+  # Get all SDD phase names
+  sddPhases = [
+    "sdd-orchestrator"
+    "sdd-init"
+    "sdd-explore"
+    "sdd-propose"
+    "sdd-spec"
+    "sdd-design"
+    "sdd-tasks"
+    "sdd-apply"
+    "sdd-verify"
+    "sdd-archive"
+    "sdd-onboard"
+  ];
 
-  # Select model set based on toggle (default: OpenCode Go)
-  models = if useGithubCopilot then modelsGithubCopilot else modelsOpencodeGo;
+  # Build agent models attrset from providers
+  # Uses primary (first enabled) provider's models
+  agentModels =
+    let
+      primary = providersConfig.primaryProvider;
+    in
+    if primary != null
+    then
+      builtins.mapAttrs (phase: _: getModelForPhase phase primary)
+        (builtins.listToAttrs (
+          map (p: { name = p; value = null; }) sddPhases
+        ))
+    else { };
+
+  # Final models - sourced exclusively from providers.nix
+  # If no provider is enabled, returns empty set (build will fail with clear error)
+  models =
+    if providersConfig.primaryProvider != null
+    then agentModels // { neutral = getModelForPhase "neutral" providersConfig.primaryProvider; }
+    else
+    # No provider enabled - this is an error condition
+    # Users must enable at least one provider in providers.nix
+      throw "No OpenCode provider is enabled. Please enable at least one provider in modules/home/opencode/providers.nix";
 
   # Default agents from upstream (converted from JSON structure to Nix attrset)
   # This is static data - no config references allowed here
@@ -456,19 +458,6 @@ let
   };
 in
 {
-  options.home.opencode.useGithubCopilot = mkOption {
-    type = types.bool;
-    default = false;
-    description = ''
-      Use GitHub Copilot models instead of OpenCode Go.
-      When false (default): Uses OpenCode Go models (opencode-go/*).
-      When true: Uses GitHub Copilot models (github-copilot/*).
-
-      Both providers use OAuth authentication via the /connect command in OpenCode TUI.
-      No static API keys are required for either provider.
-    '';
-  };
-
   options.home.opencode.agentOverrides = mkOption {
     type = types.attrsOf (
       types.submodule {
