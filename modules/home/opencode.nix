@@ -54,6 +54,9 @@ let
           options = {
             baseURL = "https://integrate.api.nvidia.com/v1";
             apiKey = "{env:NVIDIA_API_KEY}";
+            headers = {
+              "Authorization" = "Bearer {env:NVIDIA_API_KEY}";
+            };
           };
           models = {
             "z-ai/glm-5.1" = { name = "GLM 5.1"; };
