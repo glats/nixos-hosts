@@ -61,8 +61,24 @@
 # -----------------------------------------------------------------------------
 # opencode-go: Uses OAuth via /connect command - no static API key needed
 # github-copilot: Uses OAuth via /connect command - no static API key needed
+# github-copilot-student: Student tier with different rate limits
 #
-# Both providers are authentication-based, not key-based.
+# All providers are authentication-based, not key-based.
+#
+# -----------------------------------------------------------------------------
+# WEEKLY ROTATION STRATEGY
+# -----------------------------------------------------------------------------
+# When you hit week limits on opencode-go:
+# 1. Disable opencode-go (set enabled = false)
+# 2. Enable github-copilot (set enabled = true) BEFORE opencode-go in the list
+# 3. Rebuild and switch
+#
+# Example rotation configuration:
+#   providers = [
+#     { name = "github-copilot"; enabled = true; ... }   <- primary (active)
+#     { name = "opencode-go"; enabled = false; ... }     <- disabled until next week
+#     { name = "github-copilot-student"; enabled = false; ... }
+#   ];
 #
 # =============================================================================
 
@@ -76,6 +92,11 @@ let
   # All available providers
   # First enabled provider = primary (used for neutral agent default)
   providers = [
+    # =========================================================================
+    # PRIMARY PROVIDER - opencode-go (default)
+    # =========================================================================
+    # This is the main provider. When you hit week limits, disable this
+    # and enable github-copilot above it in the list.
     {
       name = "opencode-go";
       enabled = true;
@@ -100,27 +121,104 @@ let
       };
     }
 
+    # =========================================================================
+    # FALLBACK PROVIDER - github-copilot (DISABLED by default)
+    # =========================================================================
+    # UNCOMMENT AND MOVE ABOVE opencode-go WHEN YOU HIT WEEK LIMITS
+    # This provider uses Claude/GPT models optimized for different SDD phases.
+    #
+    # Cost estimates (~9x = ~9x cheaper than Opus):
+    # - Claude Sonnet 4.6: ~9x
+    # - Claude Opus 4.6: 3x (expensive, use sparingly)
+    # - Claude Haiku 4.5: 0.33x (very cheap)
+    # - GPT-5.4-Codex: ~6x
+    #
+    # To activate:
+    #   1. Uncomment this entire block
+    #   2. Set enabled = true
+    #   3. Set opencode-go enabled = false
+    #   4. Run: nixos-build && nixos-build switch
+    #
+    # {
+    #   name = "github-copilot";
+    #   enabled = false;  # CHANGE TO true TO ACTIVATE
+    #   phases = {
+    #     # orchestrator: Claude Sonnet 4.6 (~1x-9x in June)
+    #     # Sufficient for coordination and flow
+    #     sdd-orchestrator = "github-copilot/claude-sonnet-4.6";
+    #
+    #     # sdd-propose (fundamental architecture): Claude Opus 4.6 (3x)
+    #     # Use sparingly - only when critical
+    #     sdd-propose = "github-copilot/claude-opus-4.6";
+    #
+    #     # sdd-design (technical architecture): Claude Sonnet 4.6 (~9x)
+    #     # Covers most cases
+    #     sdd-design = "github-copilot/claude-sonnet-4.6";
+    #
+    #     # sdd-explore (codebase analysis): Claude Sonnet 4.6 (~9x)
+    #     # Excellent for exploration
+    #     sdd-explore = "github-copilot/claude-sonnet-4.6";
+    #
+    #     # sdd-spec: Claude Sonnet 4.6 (~9x)
+    #     # Very good at structured writing
+    #     sdd-spec = "github-copilot/claude-sonnet-4.6";
+    #
+    #     # sdd-tasks: Claude Sonnet 4.6 (~9x)
+    #     # Ideal for breakdowns
+    #     sdd-tasks = "github-copilot/claude-sonnet-4.6";
+    #
+    #     # sdd-apply (coding): Claude Sonnet 4.6 + GPT-5.4-Codex (alternate)
+    #     # ~9x / ~6x - Alternate based on code type
+    #     sdd-apply = "github-copilot/claude-sonnet-4.6";
+    #
+    #     # sdd-verify: Claude Sonnet 4.6 (~9x)
+    #     # Good for validation
+    #     sdd-verify = "github-copilot/claude-sonnet-4.6";
+    #
+    #     # sdd-archive: Claude Haiku 4.5 or Gemini 3 Flash (0.33x)
+    #     # Very cheap and fast
+    #     sdd-archive = "github-copilot/claude-haiku-4.5";
+    #
+    #     # sdd-onboard: Claude Sonnet 4.6 (~9x)
+    #     sdd-onboard = "github-copilot/claude-sonnet-4.6";
+    #
+    #     # default/neutral: Claude Sonnet 4.6 (~9x)
+    #     neutral = "github-copilot/claude-sonnet-4.6";
+    #
+    #     # Legacy phase names (for compatibility)
+    #     apply = "github-copilot/claude-sonnet-4.6";
+    #     verify = "github-copilot/claude-sonnet-4.6";
+    #     explore = "github-copilot/claude-sonnet-4.6";
+    #     tasks = "github-copilot/claude-sonnet-4.6";
+    #   };
+    # }
+
+    # =========================================================================
+    # ALTERNATIVE PROVIDER - github-copilot-student (DISABLED by default)
+    # =========================================================================
+    # Student tier with different rate limits and model availability.
+    # Keep disabled unless specifically needed.
     {
-      name = "github-copilot";
+      name = "github-copilot-student";
       enabled = false;
       phases = {
-        sdd-orchestrator = "github-copilot/gpt-4.1";
-        sdd-init = "github-copilot/claude-haiku-4.5";
-        sdd-explore = "github-copilot/gemini-3.1-pro-preview";
-        sdd-propose = "github-copilot/gpt-4.1";
-        sdd-spec = "github-copilot/gpt-4.1";
-        sdd-design = "github-copilot/gpt-4.1";
-        sdd-tasks = "github-copilot/gpt-5.4-mini";
-        sdd-apply = "github-copilot/gemini-3.1-pro-preview";
-        sdd-verify = "github-copilot/gemini-3.1-pro-preview";
-        sdd-archive = "github-copilot/claude-haiku-4.5";
-        sdd-onboard = "github-copilot/gpt-4.1";
-        neutral = "github-copilot/gpt-4.1";
+        sdd-orchestrator = "github-copilot-student/gpt-4.1";
+        sdd-init = "github-copilot-student/claude-haiku-4.5";
+        sdd-explore = "github-copilot-student/gemini-3.1-pro-preview";
+        sdd-propose = "github-copilot-student/gpt-4.1";
+        sdd-spec = "github-copilot-student/gpt-4.1";
+        sdd-design = "github-copilot-student/gpt-4.1";
+        sdd-tasks = "github-copilot-student/gpt-5.4-mini";
+        sdd-apply = "github-copilot-student/gemini-3.1-pro-preview";
+        sdd-verify = "github-copilot-student/gemini-3.1-pro-preview";
+        sdd-archive = "github-copilot-student/claude-haiku-4.5";
+        sdd-onboard = "github-copilot-student/gpt-4.1";
+        neutral = "github-copilot-student/gpt-4.1";
         # Legacy phase names (for compatibility)
-        apply = "github-copilot/gemini-3.1-pro-preview";
-        verify = "github-copilot/gemini-3.1-pro-preview";
-        explore = "github-copilot/gemini-3.1-pro-preview";
-        tasks = "github-copilot/gpt-5.4-mini";
+        apply = "github-copilot-student/gemini-3.1-pro-preview";
+        verify = "github-copilot-student/gemini-3.1-pro-preview";
+        explore = "github-copilot-student/gemini-3.1-pro-preview";
+        tasks = "github-copilot-student/gpt-5.4-mini";
       };
     }
   ];
