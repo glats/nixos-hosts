@@ -42,6 +42,7 @@ secrets/                      # sops-nix (encrypted)
 6. **overlays.nix**: NOT a module - imported via `import` in `flake.nix`, not `imports`
 7. **Home Manager**: NixOS-integrated only via `modules/base/home-manager.nix`
 8. **Formatting**: All .nix must pass `nixfmt`
+9. **OpenCode Configuration**: When updating agent profiles, use `IDENTITY.md` and `SYSTEM_RULES.md` separately instead of monolithic `PERSONA.md` (which is auto-assembled for legacy systems).
 
 ## Flake Inputs
 | Input | Source | Purpose |
@@ -49,9 +50,3 @@ secrets/                      # sops-nix (encrypted)
 | `nixpkgs` | `nixos-unstable` | Packages |
 | `home-manager` | `master` | User config |
 | `sops-nix` | github | Secrets |
-
-## OpenCode Agent Prompts & Rules
-- **IDENTITY.md**: Contains agent identity, tone, and communication style.
-- **SYSTEM_RULES.md**: Contains operational rules, memory protocols, and skill triggers.
-- **Runtime Pattern**: Prompts are dynamically composed at runtime using `{file:./IDENTITY.md}` and `{file:./SYSTEM_RULES.md}`.
-- **Legacy Fallback**: A generated `PERSONA.md` remains available for compatibility with legacy systems.
