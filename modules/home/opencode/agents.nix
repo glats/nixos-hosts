@@ -29,28 +29,28 @@ let
   ];
 
   # Build agent models attrset from providers
-  # Uses primary (first enabled) provider's models
+  # Uses active provider's models (set in providers.nix)
   agentModels =
     let
-      primary = providersConfig.primaryProvider;
+      active = providersConfig.activeProvider;
     in
-    if primary != null
+    if active != null
     then
-      builtins.mapAttrs (phase: _: getModelForPhase phase primary)
+      builtins.mapAttrs (phase: _: getModelForPhase phase active)
         (builtins.listToAttrs (
           map (p: { name = p; value = null; }) sddPhases
         ))
     else { };
 
   # Final models - sourced exclusively from providers.nix
-  # If no provider is enabled, returns empty set (build will fail with clear error)
+  # If no provider is active, returns empty set (build will fail with clear error)
   models =
-    if providersConfig.primaryProvider != null
-    then agentModels // { neutral = getModelForPhase "neutral" providersConfig.primaryProvider; }
+    if providersConfig.activeProvider != null
+    then agentModels // { neutral = getModelForPhase "neutral" providersConfig.activeProvider; }
     else
-    # No provider enabled - this is an error condition
-    # Users must enable at least one provider in providers.nix
-      throw "No OpenCode provider is enabled. Please enable at least one provider in modules/home/opencode/providers.nix";
+      # No active provider - this is an error condition
+      # Check activeProviderName in providers.nix
+      throw "No active provider found. Check activeProviderName in modules/home/opencode/providers.nix";
 
   # Default agents from upstream (converted from JSON structure to Nix attrset)
   # This is static data - no config references allowed here
