@@ -49,10 +49,10 @@ let
     {
       name = "github-copilot";
       phases = {
-        sdd-orchestrator = "github-copilot/claude-sonnet-4.6";
+        sdd-orchestrator = "github-copilot/gpt-5.4";
         sdd-init = "github-copilot/claude-sonnet-4.6";
         sdd-explore = "github-copilot/claude-sonnet-4.6";
-        sdd-propose = "github-copilot/claude-opus-4.6";
+        sdd-propose = "github-copilot/gpt-5.4";
         sdd-spec = "github-copilot/claude-sonnet-4.6";
         sdd-design = "github-copilot/claude-sonnet-4.6";
         sdd-tasks = "github-copilot/claude-sonnet-4.6";
