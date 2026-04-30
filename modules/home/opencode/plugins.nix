@@ -14,7 +14,7 @@ with lib;
           WARNING: This plugin has known orchestration issues.
           See: https://github.com/Gentleman-Programming/agent-teams-lite/issues/58
           
-          Enable only if you understand the risks and have tested in lab environment.
+          Enable only if you understand the risks and have tested in a non-production environment.
         '';
       };
     };

@@ -3,16 +3,14 @@
 {
   home.opencode = {
     enable = true;
-    runtime = "stable";
 
-    # Default model for neutral agent (built-in OpenCode Go)
-    agentOverrides.neutral.model = "opencode-go/kimi-k2.5";
-
+    # Enable background agents plugin (has known orchestration issues - see issue #58)
     plugins = {
       backgroundAgents.enable = true;
       engram.enable = true;
     };
 
+    # TUI plugins
     tuiPlugins = {
       subAgentStatusline.enable = true;
       sddEngramManage.enable = true;
