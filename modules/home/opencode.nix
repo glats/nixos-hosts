@@ -63,17 +63,33 @@ let
             "minimaxai/minimax-m2.7" = { name = "MiniMax M2.7"; };
             "deepseek-ai/deepseek-v4-flash" = { name = "DeepSeek V4 Flash"; };
             "deepseek-ai/deepseek-v4-pro" = { name = "DeepSeek V4 Pro"; };
+            "nvidia/nemotron-3-super-120b-a12b" = { name = "Nemotron 3 Super"; };
           };
         };
       };
 
-      # Generate JSON file with empty providers (OAuth via /connect)
-      jsonFile = opencodeLib.generateOpencodeJson {
-        agents = cfg.agents;
-        providers = nvidiaProvider;
-        mcps = enabledMcps;
-        permissions = cfg.permissions;
-      };
+      # Generate JSON file with providers and experimental fallback chain config
+      # Note: generateOpencodeJson doesn't support experimental/plugin, so we generate directly
+      jsonFile = pkgs.writeText "opencode.json" (
+        builtins.toJSON {
+          agent = cfg.agents;
+          provider = nvidiaProvider;
+          mcp = enabledMcps;
+          permission = cfg.permissions;
+          plugin = ["opencode-model-fallback-chain"];
+          experimental = {
+            modelFallbackChain = {
+              timeoutMs = 60000;
+              chains = [
+                ["nvidia/deepseek-ai/deepseek-v4-pro" "nvidia/z-ai/glm-5.1"]
+                ["nvidia/deepseek-ai/deepseek-v4-flash" "nvidia/minimaxai/minimax-m2.7"]
+                ["nvidia/z-ai/glm-5.1" "nvidia/minimaxai/minimax-m2.7"]
+                ["nvidia/minimaxai/minimax-m2.7" "nvidia/z-ai/glm-5.1"]
+              ];
+            };
+          };
+        }
+      );
     in
     {
       home.file = {
@@ -99,6 +115,7 @@ let
               "@opencode-ai/plugin" = "1.4.11";
               "@opencode-ai/sdk" = "1.4.11";
               "unique-names-generator" = "^4.7.1";
+              "opencode-model-fallback-chain" = "*";
             };
           };
         };
