@@ -76,14 +76,16 @@ let
   activeProviderName = "balanced";
 
   providers = [
-    { name = "nvidia"; phases = {
+    {
+      name = "nvidia";
+      phases = {
         sdd-orchestrator = "nvidia/z-ai/glm-5.1";
         sdd-init = "nvidia/minimaxai/minimax-m2.7";
         sdd-explore = "nvidia/deepseek-ai/deepseek-v4-flash";
         sdd-propose = "nvidia/z-ai/glm-5.1";
-        sdd-spec = "nvidia/nvidia/nemotron-3-super-120b-a12b";
+        sdd-spec = "nvidia/nemotron-3-super-120b-a12b";
         sdd-design = "nvidia/z-ai/glm-5.1";
-        sdd-tasks = "nvidia/nvidia/nemotron-3-super-120b-a12b";
+        sdd-tasks = "nvidia/nemotron-3-super-120b-a12b";
         sdd-apply = "nvidia/minimaxai/minimax-m2.7";
         sdd-verify = "nvidia/z-ai/glm-5.1";
         sdd-archive = "nvidia/minimaxai/minimax-m2.7";
@@ -91,7 +93,9 @@ let
         neutral = "nvidia/z-ai/glm-5.1";
       };
     }
-    { name = "groq"; phases = {
+    {
+      name = "groq";
+      phases = {
         sdd-orchestrator = "groq/llama-3.3-70b-versatile";
         sdd-init = "groq/llama-3.1-8b-instant";
         sdd-explore = "groq/llama-3.1-8b-instant";
@@ -106,7 +110,9 @@ let
         neutral = "groq/llama-3.3-70b-versatile";
       };
     }
-    { name = "cerebras"; phases = {
+    {
+      name = "cerebras";
+      phases = {
         sdd-orchestrator = "cerebras/llama-3.3-70b";
         sdd-init = "cerebras/llama-3.1-8b";
         sdd-explore = "cerebras/llama-3.1-8b";
@@ -121,7 +127,9 @@ let
         neutral = "cerebras/llama-3.3-70b";
       };
     }
-    { name = "opencode"; phases = {
+    {
+      name = "opencode";
+      phases = {
         sdd-orchestrator = "opencode/big-pickle";
         sdd-init = "opencode/minimax-m2.5-free";
         sdd-explore = "opencode/minimax-m2.5-free";
@@ -136,7 +144,9 @@ let
         neutral = "opencode/big-pickle";
       };
     }
-    { name = "speed"; phases = {
+    {
+      name = "speed";
+      phases = {
         sdd-orchestrator = "cerebras/gpt-oss-120b";
         sdd-init = "cerebras/llama-3.1-8b";
         sdd-explore = "groq/llama-3.1-8b-instant";
@@ -151,7 +161,9 @@ let
         neutral = "cerebras/gpt-oss-120b";
       };
     }
-    { name = "coding"; phases = {
+    {
+      name = "coding";
+      phases = {
         sdd-orchestrator = "nvidia/minimaxai/minimax-m2.7";
         sdd-init = "nvidia/minimaxai/minimax-m2.7";
         sdd-explore = "nvidia/minimaxai/minimax-m2.7";
@@ -166,7 +178,9 @@ let
         neutral = "nvidia/minimaxai/minimax-m2.7";
       };
     }
-    { name = "reasoning"; phases = {
+    {
+      name = "reasoning";
+      phases = {
         sdd-orchestrator = "nvidia/z-ai/glm-5.1";
         sdd-init = "nvidia/z-ai/glm-5.1";
         sdd-explore = "nvidia/z-ai/glm-5.1";
@@ -181,7 +195,9 @@ let
         neutral = "nvidia/z-ai/glm-5.1";
       };
     }
-    { name = "free"; phases = {
+    {
+      name = "free";
+      phases = {
         sdd-orchestrator = "opencode/big-pickle";
         sdd-init = "opencode/minimax-m2.5-free";
         sdd-explore = "opencode/minimax-m2.5-free";
@@ -196,14 +212,16 @@ let
         neutral = "opencode/big-pickle";
       };
     }
-    { name = "balanced"; phases = {
+    {
+      name = "balanced";
+      phases = {
         sdd-orchestrator = "nvidia/z-ai/glm-5.1";
         sdd-init = "groq/llama-3.1-8b-instant";
         sdd-explore = "nvidia/deepseek-ai/deepseek-v4-flash";
         sdd-propose = "nvidia/z-ai/glm-5.1";
-        sdd-spec = "nvidia/nvidia/nemotron-3-super-120b-a12b";
+        sdd-spec = "nvidia/nemotron-3-super-120b-a12b";
         sdd-design = "nvidia/z-ai/glm-5.1";
-        sdd-tasks = "nvidia/nvidia/nemotron-3-super-120b-a12b";
+        sdd-tasks = "nvidia/nemotron-3-super-120b-a12b";
         sdd-apply = "nvidia/minimaxai/minimax-m2.7";
         sdd-verify = "nvidia/z-ai/glm-5.1";
         sdd-archive = "groq/gpt-oss-20b";
