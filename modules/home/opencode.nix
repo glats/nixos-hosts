@@ -9,7 +9,7 @@ with lib;
 
 let
   # Import centralized provider configuration
-  providers = import ./providers.nix { inherit lib; };
+  providers = import ./opencode/providers.nix { inherit lib; };
 
   # Pure library functions - no config references
   opencodeLib = import ../../pkgs/opencode-config {
@@ -45,80 +45,8 @@ let
       };
       tuiPluginsToInstall = lib.filterAttrs (name: cfg: cfg.enable) tuiPluginsConfig;
 
-      # NVIDIA NIM provider block for opencode.json
-      # apiKey uses OpenCode's {env:VAR} syntax — resolved at runtime, never stored in Nix store
-      nvidiaProvider = {
-        nvidia = {
-          npm = "@ai-sdk/openai-compatible";
-          name = "NVIDIA NIM";
-          options = {
-            baseURL = "https://integrate.api.nvidia.com/v1";
-            apiKey = "{env:NVIDIA_API_KEY}";
-            headers = {
-              "Authorization" = "Bearer {env:NVIDIA_API_KEY}";
-            };
-          };
-          models = {
-            "z-ai/glm-5.1" = { name = "GLM 5.1"; };
-            "minimaxai/minimax-m2.7" = { name = "MiniMax M2.7"; };
-            "deepseek-ai/deepseek-v4-flash" = { name = "DeepSeek V4 Flash"; };
-            "deepseek-ai/deepseek-v4-pro" = { name = "DeepSeek V4 Pro"; };
-            "nvidia/nemotron-3-super-120b-a12b" = { name = "Nemotron 3 Super"; };
-          };
-        };
-      };
-
-      # Groq provider
-      groqProvider = {
-        groq = {
-          npm = "@ai-sdk/openai-compatible";
-          name = "Groq";
-          options = {
-            baseURL = "https://api.groq.com/openai/v1";
-            apiKey = "{env:GROQ_API_KEY}";
-          };
-          models = {
-            "llama-3.1-8b-instant" = { name = "Llama 3.1 8B Instant"; };
-            "llama-3.3-70b-versatile" = { name = "Llama 3.3 70B Versatile"; };
-            "deepseek-r1-distill-llama-70b" = { name = "DeepSeek R1 Distill Llama 70B"; };
-          };
-        };
-      };
-
-      # Cerebras provider
-      cerebrasProvider = {
-        cerebras = {
-          npm = "@ai-sdk/openai-compatible";
-          name = "Cerebras";
-          options = {
-            baseURL = "https://api.cerebras.ai/v1";
-            apiKey = "{env:CEREBRAS_API_KEY}";
-          };
-          models = {
-            "llama-3.1-8b" = { name = "Llama 3.1 8B"; };
-            "llama-3.3-70b" = { name = "Llama 3.3 70B"; };
-          };
-        };
-      };
-
-      # OpenCode Zen provider (free)
-      opencodeZenProvider = {
-        opencode = {
-          npm = "@ai-sdk/openai-compatible";
-          name = "OpenCode Zen";
-          options = {
-            baseURL = "https://opencode.ai/zen/v1";
-            apiKey = "{env:OPENCODE_API_KEY}";
-          };
-          models = {
-            "big-pickle" = { name = "Big Pickle"; };
-            "minimax-m2.5-free" = { name = "MiniMax M2.5 Free"; };
-          };
-        };
-      };
-
-      # All providers combined
-      allProviders = nvidiaProvider // groqProvider // cerebrasProvider // opencodeZenProvider;
+      # Use providers from centralized providers.nix
+      allProviders = providers.allProviders;
 
       # Generate JSON file with providers and experimental fallback chain config
       # Note: generateOpencodeJson doesn't support experimental/plugin, so we generate directly

@@ -8,7 +8,7 @@ with lib;
 
 let
   # Import centralized provider configuration
-  providersConfig = import ./providers.nix { inherit lib; };
+  providersConfig = import ../opencode/providers.nix { inherit lib; };
 
   # Get model for a specific phase from a provider entry
   getModelForPhase = phase: provider: provider.phases.${phase} or null;
