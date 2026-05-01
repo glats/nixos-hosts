@@ -229,6 +229,23 @@ let
         neutral = "nvidia/z-ai/glm-5.1";
       };
     }
+    {
+      name = "fast-reasoning";
+      phases = {
+        sdd-orchestrator = "groq/deepseek-r1-distill-llama-70b";
+        sdd-init = "groq/llama-3.1-8b-instant";
+        sdd-explore = "groq/deepseek-r1-distill-llama-70b";
+        sdd-propose = "groq/deepseek-r1-distill-llama-70b";
+        sdd-spec = "groq/deepseek-r1-distill-llama-70b";
+        sdd-design = "groq/deepseek-r1-distill-llama-70b";
+        sdd-tasks = "cerebras/gpt-oss-120b";
+        sdd-apply = "groq/llama-3.1-8b-instant";
+        sdd-verify = "groq/deepseek-r1-distill-llama-70b";
+        sdd-archive = "groq/gpt-oss-20b";
+        sdd-onboard = "groq/llama-3.1-8b-instant";
+        neutral = "cerebras/gpt-oss-120b";
+      };
+    }
   ];
 
   activeProvider = builtins.foldl' (acc: p: if p.name == activeProviderName then p else acc) null providers;
