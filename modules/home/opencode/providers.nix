@@ -1,10 +1,6 @@
 { lib ? throw "providers.nix must be imported with lib" }:
 
 let
-  # =============================================================================
-  # PROVIDER CONFIGS (for opencode.json)
-  # =============================================================================
-
   nvidiaProvider = {
     nvidia = {
       npm = "@ai-sdk/openai-compatible";
@@ -75,28 +71,77 @@ let
     };
   };
 
-  # All providers combined for JSON
   allProviders = nvidiaProvider // groqProvider // cerebrasProvider // opencodeZenProvider;
 
-  # =============================================================================
-  # ACTIVE PROVIDER SELECTION
-  # =============================================================================
-
-  # CHANGE ACTIVE PROVIDER HERE
   activeProviderName = "nvidia";
 
-  # =============================================================================
-  # TIER-BASED PROVIDERS (mixed providers for different use cases)
-  # =============================================================================
-
-  # Speed Tier - fastest models (Cerebras)
-  speedTier = [
-    { name = "speed"; phases = {
-        sdd-orchestrator = "cerebras/gpt-oss-120b";
+  providers = [
+    { name = "nvidia"; phases = {
+        sdd-orchestrator = "nvidia/z-ai/glm-5.1";
+        sdd-init = "nvidia/minimaxai/minimax-m2.7";
+        sdd-explore = "nvidia/deepseek-ai/deepseek-v4-flash";
+        sdd-propose = "nvidia/z-ai/glm-5.1";
+        sdd-spec = "nvidia/nvidia/nemotron-3-super-120b-a12b";
+        sdd-design = "nvidia/z-ai/glm-5.1";
+        sdd-tasks = "nvidia/nvidia/nemotron-3-super-120b-a12b";
+        sdd-apply = "nvidia/minimaxai/minimax-m2.7";
+        sdd-verify = "nvidia/z-ai/glm-5.1";
+        sdd-archive = "nvidia/minimaxai/minimax-m2.7";
+        sdd-onboard = "nvidia/minimaxai/minimax-m2.7";
+        neutral = "nvidia/z-ai/glm-5.1";
+      };
+    }
+    { name = "groq"; phases = {
+        sdd-orchestrator = "groq/llama-3.3-70b-versatile";
         sdd-init = "groq/llama-3.1-8b-instant";
         sdd-explore = "groq/llama-3.1-8b-instant";
-        sdd-propose = "cerebras/gpt-oss-120b";
+        sdd-propose = "groq/llama-3.3-70b-versatile";
+        sdd-spec = "groq/deepseek-r1-distill-llama-70b";
+        sdd-design = "groq/deepseek-r1-distill-llama-70b";
+        sdd-tasks = "groq/deepseek-r1-distill-llama-70b";
+        sdd-apply = "groq/llama-3.1-8b-instant";
+        sdd-verify = "groq/llama-3.1-8b-instant";
+        sdd-archive = "groq/gpt-oss-20b";
+        sdd-onboard = "groq/llama-3.1-8b-instant";
+        neutral = "groq/llama-3.3-70b-versatile";
+      };
+    }
+    { name = "cerebras"; phases = {
+        sdd-orchestrator = "cerebras/llama-3.3-70b";
+        sdd-init = "cerebras/llama-3.1-8b";
+        sdd-explore = "cerebras/llama-3.1-8b";
+        sdd-propose = "cerebras/llama-3.3-70b";
         sdd-spec = "cerebras/llama-3.3-70b";
+        sdd-design = "cerebras/gpt-oss-120b";
+        sdd-tasks = "cerebras/gpt-oss-120b";
+        sdd-apply = "cerebras/llama-3.1-8b";
+        sdd-verify = "cerebras/llama-3.1-8b";
+        sdd-archive = "cerebras/llama-3.1-8b";
+        sdd-onboard = "cerebras/llama-3.1-8b";
+        neutral = "cerebras/llama-3.3-70b";
+      };
+    }
+    { name = "opencode"; phases = {
+        sdd-orchestrator = "opencode/big-pickle";
+        sdd-init = "opencode/minimax-m2.5-free";
+        sdd-explore = "opencode/minimax-m2.5-free";
+        sdd-propose = "opencode/big-pickle";
+        sdd-spec = "opencode/big-pickle";
+        sdd-design = "opencode/minimax-m2.5-free";
+        sdd-tasks = "opencode/mimo-v2-flash-free";
+        sdd-apply = "opencode/minimax-m2.5-free";
+        sdd-verify = "opencode/minimax-m2.5-free";
+        sdd-archive = "opencode/nemotron-3-super-free";
+        sdd-onboard = "opencode/minimax-m2.5-free";
+        neutral = "opencode/big-pickle";
+      };
+    }
+    { name = "speed"; phases = {
+        sdd-orchestrator = "cerebras/gpt-oss-120b";
+        sdd-init = "cerebras/llama-3.1-8b";
+        sdd-explore = "groq/llama-3.1-8b-instant";
+        sdd-propose = "cerebras/llama-3.3-70b";
+        sdd-spec = "groq/llama-3.3-70b-versatile";
         sdd-design = "cerebras/gpt-oss-120b";
         sdd-tasks = "cerebras/gpt-oss-120b";
         sdd-apply = "groq/llama-3.1-8b-instant";
@@ -106,37 +151,29 @@ let
         neutral = "cerebras/gpt-oss-120b";
       };
     }
-  ];
-
-  # Coding Tier - best for code (MiniMax M2.7)
-  codingTier = [
     { name = "coding"; phases = {
         sdd-orchestrator = "nvidia/minimaxai/minimax-m2.7";
         sdd-init = "nvidia/minimaxai/minimax-m2.7";
         sdd-explore = "nvidia/minimaxai/minimax-m2.7";
         sdd-propose = "nvidia/minimaxai/minimax-m2.7";
-        sdd-spec = "nvidia/minimaxai/minimax-m2.7";
-        sdd-design = "nvidia/minimaxai/minimax-m2.7";
+        sdd-spec = "groq/deepseek-r1-distill-llama-70b";
+        sdd-design = "nvidia/z-ai/glm-5.1";
         sdd-tasks = "nvidia/minimaxai/minimax-m2.7";
         sdd-apply = "nvidia/minimaxai/minimax-m2.7";
-        sdd-verify = "nvidia/minimaxai/minimax-m2.7";
+        sdd-verify = "nvidia/z-ai/glm-5.1";
         sdd-archive = "nvidia/minimaxai/minimax-m2.7";
         sdd-onboard = "nvidia/minimaxai/minimax-m2.7";
         neutral = "nvidia/minimaxai/minimax-m2.7";
       };
     }
-  ];
-
-  # Reasoning Tier - best for reasoning (GLM-5.1)
-  reasoningTier = [
     { name = "reasoning"; phases = {
         sdd-orchestrator = "nvidia/z-ai/glm-5.1";
         sdd-init = "nvidia/z-ai/glm-5.1";
         sdd-explore = "nvidia/z-ai/glm-5.1";
         sdd-propose = "nvidia/z-ai/glm-5.1";
-        sdd-spec = "nvidia/z-ai/glm-5.1";
+        sdd-spec = "groq/deepseek-r1-distill-llama-70b";
         sdd-design = "nvidia/z-ai/glm-5.1";
-        sdd-tasks = "nvidia/z-ai/glm-5.1";
+        sdd-tasks = "groq/deepseek-r1-distill-llama-70b";
         sdd-apply = "nvidia/z-ai/glm-5.1";
         sdd-verify = "nvidia/z-ai/glm-5.1";
         sdd-archive = "nvidia/z-ai/glm-5.1";
@@ -144,10 +181,6 @@ let
         neutral = "nvidia/z-ai/glm-5.1";
       };
     }
-  ];
-
-  # Free Tier - no API keys needed
-  freeTier = [
     { name = "free"; phases = {
         sdd-orchestrator = "opencode/big-pickle";
         sdd-init = "opencode/minimax-m2.5-free";
@@ -165,108 +198,11 @@ let
     }
   ];
 
-  # =============================================================================
-  # SINGLE PROVIDER OPTIONS
-  # =============================================================================
-
-  # All providers - single list with name + phases
-  providers = [
-    # =========================================================================
-    # NVIDIA NIM
-    # =========================================================================
-    {
-      name = "nvidia";
-      phases = {
-        sdd-orchestrator = "nvidia/z-ai/glm-5.1";
-        sdd-init = "nvidia/minimaxai/minimax-m2.7";
-        sdd-explore = "nvidia/deepseek-ai/deepseek-v4-flash";
-        sdd-propose = "nvidia/z-ai/glm-5.1";
-        sdd-spec = "nvidia/nvidia/nemotron-3-super-120b-a12b";
-        sdd-design = "nvidia/z-ai/glm-5.1";
-        sdd-tasks = "nvidia/nvidia/nemotron-3-super-120b-a12b";
-        sdd-apply = "nvidia/minimaxai/minimax-m2.7";
-        sdd-verify = "nvidia/z-ai/glm-5.1";
-        sdd-archive = "nvidia/minimaxai/minimax-m2.7";
-        sdd-onboard = "nvidia/minimaxai/minimax-m2.7";
-        neutral = "nvidia/z-ai/glm-5.1";
-      };
-    }
-
-    # =========================================================================
-    # Groq
-    # =========================================================================
-    {
-      name = "groq";
-      phases = {
-        sdd-orchestrator = "groq/llama-3.3-70b-versatile";
-        sdd-init = "groq/llama-3.1-8b-instant";
-        sdd-explore = "groq/llama-3.1-8b-instant";
-        sdd-propose = "groq/llama-3.3-70b-versatile";
-        sdd-spec = "groq/llama-3.3-70b-versatile";
-        sdd-design = "groq/deepseek-r1-distill-llama-70b";
-        sdd-tasks = "groq/deepseek-r1-distill-llama-70b";
-        sdd-apply = "groq/llama-3.1-8b-instant";
-        sdd-verify = "groq/llama-3.1-8b-instant";
-        sdd-archive = "groq/gpt-oss-20b";
-        sdd-onboard = "groq/llama-3.1-8b-instant";
-        neutral = "groq/llama-3.3-70b-versatile";
-      };
-    }
-
-    # =========================================================================
-    # Cerebras
-    # =========================================================================
-    {
-      name = "cerebras";
-      phases = {
-        sdd-orchestrator = "cerebras/llama-3.3-70b";
-        sdd-init = "cerebras/llama-3.1-8b";
-        sdd-explore = "cerebras/llama-3.1-8b";
-        sdd-propose = "cerebras/llama-3.3-70b";
-        sdd-spec = "cerebras/llama-3.3-70b";
-        sdd-design = "cerebras/gpt-oss-120b";
-        sdd-tasks = "cerebras/gpt-oss-120b";
-        sdd-apply = "cerebras/llama-3.1-8b";
-        sdd-verify = "cerebras/llama-3.1-8b";
-        sdd-archive = "cerebras/llama-3.1-8b";
-        sdd-onboard = "cerebras/llama-3.1-8b";
-        neutral = "cerebras/llama-3.3-70b";
-      };
-    }
-
-    # =========================================================================
-    # OpenCode Zen (free)
-    # =========================================================================
-    {
-      name = "opencode";
-      phases = {
-        sdd-orchestrator = "opencode/big-pickle";
-        sdd-init = "opencode/minimax-m2.5-free";
-        sdd-explore = "opencode/minimax-m2.5-free";
-        sdd-propose = "opencode/big-pickle";
-        sdd-spec = "opencode/big-pickle";
-        sdd-design = "opencode/minimax-m2.5-free";
-        sdd-tasks = "opencode/mimo-v2-flash-free";
-        sdd-apply = "opencode/minimax-m2.5-free";
-        sdd-verify = "opencode/minimax-m2.5-free";
-        sdd-archive = "opencode/nemotron-3-super-free";
-        sdd-onboard = "opencode/minimax-m2.5-free";
-        neutral = "opencode/big-pickle";
-      };
-    }
-  ];
-
-  # Find active provider by name
   activeProvider = builtins.foldl' (acc: p: if p.name == activeProviderName then p else acc) null providers;
-
-  # Helper: get model for a phase
-  getModelForPhase = phase: provider:
-    if provider == null then null
-    else provider.phases.${phase} or null;
+  getModelForPhase = phase: provider: if provider == null then null else provider.phases.${phase} or null;
 
 in
 {
   inherit nvidiaProvider groqProvider cerebrasProvider opencodeZenProvider allProviders;
-  inherit speedTier codingTier reasoningTier freeTier;
   inherit providers activeProviderName activeProvider getModelForPhase;
 }
