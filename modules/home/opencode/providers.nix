@@ -73,7 +73,7 @@ let
 
   allProviders = nvidiaProvider // groqProvider // cerebrasProvider // opencodeZenProvider;
 
-  activeProviderName = "nvidia";
+  activeProviderName = "balanced";
 
   providers = [
     { name = "nvidia"; phases = {
@@ -194,6 +194,21 @@ let
         sdd-archive = "opencode/nemotron-3-super-free";
         sdd-onboard = "opencode/minimax-m2.5-free";
         neutral = "opencode/big-pickle";
+      };
+    }
+    { name = "balanced"; phases = {
+        sdd-orchestrator = "nvidia/z-ai/glm-5.1";
+        sdd-init = "groq/llama-3.1-8b-instant";
+        sdd-explore = "nvidia/deepseek-ai/deepseek-v4-flash";
+        sdd-propose = "nvidia/z-ai/glm-5.1";
+        sdd-spec = "nvidia/nvidia/nemotron-3-super-120b-a12b";
+        sdd-design = "nvidia/z-ai/glm-5.1";
+        sdd-tasks = "nvidia/nvidia/nemotron-3-super-120b-a12b";
+        sdd-apply = "nvidia/minimaxai/minimax-m2.7";
+        sdd-verify = "nvidia/z-ai/glm-5.1";
+        sdd-archive = "groq/gpt-oss-20b";
+        sdd-onboard = "nvidia/minimaxai/minimax-m2.7";
+        neutral = "nvidia/z-ai/glm-5.1";
       };
     }
   ];
