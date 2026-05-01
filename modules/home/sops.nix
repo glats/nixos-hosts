@@ -20,7 +20,7 @@
     mode = "0400";
   };
 
-  # TODO: OpenCode Zen API key - add when available
+  # OpenCode Zen API key - TODO: enable when key is added
   # sops.secrets."opencode/opencode_api_key" = {
   #   mode = "0400";
   # };
