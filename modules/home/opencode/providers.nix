@@ -85,6 +85,90 @@ let
   # CHANGE ACTIVE PROVIDER HERE
   activeProviderName = "nvidia";
 
+  # =============================================================================
+  # TIER-BASED PROVIDERS (mixed providers for different use cases)
+  # =============================================================================
+
+  # Speed Tier - fastest models (Cerebras)
+  speedTier = [
+    { name = "speed"; phases = {
+        sdd-orchestrator = "cerebras/gpt-oss-120b";
+        sdd-init = "groq/llama-3.1-8b-instant";
+        sdd-explore = "groq/llama-3.1-8b-instant";
+        sdd-propose = "cerebras/gpt-oss-120b";
+        sdd-spec = "cerebras/llama-3.3-70b";
+        sdd-design = "cerebras/gpt-oss-120b";
+        sdd-tasks = "cerebras/gpt-oss-120b";
+        sdd-apply = "groq/llama-3.1-8b-instant";
+        sdd-verify = "groq/llama-3.1-8b-instant";
+        sdd-archive = "groq/gpt-oss-20b";
+        sdd-onboard = "groq/llama-3.1-8b-instant";
+        neutral = "cerebras/gpt-oss-120b";
+      };
+    }
+  ];
+
+  # Coding Tier - best for code (MiniMax M2.7)
+  codingTier = [
+    { name = "coding"; phases = {
+        sdd-orchestrator = "nvidia/minimaxai/minimax-m2.7";
+        sdd-init = "nvidia/minimaxai/minimax-m2.7";
+        sdd-explore = "nvidia/minimaxai/minimax-m2.7";
+        sdd-propose = "nvidia/minimaxai/minimax-m2.7";
+        sdd-spec = "nvidia/minimaxai/minimax-m2.7";
+        sdd-design = "nvidia/minimaxai/minimax-m2.7";
+        sdd-tasks = "nvidia/minimaxai/minimax-m2.7";
+        sdd-apply = "nvidia/minimaxai/minimax-m2.7";
+        sdd-verify = "nvidia/minimaxai/minimax-m2.7";
+        sdd-archive = "nvidia/minimaxai/minimax-m2.7";
+        sdd-onboard = "nvidia/minimaxai/minimax-m2.7";
+        neutral = "nvidia/minimaxai/minimax-m2.7";
+      };
+    }
+  ];
+
+  # Reasoning Tier - best for reasoning (GLM-5.1)
+  reasoningTier = [
+    { name = "reasoning"; phases = {
+        sdd-orchestrator = "nvidia/z-ai/glm-5.1";
+        sdd-init = "nvidia/z-ai/glm-5.1";
+        sdd-explore = "nvidia/z-ai/glm-5.1";
+        sdd-propose = "nvidia/z-ai/glm-5.1";
+        sdd-spec = "nvidia/z-ai/glm-5.1";
+        sdd-design = "nvidia/z-ai/glm-5.1";
+        sdd-tasks = "nvidia/z-ai/glm-5.1";
+        sdd-apply = "nvidia/z-ai/glm-5.1";
+        sdd-verify = "nvidia/z-ai/glm-5.1";
+        sdd-archive = "nvidia/z-ai/glm-5.1";
+        sdd-onboard = "nvidia/z-ai/glm-5.1";
+        neutral = "nvidia/z-ai/glm-5.1";
+      };
+    }
+  ];
+
+  # Free Tier - no API keys needed
+  freeTier = [
+    { name = "free"; phases = {
+        sdd-orchestrator = "opencode/big-pickle";
+        sdd-init = "opencode/minimax-m2.5-free";
+        sdd-explore = "opencode/minimax-m2.5-free";
+        sdd-propose = "opencode/big-pickle";
+        sdd-spec = "opencode/big-pickle";
+        sdd-design = "opencode/minimax-m2.5-free";
+        sdd-tasks = "opencode/mimo-v2-flash-free";
+        sdd-apply = "opencode/minimax-m2.5-free";
+        sdd-verify = "opencode/minimax-m2.5-free";
+        sdd-archive = "opencode/nemotron-3-super-free";
+        sdd-onboard = "opencode/minimax-m2.5-free";
+        neutral = "opencode/big-pickle";
+      };
+    }
+  ];
+
+  # =============================================================================
+  # SINGLE PROVIDER OPTIONS
+  # =============================================================================
+
   # All providers - single list with name + phases
   providers = [
     # =========================================================================
@@ -183,5 +267,6 @@ let
 in
 {
   inherit nvidiaProvider groqProvider cerebrasProvider opencodeZenProvider allProviders;
+  inherit speedTier codingTier reasoningTier freeTier;
   inherit providers activeProviderName activeProvider getModelForPhase;
 }
