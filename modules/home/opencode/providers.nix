@@ -73,7 +73,7 @@ let
 
   allProviders = nvidiaProvider // groqProvider // cerebrasProvider // opencodeZenProvider;
 
-  activeProviderName = "balanced";
+  activeProviderName = "fast-reasoning";
 
   providers = [
     {
@@ -100,9 +100,9 @@ let
         sdd-init = "groq/llama-3.1-8b-instant";
         sdd-explore = "groq/llama-3.1-8b-instant";
         sdd-propose = "groq/llama-3.3-70b-versatile";
-        sdd-spec = "groq/deepseek-r1-distill-llama-70b";
-        sdd-design = "groq/deepseek-r1-distill-llama-70b";
-        sdd-tasks = "groq/deepseek-r1-distill-llama-70b";
+        sdd-spec = "groq/llama-3.3-70b-versatile";
+        sdd-design = "groq/llama-3.3-70b-versatile";
+        sdd-tasks = "groq/llama-3.3-70b-versatile";
         sdd-apply = "groq/llama-3.1-8b-instant";
         sdd-verify = "groq/llama-3.1-8b-instant";
         sdd-archive = "groq/gpt-oss-20b";
@@ -168,7 +168,7 @@ let
         sdd-init = "nvidia/minimaxai/minimax-m2.7";
         sdd-explore = "nvidia/minimaxai/minimax-m2.7";
         sdd-propose = "nvidia/minimaxai/minimax-m2.7";
-        sdd-spec = "groq/deepseek-r1-distill-llama-70b";
+        sdd-spec = "groq/llama-3.3-70b-versatile";
         sdd-design = "nvidia/z-ai/glm-5.1";
         sdd-tasks = "nvidia/minimaxai/minimax-m2.7";
         sdd-apply = "nvidia/minimaxai/minimax-m2.7";
@@ -185,9 +185,9 @@ let
         sdd-init = "nvidia/z-ai/glm-5.1";
         sdd-explore = "nvidia/z-ai/glm-5.1";
         sdd-propose = "nvidia/z-ai/glm-5.1";
-        sdd-spec = "groq/deepseek-r1-distill-llama-70b";
+        sdd-spec = "groq/llama-3.3-70b-versatile";
         sdd-design = "nvidia/z-ai/glm-5.1";
-        sdd-tasks = "groq/deepseek-r1-distill-llama-70b";
+        sdd-tasks = "groq/llama-3.3-70b-versatile";
         sdd-apply = "nvidia/z-ai/glm-5.1";
         sdd-verify = "nvidia/z-ai/glm-5.1";
         sdd-archive = "nvidia/z-ai/glm-5.1";
@@ -232,15 +232,15 @@ let
     {
       name = "fast-reasoning";
       phases = {
-        sdd-orchestrator = "groq/deepseek-r1-distill-llama-70b";
+        sdd-orchestrator = "groq/llama-3.3-70b-versatile";
         sdd-init = "groq/llama-3.1-8b-instant";
-        sdd-explore = "groq/deepseek-r1-distill-llama-70b";
-        sdd-propose = "groq/deepseek-r1-distill-llama-70b";
-        sdd-spec = "groq/deepseek-r1-distill-llama-70b";
-        sdd-design = "groq/deepseek-r1-distill-llama-70b";
+        sdd-explore = "groq/llama-3.3-70b-versatile";
+        sdd-propose = "groq/llama-3.3-70b-versatile";
+        sdd-spec = "groq/llama-3.3-70b-versatile";
+        sdd-design = "groq/llama-3.3-70b-versatile";
         sdd-tasks = "cerebras/gpt-oss-120b";
         sdd-apply = "groq/llama-3.1-8b-instant";
-        sdd-verify = "groq/deepseek-r1-distill-llama-70b";
+        sdd-verify = "groq/llama-3.3-70b-versatile";
         sdd-archive = "groq/gpt-oss-20b";
         sdd-onboard = "groq/llama-3.1-8b-instant";
         neutral = "cerebras/gpt-oss-120b";
