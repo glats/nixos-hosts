@@ -68,23 +68,75 @@ let
         };
       };
 
+      # Groq provider
+      groqProvider = {
+        groq = {
+          npm = "@ai-sdk/openai-compatible";
+          name = "Groq";
+          options = {
+            baseURL = "https://api.groq.com/openai/v1";
+            apiKey = "{env:GROQ_API_KEY}";
+          };
+          models = {
+            "llama-3.1-8b-instant" = { name = "Llama 3.1 8B Instant"; };
+            "llama-3.3-70b-versatile" = { name = "Llama 3.3 70B Versatile"; };
+            "deepseek-r1-distill-llama-70b" = { name = "DeepSeek R1 Distill Llama 70B"; };
+          };
+        };
+      };
+
+      # Cerebras provider
+      cerebrasProvider = {
+        cerebras = {
+          npm = "@ai-sdk/openai-compatible";
+          name = "Cerebras";
+          options = {
+            baseURL = "https://api.cerebras.ai/v1";
+            apiKey = "{env:CEREBRAS_API_KEY}";
+          };
+          models = {
+            "llama-3.1-8b" = { name = "Llama 3.1 8B"; };
+            "llama-3.3-70b" = { name = "Llama 3.3 70B"; };
+          };
+        };
+      };
+
+      # OpenCode Zen provider (free)
+      opencodeZenProvider = {
+        opencode = {
+          npm = "@ai-sdk/openai-compatible";
+          name = "OpenCode Zen";
+          options = {
+            baseURL = "https://opencode.ai/zen/v1";
+            apiKey = "{env:OPENCODE_API_KEY}";
+          };
+          models = {
+            "big-pickle" = { name = "Big Pickle"; };
+            "minimax-m2.5-free" = { name = "MiniMax M2.5 Free"; };
+          };
+        };
+      };
+
+      # All providers combined
+      allProviders = nvidiaProvider // groqProvider // cerebrasProvider // opencodeZenProvider;
+
       # Generate JSON file with providers and experimental fallback chain config
       # Note: generateOpencodeJson doesn't support experimental/plugin, so we generate directly
       jsonFile = pkgs.writeText "opencode.json" (
         builtins.toJSON {
           agent = cfg.agents;
-          provider = nvidiaProvider;
+          provider = allProviders;
           mcp = enabledMcps;
           permission = cfg.permissions;
-          plugin = ["opencode-model-fallback-chain"];
+          plugin = [ "opencode-model-fallback-chain" ];
           experimental = {
             modelFallbackChain = {
               timeoutMs = 60000;
               chains = [
-                ["nvidia/deepseek-ai/deepseek-v4-pro" "nvidia/z-ai/glm-5.1"]
-                ["nvidia/deepseek-ai/deepseek-v4-flash" "nvidia/minimaxai/minimax-m2.7"]
-                ["nvidia/z-ai/glm-5.1" "nvidia/minimaxai/minimax-m2.7"]
-                ["nvidia/minimaxai/minimax-m2.7" "nvidia/z-ai/glm-5.1"]
+                [ "nvidia/deepseek-ai/deepseek-v4-pro" "nvidia/z-ai/glm-5.1" ]
+                [ "nvidia/deepseek-ai/deepseek-v4-flash" "nvidia/minimaxai/minimax-m2.7" ]
+                [ "nvidia/z-ai/glm-5.1" "nvidia/minimaxai/minimax-m2.7" ]
+                [ "nvidia/minimaxai/minimax-m2.7" "nvidia/z-ai/glm-5.1" ]
               ];
             };
           };
@@ -197,11 +249,19 @@ in
         engram
       ];
 
-      # Export NVIDIA API key from sops secret file at shell startup
-      # Required for OpenCode's {env:NVIDIA_API_KEY} provider resolution
+      # Export API keys from sops secrets at shell startup
       programs.zsh.initContent = lib.mkAfter ''
         if [ -f "${config.sops.secrets."opencode/nvidia_api_key".path}" ]; then
           export NVIDIA_API_KEY="$(cat ${config.sops.secrets."opencode/nvidia_api_key".path})"
+        fi
+        if [ -f "${config.sops.secrets."opencode/groq_api_key".path}" ]; then
+          export GROQ_API_KEY="$(cat ${config.sops.secrets."opencode/groq_api_key".path})"
+        fi
+        if [ -f "${config.sops.secrets."opencode/cerebras_api_key".path}" ]; then
+          export CEREBRAS_API_KEY="$(cat ${config.sops.secrets."opencode/cerebras_api_key".path})"
+        fi
+        if [ -f "${config.sops.secrets."opencode/opencode_api_key".path}" ]; then
+          export OPENCODE_API_KEY="$(cat ${config.sops.secrets."opencode/opencode_api_key".path})"
         fi
       '';
     })
