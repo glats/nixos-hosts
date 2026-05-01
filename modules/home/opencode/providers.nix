@@ -83,9 +83,9 @@ let
         sdd-init = "nvidia/minimaxai/minimax-m2.7";
         sdd-explore = "nvidia/deepseek-ai/deepseek-v4-flash";
         sdd-propose = "nvidia/z-ai/glm-5.1";
-        sdd-spec = "nvidia/nemotron-3-super-120b-a12b";
+        sdd-spec = "nvidia/nvidia/nemotron-3-super-120b-a12b";
         sdd-design = "nvidia/z-ai/glm-5.1";
-        sdd-tasks = "nvidia/nemotron-3-super-120b-a12b";
+        sdd-tasks = "nvidia/nvidia/nemotron-3-super-120b-a12b";
         sdd-apply = "nvidia/minimaxai/minimax-m2.7";
         sdd-verify = "nvidia/z-ai/glm-5.1";
         sdd-archive = "nvidia/minimaxai/minimax-m2.7";
@@ -219,9 +219,9 @@ let
         sdd-init = "groq/llama-3.1-8b-instant";
         sdd-explore = "nvidia/deepseek-ai/deepseek-v4-flash";
         sdd-propose = "nvidia/z-ai/glm-5.1";
-        sdd-spec = "nvidia/nemotron-3-super-120b-a12b";
+        sdd-spec = "nvidia/nvidia/nemotron-3-super-120b-a12b";
         sdd-design = "nvidia/z-ai/glm-5.1";
-        sdd-tasks = "nvidia/nemotron-3-super-120b-a12b";
+        sdd-tasks = "nvidia/nvidia/nemotron-3-super-120b-a12b";
         sdd-apply = "nvidia/minimaxai/minimax-m2.7";
         sdd-verify = "nvidia/z-ai/glm-5.1";
         sdd-archive = "groq/gpt-oss-20b";
