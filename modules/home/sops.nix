@@ -20,13 +20,8 @@
     mode = "0400";
   };
 
-  # OpenCode Zen API key
-  sops.secrets."opencode/opencode_api_key" = {
-    mode = "0400";
-  };
-
-  # Engram Cloud client token for remote sync
-  sops.secrets."engram_cloud/client_token" = {
-    mode = "0400";
-  };
+  # TODO: OpenCode Zen API key - add when available
+  # sops.secrets."opencode/opencode_api_key" = {
+  #   mode = "0400";
+  # };
 }

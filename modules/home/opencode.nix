@@ -260,9 +260,6 @@ in
         if [ -f "${config.sops.secrets."opencode/cerebras_api_key".path}" ]; then
           export CEREBRAS_API_KEY="$(cat ${config.sops.secrets."opencode/cerebras_api_key".path})"
         fi
-        if [ -f "${config.sops.secrets."opencode/opencode_api_key".path}" ]; then
-          export OPENCODE_API_KEY="$(cat ${config.sops.secrets."opencode/opencode_api_key".path})"
-        fi
       '';
     })
 

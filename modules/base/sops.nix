@@ -62,4 +62,9 @@ in
     group = "users";
     mode = "0600";
   };
+
+  # engram cloud disabled until credentials are available
+  # sops.secrets."engram-cloud/env" = lib.mkIf isRog {
+  #   sopsFile = ../../secrets/system/engram-cloud.yaml;
+  # };
 }
