@@ -57,6 +57,9 @@ let
           mcp = enabledMcps;
           permission = cfg.permissions;
           plugin = [ "opencode-model-fallback-chain" ];
+          log = {
+            level = "WARN";
+          };
           experimental = {
             modelFallbackChain = {
               timeoutMs = 60000;
@@ -72,6 +75,7 @@ let
       );
     in
     {
+      # HM creates symlinks here; makeOpencodeConfigMutable converts them to real copies at activation time.
       home.file = {
         ".config/${runtimeCfg.dir}/opencode.json" = {
           force = true;
@@ -115,8 +119,56 @@ let
         # Plugin .ts files are copied by activation script below, not as symlinks
       };
 
+      # Convert HM symlinks to real files so OpenCode can write config at runtime.
+      # NixOS symlink farm changes store paths on every rebuild; real copies avoid
+      # false "config changed" signals that cause OpenCode to re-initialize.
+      home.activation."makeOpencodeConfigMutable-${runtimeCfg.label}" =
+        config.lib.dag.entryAfter [ "linkGeneration" ]
+          ''
+            runtime_dir="${runtimeDir}"
+
+            if [ ! -d "$runtime_dir" ]; then
+              exit 0
+            fi
+
+            # Single-file symlinks -> real copies (hash guard via cmp)
+            for file in opencode.json IDENTITY.md SYSTEM_RULES.md PERSONA.md AGENTS.md package.json .gitignore tui.json; do
+              target="$runtime_dir/$file"
+              if [ -L "$target" ]; then
+                src="$(${pkgs.coreutils}/bin/readlink -f "$target")"
+                if [ ! -f "$target" ] || ! ${pkgs.coreutils}/bin/cmp -s "$src" "$target"; then
+                  ${pkgs.coreutils}/bin/cp --remove-destination "$src" "$target"
+                fi
+              fi
+            done
+
+            # Directory symlinks -> real directories (skills/, commands/)
+            for dir in skills commands; do
+              target="$runtime_dir/$dir"
+              if [ -L "$target" ]; then
+                src="$(${pkgs.coreutils}/bin/readlink -f "$target")"
+                ${pkgs.coreutils}/bin/rm -f "$target"
+                mkdir -p "$target"
+                # Copy changed files
+                (cd "$src" && ${pkgs.findutils}/bin/find . -type f) | while read -r rel; do
+                  if [ ! -f "$target/$rel" ] || ! ${pkgs.coreutils}/bin/cmp -s "$src/$rel" "$target/$rel"; then
+                    mkdir -p "$(dirname "$target/$rel")"
+                    ${pkgs.coreutils}/bin/cp -f "$src/$rel" "$target/$rel"
+                  fi
+                done
+                # Remove orphaned files
+                (cd "$target" && ${pkgs.findutils}/bin/find . -type f) | while read -r rel; do
+                  if [ ! -f "$src/$rel" ]; then
+                    rm -f "$target/$rel"
+                  fi
+                done
+              fi
+            done
+          '';
+
+      # Install plugins and npm deps; runs after symlink conversion.
       home.activation."setupOpencodePluginRuntime-${runtimeCfg.label}" =
-        config.lib.dag.entryAfter [ "writeBoundary" ]
+        config.lib.dag.entryAfter [ "makeOpencodeConfigMutable-${runtimeCfg.label}" ]
           ''
             runtime_dir="${runtimeDir}"
 
@@ -130,29 +182,56 @@ let
             fi
             mkdir -p "$runtime_dir/plugins"
 
-            # Copy plugin files from nix store (not symlinks)
+            # Copy plugin files from nix store (not symlinks) with hash guard
             ${lib.optionalString cfg.plugins.engram.enable ''
-              ${pkgs.coreutils}/bin/cp -f "${pkgs.engram-assets}/share/engram/opencode/plugins/engram.ts" "$runtime_dir/plugins/engram.ts"
+              target="$runtime_dir/plugins/engram.ts"
+              src="${pkgs.engram-assets}/share/engram/opencode/plugins/engram.ts"
+              if [ ! -f "$target" ] || ! ${pkgs.coreutils}/bin/cmp -s "$src" "$target"; then
+                ${pkgs.coreutils}/bin/cp -f "$src" "$target"
+              fi
             ''}
             ${lib.optionalString cfg.plugins.backgroundAgents.enable ''
-              ${pkgs.coreutils}/bin/cp -f "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/plugins/background-agents.ts" "$runtime_dir/plugins/background-agents.ts"
+              target="$runtime_dir/plugins/background-agents.ts"
+              src="${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/plugins/background-agents.ts"
+              if [ ! -f "$target" ] || ! ${pkgs.coreutils}/bin/cmp -s "$src" "$target"; then
+                ${pkgs.coreutils}/bin/cp -f "$src" "$target"
+              fi
             ''}
 
-            # Install npm dependencies for plugins
+            # Install npm dependencies for plugins with guard: skip if node_modules
+            # exists and package.json is unchanged (avoids slow npm on every rebuild)
             export HOME="${config.home.homeDirectory}"
-            ${pkgs.nodejs}/bin/npm install --prefix "$runtime_dir" --no-save \
-              @opencode-ai/plugin@1.4.11 \
-              @opencode-ai/sdk@1.4.11 \
-              unique-names-generator@^4.7.1 >/dev/null 2>&1 || true
-
-            # Install TUI plugins based on enabled options
-            ${lib.optionalString cfg.tuiPlugins.subAgentStatusline.enable ''
+            need_npm=0
+            if [ ! -d "$runtime_dir/node_modules" ]; then
+              need_npm=1
+            else
+              pkg_src="${jsonFile}"
+              pkg_target="$runtime_dir/package.json"
+              if [ ! -f "$pkg_target" ] || ! ${pkgs.coreutils}/bin/cmp -s "$pkg_src" "$pkg_target" 2>/dev/null; then
+                need_npm=1
+              fi
+            fi
+            if [ "$need_npm" -eq 1 ]; then
               ${pkgs.nodejs}/bin/npm install --prefix "$runtime_dir" --no-save \
-                opencode-subagent-statusline@0.4.1 >/dev/null 2>&1 || true
+                @opencode-ai/plugin@1.4.11 \
+                @opencode-ai/sdk@1.4.11 \
+                unique-names-generator@^4.7.1 >/dev/null 2>&1 || true
+            fi
+
+            # Install TUI plugins based on enabled options with hash guard
+            ${lib.optionalString cfg.tuiPlugins.subAgentStatusline.enable ''
+              target="$runtime_dir/node_modules/opencode-subagent-statusline"
+              if [ ! -d "$target" ]; then
+                ${pkgs.nodejs}/bin/npm install --prefix "$runtime_dir" --no-save \
+                  opencode-subagent-statusline@0.4.1 >/dev/null 2>&1 || true
+              fi
             ''}
             ${lib.optionalString cfg.tuiPlugins.sddEngramManage.enable ''
-              ${pkgs.nodejs}/bin/npm install --prefix "$runtime_dir" --no-save \
-                opencode-sdd-engram-manage@1.2.0 >/dev/null 2>&1 || true
+              target="$runtime_dir/node_modules/opencode-sdd-engram-manage"
+              if [ ! -d "$target" ]; then
+                ${pkgs.nodejs}/bin/npm install --prefix "$runtime_dir" --no-save \
+                  opencode-sdd-engram-manage@1.2.0 >/dev/null 2>&1 || true
+              fi
             ''}
           '';
     };
