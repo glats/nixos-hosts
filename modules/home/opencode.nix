@@ -59,7 +59,7 @@ let
           plugin = [ "opencode-model-fallback-chain" ];
           experimental = {
             modelFallbackChain = {
-              timeoutMs = 60000;
+              timeoutMs = 3600000;
               chains = [
                 [ "nvidia/deepseek-ai/deepseek-v4-pro" "nvidia/z-ai/glm-5.1" ]
                 [ "nvidia/deepseek-ai/deepseek-v4-flash" "nvidia/minimaxai/minimax-m2.7" ]
