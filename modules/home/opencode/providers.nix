@@ -13,8 +13,7 @@ let
       models = {
         "z-ai/glm-5.1" = { name = "GLM 5.1"; };
         "minimaxai/minimax-m2.7" = { name = "MiniMax M2.7"; };
-        "nvidia/nemotron-3-super-120b-a12b" = { name = "Nemotron 3 Super"; };
-        "mistral-ai/mistral-small-4-119b-2603" = { name = "Mistral Small 4"; };
+        "mistralai/devstral-2-123b-instruct-2512" = { name = "Devstral 2 123B"; };
       };
     };
   };
@@ -79,7 +78,7 @@ let
       phases = {
         sdd-orchestrator = "nvidia/z-ai/glm-5.1";
         sdd-init = "nvidia/minimaxai/minimax-m2.7";
-        sdd-explore = "mistral-ai/mistral-small-4-119b-2603";
+        sdd-explore = "nvidia/mistralai/devstral-2-123b-instruct-2512";
         sdd-propose = "nvidia/z-ai/glm-5.1";
         sdd-spec = "nvidia/nvidia/nemotron-3-super-120b-a12b";
         sdd-design = "nvidia/z-ai/glm-5.1";
