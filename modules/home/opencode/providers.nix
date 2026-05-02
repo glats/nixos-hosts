@@ -13,7 +13,9 @@ let
       models = {
         "z-ai/glm-5.1" = { name = "GLM 5.1"; };
         "minimaxai/minimax-m2.7" = { name = "MiniMax M2.7"; };
-        "mistralai/devstral-2-123b-instruct-2512" = { name = "Devstral 2 123B"; };
+        "deepseek-ai/deepseek-v4-flash" = { name = "DeepSeek V4 Flash"; };
+        "deepseek-ai/deepseek-v4-pro" = { name = "DeepSeek V4 Pro"; };
+        "nvidia/nemotron-3-super-120b-a12b" = { name = "Nemotron 3 Super"; };
       };
     };
   };
@@ -28,6 +30,7 @@ let
       };
       models = {
         "llama-3.1-8b-instant" = { name = "Llama 3.1 8B Instant"; };
+        "llama-3.3-70b-versatile" = { name = "Llama 3.3 70B Versatile"; };
         "deepseek-r1-distill-llama-70b" = { name = "DeepSeek R1 Distill Llama 70B"; };
         "gpt-oss-120b" = { name = "GPT-OSS 120B"; };
         "gpt-oss-20b" = { name = "GPT-OSS 20B"; };
@@ -78,7 +81,7 @@ let
       phases = {
         sdd-orchestrator = "nvidia/z-ai/glm-5.1";
         sdd-init = "nvidia/minimaxai/minimax-m2.7";
-        sdd-explore = "nvidia/mistralai/devstral-2-123b-instruct-2512";
+        sdd-explore = "nvidia/deepseek-ai/deepseek-v4-flash";
         sdd-propose = "nvidia/z-ai/glm-5.1";
         sdd-spec = "nvidia/nvidia/nemotron-3-super-120b-a12b";
         sdd-design = "nvidia/z-ai/glm-5.1";
@@ -93,35 +96,35 @@ let
     {
       name = "groq";
       phases = {
-        sdd-orchestrator = "groq/llama-3.1-8b-instant";
+        sdd-orchestrator = "groq/llama-3.3-70b-versatile";
         sdd-init = "groq/llama-3.1-8b-instant";
         sdd-explore = "groq/llama-3.1-8b-instant";
-        sdd-propose = "groq/llama-3.1-8b-instant";
-        sdd-spec = "groq/llama-3.1-8b-instant";
-        sdd-design = "groq/llama-3.1-8b-instant";
-        sdd-tasks = "groq/llama-3.1-8b-instant";
+        sdd-propose = "groq/llama-3.3-70b-versatile";
+        sdd-spec = "groq/deepseek-r1-distill-llama-70b";
+        sdd-design = "groq/deepseek-r1-distill-llama-70b";
+        sdd-tasks = "groq/deepseek-r1-distill-llama-70b";
         sdd-apply = "groq/llama-3.1-8b-instant";
         sdd-verify = "groq/llama-3.1-8b-instant";
         sdd-archive = "groq/gpt-oss-20b";
         sdd-onboard = "groq/llama-3.1-8b-instant";
-        neutral = "groq/llama-3.1-8b-instant";
+        neutral = "groq/llama-3.3-70b-versatile";
       };
     }
     {
       name = "cerebras";
       phases = {
-        sdd-orchestrator = "cerebras/gpt-oss-120b";
+        sdd-orchestrator = "cerebras/llama-3.3-70b";
         sdd-init = "cerebras/llama-3.1-8b";
-        sdd-explore = "cerebras/llama-3.3-70b";
-        sdd-propose = "cerebras/gpt-oss-120b";
+        sdd-explore = "cerebras/llama-3.1-8b";
+        sdd-propose = "cerebras/llama-3.3-70b";
         sdd-spec = "cerebras/llama-3.3-70b";
         sdd-design = "cerebras/gpt-oss-120b";
         sdd-tasks = "cerebras/gpt-oss-120b";
         sdd-apply = "cerebras/llama-3.1-8b";
-        sdd-verify = "cerebras/gpt-oss-120b";
+        sdd-verify = "cerebras/llama-3.1-8b";
         sdd-archive = "cerebras/llama-3.1-8b";
         sdd-onboard = "cerebras/llama-3.1-8b";
-        neutral = "cerebras/gpt-oss-120b";
+        neutral = "cerebras/llama-3.3-70b";
       };
     }
     {
@@ -148,7 +151,7 @@ let
         sdd-init = "cerebras/llama-3.1-8b";
         sdd-explore = "groq/llama-3.1-8b-instant";
         sdd-propose = "cerebras/llama-3.3-70b";
-        sdd-spec = "cerebras/llama-3.3-70b";
+        sdd-spec = "groq/llama-3.3-70b-versatile";
         sdd-design = "cerebras/gpt-oss-120b";
         sdd-tasks = "cerebras/gpt-oss-120b";
         sdd-apply = "groq/llama-3.1-8b-instant";
@@ -161,86 +164,69 @@ let
     {
       name = "coding";
       phases = {
-        sdd-orchestrator = "cerebras/gpt-oss-120b";
-        sdd-init = "cerebras/llama-3.3-70b";
-        sdd-explore = "cerebras/llama-3.3-70b";
-        sdd-propose = "cerebras/gpt-oss-120b";
-        sdd-spec = "cerebras/llama-3.3-70b";
-        sdd-design = "cerebras/gpt-oss-120b";
-        sdd-tasks = "cerebras/gpt-oss-120b";
-        sdd-apply = "cerebras/llama-3.3-70b";
-        sdd-verify = "cerebras/gpt-oss-120b";
-        sdd-archive = "cerebras/llama-3.1-8b";
-        sdd-onboard = "cerebras/llama-3.1-8b";
-        neutral = "cerebras/gpt-oss-120b";
+        sdd-orchestrator = "nvidia/minimaxai/minimax-m2.7";
+        sdd-init = "nvidia/minimaxai/minimax-m2.7";
+        sdd-explore = "nvidia/minimaxai/minimax-m2.7";
+        sdd-propose = "nvidia/minimaxai/minimax-m2.7";
+        sdd-spec = "groq/deepseek-r1-distill-llama-70b";
+        sdd-design = "nvidia/z-ai/glm-5.1";
+        sdd-tasks = "nvidia/minimaxai/minimax-m2.7";
+        sdd-apply = "nvidia/minimaxai/minimax-m2.7";
+        sdd-verify = "nvidia/z-ai/glm-5.1";
+        sdd-archive = "nvidia/minimaxai/minimax-m2.7";
+        sdd-onboard = "nvidia/minimaxai/minimax-m2.7";
+        neutral = "nvidia/minimaxai/minimax-m2.7";
       };
     }
     {
       name = "reasoning";
       phases = {
-        sdd-orchestrator = "cerebras/gpt-oss-120b";
-        sdd-init = "cerebras/gpt-oss-120b";
-        sdd-explore = "cerebras/gpt-oss-120b";
-        sdd-propose = "cerebras/gpt-oss-120b";
-        sdd-spec = "cerebras/llama-3.3-70b";
-        sdd-design = "cerebras/gpt-oss-120b";
-        sdd-tasks = "cerebras/llama-3.3-70b";
-        sdd-apply = "cerebras/gpt-oss-120b";
-        sdd-verify = "cerebras/gpt-oss-120b";
-        sdd-archive = "cerebras/llama-3.1-8b";
-        sdd-onboard = "cerebras/gpt-oss-120b";
-        neutral = "cerebras/gpt-oss-120b";
+        sdd-orchestrator = "nvidia/z-ai/glm-5.1";
+        sdd-init = "nvidia/z-ai/glm-5.1";
+        sdd-explore = "nvidia/z-ai/glm-5.1";
+        sdd-propose = "nvidia/z-ai/glm-5.1";
+        sdd-spec = "groq/deepseek-r1-distill-llama-70b";
+        sdd-design = "nvidia/z-ai/glm-5.1";
+        sdd-tasks = "groq/deepseek-r1-distill-llama-70b";
+        sdd-apply = "nvidia/z-ai/glm-5.1";
+        sdd-verify = "nvidia/z-ai/glm-5.1";
+        sdd-archive = "nvidia/z-ai/glm-5.1";
+        sdd-onboard = "nvidia/z-ai/glm-5.1";
+        neutral = "nvidia/z-ai/glm-5.1";
       };
     }
     {
       name = "free";
       phases = {
-        sdd-orchestrator = "cerebras/gpt-oss-120b";
-        sdd-init = "groq/llama-3.1-8b-instant";
-        sdd-explore = "cerebras/llama-3.1-8b";
-        sdd-propose = "cerebras/gpt-oss-120b";
-        sdd-spec = "cerebras/llama-3.3-70b";
-        sdd-design = "cerebras/gpt-oss-120b";
-        sdd-tasks = "cerebras/llama-3.3-70b";
-        sdd-apply = "groq/llama-3.1-8b-instant";
-        sdd-verify = "cerebras/gpt-oss-120b";
-        sdd-archive = "groq/gpt-oss-20b";
-        sdd-onboard = "groq/llama-3.1-8b-instant";
-        neutral = "cerebras/gpt-oss-120b";
+        sdd-orchestrator = "opencode/big-pickle";
+        sdd-init = "opencode/minimax-m2.5-free";
+        sdd-explore = "opencode/minimax-m2.5-free";
+        sdd-propose = "opencode/big-pickle";
+        sdd-spec = "opencode/big-pickle";
+        sdd-design = "opencode/minimax-m2.5-free";
+        sdd-tasks = "opencode/mimo-v2-flash-free";
+        sdd-apply = "opencode/minimax-m2.5-free";
+        sdd-verify = "opencode/minimax-m2.5-free";
+        sdd-archive = "opencode/nemotron-3-super-free";
+        sdd-onboard = "opencode/minimax-m2.5-free";
+        neutral = "opencode/big-pickle";
       };
     }
     {
       name = "balanced";
       phases = {
-        sdd-orchestrator = "cerebras/gpt-oss-120b";
+        sdd-orchestrator = "nvidia/z-ai/glm-5.1";
         sdd-init = "groq/llama-3.1-8b-instant";
-        sdd-explore = "cerebras/llama-3.3-70b";
-        sdd-propose = "cerebras/gpt-oss-120b";
-        sdd-spec = "cerebras/llama-3.3-70b";
-        sdd-design = "cerebras/gpt-oss-120b";
-        sdd-tasks = "cerebras/llama-3.3-70b";
-        sdd-apply = "cerebras/llama-3.3-70b";
-        sdd-verify = "cerebras/gpt-oss-120b";
+        sdd-explore = "nvidia/deepseek-ai/deepseek-v4-flash";
+        sdd-propose = "nvidia/z-ai/glm-5.1";
+        sdd-spec = "nvidia/nvidia/nemotron-3-super-120b-a12b";
+        sdd-design = "nvidia/z-ai/glm-5.1";
+        sdd-tasks = "nvidia/nvidia/nemotron-3-super-120b-a12b";
+        sdd-apply = "nvidia/minimaxai/minimax-m2.7";
+        sdd-verify = "nvidia/z-ai/glm-5.1";
         sdd-archive = "groq/gpt-oss-20b";
-        sdd-onboard = "cerebras/llama-3.1-8b";
-        neutral = "cerebras/gpt-oss-120b";
-      };
-    }
-    {
-      name = "fast-reasoning";
-      phases = {
-        sdd-orchestrator = "cerebras/gpt-oss-120b";
-        sdd-init = "groq/llama-3.1-8b-instant";
-        sdd-explore = "cerebras/llama-3.3-70b";
-        sdd-propose = "cerebras/gpt-oss-120b";
-        sdd-spec = "cerebras/llama-3.3-70b";
-        sdd-design = "cerebras/gpt-oss-120b";
-        sdd-tasks = "cerebras/gpt-oss-120b";
-        sdd-apply = "groq/llama-3.1-8b-instant";
-        sdd-verify = "cerebras/llama-3.3-70b";
-        sdd-archive = "groq/gpt-oss-20b";
-        sdd-onboard = "groq/llama-3.1-8b-instant";
-        neutral = "cerebras/gpt-oss-120b";
+        sdd-onboard = "nvidia/minimaxai/minimax-m2.7";
+        neutral = "nvidia/z-ai/glm-5.1";
       };
     }
   ];
