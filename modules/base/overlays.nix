@@ -55,6 +55,19 @@ in
     };
   };
 
+  # Fix @parcel/watcher native binding: libstdc++.so.6 not found on NixOS
+  # See: https://github.com/sst/opencode/issues/18447
+  # nixpkgs fix: https://github.com/NixOS/nixpkgs/commit/f2dd0a1
+  opencode = prev.opencode.overrideAttrs (oldAttrs: {
+    nativeBuildInputs = (oldAttrs.nativeBuildInputs or [ ]) ++ [ final.makeWrapper ];
+    postFixup =
+      (oldAttrs.postFixup or "")
+      + ''
+        wrapProgram $out/bin/opencode \
+          --set LD_LIBRARY_PATH "${final.lib.makeLibraryPath [ final.stdenv.cc.cc.lib ]}"
+      '';
+  });
+
   libmateweather = prev.libmateweather.overrideAttrs (oldAttrs: {
     # Fix pointer offset bug in METAR parsing
     postPatch = (oldAttrs.postPatch or "") + ''

@@ -57,9 +57,6 @@ let
           mcp = enabledMcps;
           permission = cfg.permissions;
           plugin = [ "opencode-model-fallback-chain" ];
-          log = {
-            level = "WARN";
-          };
           experimental = {
             modelFallbackChain = {
               timeoutMs = 60000;
@@ -89,9 +86,8 @@ let
           ${builtins.readFile ./opencode/SYSTEM_RULES.md}
         '';
         ".config/${runtimeCfg.dir}/AGENTS.md".source = "${pkgs.gentle-ai-assets}/share/gentle-ai/AGENTS.md";
-        ".config/${runtimeCfg.dir}/skills".source = "${pkgs.gentle-ai-assets}/share/gentle-ai/skills";
-        ".config/${runtimeCfg.dir}/commands".source =
-          "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/commands";
+        # skills/ and commands/ are managed entirely by makeOpencodeConfigMutable activation
+        # (not via home.file) because HM cannot overwrite existing real directories with symlinks
         ".config/${runtimeCfg.dir}/package.json" = {
           force = true;
           text = builtins.toJSON {
@@ -140,29 +136,38 @@ let
                   ${pkgs.coreutils}/bin/cp --remove-destination "$src" "$target"
                 fi
               fi
+              # Ensure files are writable (nix store sources are read-only)
+              if [ -f "$target" ] && [ ! -w "$target" ]; then
+                chmod 644 "$target"
+              fi
             done
 
-            # Directory symlinks -> real directories (skills/, commands/)
-            for dir in skills commands; do
-              target="$runtime_dir/$dir"
+            # Directory management for skills/ and commands/
+            # Handled here (not via home.file) because HM cannot overwrite real dirs with symlinks.
+            # Copies files from nix store with per-file cmp guard + orphan removal.
+            for dir_pair in "skills:${pkgs.gentle-ai-assets}/share/gentle-ai/skills" "commands:${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/commands"; do
+              dir_name="''${dir_pair%%:*}"
+              src="''${dir_pair#*:}"
+              target="$runtime_dir/$dir_name"
+              # Remove symlink if HM managed to create one
               if [ -L "$target" ]; then
-                src="$(${pkgs.coreutils}/bin/readlink -f "$target")"
                 ${pkgs.coreutils}/bin/rm -f "$target"
-                mkdir -p "$target"
-                # Copy changed files
-                (cd "$src" && ${pkgs.findutils}/bin/find . -type f) | while read -r rel; do
-                  if [ ! -f "$target/$rel" ] || ! ${pkgs.coreutils}/bin/cmp -s "$src/$rel" "$target/$rel"; then
-                    mkdir -p "$(dirname "$target/$rel")"
-                    ${pkgs.coreutils}/bin/cp -f "$src/$rel" "$target/$rel"
-                  fi
-                done
-                # Remove orphaned files
-                (cd "$target" && ${pkgs.findutils}/bin/find . -type f) | while read -r rel; do
-                  if [ ! -f "$src/$rel" ]; then
-                    rm -f "$target/$rel"
-                  fi
-                done
               fi
+              mkdir -p "$target"
+              # Copy changed files
+              (cd "$src" && ${pkgs.findutils}/bin/find . -type f) | while read -r rel; do
+                if [ ! -f "$target/$rel" ] || ! ${pkgs.coreutils}/bin/cmp -s "$src/$rel" "$target/$rel"; then
+                  mkdir -p "$(dirname "$target/$rel")"
+                  ${pkgs.coreutils}/bin/cp -f "$src/$rel" "$target/$rel"
+                  chmod 644 "$target/$rel"
+                fi
+              done
+              # Remove orphaned files
+              (cd "$target" && ${pkgs.findutils}/bin/find . -type f) | while read -r rel; do
+                if [ ! -f "$src/$rel" ]; then
+                  rm -f "$target/$rel"
+                fi
+              done
             done
           '';
 
@@ -188,6 +193,7 @@ let
               src="${pkgs.engram-assets}/share/engram/opencode/plugins/engram.ts"
               if [ ! -f "$target" ] || ! ${pkgs.coreutils}/bin/cmp -s "$src" "$target"; then
                 ${pkgs.coreutils}/bin/cp -f "$src" "$target"
+                chmod 644 "$target"
               fi
             ''}
             ${lib.optionalString cfg.plugins.backgroundAgents.enable ''
@@ -195,6 +201,7 @@ let
               src="${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/plugins/background-agents.ts"
               if [ ! -f "$target" ] || ! ${pkgs.coreutils}/bin/cmp -s "$src" "$target"; then
                 ${pkgs.coreutils}/bin/cp -f "$src" "$target"
+                chmod 644 "$target"
               fi
             ''}
 
@@ -230,9 +237,18 @@ let
               target="$runtime_dir/node_modules/opencode-sdd-engram-manage"
               if [ ! -d "$target" ]; then
                 ${pkgs.nodejs}/bin/npm install --prefix "$runtime_dir" --no-save \
-                  opencode-sdd-engram-manage@1.2.0 >/dev/null 2>&1 || true
+                   opencode-sdd-engram-manage@1.2.0 >/dev/null 2>&1 || true
               fi
             ''}
+
+            # Workaround for opencode bug: migration gate checks for opencode.db
+            # but non-latest channels (stable) use opencode-stable.db, causing
+            # migration to re-run on every launch. Symlink stable -> default name.
+            # See: https://github.com/anomalyco/opencode/issues/16885
+            data_dir="${config.home.homeDirectory}/.local/share/opencode"
+            if [ -f "$data_dir/opencode-stable.db" ] && [ ! -e "$data_dir/opencode.db" ]; then
+              ln -s "$data_dir/opencode-stable.db" "$data_dir/opencode.db"
+            fi
           '';
     };
 in
