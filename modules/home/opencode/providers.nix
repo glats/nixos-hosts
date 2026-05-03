@@ -81,11 +81,11 @@ let
       phases = {
         sdd-orchestrator = "nvidia/z-ai/glm-5.1";
         sdd-init = "nvidia/minimaxai/minimax-m2.7";
-        sdd-explore = "nvidia/nvidia/nemotron-3-super-120b-a12b";
+        sdd-explore = "nvidia/z-ai/glm-5.1";
         sdd-propose = "nvidia/z-ai/glm-5.1";
-        sdd-spec = "nvidia/nvidia/nemotron-3-super-120b-a12b";
+        sdd-spec = "nvidia/z-ai/glm-5.1";
         sdd-design = "nvidia/z-ai/glm-5.1";
-        sdd-tasks = "nvidia/nvidia/nemotron-3-super-120b-a12b";
+        sdd-tasks = "nvidia/z-ai/glm-5.1";
         sdd-apply = "nvidia/minimaxai/minimax-m2.7";
         sdd-verify = "nvidia/z-ai/glm-5.1";
         sdd-archive = "nvidia/minimaxai/minimax-m2.7";
