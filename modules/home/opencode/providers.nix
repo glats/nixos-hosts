@@ -73,7 +73,7 @@ let
 
   allProviders = nvidiaProvider // groqProvider // cerebrasProvider // opencodeZenProvider;
 
-  activeProviderName = "github-copilot";
+  activeProviderName = "nvidia";
 
   providers = [
     {
