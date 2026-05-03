@@ -43,3 +43,4 @@ cmd/
 
 # SDD artifacts (external workflow)
 openspec/
+sdd/
