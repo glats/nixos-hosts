@@ -20,38 +20,47 @@
     ../../modules/base/users.nix
     ../../modules/base/zsh.nix
 
+    # Rog secrets
+    ./secrets.nix
+
+    # Rog conky config
+    ./conky-config.nix
+
+    # Conky module (options from features/conky)
+    ../../modules/features/conky
+
     # Hardware (rog-specific)
-    ../../modules/hardware/default.nix
     ../../modules/hardware/nvidia.nix
     ../../modules/hardware/asus-fan-control.nix
+    ../../modules/hardware/keyring.nix
 
     # Desktop
     ../../modules/desktop/fonts.nix
     ../../modules/desktop/i18n.nix
     ../../modules/desktop/kmscon.nix
     ../../modules/desktop/xfce-defaults.nix
-    ../../modules/features/desktop/xrdp.nix
+    ./services/xrdp.nix
 
-    # Services
-    ../../modules/features/services/arr-stack.nix
-    ../../modules/features/services/cobalt.nix
-    ../../modules/features/services/code-server.nix
-    ../../modules/features/services/ddclient.nix
-    ../../modules/features/services/dozzle.nix
-    ../../modules/features/services/fileshelter.nix
-    ../../modules/features/services/flaresolverr.nix
-    ../../modules/features/services/ftp.nix
-    ../../modules/features/services/github-mcp-server.nix
-    ../../modules/features/services/gonic.nix
-    ../../modules/features/services/guacamole.nix
-    ../../modules/features/services/jellyfin.nix
-    ../../modules/features/services/nginx.nix
-    ../../modules/features/services/ollama.nix
-    ../../modules/features/services/qbittorrent.nix
-    ../../modules/features/services/samba.nix
-    ../../modules/features/services/seerr.nix
-    ../../modules/features/services/wetty.nix
-    ../../modules/features/services/wireguard.nix
+    # Services (rog-specific)
+    ./services/arr-stack.nix
+    ./services/cobalt.nix
+    ./services/code-server.nix
+    ./services/ddclient.nix
+    ./services/dozzle.nix
+    ./services/fileshelter.nix
+    ./services/flaresolverr.nix
+    ./services/ftp.nix
+    ./services/github-mcp-server.nix
+    ./services/gonic.nix
+    ./services/guacamole.nix
+    ./services/jellyfin.nix
+    ./services/nginx.nix
+    ./services/ollama.nix
+    ./services/qbittorrent.nix
+    ./services/samba.nix
+    ./services/seerr.nix
+    ./services/wetty.nix
+    ./services/wireguard.nix
 
     # Virtualisation
     ../../modules/virtualisation/docker.nix
@@ -62,29 +71,19 @@
     ../../modules/networking/firewall.nix
     ../../modules/networking/openssh.nix
     ../../modules/networking/wol.nix
+
+    # Boot shared config
+    ../../modules/features/boot.nix
   ];
 
+  boot-settings = {
+    enable = true;
+    includeAcpiOsi = true;
+  };
+
   boot = {
-    loader.systemd-boot.enable = true;
-    loader.efi.canTouchEfiVariables = true;
-    plymouth.enable = true;
-    consoleLogLevel = 0;
-    initrd.verbose = false;
-    kernelPackages = pkgs.linuxPackages_zen;
     extraModulePackages = with config.boot.kernelPackages; [ acpi_call ];
     kernelModules = [ "acpi_call" ];
-    kernelParams = [
-      "quiet"
-      "splash"
-      "boot.shell_on_fail"
-      "loglevel=3"
-      "rd.systemd.show_status=false"
-      "rd.udev.log_level=3"
-      "udev.log_priority=3"
-      "vt.global_cursor_default=0"
-      "acpi_osi=!"
-      "acpi_osi=\"Windows 2018\""
-    ];
   };
 
   nixpkgs.config = {
@@ -133,7 +132,7 @@
     ];
   };
 
-  system.stateVersion = "24.11";
+  system.stateVersion = "25.05";
 
   # Fix 1: Extender timeouts para prevenir exit status 4 en nixos-rebuild switch
   # Ver: investigación de fallos intermitentes systemd-run switch-to-configuration
