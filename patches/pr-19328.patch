@@ -1,0 +1,17 @@
+diff -u a/packages/opencode/src/tool/task.ts b/packages/opencode/src/tool/task.ts
+--- a/packages/opencode/src/tool/task.ts
++++ b/packages/opencode/src/tool/task.ts
+@@ -64,10 +64,12 @@
+       const canTodo = next.permission.some((rule) => rule.permission === "todowrite")
+
+       const taskID = params.task_id
+-      const session = taskID
+-        ? yield* sessions.get(SessionID.make(taskID)).pipe(Effect.catchCause(() => Effect.succeed(undefined)))
+-        : undefined
++      const id = taskID ? SessionID.zod.safeParse(taskID) : undefined
++      const session = id?.success
++        ? yield* sessions.get(id.data).pipe(Effect.catchCause(() => Effect.succeed(undefined)))
++        : undefined
+       const nextSession =
+         session ??
+         (yield* sessions.create({
