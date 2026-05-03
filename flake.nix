@@ -52,7 +52,7 @@
     # engram upstream (for OpenCode plugin)
     # Must match version in pkgs/engram/default.nix
     engram-src = {
-      url = "github:Gentleman-Programming/engram/v1.14.6";
+      url = "github:Gentleman-Programming/engram/v1.15.1";
       flake = false;
     };
   };
