@@ -66,7 +66,6 @@
       # Worktree aliases (new names are clearer)
       "wt-done" = "finish-work";
       "wt-discard" = "abort-work";
-      oc = "opencode --log-level DEBUG --print-logs 2> ~/.local/share/opencode/logs/opencode-$(date +%Y%m%d-%H%M%S).log";
     };
 
     sessionVariables = {
@@ -78,8 +77,6 @@
     };
 
     initContent = ''
-      mkdir -p ~/.local/share/opencode/logs
-
       gitNewBranchFeature() { git checkout -b feature/$1 }
       gitNewBranchBugfix() { git checkout -b bugfix/$1 }
       gitNewBranchHotfix() { git checkout -b hotfix/$1 }
