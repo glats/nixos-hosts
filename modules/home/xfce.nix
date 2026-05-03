@@ -14,52 +14,9 @@ in
   # XFCE uses xfconf for settings (Home Manager: programs.xfconf)
   # GTK theme shared via theme.nix, Qt via theme.nix
 
-  xfconf.settings = {
-    # Terminal colors matching Glats palette
-    "xfce4-terminal" = {
-      "color-foreground" = "#${config.colorScheme.palette.base05}";
-      "color-background" = "#${config.colorScheme.palette.base00}";
-      "color-palette" = "${config.colorScheme.palette.base00};${config.colorScheme.palette.base08};${config.colorScheme.palette.base0B};${config.colorScheme.palette.base0A};${config.colorScheme.palette.base0D};${config.colorScheme.palette.base0E};${config.colorScheme.palette.base0C};${config.colorScheme.palette.base05};${config.colorScheme.palette.base03};${config.colorScheme.palette.base09};${config.colorScheme.palette.brightGreen};${config.colorScheme.palette.brightYellow};${config.colorScheme.palette.brightBlue};${config.colorScheme.palette.brightMagenta};${config.colorScheme.palette.brightCyan};${config.colorScheme.palette.base07}";
-      "color-bold" = "#${config.colorScheme.palette.base05}";
-      "color-cursor" = "#${config.colorScheme.palette.base05}";
-      "color-bold-is-bright" = false;
-      "background-mode" = "transparent";
-      "background-darkness" = 0.92139737991266379;
-      "font-name" = "CaskaydiaCove Nerd Font 11";
-      "misc-menubar-default" = false;
-      "misc-toolbar-default" = false;
-      "scrolling-bar" = "normal";
-      "scrolling-on-output" = false;
-      "scrolling-unlimited" = true;
-    };
-
-    # Window manager
-    "xfwm4" = {
-      "theme" = config.gtk.theme.name;
-      "button-layout" = "menu:minimize,maximize,close";
-      "title-font" = "Sans Bold 9";
-    };
-
-    # Panel background matching base00
-    "xfce4-panel" = {
-      "panel-background-style" = 1; # solid color
-      "panel-background-alpha" = 100;
-      "panel-background-rgba" = "rgba(${hexToRgb config.colorScheme.palette.base00},1.0)";
-    };
-
-    # GTK color scheme settings (match MATE's visited_link_color, buttons-have-icons, menus-have-icons)
-    "xsettings" = {
-      "Gtk/ColorScheme" = "visited_link_color:#${config.colorScheme.palette.base0E}";
-      "Gtk/ThemeName" = config.gtk.theme.name;
-      "Gtk/IconThemeName" = "Papirus-Dark";
-      "Gtk/CursorThemeName" = "mate-black";
-      "Gtk/FontName" = "Sans 10";
-      # Match MATE theme settings
-      "Gtk/ButtonImages" = true;
-      "Gtk/MenuImages" = true;
-    };
-
-  };
+  # xfconf.settings disabled temporarily - causes "Failed to set property" in headless/xrdp sessions
+  # TODO: re-enable with session detection or move to xrdp-specific config
+  xfconf.settings = lib.mkForce { };
 
   xdg.configFile = {
     # Disable xfce4-screensaver in xrdp sessions

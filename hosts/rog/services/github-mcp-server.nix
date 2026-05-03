@@ -23,17 +23,10 @@ in
 {
   # GitHub MCP Server - Model Context Protocol server for GitHub
   # Provides AI tools with access to GitHub's platform via MCP protocol
-  # Uses GitHub Personal Access Token from sops secrets
+  # Uses GitHub Personal Access Token from sops secrets (declared in modules/base/sops.nix)
 
   environment.systemPackages = [
     github-mcp-server-wrapped
     pkgs.github-mcp-server # Also install original for reference
   ];
-
-  # Ensure sops secret is available
-  sops.secrets."github/pat" = {
-    owner = "glats";
-    group = "users";
-    mode = "0400";
-  };
 }

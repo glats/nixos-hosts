@@ -2,6 +2,6 @@
 
 {
   imports = [
-    ./keyring.nix
+    ./options.nix
   ];
 }
