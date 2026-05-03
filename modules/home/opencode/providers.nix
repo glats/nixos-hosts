@@ -73,7 +73,7 @@ let
 
   allProviders = nvidiaProvider // groqProvider // cerebrasProvider // opencodeZenProvider;
 
-  activeProviderName = "nvidia";
+  activeProviderName = "opencode-go";
 
   providers = [
     {
@@ -81,11 +81,11 @@ let
       phases = {
         sdd-orchestrator = "nvidia/z-ai/glm-5.1";
         sdd-init = "nvidia/minimaxai/minimax-m2.7";
-        sdd-explore = "nvidia/z-ai/glm-5.1";
+        sdd-explore = "nvidia/mistralai/ministral-14b-instruct-2512";
         sdd-propose = "nvidia/z-ai/glm-5.1";
-        sdd-spec = "nvidia/z-ai/glm-5.1";
+        sdd-spec = "nvidia/nvidia/nemotron-3-super-120b-a12b";
         sdd-design = "nvidia/z-ai/glm-5.1";
-        sdd-tasks = "nvidia/z-ai/glm-5.1";
+        sdd-tasks = "nvidia/nvidia/nemotron-3-super-120b-a12b";
         sdd-apply = "nvidia/minimaxai/minimax-m2.7";
         sdd-verify = "nvidia/z-ai/glm-5.1";
         sdd-archive = "nvidia/minimaxai/minimax-m2.7";
