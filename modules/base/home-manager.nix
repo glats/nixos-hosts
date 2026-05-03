@@ -7,6 +7,8 @@
     extraSpecialArgs = {
       inherit inputs;
       hostName = config.networking.hostName;
+      conkyConfig = config.conky-config;
+      # Force rebuild: 2026-05-03
     };
     users.glats = {
       imports = [
@@ -30,8 +32,11 @@
         ../home/ssh.nix
         ../home/sops.nix
         inputs.sops-nix.homeManagerModules.sops
-      ] ++ lib.optional (config.networking.hostName == "rog") ../home/conky-rog.nix
-      ++ lib.optional (config.networking.hostName == "thinkcentre") ../home/conky-thinkcentre.nix;
+      ] ++ lib.optionals (config.networking.hostName == "rog") [
+        ../home/conky-rog.nix
+      ] ++ lib.optionals (config.networking.hostName == "thinkcentre") [
+        ../home/conky-thinkcentre.nix
+      ];
     };
   };
 }

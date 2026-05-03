@@ -9,7 +9,7 @@
     ./hardware-configuration.nix
 
     # Hardware
-    ../../modules/hardware/default.nix
+    ../../modules/hardware/keyring.nix
 
     # Base (transversal modules)
     ../../modules/base/cachix.nix
@@ -28,38 +28,34 @@
     ../../modules/desktop/i18n.nix
     ../../modules/desktop/kmscon.nix
     ../../modules/desktop/xfce-defaults.nix
-    ../../modules/features/desktop/xrdp.nix
+    ./services/xrdp.nix
+    ./services/github-mcp-server.nix
 
     # Virtualisation
     ../../modules/virtualisation/docker.nix
 
-    # Services
-    ../../modules/features/services/github-mcp-server.nix
+    # Thinkcentre secrets
+    ./secrets.nix
+
+    # Thinkcentre conky config
+    ./conky-config.nix
+
+    # Conky module (options from features/conky)
+    ../../modules/features/conky
 
     # Networking
     ../../modules/networking/avahi.nix
     ../../modules/networking/firewall.nix
     ../../modules/networking/openssh.nix
     ../../modules/networking/wol.nix
+
+    # Boot shared config
+    ../../modules/features/boot.nix
   ];
 
-  boot = {
-    loader.systemd-boot.enable = true;
-    loader.efi.canTouchEfiVariables = true;
-    plymouth.enable = true;
-    consoleLogLevel = 0;
-    initrd.verbose = false;
-    kernelPackages = pkgs.linuxPackages_zen;
-    kernelParams = [
-      "quiet"
-      "splash"
-      "boot.shell_on_fail"
-      "loglevel=3"
-      "rd.systemd.show_status=false"
-      "rd.udev.log_level=3"
-      "udev.log_priority=3"
-      "vt.global_cursor_default=0"
-    ];
+  boot-settings = {
+    enable = true;
+    includeAcpiOsi = false;
   };
 
   nixpkgs.config = {
