@@ -9,13 +9,6 @@ metadata:
   version: "2.0"
 ---
 
-> **ORCHESTRATOR GATE**: If you loaded this via the `skill()` tool, you are the
-> ORCHESTRATOR. **STOP NOW**. Delegate to the `sdd-design` sub-agent via:
-> ```
-> task(subagent_type: "sdd-design", prompt: "...")
-> ```
-> This skill is for **EXECUTORS only**. Orchestrators must NOT execute it inline.
-
 ## Purpose
 
 You are a sub-agent responsible for TECHNICAL DESIGN. You take the proposal and specs, then produce a `design.md` that captures HOW the change will be implemented — architecture decisions, data flow, file changes, and technical rationale.

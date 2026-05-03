@@ -131,16 +131,18 @@ in
     };
   };
 
-  # Apply opencode PR #19328: fix(task): ignore invalid task_id when spawning subagents
-  # https://github.com/anomalyco/opencode/pull/19328
-  # Bug: SessionID.make() throws on malformed task_id before session creation fallback
-  # Fix: validate task_id with SessionID.zod.safeParse() before passing to Session.get()
-  # TODO: Remove once PR is merged into upstream
+  # Override opencode to v1.14.33 which fixes the "Cannot access 'S' before initialization" bug
+  # https://github.com/anomalyco/opencode/pull/25449
   opencode = prev.opencode.overrideAttrs (oldAttrs: {
-    postPatch = (oldAttrs.postPatch or "") + ''
-      sed -i 's/const taskID = params\.task_id/const id = params.task_id ? SessionID.zod.safeParse(params.task_id) : undefined\n      const taskID = params.task_id/' packages/opencode/src/tool/task.ts
-      sed -i 's/yield\* sessions\.get(SessionID\.make(taskID))/yield* sessions.get(id.data)/' packages/opencode/src/tool/task.ts
-      sed -i 's/sessions\.get(id\.data)\.pipe(Effect\.catchCause/sessions.get(id.data).pipe(Effect.catchCause/' packages/opencode/src/tool/task.ts
-    '';
+    version = "1.14.33";
+    src = final.fetchFromGitHub {
+      owner = "anomalyco";
+      repo = "opencode";
+      tag = "v1.14.33";
+      hash = "sha256-bnAV1ApOYZngG59fxFKrGN0jmBKWKnjktsbKJiEOaSo=";
+    };
+    node_modules = oldAttrs.node_modules.overrideAttrs {
+      outputHash = "sha256-dbpqhVcjWr+puZhV0x7pR38iMjjZdbrJydKJ/qJfDeY=";
+    };
   });
 }
