@@ -130,4 +130,17 @@ in
       maintainers = [ ];
     };
   };
+
+  # Apply opencode PR #19328: fix(task): ignore invalid task_id when spawning subagents
+  # https://github.com/anomalyco/opencode/pull/19328
+  # Bug: Zod validation throws on malformed task_id before session creation fallback
+  # Fix: validate task_id with safeParse before passing to Session.get()
+  # Approach: sed substitution on the v1.14.30 source (not full file replacement)
+  # The fix changes SessionID.make(taskID) to use SessionID.zod.safeParse() first
+  # TODO: Remove once PR is merged into nixpkgs
+  opencode = prev.opencode.overrideAttrs (oldAttrs: {
+    postPatch = (oldAttrs.postPatch or "") + ''
+      sed -i 's/yield\* sessions\.get(SessionID\.make(taskID))\.pipe(Effect\.catchCause(() => Effect\.succeed(undefined)))/(() => { const p = SessionID.zod.safeParse(taskID); return p.success ? sessions.get(p.data).pipe(Effect.catchCause(() => Effect.succeed(undefined))) : Effect.succeed(undefined); })()/g' packages/opencode/src/tool/task.ts
+    '';
+  });
 }
