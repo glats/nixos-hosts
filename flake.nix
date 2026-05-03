@@ -79,6 +79,7 @@
         inherit (pkgs) writeText;
         vanilla = gentle-ai-assets-vanilla;
         extraSkills = ./modules/home/opencode/skills;
+        extraCommands = ./modules/home/opencode/commands;
       };
       engram-assets-vanilla = pkgs.callPackage ./pkgs/engram-assets/vanilla.nix {
         inherit engram-src;
@@ -90,12 +91,28 @@
 
       opencode-npm-packages = pkgs.callPackage ./pkgs/opencode-npm-packages { };
 
+      # verify-models: Test LLM model availability across free-tier providers
+      verify-models = pkgs.writers.writePython3Bin "verify-models"
+        {
+          libraries = [ pkgs.python3Packages.openai ];
+          flakeIgnore = [ "E501" "W503" "E265" "E266" ];
+        }
+        (builtins.readFile ./scripts/verify-models.py);
+
       # Library functions for external use (non-NixOS portability)
       opencode-config-lib = import ./pkgs/opencode-config { inherit (pkgs) lib writeText; };
     in
     {
       packages.${system} = {
-        inherit nixos-scripts gentle-ai engram gentle-ai-assets-vanilla gentle-ai-assets engram-assets-vanilla engram-assets opencode-npm-packages;
+        inherit nixos-scripts gentle-ai engram gentle-ai-assets-vanilla gentle-ai-assets engram-assets-vanilla engram-assets opencode-npm-packages verify-models;
+      };
+
+      # Apps for nix run .#verify-models
+      apps.${system} = {
+        verify-models = {
+          type = "app";
+          program = "${verify-models}/bin/verify-models";
+        };
       };
 
       # Reusable library functions for other flakes
