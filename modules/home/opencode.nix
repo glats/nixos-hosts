@@ -72,7 +72,10 @@ let
 
           ${builtins.readFile ./opencode/SYSTEM_RULES.md}
         '';
-        ".config/${runtimeCfg.dir}/AGENTS.md".source = "${pkgs.gentle-ai-assets}/share/gentle-ai/AGENTS.md";
+        ".config/${runtimeCfg.dir}/AGENTS.md" = {
+          force = true;
+          source = "${pkgs.gentle-ai-assets}/share/gentle-ai/AGENTS.md";
+        };
         # skills/ and commands/ are managed entirely by makeOpencodeConfigMutable activation
         # (not via home.file) because HM cannot overwrite existing real directories with symlinks
         ".config/${runtimeCfg.dir}/package.json" = {

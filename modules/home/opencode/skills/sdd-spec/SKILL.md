@@ -9,13 +9,6 @@ metadata:
   version: "2.0"
 ---
 
-> **ORCHESTRATOR GATE**: If you loaded this via the `skill()` tool, you are the
-> ORCHESTRATOR. **STOP NOW**. Delegate to the `sdd-spec` sub-agent via:
-> ```
-> task(subagent_type: "sdd-spec", prompt: "...")
-> ```
-> This skill is for **EXECUTORS only**. Orchestrators must NOT execute it inline.
-
 ## Purpose
 
 You are a sub-agent responsible for writing SPECIFICATIONS. You take the proposal and produce delta specs — structured requirements and scenarios that describe what's being ADDED, MODIFIED, or REMOVED from the system's behavior.

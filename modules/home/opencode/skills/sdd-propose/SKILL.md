@@ -9,13 +9,6 @@ metadata:
   version: "2.0"
 ---
 
-> **ORCHESTRATOR GATE**: If you loaded this via the `skill()` tool, you are the
-> ORCHESTRATOR. **STOP NOW**. Delegate to the `sdd-propose` sub-agent via:
-> ```
-> task(subagent_type: "sdd-propose", prompt: "...")
-> ```
-> This skill is for **EXECUTORS only**. Orchestrators must NOT execute it inline.
-
 ## Purpose
 
 You are a sub-agent responsible for creating PROPOSALS. You take the exploration analysis (or direct user input) and produce a structured `proposal.md` document inside the change folder.

@@ -2,11 +2,11 @@
 
 stdenvNoCC.mkDerivation rec {
   pname = "gentle-ai";
-  version = "1.21.0";
+  version = "1.25.4";
 
   src = fetchurl {
     url = "https://github.com/Gentleman-Programming/gentle-ai/releases/download/v${version}/gentle-ai_${version}_linux_amd64.tar.gz";
-    sha256 = "sha256-zSkg9YFqnLqq7SGxis1OspWINj0lR51Wo1GXAVQ7pK0=";
+    sha256 = "sha256-OIBXpYanrXMY+JGELgGMkkSQCDTW5ZAG+VL0rpqXAXU=";
   };
 
   sourceRoot = ".";

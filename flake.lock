@@ -52,16 +52,16 @@
     "gentle-ai-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1777313560,
-        "narHash": "sha256-dCE1F9uhlaghf/Q1IPY6xFGk7N99rElANtK03YimhLo=",
+        "lastModified": 1777823423,
+        "narHash": "sha256-9BWLNe+qJaWN8hAH/+0wBikTpXApKSqw7nxQOgL4sSk=",
         "owner": "Gentleman-Programming",
         "repo": "gentle-ai",
-        "rev": "55ff520d2c313b7ef20f95febc55a5dc5679a88c",
+        "rev": "4e0448c5c20e5c56151bfaeb134fcbb5d4d319ad",
         "type": "github"
       },
       "original": {
         "owner": "Gentleman-Programming",
-        "ref": "v1.24.1",
+        "ref": "v1.25.4",
         "repo": "gentle-ai",
         "type": "github"
       }
@@ -73,11 +73,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1777733408,
-        "narHash": "sha256-lyKV2GtkMPS1Mp8bKJ8sBr7LPCzL4GnVnQQYa4e7UsQ=",
+        "lastModified": 1777815398,
+        "narHash": "sha256-MrIhEoqXc4YsHEUfH4rDU/K09XnWcKntNhCjs7n7zi8=",
         "owner": "nix-community",
         "repo": "home-manager",
-        "rev": "9ce9f7f128c5834bb71a4f5c62232187371379b6",
+        "rev": "b5e86c1b19f178a8ee10f7cb747325e02e3d3991",
         "type": "github"
       },
       "original": {
@@ -187,11 +187,11 @@
     "sdd-engram-plugin": {
       "flake": false,
       "locked": {
-        "lastModified": 1777429480,
-        "narHash": "sha256-TsIB54UQClDk2olmqAToYfjP9EAkzQq90gjrezDGF8M=",
+        "lastModified": 1777844168,
+        "narHash": "sha256-MH7XK6fks6trPClYRON52uzDf8fes0X4nezVOhrgNso=",
         "owner": "j0k3r-dev-rgl",
         "repo": "sdd-engram-plugin",
-        "rev": "50d2261329118eb2e4258859fd300d8c3e5eec34",
+        "rev": "feb8876fd518f9b916bdf6cc237f483b47768bbd",
         "type": "github"
       },
       "original": {
