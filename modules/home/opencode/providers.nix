@@ -266,10 +266,10 @@ let
     {
       name = "opencode-go";
       phases = {
-        sdd-orchestrator = "opencode-go/kimi-k2.5";
+        sdd-orchestrator = "opencode-go/kimi-k2.6";
         sdd-init = "opencode-go/minimax-m2.7";
         sdd-explore = "opencode-go/deepseek-v4-flash";
-        sdd-propose = "opencode-go/kimi-k2.5";
+        sdd-propose = "opencode-go/kimi-k2.6";
         sdd-spec = "opencode-go/qwen3.6-plus";
         sdd-design = "opencode-go/glm-5.1";
         sdd-tasks = "opencode-go/deepseek-v4-pro";
@@ -277,7 +277,7 @@ let
         sdd-verify = "opencode-go/glm-5.1";
         sdd-archive = "opencode-go/mimo-v2.5-pro";
         sdd-onboard = "opencode-go/mimo-v2.5-pro";
-        neutral = "opencode-go/kimi-k2.5";
+        neutral = "opencode-go/kimi-k2.6";
       };
     }
   ];
