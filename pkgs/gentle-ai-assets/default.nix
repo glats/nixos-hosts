@@ -1,4 +1,4 @@
-{ lib, stdenvNoCC, writeText, vanilla, extraSkills ? null }:
+{ lib, stdenvNoCC, writeText, vanilla, extraSkills ? null, extraCommands ? null }:
 
 let
   # Nuestras reglas locales que se agregarán al principio
@@ -83,6 +83,18 @@ stdenvNoCC.mkDerivation {
         # Copy new version
         cp -r "$skill_dir" "$TEMP_DIR/skills/"
         chmod -R u+w "$TEMP_DIR/skills/$skill_name"
+      done
+    fi
+
+    # Overlay local commands on top of vanilla commands
+    if [ -n "${extraCommands}" ] && [ -d "${extraCommands}" ]; then
+      for cmd_file in ${extraCommands}/*; do
+        cmd_name=$(basename "$cmd_file")
+        # Remove existing if present (read-only from vanilla copy)
+        rm -f "$TEMP_DIR/opencode/commands/$cmd_name" 2>/dev/null || true
+        # Copy new version
+        cp "$cmd_file" "$TEMP_DIR/opencode/commands/"
+        chmod u+w "$TEMP_DIR/opencode/commands/$cmd_name"
       done
     fi
 
