@@ -66,7 +66,7 @@
       # Worktree aliases (new names are clearer)
       "wt-done" = "finish-work";
       "wt-discard" = "abort-work";
-      oc = "opencode --log-level DEBUG --print-logs 2>&1 | tee ~/.local/share/opencode/logs/opencode-$(date +%Y%m%d-%H%M%S).log";
+      oc = "opencode --log-level DEBUG --print-logs 2> ~/.local/share/opencode/logs/opencode-$(date +%Y%m%d-%H%M%S).log";
     };
 
     sessionVariables = {

@@ -73,7 +73,7 @@ let
 
   allProviders = nvidiaProvider // groqProvider // cerebrasProvider // opencodeZenProvider;
 
-  activeProviderName = "opencode-go";
+  activeProviderName = "nvidia";
 
   providers = [
     {
