@@ -88,12 +88,14 @@
         vanilla = engram-assets-vanilla;
       };
 
+      opencode-npm-packages = pkgs.callPackage ./pkgs/opencode-npm-packages { };
+
       # Library functions for external use (non-NixOS portability)
       opencode-config-lib = import ./pkgs/opencode-config { inherit (pkgs) lib writeText; };
     in
     {
       packages.${system} = {
-        inherit nixos-scripts gentle-ai engram gentle-ai-assets-vanilla gentle-ai-assets engram-assets-vanilla engram-assets;
+        inherit nixos-scripts gentle-ai engram gentle-ai-assets-vanilla gentle-ai-assets engram-assets-vanilla engram-assets opencode-npm-packages;
       };
 
       # Reusable library functions for other flakes

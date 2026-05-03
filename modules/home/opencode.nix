@@ -32,14 +32,13 @@ let
       # Filter MCPs based on enabled field in each MCP config
       enabledMcps = lib.filterAttrs (name: mcp: mcp.enabled or false) cfg.mcps;
 
-      # TUI plugins configuration (name -> version)
+      # TUI plugins configuration (name -> enabled)
+      # Versions come from pkgs.opencode-npm-packages/versions.json
       tuiPluginsConfig = {
         "opencode-subagent-statusline" = {
-          version = "0.4.1";
           enable = cfg.tuiPlugins.subAgentStatusline.enable;
         };
         "opencode-sdd-engram-manage" = {
-          version = "1.2.0";
           enable = cfg.tuiPlugins.sddEngramManage.enable;
         };
       };
@@ -78,13 +77,7 @@ let
         # (not via home.file) because HM cannot overwrite existing real directories with symlinks
         ".config/${runtimeCfg.dir}/package.json" = {
           force = true;
-          text = builtins.toJSON {
-            dependencies = {
-              "@opencode-ai/plugin" = "1.4.11";
-              "@opencode-ai/sdk" = "1.4.11";
-              "unique-names-generator" = "^4.7.1";
-            };
-          };
+          source = "${pkgs.opencode-npm-packages}/package.json";
         };
         ".config/${runtimeCfg.dir}/.gitignore" = {
           force = true;
@@ -192,41 +185,13 @@ let
               fi
             ''}
 
-            # Install npm dependencies for plugins with guard: skip if node_modules
-            # exists and package.json is unchanged (avoids slow npm on every rebuild)
-            export HOME="${config.home.homeDirectory}"
-            need_npm=0
-            if [ ! -d "$runtime_dir/node_modules" ]; then
-              need_npm=1
-            else
-              pkg_src="${jsonFile}"
-              pkg_target="$runtime_dir/package.json"
-              if [ ! -f "$pkg_target" ] || ! ${pkgs.coreutils}/bin/cmp -s "$pkg_src" "$pkg_target" 2>/dev/null; then
-                need_npm=1
-              fi
-            fi
-            if [ "$need_npm" -eq 1 ]; then
-              ${pkgs.nodejs}/bin/npm install --prefix "$runtime_dir" --no-save \
-                @opencode-ai/plugin@1.4.11 \
-                @opencode-ai/sdk@1.4.11 \
-                unique-names-generator@^4.7.1 >/dev/null 2>&1 || true
-            fi
+            # Copy npm packages from Nix store (pre-built, hash-verified)
+            mkdir -p "$runtime_dir/node_modules"
+            cp -r ${pkgs.opencode-npm-packages}/lib/node_modules/* "$runtime_dir/node_modules/"
+            chmod -R u+w "$runtime_dir/node_modules"
 
-            # Install TUI plugins based on enabled options with hash guard
-            ${lib.optionalString cfg.tuiPlugins.subAgentStatusline.enable ''
-              target="$runtime_dir/node_modules/opencode-subagent-statusline"
-              if [ ! -d "$target" ]; then
-                ${pkgs.nodejs}/bin/npm install --prefix "$runtime_dir" --no-save \
-                  opencode-subagent-statusline@0.4.1 >/dev/null 2>&1 || true
-              fi
-            ''}
-            ${lib.optionalString cfg.tuiPlugins.sddEngramManage.enable ''
-              target="$runtime_dir/node_modules/opencode-sdd-engram-manage"
-              if [ ! -d "$target" ]; then
-                ${pkgs.nodejs}/bin/npm install --prefix "$runtime_dir" --no-save \
-                   opencode-sdd-engram-manage@1.2.0 >/dev/null 2>&1 || true
-              fi
-            ''}
+            # Install TUI plugins: all are already in node_modules from Nix derivation
+            # OpenCode picks them up from tui.json plugin list
 
             # Workaround for opencode bug: migration gate checks for opencode.db
             # but non-latest channels (stable) use opencode-stable.db, causing
