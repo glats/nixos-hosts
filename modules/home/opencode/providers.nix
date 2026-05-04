@@ -341,6 +341,132 @@ let
       };
     }
 
+    # --- GLM-5.1 centric: best agentic, never plateaus ---
+
+    {
+      name = "nvidia3";
+      phases = {
+        # GLM-5.1: best agentic model (SWE-Bench #1, Terminal-Bench 69, CyberGym 68.7)
+        sdd-orchestrator = "nvidia/z-ai/glm-5.1";
+        # GPT-OSS 20B: 332ms, ultra fast for init
+        sdd-init = "nvidia/openai/gpt-oss-20b";
+        # GLM-5.1: explore needs strong reasoning
+        sdd-explore = "nvidia/z-ai/glm-5.1";
+        # GLM-5.1: deep proposal writing
+        sdd-propose = "nvidia/z-ai/glm-5.1";
+        # GLM-5.1: structured precision
+        sdd-spec = "nvidia/z-ai/glm-5.1";
+        # GLM-5.1: architecture reasoning
+        sdd-design = "nvidia/z-ai/glm-5.1";
+        # Qwen3 Coder 480B: structured decomposition specialist
+        sdd-tasks = "nvidia/qwen/qwen3-coder-480b-a35b-instruct";
+        # MiniMax M2.7: coding specialist
+        sdd-apply = "nvidia/minimaxai/minimax-m2.7";
+        # GLM-5.1: deep analysis
+        sdd-verify = "nvidia/z-ai/glm-5.1";
+        # GPT-OSS 20B: fast, low context
+        sdd-archive = "nvidia/openai/gpt-oss-20b";
+        # GPT-OSS 20B: fast, low context
+        sdd-onboard = "nvidia/openai/gpt-oss-20b";
+        neutral = "nvidia/z-ai/glm-5.1";
+      };
+    }
+
+    # --- Cross-provider: best model per phase ---
+
+    {
+      name = "balanced";
+      phases = {
+        # NVIDIA GLM-5.1: best agentic, no TPM wall
+        sdd-orchestrator = "nvidia/z-ai/glm-5.1";
+        # Groq Llama 3.1 8B: 646ms, low context = safe
+        sdd-init = "groq/llama-3.1-8b-instant";
+        # Cloudflare Llama 4 Scout: 518ms, no TPM wall
+        sdd-explore = "cloudflare/@cf/meta/llama-4-scout-17b-16e-instruct";
+        # Mistral Magistral Medium: 499ms, strong reasoning, no limits
+        sdd-propose = "mistral/magistral-medium-latest";
+        # NVIDIA Qwen3 Coder 480B: structured, precise
+        sdd-spec = "nvidia/qwen/qwen3-coder-480b-a35b-instruct";
+        # Mistral Magistral Medium: deep reasoning, no limits
+        sdd-design = "mistral/magistral-medium-latest";
+        # Cohere Command R Plus: 609ms, structured, no limits
+        sdd-tasks = "cohere/command-r-plus-08-2024";
+        # Mistral Devstral Medium: coding specialist, 418ms
+        sdd-apply = "mistral/devstral-medium-latest";
+        # NVIDIA GLM4.7: 9.7s, good analysis
+        sdd-verify = "nvidia/z-ai/glm4.7";
+        # Cloudflare GPT-OSS 20B: 502ms, no TPM wall
+        sdd-archive = "cloudflare/@cf/openai/gpt-oss-20b";
+        # Groq Llama 3.1 8B: fast, low context = safe
+        sdd-onboard = "groq/llama-3.1-8b-instant";
+        neutral = "nvidia/z-ai/glm-5.1";
+      };
+    }
+
+    # --- Maximum reasoning quality ---
+
+    {
+      name = "quality";
+      phases = {
+        # NVIDIA GLM-5.1: best agentic
+        sdd-orchestrator = "nvidia/z-ai/glm-5.1";
+        # Cohere R7B: 307ms, rock solid
+        sdd-init = "cohere/command-r7b-12-2024";
+        # HuggingFace DeepSeek V3: 1.2s, large model
+        sdd-explore = "huggingface/deepseek-ai/DeepSeek-V3-0324";
+        # NVIDIA GLM-5.1: maximum reasoning for proposals
+        sdd-propose = "nvidia/z-ai/glm-5.1";
+        # Mistral Large: structured output, no limits
+        sdd-spec = "mistral/mistral-large-latest";
+        # Cohere Command A Reasoning: specialized reasoning
+        sdd-design = "cohere/command-a-reasoning-08-2025";
+        # NVIDIA Qwen3 Coder 480B: precise decomposition
+        sdd-tasks = "nvidia/qwen/qwen3-coder-480b-a35b-instruct";
+        # NVIDIA DeepSeek V4 Pro: pro = max coding quality
+        sdd-apply = "nvidia/deepseek-ai/deepseek-v4-pro";
+        # Mistral Magistral Medium: deep analysis
+        sdd-verify = "mistral/magistral-medium-latest";
+        # Cohere R7B: fast, reliable
+        sdd-archive = "cohere/command-r7b-12-2024";
+        # Cohere R7B: fast, reliable
+        sdd-onboard = "cohere/command-r7b-12-2024";
+        neutral = "nvidia/z-ai/glm-5.1";
+      };
+    }
+
+    # --- Fastest safe: speed priority, never crashes ---
+
+    {
+      name = "speed";
+      phases = {
+        # Cloudflare Llama 3.3 70B: fastest with no TPM wall
+        sdd-orchestrator = "cloudflare/@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+        # Groq Llama 3.1 8B: 646ms, low context = safe
+        sdd-init = "groq/llama-3.1-8b-instant";
+        # Cloudflare Llama 4 Scout: 518ms
+        sdd-explore = "cloudflare/@cf/meta/llama-4-scout-17b-16e-instruct";
+        # Cloudflare Qwen3 30B: fast, no TPM wall
+        sdd-propose = "cloudflare/@cf/qwen/qwen3-30b-a3b-fp8";
+        # Cloudflare Qwen2.5 Coder 32B: structured, fast
+        sdd-spec = "cloudflare/@cf/qwen/qwen2.5-coder-32b-instruct";
+        # Cloudflare QwQ 32B: reasoning, no TPM wall
+        sdd-design = "cloudflare/@cf/qwen/qwq-32b";
+        # Cloudflare Qwen2.5 Coder 32B: fast, structured
+        sdd-tasks = "cloudflare/@cf/qwen/qwen2.5-coder-32b-instruct";
+        # Cloudflare Mistral Small: 477ms, coding
+        sdd-apply = "cloudflare/@cf/mistralai/mistral-small-3.1-24b-instruct";
+        # Cloudflare Mistral Small: 477ms
+        sdd-verify = "cloudflare/@cf/mistralai/mistral-small-3.1-24b-instruct";
+        # Groq Llama 3.1 8B: low context = safe
+        sdd-archive = "groq/llama-3.1-8b-instant";
+        # Groq Llama 3.1 8B: low context = safe
+        sdd-onboard = "groq/llama-3.1-8b-instant";
+        neutral = "cloudflare/@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+      };
+    }
+
+    # --- Single-provider tiers ---
+
     {
       name = "groq";
       phases = {
@@ -474,95 +600,6 @@ let
         # Flash Lite: fast onboard
         sdd-onboard = "gemini/gemini-2.5-flash-lite";
         neutral = "gemini/gemini-2.5-flash";
-      };
-    }
-
-    # --- Combined tiers ---
-
-    {
-      name = "stable";
-      phases = {
-        # Mistral Magistral Medium: 14/14 OK, 499ms, no rate limits
-        sdd-orchestrator = "mistral/magistral-medium-latest";
-        # Cohere R7B: 7/7 OK, 307ms, rock solid
-        sdd-init = "cohere/command-r7b-12-2024";
-        # Cloudflare Llama 3.3 70B: 14/15 OK, better than 8B for exploration
-        sdd-explore = "cloudflare/@cf/meta/llama-3.3-70b-instruct-fp8-fast";
-        # Cohere Command A Reasoning: 7/7 OK, 350ms, no limits
-        sdd-propose = "cohere/command-a-reasoning-08-2025";
-        # Mistral Large: 14/14 OK, structured output
-        sdd-spec = "mistral/mistral-large-latest";
-        # Cohere Command A Reasoning: deep design, no limits
-        sdd-design = "cohere/command-a-reasoning-08-2025";
-        # Mistral Large: precise tasks
-        sdd-tasks = "mistral/mistral-large-latest";
-        # Mistral Devstral Medium: coding specialist, 418ms
-        sdd-apply = "mistral/devstral-medium-latest";
-        # Mistral Devstral: code verify, 417ms
-        sdd-verify = "mistral/devstral-latest";
-        # Cloudflare GPT-OSS 20B: fast archive
-        sdd-archive = "cloudflare/@cf/openai/gpt-oss-20b";
-        # Cohere R7B: fast onboard
-        sdd-onboard = "cohere/command-r7b-12-2024";
-        neutral = "mistral/magistral-medium-latest";
-      };
-    }
-
-    {
-      name = "fast";
-      phases = {
-        # Groq Llama 3.3 70B: 324ms, ~30K TPM, best fast orchestrator
-        sdd-orchestrator = "groq/llama-3.3-70b-versatile";
-        # Groq Llama 3.1 8B: 646ms, high TPM
-        sdd-init = "groq/llama-3.1-8b-instant";
-        # Cloudflare Llama 4 Scout: 518ms
-        sdd-explore = "cloudflare/@cf/meta/llama-4-scout-17b-16e-instruct";
-        # Groq Llama 3.3 70B: ~30K TPM, good for proposal
-        sdd-propose = "groq/llama-3.3-70b-versatile";
-        # Groq Qwen3 32B: 325ms, structured
-        sdd-spec = "groq/qwen/qwen3-32b";
-        # Cerebras Qwen3 235B: 1.3s, deep reasoning
-        sdd-design = "cerebras/qwen-3-235b-a22b-instruct-2507";
-        # Groq Qwen3 32B: 325ms
-        sdd-tasks = "groq/qwen/qwen3-32b";
-        # Groq Qwen3 32B: coding strong, decent TPM
-        sdd-apply = "groq/qwen/qwen3-32b";
-        # Cloudflare Mistral Small: 477ms
-        sdd-verify = "cloudflare/@cf/mistralai/mistral-small-3.1-24b-instruct";
-        # Cloudflare GPT-OSS 20B: 502ms
-        sdd-archive = "cloudflare/@cf/openai/gpt-oss-20b";
-        # Groq Llama 3.1 8B: 646ms
-        sdd-onboard = "groq/llama-3.1-8b-instant";
-        neutral = "groq/llama-3.3-70b-versatile";
-      };
-    }
-
-    {
-      name = "budget";
-      phases = {
-        # HuggingFace DeepSeek V3: 1.2s, no TPM wall, best budget orchestrator
-        sdd-orchestrator = "huggingface/deepseek-ai/DeepSeek-V3-0324";
-        # LLM7 GPT-OSS 20B: no key needed
-        sdd-init = "llm7/gpt-oss-20b";
-        # Kilo Step 3.5 Flash: 714ms
-        sdd-explore = "kilo/stepfun/step-3.5-flash:free";
-        # HuggingFace DeepSeek V3: strong reasoning for proposals
-        sdd-propose = "huggingface/deepseek-ai/DeepSeek-V3-0324";
-        # LLM7 Qwen2.5 Coder 32B: structured spec generation
-        sdd-spec = "llm7/qwen2.5-coder-32b";
-        # HuggingFace QwQ 32B: reasoning for design
-        sdd-design = "huggingface/Qwen/QwQ-32B";
-        # LLM7 Qwen2.5 Coder 32B: structured tasks
-        sdd-tasks = "llm7/qwen2.5-coder-32b";
-        # OpenCode Zen MiniMax M2.5: coding
-        sdd-apply = "opencode/minimax-m2.5-free";
-        # LLM7 Mistral Small: verify
-        sdd-verify = "llm7/mistral-small-3.1-24b";
-        # LLM7 GPT-OSS 20B: fast archive
-        sdd-archive = "llm7/gpt-oss-20b";
-        # Kilo OpenRouter Free: onboard
-        sdd-onboard = "kilo/openrouter/free";
-        neutral = "huggingface/deepseek-ai/DeepSeek-V3-0324";
       };
     }
 
