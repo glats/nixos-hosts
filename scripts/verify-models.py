@@ -36,44 +36,79 @@ PROVIDERS = {
             "deepseek-ai/deepseek-v4-flash",
             "deepseek-ai/deepseek-v4-pro",
             "nvidia/nemotron-3-super-120b-a12b",
-            # Candidates from awesome-free-llm-apis
+            # Chat/text generation models from /v1/models API
             "deepseek-ai/deepseek-r1",
-            "nvidia/llama-3.1-nemotron-ultra-253b-v1",
-            "nvidia/nemotron-3-nano-30b-a3b",
+            "google/gemma-3-12b-it",
+            "google/gemma-3-27b-it",
+            "google/gemma-3-4b-it",
+            "google/gemma-3n-e2b-it",
+            "google/gemma-3n-e4b-it",
+            "google/gemma-4-31b-it",
+            "ibm/granite-3.0-3b-a800m-instruct",
+            "ibm/granite-3.0-8b-instruct",
             "meta/llama-3.1-405b-instruct",
-            "qwen/qwen2.5-72b-instruct",
-            "google/gemma-4-31b",
-            "mistralai/mistral-large-2-instruct",
+            "meta/llama-3.1-70b-instruct",
+            "meta/llama-3.1-8b-instruct",
+            "meta/llama-3.2-11b-vision-instruct",
+            "meta/llama-3.2-3b-instruct",
+            "meta/llama-3.3-70b-instruct",
+            "meta/llama-4-maverick-17b-128e-instruct",
+            "minimaxai/minimax-m2.5",
+            "mistralai/codestral-22b-instruct-v0.1",
+            "mistralai/devstral-2-123b-instruct-2512",
+            "mistralai/magistral-small-2506",
+            "mistralai/mistral-large-3-675b-instruct-2512",
+            "mistralai/mistral-medium-3-instruct",
+            "mistralai/mistral-medium-3.5-128b",
+            "mistralai/mistral-small-4-119b-2603",
+            "mistralai/mixtral-8x22b-instruct-v0.1",
+            "mistralai/mixtral-8x7b-instruct-v0.1",
             "moonshotai/kimi-k2-instruct",
+            "moonshotai/kimi-k2-instruct-0905",
+            "moonshotai/kimi-k2.6",
+            "nvidia/llama-3.1-nemotron-51b-instruct",
+            "nvidia/llama-3.1-nemotron-70b-instruct",
+            "nvidia/llama-3.1-nemotron-nano-8b-v1",
+            "nvidia/llama-3.1-nemotron-ultra-253b-v1",
+            "nvidia/llama-3.3-nemotron-super-49b-v1",
+            "nvidia/llama-3.3-nemotron-super-49b-v1.5",
+            "nvidia/nemotron-3-nano-30b-a3b",
+            "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
+            "nvidia/nemotron-4-340b-instruct",
+            "nvidia/nemotron-mini-4b-instruct",
+            "nvidia/nemotron-nano-12b-v2-vl",
+            "nvidia/nemotron-nano-9b-v2",
+            "openai/gpt-oss-120b",
+            "openai/gpt-oss-20b",
+            "qwen/qwen2.5-coder-32b-instruct",
             "qwen/qwen3-coder-480b-a35b-instruct",
+            "qwen/qwen3-next-80b-a3b-instruct",
+            "qwen/qwen3.5-122b-a10b",
+            "qwen/qwen3.5-397b-a17b",
+            "z-ai/glm4.7",
+            "z-ai/glm5",
         ],
     },
     "groq": {
         "base_url": "https://api.groq.com/openai/v1",
         "key_env": "GROQ_API_KEY",
         "models": [
-            # Current
+            # From /v1/models API
             "llama-3.1-8b-instant",
             "llama-3.3-70b-versatile",
-            "deepseek-r1-distill-llama-70b",
-            "gpt-oss-120b",
-            "gpt-oss-20b",
-            # Candidates
-            "qwen3-32b",
-            "kimi-k2-instruct",
-            "llama-4-scout-17b-16e-instruct",
-            "llama-4-maverick-17b-128e-instruct",
+            "meta-llama/llama-4-scout-17b-16e-instruct",
+            "openai/gpt-oss-120b",
+            "openai/gpt-oss-20b",
+            "qwen/qwen3-32b",
         ],
     },
     "cerebras": {
         "base_url": "https://api.cerebras.ai/v1",
         "key_env": "CEREBRAS_API_KEY",
         "models": [
-            # Current
-            "llama-3.1-8b",
-            "llama-3.3-70b",
+            # From /v1/models API
             "gpt-oss-120b",
-            # Candidates
+            "llama3.1-8b",
             "qwen-3-235b-a22b-instruct-2507",
             "zai-glm-4.7",
         ],
@@ -96,103 +131,176 @@ PROVIDERS = {
             "X-Title": "verify-models",
         },
         "models": [
-            "deepseek/deepseek-r1-0528:free",
-            "deepseek/deepseek-chat-v3-0324:free",
-            "qwen/qwen3.6-plus:free",
-            "qwen/qwen3-coder-480b-a35b:free",
-            "meta-llama/llama-4-scout:free",
-            "meta-llama/llama-4-maverick:free",
-            "meta-llama/llama-3.3-70b-instruct:free",
+            # All :free models from /v1/models API
+            "baidu/qianfan-ocr-fast:free",
+            "cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
+            "google/gemma-3-12b-it:free",
+            "google/gemma-3-27b-it:free",
+            "google/gemma-3-4b-it:free",
+            "google/gemma-3n-e2b-it:free",
+            "google/gemma-3n-e4b-it:free",
+            "google/gemma-4-26b-a4b-it:free",
             "google/gemma-4-31b-it:free",
-            "nvidia/nemotron-3-super-120b-a12b:free",
-            "openai/gpt-oss-120b:free",
+            "inclusionai/ling-2.6-1t:free",
+            "liquid/lfm-2.5-1.2b-instruct:free",
+            "liquid/lfm-2.5-1.2b-thinking:free",
+            "meta-llama/llama-3.2-3b-instruct:free",
+            "meta-llama/llama-3.3-70b-instruct:free",
             "minimax/minimax-m2.5:free",
-            "mistralai/devstral-2512:free",
+            "nousresearch/hermes-3-llama-3.1-405b:free",
+            "nvidia/nemotron-3-nano-30b-a3b:free",
+            "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+            "nvidia/nemotron-3-super-120b-a12b:free",
+            "nvidia/nemotron-nano-12b-v2-vl:free",
+            "nvidia/nemotron-nano-9b-v2:free",
+            "openai/gpt-oss-120b:free",
+            "openai/gpt-oss-20b:free",
+            "openrouter/free",
+            "openrouter/owl-alpha",
+            "poolside/laguna-m.1:free",
+            "poolside/laguna-xs.2:free",
+            "qwen/qwen3-coder:free",
+            "qwen/qwen3-next-80b-a3b-instruct:free",
+            "tencent/hy3-preview:free",
+            "z-ai/glm-4.5-air:free",
         ],
     },
     "mistral": {
         "base_url": "https://api.mistral.ai/v1",
         "key_env": "MISTRAL_API_KEY",
         "models": [
-            "mistral-small-4",
-            "mistral-medium-3",
-            "mistral-large-3",
+            # From /v1/models API — free tier available on la Plateforme
+            "codestral-latest",
+            "devstral-latest",
+            "devstral-medium-latest",
+            "devstral-small-2507",
+            "magistral-medium-latest",
+            "magistral-small-latest",
+            "mistral-large-latest",
+            "mistral-medium-latest",
+            "mistral-small-latest",
+            "mistral-tiny-latest",
             "open-mistral-nemo",
-            "codestral",
+            "pixtral-large-latest",
+            "ministral-3b-latest",
+            "ministral-8b-latest",
         ],
     },
     "cohere": {
-        "base_url": "https://api.cohere.com/v2",
+        "base_url": "https://api.cohere.ai/compatibility/v1",
         "key_env": "COHERE_API_KEY",
-        "note": "Cohere v2 API may NOT be OpenAI-compatible — test with OpenAI SDK, may need fallback",
+        "note": "Cohere Compatibility API — OpenAI-compatible wrapper around Cohere v2",
         "models": [
-            "command-a",
-            "command-r-plus",
-            "command-r",
-            "command-r7b",
+            # Live models from docs.cohere.com/v2/docs/models (trial key = free tier)
+            "command-a-03-2025",
+            "command-a-reasoning-08-2025",
+            "command-a-translate-08-2025",
+            "command-a-vision-07-2025",
+            "command-r-plus-08-2024",
+            "command-r-08-2024",
+            "command-r7b-12-2024",
         ],
     },
     "gemini": {
         "base_url": "https://generativelanguage.googleapis.com/v1beta/openai",
         "key_env": "GEMINI_API_KEY",
         "models": [
+            # Free tier from ai.google.dev/gemini-api/docs/models
             "gemini-2.5-flash",
             "gemini-2.5-flash-lite",
+            "gemini-2.5-pro",
+            "gemini-3.1-flash-lite-preview",
+            "gemini-3.1-pro-preview",
+            "gemini-3-flash-preview",
         ],
     },
     "github": {
         "base_url": "https://models.inference.ai.azure.com",
         "key_env": "GITHUB_TOKEN",
         "models": [
+            # Free tier with GITHUB_TOKEN
             "gpt-4.1",
             "gpt-4.1-mini",
             "gpt-4o",
+            "gpt-4o-mini",
             "o3-mini",
             "o4-mini",
+            "Meta-Llama-3.1-405B-Instruct",
+            "Meta-Llama-3.1-8B-Instruct",
             "Llama-4-Scout-17B-16E",
             "Llama-4-Maverick-17B-128E",
-            "Meta-Llama-3.3-70B",
+            "Meta-Llama-3.3-70B-Instruct",
             "DeepSeek-R1",
             "Mistral-Small-3.1",
+            "Cohere-embed-v3-english",
+            "Cohere-embed-v3-multilingual",
         ],
     },
     "cloudflare": {
         "base_url": "https://api.cloudflare.com/client/v4/accounts/{CLOUDFLARE_ACCOUNT_ID}/ai/v1",
         "key_env": "CLOUDFLARE_API_TOKEN",
-        "note": "Needs account_id in URL — require CLOUDFLARE_ACCOUNT_ID env var",
+        "note": "Needs account_id in URL — requires CLOUDFLARE_ACCOUNT_ID env var",
         "models": [
+            # Free tier (neurons-based) from developers.cloudflare.com/workers-ai/models/
             "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
             "@cf/meta/llama-3.1-8b-instruct-fp8-fast",
             "@cf/meta/llama-4-scout-17b-16e-instruct",
             "@cf/mistralai/mistral-small-3.1-24b-instruct",
             "@cf/qwen/qwq-32b",
+            "@cf/qwen/qwen2.5-coder-32b-instruct",
+            "@cf/qwen/qwen3-30b-a3b-fp8",
+            "@cf/google/gemma-3-12b-it",
+            "@cf/google/gemma-4-26b-a4b-it",
+            "@cf/openai/gpt-oss-120b",
+            "@cf/openai/gpt-oss-20b",
+            "@cf/nvidia/nemotron-3-120b-a12b",
+            "@cf/ibm-granite/granite-4.0-h-micro",
+            "@cf/moonshotai/kimi-k2.5",
+            "@cf/zhipu/glm-4.7-flash",
         ],
     },
     "ovhcloud": {
         "base_url": "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1",
-        "key_env": None,  # No API key needed for anonymous tier
+        "key_env": None,
         "models": [
+            # From /v1/models API (anonymous access)
+            "Llama-3.1-8B-Instruct",
             "Meta-Llama-3_3-70B-Instruct",
-            "Meta-Llama-3_1-8B-Instruct",
-            "DeepSeek-R1-Distill-Llama-70B",
+            "Mistral-7B-Instruct-v0.3",
+            "Mistral-Nemo-Instruct-2407",
+            "Mistral-Small-3.2-24B-Instruct-2506",
+            "Qwen2.5-VL-72B-Instruct",
             "Qwen3-32B",
             "Qwen3-Coder-30B-A3B-Instruct",
+            "Qwen3.5-9B",
+            "gpt-oss-120b",
+            "gpt-oss-20b",
         ],
     },
     "siliconflow": {
         "base_url": "https://api.siliconflow.cn/v1",
         "key_env": "SILICONFLOW_API_KEY",
         "models": [
+            # Free tier models (verified from API)
             "Qwen/Qwen3-8B",
             "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B",
             "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B",
             "THUDM/glm-4-9b-chat",
+            "Pro/Qwen/Qwen2.5-Coder-7B-Instruct",
+            "Qwen/Qwen2.5-7B-Instruct",
         ],
     },
     "llm7": {
         "base_url": "https://api.llm7.io/v1",
-        "key_env": None,  # No key needed for basic access
+        "key_env": None,
         "models": [
+            # From /v1/models API
+            "GLM-4.6V-Flash",
+            "codestral-latest",
+            "gpt-oss-20b",
+            "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            "ministral-8b-2512",
+            # Original list from awesome-free-llm-apis
             "deepseek-r1-0528",
             "deepseek-v3-0324",
             "gemini-2.5-flash-lite",
@@ -205,31 +313,44 @@ PROVIDERS = {
         "base_url": "https://api.kilo.ai/api/gateway",
         "key_env": "KILO_API_KEY",
         "models": [
-            "bytedance-seed/dola-seed-2.0-pro:free",
-            "x-ai/grok-code-fast-1:optimized:free",
+            # Free models from API (no auth needed for free models)
+            "kilo-auto/free",
+            "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
             "nvidia/nemotron-3-super-120b-a12b:free",
-            "arcee-ai/trinity-large-thinking:free",
             "openrouter/free",
+            "openrouter/owl-alpha",
+            "poolside/laguna-m.1:free",
+            "poolside/laguna-xs.2:free",
+            "stepfun/step-3.5-flash:free",
+            "tencent/hy3-preview:free",
+            "x-ai/grok-code-fast-1:optimized:free",
+            "inclusionai/ling-2.6-1t:free",
         ],
     },
     "zai-zhipu": {
         "base_url": "https://open.bigmodel.cn/api/paas/v4",
         "key_env": "ZAI_API_KEY",
         "models": [
+            # Free tier models
             "glm-4.7-flash",
             "glm-4.5-flash",
             "glm-4.6v-flash",
         ],
     },
     "huggingface": {
-        "base_url": "https://api-inference.huggingface.co/v1",
+        "base_url": "https://router.huggingface.co/v1",
         "key_env": "HF_API_KEY",
+        "note": "HF Inference Providers — uses router.huggingface.co (not api-inference)",
         "models": [
-            "Meta-Llama-3.1-8B-Instruct",
-            "Mistral-7B-Instruct-v0.3",
-            "Mixtral-8x7B-Instruct-v0.1",
-            "Phi-3.5-mini-instruct",
-            "Qwen2.5-7B-Instruct",
+            # Models with active inference providers on HF (from docs)
+            "deepseek-ai/DeepSeek-V3-0324",
+            "deepseek-ai/DeepSeek-R1",
+            "google/gemma-3-27b-it",
+            "meta-llama/Llama-3.1-8B-Instruct",
+            "meta-llama/Llama-3.3-70B-Instruct",
+            "Qwen/Qwen3-8B",
+            "Qwen/QwQ-32B",
+            "mistralai/Mistral-Small-3.1-24B-Instruct-2503",
         ],
     },
 }
@@ -238,18 +359,15 @@ SOPS_KEY_MAP = {
     "opencode/nvidia_api_key": "NVIDIA_API_KEY",
     "opencode/groq_api_key": "GROQ_API_KEY",
     "opencode/cerebras_api_key": "CEREBRAS_API_KEY",
+    "opencode/opencode_go_api_key": "OPENCODE_API_KEY",
     "opencode/openrouter_api_key": "OPENROUTER_API_KEY",
     "opencode/mistral_api_key": "MISTRAL_API_KEY",
     "opencode/cohere_api_key": "COHERE_API_KEY",
     "opencode/gemini_api_key": "GEMINI_API_KEY",
-    "opencode/github_token": "GITHUB_TOKEN",
-    "opencode/cloudflare_api_token": "CLOUDFLARE_API_TOKEN",
+    "opencode/cloudflare_api_key": "CLOUDFLARE_API_TOKEN",
     "opencode/cloudflare_account_id": "CLOUDFLARE_ACCOUNT_ID",
-    "opencode/siliconflow_api_key": "SILICONFLOW_API_KEY",
+    "opencode/huggingface_api_key": "HF_API_KEY",
     "opencode/kilo_api_key": "KILO_API_KEY",
-    "opencode/zai_api_key": "ZAI_API_KEY",
-    "opencode/hf_api_key": "HF_API_KEY",
-    "opencode/opencode_api_key": "OPENCODE_API_KEY",
 }
 
 
@@ -400,23 +518,40 @@ def run_tests(providers_filter=None, timeout=10, json_output=False):
 
         # Check if we have necessary credentials
         if provider_name == "cloudflare":
-            if not get_env_or_none("CLOUDFLARE_ACCOUNT_ID"):
-                results[provider_name] = {"error": "CLOUDFLARE_ACCOUNT_ID not set", "models": {}}
+            account_id = (
+                get_env_or_none("CLOUDFLARE_ACCOUNT_ID")
+                or api_keys.get("CLOUDFLARE_ACCOUNT_ID")
+            )
+            if not account_id:
+                results[provider_name] = {
+                    "error": "CLOUDFLARE_ACCOUNT_ID not set",
+                    "models": {},
+                }
                 total_skipped += len(models)
                 continue
+            # Set it in env so create_client can use it
+            os.environ["CLOUDFLARE_ACCOUNT_ID"] = account_id
 
         if api_key is None and key_env is not None:
             results[provider_name] = {"error": "no_api_key", "models": {}}
             for model in models:
-                results[provider_name]["models"][model] = {"status": "skipped", "error": "no_api_key"}
+                results[provider_name]["models"][model] = {
+                    "status": "skipped",
+                    "error": "no_api_key",
+                }
                 total_skipped += 1
             continue
 
-        client, client_error = create_client(provider_name, provider_config, api_key, timeout)
+        client, client_error = create_client(
+            provider_name, provider_config, api_key, timeout
+        )
         if client is None:
             results[provider_name] = {"error": client_error, "models": {}}
             for model in models:
-                results[provider_name]["models"][model] = {"status": "error", "error": client_error}
+                results[provider_name]["models"][model] = {
+                    "status": "error",
+                    "error": client_error,
+                }
                 total_failed += 1
             continue
 
