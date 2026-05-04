@@ -28,4 +28,9 @@
   users.groups.netdev = { };
 
   security.sudo.wheelNeedsPassword = false;
+
+  environment.variables = {
+    EDITOR = "nvim";
+    VISUAL = "nvim";
+  };
 }

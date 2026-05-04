@@ -49,6 +49,7 @@ let
     lsd
     util-linux
     nil
+    nix-output-monitor
     nixpkgs-fmt
     statix
     deadnix
