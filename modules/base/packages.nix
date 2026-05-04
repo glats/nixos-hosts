@@ -45,6 +45,7 @@ let
     htop
     btop
     jq
+    yq
     lsd
     util-linux
     nil

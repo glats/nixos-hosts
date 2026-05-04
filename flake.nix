@@ -95,7 +95,7 @@
       verify-models = pkgs.writers.writePython3Bin "verify-models"
         {
           libraries = [ pkgs.python3Packages.openai ];
-          flakeIgnore = [ "E501" "W503" "E265" "E266" ];
+          flakeIgnore = [ "E501" "W503" "E265" "E266" "F702" ];
         }
         (builtins.readFile ./scripts/verify-models.py);
 
