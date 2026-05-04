@@ -229,15 +229,42 @@ in
 
       # Export API keys from sops secrets at shell startup
       programs.zsh.initContent = lib.mkAfter ''
-        if [ -f "${config.sops.secrets."opencode/nvidia_api_key".path}" ]; then
-          export NVIDIA_API_KEY="$(cat ${config.sops.secrets."opencode/nvidia_api_key".path})"
+              if [ -f "${config.sops.secrets."opencode/nvidia_api_key".path}" ]; then
+                export NVIDIA_API_KEY="$(cat ${config.sops.secrets."opencode/nvidia_api_key".path})"
+              fi
+              if [ -f "${config.sops.secrets."opencode/groq_api_key".path}" ]; then
+                export GROQ_API_KEY="$(cat ${config.sops.secrets."opencode/groq_api_key".path})"
+              fi
+            if [ -f "${config.sops.secrets."opencode/cerebras_api_key".path}" ]; then
+              export CEREBRAS_API_KEY="$(cat ${config.sops.secrets."opencode/cerebras_api_key".path})"
+            fi
+          if [ -f "${config.sops.secrets."opencode/opencode_go_api_key".path}" ]; then
+            export OPENCODE_API_KEY="$(cat ${config.sops.secrets."opencode/opencode_go_api_key".path})"
+          fi
+            if [ -f "${config.sops.secrets."opencode/openrouter_api_key".path}" ]; then
+              export OPENROUTER_API_KEY="$(cat ${config.sops.secrets."opencode/openrouter_api_key".path})"
+            fi
+          if [ -f "${config.sops.secrets."opencode/mistral_api_key".path}" ]; then
+            export MISTRAL_API_KEY="$(cat ${config.sops.secrets."opencode/mistral_api_key".path})"
+          fi
+          if [ -f "${config.sops.secrets."opencode/cohere_api_key".path}" ]; then
+            export COHERE_API_KEY="$(cat ${config.sops.secrets."opencode/cohere_api_key".path})"
+          fi
+          if [ -f "${config.sops.secrets."opencode/gemini_api_key".path}" ]; then
+            export GEMINI_API_KEY="$(cat ${config.sops.secrets."opencode/gemini_api_key".path})"
+          fi
+        if [ -f "${config.sops.secrets."opencode/cloudflare_api_key".path}" ]; then
+          export CLOUDFLARE_API_TOKEN="$(cat ${config.sops.secrets."opencode/cloudflare_api_key".path})"
         fi
-        if [ -f "${config.sops.secrets."opencode/groq_api_key".path}" ]; then
-          export GROQ_API_KEY="$(cat ${config.sops.secrets."opencode/groq_api_key".path})"
+        if [ -f "${config.sops.secrets."opencode/cloudflare_account_id".path}" ]; then
+          export CLOUDFLARE_ACCOUNT_ID="$(cat ${config.sops.secrets."opencode/cloudflare_account_id".path})"
         fi
-        if [ -f "${config.sops.secrets."opencode/cerebras_api_key".path}" ]; then
-          export CEREBRAS_API_KEY="$(cat ${config.sops.secrets."opencode/cerebras_api_key".path})"
-        fi
+          if [ -f "${config.sops.secrets."opencode/huggingface_api_key".path}" ]; then
+            export HF_API_KEY="$(cat ${config.sops.secrets."opencode/huggingface_api_key".path})"
+          fi
+          if [ -f "${config.sops.secrets."opencode/kilo_api_key".path}" ]; then
+            export KILO_API_KEY="$(cat ${config.sops.secrets."opencode/kilo_api_key".path})"
+          fi
       '';
     })
 

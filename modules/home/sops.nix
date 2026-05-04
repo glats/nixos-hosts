@@ -20,8 +20,48 @@
     mode = "0400";
   };
 
-  # OpenCode Zen API key - TODO: enable when key is added
-  # sops.secrets."opencode/opencode_api_key" = {
-  #   mode = "0400";
-  # };
+  # OpenCode Go API key
+  sops.secrets."opencode/opencode_go_api_key" = {
+    mode = "0400";
+  };
+
+  # OpenRouter API key
+  sops.secrets."opencode/openrouter_api_key" = {
+    mode = "0400";
+  };
+
+  # Mistral API key
+  sops.secrets."opencode/mistral_api_key" = {
+    mode = "0400";
+  };
+
+  # Cohere API key
+  sops.secrets."opencode/cohere_api_key" = {
+    mode = "0400";
+  };
+
+  # Gemini API key
+  sops.secrets."opencode/gemini_api_key" = {
+    mode = "0400";
+  };
+
+  # Cloudflare API key
+  sops.secrets."opencode/cloudflare_api_key" = {
+    mode = "0400";
+  };
+
+  # Cloudflare Account ID
+  sops.secrets."opencode/cloudflare_account_id" = {
+    mode = "0400";
+  };
+
+  # HuggingFace API key
+  sops.secrets."opencode/huggingface_api_key" = {
+    mode = "0400";
+  };
+
+  # Kilo API key
+  sops.secrets."opencode/kilo_api_key" = {
+    mode = "0400";
+  };
 }
