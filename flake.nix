@@ -118,7 +118,10 @@
       # Reusable library functions for other flakes
       lib.opencode-config = opencode-config-lib;
 
-      checks.${system} = { };
+      checks.x86_64-linux = {
+        rog = self.nixosConfigurations.rog.config.system.build.toplevel;
+        thinkcentre = self.nixosConfigurations.thinkcentre.config.system.build.toplevel;
+      };
 
       # Multi-host configurations
       nixosConfigurations = {
