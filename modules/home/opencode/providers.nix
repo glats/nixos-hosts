@@ -6,36 +6,36 @@ let
   # Only models that PASSED verify-models.py are listed here
   # ============================================================
 
-nvidiaProvider = {
-  nvidia = {
-    npm = "@ai-sdk/openai-compatible";
-    name = "NVIDIA NIM";
-    options = {
-      baseURL = "https://integrate.api.nvidia.com/v1";
-      apiKey = "{env:NVIDIA_API_KEY}";
-      headers = { "Authorization" = "Bearer {env:NVIDIA_API_KEY}"; };
-    };
-    models = {
-      "z-ai/glm-5.1" = { name = "GLM 5.1"; };
-      "z-ai/glm5" = { name = "GLM 5"; };
-      "z-ai/glm4.7" = { name = "GLM 4.7"; };
-      "minimaxai/minimax-m2.7" = { name = "MiniMax M2.7"; };
-      "minimaxai/minimax-m2.5" = { name = "MiniMax M2.5"; };
-      "deepseek-ai/deepseek-v4-flash" = { name = "DeepSeek V4 Flash"; };
-      "deepseek-ai/deepseek-v4-pro" = { name = "DeepSeek V4 Pro"; };
-      "nvidia/nemotron-3-super-120b-a12b" = { name = "Nemotron 3 Super"; };
-      "google/gemma-4-31b-it" = { name = "Gemma 4 31B"; };
-      "meta/llama-4-maverick-17b-128e-instruct" = { name = "Llama 4 Maverick"; };
-      "openai/gpt-oss-120b" = { name = "GPT-OSS 120B"; };
-      "openai/gpt-oss-20b" = { name = "GPT-OSS 20B"; };
-      "qwen/qwen3-coder-480b-a35b-instruct" = { name = "Qwen3 Coder 480B"; };
-      "qwen/qwen3-next-80b-a3b-instruct" = { name = "Qwen3 Next 80B"; };
-      "meta/llama-3.3-70b-instruct" = { name = "Llama 3.3 70B"; };
-      "meta/llama-3.1-8b-instruct" = { name = "Llama 3.1 8B"; };
-      "moonshotai/kimi-k2.6" = { name = "Kimi K2.6"; };
+  nvidiaProvider = {
+    nvidia = {
+      npm = "@ai-sdk/openai-compatible";
+      name = "NVIDIA NIM";
+      options = {
+        baseURL = "https://integrate.api.nvidia.com/v1";
+        apiKey = "{env:NVIDIA_API_KEY}";
+        headers = { "Authorization" = "Bearer {env:NVIDIA_API_KEY}"; };
+      };
+      models = {
+        "z-ai/glm-5.1" = { name = "GLM 5.1"; };
+        "z-ai/glm5" = { name = "GLM 5"; };
+        "z-ai/glm4.7" = { name = "GLM 4.7"; };
+        "minimaxai/minimax-m2.7" = { name = "MiniMax M2.7"; };
+        "minimaxai/minimax-m2.5" = { name = "MiniMax M2.5"; };
+        "deepseek-ai/deepseek-v4-flash" = { name = "DeepSeek V4 Flash"; };
+        "deepseek-ai/deepseek-v4-pro" = { name = "DeepSeek V4 Pro"; };
+        "nvidia/nemotron-3-super-120b-a12b" = { name = "Nemotron 3 Super"; };
+        "google/gemma-4-31b-it" = { name = "Gemma 4 31B"; };
+        "meta/llama-4-maverick-17b-128e-instruct" = { name = "Llama 4 Maverick"; };
+        "openai/gpt-oss-120b" = { name = "GPT-OSS 120B"; };
+        "openai/gpt-oss-20b" = { name = "GPT-OSS 20B"; };
+        "qwen/qwen3-coder-480b-a35b-instruct" = { name = "Qwen3 Coder 480B"; };
+        "qwen/qwen3-next-80b-a3b-instruct" = { name = "Qwen3 Next 80B"; };
+        "meta/llama-3.3-70b-instruct" = { name = "Llama 3.3 70B"; };
+        "meta/llama-3.1-8b-instruct" = { name = "Llama 3.1 8B"; };
+        "moonshotai/kimi-k2.6" = { name = "Kimi K2.6"; };
+      };
     };
   };
-};
 
   groqProvider = {
     groq = {
@@ -271,9 +271,9 @@ nvidiaProvider = {
     };
   };
 
-allProviders =
-  nvidiaProvider
-  // groqProvider
+  allProviders =
+    nvidiaProvider
+    // groqProvider
     // cerebrasProvider
     // opencodeZenProvider
     // mistralProvider
@@ -285,7 +285,7 @@ allProviders =
     // kiloProvider
     // llm7Provider;
 
-  activeProviderName = "opencode-go";
+  activeProviderName = "nvidia";
 
   # ============================================================
   # Tier assignments — best verified model per SDD phase
@@ -312,57 +312,57 @@ allProviders =
       };
     }
 
-  {
-    name = "nvidia2";
-    phases = {
-      # GLM5: best agentic/coding model verified (SWE-Bench #1)
-      sdd-orchestrator = "nvidia/z-ai/glm5";
-      # Nemotron 3 Super: 732ms, 120B — fast init
-      sdd-init = "nvidia/nvidia/nemotron-3-super-120b-a12b";
-      # Llama 4 Maverick: 398ms, fast exploration
-      sdd-explore = "nvidia/meta/llama-4-maverick-17b-128e-instruct";
-      # GLM5: strong proposal writer
-      sdd-propose = "nvidia/z-ai/glm5";
-      # Qwen3 Coder 480B: structured spec generation
-      sdd-spec = "nvidia/qwen/qwen3-coder-480b-a35b-instruct";
-      # GLM5: deep reasoning for design
-      sdd-design = "nvidia/z-ai/glm5";
-      # Qwen3 Coder 480B: precise task decomposition
-      sdd-tasks = "nvidia/qwen/qwen3-coder-480b-a35b-instruct";
-      # MiniMax M2.7: coding strong, 24s acceptable for apply
-      sdd-apply = "nvidia/minimaxai/minimax-m2.7";
-      # GLM4.7: 9.7s, good analysis
-      sdd-verify = "nvidia/z-ai/glm4.7";
-      # GPT-OSS 20B: 332ms, fast archive
-      sdd-archive = "nvidia/openai/gpt-oss-20b";
-      # GPT-OSS 20B: fast onboard
-      sdd-onboard = "nvidia/openai/gpt-oss-20b";
-      neutral = "nvidia/z-ai/glm5";
-    };
-  }
+    {
+      name = "nvidia2";
+      phases = {
+        # GLM5: best agentic/coding model verified (SWE-Bench #1)
+        sdd-orchestrator = "nvidia/z-ai/glm5";
+        # Nemotron 3 Super: 732ms, 120B — fast init
+        sdd-init = "nvidia/nvidia/nemotron-3-super-120b-a12b";
+        # Llama 4 Maverick: 398ms, fast exploration
+        sdd-explore = "nvidia/meta/llama-4-maverick-17b-128e-instruct";
+        # GLM5: strong proposal writer
+        sdd-propose = "nvidia/z-ai/glm5";
+        # Qwen3 Coder 480B: structured spec generation
+        sdd-spec = "nvidia/qwen/qwen3-coder-480b-a35b-instruct";
+        # GLM5: deep reasoning for design
+        sdd-design = "nvidia/z-ai/glm5";
+        # Qwen3 Coder 480B: precise task decomposition
+        sdd-tasks = "nvidia/qwen/qwen3-coder-480b-a35b-instruct";
+        # MiniMax M2.7: coding strong, 24s acceptable for apply
+        sdd-apply = "nvidia/minimaxai/minimax-m2.7";
+        # GLM4.7: 9.7s, good analysis
+        sdd-verify = "nvidia/z-ai/glm4.7";
+        # GPT-OSS 20B: 332ms, fast archive
+        sdd-archive = "nvidia/openai/gpt-oss-20b";
+        # GPT-OSS 20B: fast onboard
+        sdd-onboard = "nvidia/openai/gpt-oss-20b";
+        neutral = "nvidia/z-ai/glm5";
+      };
+    }
 
     {
       name = "groq";
       phases = {
-        # Llama 3.3 70B: 324ms, best reasoning on Groq
+        # Llama 3.3 70B: 324ms, ~30K TPM, best reasoning on Groq free tier
         sdd-orchestrator = "groq/llama-3.3-70b-versatile";
-        # Llama 3.1 8B: 646ms, fast init
+        # Llama 3.1 8B: 646ms, high TPM, fast init
         sdd-init = "groq/llama-3.1-8b-instant";
         # Llama 4 Scout: 407ms, fast explore
         sdd-explore = "groq/meta-llama/llama-4-scout-17b-16e-instruct";
-        # GPT-OSS 120B: 275ms, strong proposal
-        sdd-propose = "groq/openai/gpt-oss-120b";
+        # Llama 3.3 70B: ~30K TPM, good enough for proposal context
+        sdd-propose = "groq/llama-3.3-70b-versatile";
         # Qwen3 32B: 325ms, structured spec
         sdd-spec = "groq/qwen/qwen3-32b";
-        # GPT-OSS 120B: strong design reasoning
-        sdd-design = "groq/openai/gpt-oss-120b";
+        # Llama 3.3 70B: ~30K TPM, design needs high context
+        sdd-design = "groq/llama-3.3-70b-versatile";
         # Qwen3 32B: structured tasks
         sdd-tasks = "groq/qwen/qwen3-32b";
-        # GPT-OSS 20B: 228ms, fast apply
-        sdd-apply = "groq/openai/gpt-oss-20b";
-        # Llama 3.1 8B: fast verify
-        sdd-verify = "groq/llama-3.1-8b-instant";
-        # GPT-OSS 20B: fast archive
+        # Qwen3 32B: coding strong, decent TPM for apply
+        sdd-apply = "groq/qwen/qwen3-32b";
+        # Qwen3 32B: better analysis than 8B
+        sdd-verify = "groq/qwen/qwen3-32b";
+        # GPT-OSS 20B: 228ms, low context OK for archive
         sdd-archive = "groq/openai/gpt-oss-20b";
         # Llama 3.1 8B: fast onboard
         sdd-onboard = "groq/llama-3.1-8b-instant";
@@ -373,7 +373,8 @@ allProviders =
     {
       name = "cerebras";
       phases = {
-        # Only qwen-3-235b verified on Cerebras
+        # Only qwen-3-235b verified on Cerebras — fast (1.3s) but possible TPM limits
+        # Use for low/medium-context phases only
         sdd-orchestrator = "cerebras/qwen-3-235b-a22b-instruct-2507";
         sdd-init = "cerebras/qwen-3-235b-a22b-instruct-2507";
         sdd-explore = "cerebras/qwen-3-235b-a22b-instruct-2507";
@@ -450,21 +451,21 @@ allProviders =
     {
       name = "gemini";
       phases = {
-        # Gemini 2.5 Flash: 1.4s, best available
+        # Gemini 2.5 Flash: 1.4s, best reasoning in free tier, 1M context
         sdd-orchestrator = "gemini/gemini-2.5-flash";
         # Flash Lite: 610ms, fast init
         sdd-init = "gemini/gemini-2.5-flash-lite";
-        # Flash Lite: fast explore
-        sdd-explore = "gemini/gemini-2.5-flash-lite";
-        # Gemini 2.5 Flash: proposal
+        # Gemini 3 Flash: newer model, good for exploration
+        sdd-explore = "gemini/gemini-3-flash-preview";
+        # Gemini 2.5 Flash: strong proposal, 1M context window
         sdd-propose = "gemini/gemini-2.5-flash";
-        # Gemini 3 Flash: structured spec
+        # Gemini 3 Flash: newer, structured output
         sdd-spec = "gemini/gemini-3-flash-preview";
-        # Gemini 2.5 Flash: design
+        # Gemini 2.5 Flash: deep design reasoning
         sdd-design = "gemini/gemini-2.5-flash";
-        # Gemini 3 Flash: tasks
+        # Gemini 3 Flash: precise task decomposition
         sdd-tasks = "gemini/gemini-3-flash-preview";
-        # Flash Lite: fast apply
+        # Flash Lite: fast apply, small context OK
         sdd-apply = "gemini/gemini-2.5-flash-lite";
         # Flash Lite: fast verify
         sdd-verify = "gemini/gemini-2.5-flash-lite";
@@ -485,9 +486,9 @@ allProviders =
         sdd-orchestrator = "mistral/magistral-medium-latest";
         # Cohere R7B: 7/7 OK, 307ms, rock solid
         sdd-init = "cohere/command-r7b-12-2024";
-        # Cloudflare Llama 3.1 8B: 14/15 OK, 446ms, no rate limits
-        sdd-explore = "cloudflare/@cf/meta/llama-3.1-8b-instruct-fp8-fast";
-        # Cohere Command A Reasoning: 7/7 OK, 350ms
+        # Cloudflare Llama 3.3 70B: 14/15 OK, better than 8B for exploration
+        sdd-explore = "cloudflare/@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+        # Cohere Command A Reasoning: 7/7 OK, 350ms, no limits
         sdd-propose = "cohere/command-a-reasoning-08-2025";
         # Mistral Large: 14/14 OK, structured output
         sdd-spec = "mistral/mistral-large-latest";
@@ -495,7 +496,7 @@ allProviders =
         sdd-design = "cohere/command-a-reasoning-08-2025";
         # Mistral Large: precise tasks
         sdd-tasks = "mistral/mistral-large-latest";
-        # Mistral Devstral Medium: coding, 418ms
+        # Mistral Devstral Medium: coding specialist, 418ms
         sdd-apply = "mistral/devstral-medium-latest";
         # Mistral Devstral: code verify, 417ms
         sdd-verify = "mistral/devstral-latest";
@@ -510,48 +511,48 @@ allProviders =
     {
       name = "fast";
       phases = {
-        # Groq GPT-OSS 120B: 275ms, strong
-        sdd-orchestrator = "groq/openai/gpt-oss-120b";
-        # Groq Llama 3.1 8B: 646ms
+        # Groq Llama 3.3 70B: 324ms, ~30K TPM, best fast orchestrator
+        sdd-orchestrator = "groq/llama-3.3-70b-versatile";
+        # Groq Llama 3.1 8B: 646ms, high TPM
         sdd-init = "groq/llama-3.1-8b-instant";
         # Cloudflare Llama 4 Scout: 518ms
         sdd-explore = "cloudflare/@cf/meta/llama-4-scout-17b-16e-instruct";
-        # Groq GPT-OSS 120B: 275ms
-        sdd-propose = "groq/openai/gpt-oss-120b";
+        # Groq Llama 3.3 70B: ~30K TPM, good for proposal
+        sdd-propose = "groq/llama-3.3-70b-versatile";
         # Groq Qwen3 32B: 325ms, structured
         sdd-spec = "groq/qwen/qwen3-32b";
         # Cerebras Qwen3 235B: 1.3s, deep reasoning
         sdd-design = "cerebras/qwen-3-235b-a22b-instruct-2507";
         # Groq Qwen3 32B: 325ms
         sdd-tasks = "groq/qwen/qwen3-32b";
-        # Groq GPT-OSS 20B: 228ms, fastest
-        sdd-apply = "groq/openai/gpt-oss-20b";
+        # Groq Qwen3 32B: coding strong, decent TPM
+        sdd-apply = "groq/qwen/qwen3-32b";
         # Cloudflare Mistral Small: 477ms
         sdd-verify = "cloudflare/@cf/mistralai/mistral-small-3.1-24b-instruct";
         # Cloudflare GPT-OSS 20B: 502ms
         sdd-archive = "cloudflare/@cf/openai/gpt-oss-20b";
         # Groq Llama 3.1 8B: 646ms
         sdd-onboard = "groq/llama-3.1-8b-instant";
-        neutral = "groq/openai/gpt-oss-120b";
+        neutral = "groq/llama-3.3-70b-versatile";
       };
     }
 
     {
       name = "budget";
       phases = {
-        # OpenRouter GPT-OSS 120B Free
-        sdd-orchestrator = "openrouter/openai/gpt-oss-120b:free";
+        # HuggingFace DeepSeek V3: 1.2s, no TPM wall, best budget orchestrator
+        sdd-orchestrator = "huggingface/deepseek-ai/DeepSeek-V3-0324";
         # LLM7 GPT-OSS 20B: no key needed
         sdd-init = "llm7/gpt-oss-20b";
         # Kilo Step 3.5 Flash: 714ms
         sdd-explore = "kilo/stepfun/step-3.5-flash:free";
-        # OpenCode Zen Big Pickle: 1.8s
-        sdd-propose = "opencode/big-pickle";
-        # LLM7 Codestral: structured
-        sdd-spec = "llm7/codestral-latest";
-        # OpenCode Zen Big Pickle
-        sdd-design = "opencode/big-pickle";
-        # LLM7 Qwen2.5 Coder: structured tasks
+        # HuggingFace DeepSeek V3: strong reasoning for proposals
+        sdd-propose = "huggingface/deepseek-ai/DeepSeek-V3-0324";
+        # LLM7 Qwen2.5 Coder 32B: structured spec generation
+        sdd-spec = "llm7/qwen2.5-coder-32b";
+        # HuggingFace QwQ 32B: reasoning for design
+        sdd-design = "huggingface/Qwen/QwQ-32B";
+        # LLM7 Qwen2.5 Coder 32B: structured tasks
         sdd-tasks = "llm7/qwen2.5-coder-32b";
         # OpenCode Zen MiniMax M2.5: coding
         sdd-apply = "opencode/minimax-m2.5-free";
@@ -561,7 +562,7 @@ allProviders =
         sdd-archive = "llm7/gpt-oss-20b";
         # Kilo OpenRouter Free: onboard
         sdd-onboard = "kilo/openrouter/free";
-        neutral = "openrouter/openai/gpt-oss-120b:free";
+        neutral = "huggingface/deepseek-ai/DeepSeek-V3-0324";
       };
     }
 
