@@ -33,7 +33,7 @@ TIER_LISTS = {
     "nvidia": {
         "sdd-orchestrator": "nvidia/z-ai/glm-5.1",
         "sdd-init": "nvidia/openai/gpt-oss-20b",
-        "sdd-explore": "nvidia/qwen/qwen3-coder-480b-a35b-instruct",
+        "sdd-explore": "mistral/devstral-medium-latest",
         "sdd-propose": "nvidia/z-ai/glm-5.1",
         "sdd-spec": "nvidia/nvidia/nemotron-3-super-120b-a12b",
         "sdd-design": "nvidia/z-ai/glm-5.1",
@@ -47,7 +47,7 @@ TIER_LISTS = {
     "nvidia2": {
         "sdd-orchestrator": "nvidia/z-ai/glm5",
         "sdd-init": "nvidia/nvidia/nemotron-3-super-120b-a12b",
-        "sdd-explore": "nvidia/qwen/qwen3-coder-480b-a35b-instruct",
+        "sdd-explore": "mistral/devstral-medium-latest",
         "sdd-propose": "nvidia/z-ai/glm5",
         "sdd-spec": "nvidia/qwen/qwen3-coder-480b-a35b-instruct",
         "sdd-design": "nvidia/z-ai/glm5",
@@ -61,7 +61,7 @@ TIER_LISTS = {
     "nvidia3": {
         "sdd-orchestrator": "nvidia/z-ai/glm-5.1",
         "sdd-init": "nvidia/openai/gpt-oss-20b",
-        "sdd-explore": "nvidia/qwen/qwen3-coder-480b-a35b-instruct",
+        "sdd-explore": "mistral/devstral-medium-latest",
         "sdd-propose": "nvidia/z-ai/glm-5.1",
         "sdd-spec": "nvidia/z-ai/glm-5.1",
         "sdd-design": "nvidia/z-ai/glm-5.1",

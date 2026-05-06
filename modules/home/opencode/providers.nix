@@ -300,8 +300,8 @@ let
         sdd-orchestrator = "nvidia/z-ai/glm-5.1";
         # GPT-OSS 20B: 7s, ultra fast
         sdd-init = "nvidia/openai/gpt-oss-20b";
-        # Qwen3 Coder 480B: aggressive tool calls, best explore (GLM-5.1 too conservative)
-        sdd-explore = "nvidia/qwen/qwen3-coder-480b-a35b-instruct";
+        # Devstral Medium: ~15s, coding specialist, respects offset/limit, aggressive tool calls (Qwen3 Coder 480B timed out)
+        sdd-explore = "mistral/devstral-medium-latest";
         sdd-propose = "nvidia/z-ai/glm-5.1";
         sdd-spec = "nvidia/nvidia/nemotron-3-super-120b-a12b";
         sdd-design = "nvidia/z-ai/glm-5.1";
@@ -324,8 +324,8 @@ let
         sdd-orchestrator = "nvidia/z-ai/glm5";
         # Nemotron 3 Super: 9s, 120B — fast init
         sdd-init = "nvidia/nvidia/nemotron-3-super-120b-a12b";
-        # Qwen3 Coder 480B: aggressive tool calls, best explore
-        sdd-explore = "nvidia/qwen/qwen3-coder-480b-a35b-instruct";
+        # Devstral Medium: ~15s, coding specialist, respects offset/limit, aggressive tool calls (Qwen3 Coder 480B timed out)
+        sdd-explore = "mistral/devstral-medium-latest";
         # GLM5: strong proposal writer
         sdd-propose = "nvidia/z-ai/glm5";
         # Qwen3 Coder 480B: structured spec generation
@@ -355,8 +355,8 @@ let
         sdd-orchestrator = "nvidia/z-ai/glm-5.1";
         # GPT-OSS 20B: 7s, ultra fast for init
         sdd-init = "nvidia/openai/gpt-oss-20b";
-        # Qwen3 Coder 480B: aggressive tool calls (GLM-5.1 too conservative for explore)
-        sdd-explore = "nvidia/qwen/qwen3-coder-480b-a35b-instruct";
+        # Devstral Medium: ~15s, coding specialist, respects offset/limit, aggressive tool calls (Qwen3 Coder 480B timed out)
+        sdd-explore = "mistral/devstral-medium-latest";
         # GLM-5.1: deep proposal writing
         sdd-propose = "nvidia/z-ai/glm-5.1";
         # GLM-5.1: structured precision
