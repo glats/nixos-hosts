@@ -298,16 +298,21 @@ let
       name = "nvidia";
       phases = {
         sdd-orchestrator = "nvidia/z-ai/glm-5.1";
-        sdd-init = "nvidia/minimaxai/minimax-m2.7";
-        sdd-explore = "nvidia/z-ai/glm-5.1";
+        # GPT-OSS 20B: 7s, ultra fast
+        sdd-init = "nvidia/openai/gpt-oss-20b";
+        # Qwen3 Coder 480B: aggressive tool calls, best explore (GLM-5.1 too conservative)
+        sdd-explore = "nvidia/qwen/qwen3-coder-480b-a35b-instruct";
         sdd-propose = "nvidia/z-ai/glm-5.1";
         sdd-spec = "nvidia/nvidia/nemotron-3-super-120b-a12b";
         sdd-design = "nvidia/z-ai/glm-5.1";
         sdd-tasks = "nvidia/nvidia/nemotron-3-super-120b-a12b";
+        # MiniMax M2.7: strong coder, ~180s (slow but reliable)
         sdd-apply = "nvidia/minimaxai/minimax-m2.7";
         sdd-verify = "nvidia/z-ai/glm-5.1";
-        sdd-archive = "nvidia/minimaxai/minimax-m2.7";
-        sdd-onboard = "nvidia/minimaxai/minimax-m2.7";
+        # GPT-OSS 20B: 7s, ultra fast
+        sdd-archive = "nvidia/openai/gpt-oss-20b";
+        # GPT-OSS 20B: 7s, ultra fast
+        sdd-onboard = "nvidia/openai/gpt-oss-20b";
         neutral = "nvidia/z-ai/glm-5.1";
       };
     }
@@ -317,10 +322,10 @@ let
       phases = {
         # GLM5: best agentic/coding model verified (SWE-Bench #1)
         sdd-orchestrator = "nvidia/z-ai/glm5";
-        # Nemotron 3 Super: 732ms, 120B — fast init
+        # Nemotron 3 Super: 9s, 120B — fast init
         sdd-init = "nvidia/nvidia/nemotron-3-super-120b-a12b";
-        # Llama 4 Maverick: 398ms, fast exploration
-        sdd-explore = "nvidia/meta/llama-4-maverick-17b-128e-instruct";
+        # Qwen3 Coder 480B: aggressive tool calls, best explore
+        sdd-explore = "nvidia/qwen/qwen3-coder-480b-a35b-instruct";
         # GLM5: strong proposal writer
         sdd-propose = "nvidia/z-ai/glm5";
         # Qwen3 Coder 480B: structured spec generation
@@ -329,11 +334,11 @@ let
         sdd-design = "nvidia/z-ai/glm5";
         # Qwen3 Coder 480B: precise task decomposition
         sdd-tasks = "nvidia/qwen/qwen3-coder-480b-a35b-instruct";
-        # MiniMax M2.7: coding strong, 24s acceptable for apply
+        # MiniMax M2.7: strong coder, ~180s (slow but reliable)
         sdd-apply = "nvidia/minimaxai/minimax-m2.7";
-        # GLM4.7: 9.7s, good analysis
+        # GLM4.7: good analysis
         sdd-verify = "nvidia/z-ai/glm4.7";
-        # GPT-OSS 20B: 332ms, fast archive
+        # GPT-OSS 20B: fast archive
         sdd-archive = "nvidia/openai/gpt-oss-20b";
         # GPT-OSS 20B: fast onboard
         sdd-onboard = "nvidia/openai/gpt-oss-20b";
@@ -348,10 +353,10 @@ let
       phases = {
         # GLM-5.1: best agentic model (SWE-Bench #1, Terminal-Bench 69, CyberGym 68.7)
         sdd-orchestrator = "nvidia/z-ai/glm-5.1";
-        # GPT-OSS 20B: 332ms, ultra fast for init
+        # GPT-OSS 20B: 7s, ultra fast for init
         sdd-init = "nvidia/openai/gpt-oss-20b";
-        # GLM-5.1: explore needs strong reasoning
-        sdd-explore = "nvidia/z-ai/glm-5.1";
+        # Qwen3 Coder 480B: aggressive tool calls (GLM-5.1 too conservative for explore)
+        sdd-explore = "nvidia/qwen/qwen3-coder-480b-a35b-instruct";
         # GLM-5.1: deep proposal writing
         sdd-propose = "nvidia/z-ai/glm-5.1";
         # GLM-5.1: structured precision
@@ -360,7 +365,7 @@ let
         sdd-design = "nvidia/z-ai/glm-5.1";
         # Qwen3 Coder 480B: structured decomposition specialist
         sdd-tasks = "nvidia/qwen/qwen3-coder-480b-a35b-instruct";
-        # MiniMax M2.7: coding specialist
+        # MiniMax M2.7: strong coder, ~180s (slow but reliable)
         sdd-apply = "nvidia/minimaxai/minimax-m2.7";
         # GLM-5.1: deep analysis
         sdd-verify = "nvidia/z-ai/glm-5.1";
@@ -412,25 +417,25 @@ let
         sdd-orchestrator = "nvidia/z-ai/glm-5.1";
         # Cohere R7B: 307ms, rock solid
         sdd-init = "cohere/command-r7b-12-2024";
-        # HuggingFace DeepSeek V3: 1.2s, large model
+        # HuggingFace DeepSeek V3: 862ms, large model
         sdd-explore = "huggingface/deepseek-ai/DeepSeek-V3-0324";
-        # NVIDIA GLM-5.1: maximum reasoning for proposals
-        sdd-propose = "nvidia/z-ai/glm-5.1";
+        # Mistral Magistral Medium: 499ms, strong reasoning, no timeout risk
+        sdd-propose = "mistral/magistral-medium-latest";
         # Mistral Large: structured output, no limits
         sdd-spec = "mistral/mistral-large-latest";
         # Cohere Command A Reasoning: specialized reasoning
         sdd-design = "cohere/command-a-reasoning-08-2025";
         # NVIDIA Qwen3 Coder 480B: precise decomposition
         sdd-tasks = "nvidia/qwen/qwen3-coder-480b-a35b-instruct";
-        # NVIDIA DeepSeek V4 Pro: pro = max coding quality
-        sdd-apply = "nvidia/deepseek-ai/deepseek-v4-pro";
+        # NVIDIA MiniMax M2.7: strong coder, ~180s (DeepSeek V4 Flash hangs via SDK bug #24264)
+        sdd-apply = "nvidia/minimaxai/minimax-m2.7";
         # Mistral Magistral Medium: deep analysis
         sdd-verify = "mistral/magistral-medium-latest";
         # Cohere R7B: fast, reliable
         sdd-archive = "cohere/command-r7b-12-2024";
         # Cohere R7B: fast, reliable
         sdd-onboard = "cohere/command-r7b-12-2024";
-        neutral = "nvidia/z-ai/glm-5.1";
+        neutral = "mistral/magistral-medium-latest";
       };
     }
 
