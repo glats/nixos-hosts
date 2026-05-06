@@ -99,12 +99,27 @@
         }
         (builtins.readFile ./scripts/verify-models.py);
 
+      # verify-tiers: Test every model in every OpenCode tier list (raw API)
+      verify-tiers = pkgs.writers.writePython3Bin "verify-tiers"
+        {
+          libraries = [ pkgs.python3Packages.openai ];
+          flakeIgnore = [ "E501" "W503" "E265" "E266" "E226" "F702" ];
+        }
+        (builtins.readFile ./scripts/verify-tiers.py);
+
+      # verify-opencode: Test models through opencode run (catches SDK/integration bugs)
+      verify-opencode = pkgs.writers.writePython3Bin "verify-opencode"
+        {
+          flakeIgnore = [ "E501" "W503" "E265" "E266" "E226" "F702" ];
+        }
+        (builtins.readFile ./scripts/verify-opencode.py);
+
       # Library functions for external use (non-NixOS portability)
       opencode-config-lib = import ./pkgs/opencode-config { inherit (pkgs) lib writeText; };
     in
     {
       packages.${system} = {
-        inherit nixos-scripts gentle-ai engram gentle-ai-assets-vanilla gentle-ai-assets engram-assets-vanilla engram-assets opencode-npm-packages verify-models;
+        inherit nixos-scripts gentle-ai engram gentle-ai-assets-vanilla gentle-ai-assets engram-assets-vanilla engram-assets opencode-npm-packages verify-models verify-tiers verify-opencode;
       };
 
       # Apps for nix run .#verify-models
@@ -112,6 +127,14 @@
         verify-models = {
           type = "app";
           program = "${verify-models}/bin/verify-models";
+        };
+        verify-tiers = {
+          type = "app";
+          program = "${verify-tiers}/bin/verify-tiers";
+        };
+        verify-opencode = {
+          type = "app";
+          program = "${verify-opencode}/bin/verify-opencode";
         };
       };
 

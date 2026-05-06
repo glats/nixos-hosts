@@ -104,20 +104,22 @@ let
       home.activation."makeOpencodeConfigMutable-${runtimeCfg.label}" =
         config.lib.dag.entryAfter [ "linkGeneration" ]
           ''
-            runtime_dir="${runtimeDir}"
+                      runtime_dir="${runtimeDir}"
 
-            if [ ! -d "$runtime_dir" ]; then
-              exit 0
-            fi
+                      if [ ! -d "$runtime_dir" ]; then
+                        exit 0
+                      fi
 
             # Single-file symlinks -> real copies (hash guard via cmp)
+            # ALWAYS replace symlinks with real copies — even if content matches,
+            # the symlink points to the read-only nix store which OpenCode can't write to.
+            # cmp guard is only used to skip unnecessary writes to already-real files
+            # that haven't changed since the last build.
             for file in opencode.json IDENTITY.md SYSTEM_RULES.md PERSONA.md AGENTS.md package.json .gitignore tui.json; do
               target="$runtime_dir/$file"
               if [ -L "$target" ]; then
                 src="$(${pkgs.coreutils}/bin/readlink -f "$target")"
-                if [ ! -f "$target" ] || ! ${pkgs.coreutils}/bin/cmp -s "$src" "$target"; then
-                  ${pkgs.coreutils}/bin/cp --remove-destination "$src" "$target"
-                fi
+                ${pkgs.coreutils}/bin/cp --remove-destination "$src" "$target"
               fi
               # Ensure files are writable (nix store sources are read-only)
               if [ -f "$target" ] && [ ! -w "$target" ]; then
@@ -125,33 +127,33 @@ let
               fi
             done
 
-            # Directory management for skills/ and commands/
-            # Handled here (not via home.file) because HM cannot overwrite real dirs with symlinks.
-            # Copies files from nix store with per-file cmp guard + orphan removal.
-            for dir_pair in "skills:${pkgs.gentle-ai-assets}/share/gentle-ai/skills" "commands:${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/commands"; do
-              dir_name="''${dir_pair%%:*}"
-              src="''${dir_pair#*:}"
-              target="$runtime_dir/$dir_name"
-              # Remove symlink if HM managed to create one
-              if [ -L "$target" ]; then
-                ${pkgs.coreutils}/bin/rm -f "$target"
-              fi
-              mkdir -p "$target"
-              # Copy changed files
-              (cd "$src" && ${pkgs.findutils}/bin/find . -type f) | while read -r rel; do
-                if [ ! -f "$target/$rel" ] || ! ${pkgs.coreutils}/bin/cmp -s "$src/$rel" "$target/$rel"; then
-                  mkdir -p "$(dirname "$target/$rel")"
-                  ${pkgs.coreutils}/bin/cp -f "$src/$rel" "$target/$rel"
-                  chmod 644 "$target/$rel"
-                fi
-              done
-              # Remove orphaned files
-              (cd "$target" && ${pkgs.findutils}/bin/find . -type f) | while read -r rel; do
-                if [ ! -f "$src/$rel" ]; then
-                  rm -f "$target/$rel"
-                fi
-              done
-            done
+                      # Directory management for skills/ and commands/
+                      # Handled here (not via home.file) because HM cannot overwrite real dirs with symlinks.
+                      # Copies files from nix store with per-file cmp guard + orphan removal.
+                      for dir_pair in "skills:${pkgs.gentle-ai-assets}/share/gentle-ai/skills" "commands:${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/commands"; do
+                        dir_name="''${dir_pair%%:*}"
+                        src="''${dir_pair#*:}"
+                        target="$runtime_dir/$dir_name"
+                        # Remove symlink if HM managed to create one
+                        if [ -L "$target" ]; then
+                          ${pkgs.coreutils}/bin/rm -f "$target"
+                        fi
+                        mkdir -p "$target"
+                        # Copy changed files
+                        (cd "$src" && ${pkgs.findutils}/bin/find . -type f) | while read -r rel; do
+                          if [ ! -f "$target/$rel" ] || ! ${pkgs.diffutils}/bin/cmp -s "$src/$rel" "$target/$rel"; then
+                            mkdir -p "$(dirname "$target/$rel")"
+                            ${pkgs.coreutils}/bin/cp -f "$src/$rel" "$target/$rel"
+                            chmod 644 "$target/$rel"
+                          fi
+                        done
+                        # Remove orphaned files
+                        (cd "$target" && ${pkgs.findutils}/bin/find . -type f) | while read -r rel; do
+                          if [ ! -f "$src/$rel" ]; then
+                            rm -f "$target/$rel"
+                          fi
+                        done
+                      done
           '';
 
       # Install plugins and npm deps; runs after symlink conversion.
@@ -174,7 +176,7 @@ let
             ${lib.optionalString cfg.plugins.engram.enable ''
               target="$runtime_dir/plugins/engram.ts"
               src="${pkgs.engram-assets}/share/engram/opencode/plugins/engram.ts"
-              if [ ! -f "$target" ] || ! ${pkgs.coreutils}/bin/cmp -s "$src" "$target"; then
+              if [ ! -f "$target" ] || ! ${pkgs.diffutils}/bin/cmp -s "$src" "$target"; then
                 ${pkgs.coreutils}/bin/cp -f "$src" "$target"
                 chmod 644 "$target"
               fi
@@ -182,7 +184,7 @@ let
             ${lib.optionalString cfg.plugins.backgroundAgents.enable ''
               target="$runtime_dir/plugins/background-agents.ts"
               src="${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/plugins/background-agents.ts"
-              if [ ! -f "$target" ] || ! ${pkgs.coreutils}/bin/cmp -s "$src" "$target"; then
+              if [ ! -f "$target" ] || ! ${pkgs.diffutils}/bin/cmp -s "$src" "$target"; then
                 ${pkgs.coreutils}/bin/cp -f "$src" "$target"
                 chmod 644 "$target"
               fi
