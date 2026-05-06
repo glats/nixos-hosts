@@ -10,6 +10,21 @@ let
   # Import centralized provider configuration
   providersConfig = import ./providers.nix { inherit lib; };
 
+  # Project context injected into all SDD sub-agent prompts
+  # Prevents path hallucination (e.g. /home/gl1ats/ instead of /home/glats/)
+  # and ensures agents know the correct working directory
+  projectContext = ''
+    ENVIRONMENT: User home is ${config.home.homeDirectory}. Username is ${config.home.username}.
+    All file paths MUST use this home directory. NEVER guess or hallucinate paths.'';
+
+  # Generate SDD sub-agent prompt with project context
+  mkSddPrompt = phase: ''
+    You are an SDD executor for the ${phase} phase, not the orchestrator. Do this phase's work yourself. Do NOT delegate, Do NOT call task/delegate, and Do NOT launch sub-agents. Read your skill file at ~/.config/opencode/skills/sdd-${phase}/SKILL.md and follow it exactly.
+
+    ${projectContext}
+
+    {file:./SYSTEM_RULES.md}'';
+
   # Get model for a specific phase from a provider entry
   getModelForPhase = phase: provider: provider.phases.${phase} or null;
 
@@ -290,7 +305,7 @@ let
       description = "Bootstrap SDD context and project configuration";
       hidden = true;
       mode = "subagent";
-      prompt = "You are an SDD executor for the init phase, not the orchestrator. Do this phase's work yourself. Do NOT delegate, Do NOT call task/delegate, and Do NOT launch sub-agents. Read your skill file at ~/.config/opencode/skills/sdd-init/SKILL.md and follow it exactly.\n\n{file:./SYSTEM_RULES.md}";
+      prompt = mkSddPrompt "init";
       tools = {
         bash = true;
         edit = true;
@@ -307,7 +322,8 @@ let
       description = "Investigate codebase and think through ideas";
       hidden = true;
       mode = "subagent";
-      prompt = "You are an SDD executor for the explore phase, not the orchestrator. Do this phase's work yourself. Do NOT delegate, Do NOT call task/delegate, and Do NOT launch sub-agents. Read your skill file at ~/.config/opencode/skills/sdd-explore/SKILL.md and follow it exactly.\n\n{file:./SYSTEM_RULES.md}";
+      maxSteps = 15;
+      prompt = mkSddPrompt "explore" + "\n\nCRITICAL: You have a limited step budget. Be EFFICIENT with reads:\n- Use Grep/Glob to FIND relevant files first, then read ONLY the specific sections you need\n- NEVER read entire large files (200+ lines) — use offset/limit parameters to read targeted sections\n- If a file is long, read the first 50 lines to understand structure, then use Grep for specifics\n- Prioritize breadth (scan many files) over depth (reading whole files)";
       tools = {
         bash = true;
         edit = true;
@@ -324,7 +340,7 @@ let
       description = "Create change proposals from explorations";
       hidden = true;
       mode = "subagent";
-      prompt = "You are an SDD executor for the propose phase, not the orchestrator. Do this phase's work yourself. Do NOT delegate, Do NOT call task/delegate, and Do NOT launch sub-agents. Read your skill file at ~/.config/opencode/skills/sdd-propose/SKILL.md and follow it exactly.\n\n{file:./SYSTEM_RULES.md}";
+      prompt = mkSddPrompt "propose";
       tools = {
         bash = true;
         edit = true;
@@ -341,7 +357,7 @@ let
       description = "Write detailed specifications from proposals";
       hidden = true;
       mode = "subagent";
-      prompt = "You are an SDD executor for the spec phase, not the orchestrator. Do this phase's work yourself. Do NOT delegate, Do NOT call task/delegate, and Do NOT launch sub-agents. Read your skill file at ~/.config/opencode/skills/sdd-spec/SKILL.md and follow it exactly.\n\n{file:./SYSTEM_RULES.md}";
+      prompt = mkSddPrompt "spec";
       tools = {
         bash = true;
         edit = true;
@@ -358,7 +374,7 @@ let
       description = "Create technical design from proposals";
       hidden = true;
       mode = "subagent";
-      prompt = "You are an SDD executor for the design phase, not the orchestrator. Do this phase's work yourself. Do NOT delegate, Do NOT call task/delegate, and Do NOT launch sub-agents. Read your skill file at ~/.config/opencode/skills/sdd-design/SKILL.md and follow it exactly.\n\n{file:./SYSTEM_RULES.md}";
+      prompt = mkSddPrompt "design";
       tools = {
         bash = true;
         edit = true;
@@ -375,7 +391,7 @@ let
       description = "Break down specs and designs into implementation tasks";
       hidden = true;
       mode = "subagent";
-      prompt = "You are an SDD executor for the tasks phase, not the orchestrator. Do this phase's work yourself. Do NOT delegate, Do NOT call task/delegate, and Do NOT launch sub-agents. Read your skill file at ~/.config/opencode/skills/sdd-tasks/SKILL.md and follow it exactly.\n\n{file:./SYSTEM_RULES.md}";
+      prompt = mkSddPrompt "tasks";
       tools = {
         bash = true;
         edit = true;
@@ -392,7 +408,7 @@ let
       description = "Implement code changes from task definitions";
       hidden = true;
       mode = "subagent";
-      prompt = "You are an SDD executor for the apply phase, not the orchestrator. Do this phase's work yourself. Do NOT delegate, Do NOT call task/delegate, and Do NOT launch sub-agents. Read your skill file at ~/.config/opencode/skills/sdd-apply/SKILL.md and follow it exactly.\n\n{file:./SYSTEM_RULES.md}";
+      prompt = mkSddPrompt "apply";
       tools = {
         bash = true;
         edit = true;
@@ -409,7 +425,7 @@ let
       description = "Validate implementation against specs";
       hidden = true;
       mode = "subagent";
-      prompt = "You are an SDD executor for the verify phase, not the orchestrator. Do this phase's work yourself. Do NOT delegate, Do NOT call task/delegate, and Do NOT launch sub-agents. Read your skill file at ~/.config/opencode/skills/sdd-verify/SKILL.md and follow it exactly.\n\n{file:./SYSTEM_RULES.md}";
+      prompt = mkSddPrompt "verify";
       tools = {
         bash = true;
         edit = true;
@@ -426,7 +442,7 @@ let
       description = "Archive completed change artifacts";
       hidden = true;
       mode = "subagent";
-      prompt = "You are an SDD executor for the archive phase, not the orchestrator. Do this phase's work yourself. Do NOT delegate, Do NOT call task/delegate, and Do NOT launch sub-agents. Read your skill file at ~/.config/opencode/skills/sdd-archive/SKILL.md and follow it exactly.\n\n{file:./SYSTEM_RULES.md}";
+      prompt = mkSddPrompt "archive";
       tools = {
         bash = true;
         edit = true;
@@ -443,7 +459,7 @@ let
       description = "Guide user through a complete SDD cycle using their real codebase";
       hidden = true;
       mode = "subagent";
-      prompt = "You are an SDD executor for the onboard phase, not the orchestrator. Do this phase's work yourself. Do NOT delegate, Do NOT call task/delegate, and Do NOT launch sub-agents. Read your skill file at ~/.config/opencode/skills/sdd-onboard/SKILL.md and follow it exactly.\n\n{file:./SYSTEM_RULES.md}";
+      prompt = mkSddPrompt "onboard";
       tools = {
         bash = true;
         edit = true;
