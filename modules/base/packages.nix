@@ -177,6 +177,7 @@ in
     bun
     docker
     opencode
+    openfang
     asus-fan-control
     pipewire-module-xrdp
   ] ++ matePkgs ++ cliTools ++ devTooling ++ desktopApps ++ mediaSupport ++ browsers ++ virtualization;

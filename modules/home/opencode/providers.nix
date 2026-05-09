@@ -206,6 +206,7 @@ let
         "z-ai/glm-4.5-air:free" = { name = "GLM 4.5 Air Free"; };
         "baidu/qianfan-ocr-fast:free" = { name = "Qianfan OCR Free"; };
         "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free" = { name = "Nemotron 3 Nano Reasoning Free"; };
+        "moonshotai/kimi-k2.6" = { name = "Kimi K2.6"; };
       };
     };
   };
@@ -285,7 +286,7 @@ let
     // kiloProvider
     // llm7Provider;
 
-  activeProviderName = "nvidia";
+  activeProviderName = "opencode-go";
 
   # ============================================================
   # Tier assignments — best verified model per SDD phase
@@ -301,7 +302,8 @@ let
         # GPT-OSS 20B: 7s, ultra fast
         sdd-init = "nvidia/openai/gpt-oss-20b";
         # Devstral Medium: ~15s, coding specialist, respects offset/limit, aggressive tool calls (Qwen3 Coder 480B timed out)
-        sdd-explore = "mistral/devstral-medium-latest";
+        # OpenRouter Kimi K2.6: 262K context, <5s, excellent tool calls via OpenRouter (NVIDIA NIM + Kimi hangs due to SDK issue)
+        sdd-explore = "nvidia/z-ai/glm-5.1";
         sdd-propose = "nvidia/z-ai/glm-5.1";
         sdd-spec = "nvidia/nvidia/nemotron-3-super-120b-a12b";
         sdd-design = "nvidia/z-ai/glm-5.1";
@@ -325,7 +327,8 @@ let
         # Nemotron 3 Super: 9s, 120B — fast init
         sdd-init = "nvidia/nvidia/nemotron-3-super-120b-a12b";
         # Devstral Medium: ~15s, coding specialist, respects offset/limit, aggressive tool calls (Qwen3 Coder 480B timed out)
-        sdd-explore = "mistral/devstral-medium-latest";
+        # OpenRouter Kimi K2.6: 262K context, <5s, excellent tool calls via OpenRouter (NVIDIA NIM + Kimi hangs due to SDK issue)
+        sdd-explore = "nvidia/z-ai/glm-5.1";
         # GLM5: strong proposal writer
         sdd-propose = "nvidia/z-ai/glm5";
         # Qwen3 Coder 480B: structured spec generation
@@ -356,7 +359,8 @@ let
         # GPT-OSS 20B: 7s, ultra fast for init
         sdd-init = "nvidia/openai/gpt-oss-20b";
         # Devstral Medium: ~15s, coding specialist, respects offset/limit, aggressive tool calls (Qwen3 Coder 480B timed out)
-        sdd-explore = "mistral/devstral-medium-latest";
+        # OpenRouter Kimi K2.6: 262K context, <5s, excellent tool calls via OpenRouter (NVIDIA NIM + Kimi hangs due to SDK issue)
+        sdd-explore = "nvidia/z-ai/glm-5.1";
         # GLM-5.1: deep proposal writing
         sdd-propose = "nvidia/z-ai/glm-5.1";
         # GLM-5.1: structured precision

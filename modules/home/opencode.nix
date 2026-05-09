@@ -207,6 +207,43 @@ let
               ln -s "$data_dir/opencode-stable.db" "$data_dir/opencode.db"
             fi
           '';
+
+      # Sync OpenCode skills to OpenFang (cmp-guarded copy + orphan cleanup).
+      # OpenFang requires write access to skill dirs (writes skill.toml manifests),
+      # so we copy instead of symlink. Runs after makeOpencodeConfigMutable so all
+      # OpenCode skills are already deployed, and before setupOpencodePluginRuntime.
+      home.activation."syncOpencodeSkillsToOpenfang-${runtimeCfg.label}" =
+        config.lib.dag.entryAfter [ "makeOpencodeConfigMutable-${runtimeCfg.label}" ]
+          ''
+            opencode_skills_dir="${config.home.homeDirectory}/.config/opencode/skills"
+            openfang_skills_dir="${config.home.homeDirectory}/.openfang/skills"
+
+            if [ ! -d "$opencode_skills_dir" ]; then
+              exit 0
+            fi
+
+            # Ensure openfang skills dir exists as a real directory
+            if [ -L "$openfang_skills_dir" ]; then
+              ${pkgs.coreutils}/bin/rm -f "$openfang_skills_dir"
+            fi
+            mkdir -p "$openfang_skills_dir"
+
+            # Copy changed files with cmp guard
+            (cd "$opencode_skills_dir" && ${pkgs.findutils}/bin/find . -type f) | while read -r rel; do
+              if [ ! -f "$openfang_skills_dir/$rel" ] || ! ${pkgs.diffutils}/bin/cmp -s "$opencode_skills_dir/$rel" "$openfang_skills_dir/$rel"; then
+                mkdir -p "$(dirname "$openfang_skills_dir/$rel")"
+                ${pkgs.coreutils}/bin/cp -f "$opencode_skills_dir/$rel" "$openfang_skills_dir/$rel"
+                chmod 644 "$openfang_skills_dir/$rel"
+              fi
+            done
+
+            # Orphan cleanup: remove files in openfang/skills not in opencode/skills
+            (cd "$openfang_skills_dir" && ${pkgs.findutils}/bin/find . -type f) | while read -r rel; do
+              if [ ! -f "$opencode_skills_dir/$rel" ]; then
+                rm -f "$openfang_skills_dir/$rel"
+              fi
+            done
+          '';
     };
 in
 {
