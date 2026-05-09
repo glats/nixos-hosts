@@ -14,7 +14,7 @@ in
     # Ensure systemd user services are enabled
     systemd.user.enable = true;
 
-    # Generate OpenFang config.toml with Telegram and OpenCode Go provider
+    # Generate OpenFang config.toml with Telegram and NVIDIA NIM provider
     home.file.".openfang/config.toml" = {
       force = true;
       text = ''
@@ -26,13 +26,15 @@ in
         lifecycle_reactions = false
 
         [default_model]
-        provider = "openai"
-        model = "moonshotai/kimi-k2.6"
-        api_key_env = "OPENCODE_API_KEY"
-        base_url = "https://opencode.ai/zen/go/v1"
+        provider = "nvidia"
+          model = "z-ai/glm5"
+        api_key_env = "NVIDIA_API_KEY"
 
         [exec_policy]
         mode = "full"
+
+        [provider_urls]
+        nvidia = "https://integrate.api.nvidia.com/v1"
       '';
     };
 
@@ -42,8 +44,8 @@ in
       if [ -f "${config.sops.secrets."openfang/telegram_bot_token".path}" ]; then
         export TELEGRAM_BOT_TOKEN="$(cat ${config.sops.secrets."openfang/telegram_bot_token".path})"
       fi
-      if [ -f "${config.sops.secrets."opencode/opencode_go_api_key".path}" ]; then
-        export OPENCODE_API_KEY="$(cat ${config.sops.secrets."opencode/opencode_go_api_key".path})"
+      if [ -f "${config.sops.secrets."opencode/nvidia_api_key".path}" ]; then
+        export NVIDIA_API_KEY="$(cat ${config.sops.secrets."opencode/nvidia_api_key".path})"
       fi
     '';
 
@@ -53,7 +55,7 @@ in
       text = ''
         #!/usr/bin/env bash
         export TELEGRAM_BOT_TOKEN="$(cat ${config.sops.secrets."openfang/telegram_bot_token".path})"
-        export OPENCODE_API_KEY="$(cat ${config.sops.secrets."opencode/opencode_go_api_key".path})"
+        export NVIDIA_API_KEY="$(cat ${config.sops.secrets."opencode/nvidia_api_key".path})"
         exec ${pkgs.openfang}/bin/openfang start
       '';
     };

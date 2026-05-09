@@ -31,6 +31,7 @@
 
     # Hardware (rog-specific)
     ../../modules/hardware/nvidia.nix
+    ../../modules/hardware/rog-shutdown.nix
     ../../modules/hardware/asus-fan-control.nix
     ../../modules/hardware/keyring.nix
 
@@ -79,6 +80,7 @@
   boot-settings = {
     enable = true;
     includeAcpiOsi = true;
+    includePoweroffFix = true;
   };
 
   boot = {
