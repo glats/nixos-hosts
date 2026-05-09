@@ -90,6 +90,7 @@
       };
 
       opencode-npm-packages = pkgs.callPackage ./pkgs/opencode-npm-packages { };
+      openfang = pkgs.callPackage ./pkgs/openfang { };
 
       # verify-models: Test LLM model availability across free-tier providers
       verify-models = pkgs.writers.writePython3Bin "verify-models"
@@ -119,7 +120,7 @@
     in
     {
       packages.${system} = {
-        inherit nixos-scripts gentle-ai engram gentle-ai-assets-vanilla gentle-ai-assets engram-assets-vanilla engram-assets opencode-npm-packages verify-models verify-tiers verify-opencode;
+        inherit nixos-scripts gentle-ai engram gentle-ai-assets-vanilla gentle-ai-assets engram-assets-vanilla engram-assets opencode-npm-packages verify-models verify-tiers verify-opencode openfang;
       };
 
       # Apps for nix run .#verify-models

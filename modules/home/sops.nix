@@ -64,4 +64,9 @@
   sops.secrets."opencode/kilo_api_key" = {
     mode = "0400";
   };
+
+  # Telegram bot token for OpenFang
+  sops.secrets."openfang/telegram_bot_token" = {
+    mode = "0400";
+  };
 }
