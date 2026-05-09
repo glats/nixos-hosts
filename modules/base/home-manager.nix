@@ -28,6 +28,7 @@
         ../home/kitty.nix
         ../home/opencode.nix
         ../home/opencode-profile.nix
+        ../home/openfang.nix
         ../home/chrome-apps.nix
         ../home/ssh.nix
         ../home/sops.nix
