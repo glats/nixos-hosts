@@ -1,4 +1,4 @@
-{ config, lib, ... }:
+{ config, lib, pkgs, ... }:
 
 with lib;
 
@@ -14,23 +14,49 @@ in
     # Ensure systemd user services are enabled
     systemd.user.enable = true;
 
-    # Generate OpenFang config.toml with Telegram channel enabled
+    # Generate OpenFang config.toml with Telegram and OpenCode Go provider
     home.file.".openfang/config.toml" = {
       force = true;
       text = ''
         [channels.telegram]
         enabled = true
         bot_token_env = "TELEGRAM_BOT_TOKEN"
+
+        [channels.telegram.overrides]
+        lifecycle_reactions = false
+
+        [default_model]
+        provider = "openai"
+        model = "moonshotai/kimi-k2.6"
+        api_key_env = "OPENCODE_API_KEY"
+        base_url = "https://opencode.ai/zen/go/v1"
+
+        [exec_policy]
+        mode = "full"
       '';
     };
 
-    # Export Telegram bot token from sops secret to shell environment
+    # Export secrets from sops to shell environment
     # This enables `openfang status` and other commands in the terminal
     programs.zsh.initContent = lib.mkAfter ''
       if [ -f "${config.sops.secrets."openfang/telegram_bot_token".path}" ]; then
         export TELEGRAM_BOT_TOKEN="$(cat ${config.sops.secrets."openfang/telegram_bot_token".path})"
       fi
+      if [ -f "${config.sops.secrets."opencode/opencode_go_api_key".path}" ]; then
+        export OPENCODE_API_KEY="$(cat ${config.sops.secrets."opencode/opencode_go_api_key".path})"
+      fi
     '';
+
+    # Wrapper script that reads sops secrets and exports them before starting openfang
+    home.file.".local/bin/openfang-start" = {
+      executable = true;
+      text = ''
+        #!/usr/bin/env bash
+        export TELEGRAM_BOT_TOKEN="$(cat ${config.sops.secrets."openfang/telegram_bot_token".path})"
+        export OPENCODE_API_KEY="$(cat ${config.sops.secrets."opencode/opencode_go_api_key".path})"
+        exec ${pkgs.openfang}/bin/openfang start
+      '';
+    };
 
     # Systemd user service to run OpenFang automatically on login
     systemd.user.services.openfang = {
@@ -41,15 +67,9 @@ in
 
       Service = {
         Type = "simple";
-        ExecStart = "${pkgs.openfang}/bin/openfang start";
+        ExecStart = "${config.home.homeDirectory}/.local/bin/openfang-start";
         Restart = "on-failure";
         RestartSec = "5s";
-
-        # Pass Telegram bot token directly from sops secret
-        # Systemd services do not inherit shell environment variables
-        Environment = [
-          "TELEGRAM_BOT_TOKEN=${config.sops.secrets."openfang/telegram_bot_token".path}"
-        ];
       };
 
       Install = {
