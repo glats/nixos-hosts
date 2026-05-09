@@ -8,6 +8,11 @@
       default = false;
       description = "Include ACPI OSI overrides (for ASUS laptops)";
     };
+    includePoweroffFix = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Include ACPI poweroff fix kernel params (for ASUS ROG)";
+    };
   };
 
   config = lib.mkIf config.boot-settings.enable {
@@ -30,6 +35,10 @@
       ] ++ lib.optionals config.boot-settings.includeAcpiOsi [
         "acpi_osi=!"
         "acpi_osi=\"Windows 2018\""
+      ] ++ lib.optionals config.boot-settings.includePoweroffFix [
+        "acpi=force"
+        "pcie_aspm=off"
+        "reboot=acpi"
       ];
     };
   };

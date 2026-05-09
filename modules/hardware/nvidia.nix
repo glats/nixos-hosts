@@ -8,6 +8,7 @@ in
 
   boot.extraModprobeConfig = ''
     options nvidia NVreg_PreserveVideoMemoryAllocations=0 NVreg_DynamicPowerManagement=0x00
+    options nvidia-drm modeset=1
   '';
 
   hardware.nvidia = {

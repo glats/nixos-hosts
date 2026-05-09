@@ -299,11 +299,10 @@ let
       name = "nvidia";
       phases = {
         sdd-orchestrator = "nvidia/z-ai/glm-5.1";
-        # GPT-OSS 20B: 7s, ultra fast
-        sdd-init = "nvidia/openai/gpt-oss-20b";
-        # Devstral Medium: ~15s, coding specialist, respects offset/limit, aggressive tool calls (Qwen3 Coder 480B timed out)
-        # OpenRouter Kimi K2.6: 262K context, <5s, excellent tool calls via OpenRouter (NVIDIA NIM + Kimi hangs due to SDK issue)
-        sdd-explore = "nvidia/z-ai/glm-5.1";
+        # Nemotron 3 Super: 9s, 120B — fast init
+        sdd-init = "nvidia/nvidia/nemotron-3-super-120b-a12b";
+        # GLM5: best agentic/coding model verified (SWE-Bench #1)
+        sdd-explore = "nvidia/z-ai/glm5";
         sdd-propose = "nvidia/z-ai/glm-5.1";
         sdd-spec = "nvidia/nvidia/nemotron-3-super-120b-a12b";
         sdd-design = "nvidia/z-ai/glm-5.1";
@@ -311,72 +310,39 @@ let
         # MiniMax M2.7: strong coder, ~180s (slow but reliable)
         sdd-apply = "nvidia/minimaxai/minimax-m2.7";
         sdd-verify = "nvidia/z-ai/glm-5.1";
-        # GPT-OSS 20B: 7s, ultra fast
-        sdd-archive = "nvidia/openai/gpt-oss-20b";
-        # GPT-OSS 20B: 7s, ultra fast
-        sdd-onboard = "nvidia/openai/gpt-oss-20b";
+        # GLM-5.1: reliable (GPT-OSS 20B hangs mid-way in TUI)
+        sdd-archive = "nvidia/z-ai/glm-5.1";
+        sdd-onboard = "nvidia/z-ai/glm-5.1";
         neutral = "nvidia/z-ai/glm-5.1";
       };
     }
 
+    # --- Pragmatic: best model per phase, NVIDIA + opencode-go hybrid ---
+
     {
-      name = "nvidia2";
+      name = "pragmatic";
       phases = {
-        # GLM5: best agentic/coding model verified (SWE-Bench #1)
-        sdd-orchestrator = "nvidia/z-ai/glm5";
-        # Nemotron 3 Super: 9s, 120B — fast init
+        # opencode-go Kimi K2.6: best orchestrator, tool calls perfectos, 262K context
+        sdd-orchestrator = "opencode-go/kimi-k2.6";
+        # NVIDIA Nemotron 3 Super: rápido, barato, init simple
         sdd-init = "nvidia/nvidia/nemotron-3-super-120b-a12b";
-        # Devstral Medium: ~15s, coding specialist, respects offset/limit, aggressive tool calls (Qwen3 Coder 480B timed out)
-        # OpenRouter Kimi K2.6: 262K context, <5s, excellent tool calls via OpenRouter (NVIDIA NIM + Kimi hangs due to SDK issue)
-        sdd-explore = "nvidia/z-ai/glm-5.1";
-        # GLM5: strong proposal writer
-        sdd-propose = "nvidia/z-ai/glm5";
-        # Qwen3 Coder 480B: structured spec generation
-        sdd-spec = "nvidia/qwen/qwen3-coder-480b-a35b-instruct";
-        # GLM5: deep reasoning for design
-        sdd-design = "nvidia/z-ai/glm5";
-        # Qwen3 Coder 480B: precise task decomposition
-        sdd-tasks = "nvidia/qwen/qwen3-coder-480b-a35b-instruct";
-        # MiniMax M2.7: strong coder, ~180s (slow but reliable)
-        sdd-apply = "nvidia/minimaxai/minimax-m2.7";
-        # GLM4.7: good analysis
-        sdd-verify = "nvidia/z-ai/glm4.7";
-        # GPT-OSS 20B: fast archive
-        sdd-archive = "nvidia/openai/gpt-oss-20b";
-        # GPT-OSS 20B: fast onboard
-        sdd-onboard = "nvidia/openai/gpt-oss-20b";
-        neutral = "nvidia/z-ai/glm5";
-      };
-    }
-
-    # --- GLM-5.1 centric: best agentic, never plateaus ---
-
-    {
-      name = "nvidia3";
-      phases = {
-        # GLM-5.1: best agentic model (SWE-Bench #1, Terminal-Bench 69, CyberGym 68.7)
-        sdd-orchestrator = "nvidia/z-ai/glm-5.1";
-        # GPT-OSS 20B: 7s, ultra fast for init
-        sdd-init = "nvidia/openai/gpt-oss-20b";
-        # Devstral Medium: ~15s, coding specialist, respects offset/limit, aggressive tool calls (Qwen3 Coder 480B timed out)
-        # OpenRouter Kimi K2.6: 262K context, <5s, excellent tool calls via OpenRouter (NVIDIA NIM + Kimi hangs due to SDK issue)
-        sdd-explore = "nvidia/z-ai/glm-5.1";
-        # GLM-5.1: deep proposal writing
-        sdd-propose = "nvidia/z-ai/glm-5.1";
-        # GLM-5.1: structured precision
-        sdd-spec = "nvidia/z-ai/glm-5.1";
-        # GLM-5.1: architecture reasoning
+        # opencode-go DeepSeek V4 Flash: explore con mejor contexto
+        sdd-explore = "opencode-go/deepseek-v4-flash";
+        # opencode-go DeepSeek V4 Pro: mejor proposal writer, 1M context
+        sdd-propose = "opencode-go/deepseek-v4-pro";
+        # opencode-go Qwen3.6 Plus: buen contexto para specs estructuradas
+        sdd-spec = "opencode-go/qwen3.6-plus";
+        # NVIDIA GLM-5.1: design rápido
         sdd-design = "nvidia/z-ai/glm-5.1";
-        # Qwen3 Coder 480B: structured decomposition specialist
-        sdd-tasks = "nvidia/qwen/qwen3-coder-480b-a35b-instruct";
-        # MiniMax M2.7: strong coder, ~180s (slow but reliable)
-        sdd-apply = "nvidia/minimaxai/minimax-m2.7";
-        # GLM-5.1: deep analysis
+        # NVIDIA Nemotron 3 Super: tasks breakdown
+        sdd-tasks = "nvidia/nvidia/nemotron-3-super-120b-a12b";
+        # opencode-go MiniMax M2.7: más rápido que NVIDIA
+        sdd-apply = "opencode-go/minimax-m2.7";
+        # NVIDIA GLM-5.1: verify rápido
         sdd-verify = "nvidia/z-ai/glm-5.1";
-        # GPT-OSS 20B: fast, low context
-        sdd-archive = "nvidia/openai/gpt-oss-20b";
-        # GPT-OSS 20B: fast, low context
-        sdd-onboard = "nvidia/openai/gpt-oss-20b";
+        # NVIDIA GLM-5.1: archive/onboard confiable
+        sdd-archive = "nvidia/z-ai/glm-5.1";
+        sdd-onboard = "nvidia/z-ai/glm-5.1";
         neutral = "nvidia/z-ai/glm-5.1";
       };
     }
