@@ -17,7 +17,10 @@
 
   config = lib.mkIf config.boot-settings.enable {
     boot = {
-      loader.systemd-boot.enable = true;
+      loader.systemd-boot = {
+        enable = true;
+        configurationLimit = 3;
+      };
       loader.efi.canTouchEfiVariables = true;
       plymouth.enable = true;
       consoleLogLevel = 0;

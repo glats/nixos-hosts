@@ -58,6 +58,8 @@
     includeAcpiOsi = false;
   };
 
+  zramSwap.enable = true;
+
   nixpkgs.config = {
     allowUnfree = true;
     allowUnfreePackages = [ "joypixels" ];

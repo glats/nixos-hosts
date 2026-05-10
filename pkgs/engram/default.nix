@@ -2,11 +2,11 @@
 
 stdenvNoCC.mkDerivation rec {
   pname = "engram";
-  version = "1.15.1";
+  version = "1.15.10";
 
   src = fetchurl {
     url = "https://github.com/Gentleman-Programming/engram/releases/download/v${version}/engram_${version}_linux_amd64.tar.gz";
-    sha256 = "sha256-gkTnMeHOxHszJMgb+DS/coOymP4vhzURA1ZirSVhap0=";
+    sha256 = "sha256-zGq9PYJYapgoZ/46cYvSqvV6soMvJEJxDW/4RiXZOts=";
   };
 
   sourceRoot = ".";

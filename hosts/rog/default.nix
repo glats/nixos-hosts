@@ -90,6 +90,8 @@
     kernelModules = [ "acpi_call" ];
   };
 
+  zramSwap.enable = true;
+
   nixpkgs.config = {
     allowUnfree = true;
     permittedInsecurePackages = [ ];
