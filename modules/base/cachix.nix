@@ -10,6 +10,9 @@
       "https://cuda-maintainers.cachix.org"
       "https://ghostty.cachix.org"
       "https://nixpkgs-unfree.cachix.org"
+      "https://glats.cachix.org"
+      "https://cache.flox.dev"
+      "https://nixpkgs.cachix.org"
     ];
     trusted-public-keys = lib.mkAfter [
       "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZvDo1tvuGySTdw="
@@ -17,6 +20,9 @@
       "cuda-maintainers.cachix.org-1:0dq3bujKpuEPMCX6U4WylrUDZ9JyUG0VpVZa7CNfq5E="
       "ghostty.cachix.org-1:QB389yTa6gTyneehvqG58y0WnHjQOqgnA+wBnpWWxns="
       "nixpkgs-unfree.cachix.org-1:hqvoInulhbV4nJ9yJOEr+4wxhDV4xq2d1DK7S6Nj6rs="
+      "glats.cachix.org-1:V2oAsHsOlToaHUEnJoq59uwf+696fLE0WzJI9XTupLc="
+      "flox-cache-public"
+      "nixpkgs.cachix.org-1:q91R6hxbwFvDqTSDKwDAV4T5PxqXGxswD8vhONFMeOE="
     ];
   };
 }
