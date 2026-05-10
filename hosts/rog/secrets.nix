@@ -53,4 +53,29 @@ in
     group = "users";
     mode = "0600";
   };
+
+  # Authelia SSO secrets
+  sops.secrets."authelia/jwt_secret" = {
+    sopsFile = ../../secrets/system/authelia.yaml;
+  };
+  sops.secrets."authelia/session_secret" = {
+    sopsFile = ../../secrets/system/authelia.yaml;
+  };
+  sops.secrets."authelia/storage_encryption_key" = {
+    sopsFile = ../../secrets/system/authelia.yaml;
+  };
+  sops.secrets."authelia/postgresql_password" = {
+    sopsFile = ../../secrets/system/authelia.yaml;
+  };
+  sops.secrets."authelia/redis_password" = {
+    sopsFile = ../../secrets/system/authelia.yaml;
+  };
+
+  # OpenFang API key (for OpenCode Go proxy)
+  sops.secrets."openfang/api_key" = {
+    sopsFile = ../../secrets/system/authelia.yaml;
+    owner = "glats";
+    group = "users";
+    mode = "0400";
+  };
 }

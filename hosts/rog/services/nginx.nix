@@ -246,7 +246,7 @@
           extraConfig = ''
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header Host $host;
+            # proxy_set_header Host removed - nginx sets it automatically
             proxy_set_header X-NginX-Proxy true;
             proxy_read_timeout 43200000;
           '';
@@ -306,7 +306,7 @@
         '';
 
         locations."/" = {
-          proxyPass = "http://127.0.0.1:8989";
+          proxyPass = "http://127.0.0.1:9002";
           proxyWebsockets = true;
           extraConfig = ''
             proxy_set_header X-Forwarded-Proto $scheme;
@@ -512,6 +512,112 @@
         };
 
         extraConfig = ''
+          add_header X-Content-Type-Options nosniff always;
+          add_header X-XSS-Protection "1; mode=block" always;
+          add_header X-Frame-Options SAMEORIGIN always;
+        '';
+      };
+
+      # ============================================================
+      # Authelia SSO
+      # ============================================================
+
+      "auth.glats.org" = {
+        useACMEHost = "glats.org";
+        forceSSL = true;
+
+        locations."/" = {
+          proxyPass = "http://127.0.0.1:9091";
+          proxyWebsockets = true;
+          extraConfig = ''
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-Host $host;
+          '';
+        };
+
+        extraConfig = ''
+          add_header X-Content-Type-Options nosniff always;
+          add_header X-XSS-Protection "1; mode=block" always;
+          add_header X-Frame-Options SAMEORIGIN always;
+        '';
+      };
+
+      "openfang.glats.org" = {
+        useACMEHost = "glats.org";
+        forceSSL = true;
+
+        # Internal authelia verification endpoint (no access from outside)
+        locations."/internal/authelia/authz" = {
+          proxyPass = "http://127.0.0.1:9091/api/verify";
+          extraConfig = ''
+            internal;
+            proxy_pass_request_body off;
+            proxy_set_header Content-Length "";
+            proxy_set_header X-Original-URL $scheme://$http_host$request_uri;
+            proxy_set_header X-Real-IP $remote_addr;
+          '';
+        };
+
+        # Bypass locations - API and WebSocket don't use auth_request
+        locations."/api/" = {
+          proxyPass = "http://127.0.0.1:50051";
+          proxyWebsockets = true;
+          extraConfig = ''
+            # proxy_set_header Host removed - nginx sets it automatically
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+          '';
+        };
+
+        locations."/v1/" = {
+          proxyPass = "http://127.0.0.1:50051";
+          proxyWebsockets = true;
+          extraConfig = ''
+            # proxy_set_header Host removed - nginx sets it automatically
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+          '';
+        };
+
+        locations."/ws" = {
+          proxyPass = "http://127.0.0.1:50051/ws";
+          proxyWebsockets = true;
+          extraConfig = ''
+            # proxy_set_header Host removed - nginx sets it automatically
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_read_timeout 86400s;
+            proxy_send_timeout 86400s;
+          '';
+        };
+
+        # Main location - requires auth via auth_request
+        locations."/" = {
+          proxyPass = "http://127.0.0.1:50051";
+          proxyWebsockets = true;
+          extraConfig = ''
+            auth_request /internal/authelia/authz;
+            auth_request_set $auth_status $upstream_status;
+            # proxy_set_header Host removed - nginx sets it automatically
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            error_page 401 = @auth_redirect;
+          '';
+        };
+
+        # Redirect unauthenticated users to Authelia login
+        locations."@auth_redirect" = {
+          return = "302 https://auth.glats.org/?rd=https://openfang.glats.org$request_uri";
+        };
+
+        extraConfig = ''
+          # Security headers
           add_header X-Content-Type-Options nosniff always;
           add_header X-XSS-Protection "1; mode=block" always;
           add_header X-Frame-Options SAMEORIGIN always;

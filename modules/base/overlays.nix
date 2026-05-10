@@ -6,7 +6,7 @@ let
   pipewire-module-xrdp-src = inputs.pipewire-module-xrdp-src;
 in
 {
-  inherit (self.packages.${prev.stdenv.hostPlatform.system}) nixos-scripts gentle-ai engram gentle-ai-assets gentle-ai-assets-vanilla engram-assets engram-assets-vanilla opencode-npm-packages openfang;
+  inherit (self.packages.${prev.stdenv.hostPlatform.system}) nixos-scripts gentle-ai engram gentle-ai-assets gentle-ai-assets-vanilla engram-assets engram-assets-vanilla secret-guard-assets opencode-npm-packages openfang;
 
   asus-fan-control = final.stdenv.mkDerivation rec {
     pname = "asus-fan-control";

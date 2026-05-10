@@ -33,6 +33,23 @@ with lib;
         '';
       };
     };
+
+    secretGuard = {
+      enable = mkOption {
+        type = types.bool;
+        default = false;
+        description = ''
+          Enable the secret-guard plugin to prevent accidental secret exposure.
+
+          This plugin:
+          - Redacts secret patterns from bash output (API keys, age keys, tokens)
+          - Strips SOPS_AGE_KEY and SOPS_AGE_KEY_FILE from shell environment
+
+          Note: Blocking of secret paths is handled by permissions.nix and
+          SYSTEM_RULES.md. This plugin provides runtime redaction only.
+        '';
+      };
+    };
   };
 
   # TUI Plugins submodule
@@ -76,6 +93,7 @@ with lib;
     lib.filterAttrs (name: enabled: enabled) {
       background-agents = config.home.opencode.plugins.backgroundAgents.enable;
       engram = config.home.opencode.plugins.engram.enable;
+      secret-guard = config.home.opencode.plugins.secretGuard.enable;
     }
   );
 }

@@ -69,4 +69,9 @@
   sops.secrets."openfang/telegram_bot_token" = {
     mode = "0400";
   };
+
+  # OpenFang API key for OpenCode Go proxy
+  sops.secrets."openfang/api_key" = {
+    mode = "0400";
+  };
 }
