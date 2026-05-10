@@ -97,6 +97,7 @@ let
     tcpdump
     lazygit
     lazydocker
+    thttpd
   ];
 
   devTooling = with pkgs; [

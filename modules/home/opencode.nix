@@ -65,13 +65,22 @@ let
           force = true;
           source = jsonFile;
         };
-        ".config/${runtimeCfg.dir}/IDENTITY.md".source = ./opencode/IDENTITY.md;
-        ".config/${runtimeCfg.dir}/SYSTEM_RULES.md".source = ./opencode/SYSTEM_RULES.md;
-        ".config/${runtimeCfg.dir}/PERSONA.md".text = ''
-          ${builtins.readFile ./opencode/IDENTITY.md}
+        ".config/${runtimeCfg.dir}/IDENTITY.md" = {
+          force = true;
+          source = ./opencode/IDENTITY.md;
+        };
+        ".config/${runtimeCfg.dir}/SYSTEM_RULES.md" = {
+          force = true;
+          source = ./opencode/SYSTEM_RULES.md;
+        };
+        ".config/${runtimeCfg.dir}/PERSONA.md" = {
+          force = true;
+          text = ''
+            ${builtins.readFile ./opencode/IDENTITY.md}
 
-          ${builtins.readFile ./opencode/SYSTEM_RULES.md}
-        '';
+            ${builtins.readFile ./opencode/SYSTEM_RULES.md}
+          '';
+        };
         ".config/${runtimeCfg.dir}/AGENTS.md" = {
           force = true;
           source = "${pkgs.gentle-ai-assets}/share/gentle-ai/AGENTS.md";
@@ -184,6 +193,14 @@ let
             ${lib.optionalString cfg.plugins.backgroundAgents.enable ''
               target="$runtime_dir/plugins/background-agents.ts"
               src="${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/plugins/background-agents.ts"
+              if [ ! -f "$target" ] || ! ${pkgs.diffutils}/bin/cmp -s "$src" "$target"; then
+                ${pkgs.coreutils}/bin/cp -f "$src" "$target"
+                chmod 644 "$target"
+              fi
+            ''}
+            ${lib.optionalString cfg.plugins.secretGuard.enable ''
+              target="$runtime_dir/plugins/secret-guard.ts"
+              src="${pkgs.secret-guard-assets}/share/secret-guard/opencode/plugins/secret-guard.ts"
               if [ ! -f "$target" ] || ! ${pkgs.diffutils}/bin/cmp -s "$src" "$target"; then
                 ${pkgs.coreutils}/bin/cp -f "$src" "$target"
                 chmod 644 "$target"

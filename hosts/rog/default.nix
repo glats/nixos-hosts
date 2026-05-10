@@ -44,10 +44,12 @@
 
     # Services (rog-specific)
     ./services/arr-stack.nix
+    ./services/authelia.nix
     ./services/cobalt.nix
     ./services/code-server.nix
     ./services/ddclient.nix
     ./services/dozzle.nix
+    ./services/droppy.nix
     ./services/fileshelter.nix
     ./services/flaresolverr.nix
     ./services/ftp.nix
@@ -141,6 +143,7 @@
   # Usar mkForce para override los defaults del módulo oci-containers
   systemd.services.nginx.serviceConfig.TimeoutStartSec = lib.mkForce "300";
   systemd.services."acme-glats.org".serviceConfig.TimeoutStartSec = lib.mkForce "300";
+  systemd.services."docker-droppy".serviceConfig.TimeoutStartSec = lib.mkForce "300";
   systemd.services."docker-guacamoledb".serviceConfig.TimeoutStartSec = lib.mkForce "300";
   systemd.services."docker-jellyfin".serviceConfig.TimeoutStartSec = lib.mkForce "300";
   systemd.services."docker-jellyseerr".serviceConfig.TimeoutStartSec = lib.mkForce "300";
@@ -148,6 +151,7 @@
   # Prevenir restart loops que consumen tiempo durante switch
   # Usar mkForce porque nginx ya define este valor
   systemd.services.nginx.startLimitIntervalSec = lib.mkForce 0;
+  systemd.services."docker-droppy".startLimitIntervalSec = lib.mkForce 0;
   systemd.services."docker-jellyfin".startLimitIntervalSec = lib.mkForce 0;
   systemd.services."docker-guacamoledb".startLimitIntervalSec = lib.mkForce 0;
   systemd.services."docker-jellyseerr".startLimitIntervalSec = lib.mkForce 0;

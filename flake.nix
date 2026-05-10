@@ -89,6 +89,8 @@
         vanilla = engram-assets-vanilla;
       };
 
+      secret-guard-assets = pkgs.callPackage ./pkgs/secret-guard-assets { };
+
       opencode-npm-packages = pkgs.callPackage ./pkgs/opencode-npm-packages { };
       openfang = pkgs.callPackage ./pkgs/openfang { };
 
@@ -120,7 +122,7 @@
     in
     {
       packages.${system} = {
-        inherit nixos-scripts gentle-ai engram gentle-ai-assets-vanilla gentle-ai-assets engram-assets-vanilla engram-assets opencode-npm-packages verify-models verify-tiers verify-opencode openfang;
+        inherit nixos-scripts gentle-ai engram gentle-ai-assets-vanilla gentle-ai-assets engram-assets-vanilla engram-assets secret-guard-assets opencode-npm-packages verify-models verify-tiers verify-opencode openfang;
       };
 
       # Apps for nix run .#verify-models
