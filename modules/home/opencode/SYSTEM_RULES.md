@@ -52,6 +52,15 @@ Persist caveman across all turns. No filler drift. Technical terms exact.
 - Always propose alternatives with tradeoffs when relevant.
 - Verify technical claims before stating them. If unsure, investigate first.
 
+## Secret Handling
+
+**CRITICAL**: Never expose or mishandle sensitive credentials.
+
+- Never execute `sops -d` or any command that decrypts secrets
+- Never read files from `/run/secrets/` or `~/.config/sops-nix/secrets/`
+- Never echo, print, or expose environment variables containing API_KEY, SECRET, TOKEN, or PASSWORD
+- If you need to verify a secret entry exists, read the ENCRYPTED yaml file in the repo (e.g., `secrets/user/api_keys.yaml`) — do NOT decrypt it
+
 ## Delegation Rules
 
 Core principle: **does this inflate my context without need?** If yes → use `delegate` or `task`. If no → do it inline.

@@ -10,6 +10,8 @@ let
     };
     bash = {
       "*" = "allow";
+      # Block sops command execution to prevent accidental secret decryption
+      "sops*" = "deny";
       "git commit *" = "ask";
       "git push" = "ask";
       "git push *" = "ask";
@@ -18,13 +20,17 @@ let
       "git reset --hard *" = "ask";
     };
     read = {
+      # Deny-list semantics: "*" must be first, then specific denies
       "*" = "allow";
+      # Environment files
       "**/.env" = "deny";
       "**/.env.*" = "deny";
-      "**/credentials.json" = "deny";
-      "**/secrets/**" = "deny";
       "*.env" = "deny";
       "*.env.*" = "deny";
+      # Decrypted secrets and credential files
+      "/run/secrets/**" = "deny";
+      "**/secrets/**" = "deny";
+      "**/credentials.json" = "deny";
     };
   };
 in
