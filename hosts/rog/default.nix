@@ -163,12 +163,6 @@
   #
   # To change provider or model:
   # 1. Edit providers.nix to enable/disable providers or change models per phase
-  # 2. The first enabled provider in the list becomes the primary provider
+  # 2. Set activeProviderName to select which provider tier is active
   # 3. Both providers use OAuth via /connect command - no API keys needed
-  #
-  # Example - to enable GitHub Copilot:
-  # providers = [
-  #   { name = "github-copilot"; enabled = true; phases = { ... }; }
-  #   { name = "opencode-go"; enabled = false; ... }
-  # ];
 }
