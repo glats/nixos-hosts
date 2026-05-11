@@ -10,7 +10,7 @@ in
 {
   systemd.services.wol-enable = lib.mkIf (wolInterface != null) {
     description = "Enable Wake-on-LAN";
-    after = [ "network-online.target" "NetworkManager.service" ];
+    after = [ "NetworkManager.service" ];
     wants = [ "NetworkManager.service" ];
     wantedBy = [ "multi-user.target" "sleep.target" ];
     serviceConfig = {
