@@ -8,12 +8,11 @@ let
     else null;
 in
 {
-  networking.interfaces.${wolInterface}.wakeOnLan.enable = lib.mkIf (wolInterface != null) true;
-
   systemd.services.wol-enable = lib.mkIf (wolInterface != null) {
     description = "Enable Wake-on-LAN";
-    after = [ "network.target" ];
-    wantedBy = [ "multi-user.target" ];
+    after = [ "network-online.target" "NetworkManager.service" ];
+    wants = [ "NetworkManager.service" ];
+    wantedBy = [ "multi-user.target" "sleep.target" ];
     serviceConfig = {
       Type = "oneshot";
       ExecStart = "${pkgs.ethtool}/bin/ethtool -s ${wolInterface} wol g";
