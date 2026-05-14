@@ -5,9 +5,10 @@ let
   # DPMS/screen blanking causes disconnects in virtual sessions
   xrdpPreamble = ''
     ${pkgs.dbus}/bin/dbus-update-activation-environment --systemd --all
-    # NixOS doesn't add pam_systemd.so to xrdp-sesman PAM config.
-    # Without it, graphical-session.target is never activated.
-    # See: https://github.com/NixOS/nixpkgs/issues/126265
+    # xrdp-sesman creates the session directly (no display manager).
+    # Even though pam_systemd.so is present in the PAM config,
+    # graphical-session.target must be activated explicitly because
+    # there is no DM to do it for us.
     ${pkgs.systemd}/bin/systemctl --user start graphical-session.target 2>/dev/null || true
     ${pkgs.xset}/bin/xset s off 2>/dev/null || true
     ${pkgs.xset}/bin/xset -dpms 2>/dev/null || true
