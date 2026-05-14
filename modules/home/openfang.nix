@@ -102,15 +102,15 @@ in
       };
 
       Install = {
-        WantedBy = [ "default.target" ];
+        WantedBy = [ "graphical-session.target" ];
       };
     };
 
-    # Systemd user service to run OpenFang automatically on login
+    # Systemd user service to run OpenFang automatically on graphical login
     systemd.user.services.openfang = {
       Unit = {
         Description = "OpenFang AI coding agent with Telegram integration";
-        After = [ "default.target" "opencode-go-proxy.service" ];
+        After = [ "graphical-session.target" "opencode-go-proxy.service" ];
         Requires = [ "opencode-go-proxy.service" ];
       };
 
@@ -122,7 +122,7 @@ in
       };
 
       Install = {
-        WantedBy = [ "default.target" ];
+        WantedBy = [ "graphical-session.target" ];
       };
     };
   };
