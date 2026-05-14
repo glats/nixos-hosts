@@ -137,6 +137,22 @@ let
         rm -f "$BEFORE_PID_FILE"
       fi
 
+      # Phase 3.5: Kill DE-specific watchdogs by name.
+      # These survive the PID snapshot because they start before the DE
+      # but act as watchdogs that restart the DE after logout.
+      case "$CHOICE" in
+        Cinnamon)
+          pkill -TERM -f "cinnamon-launcher" 2>/dev/null || true
+          pkill -TERM -f "cinnamon-killer-daemon" 2>/dev/null || true
+          ;;
+        MATE)
+          pkill -TERM -f "mate-session" 2>/dev/null || true
+          ;;
+        XFCE)
+          pkill -TERM -f "xfce4-session" 2>/dev/null || true
+          ;;
+      esac
+
       # Phase 4: Clear session state files
       rm -rf "$HOME/.local/share/cinnamon/session-state" 2>/dev/null || true
       rm -f "$HOME/.config/mate/session.state" 2>/dev/null || true
