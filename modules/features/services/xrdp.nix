@@ -144,6 +144,7 @@ let
         Cinnamon)
           pkill -TERM -f "cinnamon-launcher" 2>/dev/null || true
           pkill -TERM -f "cinnamon-killer-daemon" 2>/dev/null || true
+          pkill -TERM -f "cinnamon --replace" 2>/dev/null || true
           ;;
         MATE)
           pkill -TERM -f "mate-session" 2>/dev/null || true
