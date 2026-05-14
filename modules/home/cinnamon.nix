@@ -183,7 +183,10 @@ in
     OnlyShowIn=X-Cinnamon;
   '';
 
-  # devilspie2 script for gnome-terminal transparency - use activation to create a real file
+  # devilspie2 script for gnome-terminal transparency
+  # NOTE: No DESKTOP_SESSION guard needed. This file is only loaded by
+  # devilspie2 when it runs, and devilspie2 is only started in Cinnamon
+  # via the autostart .desktop above (OnlyShowIn=X-Cinnamon).
   home.activation.setupDevilspie2 = config.lib.dag.entryAfter [ "writeBoundary" ] ''
         mkdir -p "${config.home.homeDirectory}/.config/devilspie2"
         ${pkgs.coreutils}/bin/tee "${config.home.homeDirectory}/.config/devilspie2/terminal-opacity.lua" > /dev/null << 'EOF'
