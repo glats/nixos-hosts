@@ -14,10 +14,6 @@ in
   # XFCE uses xfconf for settings (Home Manager: programs.xfconf)
   # GTK theme shared via theme.nix, Qt via theme.nix
 
-  # xfconf.settings disabled temporarily - causes "Failed to set property" in headless/xrdp sessions
-  # TODO: re-enable with session detection or move to xrdp-specific config
-  xfconf.settings = lib.mkForce { };
-
   xdg.configFile = {
     # Disable xfce4-screensaver in xrdp sessions
     "autostart/xfce4-screensaver.desktop".text = ''

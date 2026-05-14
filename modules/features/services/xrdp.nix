@@ -5,6 +5,10 @@ let
   # DPMS/screen blanking causes disconnects in virtual sessions
   xrdpPreamble = ''
     ${pkgs.dbus}/bin/dbus-update-activation-environment --systemd --all
+    # NixOS doesn't add pam_systemd.so to xrdp-sesman PAM config.
+    # Without it, graphical-session.target is never activated.
+    # See: https://github.com/NixOS/nixpkgs/issues/126265
+    ${pkgs.systemd}/bin/systemctl --user start graphical-session.target 2>/dev/null || true
     ${pkgs.xset}/bin/xset s off 2>/dev/null || true
     ${pkgs.xset}/bin/xset -dpms 2>/dev/null || true
     ${pkgs.xset}/bin/xset s noblank 2>/dev/null || true
@@ -72,9 +76,20 @@ let
 
         # Snapshot PIDs before starting DE
         # After logout, any PID not in this file will be killed
-        BEFORE_PID_FILE="$HOME/.local/state/xrdp-before-pids"
+        BEFORE_PID_FILE="$HOME/.local/state/xrdp-before-pids-$DISPLAY"
         mkdir -p "$HOME/.local/state"
         pgrep -u "$USER" > "$BEFORE_PID_FILE"
+
+        # Check if a process is an agent that should survive DE logout
+        is_excluded() {
+          local pid="$1"
+          local comm
+          comm=$(cat /proc/$pid/comm 2>/dev/null) || return 1
+          case "$comm" in
+            ssh-agent|gpg-agent|gnome-keyring-d|gnome-keyring-daemon) return 0 ;;
+            *) return 1 ;;
+          esac
+        }
 
         case "$CHOICE" in
           MATE)
@@ -102,7 +117,7 @@ let
       # Phase 1: SIGTERM to all PIDs that didn't exist before DE started
       if [ -f "$BEFORE_PID_FILE" ]; then
         for pid in $(pgrep -u "$USER"); do
-          if ! grep -qw "$pid" "$BEFORE_PID_FILE"; then
+          if ! grep -qw "$pid" "$BEFORE_PID_FILE" && ! is_excluded "$pid"; then
             kill -TERM "$pid" 2>/dev/null || true
           fi
         done
@@ -114,7 +129,7 @@ let
       # Phase 3: SIGKILL survivors
       if [ -f "$BEFORE_PID_FILE" ]; then
         for pid in $(pgrep -u "$USER"); do
-          if ! grep -qw "$pid" "$BEFORE_PID_FILE"; then
+          if ! grep -qw "$pid" "$BEFORE_PID_FILE" && ! is_excluded "$pid"; then
             kill -KILL "$pid" 2>/dev/null || true
           fi
         done
