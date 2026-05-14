@@ -137,6 +137,9 @@ in
     displayManager.lightdm.enable = false;
   };
 
+  # Disable Cinnamon optional app suite (bulky, warpinator, xviewer, xed, pix, etc.)
+  services.cinnamon.apps.enable = false;
+
   services.xrdp = {
     enable = true;
     defaultWindowManager = "${sessionPicker}";

@@ -45,6 +45,9 @@ in
   sops.secrets."guacamole/env" = {
     sopsFile = ../../secrets/system/guacamole.yaml;
   };
+  sops.secrets."guacamole/admin_password" = {
+    sopsFile = ../../secrets/system/guacamole.yaml;
+  };
 
   # Git credentials for homemanager git module
   sops.secrets."git-credentials" = {

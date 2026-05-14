@@ -261,7 +261,7 @@ let
     neutral = {
       description = "Senior Architect mentor - helpful first, challenging when it matters";
       mode = "primary";
-      prompt = "{file:./IDENTITY.md}\n\n{file:./SYSTEM_RULES.md}";
+      prompt = "{file:./IDENTITY.md}\n\n{file:./SYSTEM_RULES.md}\n\n{file:./CAVEMAN_RULES.md}";
       tools = {
         bash = true;
         read = true;
