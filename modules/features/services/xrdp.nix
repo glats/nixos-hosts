@@ -111,10 +111,14 @@ let
       # Check if a process is an agent that should survive DE logout
       is_excluded() {
         local pid="$1"
-        local comm
+        local comm cmdline
         comm=$(cat /proc/$pid/comm 2>/dev/null) || return 1
+        cmdline=$(cat /proc/$pid/cmdline 2>/dev/null | tr '\0' ' ') || true
         case "$comm" in
-          ssh-agent|gpg-agent|gnome-keyring-d|gnome-keyring-daemon) return 0 ;;
+          ssh-agent|gpg-agent|gnome-keyring-d|gnome-keyring-daemon|.gnome-keyring-) return 0 ;;
+        esac
+        case "$cmdline" in
+          *gnome-keyring*) return 0 ;;
           *) return 1 ;;
         esac
       }
