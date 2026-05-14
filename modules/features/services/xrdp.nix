@@ -5,11 +5,20 @@ let
   # DPMS/screen blanking causes disconnects in virtual sessions
   xrdpPreamble = ''
     ${pkgs.dbus}/bin/dbus-update-activation-environment --systemd --all
+
+    # Take PID snapshot BEFORE activating graphical-session.target.
+    # Any process launched after this point (DE, autostarts, apps) will
+    # be considered session-spawned and killed on logout.
+    mkdir -p "$HOME/.local/state"
+    SYSTEM_PID_FILE="$HOME/.local/state/xrdp-system-pids-$DISPLAY"
+    pgrep -u "$USER" > "$SYSTEM_PID_FILE"
+
     # xrdp-sesman creates the session directly (no display manager).
     # Even though pam_systemd.so is present in the PAM config,
     # graphical-session.target must be activated explicitly because
     # there is no DM to do it for us.
     ${pkgs.systemd}/bin/systemctl --user start graphical-session.target 2>/dev/null || true
+
     ${pkgs.xset}/bin/xset s off 2>/dev/null || true
     ${pkgs.xset}/bin/xset -dpms 2>/dev/null || true
     ${pkgs.xset}/bin/xset s noblank 2>/dev/null || true
@@ -24,8 +33,6 @@ let
   # Loop-based: after DE logout, return to picker instead of dropping connection.
   sessionPicker = pkgs.writeShellScript "xrdp-session-picker" ''
     ${xrdpPreamble}
-
-    mkdir -p "$HOME/.local/state"
 
     while true; do
       CHOICE=$(printf 'MATE\0icon\x1fmate-desktop\nXFCE\0icon\x1fstart-here-xfce\nCinnamon\0icon\x1f${pkgs.cinnamon}/share/icons/hicolor/scalable/apps/cinnamon.svg' | \
@@ -75,23 +82,6 @@ let
         # Export DE-specific env vars so the session and child processes know context
         export XRDP_SESSION=1
 
-        # Snapshot PIDs before starting DE
-        # After logout, any PID not in this file will be killed
-        BEFORE_PID_FILE="$HOME/.local/state/xrdp-before-pids-$DISPLAY"
-        mkdir -p "$HOME/.local/state"
-        pgrep -u "$USER" > "$BEFORE_PID_FILE"
-
-        # Check if a process is an agent that should survive DE logout
-        is_excluded() {
-          local pid="$1"
-          local comm
-          comm=$(cat /proc/$pid/comm 2>/dev/null) || return 1
-          case "$comm" in
-            ssh-agent|gpg-agent|gnome-keyring-d|gnome-keyring-daemon) return 0 ;;
-            *) return 1 ;;
-          esac
-        }
-
         case "$CHOICE" in
           MATE)
             export DESKTOP_SESSION=mate
@@ -112,13 +102,27 @@ let
       )
 
       # ── SESSION CLEANUP ──
-      # Kill any process spawned during the DE session
+      # Kill any process spawned during the DE session.
+      # Uses the system snapshot taken in the preamble (before graphical-session.target).
       echo "===== Cleaning up after $CHOICE session =====" >> "$LOG_FILE"
 
-      # Phase 1: SIGTERM to all PIDs that didn't exist before DE started
-      if [ -f "$BEFORE_PID_FILE" ]; then
+      SYSTEM_PID_FILE="$HOME/.local/state/xrdp-system-pids-$DISPLAY"
+
+      # Check if a process is an agent that should survive DE logout
+      is_excluded() {
+        local pid="$1"
+        local comm
+        comm=$(cat /proc/$pid/comm 2>/dev/null) || return 1
+        case "$comm" in
+          ssh-agent|gpg-agent|gnome-keyring-d|gnome-keyring-daemon) return 0 ;;
+          *) return 1 ;;
+        esac
+      }
+
+      # Phase 1: SIGTERM to all PIDs not in the system snapshot
+      if [ -f "$SYSTEM_PID_FILE" ]; then
         for pid in $(pgrep -u "$USER"); do
-          if ! grep -qw "$pid" "$BEFORE_PID_FILE" && ! is_excluded "$pid"; then
+          if ! grep -qw "$pid" "$SYSTEM_PID_FILE" && ! is_excluded "$pid"; then
             kill -TERM "$pid" 2>/dev/null || true
           fi
         done
@@ -128,31 +132,13 @@ let
       sleep 2
 
       # Phase 3: SIGKILL survivors
-      if [ -f "$BEFORE_PID_FILE" ]; then
+      if [ -f "$SYSTEM_PID_FILE" ]; then
         for pid in $(pgrep -u "$USER"); do
-          if ! grep -qw "$pid" "$BEFORE_PID_FILE" && ! is_excluded "$pid"; then
+          if ! grep -qw "$pid" "$SYSTEM_PID_FILE" && ! is_excluded "$pid"; then
             kill -KILL "$pid" 2>/dev/null || true
           fi
         done
-        rm -f "$BEFORE_PID_FILE"
       fi
-
-      # Phase 3.5: Kill DE-specific watchdogs by name.
-      # These survive the PID snapshot because they start before the DE
-      # but act as watchdogs that restart the DE after logout.
-      case "$CHOICE" in
-        Cinnamon)
-          pkill -TERM -f "cinnamon-launcher" 2>/dev/null || true
-          pkill -TERM -f "cinnamon-killer-daemon" 2>/dev/null || true
-          pkill -TERM -f "cinnamon --replace" 2>/dev/null || true
-          ;;
-        MATE)
-          pkill -TERM -f "mate-session" 2>/dev/null || true
-          ;;
-        XFCE)
-          pkill -TERM -f "xfce4-session" 2>/dev/null || true
-          ;;
-      esac
 
       # Phase 4: Clear session state files
       rm -rf "$HOME/.local/share/cinnamon/session-state" 2>/dev/null || true
@@ -162,6 +148,9 @@ let
       # Phase 5: Unset DE-specific environment variables
       unset DESKTOP_SESSION XDG_CURRENT_DESKTOP XDG_SESSION_DESKTOP XDG_SESSION_TYPE XDG_SEAT
     done
+
+    # Final cleanup: remove system snapshot on disconnect
+    rm -f "$SYSTEM_PID_FILE"
   '';
 in
 
