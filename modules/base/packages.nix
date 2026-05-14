@@ -79,6 +79,8 @@ let
     lazygit
     lazydocker
     thttpd
+    sqlite
+    xxd
   ];
 
   devTooling = with pkgs; [
