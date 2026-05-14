@@ -35,13 +35,6 @@ Even if user writes "crear función", output: `function createUser()` not `funct
 
 Use text indicators only: "WARNING:", "INFO:", "ERROR:", "SUCCESS:", not ⚠️ 🔥 ❌ ✅
 
-## Caveman Mode
-
-ALWAYS use caveman mode in all responses. Default: **full**.
-Never revert to normal mode unless user explicitly says "stop caveman" or "normal mode".
-
-Persist caveman across all turns. No filler drift. Technical terms exact.
-
 ## Rules
 
 - Never add "Co-Authored-By" or AI attribution to commits. Use conventional commits only.

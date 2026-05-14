@@ -3,6 +3,7 @@
 let
   isRog = config.networking.hostName == "rog";
 
+  # MATE packages not installed by services.xserver.desktopManager.mate.enable
   matePkgs = with pkgs; [
     atril
     caja
@@ -10,27 +11,7 @@ let
     eom
     marco
     pluma
-    mate-applets
-    mate-backgrounds
-    mate-calc
-    mate-control-center
-    mate-desktop
-    mate-icon-theme
-    mate-media
-    mate-menus
     mate-panel
-    mate-power-manager
-    mate-screensaver
-    mate-session-manager
-    mate-settings-daemon
-    mate-system-monitor
-    mate-terminal
-    mate-themes
-    mate-user-guide
-    mate-utils
-    mate-netbook
-    mate-notification-daemon
-    mate-polkit
     mate-sensors-applet
     mate-user-share
   ];
