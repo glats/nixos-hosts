@@ -28,7 +28,7 @@
     ../../modules/desktop/i18n.nix
     ../../modules/desktop/kmscon.nix
     ../../modules/desktop/xfce-defaults.nix
-    ./services/xrdp.nix
+    ../../modules/features/services/xrdp.nix
     ./services/github-mcp-server.nix
 
     # Virtualisation

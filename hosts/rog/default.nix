@@ -40,7 +40,7 @@
     ../../modules/desktop/i18n.nix
     ../../modules/desktop/kmscon.nix
     ../../modules/desktop/xfce-defaults.nix
-    ./services/xrdp.nix
+    ../../modules/features/services/xrdp.nix
 
     # Services (rog-specific)
     ./services/arr-stack.nix
