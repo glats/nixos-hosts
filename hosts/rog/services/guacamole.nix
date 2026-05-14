@@ -70,6 +70,179 @@ in
     };
   };
 
+  # Set up the guacadmin user password and rotate the PostgreSQL role password.
+  # Runs on every boot to ensure passwords are always current after sops rotation.
+  # Idempotent via ON CONFLICT DO UPDATE, so running on every boot is safe.
+  systemd.services.guacamole-admin-setup = {
+    description = "Guacamole admin user and database password setup";
+    after = [ "docker-guacamoledb.service" ];
+    requires = [ "docker-guacamoledb.service" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      # Do NOT set RemainAfterExit = true here.
+      # The service must re-run on every boot so that a sops password rotation
+      # takes effect immediately (no manual restart needed).
+      User = "root";
+      ExecStart = pkgs.writeScript "guacamole-admin-setup" ''
+          #!${pkgs.python3}/bin/python3
+          import sys
+          import os
+          import hashlib
+          import secrets
+          import subprocess
+          import time
+
+          docker = "${pkgs.docker}/bin/docker"
+
+          # Retry loop: PostgreSQL may not be ready on first boot.
+          # Try up to 10 times with 2-second intervals.
+          max_attempts = 10
+          for attempt in range(1, max_attempts + 1):
+              check_cmd = [docker, "exec", "guacamoledb",
+                           "pg_isready", "-U", "guacamole"]
+              result = subprocess.run(check_cmd, capture_output=True, text=True, timeout=10)
+              if result.returncode == 0:
+                  break
+              if attempt < max_attempts:
+                  sys.stdout.write("PostgreSQL not ready (attempt " + str(attempt) + "/" + str(max_attempts) + "), retrying in 2s...\n")
+                  time.sleep(2)
+              else:
+                  sys.stderr.write("PostgreSQL not ready after " + str(max_attempts) + " attempts\n")
+                  sys.exit(1)
+
+          # Phase 1: Parse env file to get GUACAMOLE_DATABASE_PASSWORD
+          env_path = "${config.sops.secrets."guacamole/env".path}"
+          env_vars = {}
+          try:
+              with open(env_path, 'r') as f:
+                  for line in f:
+                      if '=' in line:
+                          k, v = line.strip().split('=', 1)
+                          env_vars[k] = v
+          except Exception as e:
+              sys.stderr.write("Error reading env file: " + str(e) + "\n")
+              sys.exit(1)
+
+          db_password = env_vars.get('GUACAMOLE_DATABASE_PASSWORD')
+          if not db_password:
+              sys.stderr.write("Error: GUACAMOLE_DATABASE_PASSWORD not found or empty in env file\n")
+              sys.exit(1)
+
+          # Phase 2: ALTER ROLE to update the PostgreSQL role password
+          sq = chr(39)
+          escaped_password = db_password.replace(sq, sq + sq)
+          alter_sql = "ALTER ROLE guacamole WITH PASSWORD " + sq + escaped_password + sq + ";"
+          try:
+              alter_result = subprocess.run(
+                  [docker, "exec", "-i", "guacamoledb",
+                   "psql", "-U", "guacamole", "-d", "guacamole"],
+                  input=alter_sql, text=True, capture_output=True, timeout=30
+              )
+              if alter_result.returncode != 0:
+                  sys.stderr.write("ALTER ROLE failed: " + alter_result.stderr + "\n")
+                  sys.exit(1)
+              sys.stdout.write("Successfully updated guacamole role password\n")
+          except Exception as e:
+              sys.stderr.write("Error executing ALTER ROLE: " + str(e) + "\n")
+              sys.exit(1)
+
+          # Phase 3: Verify connectivity with the new password
+          try:
+              verify_result = subprocess.run(
+                  [docker, "exec", "-i", "guacamoledb",
+                   "psql", "-U", "guacamole", "-d", "guacamole",
+                   "-c", "SELECT 1;"],
+                  capture_output=True, text=True, timeout=10,
+                  env={**os.environ, "PGPASSWORD": db_password}
+              )
+              if verify_result.returncode != 0:
+                  sys.stderr.write("Password verification failed: " + verify_result.stderr + "\n")
+                  sys.exit(1)
+              sys.stdout.write("Password verification passed\n")
+          except Exception as e:
+              sys.stderr.write("Error verifying password: " + str(e) + "\n")
+              sys.exit(1)
+
+          # Phase 4: Set up guacadmin user password (SHA-256 hash)
+          secret_path = "${config.sops.secrets."guacamole/admin_password".path}"
+          try:
+              with open(secret_path, 'r') as f:
+                  password = f.read().strip()
+          except Exception as e:
+              sys.stderr.write("Error reading password secret: " + str(e) + "\n")
+              sys.exit(1)
+
+          if not password:
+              sys.stderr.write("Error: admin password is empty\n")
+              sys.exit(1)
+
+          # Guacamole hashes: SHA-256(password_string + salt_hex_uppercase)
+          # See: SHA256PasswordEncryptionService.java in guacamole-auth-jdbc-base
+          salt = secrets.token_bytes(32)
+          salt_hex_upper = salt.hex().upper()
+          hash_input = (password + salt_hex_upper).encode('utf-8')
+          password_hash = hashlib.sha256(hash_input).digest()
+          hash_hex = password_hash.hex()
+          salt_hex = salt.hex()
+
+          upsert_sql = (
+              "INSERT INTO guacamole_entity (name, type) VALUES ('guacadmin', 'USER') "
+              "ON CONFLICT (name, type) DO UPDATE SET name = 'guacadmin'; "
+              "INSERT INTO guacamole_user (entity_id, password_hash, password_salt, password_date, disabled) "
+              "SELECT entity_id, decode('" + hash_hex + "', 'hex'), decode('" + salt_hex + "', 'hex'), NOW(), FALSE "
+              "FROM guacamole_entity WHERE name = 'guacadmin' AND type = 'USER' "
+              "ON CONFLICT (entity_id) DO UPDATE SET "
+              "password_hash = EXCLUDED.password_hash, "
+              "password_salt = EXCLUDED.password_salt, "
+              "password_date = NOW();"
+          )
+
+          verify_sql = (
+              "SELECT length(password_hash), length(password_salt) FROM guacamole_user u "
+              "JOIN guacamole_entity e ON u.entity_id = e.entity_id "
+              "WHERE e.name = 'guacadmin' AND e.type = 'USER';"
+          )
+
+          cmd = [docker, "exec", "-i", "guacamoledb",
+                 "psql", "-U", "guacamole", "-d", "guacamole", "-c", upsert_sql]
+          try:
+              result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+              if result.returncode != 0:
+                  sys.stderr.write("UPSERT SQL execution failed: " + result.stderr + "\n")
+                  sys.stderr.write("stdout: " + result.stdout + "\n")
+                  sys.exit(1)
+              sys.stdout.write("Successfully configured guacadmin password\n")
+          except Exception as e:
+              sys.stderr.write("Error executing docker exec: " + str(e) + "\n")
+              sys.exit(1)
+
+          # Verify the stored bytes have the expected length (32 bytes each for hash and salt).
+          verify_cmd = [docker, "exec", "-i", "guacamoledb",
+                        "psql", "-U", "guacamole", "-d", "guacamole", "-t", "-c", verify_sql]
+          try:
+              verify_result = subprocess.run(verify_cmd, capture_output=True, text=True, timeout=30)
+              if verify_result.returncode != 0:
+                  sys.stderr.write("Verification SQL failed: " + verify_result.stderr + "\n")
+                  sys.exit(1)
+              output = verify_result.stdout.strip()
+              parts = output.split("|")
+              if len(parts) != 2:
+                  sys.stderr.write("Unexpected verification output format: " + output + "\n")
+                  sys.exit(1)
+              hash_len = int(parts[0].strip())
+              salt_len = int(parts[1].strip())
+              if hash_len != 32 or salt_len != 32:
+                  sys.stderr.write("Verification failed: expected hash_len = 32 salt_len=32, got hash_len=" + str(hash_len) + " salt_len=" + str(salt_len) + "\n")
+                  sys.exit(1)
+              sys.stdout.write("Verification passed: hash_len=" + str(hash_len) + ", salt_len=" + str(salt_len) + "\n")
+          except Exception as e:
+              sys.stderr.write("Error executing verification: " + str(e) + "\n")
+              sys.exit(1)
+      '';
+    };
+  };
+
   # 1. PostgreSQL Database
   virtualisation.oci-containers.containers.guacamoledb = {
     image = "postgres:17-alpine";
@@ -157,14 +330,17 @@ in
   };
 
   # Generate guacamole.properties before starting the web container
+  # Also waits for guacamole-admin-setup to ensure the admin user and db password are ready.
   systemd.services.docker-guacamole = {
     after = [
       "docker-guacamoledb.service"
       "docker-guacamoled.service"
+      "guacamole-admin-setup.service"
     ];
     requires = [
       "docker-guacamoledb.service"
       "docker-guacamoled.service"
+      "guacamole-admin-setup.service"
     ];
     serviceConfig = {
       ExecStartPre = [
@@ -173,3 +349,4 @@ in
     };
   };
 }
+
