@@ -27,7 +27,6 @@
     ../../modules/desktop/fonts.nix
     ../../modules/desktop/i18n.nix
     ../../modules/desktop/kmscon.nix
-    ../../modules/desktop/xfce-defaults.nix
     ../../modules/features/services/xrdp.nix
     ./services/github-mcp-server.nix
 

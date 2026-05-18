@@ -45,9 +45,6 @@ stdenvNoCC.mkDerivation {
     cp $src/export-mate-config $out/bin/
     chmod +x $out/bin/export-mate-config
 
-    cp $src/xrdp-back-to-picker $out/bin/
-    chmod +x $out/bin/xrdp-back-to-picker
-
     cp $src/add_github_secret.sh $out/bin/ 2>/dev/null || true
 
     # Create symlinks for convenience
