@@ -22,6 +22,7 @@ let
       border: 2px;
       border-color: @background-alt;
       border-radius: 8px;
+      opacity: 100;
     }
 
     mainbox {
@@ -29,6 +30,7 @@ let
       children: [inputbar, listview];
       spacing: 10px;
       padding: 15px;
+      opacity: 100;
     }
 
     inputbar {

@@ -24,53 +24,19 @@ let
     ${pkgs.xset}/bin/xset s noblank 2>/dev/null || true
   '';
 
-  # Rofi session picker — shown on xrdp login before launching a DE.
-  # Uses icon specs so rofi shows the DE logo next to each choice.
-  # Papirus has: mate-desktop, start-here-xfce
-  # Cinnamon icon comes from the cinnamon package itself.
-  # Per-user override: create ~/startwm.sh to bypass the picker entirely.
-  #
-  # Loop-based: after DE logout, return to picker instead of dropping connection.
-  sessionPicker = pkgs.writeShellScript "xrdp-session-picker" ''
+  # Direct MATE session launcher for xrdp.
+  # Loop-based: after MATE logout, return to fresh MATE session instead of disconnect.
+  # Per-user override: create ~/startwm.sh to bypass entirely.
+  xrdpMateSession = pkgs.writeShellScript "xrdp-mate-session" ''
     ${xrdpPreamble}
 
     while true; do
-      CHOICE=$(printf 'MATE\0icon\x1fmate-desktop\nXFCE\0icon\x1fstart-here-xfce\nCinnamon\0icon\x1f${pkgs.cinnamon}/share/icons/hicolor/scalable/apps/cinnamon.svg' | \
-        ${pkgs.rofi}/bin/rofi \
-        -dmenu \
-        -i \
-        -p "Desktop" \
-        -font "Sans 14" \
-        -show-icons \
-        -icon-theme "Papirus-Dark" \
-        -width 25 \
-        -lines 3)
-
-      # User cancelled (Escape or closed rofi) — exit loop and disconnect
-      if [ -z "$CHOICE" ]; then
-        break
-      fi
-
-      case "$CHOICE" in
-        MATE)
-          LOG_FILE="$HOME/.local/state/xrdp-mate.log"
-          ;;
-        XFCE)
-          LOG_FILE="$HOME/.local/state/xrdp-xfce.log"
-          ;;
-        Cinnamon)
-          LOG_FILE="$HOME/.local/state/xrdp-cinnamon.log"
-          ;;
-        *)
-          CHOICE="MATE"
-          LOG_FILE="$HOME/.local/state/xrdp-mate.log"
-          ;;
-      esac
+      LOG_FILE="$HOME/.local/state/xrdp-mate.log"
 
       {
         echo
         echo "===== $(date) ====="
-        echo "choice=$CHOICE"
+        echo "Starting MATE session"
         echo "user=$USER"
         echo "display=$DISPLAY"
       } >> "$LOG_FILE"
@@ -81,30 +47,16 @@ let
 
         # Export DE-specific env vars so the session and child processes know context
         export XRDP_SESSION=1
+        export DESKTOP_SESSION=mate
+        export XDG_CURRENT_DESKTOP=MATE
 
-        case "$CHOICE" in
-          MATE)
-            export DESKTOP_SESSION=mate
-            export XDG_CURRENT_DESKTOP=MATE
-            ${pkgs.mate-session-manager}/bin/mate-session
-            ;;
-          XFCE)
-            export DESKTOP_SESSION=xfce
-            export XDG_CURRENT_DESKTOP=XFCE
-            ${pkgs.xfce4-session}/bin/xfce4-session
-            ;;
-          Cinnamon)
-            export DESKTOP_SESSION=cinnamon
-            export XDG_CURRENT_DESKTOP=X-Cinnamon
-            ${pkgs.cinnamon-session}/bin/cinnamon-session
-            ;;
-        esac
+        ${pkgs.mate-session-manager}/bin/mate-session
       )
 
       # ── SESSION CLEANUP ──
       # Kill any process spawned during the DE session.
       # Uses the system snapshot taken in the preamble (before graphical-session.target).
-      echo "===== Cleaning up after $CHOICE session =====" >> "$LOG_FILE"
+      echo "===== Cleaning up after MATE session =====" >> "$LOG_FILE"
 
       SYSTEM_PID_FILE="$HOME/.local/state/xrdp-system-pids-$DISPLAY"
 
@@ -115,10 +67,10 @@ let
         comm=$(cat /proc/$pid/comm 2>/dev/null) || return 1
         cmdline=$(cat /proc/$pid/cmdline 2>/dev/null | tr '\0' ' ') || true
         case "$comm" in
-          ssh-agent|gpg-agent|gnome-keyring-d|gnome-keyring-daemon|.gnome-keyring-) return 0 ;;
+          ssh-agent|gpg-agent|gnome-keyring-d|gnome-keyring-daemon|.gnome-keyring-*|tmux) return 0 ;;
         esac
         case "$cmdline" in
-          *gnome-keyring*) return 0 ;;
+          *gnome-keyring*|*tmux*) return 0 ;;
           *) return 1 ;;
         esac
       }
@@ -145,7 +97,6 @@ let
       fi
 
       # Phase 4: Clear session state files
-      rm -rf "$HOME/.local/share/cinnamon/session-state" 2>/dev/null || true
       rm -f "$HOME/.config/mate/session.state" 2>/dev/null || true
       rm -rf "$HOME/.cache/sessions" 2>/dev/null || true
 
@@ -163,17 +114,12 @@ in
     enable = true;
     updateDbusEnvironment = true;
     desktopManager.mate.enable = true;
-    desktopManager.xfce.enable = true;
-    desktopManager.cinnamon.enable = true;
     displayManager.lightdm.enable = false;
   };
 
-  # Disable Cinnamon optional app suite (bulky, warpinator, xviewer, xed, pix, etc.)
-  services.cinnamon.apps.enable = false;
-
   services.xrdp = {
     enable = true;
-    defaultWindowManager = "${sessionPicker}";
+    defaultWindowManager = "${xrdpMateSession}";
   };
 
   environment.systemPackages = with pkgs; [

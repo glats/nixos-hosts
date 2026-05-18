@@ -19,8 +19,6 @@
         ../home/tmux.nix
         ../home/neovim.nix
         ../home/mate.nix
-        ../home/xfce.nix
-        ../home/cinnamon.nix
         ../home/rofi.nix
         ../home/git.nix
         ../home/gh.nix
