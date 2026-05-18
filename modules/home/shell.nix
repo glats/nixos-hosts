@@ -66,6 +66,13 @@
       # Worktree aliases (new names are clearer)
       "wt-done" = "finish-work";
       "wt-discard" = "abort-work";
+
+      # NixOS build shortcuts
+      nrs = "nixos-build switch";
+      nrt = "nixos-build test";
+      nrb = "nixos-build boot";
+      nrd = "nixos-build dry";
+      hms = "nixos-build switch";
     };
 
     sessionVariables = {
