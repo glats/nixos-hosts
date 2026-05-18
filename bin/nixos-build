@@ -2,6 +2,7 @@
 # nixos-build - Helper to build NixOS configuration from main repo or worktree
 # Auto-detects if in worktree and uses correct flake path
 # Auto-detects hostname for multi-host configuration
+# Auto-detects nix-output-monitor (nom) for better build output
 
 set -euo pipefail
 
@@ -17,7 +18,7 @@ fi
 # Detect if we're in a worktree
 get_flake_path() {
   local current_dir="$PWD"
-  
+
   # Check if we're in a worktree
   if [[ "$current_dir" == "$REPO_ROOT/.worktrees"* ]]; then
     # In worktree - use current directory
@@ -36,23 +37,61 @@ FLAKE_PATH=$(get_flake_path)
 # Detect hostname for multi-host configuration
 HOSTNAME=$(hostname)
 
+# Auto-detect nix-output-monitor (nom)
+USE_NOM=false
+if command -v nom &>/dev/null; then
+  USE_NOM=true
+fi
+
+# Parse --no-nom flag before command
+for arg in "$@"; do
+  if [[ "$arg" == "--no-nom" ]]; then
+    USE_NOM=false
+  fi
+done
+
+# Filter out --no-nom from arguments
+ARGS=()
+for arg in "$@"; do
+  if [[ "$arg" != "--no-nom" ]]; then
+    ARGS+=("$arg")
+  fi
+done
+set -- "${ARGS[@]}"
+
 # Parse command
 COMMAND="${1:-switch}"
 
+# Helper to run command with nom if available
+run_with_nom() {
+  if [[ "$USE_NOM" == "true" ]]; then
+    "$@" |& nom
+  else
+    "$@"
+  fi
+}
+
 # Validate command
 if [[ "$COMMAND" == "help" ]] || [[ "$COMMAND" == "-h" ]] || [[ "$COMMAND" == "--help" ]]; then
-  echo "Usage: nixos-build [command]"
+  echo "Usage: nixos-build [command] [--no-nom]"
   echo ""
   echo "Commands:"
   echo "  switch     Build and activate (default)"
-  echo "  upgrade    Build and upgrade"
+  echo "  boot       Build and activate on next boot"
+  echo "  test       Build and activate in test environment"
+  echo "  upgrade    Update flake inputs then rebuild"
   echo "  dry        Dry-activate (show changes only)"
   echo "  check      Validate flake"
   echo "  build      Dry-build only"
+  echo "  safe       Sequential: check -> build -> dry -> switch (stops on failure)"
+  echo ""
+  echo "Options:"
+  echo "  --no-nom   Disable nix-output-monitor even if available"
   echo ""
   echo "Auto-detects:"
   echo "  - Hostname: selects correct nixosConfiguration"
   echo "  - Worktree: uses current directory (else /etc/nixos)"
+  echo "  - nom: uses nix-output-monitor if available (pass --no-nom to disable)"
   exit 0
 fi
 
@@ -61,13 +100,28 @@ case "$COMMAND" in
     echo ""
     echo "> Building NixOS configuration (switch)..."
     echo "> Using flake: $FLAKE_PATH#$HOSTNAME"
-    sudo nixos-rebuild switch --flake "$FLAKE_PATH#$HOSTNAME"
+    run_with_nom sudo nixos-rebuild switch --flake "$FLAKE_PATH#$HOSTNAME"
+    ;;
+  boot)
+    echo ""
+    echo "> Building NixOS configuration (boot)..."
+    echo "> Using flake: $FLAKE_PATH#$HOSTNAME"
+    run_with_nom sudo nixos-rebuild boot --flake "$FLAKE_PATH#$HOSTNAME"
+    ;;
+  test)
+    echo ""
+    echo "> Building NixOS configuration (test)..."
+    echo "> Using flake: $FLAKE_PATH#$HOSTNAME"
+    run_with_nom sudo nixos-rebuild test --flake "$FLAKE_PATH#$HOSTNAME"
     ;;
   upgrade)
     echo ""
+    echo "> Updating flake inputs..."
+    nix flake update
+    echo ""
     echo "> Building NixOS configuration (upgrade)..."
     echo "> Using flake: $FLAKE_PATH#$HOSTNAME"
-    sudo nixos-rebuild switch --upgrade --flake "$FLAKE_PATH#$HOSTNAME"
+    run_with_nom sudo nixos-rebuild switch --flake "$FLAKE_PATH#$HOSTNAME"
     ;;
   dry)
     echo "> Dry-activating (showing changes)..."
@@ -80,7 +134,46 @@ case "$COMMAND" in
     ;;
   build)
     echo "> Dry-building..."
-    nix build "$FLAKE_PATH#nixosConfigurations.$HOSTNAME.config.system.build.toplevel"
+    run_with_nom nix build "$FLAKE_PATH#nixosConfigurations.$HOSTNAME.config.system.build.toplevel"
+    ;;
+  safe)
+    echo ""
+    echo "> Running safe build workflow..."
+    echo ""
+
+    echo "> [1/4] Checking flake..."
+    if ! nix flake check; then
+      echo ""
+      echo "> ERROR: Flake check failed. Stopping."
+      exit 1
+    fi
+    echo ""
+
+    echo "> [2/4] Building..."
+    if ! run_with_nom nix build "$FLAKE_PATH#nixosConfigurations.$HOSTNAME.config.system.build.toplevel"; then
+      echo ""
+      echo "> ERROR: Build failed. Stopping."
+      exit 1
+    fi
+    echo ""
+
+    echo "> [3/4] Dry-activating..."
+    if ! sudo nixos-rebuild dry-activate --flake "$FLAKE_PATH#$HOSTNAME"; then
+      echo ""
+      echo "> ERROR: Dry-activate failed. Stopping."
+      exit 1
+    fi
+    echo ""
+
+    echo "> [4/4] Switching..."
+    if ! run_with_nom sudo nixos-rebuild switch --flake "$FLAKE_PATH#$HOSTNAME"; then
+      echo ""
+      echo "> ERROR: Switch failed. Stopping."
+      exit 1
+    fi
+
+    echo ""
+    echo "> Safe build completed successfully!"
     ;;
   *)
     echo "Unknown command: $COMMAND"
@@ -88,4 +181,3 @@ case "$COMMAND" in
     exit 1
     ;;
 esac
-

@@ -12,6 +12,7 @@
     ../../modules/base/cachix.nix
     ../../modules/base/home-manager.nix
     ../../modules/base/logind.nix
+    ../../modules/base/nh.nix
     ../../modules/base/nix.nix
     ../../modules/base/packages.nix
     ../../modules/base/polkit.nix

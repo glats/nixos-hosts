@@ -223,11 +223,11 @@
     "sub-agent-statusline": {
       "flake": false,
       "locked": {
-        "lastModified": 1778800059,
-        "narHash": "sha256-rIpEXPDj2XQALP2/wXitY1eiklFDvUrXM1erwvMmBPk=",
+        "lastModified": 1779130769,
+        "narHash": "sha256-kchSyINjaa+ROVjBg+zLfkzqCoX4jdyAJpSrcgvZlMU=",
         "owner": "Joaquinvesapa",
         "repo": "sub-agent-statusline",
-        "rev": "5c7cbe06813ce1e06170f8ad6cc45cf57302b187",
+        "rev": "2ef9472639ffc66e5d26ba0a8a04108cb2fd5349",
         "type": "github"
       },
       "original": {

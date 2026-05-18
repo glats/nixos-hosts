@@ -139,6 +139,10 @@
           type = "app";
           program = "${verify-opencode}/bin/verify-opencode";
         };
+        nixos-build = {
+          type = "app";
+          program = "${nixos-scripts}/bin/nixos-build";
+        };
       };
 
       # Reusable library functions for other flakes
