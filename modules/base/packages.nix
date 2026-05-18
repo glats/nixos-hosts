@@ -124,6 +124,7 @@ let
     hexchat # IRC client
     devilspie2
     warp-terminal
+
   ];
 
   mediaSupport = with pkgs; [
