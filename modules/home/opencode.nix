@@ -44,6 +44,25 @@ let
       };
       tuiPluginsToInstall = lib.filterAttrs (name: cfg: cfg.enable) tuiPluginsConfig;
 
+      managedPlugins = {
+        "background-agents.ts" = {
+          enable = cfg.plugins.backgroundAgents.enable;
+          src = "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/plugins/background-agents.ts";
+        };
+        "engram.ts" = {
+          enable = cfg.plugins.engram.enable;
+          src = "${pkgs.engram-assets}/share/engram/opencode/plugins/engram.ts";
+        };
+        "secret-guard.ts" = {
+          enable = cfg.plugins.secretGuard.enable;
+          src = "${pkgs.secret-guard-assets}/share/secret-guard/opencode/plugins/secret-guard.ts";
+        };
+      };
+      enabledManagedPlugins = lib.filterAttrs (_: plugin: plugin.enable) managedPlugins;
+      disabledManagedPluginNames = lib.attrNames (
+        lib.filterAttrs (_: plugin: !plugin.enable) managedPlugins
+      );
+
       # Use providers from centralized providers.nix
       allProviders = providers.allProviders;
 
@@ -185,31 +204,28 @@ let
             fi
             mkdir -p "$runtime_dir/plugins"
 
+            # Remove Nix-managed plugins that are now disabled.
+            ${lib.concatStringsSep "\n" (
+              map (
+                pluginName: ''
+                  ${pkgs.coreutils}/bin/rm -f "$runtime_dir/plugins/${pluginName}"
+                ''
+              ) disabledManagedPluginNames
+            )}
+
             # Copy plugin files from nix store (not symlinks) with hash guard
-            ${lib.optionalString cfg.plugins.engram.enable ''
-              target="$runtime_dir/plugins/engram.ts"
-              src="${pkgs.engram-assets}/share/engram/opencode/plugins/engram.ts"
-              if [ ! -f "$target" ] || ! ${pkgs.diffutils}/bin/cmp -s "$src" "$target"; then
-                ${pkgs.coreutils}/bin/cp -f "$src" "$target"
-                chmod 644 "$target"
-              fi
-            ''}
-            ${lib.optionalString cfg.plugins.backgroundAgents.enable ''
-              target="$runtime_dir/plugins/background-agents.ts"
-              src="${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/plugins/background-agents.ts"
-              if [ ! -f "$target" ] || ! ${pkgs.diffutils}/bin/cmp -s "$src" "$target"; then
-                ${pkgs.coreutils}/bin/cp -f "$src" "$target"
-                chmod 644 "$target"
-              fi
-            ''}
-            ${lib.optionalString cfg.plugins.secretGuard.enable ''
-              target="$runtime_dir/plugins/secret-guard.ts"
-              src="${pkgs.secret-guard-assets}/share/secret-guard/opencode/plugins/secret-guard.ts"
-              if [ ! -f "$target" ] || ! ${pkgs.diffutils}/bin/cmp -s "$src" "$target"; then
-                ${pkgs.coreutils}/bin/cp -f "$src" "$target"
-                chmod 644 "$target"
-              fi
-            ''}
+            ${lib.concatStringsSep "\n" (
+              lib.mapAttrsToList (
+                pluginName: plugin: ''
+                  target="$runtime_dir/plugins/${pluginName}"
+                  src="${plugin.src}"
+                  if [ ! -f "$target" ] || ! ${pkgs.diffutils}/bin/cmp -s "$src" "$target"; then
+                    ${pkgs.coreutils}/bin/cp -f "$src" "$target"
+                    chmod 644 "$target"
+                  fi
+                ''
+              ) enabledManagedPlugins
+            )}
 
             # Copy npm packages from Nix store (pre-built, hash-verified)
             mkdir -p "$runtime_dir/node_modules"
