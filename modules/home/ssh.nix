@@ -60,6 +60,16 @@ in
           TERM = "xterm-256color";
         };
       };
+      t14-local = {
+        host = "t14.local";
+        hostname = "t14.local";
+        user = "glats";
+        identityFile = "${sshDir}/t14";
+        identitiesOnly = true;
+        setEnv = {
+          TERM = "xterm-256color";
+        };
+      };
     };
   };
 }

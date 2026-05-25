@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, pkgs, lib, ... }:
 
 {
   virtualisation.oci-containers.containers.jellyfin = {
@@ -28,7 +28,17 @@
 
     extraOptions = [
       "--network=host"
-      "--user=0:0"
+      "--group-add=${toString config.ids.gids.render}"
     ];
   };
+
+  # Ensure config/cache directories exist with correct permissions
+  systemd.tmpfiles.rules = [
+    "d /srv/glats/jellyfin 0755 root root -"
+    "d /srv/glats/jellyfin/config 0755 root root -"
+    "d /srv/glats/jellyfin/cache 0755 root root -"
+  ];
+
+  # Order after media permissions service so ACLs on media dirs are set
+  systemd.services."docker-jellyfin".after = [ "arr-media-permissions.service" ];
 }

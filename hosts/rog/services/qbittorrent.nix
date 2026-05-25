@@ -20,19 +20,14 @@
   };
 
   # Add qbittorrent user to media group
-  users.users.qbittorrent = {
-    isSystemUser = true;
-    group = "qbittorrent";
-    extraGroups = [ "media" ];
-  };
-  users.groups.qbittorrent = { };
+  # User/group created by upstream NixOS module
+  users.users.qbittorrent.extraGroups = [ "media" ];
 
   # Create directories with correct ownership before qbittorrent starts
+  # Note: /srv/glats/downloads tmpfiles managed centrally in arr-stack.nix
   systemd.tmpfiles.rules = [
     "d /srv/glats/qbittorrent 0775 qbittorrent media -"
     "d /srv/glats/qbittorrent/qBittorrent 0775 qbittorrent media -"
     "d /srv/glats/qbittorrent/qBittorrent/config 0775 qbittorrent media -"
-    "d /srv/glats/downloads 0775 qbittorrent media -"
-    "d /srv/glats/downloads/.incomplete 0775 qbittorrent media -"
   ];
 }

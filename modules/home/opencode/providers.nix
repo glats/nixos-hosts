@@ -32,7 +32,7 @@ let
 
   allProviders = nvidiaProvider;
 
-  activeProviderName = "nvidia";
+  activeProviderName = "github-copilot";
 
   providers = [
     {
