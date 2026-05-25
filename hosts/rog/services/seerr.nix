@@ -8,7 +8,7 @@
   # Using OCI container (native module not available in current nixpkgs)
   # ============================================================
   virtualisation.oci-containers.containers.jellyseerr = {
-    image = "fallenbagel/jellyseerr:latest";
+    image = "fallenbagel/jellyseerr:2.5.0";
     autoStart = true;
 
     # Use host network so container can access localhost services
@@ -24,9 +24,10 @@
   };
 
   # Create config directory via tmpfiles (for boot) AND preStart (for switch)
+  # Container runs as UID 1000 (node user), so config dir must be writable
   systemd.tmpfiles.rules = [
     "d /srv/glats/jellyseerr 0755 root root -"
-    "d /srv/glats/jellyseerr/config 0755 root root -"
+    "d /srv/glats/jellyseerr/config 0755 1000 1000 -"
   ];
 
   # Ensure directory exists before docker tries to mount it
