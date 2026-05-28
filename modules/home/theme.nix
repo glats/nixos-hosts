@@ -1,4 +1,4 @@
-{ config, pkgs, inputs, ... }:
+{ config, lib, pkgs, inputs, hostName, ... }:
 
 {
   imports = [ inputs.nix-colors.homeManagerModules.default ];
@@ -33,7 +33,7 @@
     };
   };
 
-  gtk = {
+  gtk = lib.mkIf (hostName != "t14") {
     enable = true;
     theme.name = "Materia-dark-compact";
     theme.package = pkgs.materia-theme;
@@ -73,13 +73,15 @@
     gtk4.theme = config.gtk.theme;
   };
 
-  qt = {
+  qt = lib.mkIf (hostName != "t14") {
     enable = true;
     platformTheme.name = "gtk";
     style.name = "adwaita-dark";
   };
 
-  dconf.settings."org/gnome/desktop/interface" = {
-    color-scheme = "prefer-dark";
+  dconf.settings = lib.mkIf (hostName != "t14") {
+    "org/gnome/desktop/interface" = {
+      color-scheme = "prefer-dark";
+    };
   };
 }

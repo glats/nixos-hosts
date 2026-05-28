@@ -16,6 +16,12 @@
 
     nix-colors.url = "github:misterio77/nix-colors";
 
+    omarchy-nix = {
+      url = "github:glats/omarchy-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.home-manager.follows = "home-manager";
+    };
+
     # gentle-ai upstream (for skills, commands, plugins)
     # Must match version in pkgs/gentle-ai/default.nix
     gentle-ai-src = {
@@ -57,7 +63,7 @@
     };
   };
 
-  outputs = inputs@{ self, nixpkgs, home-manager, sops-nix, nix-colors, gentle-ai-src, asus-fan-control-src, pipewire-module-xrdp-src, nvim-config, sub-agent-statusline, sdd-engram-plugin, engram-src, ... }:
+  outputs = inputs@{ self, nixpkgs, home-manager, sops-nix, nix-colors, omarchy-nix, gentle-ai-src, asus-fan-control-src, pipewire-module-xrdp-src, nvim-config, sub-agent-statusline, sdd-engram-plugin, engram-src, ... }:
     let
       inherit (import ./lib/mkHost.nix { inherit inputs self; }) mkHost;
 
@@ -150,12 +156,17 @@
 
       checks.x86_64-linux = {
         rog = self.nixosConfigurations.rog.config.system.build.toplevel;
+        t14 = self.nixosConfigurations.t14.config.system.build.toplevel;
         thinkcentre = self.nixosConfigurations.thinkcentre.config.system.build.toplevel;
       };
 
       # Multi-host configurations
       nixosConfigurations = {
         rog = mkHost { hostname = "rog"; };
+        t14 = mkHost {
+          hostname = "t14";
+          extraModules = [ omarchy-nix.nixosModules.default ];
+        };
         thinkcentre = mkHost { hostname = "thinkcentre"; };
       };
 
