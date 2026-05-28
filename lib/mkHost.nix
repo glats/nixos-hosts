@@ -26,11 +26,11 @@ let
           ];
         }
 
-        # Pasar inputs a home-manager para que opencode.nix pueda acceder a gentle-ai-src
+        # Pass flake inputs through Home Manager modules.
         {
           home-manager.extraSpecialArgs = { inherit inputs; };
         }
-      ] ++ extraModules;
+      ] ++ extraModules; # Extra host modules such as external desktop layers.
     };
 in
 {
