@@ -30,6 +30,7 @@
     ../../modules/desktop/kmscon.nix
     ../../modules/features/services/xrdp.nix
     ./services/github-mcp-server.nix
+    ./services/maquilinux-mounts.nix
 
     # Virtualisation
     ../../modules/virtualisation/docker.nix
