@@ -32,7 +32,7 @@ let
 
   allProviders = nvidiaProvider;
 
-  activeProviderName = "github-copilot";
+  activeProviderName = "opencode-go";
 
   providers = [
     {
@@ -73,17 +73,17 @@ let
       name = "opencode-go";
       phases = {
         sdd-orchestrator = "opencode-go/kimi-k2.6";
-        sdd-init = "opencode-go/minimax-m2.7";
+        sdd-init = "opencode-go/deepseek-v4-flash";
         sdd-explore = "opencode-go/deepseek-v4-flash";
-        sdd-propose = "opencode-go/kimi-k2.6";
-        sdd-spec = "opencode-go/qwen3.6-plus";
-        sdd-design = "opencode-go/glm-5.1";
+        sdd-propose = "opencode-go/qwen3.6-plus";
+        sdd-spec = "opencode-go/qwen3.7-max";
+        sdd-design = "opencode-go/qwen3.7-max";
         sdd-tasks = "opencode-go/deepseek-v4-pro";
-        sdd-apply = "opencode-go/minimax-m2.7";
-        sdd-verify = "opencode-go/glm-5.1";
-        sdd-archive = "opencode-go/mimo-v2.5-pro";
-        sdd-onboard = "opencode-go/mimo-v2.5-pro";
-        neutral = "opencode-go/kimi-k2.6";
+        sdd-apply = "opencode-go/mimo-v2.5-pro";
+        sdd-verify = "opencode-go/qwen3.7-max";
+        sdd-archive = "opencode-go/deepseek-v4-flash";
+        sdd-onboard = "opencode-go/minimax-m2.7";
+        neutral = "opencode-go/minimax-m2.7";
       };
     }
   ];
