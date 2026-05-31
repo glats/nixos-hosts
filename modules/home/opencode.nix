@@ -66,15 +66,17 @@ let
       # Use providers from centralized providers.nix
       allProviders = providers.allProviders;
 
-      # Generate JSON file with providers and experimental fallback chain config
-      # Note: generateOpencodeJson doesn't support experimental/plugin, so we generate directly
+      # Generate JSON file with providers, agents, and extra config
       jsonFile = pkgs.writeText "opencode.json" (
-        builtins.toJSON {
-          agent = cfg.agents;
-          provider = allProviders;
-          mcp = enabledMcps;
-          permission = cfg.permissions;
-        }
+        builtins.toJSON (
+          {
+            agent = cfg.agents;
+            provider = allProviders;
+            mcp = enabledMcps;
+            permission = cfg.permissions;
+          }
+          // lib.optionalAttrs (cfg.disabledProviders != [ ]) { disabled_providers = cfg.disabledProviders; }
+        )
       );
     in
     {
@@ -293,6 +295,12 @@ in
 
   options.home.opencode = {
     enable = mkEnableOption "OpenCode configuration with declarative JSON generation";
+
+    disabledProviders = mkOption {
+      type = types.listOf types.str;
+      default = [ ];
+      description = "Built-in providers to disable (e.g. cloudflare-workers-ai).";
+    };
   };
 
   config = mkMerge [
