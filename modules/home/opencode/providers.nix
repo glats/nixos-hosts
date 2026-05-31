@@ -32,7 +32,7 @@ let
 
   allProviders = nvidiaProvider;
 
-  activeProviderName = "opencode-go";
+  activeProviderName = "nvidia";
 
   providers = [
     {

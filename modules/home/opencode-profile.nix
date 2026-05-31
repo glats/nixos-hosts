@@ -4,6 +4,19 @@
   home.opencode = {
     enable = true;
 
+    # Built-in providers we don't use
+    disabledProviders = [
+      "cerebras"
+      "cloudflare-ai-gateway"
+      "cloudflare-workers-ai"
+      "cohere"
+      "groq"
+      "kilo"
+      "mistral"
+      "openrouter"
+      "google"
+    ];
+
     # backgroundAgents: disabled due to known orchestration issues (gentle-ai#58)
     # Keep option definition in plugins.nix but do not enable here
     plugins = {
