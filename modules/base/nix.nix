@@ -2,7 +2,7 @@
 
 {
   nix.gc = {
-    automatic = true;
+    automatic = false;
     dates = "weekly";
     randomizedDelaySec = "1h";
   };

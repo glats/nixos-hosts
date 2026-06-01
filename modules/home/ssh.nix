@@ -9,64 +9,63 @@ in
     enable = true;
     enableDefaultConfig = false;
 
-    matchBlocks = {
-      oneplus5-local = {
-        host = "oneplus5.local";
-        hostname = "oneplus5.local";
-        user = "glats";
-        identityFile = "${sshDir}/oneplus5";
-        identitiesOnly = true;
-        setEnv = {
+    settings = {
+      "Host oneplus5.local" = {
+        HostName = "oneplus5.local";
+        User = "glats";
+        IdentityFile = "${sshDir}/oneplus5";
+        IdentitiesOnly = true;
+        SetEnv = {
           TERM = "xterm-256color";
         };
       };
-      oneplus5-ip = {
-        host = "172.16.0.12";
-        hostname = "172.16.0.12";
-        user = "glats";
-        identityFile = "${sshDir}/oneplus5";
-        identitiesOnly = true;
-        setEnv = {
+
+      "172.16.0.12" = {
+        HostName = "172.16.0.12";
+        User = "glats";
+        IdentityFile = "${sshDir}/oneplus5";
+        IdentitiesOnly = true;
+        SetEnv = {
           TERM = "xterm-256color";
         };
       };
-      thinkcentre-local = {
-        host = "thinkcentre.local";
-        hostname = "thinkcentre.local";
-        user = "glats";
-        identityFile = "${sshDir}/thinkcentre";
-        identitiesOnly = true;
-        setEnv = {
+
+      "thinkcentre.local" = {
+        HostName = "thinkcentre.local";
+        User = "glats";
+        IdentityFile = "${sshDir}/thinkcentre";
+        IdentitiesOnly = true;
+        SetEnv = {
           TERM = "xterm-256color";
         };
       };
-      mact2-local = {
-        host = "mact2.local";
-        hostname = "mact2.local";
-        user = "jcuzmar";
-        identityFile = "${sshDir}/mact2";
-        identitiesOnly = true;
-        setEnv = {
+
+      "mact2.local" = {
+        HostName = "mact2.local";
+        User = "jcuzmar";
+        IdentityFile = "${sshDir}/mact2";
+        IdentitiesOnly = true;
+        SetEnv = {
           TERM = "xterm-256color";
         };
       };
-      rog-local = {
-        host = "rog.local";
-        hostname = "rog.local";
-        user = "glats";
-        identityFile = "${sshDir}/rog";
-        identitiesOnly = true;
-        setEnv = {
+
+      "rog.local" = {
+        HostName = "rog.local";
+        User = "glats";
+        IdentityFile = "${sshDir}/rog";
+        IdentitiesOnly = true;
+        SetEnv = {
           TERM = "xterm-256color";
         };
       };
-      t14-local = {
-        host = "t14.local";
-        hostname = "t14.local";
-        user = "glats";
-        identityFile = "${sshDir}/t14";
-        identitiesOnly = true;
-        setEnv = {
+
+      "t14.local" = {
+        HostName = "t14.local";
+        User = "glats";
+        IdentityFile = "${sshDir}/t14";
+        IdentitiesOnly = true;
+        SetEnv = {
           TERM = "xterm-256color";
         };
       };

@@ -8,7 +8,7 @@
       size = 11;
     };
     settings = {
-      background_opacity = "0.8";
+      background_opacity = "0.6";
       background_tint = "0.2";
       scrollback_lines = -1;
       cursor_shape = "block";
