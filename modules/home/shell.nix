@@ -71,7 +71,6 @@
       nrt = "nixos-build test";
       nrb = "nixos-build boot";
       nrd = "nixos-build dry";
-      hms = "home-manager switch";
       hm = "home-manager";
       hmg = "home-manager generations";
       nfu = "nixos-build upgrade";
@@ -98,6 +97,21 @@
 
       glog() {
         git log --topo-order --pretty='format:%C(auto)%h%d %s %C(8)%cr %C(bold blue)%an' "$@"
+      }
+
+      hms() {
+        local flake="''${NIXOS_REPO:-/etc/nixos}"
+        local host="$(hostname)"
+        if [[ "$1" == "--help" || "$1" == "-h" ]]; then
+          echo "Usage: hms"
+          echo ""
+          echo "Runs: home-manager switch --flake <flake>#<hostname>"
+          echo ""
+          echo "Flake path: $flake"
+          echo "Host:       $host"
+          return 0
+        fi
+        home-manager switch --flake "$flake#$host" "$@"
       }
 
       code-work() {

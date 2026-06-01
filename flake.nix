@@ -158,5 +158,43 @@
         rog = mkHost { hostname = "rog"; };
         thinkcentre = mkHost { hostname = "thinkcentre"; };
       };
+
+      # Standalone home-manager configurations (for hms alias)
+      homeConfigurations =
+        let
+          mkHomeConfig = hostname: extraModules:
+            home-manager.lib.homeManagerConfiguration {
+              pkgs = pkgsFor system;
+              modules = [
+                ./modules/home/base.nix
+                ./modules/home/shell.nix
+                ./modules/home/theme.nix
+                ./modules/home/btop.nix
+                ./modules/home/tmux.nix
+                ./modules/home/neovim.nix
+                ./modules/home/mate.nix
+                ./modules/home/rofi.nix
+                ./modules/home/git.nix
+                ./modules/home/gh.nix
+                ./modules/home/ghostty.nix
+                ./modules/home/kitty.nix
+                ./modules/home/opencode.nix
+                ./modules/home/opencode-profile.nix
+                ./modules/home/openfang.nix
+                ./modules/home/chrome-apps.nix
+                ./modules/home/ssh.nix
+                ./modules/home/sops.nix
+                inputs.sops-nix.homeManagerModules.sops
+              ] ++ extraModules;
+              extraSpecialArgs = {
+                inherit inputs;
+                hostName = hostname;
+              };
+            };
+        in
+        {
+          rog = mkHomeConfig "rog" [ ./modules/home/conky-rog.nix ];
+          thinkcentre = mkHomeConfig "thinkcentre" [ ./modules/home/conky-thinkcentre.nix ];
+        };
     };
 }
