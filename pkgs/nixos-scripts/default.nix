@@ -39,13 +39,8 @@ stdenvNoCC.mkDerivation {
     cp $src/nixos-build $out/bin/
     chmod +x $out/bin/nixos-build
     
-    cp $src/update-gentle-ai $out/bin/
-    chmod +x $out/bin/update-gentle-ai
-    
     cp $src/export-mate-config $out/bin/
     chmod +x $out/bin/export-mate-config
-
-    cp $src/add_github_secret.sh $out/bin/ 2>/dev/null || true
 
     # Create symlinks for convenience
     ln -s $out/bin/git-flow $out/bin/git-worktree-flow

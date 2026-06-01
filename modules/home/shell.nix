@@ -41,7 +41,6 @@
       gcl = "git clone --recursive";
       gadd = "git add --all";
       ga = "git add";
-      glog = "git log --topo-order --pretty=format:%C\(auto\)%h%d %s %C\(8\)%cr %C\(bold blue\)%an";
       gl = "git pull";
       glr = "git pull --rebase";
       gp = "git push";
@@ -72,7 +71,12 @@
       nrt = "nixos-build test";
       nrb = "nixos-build boot";
       nrd = "nixos-build dry";
-      hms = "nixos-build switch";
+      hms = "home-manager switch";
+      hm = "home-manager";
+      hmg = "home-manager generations";
+      nfu = "nixos-build upgrade";
+      ngc = "nix-collect-garbage";
+      ngd = "nix-collect-garbage --delete-old";
     };
 
     sessionVariables = {
@@ -91,6 +95,10 @@
       gaa() { git add -A :/ "$@" }
 
       gpo() { git push origin "$(git branch --show-current)" "$@" }
+
+      glog() {
+        git log --topo-order --pretty='format:%C(auto)%h%d %s %C(8)%cr %C(bold blue)%an' "$@"
+      }
 
       code-work() {
         local repo_root="/home/glats/.nixos"
