@@ -63,7 +63,23 @@
     };
   };
 
-  outputs = inputs@{ self, nixpkgs, home-manager, sops-nix, nix-colors, omarchy-nix, gentle-ai-src, asus-fan-control-src, pipewire-module-xrdp-src, nvim-config, sub-agent-statusline, sdd-engram-plugin, engram-src, ... }:
+  outputs =
+    inputs@{
+      self,
+      nixpkgs,
+      home-manager,
+      sops-nix,
+      nix-colors,
+      omarchy-nix,
+      gentle-ai-src,
+      asus-fan-control-src,
+      pipewire-module-xrdp-src,
+      nvim-config,
+      sub-agent-statusline,
+      sdd-engram-plugin,
+      engram-src,
+      ...
+    }:
     let
       inherit (import ./lib/mkHost.nix { inherit inputs self; }) mkHost;
 
@@ -71,7 +87,12 @@
       overlay = import ./modules/base/overlays.nix {
         inherit self inputs; # Pasar inputs para los nuevos src
       };
-      pkgsFor = s: import nixpkgs { system = s; overlays = [ overlay ]; };
+      pkgsFor =
+        s:
+        import nixpkgs {
+          system = s;
+          overlays = [ overlay ];
+        };
       pkgs = pkgsFor system;
 
       # Custom packages
@@ -101,34 +122,64 @@
       openfang = pkgs.callPackage ./pkgs/openfang { };
 
       # verify-models: Test LLM model availability across free-tier providers
-      verify-models = pkgs.writers.writePython3Bin "verify-models"
-        {
-          libraries = [ pkgs.python3Packages.openai ];
-          flakeIgnore = [ "E501" "W503" "E265" "E266" "F702" ];
-        }
-        (builtins.readFile ./scripts/verify-models.py);
+      verify-models = pkgs.writers.writePython3Bin "verify-models" {
+        libraries = [ pkgs.python3Packages.openai ];
+        flakeIgnore = [
+          "E501"
+          "W503"
+          "E265"
+          "E266"
+          "F702"
+        ];
+      } (builtins.readFile ./scripts/verify-models.py);
 
       # verify-tiers: Test every model in every OpenCode tier list (raw API)
-      verify-tiers = pkgs.writers.writePython3Bin "verify-tiers"
-        {
-          libraries = [ pkgs.python3Packages.openai ];
-          flakeIgnore = [ "E501" "W503" "E265" "E266" "E226" "F702" ];
-        }
-        (builtins.readFile ./scripts/verify-tiers.py);
+      verify-tiers = pkgs.writers.writePython3Bin "verify-tiers" {
+        libraries = [ pkgs.python3Packages.openai ];
+        flakeIgnore = [
+          "E501"
+          "W503"
+          "E265"
+          "E266"
+          "E226"
+          "F702"
+        ];
+      } (builtins.readFile ./scripts/verify-tiers.py);
 
       # verify-opencode: Test models through opencode run (catches SDK/integration bugs)
-      verify-opencode = pkgs.writers.writePython3Bin "verify-opencode"
-        {
-          flakeIgnore = [ "E501" "W503" "E265" "E266" "E226" "F702" ];
-        }
-        (builtins.readFile ./scripts/verify-opencode.py);
+      verify-opencode = pkgs.writers.writePython3Bin "verify-opencode" {
+        flakeIgnore = [
+          "E501"
+          "W503"
+          "E265"
+          "E266"
+          "E226"
+          "F702"
+        ];
+      } (builtins.readFile ./scripts/verify-opencode.py);
 
       # Library functions for external use (non-NixOS portability)
       opencode-config-lib = import ./pkgs/opencode-config { inherit (pkgs) lib writeText; };
     in
     {
       packages.${system} = {
-        inherit nixos-scripts gentle-ai engram gentle-ai-assets-vanilla gentle-ai-assets engram-assets-vanilla engram-assets secret-guard-assets opencode-npm-packages verify-models verify-tiers verify-opencode openfang;
+        inherit
+          nixos-scripts
+          gentle-ai
+          engram
+          gentle-ai-assets-vanilla
+          gentle-ai-assets
+          engram-assets-vanilla
+          engram-assets
+          secret-guard-assets
+          opencode-npm-packages
+          verify-models
+          verify-tiers
+          verify-opencode
+          openfang
+          ;
+        # ISO package for nix build .#packages.x86_64-linux.t14-iso
+        t14-iso = self.nixosConfigurations.t14-iso.config.system.build.isoImage;
       };
 
       # Apps for nix run .#verify-models
@@ -168,12 +219,26 @@
           extraModules = [ omarchy-nix.nixosModules.default ];
         };
         thinkcentre = mkHost { hostname = "thinkcentre"; };
+        t14-iso = nixpkgs.lib.nixosSystem {
+          inherit system;
+          specialArgs = { inherit inputs; };
+          modules = [
+            ./hosts/t14/iso.nix
+            { nixpkgs.config.allowUnfree = true; }
+            {
+              nixpkgs.overlays = [
+                (import ./modules/base/overlays.nix { inherit self inputs; })
+              ];
+            }
+          ];
+        };
       };
 
       # Standalone home-manager configurations (for hms alias)
       homeConfigurations =
         let
-          mkHomeConfig = hostname: extraModules:
+          mkHomeConfig =
+            hostname: extraModules:
             home-manager.lib.homeManagerConfiguration {
               pkgs = pkgsFor system;
               modules = [
@@ -196,7 +261,8 @@
                 ./modules/home/ssh.nix
                 ./modules/home/sops.nix
                 inputs.sops-nix.homeManagerModules.sops
-              ] ++ extraModules;
+              ]
+              ++ extraModules;
               extraSpecialArgs = {
                 inherit inputs;
                 hostName = hostname;
@@ -207,5 +273,6 @@
           rog = mkHomeConfig "rog" [ ./modules/home/conky-rog.nix ];
           thinkcentre = mkHomeConfig "thinkcentre" [ ./modules/home/conky-thinkcentre.nix ];
         };
+
     };
 }
