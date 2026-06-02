@@ -12,29 +12,29 @@
     };
     users.glats = {
       imports = [
-        ../home/base.nix
-        ../home/shell.nix
-        ../home/theme.nix
-        ../home/btop.nix
-        ../home/tmux.nix
-        ../home/neovim.nix
-        ../home/mate.nix
-        ../home/rofi.nix
-        ../home/git.nix
-        ../home/gh.nix
-        ../home/ghostty.nix
-        ../home/kitty.nix
-        ../home/opencode.nix
-        ../home/opencode-profile.nix
-        ../home/openfang.nix
-        ../home/chrome-apps.nix
-        ../home/ssh.nix
-        ../home/sops.nix
+        ../../home-linux/base.nix
+        ../../home-linux/shell.nix
+        ../../home-linux/theme.nix
+        ../../home-linux/btop.nix
+        ../../home-linux/tmux.nix
+        ../../home-linux/neovim.nix
+        ../../home-linux/mate.nix
+        ../../home-linux/rofi.nix
+        ../../home-linux/git.nix
+        ../../home-linux/gh.nix
+        ../../home-linux/ghostty.nix
+        ../../home-linux/kitty.nix
+        ../../home-linux/opencode.nix
+        ../../home-linux/opencode-profile.nix
+        ../../home-linux/openfang.nix
+        ../../home-linux/chrome-apps.nix
+        ../../home-linux/ssh.nix
+        ../../home-linux/sops.nix
         inputs.sops-nix.homeManagerModules.sops
       ] ++ lib.optionals (config.networking.hostName == "rog") [
-        ../home/conky-rog.nix
+        ../../home-linux/conky-rog.nix
       ] ++ lib.optionals (config.networking.hostName == "thinkcentre") [
-        ../home/conky-thinkcentre.nix
+        ../../home-linux/conky-thinkcentre.nix
       ];
     };
   };
