@@ -1,5 +1,5 @@
-{ lib ? throw "providers-base.nix must be imported with lib"
-,
+{
+  lib ? throw "providers-base.nix must be imported with lib",
 }:
 
 let
@@ -66,7 +66,7 @@ let
 
   allProviders = nvidiaProvider;
 
-  activeProviderName = "opencode-go";
+  activeProviderName = "free";
 
   providers = [
     {
@@ -120,14 +120,45 @@ let
         neutral = "opencode-go/minimax-m2.7";
       };
     }
+    {
+      name = "free";
+      phases = {
+        sdd-orchestrator = "opencode/minimax-m3-free";
+        sdd-init = "opencode/mimo-v2.5-free";
+        sdd-explore = "opencode/deepseek-v4-flash-free";
+        sdd-propose = "opencode/nemotron-3-super-free";
+        sdd-spec = "opencode/nemotron-3-super-free";
+        sdd-design = "opencode/nemotron-3-super-free";
+        sdd-tasks = "opencode/deepseek-v4-flash-free";
+        sdd-apply = "opencode/minimax-m3-free";
+        sdd-verify = "opencode/deepseek-v4-flash-free";
+        sdd-archive = "opencode/deepseek-v4-flash-free";
+        sdd-onboard = "opencode/deepseek-v4-flash-free";
+        neutral = "opencode/mimo-v2.5-free";
+      };
+    }
+    {
+      name = "deepseekfree";
+      phases = {
+        sdd-orchestrator = "opencode/deepseek-v4-flash-free";
+        sdd-init = "opencode/deepseek-v4-flash-free";
+        sdd-explore = "opencode/deepseek-v4-flash-free";
+        sdd-propose = "opencode/deepseek-v4-flash-free";
+        sdd-spec = "opencode/deepseek-v4-flash-free";
+        sdd-design = "opencode/deepseek-v4-flash-free";
+        sdd-tasks = "opencode/deepseek-v4-flash-free";
+        sdd-apply = "opencode/deepseek-v4-flash-free";
+        sdd-verify = "opencode/deepseek-v4-flash-free";
+        sdd-archive = "opencode/deepseek-v4-flash-free";
+        sdd-onboard = "opencode/deepseek-v4-flash-free";
+        neutral = "opencode/deepseek-v4-flash-free";
+      };
+    }
   ];
 
-  activeProvider = builtins.foldl'
-    (
-      acc: p: if p.name == activeProviderName then p else acc
-    )
-    null
-    providers;
+  activeProvider = builtins.foldl' (
+    acc: p: if p.name == activeProviderName then p else acc
+  ) null providers;
   getModelForPhase =
     phase: provider: if provider == null then null else provider.phases.${phase} or null;
 
