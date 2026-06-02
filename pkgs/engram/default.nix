@@ -20,7 +20,7 @@ let
     else if isDarwin then
       {
         url = "https://github.com/Gentleman-Programming/engram/releases/download/v${version}/engram_${version}_darwin_amd64.tar.gz";
-        sha256 = "sha256-HbqIC61MUJf01qESy/LdrEaTkdyJNk2NMKGm1/A89o0=";
+        sha256 = "sha256-SCLMPJ0NIn08CdIql3TdEL4ucDuwzYur9rQXLnNtfA0=";
       }
     else
       throw "Unsupported system: ${system}";
