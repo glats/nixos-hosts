@@ -121,10 +121,8 @@ let
     scrot
     networkmanagerapplet
     gparted
-    hexchat # IRC client
-    devilspie2
-    warp-terminal
-
+    hexchat
+    popsicle
   ];
 
   mediaSupport = with pkgs; [
