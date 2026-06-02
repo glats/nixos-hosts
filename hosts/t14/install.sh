@@ -70,7 +70,19 @@ nixos-enter --root /mnt -c 'passwd glats'
 nixos-enter --root /mnt -c 'passwd root'
 
 # ------------------------------------------------------------------
-# 7. Done
+# 7. Post-install: enable sops (after generating host key)
+# ------------------------------------------------------------------
+INFO "Post-install steps (run after reboot):"
+cat << 'EOF'
+1. Generate host SSH key:  ssh-keygen -t ed25519 -f /etc/ssh/ssh_host_ed25519_key -N ""
+2. Get public key:         cat /etc/ssh/ssh_host_ed25519_key.pub
+3. Add to .sops.yaml in repo (age key or ssh key)
+4. Re-enable sops in hosts/t14/default.nix (uncomment sops.nix and secrets.nix)
+5. Rebuild:                nixos-build switch
+EOF
+
+# ------------------------------------------------------------------
+# 8. Done
 # ------------------------------------------------------------------
 INFO "Install complete. Reboot when ready:"
 echo "  umount -R /mnt && reboot"

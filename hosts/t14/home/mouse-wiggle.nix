@@ -55,13 +55,13 @@ in
   systemd.user.services.mouse-wiggle = {
     Unit = {
       Description = "Mouse wiggle — prevent idle lock during fullscreen media";
-      After      = [ "graphical-session-pre.target" ];
-      PartOf     = [ "graphical-session.target" ];
+      After = [ "graphical-session-pre.target" ];
+      PartOf = [ "graphical-session.target" ];
     };
     Service = {
-      Type      = "simple";
+      Type = "simple";
       ExecStart = "${script}/bin/mouse-wiggle";
-      Restart   = "on-failure";
+      Restart = "on-failure";
     };
     Install = {
       WantedBy = [ "graphical-session.target" ];
@@ -70,10 +70,10 @@ in
 
   # Desktop launcher so it can also be started manually from a menu.
   xdg.desktopEntries.mouse-wiggle = {
-    name     = "Mouse Wiggle";
-    comment  = "Prevent screen lock by wiggling the mouse";
-    exec     = "${script}/bin/mouse-wiggle";
-    icon     = "input-mouse";
+    name = "Mouse Wiggle";
+    comment = "Prevent screen lock by wiggling the mouse";
+    exec = "${script}/bin/mouse-wiggle";
+    icon = "input-mouse";
     terminal = false;
     categories = [ "Utility" ];
   };

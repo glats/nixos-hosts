@@ -1,9 +1,8 @@
-{
-  config,
-  lib,
-  pkgs,
-  modulesPath,
-  ...
+{ config
+, lib
+, pkgs
+, modulesPath
+, ...
 }:
 
 {
@@ -47,5 +46,5 @@
 
   # Install guide + script baked into ISO
   environment.etc."nixos/t14-install.sh".source = ./install.sh;
-  environment.etc."nixos/INSTALL.md".source   = ./INSTALL.md;
+  environment.etc."nixos/INSTALL.md".source = ./INSTALL.md;
 }

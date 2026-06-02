@@ -40,14 +40,14 @@ in
       executable = true;
     };
 
-  # Keyboard layout toggle (es <-> latam)
-  ".local/share/omarchy/bin/kb-toggle.sh" = {
+    # Keyboard layout toggle (es <-> latam)
+    ".local/share/omarchy/bin/kb-toggle.sh" = {
       source = ./scripts/kb-toggle.sh;
       executable = true;
     };
 
-  # Keyboard layout set (es or latam)
-  ".local/share/omarchy/bin/kb-layout.sh" = {
+    # Keyboard layout set (es or latam)
+    ".local/share/omarchy/bin/kb-layout.sh" = {
       source = ./scripts/kb-layout.sh;
       executable = true;
     };
