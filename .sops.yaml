@@ -17,6 +17,7 @@ creation_rules:
     key_groups:
       - age:
           - *admin_glats
+          - *host_mact2
 
   # Shared system secrets (common across hosts)
   - path_regex: secrets/shared/.+
