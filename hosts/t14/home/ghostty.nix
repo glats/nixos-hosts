@@ -14,7 +14,7 @@
     settings = {
       # Font — slightly larger than omarchy default for the laptop panel
       font-family = "JetBrainsMono Nerd Font";
-      font-size   = 10;
+      font-size = 10;
 
       # Opacity tuned for the built-in display
       background-opacity = 0.92;

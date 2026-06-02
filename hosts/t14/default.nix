@@ -13,12 +13,13 @@
     ../../modules/base/packages.nix
     ../../modules/base/polkit.nix
     ../../modules/base/shutdown-fix.nix
-    ../../modules/base/sops.nix
+    # T14 secrets (deactivated for fresh install — re-enable after generating host key)
+    # ../../modules/base/sops.nix
     ../../modules/base/users.nix
     ../../modules/base/zsh.nix
 
-    # T14 secrets
-    ./secrets.nix
+    # T14 secrets (deactivated for fresh install — re-enable after generating host key)
+    # ./secrets.nix
 
     # Hardware
     ../../modules/hardware/amd-laptop.nix
