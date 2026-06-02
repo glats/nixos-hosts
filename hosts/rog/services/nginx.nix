@@ -26,6 +26,10 @@
     recommendedGzipSettings = true;
     recommendedProxySettings = true;
 
+    commonHttpConfig = ''
+      proxy_headers_hash_max_size 1024;
+    '';
+
     clientMaxBodySize = "100g";
 
     virtualHosts = {
@@ -353,7 +357,7 @@
         root = "/srv/glats/nginx/maquiroot";
 
         locations."/" = {
-          tryFiles = "$uri $uri/ /index.html";
+          tryFiles = "$uri $uri/ =404";
           extraConfig = ''
             autoindex on;
             autoindex_exact_size on;

@@ -75,10 +75,11 @@
   system.stateVersion = "25.05";
 
   # OpenCode LLM provider configuration is managed centrally in
-  # modules/home/opencode/providers.nix
+  # shared/opencode/providers.nix (base providers)
+  # home-darwin/opencode/providers-extra.nix (macOS extras)
   #
   # To change provider or model:
-  # 1. Edit providers.nix to enable/disable providers or change models per phase
+  # 1. Edit providers-base.nix to enable/disable providers or change models per phase
   # 2. Set activeProviderName to select which provider tier is active
   # 3. Both providers use OAuth via /connect command - no API keys needed
 }
