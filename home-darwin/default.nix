@@ -1,9 +1,10 @@
 # Home Manager configuration for macOS
 # Aggregates all home-darwin modules
-{ pkgs
-, lib
-, primaryUser
-, ...
+{
+  pkgs,
+  lib,
+  primaryUser,
+  ...
 }:
 let
   # Toggle: set to false to disable Spotlight indexing for HM apps
@@ -44,6 +45,9 @@ let
     # Disable man page generation — triggers boost::too_few_args in Nix 2.31
     # (home-manager uses builtins.derivation for options.json without proper store context)
     manual.manpages.enable = false;
+
+    # Silenciar warning de version mismatch entre home-manager y nixpkgs
+    home.enableNixpkgsReleaseCheck = false;
 
     # create .hushlogin file to suppress login messages
     home.file.".hushlogin".text = "";
