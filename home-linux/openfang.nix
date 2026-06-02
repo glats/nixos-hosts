@@ -1,7 +1,8 @@
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }:
 
 with lib;
@@ -12,7 +13,7 @@ in
 {
   options.home.openfang = {
     enable = mkEnableOption "OpenFang Telegram channel configuration" // {
-      default = true;
+      default = false;
     };
   };
 
