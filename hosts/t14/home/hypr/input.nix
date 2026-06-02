@@ -19,10 +19,10 @@
       # since ThinkPad buttons provide their own scroll feel.
       # touchpad.natural_scroll = false (omarchy default — keep it)
 
-      repeat_rate    = 40;
-      repeat_delay   = 250;
-      follow_mouse   = 1;
-      sensitivity    = 0;
+      repeat_rate = 40;
+      repeat_delay = 250;
+      follow_mouse = 1;
+      sensitivity = 0;
       numlock_by_default = true;
     };
   };

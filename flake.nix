@@ -64,21 +64,20 @@
   };
 
   outputs =
-    inputs@{
-      self,
-      nixpkgs,
-      home-manager,
-      sops-nix,
-      nix-colors,
-      omarchy-nix,
-      gentle-ai-src,
-      asus-fan-control-src,
-      pipewire-module-xrdp-src,
-      nvim-config,
-      sub-agent-statusline,
-      sdd-engram-plugin,
-      engram-src,
-      ...
+    inputs@{ self
+    , nixpkgs
+    , home-manager
+    , sops-nix
+    , nix-colors
+    , omarchy-nix
+    , gentle-ai-src
+    , asus-fan-control-src
+    , pipewire-module-xrdp-src
+    , nvim-config
+    , sub-agent-statusline
+    , sdd-engram-plugin
+    , engram-src
+    , ...
     }:
     let
       inherit (import ./lib/mkHost.nix { inherit inputs self; }) mkHost;
@@ -122,41 +121,47 @@
       openfang = pkgs.callPackage ./pkgs/openfang { };
 
       # verify-models: Test LLM model availability across free-tier providers
-      verify-models = pkgs.writers.writePython3Bin "verify-models" {
-        libraries = [ pkgs.python3Packages.openai ];
-        flakeIgnore = [
-          "E501"
-          "W503"
-          "E265"
-          "E266"
-          "F702"
-        ];
-      } (builtins.readFile ./scripts/verify-models.py);
+      verify-models = pkgs.writers.writePython3Bin "verify-models"
+        {
+          libraries = [ pkgs.python3Packages.openai ];
+          flakeIgnore = [
+            "E501"
+            "W503"
+            "E265"
+            "E266"
+            "F702"
+          ];
+        }
+        (builtins.readFile ./scripts/verify-models.py);
 
       # verify-tiers: Test every model in every OpenCode tier list (raw API)
-      verify-tiers = pkgs.writers.writePython3Bin "verify-tiers" {
-        libraries = [ pkgs.python3Packages.openai ];
-        flakeIgnore = [
-          "E501"
-          "W503"
-          "E265"
-          "E266"
-          "E226"
-          "F702"
-        ];
-      } (builtins.readFile ./scripts/verify-tiers.py);
+      verify-tiers = pkgs.writers.writePython3Bin "verify-tiers"
+        {
+          libraries = [ pkgs.python3Packages.openai ];
+          flakeIgnore = [
+            "E501"
+            "W503"
+            "E265"
+            "E266"
+            "E226"
+            "F702"
+          ];
+        }
+        (builtins.readFile ./scripts/verify-tiers.py);
 
       # verify-opencode: Test models through opencode run (catches SDK/integration bugs)
-      verify-opencode = pkgs.writers.writePython3Bin "verify-opencode" {
-        flakeIgnore = [
-          "E501"
-          "W503"
-          "E265"
-          "E266"
-          "E226"
-          "F702"
-        ];
-      } (builtins.readFile ./scripts/verify-opencode.py);
+      verify-opencode = pkgs.writers.writePython3Bin "verify-opencode"
+        {
+          flakeIgnore = [
+            "E501"
+            "W503"
+            "E265"
+            "E266"
+            "E226"
+            "F702"
+          ];
+        }
+        (builtins.readFile ./scripts/verify-opencode.py);
 
       # Library functions for external use (non-NixOS portability)
       opencode-config-lib = import ./pkgs/opencode-config { inherit (pkgs) lib writeText; };
