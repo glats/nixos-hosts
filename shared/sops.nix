@@ -2,7 +2,7 @@
 
 {
   # Shared sops configuration — imported by home-linux and home-darwin
-  sops.defaultSopsFile = ../secrets/user/api_keys.yaml;
+  sops.defaultSopsFile = ../secrets/user/opencode.yaml;
   sops.age.keyFile = "${config.home.homeDirectory}/.config/sops/age/keys.txt";
 
   # OpenCode API keys (cross-platform)
