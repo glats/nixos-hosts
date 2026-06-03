@@ -5,31 +5,31 @@ let
 in
 {
   # Rog-specific secret declarations via sops
-  # These reference encrypted files in ../../secrets/system/
+  # These reference encrypted files in ../../secrets/host/rog/ and ../../secrets/shared/
 
   # WireGuard secrets (server private key + peer preshared keys)
   sops.secrets."wireguard/server_private_key" = {
-    sopsFile = ../../secrets/system/wireguard.yaml;
+    sopsFile = ../../secrets/host/rog/wireguard.yaml;
   };
   sops.secrets."wireguard/peer_oneplus9_psk" = {
-    sopsFile = ../../secrets/system/wireguard.yaml;
+    sopsFile = ../../secrets/host/rog/wireguard.yaml;
   };
   sops.secrets."wireguard/peer_mac_psk" = {
-    sopsFile = ../../secrets/system/wireguard.yaml;
+    sopsFile = ../../secrets/host/rog/wireguard.yaml;
   };
   sops.secrets."wireguard/peer_thinkpad_psk" = {
-    sopsFile = ../../secrets/system/wireguard.yaml;
+    sopsFile = ../../secrets/host/rog/wireguard.yaml;
   };
   sops.secrets."wireguard/peer_samsung_psk" = {
-    sopsFile = ../../secrets/system/wireguard.yaml;
+    sopsFile = ../../secrets/host/rog/wireguard.yaml;
   };
   sops.secrets."wireguard/peer_thinkphone_psk" = {
-    sopsFile = ../../secrets/system/wireguard.yaml;
+    sopsFile = ../../secrets/host/rog/wireguard.yaml;
   };
 
   # DDNS (ddclient)
   sops.secrets."ddclient" = {
-    sopsFile = ../../secrets/system/ddclient.yaml;
+    sopsFile = ../../secrets/host/rog/ddclient.yaml;
     owner = "ddclient";
     group = "ddclient";
     mode = "0400";
@@ -37,21 +37,21 @@ in
 
   # Cloudflare API token for acme
   sops.secrets."cloudflare_api_token" = {
-    sopsFile = ../../secrets/system/cloudflare.yaml;
+    sopsFile = ../../secrets/host/rog/cloudflare.yaml;
     owner = "acme";
   };
 
   # Guacamole
   sops.secrets."guacamole/env" = {
-    sopsFile = ../../secrets/system/guacamole.yaml;
+    sopsFile = ../../secrets/host/rog/guacamole.yaml;
   };
   sops.secrets."guacamole/admin_password" = {
-    sopsFile = ../../secrets/system/guacamole.yaml;
+    sopsFile = ../../secrets/host/rog/guacamole.yaml;
   };
 
   # Git credentials for homemanager git module
   sops.secrets."git-credentials" = {
-    sopsFile = ../../secrets/system/git-credentials.yaml;
+    sopsFile = ../../secrets/shared/git-credentials.yaml;
     owner = "glats";
     group = "users";
     mode = "0600";
@@ -59,19 +59,19 @@ in
 
   # Authelia SSO secrets
   sops.secrets."authelia/jwt_secret" = {
-    sopsFile = ../../secrets/system/authelia.yaml;
+    sopsFile = ../../secrets/host/rog/authelia.yaml;
   };
   sops.secrets."authelia/session_secret" = {
-    sopsFile = ../../secrets/system/authelia.yaml;
+    sopsFile = ../../secrets/host/rog/authelia.yaml;
   };
   sops.secrets."authelia/storage_encryption_key" = {
-    sopsFile = ../../secrets/system/authelia.yaml;
+    sopsFile = ../../secrets/host/rog/authelia.yaml;
   };
   sops.secrets."authelia/postgresql_password" = {
-    sopsFile = ../../secrets/system/authelia.yaml;
+    sopsFile = ../../secrets/host/rog/authelia.yaml;
   };
   sops.secrets."authelia/redis_password" = {
-    sopsFile = ../../secrets/system/authelia.yaml;
+    sopsFile = ../../secrets/host/rog/authelia.yaml;
   };
 
 }
