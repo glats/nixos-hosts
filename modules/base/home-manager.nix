@@ -1,4 +1,10 @@
-{ config, lib, pkgs, inputs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
+}:
 
 {
   home-manager = {
@@ -26,14 +32,16 @@
         ../../home-linux/kitty.nix
         ../../home-linux/opencode.nix
         ../../home-linux/opencode-profile.nix
-        ../../home-linux/openfang.nix
         ../../home-linux/chrome-apps.nix
         ../../home-linux/ssh.nix
         ../../home-linux/sops.nix
         inputs.sops-nix.homeManagerModules.sops
-      ] ++ lib.optionals (config.networking.hostName == "rog") [
+      ]
+      ++ lib.optionals (config.networking.hostName == "rog") [
         ../../home-linux/conky-rog.nix
-      ] ++ lib.optionals (config.networking.hostName == "thinkcentre") [
+        ../../home-linux/openfang.nix
+      ]
+      ++ lib.optionals (config.networking.hostName == "thinkcentre") [
         ../../home-linux/conky-thinkcentre.nix
       ];
     };
