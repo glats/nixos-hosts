@@ -1,14 +1,18 @@
 { inputs, self, ... }:
 
 let
-  mkHost =
+  mkNixosHost =
     { hostname
     , system ? "x86_64-linux"
+    , username ? "glats"
     , extraModules ? [ ]
+    ,
     }:
     inputs.nixpkgs.lib.nixosSystem {
       inherit system;
-      specialArgs = { inherit inputs self; };
+      specialArgs = {
+        inherit inputs self username;
+      };
       modules = [
         # Host-specific configuration
         ../hosts/${hostname}
@@ -22,17 +26,23 @@ let
         # Overlays for custom packages
         {
           nixpkgs.overlays = [
-            (import ../modules/base/overlays.nix { inherit self inputs; })
+            (import ../overlays/linux.nix { inherit self inputs; })
           ];
         }
 
-        # Pass flake inputs through Home Manager modules.
+        # Pass inputs to home-manager for module access
         {
-          home-manager.extraSpecialArgs = { inherit inputs; };
+          home-manager.extraSpecialArgs = {
+            inherit inputs username;
+          };
         }
-      ] ++ extraModules; # Extra host modules such as external desktop layers.
+      ]
+      ++ extraModules;
     };
+
+  # Backward-compatible alias
+  mkHost = mkNixosHost;
 in
 {
-  inherit mkHost;
+  inherit mkHost mkNixosHost;
 }

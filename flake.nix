@@ -1,5 +1,5 @@
 {
-  description = "Unified NixOS configuration for multiple hosts";
+  description = "Unified Nix configuration for NixOS and macOS hosts";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -26,9 +26,28 @@
     # Must match version in pkgs/gentle-ai/default.nix
     gentle-ai-src = {
       url = "github:Gentleman-Programming/gentle-ai/v1.30.3";
-      flake = false; # No es un flake, es repo normal
+      flake = false;
     };
 
+    # engram upstream (for OpenCode plugin)
+    # Must match version in pkgs/engram/default.nix
+    engram-src = {
+      url = "github:Gentleman-Programming/engram/v1.15.13";
+      flake = false;
+    };
+
+    # TUI plugins for OpenCode
+    sub-agent-statusline = {
+      url = "github:Joaquinvesapa/sub-agent-statusline";
+      flake = false;
+    };
+
+    sdd-engram-plugin = {
+      url = "github:j0k3r-dev-rgl/sdd-engram-plugin";
+      flake = false;
+    };
+
+    # --- NixOS-only inputs ---
     asus-fan-control-src = {
       url = "github:dominiksalvet/asus-fan-control";
       flake = false;
@@ -44,22 +63,44 @@
       flake = false;
     };
 
-    # TUI plugins for OpenCode
-    sub-agent-statusline = {
-      url = "github:Joaquinvesapa/sub-agent-statusline";
+    # --- macOS-only inputs ---
+    nix-darwin = {
+      url = "github:nix-darwin/nix-darwin/master";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    # Determinate 3.* module
+    determinate = {
+      url = "https://flakehub.com/f/DeterminateSystems/determinate/3";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    # nix-homebrew -- brew-src pinned to commit that fixes `to_sym for nil` crash
+    nix-homebrew = {
+      url = "github:zhaofengli/nix-homebrew";
+      inputs.brew-src.follows = "homebrew-brew";
+    };
+    homebrew-brew = {
+      # Fix commit: "cleanup undefined-method-to_sym-for-nil" (5.1.10 + 17 commits)
+      url = "github:Homebrew/brew/3f0f2574bc0c89f75271cd7ee21695bfdade50f6";
       flake = false;
     };
 
-    sdd-engram-plugin = {
-      url = "github:j0k3r-dev-rgl/sdd-engram-plugin";
+    # LazyVim starter (pinned via flake input, no sha256 needed here)
+    lazyvim-starter = {
+      url = "github:LazyVim/starter";
       flake = false;
     };
 
-    # engram upstream (for OpenCode plugin)
-    # Must match version in pkgs/engram/default.nix
-    engram-src = {
-      url = "github:Gentleman-Programming/engram/v1.15.13";
-      flake = false;
+    # VS Code extensions as Nix
+    nix-vscode-extensions = {
+      url = "github:nix-community/nix-vscode-extensions";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    ghostty = {
+      url = "github:ghostty-org/ghostty";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
@@ -71,59 +112,59 @@
     , nix-colors
     , omarchy-nix
     , gentle-ai-src
-    , asus-fan-control-src
-    , pipewire-module-xrdp-src
-    , nvim-config
-    , sub-agent-statusline
-    , sdd-engram-plugin
     , engram-src
     , ...
     }:
     let
-      inherit (import ./lib/mkHost.nix { inherit inputs self; }) mkHost;
+      # --- Builders ---
+      inherit (import ./lib/mkHost.nix { inherit inputs self; }) mkNixosHost mkHost;
+      inherit (import ./lib/mkDarwinHost.nix { inherit inputs self; }) mkDarwinHost;
 
-      system = "x86_64-linux";
-      overlay = import ./modules/base/overlays.nix {
-        inherit self inputs; # Pasar inputs para los nuevos src
+      # --- Overlay selection by system ---
+      linuxOverlay = import ./overlays/linux.nix {
+        inherit self inputs;
       };
+      darwinOverlay = import ./overlays/darwin.nix {
+        inherit inputs self;
+      };
+
       pkgsFor =
         s:
         import nixpkgs {
           system = s;
-          overlays = [ overlay ];
+          overlays = if nixpkgs.lib.hasSuffix "linux" s then [ linuxOverlay ] else [ darwinOverlay ];
         };
-      pkgs = pkgsFor system;
 
-      # Custom packages
-      nixos-scripts = pkgs.callPackage ./pkgs/nixos-scripts { };
-      gentle-ai = pkgs.callPackage ./pkgs/gentle-ai { };
-      engram = pkgs.callPackage ./pkgs/engram { };
-      gentle-ai-assets-vanilla = pkgs.callPackage ./pkgs/gentle-ai-assets/vanilla.nix {
+      # --- Linux packages (x86_64-linux) ---
+      linuxPkgs = pkgsFor "x86_64-linux";
+
+      nixos-scripts = linuxPkgs.callPackage ./pkgs/nixos-scripts { };
+      gentle-ai = linuxPkgs.callPackage ./pkgs/gentle-ai { };
+      engram = linuxPkgs.callPackage ./pkgs/engram { };
+      gentle-ai-assets-vanilla = linuxPkgs.callPackage ./pkgs/gentle-ai-assets/vanilla.nix {
         inherit gentle-ai-src;
       };
-      gentle-ai-assets = pkgs.callPackage ./pkgs/gentle-ai-assets/default.nix {
-        inherit (pkgs) writeText;
+      gentle-ai-assets = linuxPkgs.callPackage ./pkgs/gentle-ai-assets/default.nix {
+        inherit (linuxPkgs) writeText;
         vanilla = gentle-ai-assets-vanilla;
-        extraSkills = ./modules/home/opencode/skills;
-        extraCommands = ./modules/home/opencode/commands;
+        extraSkills = ./shared/opencode/skills;
+        extraCommands = ./shared/opencode/commands;
       };
-      engram-assets-vanilla = pkgs.callPackage ./pkgs/engram-assets/vanilla.nix {
+      engram-assets-vanilla = linuxPkgs.callPackage ./pkgs/engram-assets/vanilla.nix {
         inherit engram-src;
       };
-      engram-assets = pkgs.callPackage ./pkgs/engram-assets/default.nix {
+      engram-assets = linuxPkgs.callPackage ./pkgs/engram-assets/default.nix {
         inherit engram;
         vanilla = engram-assets-vanilla;
       };
-
-      secret-guard-assets = pkgs.callPackage ./pkgs/secret-guard-assets { };
-
-      opencode-npm-packages = pkgs.callPackage ./pkgs/opencode-npm-packages { };
-      openfang = pkgs.callPackage ./pkgs/openfang { };
+      secret-guard-assets = linuxPkgs.callPackage ./pkgs/secret-guard-assets { };
+      opencode-npm-packages = linuxPkgs.callPackage ./pkgs/opencode-npm-packages { };
+      openfang = linuxPkgs.callPackage ./pkgs/openfang { };
 
       # verify-models: Test LLM model availability across free-tier providers
-      verify-models = pkgs.writers.writePython3Bin "verify-models"
+      verify-models = linuxPkgs.writers.writePython3Bin "verify-models"
         {
-          libraries = [ pkgs.python3Packages.openai ];
+          libraries = [ linuxPkgs.python3Packages.openai ];
           flakeIgnore = [
             "E501"
             "W503"
@@ -135,9 +176,9 @@
         (builtins.readFile ./scripts/verify-models.py);
 
       # verify-tiers: Test every model in every OpenCode tier list (raw API)
-      verify-tiers = pkgs.writers.writePython3Bin "verify-tiers"
+      verify-tiers = linuxPkgs.writers.writePython3Bin "verify-tiers"
         {
-          libraries = [ pkgs.python3Packages.openai ];
+          libraries = [ linuxPkgs.python3Packages.openai ];
           flakeIgnore = [
             "E501"
             "W503"
@@ -150,7 +191,7 @@
         (builtins.readFile ./scripts/verify-tiers.py);
 
       # verify-opencode: Test models through opencode run (catches SDK/integration bugs)
-      verify-opencode = pkgs.writers.writePython3Bin "verify-opencode"
+      verify-opencode = linuxPkgs.writers.writePython3Bin "verify-opencode"
         {
           flakeIgnore = [
             "E501"
@@ -164,10 +205,85 @@
         (builtins.readFile ./scripts/verify-opencode.py);
 
       # Library functions for external use (non-NixOS portability)
-      opencode-config-lib = import ./pkgs/opencode-config { inherit (pkgs) lib writeText; };
+      opencode-config-lib = import ./pkgs/opencode-config {
+        inherit (linuxPkgs) lib writeText;
+      };
+
+      # --- Darwin packages (x86_64-darwin) ---
+      darwinPkgs = pkgsFor "x86_64-darwin";
+
+      darwin-gentle-ai = darwinPkgs.callPackage ./pkgs/gentle-ai { };
+      darwin-engram = darwinPkgs.callPackage ./pkgs/engram { };
+      darwin-gentle-ai-assets-vanilla = darwinPkgs.callPackage ./pkgs/gentle-ai-assets/vanilla.nix {
+        inherit gentle-ai-src;
+      };
+      darwin-gentle-ai-assets = darwinPkgs.callPackage ./pkgs/gentle-ai-assets/default.nix {
+        inherit (darwinPkgs) writeText;
+        vanilla = darwin-gentle-ai-assets-vanilla;
+        extraSkills = ./shared/opencode/skills;
+        extraCommands = ./shared/opencode/commands;
+      };
+      darwin-engram-assets-vanilla = darwinPkgs.callPackage ./pkgs/engram-assets/vanilla.nix {
+        inherit engram-src;
+      };
+      darwin-engram-assets = darwinPkgs.callPackage ./pkgs/engram-assets/default.nix {
+        engram = darwin-engram;
+        vanilla = darwin-engram-assets-vanilla;
+      };
+      darwin-secret-guard-assets = darwinPkgs.callPackage ./pkgs/secret-guard-assets { };
+      darwin-opencode-npm-packages = darwinPkgs.callPackage ./pkgs/opencode-npm-packages { };
+
+      darwin-opencode-config-lib = import ./pkgs/opencode-config {
+        inherit (darwinPkgs) lib writeText;
+      };
+
+      # --- Home module lists ---
+      linuxHomeModules = [
+        ./home-linux/base.nix
+        ./home-linux/shell.nix
+        ./home-linux/theme.nix
+        ./home-linux/btop.nix
+        ./home-linux/tmux.nix
+        ./home-linux/neovim.nix
+        ./home-linux/mate.nix
+        ./home-linux/rofi.nix
+        ./home-linux/git.nix
+        ./home-linux/gh.nix
+        ./home-linux/ghostty.nix
+        ./home-linux/kitty.nix
+        ./home-linux/opencode.nix
+        ./home-linux/opencode-profile.nix
+        ./home-linux/openfang.nix
+        ./home-linux/chrome-apps.nix
+        ./home-linux/ssh.nix
+        ./home-linux/sops.nix
+        inputs.sops-nix.homeManagerModules.sops
+      ];
+
+      darwinHomeModules = [
+        ./home-darwin
+      ];
+
+      # --- mkHomeConfig: standalone home-manager for any platform ---
+      mkHomeConfig =
+        hostname: system: username: extraModules:
+        home-manager.lib.homeManagerConfiguration {
+          pkgs = pkgsFor system;
+          modules =
+            (if nixpkgs.lib.hasSuffix "linux" system then linuxHomeModules else darwinHomeModules)
+            ++ extraModules;
+          extraSpecialArgs = {
+            inherit inputs username;
+            hostName = hostname;
+            # Darwin-specific extras (ignored by linux modules)
+            primaryUser = username;
+            javaVersion = "temurin-25.0.1+8.0.LTS";
+          };
+        };
     in
     {
-      packages.${system} = {
+      # --- Linux packages ---
+      packages.x86_64-linux = {
         inherit
           nixos-scripts
           gentle-ai
@@ -183,12 +299,23 @@
           verify-opencode
           openfang
           ;
-        # ISO package for nix build .#packages.x86_64-linux.t14-iso
         t14-iso = self.nixosConfigurations.t14-iso.config.system.build.isoImage;
       };
 
-      # Apps for nix run .#verify-models
-      apps.${system} = {
+      # --- Darwin packages (no nixos-scripts, no openfang) ---
+      packages.x86_64-darwin = {
+        gentle-ai = darwin-gentle-ai;
+        engram = darwin-engram;
+        gentle-ai-assets-vanilla = darwin-gentle-ai-assets-vanilla;
+        gentle-ai-assets = darwin-gentle-ai-assets;
+        engram-assets-vanilla = darwin-engram-assets-vanilla;
+        engram-assets = darwin-engram-assets;
+        secret-guard-assets = darwin-secret-guard-assets;
+        opencode-npm-packages = darwin-opencode-npm-packages;
+      };
+
+      # --- Apps for nix run ---
+      apps.x86_64-linux = {
         verify-models = {
           type = "app";
           program = "${verify-models}/bin/verify-models";
@@ -207,77 +334,63 @@
         };
       };
 
-      # Reusable library functions for other flakes
+      # --- Reusable library functions ---
       lib.opencode-config = opencode-config-lib;
 
+      # --- Checks ---
       checks.x86_64-linux = {
         rog = self.nixosConfigurations.rog.config.system.build.toplevel;
-        t14 = self.nixosConfigurations.t14.config.system.build.toplevel;
         thinkcentre = self.nixosConfigurations.thinkcentre.config.system.build.toplevel;
+        t14 = self.nixosConfigurations.t14.config.system.build.toplevel;
       };
 
-      # Multi-host configurations
+      # --- NixOS configurations ---
       nixosConfigurations = {
-        rog = mkHost { hostname = "rog"; };
-        t14 = mkHost {
+        rog = mkNixosHost { hostname = "rog"; };
+        thinkcentre = mkNixosHost { hostname = "thinkcentre"; };
+        t14 = mkNixosHost {
           hostname = "t14";
           extraModules = [ omarchy-nix.nixosModules.default ];
         };
-        thinkcentre = mkHost { hostname = "thinkcentre"; };
-        t14-iso = nixpkgs.lib.nixosSystem {
-          inherit system;
+        t14-iso = inputs.nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
           specialArgs = { inherit inputs; };
           modules = [
             ./hosts/t14/iso.nix
             { nixpkgs.config.allowUnfree = true; }
             {
               nixpkgs.overlays = [
-                (import ./modules/base/overlays.nix { inherit self inputs; })
+                (import ./overlays/linux.nix { inherit self inputs; })
               ];
             }
           ];
         };
       };
 
-      # Standalone home-manager configurations (for hms alias)
+      # --- Darwin configurations ---
+      darwinConfigurations = {
+        mact2 = mkDarwinHost { hostname = "mact2"; };
+      };
+
+      # --- Standalone home-manager configurations ---
       homeConfigurations =
         let
-          mkHomeConfig =
-            hostname: extraModules:
-            home-manager.lib.homeManagerConfiguration {
-              pkgs = pkgsFor system;
-              modules = [
-                ./modules/home/base.nix
-                ./modules/home/shell.nix
-                ./modules/home/theme.nix
-                ./modules/home/btop.nix
-                ./modules/home/tmux.nix
-                ./modules/home/neovim.nix
-                ./modules/home/mate.nix
-                ./modules/home/rofi.nix
-                ./modules/home/git.nix
-                ./modules/home/gh.nix
-                ./modules/home/ghostty.nix
-                ./modules/home/kitty.nix
-                ./modules/home/opencode.nix
-                ./modules/home/opencode-profile.nix
-                ./modules/home/openfang.nix
-                ./modules/home/chrome-apps.nix
-                ./modules/home/ssh.nix
-                ./modules/home/sops.nix
-                inputs.sops-nix.homeManagerModules.sops
-              ]
-              ++ extraModules;
-              extraSpecialArgs = {
-                inherit inputs;
-                hostName = hostname;
-              };
-            };
+          baseHomeConfig =
+            hostname: system: username: extraModules:
+            mkHomeConfig hostname system username extraModules;
         in
         {
-          rog = mkHomeConfig "rog" [ ./modules/home/conky-rog.nix ];
-          thinkcentre = mkHomeConfig "thinkcentre" [ ./modules/home/conky-thinkcentre.nix ];
+          rog = baseHomeConfig "rog" "x86_64-linux" "glats" [
+            ./home-linux/conky-rog.nix
+          ];
+          thinkcentre = baseHomeConfig "thinkcentre" "x86_64-linux" "glats" [
+            ./home-linux/conky-thinkcentre.nix
+          ];
+          mact2 = baseHomeConfig "mact2" "x86_64-darwin" "jcuzmar" [ ];
         };
 
+      # --- Formatter ---
+      formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixfmt-rfc-style;
+      formatter.x86_64-darwin = nixpkgs.legacyPackages.x86_64-darwin.nixfmt-rfc-style;
     };
 }
