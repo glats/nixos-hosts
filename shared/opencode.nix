@@ -1,8 +1,9 @@
-{ config
-, lib
-, pkgs
-, inputs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
 }:
 
 with lib;
@@ -29,8 +30,9 @@ let
     let
       runtimeDir = "${config.home.homeDirectory}/.config/${runtimeCfg.dir}";
 
-      # Filter MCPs based on enabled field in each MCP config
-      enabledMcps = lib.filterAttrs (name: mcp: mcp.enabled or false) cfg.mcps;
+      # Merge base MCPs with extra MCPs, then filter by enabled
+      allMcps = cfg.mcps // cfg.extraMcps;
+      enabledMcps = lib.filterAttrs (name: mcp: mcp.enabled or false) allMcps;
 
       # TUI plugins configuration (name -> enabled)
       # Versions come from pkgs.opencode-npm-packages/versions.json
