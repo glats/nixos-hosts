@@ -74,11 +74,4 @@ in
     sopsFile = ../../secrets/system/authelia.yaml;
   };
 
-  # OpenFang API key (for OpenCode Go proxy)
-  sops.secrets."openfang/api_key" = {
-    sopsFile = ../../secrets/system/authelia.yaml;
-    owner = "glats";
-    group = "users";
-    mode = "0400";
-  };
 }

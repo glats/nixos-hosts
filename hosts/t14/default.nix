@@ -69,6 +69,15 @@
     xdg.userDirs.setSessionVariables = true;
   };
 
+  # Graphics drivers for AMD iGPU (required for Hyprland/Omarchy)
+  hardware.graphics = {
+    enable = true;
+    extraPackages = with pkgs; [ mesa ];
+  };
+
+  # Ensure polkit is enabled (required by Hyprland for auth operations)
+  security.polkit.enable = true;
+
   # Preserve the expected login stack for this host:
   # SDDM -> UWSM -> Hyprland.
   programs.uwsm.enable = true;
