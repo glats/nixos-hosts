@@ -1,13 +1,15 @@
-# SOPS configuration for multi-host NixOS configuration
+# SOPS configuration for multi-host NixOS/macOS configuration
 # Keys:
 #   - admin_glats: User key for personal secrets (stored in ~/.config/sops/age/keys.txt)
 #   - host_rog: System key for rog host (stored in /var/lib/sops-nix/key.txt)
 #   - host_thinkcentre: System key for thinkcentre host (stored in /var/lib/sops-nix/key.txt)
+#   - host_mact2: System key for mact2 host (stored in ~/.config/sops/age/keys.txt on macOS)
 
 keys:
   - &admin_glats age1j4mxejwmktekgf24sju92ryayh5jlmv4ldxj62e2srwghpkpuujscct9lt
   - &host_rog age1q46qlf4kt0pc255nrl4r24m5hnvqwqf9wd8n6206f0zg95v6993qvd9cr8
   - &host_thinkcentre age1uhv0z8e04q2385wlrn0vgd237ts2exea375yr4yeqwx5v9zgw9esdg3rsn
+  - &host_mact2 age1ngeetv5mnt8ax30tmm6799qs2779905v0jafpywuydrvw2sz7yds7rlp5z
 
 creation_rules:
   # User secrets (API keys, personal tokens) - accessible on any host via user key
@@ -15,6 +17,7 @@ creation_rules:
     key_groups:
       - age:
           - *admin_glats
+          - *host_mact2
 
   # Shared system secrets (common across hosts)
   - path_regex: secrets/shared/.+
@@ -38,3 +41,4 @@ creation_rules:
           - *admin_glats
           - *host_rog
           - *host_thinkcentre
+          - *host_mact2
