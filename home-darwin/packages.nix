@@ -61,6 +61,7 @@ in
       sops
       home-manager
       superfile
+      ffmpeg
     ];
   };
 }
