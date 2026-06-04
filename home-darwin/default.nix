@@ -25,6 +25,7 @@ let
       ./vscode.nix
       ./windsurf.nix
       ./opencode.nix # Provides option definitions and activation scripts
+      ./opencode/mcps-extra.nix # macOS-specific MCPs (atlassian, chrome-devtools, etc.)
       ./opencode-profile.nix # Provides plugin/TUI enablement settings
       ./sops.nix
       ./github-mcp-server-wrapper.nix
