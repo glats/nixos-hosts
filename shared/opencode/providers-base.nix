@@ -125,15 +125,15 @@ let
       phases = {
         sdd-orchestrator = "opencode/minimax-m3-free";
         sdd-init = "opencode/mimo-v2.5-free";
-        sdd-explore = "opencode/deepseek-v4-flash-free";
+        sdd-explore = "opencode/minimax-m3-free";
         sdd-propose = "opencode/nemotron-3-super-free";
         sdd-spec = "opencode/nemotron-3-super-free";
         sdd-design = "opencode/nemotron-3-super-free";
-        sdd-tasks = "opencode/deepseek-v4-flash-free";
+        sdd-tasks = "opencode/minimax-m3-free";
         sdd-apply = "opencode/minimax-m3-free";
-        sdd-verify = "opencode/deepseek-v4-flash-free";
-        sdd-archive = "opencode/deepseek-v4-flash-free";
-        sdd-onboard = "opencode/deepseek-v4-flash-free";
+        sdd-verify = "opencode/minimax-m3-free";
+        sdd-archive = "opencode/minimax-m3-free";
+        sdd-onboard = "opencode/minimax-m3-free";
         neutral = "opencode/mimo-v2.5-free";
       };
     }
