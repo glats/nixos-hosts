@@ -11,7 +11,8 @@ with lib;
 let
   # Extra MCPs for macOS
   extraMcps = {
-    github-mcp-server-wrapped = {
+    # Override base github MCP to use the wrapped version (reads token from sops)
+    github = {
       type = "local";
       command = [
         "github-mcp-server-wrapped"
@@ -28,7 +29,11 @@ let
 
     playwright = {
       type = "local";
-      command = [ "${pkgs.playwright-mcp}/bin/mcp-server-playwright" ];
+      command = [
+        "npx"
+        "-y"
+        "@playwright/mcp@latest"
+      ];
       enabled = true;
     };
 
