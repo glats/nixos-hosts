@@ -1,4 +1,4 @@
-{ lib, ... }:
+{ lib, pkgs, ... }:
 
 {
   imports = [
@@ -13,21 +13,16 @@
     ../../modules/base/packages.nix
     ../../modules/base/polkit.nix
     ../../modules/base/shutdown-fix.nix
-    # T14 secrets (deactivated for fresh install — re-enable after generating host key)
-    # ../../modules/base/sops.nix
     ../../modules/base/users.nix
     ../../modules/base/zsh.nix
 
-    # T14 secrets (deactivated for fresh install — re-enable after generating host key)
-    # ./secrets.nix
-
     # Hardware
     ../../modules/hardware/amd-laptop.nix
-    ../../modules/hardware/keyring.nix
 
     # Desktop
     ../../modules/desktop/fonts.nix
     ../../modules/desktop/i18n.nix
+    ../../modules/desktop/kmscon.nix
 
     # Networking
     ../../modules/networking/avahi.nix
@@ -51,47 +46,14 @@
 
   networking.hostName = "t14";
 
-  omarchy = {
-    username = "glats";
-    full_name = "Glats";
-    email_address = "glats@glats.org";
-    theme = "tokyo-night";
-    browser = "chromium";
-    terminal = "ghostty";
-    firewall.enable = false;
-  };
+  # Minimal T14 - just a TTY terminal
+  # No display manager, no Hyprland, no Omarchy
 
   home-manager.users.glats = {
     imports = [
-      ./home
+      ./home/minimal.nix
     ];
-    wayland.windowManager.hyprland.configType = "hyprlang";
-    xdg.userDirs.setSessionVariables = true;
   };
-
-  # Graphics drivers for AMD iGPU (required for Hyprland/Omarchy)
-  hardware.graphics = {
-    enable = true;
-    extraPackages = with pkgs; [ mesa ];
-  };
-
-  # Ensure polkit is enabled (required by Hyprland for auth operations)
-  security.polkit.enable = true;
-
-  # Preserve the expected login stack for this host:
-  # SDDM -> UWSM -> Hyprland.
-  programs.uwsm.enable = true;
-  programs.hyprland.withUWSM = lib.mkForce true;
-
-  services.greetd.enable = lib.mkForce false;
-  services.displayManager = {
-    sddm.enable = true;
-    sddm.wayland.enable = true;
-    defaultSession = "hyprland-uwsm";
-  };
-  services.xserver.enable = true;
-
-  security.pam.services.sddm.enableGnomeKeyring = true;
 
   system.stateVersion = "25.05";
 }
