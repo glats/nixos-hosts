@@ -350,7 +350,7 @@
         thinkcentre = mkNixosHost { hostname = "thinkcentre"; };
         t14 = mkNixosHost {
           hostname = "t14";
-          extraModules = [ omarchy-nix.nixosModules.default ];
+          # Minimal config - no extra modules
         };
         t14-iso = inputs.nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
