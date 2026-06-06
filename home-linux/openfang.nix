@@ -21,11 +21,11 @@ in
     # Unconditional secret declarations (always evaluated)
     {
       sops.secrets."openfang/telegram_bot_token" = {
-        sopsFile = ../secrets/user/openfang.yaml;
+        sopsFile = ../secrets/host/rog/openfang.yaml;
         mode = "0400";
       };
       sops.secrets."openfang/api_key" = {
-        sopsFile = ../secrets/user/openfang.yaml;
+        sopsFile = ../secrets/host/rog/openfang.yaml;
         mode = "0400";
       };
     }
