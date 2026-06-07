@@ -73,6 +73,8 @@
     networkmanager.enable = true;
   };
 
+  services.wol-custom.interface = "enp0s31f6";
+
   system.stateVersion = "25.05";
 
   # OpenCode LLM provider configuration is managed centrally in
