@@ -105,6 +105,8 @@
     networkmanager.enable = true;
   };
 
+  services.wol-custom.interface = "enp3s0";
+
   fileSystems."/run/media/library" = {
     device = "/dev/disk/by-uuid/608cd7cf-3cb4-4589-8f36-c558fb4e32a3";
     fsType = "ext4";
