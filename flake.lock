@@ -778,22 +778,6 @@
         "type": "github"
       }
     },
-    "lazyvim-starter": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1733936199,
-        "narHash": "sha256-QrpnlDD4r1X4C8PqBhQ+S3ar5C+qDrU1Jm/lPqyMIFM=",
-        "owner": "LazyVim",
-        "repo": "starter",
-        "rev": "803bc181d7c0d6d5eeba9274d9be49b287294d99",
-        "type": "github"
-      },
-      "original": {
-        "owner": "LazyVim",
-        "repo": "starter",
-        "type": "github"
-      }
-    },
     "nix": {
       "inputs": {
         "flake-parts": "flake-parts",
@@ -1146,7 +1130,6 @@
         "ghostty": "ghostty",
         "home-manager": "home-manager_2",
         "homebrew-brew": "homebrew-brew",
-        "lazyvim-starter": "lazyvim-starter",
         "nix-colors": "nix-colors",
         "nix-darwin": "nix-darwin",
         "nix-homebrew": "nix-homebrew",
@@ -1155,25 +1138,8 @@
         "nvim-config": "nvim-config",
         "omarchy-nix": "omarchy-nix",
         "pipewire-module-xrdp-src": "pipewire-module-xrdp-src",
-        "sdd-engram-plugin": "sdd-engram-plugin",
         "sops-nix": "sops-nix",
         "sub-agent-statusline": "sub-agent-statusline"
-      }
-    },
-    "sdd-engram-plugin": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1778759588,
-        "narHash": "sha256-MGYtSudhjRlHZzYPMu7we1ijkhs621kdUzbMsfM+xVQ=",
-        "owner": "j0k3r-dev-rgl",
-        "repo": "sdd-engram-plugin",
-        "rev": "062e60090ed9b422563fa96ed9652a70f18b20f6",
-        "type": "github"
-      },
-      "original": {
-        "owner": "j0k3r-dev-rgl",
-        "repo": "sdd-engram-plugin",
-        "type": "github"
       }
     },
     "sops-nix": {
