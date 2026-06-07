@@ -42,11 +42,6 @@
       flake = false;
     };
 
-    sdd-engram-plugin = {
-      url = "github:j0k3r-dev-rgl/sdd-engram-plugin";
-      flake = false;
-    };
-
     # --- NixOS-only inputs ---
     asus-fan-control-src = {
       url = "github:dominiksalvet/asus-fan-control";
