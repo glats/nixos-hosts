@@ -1,10 +1,16 @@
-{ pkgs
-, lib
-, config
-, primaryUser
-, ...
-}:
 {
+  pkgs,
+  lib,
+  config,
+  primaryUser,
+  ...
+}:
+
+{
+  imports = [
+    ../shared/tmux.nix
+  ];
+
   # Home Manager configuration for tmux kept in a separate file to keep
   # `home/default.nix` tidy.
   home = {
@@ -39,89 +45,34 @@
   };
 
   programs.tmux = {
-    enable = true;
-
-    # 🔥 CRITICAL: ESC key responsiveness
+    # CRITICAL: ESC key responsiveness.
     # Without this, tmux waits 500ms after ESC to check if it's an escape
     # sequence, breaking "ESC to interrupt" in opencode and other TUI apps.
-    # Value 0 means send ESC immediately (required for responsive interrupt).
+    # Value 10 is a compromise: still responsive but tolerates escape sequences.
     escapeTime = 10;
 
     extraConfig = ''
-      # Common tmux settings
       # Use a 256-color capable default and ensure terminals that advertise
       # a custom name (like Ghostty's "xterm-ghostty") are treated like xterm
       # so tmux enables modern features (SGR mouse / 1006). This fixes mouse
       # events when the terminal reports a non-standard TERM name.
       set -g default-terminal "screen-256color"
       set -as terminal-overrides ',xterm-ghostty:XT'
-      set -g escape-time 10
-      set -gq base-index 1
-      set -g renumber-windows on
-      set -gq focus-events on
-      set -gq history-limit 10000
-      set -gq set-titles on
-      setw -gq mode-keys vi
-      setw -gq xterm-keys on
-      set -g mouse on
-      set -g @resurrect-capture-pane-contents 'on'
 
-      # ── base16 theme ──
-      # status bar
-      set -g status-style fg=#${config.colorScheme.palette.base05},bg=#${config.colorScheme.palette.base01}
-
-      # window titles
-      setw -g window-status-style fg=#${config.colorScheme.palette.base05},bg=#${config.colorScheme.palette.base01}
-      setw -g window-status-current-style fg=#${config.colorScheme.palette.base0D},bg=#${config.colorScheme.palette.base01}
-
-      # pane borders
-      set -g pane-border-style fg=#${config.colorScheme.palette.base01}
-      set -g pane-active-border-style fg=#${config.colorScheme.palette.base04}
-
-      # message text
-      set -g message-style fg=#${config.colorScheme.palette.base05},bg=#${config.colorScheme.palette.base02}
-
-      # pane number display / copy mode
-      set -g mode-style fg=#${config.colorScheme.palette.base04},bg=#${config.colorScheme.palette.base02}
-
-      # clock
-      setw -g clock-mode-colour '#${config.colorScheme.palette.base0D}'
-
-      set -g allow-passthrough on
-
-      set -g exit-empty off
-      set -g exit-unattached off
-
-      # TPM and plugins
-      set -g @plugin 'tmux-plugins/tpm'
-      set -g @plugin 'tmux-plugins/tmux-resurrect'
-      set -g @plugin 'tmux-plugins/tmux-sessionist'
-      set -g @plugin 'tmux-plugins/tmux-yank'
-
-      # Initialize TPM and OS-specific settings
-      if-shell '[ "$(uname)" = "Darwin" ]' \
-        "set -s set-clipboard on; \
-         bind -T copy-mode-vi y send-keys -X copy-pipe-and-cancel \"pbcopy\"; \
-         bind -T copy-mode y send-keys -X copy-pipe-and-cancel \"pbcopy\"; \
-         run -b \"$HOME/.tmux/plugins/tpm/tpm\"" \
-        "run-shell '/usr/share/tmux-plugin-manager/tpm'"
-
-      set-environment -g TMUX_PLUGIN_MANAGER_PATH "$HOME/.config/tmux/plugins"
-      set -gq set-titles on
-      setw -gq aggressive-resize on
-      # Enable mouse interactions (click panes/tabs) and macOS clipboard sync
-
-      set -g mouse on
+      # macOS clipboard integration (pbcopy)
       set -s set-clipboard on
       bind -T copy-mode-vi y send-keys -X copy-pipe-and-cancel "pbcopy"
       bind -T copy-mode y send-keys -X copy-pipe-and-cancel "pbcopy"
 
-      # tmux plugin manager (TPM) + plugins
+      # TPM plugin declarations
       set -g @plugin 'tmux-plugins/tpm'
       set -g @plugin 'tmux-plugins/tmux-resurrect'
       set -g @plugin 'tmux-plugins/tmux-sessionist'
       set -g @plugin 'tmux-plugins/tmux-yank'
-      set -g @resurrect-capture-pane-contents 'on'
+
+      set-environment -g TMUX_PLUGIN_MANAGER_PATH "$HOME/.config/tmux/plugins"
+
+      # Initialize TPM (runs on config source)
       run -b "$HOME/.config/tmux/plugins/tpm/tpm"
     '';
   };

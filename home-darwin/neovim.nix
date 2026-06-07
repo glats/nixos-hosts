@@ -12,7 +12,7 @@
     vimAlias = true; # provide `vim` command
     viAlias = true; # provide `vi` command
 
-    # Explicitar comportamiento legacy para silenciar warnings de stateVersion < 26.05
+    # Explicitly set legacy behavior to silence warnings for stateVersion < 26.05
     withRuby = false;
     withPython3 = false;
 
