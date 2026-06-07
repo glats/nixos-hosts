@@ -17,6 +17,14 @@ Usage: format-nix [--check]
 Formats all .nix files under /etc/nixos using nixfmt (preferred) or nixpkgs-fmt.
 Run with sufficient privileges to modify files in /etc/nixos.
 
+Formatter workflow in this repo:
+  Full repo:    format-nix
+  Single file:  nix fmt -- <path>
+
+Avoid this anti-pattern:
+  nix shell nixpkgs#nixfmt-rfc-style --command nixfmt-rfc-style ...
+The package executable is `nixfmt`, and the flake formatter should be invoked through `nix fmt`.
+
 Options:
   --check    Report files that would change instead of modifying them
   -h, --help Show this help message
@@ -25,6 +33,7 @@ EOF
       ;;
     *)
       echo "Unknown argument: $1" >&2
+      echo "TIP: format-nix only supports full-repo formatting. Use 'nix fmt -- <path>' for a single file." >&2
       exit 2
       ;;
   esac

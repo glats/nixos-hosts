@@ -6,7 +6,7 @@
 }:
 
 let
-  version = "1.27.3";
+  version = "1.36.6";
 
   system = stdenvNoCC.hostPlatform.system;
   isLinux = lib.hasSuffix "linux" system;
@@ -16,12 +16,12 @@ let
     if isLinux then
       {
         url = "https://github.com/Gentleman-Programming/gentle-ai/releases/download/v${version}/gentle-ai_${version}_linux_amd64.tar.gz";
-        sha256 = "sha256-iG35b+Wi7mNq2EHmB7N//bp6y2X3kvCoR1UtQ1BgANM=";
+        sha256 = "sha256-DQBgAg1+vtPBWgXHdYieed0s474O9dubKqgHYOT++UQ=";
       }
     else if isDarwin then
       {
         url = "https://github.com/Gentleman-Programming/gentle-ai/releases/download/v${version}/gentle-ai_${version}_darwin_amd64.tar.gz";
-        sha256 = "sha256-ww6GJis85kYks8SFMYbjL4xhVCGPjYfyZQHGVksieaE=";
+        sha256 = "sha256-2IX6tUAHlsfn06hucQrNxjo6by12cna1DCmb/K7XpcI=";
       }
     else
       throw "Unsupported system: ${system}";
@@ -83,8 +83,8 @@ stdenvNoCC.mkDerivation {
       darwin_sri=$(${pkgs.nix}/bin/nix hash to-sri --type sha256 "$darwin_hash")
 
       ${pkgs.gnused}/bin/sed -i "s/version = \"$current\";/version = \"$latest\";/" "$PKG_DIR/default.nix"
-      ${pkgs.gnused}/bin/sed -i "s|sha256 = \"sha256-iG35b+Wi7mNq2EHmB7N//bp6y2X3kvCoR1UtQ1BgANM=\";|sha256 = \"$linux_sri\";|" "$PKG_DIR/default.nix"
-      ${pkgs.gnused}/bin/sed -i "s|sha256 = \"sha256-ww6GJis85kYks8SFMYbjL4xhVCGPjYfyZQHGVksieaE=\";|sha256 = \"$darwin_sri\";|" "$PKG_DIR/default.nix"
+      ${pkgs.gnused}/bin/sed -i "s|sha256 = \"sha256-DQBgAg1+vtPBWgXHdYieed0s474O9dubKqgHYOT++UQ=\";|sha256 = \"$linux_sri\";|" "$PKG_DIR/default.nix"
+      ${pkgs.gnused}/bin/sed -i "s|sha256 = \"sha256-2IX6tUAHlsfn06hucQrNxjo6by12cna1DCmb/K7XpcI=\";|sha256 = \"$darwin_sri\";|" "$PKG_DIR/default.nix"
 
       echo "Updated gentle-ai to $latest"
       echo "Linux hash: $linux_sri"

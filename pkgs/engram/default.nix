@@ -5,7 +5,7 @@
 }:
 
 let
-  version = "1.15.13";
+  version = "1.16.1";
 
   system = stdenvNoCC.hostPlatform.system;
   isLinux = lib.hasSuffix "linux" system;
@@ -15,12 +15,12 @@ let
     if isLinux then
       {
         url = "https://github.com/Gentleman-Programming/engram/releases/download/v${version}/engram_${version}_linux_amd64.tar.gz";
-        sha256 = "sha256-z1gGO+QPVY57c8SOLDI7xcCSr9QdF0XHOn5VN2kbo8A=";
+        sha256 = "sha256-2VIC8ZJ9FCz+DXZPTEvHqiFx6FuZ+upq7fzJArc9vfc=";
       }
     else if isDarwin then
       {
         url = "https://github.com/Gentleman-Programming/engram/releases/download/v${version}/engram_${version}_darwin_amd64.tar.gz";
-        sha256 = "sha256-SCLMPJ0NIn08CdIql3TdEL4ucDuwzYur9rQXLnNtfA0=";
+        sha256 = "sha256-CjJ1A0teQUDjq9XFN4qKer73sLAAfAtcRZnAnz0ZicI=";
       }
     else
       throw "Unsupported system: ${system}";
