@@ -47,7 +47,7 @@ let
     # (home-manager uses builtins.derivation for options.json without proper store context)
     manual.manpages.enable = false;
 
-    # Silenciar warning de version mismatch entre home-manager y nixpkgs
+    # Silence version mismatch warning between home-manager and nixpkgs
     home.enableNixpkgsReleaseCheck = false;
 
     # create .hushlogin file to suppress login messages
