@@ -5,7 +5,7 @@
 {
   programs.nh = {
     enable = true;
-    flake = "/home/glats/.nixos";
+    flake = config.users.users.glats.home + "/.nixos";
     clean = {
       enable = true;
       dates = "weekly";
