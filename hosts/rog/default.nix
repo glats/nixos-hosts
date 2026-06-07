@@ -1,7 +1,8 @@
-{ config
-, pkgs
-, lib
-, ...
+{
+  config,
+  pkgs,
+  lib,
+  ...
 }:
 
 {
@@ -140,9 +141,9 @@
 
   system.stateVersion = "25.05";
 
-  # Fix 1: Extender timeouts para prevenir exit status 4 en nixos-rebuild switch
-  # Ver: investigación de fallos intermitentes systemd-run switch-to-configuration
-  # Usar mkForce para override los defaults del módulo oci-containers
+  # Fix 1: Extend timeouts to prevent exit status 4 in nixos-rebuild switch
+  # See: investigation of intermittent systemd-run switch-to-configuration failures
+  # Use mkForce to override the oci-containers module defaults
   systemd.services.nginx.serviceConfig.TimeoutStartSec = lib.mkForce "300";
   systemd.services."acme-glats.org".serviceConfig.TimeoutStartSec = lib.mkForce "300";
   systemd.services."docker-droppy".serviceConfig.TimeoutStartSec = lib.mkForce "300";
@@ -150,8 +151,8 @@
   systemd.services."docker-jellyfin".serviceConfig.TimeoutStartSec = lib.mkForce "300";
   systemd.services."docker-jellyseerr".serviceConfig.TimeoutStartSec = lib.mkForce "300";
 
-  # Prevenir restart loops que consumen tiempo durante switch
-  # Usar mkForce porque nginx ya define este valor
+  # Prevent restart loops that consume time during switch
+  # Use mkForce because nginx already defines this value
   systemd.services.nginx.startLimitIntervalSec = lib.mkForce 0;
   systemd.services."docker-droppy".startLimitIntervalSec = lib.mkForce 0;
   systemd.services."docker-jellyfin".startLimitIntervalSec = lib.mkForce 0;
