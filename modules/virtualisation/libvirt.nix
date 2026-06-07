@@ -1,12 +1,25 @@
-{ pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
-  virtualisation.libvirtd = {
-    enable = true;
-    qemu = {
-      package = pkgs.qemu_kvm;
+  options.virtualisation.libvirt-custom = {
+    enable = lib.mkEnableOption "Libvirt virtualisation" // {
+      default = true;
     };
   };
 
-  programs.virt-manager.enable = true;
+  config = lib.mkIf config.virtualisation.libvirt-custom.enable {
+    virtualisation.libvirtd = {
+      enable = true;
+      qemu = {
+        package = pkgs.qemu_kvm;
+      };
+    };
+
+    programs.virt-manager.enable = true;
+  };
 }
