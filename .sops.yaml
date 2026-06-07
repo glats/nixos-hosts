@@ -4,7 +4,7 @@ keys:
   - &host_rog age1q46qlf4kt0pc255nrl4r24m5hnvqwqf9wd8n6206f0zg95v6993qvd9cr8
   - &host_thinkcentre age1uhv0z8e04q2385wlrn0vgd237ts2exea375yr4yeqwx5v9zgw9esdg3rsn
   - &host_mact2 age1ngeetv5mnt8ax30tmm6799qs2779905v0jafpywuydrvw2sz7yds7rlp5z
-  - &host_t14 age196hvyhz9nhwdxyadwj36umtssxqdhde80x3xyhkt9l9va73mtq3s3pxvnk
+  - &host_t14 age1kc4mnetans8hwzwy24gsnw2hzxzcz3c5wcthcsr5wdfwk5e7vvtqvku74u
 
 creation_rules:
   # Host-specific secrets
