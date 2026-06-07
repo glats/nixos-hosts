@@ -25,14 +25,14 @@
     # gentle-ai upstream (for skills, commands, plugins)
     # Must match version in pkgs/gentle-ai/default.nix
     gentle-ai-src = {
-      url = "github:Gentleman-Programming/gentle-ai/v1.30.3";
+      url = "github:Gentleman-Programming/gentle-ai/v1.36.6";
       flake = false;
     };
 
     # engram upstream (for OpenCode plugin)
     # Must match version in pkgs/engram/default.nix
     engram-src = {
-      url = "github:Gentleman-Programming/engram/v1.15.13";
+      url = "github:Gentleman-Programming/engram/v1.16.1";
       flake = false;
     };
 
@@ -94,16 +94,15 @@
   };
 
   outputs =
-    inputs@{
-      self,
-      nixpkgs,
-      home-manager,
-      sops-nix,
-      nix-colors,
-      omarchy-nix,
-      gentle-ai-src,
-      engram-src,
-      ...
+    inputs@{ self
+    , nixpkgs
+    , home-manager
+    , sops-nix
+    , nix-colors
+    , omarchy-nix
+    , gentle-ai-src
+    , engram-src
+    , ...
     }:
     let
       # --- Builders ---
@@ -152,41 +151,47 @@
       openfang = linuxPkgs.callPackage ./pkgs/openfang { };
 
       # verify-models: Test LLM model availability across free-tier providers
-      verify-models = linuxPkgs.writers.writePython3Bin "verify-models" {
-        libraries = [ linuxPkgs.python3Packages.openai ];
-        flakeIgnore = [
-          "E501"
-          "W503"
-          "E265"
-          "E266"
-          "F702"
-        ];
-      } (builtins.readFile ./scripts/verify-models.py);
+      verify-models = linuxPkgs.writers.writePython3Bin "verify-models"
+        {
+          libraries = [ linuxPkgs.python3Packages.openai ];
+          flakeIgnore = [
+            "E501"
+            "W503"
+            "E265"
+            "E266"
+            "F702"
+          ];
+        }
+        (builtins.readFile ./scripts/verify-models.py);
 
       # verify-tiers: Test every model in every OpenCode tier list (raw API)
-      verify-tiers = linuxPkgs.writers.writePython3Bin "verify-tiers" {
-        libraries = [ linuxPkgs.python3Packages.openai ];
-        flakeIgnore = [
-          "E501"
-          "W503"
-          "E265"
-          "E266"
-          "E226"
-          "F702"
-        ];
-      } (builtins.readFile ./scripts/verify-tiers.py);
+      verify-tiers = linuxPkgs.writers.writePython3Bin "verify-tiers"
+        {
+          libraries = [ linuxPkgs.python3Packages.openai ];
+          flakeIgnore = [
+            "E501"
+            "W503"
+            "E265"
+            "E266"
+            "E226"
+            "F702"
+          ];
+        }
+        (builtins.readFile ./scripts/verify-tiers.py);
 
       # verify-opencode: Test models through opencode run (catches SDK/integration bugs)
-      verify-opencode = linuxPkgs.writers.writePython3Bin "verify-opencode" {
-        flakeIgnore = [
-          "E501"
-          "W503"
-          "E265"
-          "E266"
-          "E226"
-          "F702"
-        ];
-      } (builtins.readFile ./scripts/verify-opencode.py);
+      verify-opencode = linuxPkgs.writers.writePython3Bin "verify-opencode"
+        {
+          flakeIgnore = [
+            "E501"
+            "W503"
+            "E265"
+            "E266"
+            "E226"
+            "F702"
+          ];
+        }
+        (builtins.readFile ./scripts/verify-opencode.py);
 
       # Library functions for external use (non-NixOS portability)
       opencode-config-lib = import ./pkgs/opencode-config {
@@ -269,7 +274,6 @@
           verify-opencode
           openfang
           ;
-        t14-iso = self.nixosConfigurations.t14-iso.config.system.build.isoImage;
       };
 
       # --- Darwin packages (no nixos-scripts, no openfang) ---
@@ -322,19 +326,6 @@
           hostname = "t14";
           # Minimal config - no extra modules
         };
-        t14-iso = inputs.nixpkgs.lib.nixosSystem {
-          system = "x86_64-linux";
-          specialArgs = { inherit inputs; };
-          modules = [
-            ./hosts/t14/iso.nix
-            { nixpkgs.config.allowUnfree = true; }
-            {
-              nixpkgs.overlays = [
-                (import ./overlays/linux.nix { inherit self inputs; })
-              ];
-            }
-          ];
-        };
       };
 
       # --- Darwin configurations ---
@@ -361,7 +352,9 @@
         };
 
       # --- Formatter ---
-      formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixfmt-rfc-style;
-      formatter.x86_64-darwin = nixpkgs.legacyPackages.x86_64-darwin.nixfmt-rfc-style;
+      # Use through `nix fmt -- <path>` in this repo.
+      # Do not invoke `nixfmt-rfc-style` directly; the executable is `nixfmt`.
+      formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixfmt;
+      formatter.x86_64-darwin = nixpkgs.legacyPackages.x86_64-darwin.nixfmt;
     };
 }
