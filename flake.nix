@@ -222,27 +222,13 @@
       };
 
       # --- Home module lists ---
-      linuxHomeModules = [
-        ./home-linux/base.nix
-        ./home-linux/shell.nix
-        ./home-linux/theme.nix
-        ./home-linux/btop.nix
-        ./home-linux/tmux.nix
-        ./home-linux/neovim.nix
-        ./home-linux/mate.nix
-        ./home-linux/rofi.nix
-        ./home-linux/git.nix
-        ./home-linux/gh.nix
-        ./home-linux/ghostty.nix
-        ./home-linux/kitty.nix
-        ./home-linux/opencode.nix
-        ./home-linux/opencode-profile.nix
-        ./home-linux/openfang.nix
-        ./home-linux/chrome-apps.nix
-        ./home-linux/ssh.nix
-        ./home-linux/sops.nix
-        inputs.sops-nix.homeManagerModules.sops
-      ];
+      # Canonical base list of shared Home Manager modules. See
+      # `home-linux/shared-modules.nix` for the full list. The
+      # NixOS-integrated home-manager module (`modules/base/home-manager.nix`)
+      # imports the same list, so both code paths stay in sync.
+      linuxHomeModules = import ./home-linux/shared-modules.nix {
+        inherit inputs;
+      };
 
       darwinHomeModules = [
         ./home-darwin
@@ -366,6 +352,7 @@
         {
           rog = baseHomeConfig "rog" "x86_64-linux" "glats" [
             ./home-linux/conky-rog.nix
+            ./home-linux/openfang.nix
           ];
           thinkcentre = baseHomeConfig "thinkcentre" "x86_64-linux" "glats" [
             ./home-linux/conky-thinkcentre.nix
