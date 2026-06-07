@@ -24,10 +24,10 @@
   ./gh.nix
   ./ghostty.nix
   ./kitty.nix
-  ./opencode.nix
-  ./opencode-profile.nix
+  ../shared/opencode.nix
+  ../shared/opencode-profile.nix
   ./chrome-apps.nix
   ./ssh.nix
-  ./sops.nix
+  ../shared/sops.nix
   inputs.sops-nix.homeManagerModules.sops
 ]
