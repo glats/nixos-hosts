@@ -15,27 +15,28 @@
     ../../modules/base/sops.nix
     ../../modules/base/users.nix
     ../../modules/base/zsh.nix
-    # TODO phase 2: ../../modules/base/logind.nix
-    # TODO phase 2: ../../modules/base/packages.nix
+    ../../modules/base/logind.nix
+    ../../modules/base/packages.nix
     # NOTA: modules/base/home-manager.nix NO se importa — usamos nuestra
     # propia config de home-manager abajo con un set mínimo.
 
     # === DESKTOP (TEMPORAL — migraremos a Hyprland+Omarchy) ===
     ../../modules/desktop/gnome.nix
     ../../modules/desktop/i18n.nix
-    # TODO phase 1: ../../modules/desktop/fonts.nix
-    # TODO phase 1: ../../modules/desktop/kmscon.nix
+    ../../modules/desktop/fonts.nix
+    ../../modules/desktop/kmscon.nix
 
     # === HARDWARE ===
-    # TODO phase 1: ../../modules/hardware/amd-laptop.nix
+    ../../modules/hardware/amd-laptop.nix
 
     # === NETWORKING (mínimo) ===
     ../../modules/networking/openssh.nix
-    # TODO phase 2: ../../modules/networking/firewall.nix
-    # TODO phase 2: ../../modules/networking/avahi.nix
+    # firewall.nix lo desactivaría (`enable = false`); lo salteamos en t14
+    # hasta definir reglas propias. TODO: crear un t14-firewall.nix.
+    ../../modules/networking/avahi.nix
 
     # === HOST SECRETS (vacío por ahora) ===
-    # TODO phase 2: ./secrets.nix
+    ./secrets.nix
 
     # === BOOT ===
     # Necesario: el sistema no bootea sin bootloader configurado.
@@ -47,7 +48,12 @@
     networkmanager.enable = true;
   };
 
-  nixpkgs.config.allowUnfree = true;
+  nixpkgs.config = {
+    allowUnfree = true;
+    # fonts.nix incluye joypixels; requiere aceptación explícita de licencia.
+    allowUnfreePackages = [ "joypixels" ];
+    joypixels.acceptLicense = true;
+  };
 
   # Habilita el módulo de boot importado (systemd-boot, plymouth, kernel zen)
   boot-settings.enable = true;
