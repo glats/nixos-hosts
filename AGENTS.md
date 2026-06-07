@@ -11,7 +11,8 @@
 | Build & switch | `nixos-build` |
 | Dry run | `nixos-build dry` |
 | Validate | `nix flake check` |
-| Format | `format-nix` |
+| Format (full repo) | `format-nix` |
+| Format (single file) | `nix fmt -- <path>` |
 
 ## Project Structure
 ```
@@ -30,6 +31,8 @@ secrets/                      # sops-nix (encrypted)
 ## Boundaries
 - ✅ ALWAYS: Run `nix flake check` before finishing
 - ✅ ALWAYS: Run `format-nix` after editing .nix files
+- INFO: For a single `.nix` file, use `nix fmt -- <path>`
+- INFO: Do not use `nix shell nixpkgs#nixfmt-rfc-style --command nixfmt-rfc-style ...`; this repo's formatter is exposed through `nix fmt`, and the package executable is `nixfmt`
 - ⚠️ ASK: Before editing `hardware-configuration.nix`
 - ❌ NEVER: Edit files in `secrets/` directly (use sops)
 
@@ -42,7 +45,9 @@ secrets/                      # sops-nix (encrypted)
 6. **overlays.nix**: NOT a module - imported via `import` in `flake.nix`, not `imports`
 7. **Home Manager**: NixOS-integrated only via `modules/base/home-manager.nix`
 8. **Formatting**: All .nix must pass `nixfmt`
-9. **OpenCode Configuration**: When updating agent profiles, use `IDENTITY.md` and `SYSTEM_RULES.md` separately instead of monolithic `PERSONA.md` (which is auto-assembled for legacy systems).
+9. **Formatter workflow**: Use `format-nix` for full-repo formatting and `nix fmt -- <path>` for a single file
+10. **Formatter anti-pattern**: Never run `nix shell nixpkgs#nixfmt-rfc-style --command nixfmt-rfc-style ...` in this repo
+11. **OpenCode Configuration**: When updating agent profiles, use `IDENTITY.md` and `SYSTEM_RULES.md` separately instead of monolithic `PERSONA.md` (which is auto-assembled for legacy systems).
 
 ## Flake Inputs
 | Input | Source | Purpose |
