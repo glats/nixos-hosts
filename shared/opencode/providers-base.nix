@@ -66,7 +66,7 @@ let
 
   allProviders = nvidiaProvider;
 
-  activeProviderName = "free";
+  activeProviderName = "github-copilot";
 
   providers = [
     {

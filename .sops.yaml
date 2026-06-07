@@ -21,6 +21,14 @@ creation_rules:
           - *host_thinkcentre
 
   # Shared system secrets
+  - path_regex: secrets/system/.+
+    key_groups:
+      - age:
+          - *admin_glats
+          - *host_rog
+          - *host_thinkcentre
+          - *host_t14
+
   - path_regex: secrets/shared/.+
     key_groups:
       - age:
@@ -37,6 +45,15 @@ creation_rules:
           - *host_rog
           - *host_thinkcentre
           - *host_mact2
+          - *host_t14
+
+  # User secrets (catch-all for other user files)
+  - path_regex: secrets/user/.+
+    key_groups:
+      - age:
+          - *admin_glats
+          - *host_rog
+          - *host_thinkcentre
           - *host_t14
 
   # macOS-only user secrets
