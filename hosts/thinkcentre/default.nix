@@ -1,7 +1,8 @@
-{ config
-, pkgs
-, lib
-, ...
+{
+  config,
+  pkgs,
+  lib,
+  ...
 }:
 
 {
@@ -29,7 +30,7 @@
     ../../modules/desktop/i18n.nix
     ../../modules/desktop/kmscon.nix
     ../../modules/features/services/xrdp.nix
-    ./services/github-mcp-server.nix
+    ../../modules/features/services/github-mcp-server.nix
     ./services/maquilinux-mounts.nix
 
     # Virtualisation
