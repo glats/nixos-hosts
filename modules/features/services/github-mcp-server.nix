@@ -24,14 +24,21 @@ let
     exec ${pkgs.github-mcp-server}/bin/github-mcp-server "''${@:-stdio}"
   '';
 in
-
 {
   # GitHub MCP Server - Model Context Protocol server for GitHub
   # Provides AI tools with access to GitHub's platform via MCP protocol
   # Uses GitHub Personal Access Token from sops secrets (declared in modules/base/sops.nix)
 
-  environment.systemPackages = [
-    github-mcp-server-wrapped
-    pkgs.github-mcp-server # Also install original for reference
-  ];
+  options.services.github-mcp-server-custom = {
+    enable = lib.mkEnableOption "GitHub MCP Server" // {
+      default = true;
+    };
+  };
+
+  config = lib.mkIf config.services.github-mcp-server-custom.enable {
+    environment.systemPackages = [
+      github-mcp-server-wrapped
+      pkgs.github-mcp-server # Also install original for reference
+    ];
+  };
 }

@@ -1,56 +1,76 @@
-{ config, pkgs, ... }:
-
-let
-  btopWithCuda = pkgs.btop.override { cudaSupport = true; };
-in
 {
-  boot.kernelModules = [ "nvidia" "nvidia_modeset" "nvidia_uvm" "nvidia_drm" ];
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
-  boot.extraModprobeConfig = ''
-    options nvidia NVreg_PreserveVideoMemoryAllocations=0 NVreg_DynamicPowerManagement=0x00
-    options nvidia-drm modeset=1
-  '';
-
-  hardware.nvidia = {
-    open = false;
-    nvidiaSettings = true;
-    # GTX 1050 requires legacy 580.xx driver (595.xx dropped support for this GPU)
-    package = config.boot.kernelPackages.nvidiaPackages.legacy_580;
+{
+  options.hardware.nvidia-custom = {
+    enable = lib.mkEnableOption "NVIDIA hardware configuration" // {
+      default = true;
+    };
   };
 
-  services.xserver.videoDrivers = [ "nvidia" ];
+  config = lib.mkIf config.hardware.nvidia-custom.enable (
+    let
+      btopWithCuda = pkgs.btop.override { cudaSupport = true; };
+    in
+    {
+      boot.kernelModules = [
+        "nvidia"
+        "nvidia_modeset"
+        "nvidia_uvm"
+        "nvidia_drm"
+      ];
 
-  hardware.nvidia-container-toolkit.enable = true;
+      boot.extraModprobeConfig = ''
+        options nvidia NVreg_PreserveVideoMemoryAllocations=0 NVreg_DynamicPowerManagement=0x00
+        options nvidia-drm modeset=1
+      '';
 
-  hardware.graphics = {
-    enable = true;
-    enable32Bit = true;
-    extraPackages = with pkgs; [
-      nvidia-vaapi-driver
-    ];
-  };
+      hardware.nvidia = {
+        open = false;
+        nvidiaSettings = true;
+        # GTX 1050 requires legacy 580.xx driver (595.xx dropped support for this GPU)
+        package = config.boot.kernelPackages.nvidiaPackages.legacy_580;
+      };
 
-  environment.etc."X11/xorg.conf.d/10-nvidia-monitor.conf".text = ''
-    Section "Monitor"
-        Identifier      "eDP-1"
-        Option          "ignore" "true"
-    EndSection
+      services.xserver.videoDrivers = [ "nvidia" ];
 
-    Section "Monitor"
-        Identifier      "HDMI-1"
-        Option          "Enable" "true"
-    EndSection
-  '';
+      hardware.nvidia-container-toolkit.enable = true;
 
-  environment.systemPackages = with pkgs; [
-    nvtopPackages.nvidia
-    nvidia-container-toolkit
-  ];
+      hardware.graphics = {
+        enable = true;
+        enable32Bit = true;
+        extraPackages = with pkgs; [
+          nvidia-vaapi-driver
+        ];
+      };
 
-  security.wrappers.btop = {
-    owner = "root";
-    group = "root";
-    capabilities = "cap_perfmon=ep";
-    source = "${btopWithCuda}/bin/btop";
-  };
+      environment.etc."X11/xorg.conf.d/10-nvidia-monitor.conf".text = ''
+        Section "Monitor"
+            Identifier      "eDP-1"
+            Option          "ignore" "true"
+        EndSection
+
+        Section "Monitor"
+            Identifier      "HDMI-1"
+            Option          "Enable" "true"
+        EndSection
+      '';
+
+      environment.systemPackages = with pkgs; [
+        nvtopPackages.nvidia
+        nvidia-container-toolkit
+      ];
+
+      security.wrappers.btop = {
+        owner = "root";
+        group = "root";
+        capabilities = "cap_perfmon=ep";
+        source = "${btopWithCuda}/bin/btop";
+      };
+    }
+  );
 }
