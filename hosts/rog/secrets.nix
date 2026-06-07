@@ -1,8 +1,5 @@
 { lib, ... }:
 
-let
-  isRog = true;
-in
 {
   # Rog-specific secret declarations via sops
   # These reference encrypted files in ../../secrets/host/rog/ and ../../secrets/shared/
