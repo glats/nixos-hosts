@@ -86,12 +86,6 @@
       flake = false;
     };
 
-    # LazyVim starter (pinned via flake input, no sha256 needed here)
-    lazyvim-starter = {
-      url = "github:LazyVim/starter";
-      flake = false;
-    };
-
     # VS Code extensions as Nix
     nix-vscode-extensions = {
       url = "github:nix-community/nix-vscode-extensions";
@@ -105,15 +99,16 @@
   };
 
   outputs =
-    inputs@{ self
-    , nixpkgs
-    , home-manager
-    , sops-nix
-    , nix-colors
-    , omarchy-nix
-    , gentle-ai-src
-    , engram-src
-    , ...
+    inputs@{
+      self,
+      nixpkgs,
+      home-manager,
+      sops-nix,
+      nix-colors,
+      omarchy-nix,
+      gentle-ai-src,
+      engram-src,
+      ...
     }:
     let
       # --- Builders ---
@@ -162,47 +157,41 @@
       openfang = linuxPkgs.callPackage ./pkgs/openfang { };
 
       # verify-models: Test LLM model availability across free-tier providers
-      verify-models = linuxPkgs.writers.writePython3Bin "verify-models"
-        {
-          libraries = [ linuxPkgs.python3Packages.openai ];
-          flakeIgnore = [
-            "E501"
-            "W503"
-            "E265"
-            "E266"
-            "F702"
-          ];
-        }
-        (builtins.readFile ./scripts/verify-models.py);
+      verify-models = linuxPkgs.writers.writePython3Bin "verify-models" {
+        libraries = [ linuxPkgs.python3Packages.openai ];
+        flakeIgnore = [
+          "E501"
+          "W503"
+          "E265"
+          "E266"
+          "F702"
+        ];
+      } (builtins.readFile ./scripts/verify-models.py);
 
       # verify-tiers: Test every model in every OpenCode tier list (raw API)
-      verify-tiers = linuxPkgs.writers.writePython3Bin "verify-tiers"
-        {
-          libraries = [ linuxPkgs.python3Packages.openai ];
-          flakeIgnore = [
-            "E501"
-            "W503"
-            "E265"
-            "E266"
-            "E226"
-            "F702"
-          ];
-        }
-        (builtins.readFile ./scripts/verify-tiers.py);
+      verify-tiers = linuxPkgs.writers.writePython3Bin "verify-tiers" {
+        libraries = [ linuxPkgs.python3Packages.openai ];
+        flakeIgnore = [
+          "E501"
+          "W503"
+          "E265"
+          "E266"
+          "E226"
+          "F702"
+        ];
+      } (builtins.readFile ./scripts/verify-tiers.py);
 
       # verify-opencode: Test models through opencode run (catches SDK/integration bugs)
-      verify-opencode = linuxPkgs.writers.writePython3Bin "verify-opencode"
-        {
-          flakeIgnore = [
-            "E501"
-            "W503"
-            "E265"
-            "E266"
-            "E226"
-            "F702"
-          ];
-        }
-        (builtins.readFile ./scripts/verify-opencode.py);
+      verify-opencode = linuxPkgs.writers.writePython3Bin "verify-opencode" {
+        flakeIgnore = [
+          "E501"
+          "W503"
+          "E265"
+          "E266"
+          "E226"
+          "F702"
+        ];
+      } (builtins.readFile ./scripts/verify-opencode.py);
 
       # Library functions for external use (non-NixOS portability)
       opencode-config-lib = import ./pkgs/opencode-config {
