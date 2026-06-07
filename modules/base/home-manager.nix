@@ -21,6 +21,10 @@ in
       inherit inputs;
       hostName = config.networking.hostName;
       conkyConfig = config.conky-config;
+      # Pass the active login user so parameterized modules
+      # (e.g. home-linux/base.nix) can derive home.username and
+      # home.homeDirectory without hardcoding the name.
+      username = "glats";
       # Force rebuild: 2026-05-03
     };
     users.glats.imports =
