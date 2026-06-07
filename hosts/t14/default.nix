@@ -15,7 +15,6 @@
     ../../modules/base/sops.nix
     ../../modules/base/users.nix
     ../../modules/base/zsh.nix
-    ../../modules/base/logind.nix
     ../../modules/base/packages.nix
     # NOTA: modules/base/home-manager.nix NO se importa — usamos nuestra
     # propia config de home-manager abajo con un set mínimo.
@@ -67,12 +66,6 @@
   };
   console.keyMap = lib.mkForce "la-latin1";
 
-  # SOPS en t14: usamos solo SSH key como age identity. modules/base/sops.nix
-  # configura un keyFile separado (/var/lib/sops-nix/key.txt) que no
-  # generamos en este host; lo anulamos explícitamente para que la
-  # activation no falle.
-  sops.age.keyFile = lib.mkForce "/dev/null";
-  sops.age.generateKey = lib.mkForce false;
 
   # === HOME-MANAGER ===
   # Set mínimo para fase GNOME-temporal. No importamos
