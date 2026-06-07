@@ -1,8 +1,11 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
-  isRog = config.networking.hostName == "rog";
-
   # MATE packages not installed by services.xserver.desktopManager.mate.enable
   matePkgs = with pkgs; [
     atril
@@ -153,15 +156,24 @@ let
 in
 
 {
-  environment.systemPackages = with pkgs; [
-    git
-    neovim
-    nodejs_22
-    bun
-    docker
-    opencode
-    openfang
-    asus-fan-control
-    pipewire-module-xrdp
-  ] ++ matePkgs ++ cliTools ++ devTooling ++ desktopApps ++ mediaSupport ++ browsers ++ virtualization;
+  environment.systemPackages =
+    with pkgs;
+    [
+      git
+      neovim
+      nodejs_22
+      bun
+      docker
+      opencode
+      openfang
+      asus-fan-control
+      pipewire-module-xrdp
+    ]
+    ++ matePkgs
+    ++ cliTools
+    ++ devTooling
+    ++ desktopApps
+    ++ mediaSupport
+    ++ browsers
+    ++ virtualization;
 }
