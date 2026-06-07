@@ -1,7 +1,8 @@
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }:
 
 {
@@ -119,7 +120,7 @@
       }
 
       code-work() {
-        local repo_root="/home/glats/.nixos"
+        local repo_root="${config.home.homeDirectory}/.nixos"
         local worktree_name="''${1:-}"
         
         # Create worktree
