@@ -31,8 +31,6 @@
 
     # === NETWORKING (mínimo) ===
     ../../modules/networking/openssh.nix
-    # firewall.nix lo desactivaría (`enable = false`); lo salteamos en t14
-    # hasta definir reglas propias. TODO: crear un t14-firewall.nix.
     ../../modules/networking/avahi.nix
 
     # === HOST SECRETS (vacío por ahora) ===
@@ -46,6 +44,9 @@
   networking = {
     hostName = "t14";
     networkmanager.enable = true;
+    # Sin firewall en t14 (decisión del usuario: entorno de desarrollo,
+    # máquina de un solo usuario en redes controladas).
+    firewall.enable = false;
   };
 
   nixpkgs.config = {
