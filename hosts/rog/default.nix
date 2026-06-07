@@ -42,6 +42,7 @@
     ../../modules/desktop/i18n.nix
     ../../modules/desktop/kmscon.nix
     ../../modules/features/services/xrdp.nix
+    ../../modules/features/services/github-mcp-server.nix
 
     # Services (rog-specific)
     ./services/arr-stack.nix
@@ -54,7 +55,6 @@
     ./services/fileshelter.nix
     ./services/flaresolverr.nix
     ./services/ftp.nix
-    ./services/github-mcp-server.nix
     ./services/gonic.nix
     ./services/guacamole.nix
     ./services/jellyfin.nix
