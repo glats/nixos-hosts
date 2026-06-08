@@ -12,12 +12,6 @@ let
   # Import centralized provider configuration
   providers = import ./opencode/providers.nix { inherit lib; };
 
-  # Pure library functions - no config references
-  opencodeLib = import ../pkgs/opencode-config {
-    inherit lib;
-    writeText = pkgs.writeText;
-  };
-
   # Single runtime configuration
   runtimeConfig = {
     dir = "opencode";
