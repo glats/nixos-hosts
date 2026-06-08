@@ -1,30 +1,12 @@
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
 
 let
-  hexToRgb = hex:
+  hexToRgb =
+    hex:
     let
-      n = c: {
-        "0" = 0;
-        "1" = 1;
-        "2" = 2;
-        "3" = 3;
-        "4" = 4;
-        "5" = 5;
-        "6" = 6;
-        "7" = 7;
-        "8" = 8;
-        "9" = 9;
-        "a" = 10;
-        "b" = 11;
-        "c" = 12;
-        "d" = 13;
-        "e" = 14;
-        "f" = 15;
-      }.${c};
-      byte = s: n (builtins.substring 0 1 s) * 16 + n (builtins.substring 1 1 s);
-      r = byte (builtins.substring 0 2 hex);
-      g = byte (builtins.substring 2 2 hex);
-      b = byte (builtins.substring 4 2 hex);
+      r = lib.fromHexString (builtins.substring 0 2 hex);
+      g = lib.fromHexString (builtins.substring 2 2 hex);
+      b = lib.fromHexString (builtins.substring 4 2 hex);
     in
     "${toString r},${toString g},${toString b}";
 

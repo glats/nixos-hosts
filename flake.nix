@@ -120,7 +120,7 @@
           overlays = if nixpkgs.lib.hasSuffix "linux" s then [ linuxOverlay ] else [ darwinOverlay ];
         };
 
-      # Per-system package definitions and verify-* script helpers.
+      # Per-system package definitions.
       # See lib/packages.nix for the full interface.
       packages = import ./lib/packages.nix {
         inherit inputs;
@@ -129,8 +129,6 @@
       inherit (packages)
         linuxPackages
         darwinPackages
-        verifyIgnore
-        mkVerifyScript
         ;
 
       # Library functions for external use (non-NixOS portability).
@@ -176,18 +174,6 @@
 
       # --- Apps for nix run ---
       apps.x86_64-linux = {
-        verify-models = {
-          type = "app";
-          program = "${linuxPackages.verify-models}/bin/verify-models";
-        };
-        verify-tiers = {
-          type = "app";
-          program = "${linuxPackages.verify-tiers}/bin/verify-tiers";
-        };
-        verify-opencode = {
-          type = "app";
-          program = "${linuxPackages.verify-opencode}/bin/verify-opencode";
-        };
         nixos-build = {
           type = "app";
           program = "${linuxPackages.nixos-scripts}/bin/nixos-build";
