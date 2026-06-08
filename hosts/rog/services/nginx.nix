@@ -1,6 +1,86 @@
-{ config, pkgs, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
+let
+  domain = "glats.org";
 
+  # Standard security headers block. frameOption = SAMEORIGIN | DENY
+  secHeaders = frameOption: ''
+    add_header X-Content-Type-Options nosniff always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header X-Frame-Options ${frameOption} always;
+  '';
+
+  # Generate a simple proxy vhost (port + optional locExtra/vhostExtra)
+  mkProxyVhost =
+    {
+      port,
+      locExtra ? "",
+      vhostExtra ? "",
+      frame ? "SAMEORIGIN",
+      basicAuth ? null,
+    }:
+    {
+      useACMEHost = domain;
+      forceSSL = true;
+      locations."/" = {
+        proxyPass = "http://127.0.0.1:${toString port}";
+        proxyWebsockets = true;
+      }
+      // lib.optionalAttrs (locExtra != "") { extraConfig = locExtra; };
+      extraConfig = secHeaders frame + vhostExtra;
+    }
+    // lib.optionalAttrs (basicAuth != null) { basicAuthFile = basicAuth; };
+
+  # ARR-style location extra config: standard headers + 90s timeouts
+  arrLocExtra = ''
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_connect_timeout 90s;
+    proxy_send_timeout 90s;
+    proxy_read_timeout 90s;
+  '';
+
+  # ARR stack - data-driven via port mapping
+  arrServices = {
+    radarr = 7878;
+    sonarr = 8989;
+    prowlarr = 9696;
+    bazarr = 6767;
+  };
+  arrVhosts = lib.mapAttrs' (name: port: {
+    name = "${name}.${domain}";
+    value = mkProxyVhost {
+      inherit port;
+      locExtra = arrLocExtra;
+    };
+  }) arrServices;
+
+  # Qbit has extra X-Real-IP and X-Forwarded-For headers
+  qbitLocExtra = ''
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_connect_timeout 90s;
+    proxy_send_timeout 90s;
+    proxy_read_timeout 90s;
+  '';
+
+  # Seerr has extra X-Real-IP header
+  seerrLocExtra = ''
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_connect_timeout 90s;
+    proxy_send_timeout 90s;
+    proxy_read_timeout 90s;
+  '';
+in
 {
   security.acme = {
     acceptTerms = true;
@@ -35,8 +115,14 @@
     virtualHosts = {
       "localhost" = {
         listen = [
-          { addr = "127.0.0.1"; port = 80; }
-          { addr = "172.16.0.5"; port = 80; }
+          {
+            addr = "127.0.0.1";
+            port = 80;
+          }
+          {
+            addr = "172.16.0.5";
+            port = 80;
+          }
         ];
         serverName = "localhost 172.16.0.5";
 
@@ -64,7 +150,7 @@
             fancyindex_localtime on;
             fancyindex_show_dotfiles off;
           }
-          
+
           # files/ - fancyindex for local network
           location /files/ {
             alias /run/media/stuff/droppy/nginx/;
@@ -75,9 +161,7 @@
           }
 
           # Security headers
-          add_header X-Content-Type-Options nosniff always;
-          add_header X-XSS-Protection "1; mode=block" always;
-          add_header X-Frame-Options DENY always;
+          ${secHeaders "DENY"}
         '';
       };
 
@@ -104,7 +188,7 @@
           # uploads/ - autoindex restricted to local network, files accessible to all
           location /uploads/ {
             alias /run/media/stuff/droppy/nginx/;
-            
+
             # Directory listing only for local network
             location = /uploads/ {
               allow 172.16.0.0/24;
@@ -113,11 +197,11 @@
               autoindex on;
             }
           }
-          
+
           # files/ - autoindex restricted to local network, files accessible to all
           location /files/ {
             alias /run/media/stuff/droppy/nginx/;
-            
+
             # Directory listing only for local network
             location = /files/ {
               allow 172.16.0.0/24;
@@ -127,15 +211,12 @@
             }
           }
 
-          # Security headers
-          add_header X-Content-Type-Options nosniff always;
-          add_header X-XSS-Protection "1; mode=block" always;
-          add_header X-Frame-Options DENY always;
+          ${secHeaders "DENY"}
           add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
         '';
       };
 
-      "jelly.glats.org" = {
+      "jelly.${domain}" = {
         useACMEHost = "glats.org";
         forceSSL = true;
 
@@ -168,15 +249,10 @@
           '';
         };
 
-        extraConfig = ''
-          # Security headers
-          add_header X-Content-Type-Options nosniff always;
-          add_header X-XSS-Protection "1; mode=block" always;
-          add_header X-Frame-Options SAMEORIGIN always;
-        '';
+        extraConfig = secHeaders "SAMEORIGIN";
       };
 
-      "gonic.glats.org" = {
+      "gonic.${domain}" = {
         useACMEHost = "glats.org";
         forceSSL = true;
 
@@ -189,15 +265,10 @@
           '';
         };
 
-        extraConfig = ''
-          # Security headers
-          add_header X-Content-Type-Options nosniff always;
-          add_header X-XSS-Protection "1; mode=block" always;
-          add_header X-Frame-Options SAMEORIGIN always;
-        '';
+        extraConfig = secHeaders "SAMEORIGIN";
       };
 
-      "tty.glats.org" = {
+      "tty.${domain}" = {
         useACMEHost = "glats.org";
         forceSSL = true;
 
@@ -206,15 +277,10 @@
           proxyWebsockets = true;
         };
 
-        extraConfig = ''
-          # Security headers
-          add_header X-Content-Type-Options nosniff always;
-          add_header X-XSS-Protection "1; mode=block" always;
-          add_header X-Frame-Options SAMEORIGIN always;
-        '';
+        extraConfig = secHeaders "SAMEORIGIN";
       };
 
-      "guac.glats.org" = {
+      "guac.${domain}" = {
         useACMEHost = "glats.org";
         forceSSL = true;
 
@@ -232,15 +298,10 @@
           '';
         };
 
-        extraConfig = ''
-          # Security headers
-          add_header X-Content-Type-Options nosniff always;
-          add_header X-XSS-Protection "1; mode=block" always;
-          add_header X-Frame-Options SAMEORIGIN always;
-        '';
+        extraConfig = secHeaders "SAMEORIGIN";
       };
 
-      "code.glats.org" = {
+      "code.${domain}" = {
         useACMEHost = "glats.org";
         forceSSL = true;
 
@@ -256,15 +317,10 @@
           '';
         };
 
-        extraConfig = ''
-          # Security headers
-          add_header X-Content-Type-Options nosniff always;
-          add_header X-XSS-Protection "1; mode=block" always;
-          add_header X-Frame-Options SAMEORIGIN always;
-        '';
+        extraConfig = secHeaders "SAMEORIGIN";
       };
 
-      "file.glats.org" = {
+      "file.${domain}" = {
         useACMEHost = "glats.org";
         forceSSL = true;
 
@@ -285,15 +341,10 @@
           '';
         };
 
-        extraConfig = ''
-          # Security headers
-          add_header X-Content-Type-Options nosniff always;
-          add_header X-XSS-Protection "1; mode=block" always;
-          add_header X-Frame-Options SAMEORIGIN always;
-        '';
+        extraConfig = secHeaders "SAMEORIGIN";
       };
 
-      "drop.glats.org" = {
+      "drop.${domain}" = {
         useACMEHost = "glats.org";
         forceSSL = true;
 
@@ -303,10 +354,7 @@
           client_body_timeout 43200s;
           send_timeout 43200s;
 
-          # Security headers
-          add_header X-Content-Type-Options nosniff always;
-          add_header X-XSS-Protection "1; mode=block" always;
-          add_header X-Frame-Options SAMEORIGIN always;
+          ${secHeaders "SAMEORIGIN"}
         '';
 
         locations."/" = {
@@ -328,7 +376,7 @@
         };
       };
 
-      "repo.glats.org" = {
+      "repo.${domain}" = {
         useACMEHost = "glats.org";
         forceSSL = true;
         root = "/srv/glats/nginx/repo";
@@ -345,13 +393,12 @@
         };
 
         extraConfig = ''
-          # Security headers
           add_header X-Content-Type-Options nosniff always;
           add_header X-Frame-Options DENY always;
         '';
       };
 
-      "maquiroot.glats.org" = {
+      "maquiroot.${domain}" = {
         useACMEHost = "glats.org";
         forceSSL = true;
         root = "/srv/glats/nginx/maquiroot";
@@ -367,7 +414,6 @@
         };
 
         extraConfig = ''
-          # Security headers
           add_header X-Content-Type-Options nosniff always;
           add_header X-Frame-Options DENY always;
 
@@ -377,156 +423,17 @@
         '';
       };
 
-      # ============================================================
-      # ARR Stack Services
-      # ============================================================
-
-      "radarr.glats.org" = {
-        useACMEHost = "glats.org";
-        forceSSL = true;
-
-        locations."/" = {
-          proxyPass = "http://127.0.0.1:7878";
-          proxyWebsockets = true;
-          extraConfig = ''
-            proxy_set_header X-Forwarded-Host $host;
-            proxy_set_header X-Forwarded-Proto $scheme;
-            proxy_connect_timeout 90s;
-            proxy_send_timeout 90s;
-            proxy_read_timeout 90s;
-          '';
-        };
-
-        extraConfig = ''
-          add_header X-Content-Type-Options nosniff always;
-          add_header X-XSS-Protection "1; mode=block" always;
-          add_header X-Frame-Options SAMEORIGIN always;
-        '';
+      "qbit.${domain}" = mkProxyVhost {
+        port = 8080;
+        locExtra = qbitLocExtra;
       };
 
-      "sonarr.glats.org" = {
-        useACMEHost = "glats.org";
-        forceSSL = true;
-
-        locations."/" = {
-          proxyPass = "http://127.0.0.1:8989";
-          proxyWebsockets = true;
-          extraConfig = ''
-            proxy_set_header X-Forwarded-Host $host;
-            proxy_set_header X-Forwarded-Proto $scheme;
-            proxy_connect_timeout 90s;
-            proxy_send_timeout 90s;
-            proxy_read_timeout 90s;
-          '';
-        };
-
-        extraConfig = ''
-          add_header X-Content-Type-Options nosniff always;
-          add_header X-XSS-Protection "1; mode=block" always;
-          add_header X-Frame-Options SAMEORIGIN always;
-        '';
+      "seerr.${domain}" = mkProxyVhost {
+        port = 5055;
+        locExtra = seerrLocExtra;
       };
 
-      "prowlarr.glats.org" = {
-        useACMEHost = "glats.org";
-        forceSSL = true;
-
-        locations."/" = {
-          proxyPass = "http://127.0.0.1:9696";
-          proxyWebsockets = true;
-          extraConfig = ''
-            proxy_set_header X-Forwarded-Host $host;
-            proxy_set_header X-Forwarded-Proto $scheme;
-            proxy_connect_timeout 90s;
-            proxy_send_timeout 90s;
-            proxy_read_timeout 90s;
-          '';
-        };
-
-        extraConfig = ''
-          add_header X-Content-Type-Options nosniff always;
-          add_header X-XSS-Protection "1; mode=block" always;
-          add_header X-Frame-Options SAMEORIGIN always;
-        '';
-      };
-
-      "bazarr.glats.org" = {
-        useACMEHost = "glats.org";
-        forceSSL = true;
-
-        locations."/" = {
-          proxyPass = "http://127.0.0.1:6767";
-          proxyWebsockets = true;
-          extraConfig = ''
-            proxy_set_header X-Forwarded-Host $host;
-            proxy_set_header X-Forwarded-Proto $scheme;
-            proxy_connect_timeout 90s;
-            proxy_send_timeout 90s;
-            proxy_read_timeout 90s;
-          '';
-        };
-
-        extraConfig = ''
-          add_header X-Content-Type-Options nosniff always;
-          add_header X-XSS-Protection "1; mode=block" always;
-          add_header X-Frame-Options SAMEORIGIN always;
-        '';
-      };
-
-      "qbit.glats.org" = {
-        useACMEHost = "glats.org";
-        forceSSL = true;
-
-        locations."/" = {
-          proxyPass = "http://127.0.0.1:8080";
-          proxyWebsockets = true;
-          extraConfig = ''
-            proxy_set_header X-Forwarded-Host $host;
-            proxy_set_header X-Forwarded-Proto $scheme;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_connect_timeout 90s;
-            proxy_send_timeout 90s;
-            proxy_read_timeout 90s;
-          '';
-        };
-
-        extraConfig = ''
-          add_header X-Content-Type-Options nosniff always;
-          add_header X-XSS-Protection "1; mode=block" always;
-          add_header X-Frame-Options SAMEORIGIN always;
-        '';
-      };
-
-      "seerr.glats.org" = {
-        useACMEHost = "glats.org";
-        forceSSL = true;
-
-        locations."/" = {
-          proxyPass = "http://127.0.0.1:5055";
-          proxyWebsockets = true;
-          extraConfig = ''
-            proxy_set_header X-Forwarded-Host $host;
-            proxy_set_header X-Forwarded-Proto $scheme;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_connect_timeout 90s;
-            proxy_send_timeout 90s;
-            proxy_read_timeout 90s;
-          '';
-        };
-
-        extraConfig = ''
-          add_header X-Content-Type-Options nosniff always;
-          add_header X-XSS-Protection "1; mode=block" always;
-          add_header X-Frame-Options SAMEORIGIN always;
-        '';
-      };
-
-      # ============================================================
-      # Authelia SSO
-      # ============================================================
-
-      "auth.glats.org" = {
+      "auth.${domain}" = {
         useACMEHost = "glats.org";
         forceSSL = true;
 
@@ -541,14 +448,10 @@
           '';
         };
 
-        extraConfig = ''
-          add_header X-Content-Type-Options nosniff always;
-          add_header X-XSS-Protection "1; mode=block" always;
-          add_header X-Frame-Options SAMEORIGIN always;
-        '';
+        extraConfig = secHeaders "SAMEORIGIN";
       };
 
-      "openfang.glats.org" = {
+      "openfang.${domain}" = {
         useACMEHost = "glats.org";
         forceSSL = true;
 
@@ -620,14 +523,10 @@
           return = "302 https://auth.glats.org/?rd=https://openfang.glats.org$request_uri";
         };
 
-        extraConfig = ''
-          # Security headers
-          add_header X-Content-Type-Options nosniff always;
-          add_header X-XSS-Protection "1; mode=block" always;
-          add_header X-Frame-Options SAMEORIGIN always;
-        '';
+        extraConfig = secHeaders "SAMEORIGIN";
       };
-    };
+    }
+    // arrVhosts;
   };
 
   systemd.services.nginx = {
