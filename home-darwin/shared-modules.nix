@@ -23,8 +23,8 @@
   ./tmux.nix
   ./vscode.nix
   ./windsurf.nix
-  ./opencode.nix
-  ./opencode-profile.nix
+  ../shared/opencode.nix
+  ../shared/opencode-profile.nix
   ./sops.nix
   ./github-mcp-server-wrapper.nix
   inputs.sops-nix.homeManagerModules.sops
