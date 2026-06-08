@@ -217,10 +217,6 @@
       darwin-secret-guard-assets = darwinPkgs.callPackage ./pkgs/secret-guard-assets { };
       darwin-opencode-npm-packages = darwinPkgs.callPackage ./pkgs/opencode-npm-packages { };
 
-      darwin-opencode-config-lib = import ./pkgs/opencode-config {
-        inherit (darwinPkgs) lib writeText;
-      };
-
       # --- Home module lists ---
       # Canonical base list of shared Home Manager modules. See
       # `home-linux/shared-modules.nix` for the full list. The
