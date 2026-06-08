@@ -9,32 +9,8 @@
   imports = [
     ./hardware-configuration.nix
 
-    # Hardware
-    ../../modules/hardware/keyring.nix
-
-    # Base (transversal modules)
-    ../../modules/base/cachix.nix
-    ../../modules/base/home-manager.nix
-    ../../modules/base/logind.nix
-    ../../modules/base/nh.nix
-    ../../modules/base/nix.nix
-    ../../modules/base/packages.nix
-    ../../modules/base/polkit.nix
-    ../../modules/base/shutdown-fix.nix
-    ../../modules/base/sops.nix
-    ../../modules/base/users.nix
-    ../../modules/base/zsh.nix
-
-    # Desktop
-    ../../modules/desktop/fonts.nix
-    ../../modules/desktop/i18n.nix
-    ../../modules/desktop/kmscon.nix
-    ../../modules/features/services/xrdp.nix
-    ../../modules/features/services/github-mcp-server.nix
-    ./services/maquilinux-mounts.nix
-
-    # Virtualisation
-    ../../modules/virtualisation/docker.nix
+    # Shared profile (base + desktop + server)
+    ../../modules/profiles/server.nix
 
     # Thinkcentre secrets
     ./secrets.nix
@@ -45,14 +21,8 @@
     # Conky module (options from features/conky)
     ../../modules/features/conky
 
-    # Networking
-    ../../modules/networking/avahi.nix
-    ../../modules/networking/firewall.nix
-    ../../modules/networking/openssh.nix
-    ../../modules/networking/wol.nix
-
-    # Boot shared config
-    ../../modules/features/boot.nix
+    # Host-specific service
+    ./services/maquilinux-mounts.nix
   ];
 
   boot-settings = {
