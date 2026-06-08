@@ -34,19 +34,4 @@ final: prev: {
         --replace-fail 'p += WEATHER_LOCATION_CODE_LEN + 11;' 'p += WEATHER_LOCATION_CODE_LEN + 17;'
     '';
   });
-
-  # Override opencode to v1.14.33 which fixes the "Cannot access 'S' before initialization" bug
-  # https://github.com/anomalyco/opencode/pull/25449
-  opencode = prev.opencode.overrideAttrs (oldAttrs: {
-    version = "1.14.33";
-    src = final.fetchFromGitHub {
-      owner = "anomalyco";
-      repo = "opencode";
-      tag = "v1.14.33";
-      hash = "sha256-bnAV1ApOYZngG59fxFKrGN0jmBKWKnjktsbKJiEOaSo=";
-    };
-    node_modules = oldAttrs.node_modules.overrideAttrs {
-      outputHash = "sha256-Zfgx97up2qPnDSGYFTIjdEioLHp4YCZSIgMGR5Zi6k8=";
-    };
-  });
 }
