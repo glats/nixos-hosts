@@ -1,4 +1,4 @@
-# Per-system package definitions and verify-script helpers extracted from flake.nix.
+# Per-system package definitions extracted from flake.nix.
 #
 # Usage from flake.nix:
 #   let
@@ -16,30 +16,6 @@
 let
   linuxPkgs = pkgsFor "x86_64-linux";
   darwinPkgs = pkgsFor "x86_64-darwin";
-
-  # Shared flake8 ignores for all verify-* scripts.
-  # Mirrors the project's ruff/flake8 style: long lines OK, break-before-binary-op OK.
-  verifyIgnore = [
-    "E501"
-    "W503"
-    "E265"
-    "E266"
-    "F702"
-  ];
-
-  # Helper: build a verify-* script that calls `nix run` on the resulting derivation.
-  # Per-script extra ignore codes (e.g. E226 for ambiguous scalar expressions) are added
-  # by callers via `extraIgnore`.
-  mkVerifyScript =
-    {
-      name,
-      libraries ? [ ],
-      extraIgnore ? [ ],
-    }:
-    linuxPkgs.writers.writePython3Bin name {
-      inherit libraries;
-      flakeIgnore = verifyIgnore ++ extraIgnore;
-    } (builtins.readFile ./../scripts/${name}.py);
 
   # Cross-platform shared inputs
   sharedOpencodePaths = {
@@ -69,21 +45,6 @@ let
     secret-guard-assets = linuxPkgs.callPackage ../pkgs/secret-guard-assets { };
     opencode-npm-packages = linuxPkgs.callPackage ../pkgs/opencode-npm-packages { };
     openfang = linuxPkgs.callPackage ../pkgs/openfang { };
-
-    # Verify scripts: free-tier + tier-list + opencode-RUN integration tests.
-    verify-models = mkVerifyScript {
-      name = "verify-models";
-      libraries = [ linuxPkgs.python3Packages.openai ];
-    };
-    verify-tiers = mkVerifyScript {
-      name = "verify-tiers";
-      libraries = [ linuxPkgs.python3Packages.openai ];
-      extraIgnore = [ "E226" ];
-    };
-    verify-opencode = mkVerifyScript {
-      name = "verify-opencode";
-      extraIgnore = [ "E226" ];
-    };
   };
 
   darwinPackages = rec {
@@ -112,7 +73,5 @@ in
   inherit
     linuxPackages
     darwinPackages
-    verifyIgnore
-    mkVerifyScript
     ;
 }
