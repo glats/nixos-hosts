@@ -9,18 +9,8 @@
   imports = [
     ./hardware-configuration.nix
 
-    # Base (transversal modules)
-    ../../modules/base/cachix.nix
-    ../../modules/base/home-manager.nix
-    ../../modules/base/logind.nix
-    ../../modules/base/nh.nix
-    ../../modules/base/nix.nix
-    ../../modules/base/packages.nix
-    ../../modules/base/polkit.nix
-    ../../modules/base/shutdown-fix.nix
-    ../../modules/base/sops.nix
-    ../../modules/base/users.nix
-    ../../modules/base/zsh.nix
+    # Shared profile (base + desktop + server)
+    ../../modules/profiles/server.nix
 
     # Rog secrets
     ./secrets.nix
@@ -35,14 +25,6 @@
     ../../modules/hardware/nvidia.nix
     ../../modules/hardware/rog-shutdown.nix
     ../../modules/hardware/asus-fan-control.nix
-    ../../modules/hardware/keyring.nix
-
-    # Desktop
-    ../../modules/desktop/fonts.nix
-    ../../modules/desktop/i18n.nix
-    ../../modules/desktop/kmscon.nix
-    ../../modules/features/services/xrdp.nix
-    ../../modules/features/services/github-mcp-server.nix
 
     # Services (rog-specific)
     ./services/arr-stack.nix
@@ -66,18 +48,8 @@
     ./services/wetty.nix
     ./services/wireguard.nix
 
-    # Virtualisation
-    ../../modules/virtualisation/docker.nix
+    # Virtualisation (rog-specific)
     ../../modules/virtualisation/libvirt.nix
-
-    # Networking
-    ../../modules/networking/avahi.nix
-    ../../modules/networking/firewall.nix
-    ../../modules/networking/openssh.nix
-    ../../modules/networking/wol.nix
-
-    # Boot shared config
-    ../../modules/features/boot.nix
   ];
 
   boot-settings = {
