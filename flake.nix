@@ -98,11 +98,6 @@
       self,
       nixpkgs,
       home-manager,
-      sops-nix,
-      nix-colors,
-      omarchy-nix,
-      gentle-ai-src,
-      engram-src,
       ...
     }:
     let
@@ -125,97 +120,24 @@
           overlays = if nixpkgs.lib.hasSuffix "linux" s then [ linuxOverlay ] else [ darwinOverlay ];
         };
 
-      # --- Linux packages (x86_64-linux) ---
-      linuxPkgs = pkgsFor "x86_64-linux";
-
-      nixos-scripts = linuxPkgs.callPackage ./pkgs/nixos-scripts { };
-      gentle-ai = linuxPkgs.callPackage ./pkgs/gentle-ai { };
-      engram = linuxPkgs.callPackage ./pkgs/engram { };
-      gentle-ai-assets-vanilla = linuxPkgs.callPackage ./pkgs/gentle-ai-assets/vanilla.nix {
-        inherit gentle-ai-src;
+      # Per-system package definitions and verify-* script helpers.
+      # See lib/packages.nix for the full interface.
+      packages = import ./lib/packages.nix {
+        inherit inputs;
+        pkgsFor = pkgsFor;
       };
-      gentle-ai-assets = linuxPkgs.callPackage ./pkgs/gentle-ai-assets/default.nix {
-        inherit (linuxPkgs) writeText;
-        vanilla = gentle-ai-assets-vanilla;
-        extraSkills = ./shared/opencode/skills;
-        extraCommands = ./shared/opencode/commands;
-      };
-      engram-assets-vanilla = linuxPkgs.callPackage ./pkgs/engram-assets/vanilla.nix {
-        inherit engram-src;
-      };
-      engram-assets = linuxPkgs.callPackage ./pkgs/engram-assets/default.nix {
-        inherit engram;
-        vanilla = engram-assets-vanilla;
-      };
-      secret-guard-assets = linuxPkgs.callPackage ./pkgs/secret-guard-assets { };
-      opencode-npm-packages = linuxPkgs.callPackage ./pkgs/opencode-npm-packages { };
-      openfang = linuxPkgs.callPackage ./pkgs/openfang { };
+      inherit (packages)
+        linuxPackages
+        darwinPackages
+        verifyIgnore
+        mkVerifyScript
+        ;
 
-      # verify-models: Test LLM model availability across free-tier providers
-      verify-models = linuxPkgs.writers.writePython3Bin "verify-models" {
-        libraries = [ linuxPkgs.python3Packages.openai ];
-        flakeIgnore = [
-          "E501"
-          "W503"
-          "E265"
-          "E266"
-          "F702"
-        ];
-      } (builtins.readFile ./scripts/verify-models.py);
-
-      # verify-tiers: Test every model in every OpenCode tier list (raw API)
-      verify-tiers = linuxPkgs.writers.writePython3Bin "verify-tiers" {
-        libraries = [ linuxPkgs.python3Packages.openai ];
-        flakeIgnore = [
-          "E501"
-          "W503"
-          "E265"
-          "E266"
-          "E226"
-          "F702"
-        ];
-      } (builtins.readFile ./scripts/verify-tiers.py);
-
-      # verify-opencode: Test models through opencode run (catches SDK/integration bugs)
-      verify-opencode = linuxPkgs.writers.writePython3Bin "verify-opencode" {
-        flakeIgnore = [
-          "E501"
-          "W503"
-          "E265"
-          "E266"
-          "E226"
-          "F702"
-        ];
-      } (builtins.readFile ./scripts/verify-opencode.py);
-
-      # Library functions for external use (non-NixOS portability)
+      # Library functions for external use (non-NixOS portability).
+      # Kept for compatibility with consumers like glats/nix-macos.
       opencode-config-lib = import ./pkgs/opencode-config {
-        inherit (linuxPkgs) lib writeText;
+        inherit (pkgsFor "x86_64-linux") lib writeText;
       };
-
-      # --- Darwin packages (x86_64-darwin) ---
-      darwinPkgs = pkgsFor "x86_64-darwin";
-
-      darwin-gentle-ai = darwinPkgs.callPackage ./pkgs/gentle-ai { };
-      darwin-engram = darwinPkgs.callPackage ./pkgs/engram { };
-      darwin-gentle-ai-assets-vanilla = darwinPkgs.callPackage ./pkgs/gentle-ai-assets/vanilla.nix {
-        inherit gentle-ai-src;
-      };
-      darwin-gentle-ai-assets = darwinPkgs.callPackage ./pkgs/gentle-ai-assets/default.nix {
-        inherit (darwinPkgs) writeText;
-        vanilla = darwin-gentle-ai-assets-vanilla;
-        extraSkills = ./shared/opencode/skills;
-        extraCommands = ./shared/opencode/commands;
-      };
-      darwin-engram-assets-vanilla = darwinPkgs.callPackage ./pkgs/engram-assets/vanilla.nix {
-        inherit engram-src;
-      };
-      darwin-engram-assets = darwinPkgs.callPackage ./pkgs/engram-assets/default.nix {
-        engram = darwin-engram;
-        vanilla = darwin-engram-assets-vanilla;
-      };
-      darwin-secret-guard-assets = darwinPkgs.callPackage ./pkgs/secret-guard-assets { };
-      darwin-opencode-npm-packages = darwinPkgs.callPackage ./pkgs/opencode-npm-packages { };
 
       # --- Home module lists ---
       # Canonical base list of shared Home Manager modules. See
@@ -248,54 +170,27 @@
         };
     in
     {
-      # --- Linux packages ---
-      packages.x86_64-linux = {
-        inherit
-          nixos-scripts
-          gentle-ai
-          engram
-          gentle-ai-assets-vanilla
-          gentle-ai-assets
-          engram-assets-vanilla
-          engram-assets
-          secret-guard-assets
-          opencode-npm-packages
-          verify-models
-          verify-tiers
-          verify-opencode
-          openfang
-          ;
-      };
+      packages.x86_64-linux = linuxPackages;
 
-      # --- Darwin packages (no nixos-scripts, no openfang) ---
-      packages.x86_64-darwin = {
-        gentle-ai = darwin-gentle-ai;
-        engram = darwin-engram;
-        gentle-ai-assets-vanilla = darwin-gentle-ai-assets-vanilla;
-        gentle-ai-assets = darwin-gentle-ai-assets;
-        engram-assets-vanilla = darwin-engram-assets-vanilla;
-        engram-assets = darwin-engram-assets;
-        secret-guard-assets = darwin-secret-guard-assets;
-        opencode-npm-packages = darwin-opencode-npm-packages;
-      };
+      packages.x86_64-darwin = darwinPackages;
 
       # --- Apps for nix run ---
       apps.x86_64-linux = {
         verify-models = {
           type = "app";
-          program = "${verify-models}/bin/verify-models";
+          program = "${linuxPackages.verify-models}/bin/verify-models";
         };
         verify-tiers = {
           type = "app";
-          program = "${verify-tiers}/bin/verify-tiers";
+          program = "${linuxPackages.verify-tiers}/bin/verify-tiers";
         };
         verify-opencode = {
           type = "app";
-          program = "${verify-opencode}/bin/verify-opencode";
+          program = "${linuxPackages.verify-opencode}/bin/verify-opencode";
         };
         nixos-build = {
           type = "app";
-          program = "${nixos-scripts}/bin/nixos-build";
+          program = "${linuxPackages.nixos-scripts}/bin/nixos-build";
         };
       };
 
