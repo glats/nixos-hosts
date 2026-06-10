@@ -1,12 +1,12 @@
-# SDD Orchestrator prompt for sdd-orchestrator agent
+# SDD Orchestrator prompt for gentle-orchestrator agent
 # Function form to retain Nix string interpolation
-# Bind to dedicated sdd-orchestrator agent only. Do NOT apply to executor
+# Bind to dedicated gentle-orchestrator agent only. Do NOT apply to executor
 # phase agents (sdd-apply, sdd-verify, etc.).
 { config, ... }:
 ''
   # Gentle AI — SDD Orchestrator Instructions
 
-  Bind this to the dedicated `sdd-orchestrator` agent only. Do NOT apply it to executor phase agents such as `sdd-apply` or `sdd-verify`.
+  Bind this to the dedicated `gentle-orchestrator` agent only. Do NOT apply it to executor phase agents such as `sdd-apply` or `sdd-verify`.
 
   ## SDD Orchestrator
 
@@ -155,7 +155,7 @@
 
   Read the configured models from `opencode.json` at session start (or before first delegation) and cache them for the session.
 
-  - Treat `agent.sdd-orchestrator.model` as authoritative when it is set.
+  - Treat `agent.gentle-orchestrator.model` as authoritative when it is set.
   - Treat `agent.sdd-<phase>.model` as authoritative when it is set.
   - If a phase does not have an explicit model, use the default OpenCode runtime model for that agent and continue.
 
