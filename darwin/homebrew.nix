@@ -18,7 +18,7 @@
 
     # homebrew is best for GUI apps
     # nixpkgs is best for CLI tools
-    # gentle-ai, engram, opencode: managed by nix flake (pkgs/gentle-ai, pkgs/engram, pkgs/opencode)
+    # gentle-ai, engram: managed by nix flake (pkgs/gentle-ai, pkgs/engram)
     brews = [
       "leaf-md"
       "tw93/tap/mole"

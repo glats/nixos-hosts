@@ -1,5 +1,5 @@
-{ lib ? throw "providers-base.nix must be imported with lib"
-,
+{
+  lib ? throw "providers-base.nix must be imported with lib",
 }:
 
 let
@@ -21,41 +21,29 @@ let
         "minimaxai/minimax-m2.7" = {
           name = "MiniMax M2.7";
         };
-        "minimaxai/minimax-m2.5" = {
-          name = "MiniMax M2.5";
-        };
         "deepseek-ai/deepseek-v4-flash" = {
           name = "DeepSeek V4 Flash";
         };
         "deepseek-ai/deepseek-v4-pro" = {
           name = "DeepSeek V4 Pro";
         };
-        "nvidia/nemotron-3-super-120b-a12b" = {
-          name = "Nemotron 3 Super";
+        "nvidia/nemotron-3-ultra-550b-a55b" = {
+          name = "Nemotron 3 Ultra";
+        };
+        "stepfun-ai/step-3.7-flash" = {
+          name = "Step 3.7 Flash";
+        };
+        "mistralai/mistral-medium-3.5-128b" = {
+          name = "Mistral Medium 3.5";
         };
         "google/gemma-4-31b-it" = {
-          name = "Gemma 4 31B";
+          name = "Gemma 4";
         };
-        "meta/llama-4-maverick-17b-128e-instruct" = {
-          name = "Llama 4 Maverick";
+        "qwen/qwen3.5-397b-a17b" = {
+          name = "Qwen 3.5";
         };
         "openai/gpt-oss-120b" = {
-          name = "GPT-OSS 120B";
-        };
-        "openai/gpt-oss-20b" = {
-          name = "GPT-OSS 20B";
-        };
-        "qwen/qwen3-coder-480b-a35b-instruct" = {
-          name = "Qwen3 Coder 480B";
-        };
-        "qwen/qwen3-next-80b-a3b-instruct" = {
-          name = "Qwen3 Next 80B";
-        };
-        "meta/llama-3.3-70b-instruct" = {
-          name = "Llama 3.3 70B";
-        };
-        "meta/llama-3.1-8b-instruct" = {
-          name = "Llama 3.1 8B";
+          name = "GPT OSS 120b";
         };
         "moonshotai/kimi-k2.6" = {
           name = "Kimi K2.6";
@@ -66,30 +54,30 @@ let
 
   allProviders = nvidiaProvider;
 
-  activeProviderName = "opencode-go2";
+  activeProviderName = "nvidia";
 
   providers = [
     {
       name = "nvidia";
       phases = {
-        sdd-orchestrator = "nvidia/z-ai/glm-5.1";
-        sdd-init = "nvidia/nvidia/nemotron-3-super-120b-a12b";
-        sdd-explore = "nvidia/z-ai/glm-5.1";
-        sdd-propose = "nvidia/z-ai/glm-5.1";
-        sdd-spec = "nvidia/nvidia/nemotron-3-super-120b-a12b";
-        sdd-design = "nvidia/z-ai/glm-5.1";
-        sdd-tasks = "nvidia/nvidia/nemotron-3-super-120b-a12b";
+        gentle-orchestrator = "nvidia/deepseek-ai/deepseek-v4-pro";
+        sdd-init = "nvidia/deepseek-ai/deepseek-v4-flash";
+        sdd-explore = "nvidia/qwen/qwen3.5-397b-a17b";
+        sdd-propose = "nvidia/qwen/qwen3.5-397b-a17b";
+        sdd-spec = "nvidia/qwen/qwen3.5-397b-a17b";
+        sdd-design = "nvidia/qwen/qwen3.5-397b-a17b";
+        sdd-tasks = "nvidia/qwen/qwen3.5-397b-a17b";
         sdd-apply = "nvidia/minimaxai/minimax-m2.7";
-        sdd-verify = "nvidia/z-ai/glm-5.1";
-        sdd-archive = "nvidia/z-ai/glm-5.1";
-        sdd-onboard = "nvidia/z-ai/glm-5.1";
-        neutral = "nvidia/z-ai/glm-5.1";
+        sdd-verify = "nvidia/qwen/qwen3.5-397b-a17b";
+        sdd-archive = "nvidia/deepseek-ai/deepseek-v4-flash";
+        sdd-onboard = "nvidia/deepseek-ai/deepseek-v4-flash";
+        neutral = "nvidia/deepseek-ai/deepseek-v4-pro";
       };
     }
     {
       name = "github-copilot";
       phases = {
-        sdd-orchestrator = "github-copilot/gpt-5.4";
+        gentle-orchestrator = "github-copilot/gpt-5.4";
         sdd-init = "github-copilot/gpt-5.4-mini";
         sdd-explore = "github-copilot/gpt-5.4";
         sdd-propose = "github-copilot/claude-sonnet-4.6";
@@ -106,7 +94,7 @@ let
     {
       name = "opencode-go";
       phases = {
-        sdd-orchestrator = "opencode-go/kimi-k2.6";
+        gentle-orchestrator = "opencode-go/kimi-k2.6";
         sdd-init = "opencode-go/deepseek-v4-flash";
         sdd-explore = "opencode-go/deepseek-v4-flash";
         sdd-propose = "opencode-go/qwen3.7-max";
@@ -123,24 +111,24 @@ let
     {
       name = "opencode-go2";
       phases = {
-        sdd-orchestrator = "opencode-go/kimi-k2.6";
+        gentle-orchestrator = "opencode-go/kimi-k2.6";
         sdd-init = "opencode-go/deepseek-v4-flash";
         sdd-explore = "opencode-go/qwen3.7-plus";
-        sdd-propose = "opencode-go/kimi-k2.6";
+        sdd-propose = "opencode-go/qwen3.7-plus";
         sdd-spec = "opencode-go/qwen3.7-plus";
         sdd-design = "opencode-go/glm-5.1";
         sdd-tasks = "opencode-go/kimi-k2.6";
         sdd-apply = "opencode-go/minimax-m3";
         sdd-verify = "opencode-go/glm-5.1";
-        sdd-archive = "opencode-go/deepseek-v4-flash";
-        sdd-onboard = "opencode-go/deepseek-v4-flash";
+        sdd-archive = "opencode-go/deepseek-v4-pro";
+        sdd-onboard = "opencode-go/deepseek-v4-pro";
         neutral = "opencode-go/kimi-k2.6";
       };
     }
     {
       name = "free";
       phases = {
-        sdd-orchestrator = "opencode/minimax-m3-free";
+        gentle-orchestrator = "opencode/minimax-m3-free";
         sdd-init = "opencode/mimo-v2.5-free";
         sdd-explore = "opencode/minimax-m3-free";
         sdd-propose = "opencode/nemotron-3-super-free";
@@ -157,7 +145,7 @@ let
     {
       name = "deepseekfree";
       phases = {
-        sdd-orchestrator = "opencode/deepseek-v4-flash-free";
+        gentle-orchestrator = "opencode/deepseek-v4-flash-free";
         sdd-init = "opencode/deepseek-v4-flash-free";
         sdd-explore = "opencode/deepseek-v4-flash-free";
         sdd-propose = "opencode/deepseek-v4-flash-free";
@@ -173,12 +161,9 @@ let
     }
   ];
 
-  activeProvider = builtins.foldl'
-    (
-      acc: p: if p.name == activeProviderName then p else acc
-    )
-    null
-    providers;
+  activeProvider = builtins.foldl' (
+    acc: p: if p.name == activeProviderName then p else acc
+  ) null providers;
   getModelForPhase =
     phase: provider: if provider == null then null else provider.phases.${phase} or null;
 
