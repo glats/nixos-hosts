@@ -34,7 +34,6 @@ let
 
   # Get all SDD phase names
   sddPhases = [
-    "sdd-orchestrator"
     "sdd-init"
     "sdd-explore"
     "sdd-propose"
@@ -69,7 +68,11 @@ let
   # If no provider is active, returns empty set (build will fail with clear error)
   models =
     if providersConfig.activeProvider != null then
-      agentModels // { neutral = getModelForPhase "neutral" providersConfig.activeProvider; }
+      agentModels
+      // {
+        neutral = getModelForPhase "neutral" providersConfig.activeProvider;
+        gentle-orchestrator = getModelForPhase "gentle-orchestrator" providersConfig.activeProvider;
+      }
     else
       # No active provider - this is an error condition
       # Check activeProviderName in providers.nix
@@ -203,7 +206,7 @@ in
           model = models.neutral;
         };
 
-        sdd-orchestrator = {
+        gentle-orchestrator = {
           description = "Agent Teams Orchestrator - coordinates sub-agents, never does work inline";
           mode = "primary";
           permission = {
@@ -226,7 +229,7 @@ in
             mem_save = true;
             mem_get_observation = true;
           };
-          model = models.sdd-orchestrator;
+          model = models.gentle-orchestrator;
         };
       };
     in

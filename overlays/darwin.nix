@@ -20,7 +20,4 @@ in
     secret-guard-assets
     opencode-npm-packages
     ;
-
-  # OpenCode: use pre-built binary for darwin (source build breaks on macOS)
-  opencode = final.callPackage ../pkgs/opencode { };
 }

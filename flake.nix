@@ -29,6 +29,12 @@
       flake = false;
     };
 
+    # Caveman ultra-compressed communication skills
+    caveman-src = {
+      url = "github:JuliusBrussee/caveman";
+      flake = false;
+    };
+
     # engram upstream (for OpenCode plugin)
     # Must match version in pkgs/engram/default.nix
     engram-src = {
@@ -131,12 +137,6 @@
         darwinPackages
         ;
 
-      # Library functions for external use (non-NixOS portability).
-      # Kept for compatibility with consumers like glats/nix-macos.
-      opencode-config-lib = import ./pkgs/opencode-config {
-        inherit (pkgsFor "x86_64-linux") lib writeText;
-      };
-
       # --- Home module lists ---
       # Canonical base list of shared Home Manager modules. See
       # `home-linux/shared-modules.nix` for the full list. The
@@ -179,9 +179,6 @@
           program = "${linuxPackages.nixos-scripts}/bin/nixos-build";
         };
       };
-
-      # --- Reusable library functions ---
-      lib.opencode-config = opencode-config-lib;
 
       # --- Checks ---
       checks.x86_64-linux = {

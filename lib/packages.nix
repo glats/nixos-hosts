@@ -20,7 +20,8 @@ let
   # Cross-platform shared inputs
   sharedOpencodePaths = {
     extraSkills = ./../shared/opencode/skills;
-    extraCommands = ./../shared/opencode/commands;
+    # extraCommands: no local command forks; commands come from upstream
+    # gentle-ai-src and caveman-src via gentle-ai-assets-vanilla.
   };
 
   linuxPackages = rec {
@@ -29,11 +30,11 @@ let
     engram = linuxPkgs.callPackage ../pkgs/engram { };
     gentle-ai-assets-vanilla = linuxPkgs.callPackage ../pkgs/gentle-ai-assets/vanilla.nix {
       gentle-ai-src = inputs.gentle-ai-src;
+      caveman-src = inputs.caveman-src;
     };
     gentle-ai-assets = linuxPkgs.callPackage ../pkgs/gentle-ai-assets/default.nix {
-      inherit (linuxPkgs) writeText;
       vanilla = linuxPackages.gentle-ai-assets-vanilla;
-      inherit (sharedOpencodePaths) extraSkills extraCommands;
+      inherit (sharedOpencodePaths) extraSkills;
     };
     engram-assets-vanilla = linuxPkgs.callPackage ../pkgs/engram-assets/vanilla.nix {
       engram-src = inputs.engram-src;
@@ -52,11 +53,11 @@ let
     engram = darwinPkgs.callPackage ../pkgs/engram { };
     gentle-ai-assets-vanilla = darwinPkgs.callPackage ../pkgs/gentle-ai-assets/vanilla.nix {
       gentle-ai-src = inputs.gentle-ai-src;
+      caveman-src = inputs.caveman-src;
     };
     gentle-ai-assets = darwinPkgs.callPackage ../pkgs/gentle-ai-assets/default.nix {
-      inherit (darwinPkgs) writeText;
       vanilla = darwinPackages.gentle-ai-assets-vanilla;
-      inherit (sharedOpencodePaths) extraSkills extraCommands;
+      inherit (sharedOpencodePaths) extraSkills;
     };
     engram-assets-vanilla = darwinPkgs.callPackage ../pkgs/engram-assets/vanilla.nix {
       engram-src = inputs.engram-src;
