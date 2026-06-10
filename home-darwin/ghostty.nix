@@ -22,7 +22,7 @@
     palette = 5=#${config.colorScheme.palette.base0E}
     palette = 6=#${config.colorScheme.palette.base0C}
     palette = 7=#${config.colorScheme.palette.base05}
-    palette = 8=#${config.colorScheme.palette.base04}
+    palette = 8=#${config.colorScheme.palette.base03}
     palette = 9=#${config.colorScheme.palette.base09}
     palette = 10=#${config.colorScheme.palette.brightGreen}
     palette = 11=#${config.colorScheme.palette.brightYellow}

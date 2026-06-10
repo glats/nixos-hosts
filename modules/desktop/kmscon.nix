@@ -1,33 +1,9 @@
 { pkgs, lib, ... }:
 
 let
-  hexToRgb =
-    hex:
-    let
-      r = lib.fromHexString (builtins.substring 0 2 hex);
-      g = lib.fromHexString (builtins.substring 2 2 hex);
-      b = lib.fromHexString (builtins.substring 4 2 hex);
-    in
-    "${toString r},${toString g},${toString b}";
-
-  p = {
-    black = "000000";
-    red = "cc0403";
-    green = "19cb00";
-    yellow = "cecb00";
-    blue = "0d73cc";
-    magenta = "cb1ed1";
-    cyan = "0dcdcd";
-    white = "dddddd";
-    darkGrey = "8a8a8a";
-    brightRed = "f2201f";
-    brightGreen = "23fd00";
-    brightYellow = "fffd00";
-    brightBlue = "1a8fff";
-    brightMagenta = "fd28ff";
-    brightCyan = "14ffff";
-    brightWhite = "ffffff";
-  };
+  palette = import ../../shared/palette.nix;
+  colors = import ../../lib/colors.nix { inherit lib; };
+  p = palette.palette;
 in
 
 {
@@ -43,24 +19,24 @@ in
     ];
     extraConfig = ''
       palette=custom
-      palette-background=${hexToRgb p.black}
-      palette-foreground=${hexToRgb p.white}
-      palette-black=${hexToRgb p.black}
-      palette-red=${hexToRgb p.red}
-      palette-green=${hexToRgb p.green}
-      palette-yellow=${hexToRgb p.yellow}
-      palette-blue=${hexToRgb p.blue}
-      palette-magenta=${hexToRgb p.magenta}
-      palette-cyan=${hexToRgb p.cyan}
-      palette-light-grey=${hexToRgb p.white}
-      palette-dark-grey=${hexToRgb p.darkGrey}
-      palette-light-red=${hexToRgb p.brightRed}
-      palette-light-green=${hexToRgb p.brightGreen}
-      palette-light-yellow=${hexToRgb p.brightYellow}
-      palette-light-blue=${hexToRgb p.brightBlue}
-      palette-light-magenta=${hexToRgb p.brightMagenta}
-      palette-light-cyan=${hexToRgb p.brightCyan}
-      palette-white=${hexToRgb p.brightWhite}
+      palette-background=${colors.hexToRgb p.base00}
+      palette-foreground=${colors.hexToRgb p.base05}
+      palette-black=${colors.hexToRgb p.base00}
+      palette-red=${colors.hexToRgb p.base08}
+      palette-green=${colors.hexToRgb p.base0B}
+      palette-yellow=${colors.hexToRgb p.base0A}
+      palette-blue=${colors.hexToRgb p.base0D}
+      palette-magenta=${colors.hexToRgb p.base0E}
+      palette-cyan=${colors.hexToRgb p.base0C}
+      palette-light-grey=${colors.hexToRgb p.base05}
+      palette-dark-grey=${colors.hexToRgb p.base03}
+      palette-light-red=${colors.hexToRgb p.base09}
+      palette-light-green=${colors.hexToRgb p.brightGreen}
+      palette-light-yellow=${colors.hexToRgb p.brightYellow}
+      palette-light-blue=${colors.hexToRgb p.brightBlue}
+      palette-light-magenta=${colors.hexToRgb p.brightMagenta}
+      palette-light-cyan=${colors.hexToRgb p.brightCyan}
+      palette-white=${colors.hexToRgb p.base07}
     '';
   };
 }
