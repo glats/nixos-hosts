@@ -70,6 +70,7 @@ let
             provider = allProviders;
             mcp = enabledMcps;
             permission = cfg.permissions;
+            instructions = [ "SYSTEM_RULES.md" ];
           }
           // lib.optionalAttrs (cfg.disabledProviders != [ ]) { disabled_providers = cfg.disabledProviders; }
         )
