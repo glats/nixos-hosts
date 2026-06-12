@@ -1,7 +1,6 @@
-{
-  pkgs,
-  inputs,
-  ...
+{ pkgs
+, inputs
+, ...
 }:
 let
   # Build the upstream nvim config as a Nix store path so ~/.config/nvim

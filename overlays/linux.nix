@@ -1,8 +1,8 @@
 # Linux-specific overlay
 # Provides packages and overrides needed by NixOS hosts
-{
-  self,
-  inputs,
+{ self
+, inputs
+,
 }:
 final: prev: {
   # Cross-platform packages from flake outputs
