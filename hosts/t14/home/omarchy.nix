@@ -35,6 +35,11 @@
 
     # t14-specific overlays on top of omarchy.
     ./default.nix
+    ./starship.nix
+    ./elephant.nix
+    ./alacritty.nix
+    ./kitty.nix
+    ./fcitx5.nix
 
     # Compatible shared modules from home-linux/.  These are the same
     # modules the previous gnome.nix imported; we keep them so that
