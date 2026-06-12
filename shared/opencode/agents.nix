@@ -1,8 +1,7 @@
-{
-  config,
-  lib,
-  pkgs,
-  ...
+{ config
+, lib
+, pkgs
+, ...
 }:
 
 with lib;
@@ -53,14 +52,17 @@ let
       active = providersConfig.activeProvider;
     in
     if active != null then
-      builtins.mapAttrs (phase: _: getModelForPhase phase active) (
-        builtins.listToAttrs (
-          map (p: {
-            name = p;
-            value = null;
-          }) sddPhases
+      builtins.mapAttrs (phase: _: getModelForPhase phase active)
+        (
+          builtins.listToAttrs (
+            map
+              (p: {
+                name = p;
+                value = null;
+              })
+              sddPhases
+          )
         )
-      )
     else
       { };
 
@@ -74,8 +76,8 @@ let
         gentle-orchestrator = getModelForPhase "gentle-orchestrator" providersConfig.activeProvider;
       }
     else
-      # No active provider - this is an error condition
-      # Check activeProviderName in providers.nix
+    # No active provider - this is an error condition
+    # Check activeProviderName in providers.nix
       throw "No active provider found. Check activeProviderName in modules/home/opencode/providers.nix";
 
   # Standard SDD sub-agent toolset (shared by all 10 sub-agents)
@@ -93,11 +95,11 @@ let
   # Optional promptSuffix for phases that need extra prompt text.
   # Optional maxSteps for phases with step budgets.
   mkSddAgent =
-    {
-      phase,
-      description,
-      promptSuffix ? "",
-      maxSteps ? null,
+    { phase
+    , description
+    , promptSuffix ? ""
+    , maxSteps ? null
+    ,
     }:
     {
       inherit description;

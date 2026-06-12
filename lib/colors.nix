@@ -8,8 +8,8 @@
 #     # ...
 #     color = "rgb(${colors.hexToRgb config.colorScheme.palette.base00})";
 #   }
-{
-  lib,
+{ lib
+,
 }:
 let
   hexToRgb =
@@ -24,10 +24,12 @@ let
   doubleHex =
     hex:
     lib.concatStrings (
-      lib.concatMap (c: [
-        c
-        c
-      ]) (lib.stringToCharacters hex)
+      lib.concatMap
+        (c: [
+          c
+          c
+        ])
+        (lib.stringToCharacters hex)
     );
 
   byteDoubleHex =
