@@ -100,11 +100,10 @@
   };
 
   outputs =
-    inputs@{
-      self,
-      nixpkgs,
-      home-manager,
-      ...
+    inputs@{ self
+    , nixpkgs
+    , home-manager
+    , ...
     }:
     let
       # --- Builders ---

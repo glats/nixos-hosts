@@ -1,9 +1,9 @@
-{
-  lib,
-  stdenvNoCC,
-  vanilla,
-  extraSkills ? null,
-  extraCommands ? null,
+{ lib
+, stdenvNoCC
+, vanilla
+, extraSkills ? null
+, extraCommands ? null
+,
 }:
 
 stdenvNoCC.mkDerivation {

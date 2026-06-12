@@ -1,16 +1,16 @@
 # asus-fan-control
 # Fan control for ASUS devices running Linux
 # Source: https://github.com/dominiksalvet/asus-fan-control
-{
-  lib,
-  stdenv,
-  makeWrapper,
-  dmidecode,
-  coreutils,
-  gnugrep,
-  gawk,
-  kmod,
-  asus-fan-control-src,
+{ lib
+, stdenv
+, makeWrapper
+, dmidecode
+, coreutils
+, gnugrep
+, gawk
+, kmod
+, asus-fan-control-src
+,
 }:
 
 stdenv.mkDerivation rec {

@@ -1,16 +1,16 @@
 # pipewire-module-xrdp
 # PipeWire sink and source modules for XRDP
 # Source: https://github.com/neutrinolabs/pipewire-module-xrdp
-{
-  lib,
-  stdenv,
-  autoreconfHook,
-  pkg-config,
-  automake,
-  autoconf,
-  libtool,
-  pipewire,
-  pipewire-module-xrdp-src,
+{ lib
+, stdenv
+, autoreconfHook
+, pkg-config
+, automake
+, autoconf
+, libtool
+, pipewire
+, pipewire-module-xrdp-src
+,
 }:
 
 stdenv.mkDerivation rec {
