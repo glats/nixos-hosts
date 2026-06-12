@@ -1,8 +1,10 @@
-# T14 — ThinkPad T14 with temporary GNOME.
-# Endgame: Hyprland + Omarchy (see t14-context.md Phase 1).
-# This host keeps a minimal module import set to survive the merge;
-# the rest is activated progressively.
-{ lib, pkgs, ... }:
+# T14 — ThinkPad T14 with GNOME + OpenCode.
+# Migrating progressively from minimal GNOME to full dev stack.
+{ config
+, lib
+, pkgs
+, ...
+}:
 
 {
   imports = [
@@ -17,9 +19,9 @@
     ../../modules/base/zsh.nix
     ../../modules/base/packages.nix
     # NOTE: modules/base/home-manager.nix is NOT imported — we use our
-    # own home-manager config below with a minimal set.
+    # own home-manager config below with a targeted set.
 
-    # === DESKTOP (TEMPORARY — will migrate to Hyprland+Omarchy) ===
+    # === DESKTOP ===
     ../../modules/desktop/gnome.nix
     ../../modules/desktop/i18n.nix
     ../../modules/desktop/fonts.nix
@@ -38,6 +40,10 @@
     # === BOOT ===
     # Required: the system will not boot without bootloader configured.
     ../../modules/features/boot.nix
+
+    # === MCP REQUIREMENTS ===
+    ../../modules/features/services/github-mcp-server.nix
+    ../../modules/virtualisation/docker.nix
   ];
 
   networking = {
@@ -67,14 +73,16 @@
   console.keyMap = lib.mkForce "la-latin1";
 
   # === HOME-MANAGER ===
-  # Minimal set for the GNOME-temporary phase. We do not import
-  # modules/base/home-manager.nix to avoid its full import list.
+  # GNOME + OpenCode stack imported via ./home/gnome.nix.
   # The NixOS home-manager module is loaded by lib/mkHost.nix.
   home-manager = {
     useGlobalPkgs = true;
     useUserPackages = true;
+    extraSpecialArgs = {
+      hostName = config.networking.hostName;
+    };
     users.glats = {
-      imports = [ ./home/gnome-temp.nix ];
+      imports = [ ./home/gnome.nix ];
     };
   };
 

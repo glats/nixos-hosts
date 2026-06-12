@@ -1,8 +1,5 @@
-# TEMPORAL: GNOME como desktop mientras migramos a Hyprland+Omarchy.
-# Ver: t14-context.md Phase 1 — activar Hyprland + Omarchy.
-# Este módulo debe borrarse (junto con su import en hosts/t14/default.nix)
-# cuando lleguemos a Phase 1.
-{ config, lib, pkgs, ... }:
+# GNOME desktop for T14.
+{ lib, pkgs, ... }:
 
 {
   services.xserver.enable = true;
