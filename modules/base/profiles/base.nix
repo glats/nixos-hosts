@@ -113,6 +113,7 @@ with pkgs;
   gparted
   hexchat
   popsicle
+  hypridle
 
   # System utilities (hardware + xrdp audio)
   asus-fan-control

@@ -116,17 +116,51 @@
     firewall.enable = false;
   };
 
+  # === UWSM ===
+  # The omarchy-nix NixOS module (modules/nixos/system.nix) only enables
+  # `programs.uwsm` when `omarchy.seamless_boot.enable = true`. On this
+  # host we deliberately keep seamless_boot off (no Plymouth / auto-login),
+  # but the omarchy userland scripts (omarchy-launch-walker, omarchy-toggle-*,
+  # omarchy-restart-app, etc.) all invoke `uwsm-app` to start GUI daemons
+  # as detached children of the session. Without `uwsm-app` on PATH the
+  # walker gapplication-service daemon never starts, so SUPER+SPACE opens
+  # a walker client that cannot find the service and silently exits without
+  # a window — the launcher appears "broken". Add `pkgs.uwsm` to the system
+  # PATH so the scripts work without enabling seamless_boot. This does NOT
+  # change the login manager or the boot flow; it only makes the binary
+  # available on PATH for the user session.
+  environment.systemPackages = [ pkgs.uwsm ];
+
+  # === OMARCHY PATH ===
+  # Hyprland's `exec` dispatcher runs commands in a non-interactive shell
+  # that does NOT source ~/.zshrc or ~/.profile, so it does NOT see the
+  # PATH injected by Home Manager's `home.sessionPath`. The result is that
+  # all `bindd = SUPER, ..., exec, omarchy-launch-*` bindings fail because
+  # the bare script names cannot be resolved. We add the directory to the
+  # global session PATH so every shell (interactive or not) spawned by
+  # Hyprland can find the omarchy helpers.
+  environment.sessionVariables.PATH = "/home/glats/.local/share/omarchy/bin:/home/glats/.nix-profile/bin:/nix/profile/bin:/home/glats/.local/state/nix/profile/bin:/etc/profiles/per-user/glats/bin:/nix/var/nix/profiles/default/bin:/run/current-system/sw/bin";
+
   # === HOME-MANAGER ===
   # Omarchy + t14 Hyprland overlays imported via ./home/omarchy.nix.
   # The NixOS home-manager module is loaded by lib/mkHost.nix.
   home-manager = {
     useGlobalPkgs = true;
     useUserPackages = true;
+    # REQ (t14-omarchy-nix-best-way): pre-existing unmanaged files
+    # (e.g. /home/glats/.config/user-dirs.dirs left over from the previous
+    # GNOME session) block home-manager's symlink activation with
+    # "would be clobbered" errors. Enabling backupFileExtension makes HM
+    # rename the colliding file to <path>.backup instead of aborting.
+    # We do not set overwriteBackup = true: the first run creates the
+    # backup cleanly, and a future stale backup will surface a real
+    # signal that something else is managing the same path.
+    backupFileExtension = "backup";
     extraSpecialArgs = {
       hostName = config.networking.hostName;
     };
     users.glats = {
-      imports = [ ./home/omarchy.nix ];
+      imports = [ ./home/omarchy-personalizado.nix ];
     };
   };
 
