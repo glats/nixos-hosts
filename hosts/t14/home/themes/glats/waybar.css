@@ -1,27 +1,25 @@
-# Glats theme — Waybar stylesheet
-#
-# Deployed to ~/.config/omarchy/themes/glats/waybar.css by
-# hosts/t14/home/omarchy.nix. Activated by running
-# `omarchy-theme-set glats` (or symlinking
-# ~/.config/omarchy/current -> ~/.config/omarchy/themes/glats).
-#
-# Colors are taken from the glats palette (16-color, terminal-friendly).
-# bg          #1e1e2e   base00
-# bg-soft     #181825   base01
-# surface     #313244   base02
-# overlay     #45475a   base03
-# subtle      #585b70   base04
-# text        #cdd6f4   base05
-# text-soft   #f5e0dc   rosewater
-# love        #f38ba8   base08 (red)
-# gold        #f9e2af   base0A (yellow)
-# peach       #fab387   peach
-# green       #a6e3a1   base0B
-# teal        #94e2d5   teal
-# blue        #89b4fa   base0D
-# lavender    #b4befe   lavender
-# sky         #89dceb   base0C
-# sapphire    #74c7ec   sapphire
+/* Glats theme - Waybar stylesheet.
+ *
+ * Deployed to ~/.config/omarchy/themes/glats/waybar.css by
+ * hosts/t14/home/omarchy.nix. Activated by running
+ * `omarchy-theme-set glats` (or symlinking
+ * ~/.config/omarchy/current -> ~/.config/omarchy/themes/glats).
+ *
+ * IMPORTANT: this is CSS, not a shell script. GTK CSS uses C-style
+ * block comments (slash-star ... star-slash), not the shell hash
+ * form. Earlier revisions used the hash form and waybar crashed
+ * with "waybar.css:3:15Expected a valid selector" on every launch,
+ * leaving the bar invisible. Do not put slash-star inside a comment
+ * either - that re-opens the block and produces
+ * "waybar.css:N:M slash-star in comment block".
+ *
+ * Glats palette (monochrome, accent-only):
+ *   bg          #000000
+ *   fg          #dddddd
+ *   accent      #0d73cc
+ *   selection   #505050
+ *   dim         #8a8a8a
+ */
 * {
   border: none;
   border-radius: 0;
@@ -31,25 +29,25 @@
 }
 
 window#waybar {
-  background-color: #1e1e2e;
-  color: #cdd6f4;
-  border-bottom: 1px solid #313244;
+  background-color: #000000;
+  color: #dddddd;
+  border-bottom: 1px solid #505050;
 }
 
 #workspaces button {
   padding: 0 8px;
-  color: #cdd6f4;
+  color: #dddddd;
   background-color: transparent;
 }
 
 #workspaces button.active {
-  background-color: #89b4fa;
-  color: #1e1e2e;
+  background-color: #0d73cc;
+  color: #dddddd;
   border-radius: 4px;
 }
 
 #workspaces button:hover {
-  background-color: #45475a;
+  background-color: #505050;
 }
 
 #clock,
@@ -59,30 +57,30 @@ window#waybar {
 #tray,
 #backlight {
   padding: 0 8px;
-  color: #cdd6f4;
+  color: #dddddd;
 }
 
 #clock {
   font-weight: bold;
-  color: #a6e3a1;
+  color: #dddddd;
 }
 
 #battery.charging {
-  color: #a6e3a1;
+  color: #dddddd;
 }
 
 #battery.warning:not(.charging) {
-  color: #f9e2af;
+  color: #8a8a8a;
 }
 
 #battery.critical:not(.charging) {
-  color: #f38ba8;
+  color: #dddddd;
 }
 
 #network.disconnected {
-  color: #f38ba8;
+  color: #dddddd;
 }
 
 #pulseaudio.muted {
-  color: #585b70;
+  color: #8a8a8a;
 }

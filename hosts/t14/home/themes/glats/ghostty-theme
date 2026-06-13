@@ -3,29 +3,35 @@
 # Deployed to ~/.config/omarchy/themes/glats/ghostty-theme by
 # hosts/t14/home/omarchy.nix. This is the `include` file omarchy
 # sources at startup via ghostty's `config-file` (or `theme = glats`
-# when set). Mirrors the same 16-color palette used by waybar.css
-# and hyprland.conf for visual consistency.
+# when set).
+#
+# Glats palette (monochrome, accent-only):
+#   bg          #000000
+#   fg          #dddddd
+#   accent      #0d73cc
+#   selection   #505050
+#   dim         #8a8a8a
 
-palette = 0=#1e1e2e
-palette = 1=#f38ba8
-palette = 2=#a6e3a1
-palette = 3=#f9e2af
-palette = 4=#89b4fa
-palette = 5=#f5c2e7
-palette = 6=#94e2d5
-palette = 7=#cdd6f4
-palette = 8=#585b70
-palette = 9=#f38ba8
-palette = 10=#a6e3a1
-palette = 11=#f9e2af
-palette = 12=#89b4fa
-palette = 13=#f5c2e7
-palette = 14=#94e2d5
+palette = 0=#000000
+palette = 1=#dddddd
+palette = 2=#dddddd
+palette = 3=#8a8a8a
+palette = 4=#0d73cc
+palette = 5=#0d73cc
+palette = 6=#dddddd
+palette = 7=#dddddd
+palette = 8=#505050
+palette = 9=#dddddd
+palette = 10=#dddddd
+palette = 11=#8a8a8a
+palette = 12=#0d73cc
+palette = 13=#0d73cc
+palette = 14=#dddddd
 palette = 15=#ffffff
 
-background = #1e1e2e
-foreground = #cdd6f4
-cursor-color = #f5e0dc
-cursor-text = #1e1e2e
-selection-background = #45475a
-selection-foreground = #cdd6f4
+background = #000000
+foreground = #dddddd
+cursor-color = #dddddd
+cursor-text = #000000
+selection-background = #505050
+selection-foreground = #dddddd
