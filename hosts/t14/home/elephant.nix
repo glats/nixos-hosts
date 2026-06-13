@@ -1,54 +1,46 @@
 # T14-specific elephant provider config overlays.
 #
 # Elephant is omarchy's launcher backend (used by walker in calc/dmenu
-# modes).  Omarchy deploys default calc.toml and
-# desktopapplications.toml at ~/.config/elephant/.  This module
-# supplies a t14-specific extension file that walker picks up in
-# addition to omarchy's defaults.
-#
-# REQ-007 / T3-003: port elephant configs to t14/home so the system is
-# fully self-contained (no out-of-repo file references).
-{ pkgs, ... }:
+# modes). Omarchy's HM module deploys default calc.toml and
+# desktopapplications.toml via home.file. This module overrides them
+# with the user's personal versions using home.file + force = true
+# (same mechanism as upstream to avoid cross-mechanism conflicts).
+# The symbols.toml override is also included.
+{ lib, ... }:
 
 {
-  # t14-specific calc overlay: tweak the output format for the
-  # Chilean locale (decimal "," and thousands ".") and add a default
-  # precision.  We do NOT overwrite omarchy's calc.toml (which sets
-  # `async = false`) to avoid conflicting home.file declarations;
-  # instead, we drop a sibling file that the elephant `calc` provider
-  # also reads (provider-specific overrides via the `extra*` keys
-  # walker supports for the `unicode` provider).
-  #
-  # Chilean-Spanish extensions for the unicode picker: add the most
-  # common accented letters to the t14 symbol list so SUPER+CTRL+E
-  # surfaces them at the top of the menu.
+  # Override omarchy's default elephant configs with the user's personal
+  # versions from the external drive. lib.mkForce is required because the
+  # upstream omarchy-nix module also defines these paths via home.file
+  # (through programs.walker.elephant). Without mkForce, Nix sees two
+  # definitions for the same option path and raises a conflicting-definition
+  # error.
+  home.file = {
+    ".config/elephant/calc.toml" = lib.mkForce {
+      source = ./elephant/calc.toml;
+    };
+    ".config/elephant/desktopapplications.toml" = lib.mkForce {
+      source = ./elephant/desktopapplications.toml;
+    };
+    ".config/elephant/symbols.toml" = lib.mkForce {
+      source = ./elephant/symbols.toml;
+    };
+  };
+
+  # t14-specific unicode symbol extensions for the elephant picker.
+  # This adds Latin American accented characters to the top of the
+  # SUPER+CTRL+E picker so they appear on the first page.
   xdg.configFile."elephant/symbols-t14.toml".text = ''
     providers = [ "unicode" ]
 
     [providers.unicode]
-    # Latin American accented characters and inverted punctuation.
-    # The full emoji set is loaded from omarchy's symbols.toml; this
-    # file only adds the t14-specific glyphs so the unicode picker
-    # shows them in the first page.
     extraSymbols = [
-      "á"
-      "é"
-      "í"
-      "ó"
-      "ú"
-      "ñ"
-      "ü"
-      "Á"
-      "É"
-      "Í"
-      "Ó"
-      "Ú"
-      "Ñ"
-      "Ü"
-      "¡"
-      "¿"
-      "«"
-      "»"
+      "á" "é" "í" "ó" "ú"
+      "ñ" "ü"
+      "Á" "É" "Í" "Ó" "Ú"
+      "Ñ" "Ü"
+      "¡" "¿"
+      "«" "»"
     ]
   '';
 }

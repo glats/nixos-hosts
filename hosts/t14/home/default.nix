@@ -24,7 +24,11 @@ in
     ./hypr/looknfeel.nix
     ./hypr/autostart.nix
     ./hypr/hypridle.nix
+    ./hypr/hyprlock.nix
+    ./hypr/hyprsunset.nix
+    ./hypr/xdph.nix
     ./waybar.nix
+    ./btop.nix
     ./ghostty.nix
     ./mouse-wiggle.nix
   ];
@@ -54,6 +58,22 @@ in
     # Keyboard layout set (es or latam)
     ".local/share/omarchy/bin/kb-layout.sh" = {
       source = ./scripts/kb-layout.sh;
+      executable = true;
+    };
+
+    # ------------------------------------------------------------------
+    # The user's personal waybar config.jsonc references the kb-layout
+    # and kb-toggle helpers at ~/.config/hypr/ (not the omarchy bin
+    # directory). Symlink the bin copies into ~/.config/hypr/ so the
+    # waybar custom/kb-layout module finds them at the expected paths.
+    # Both paths point to the same source file (no duplicate content).
+    # ------------------------------------------------------------------
+    ".config/hypr/kb-layout.sh" = {
+      source = ./scripts/kb-layout.sh;
+      executable = true;
+    };
+    ".config/hypr/kb-toggle.sh" = {
+      source = ./scripts/kb-toggle.sh;
       executable = true;
     };
   };

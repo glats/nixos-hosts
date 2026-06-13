@@ -87,6 +87,15 @@
       "match:class ^(xdg-desktop-portal-gtk)$, float on"
       # Workspace 7 (special) gets a no-anim override for fullscreen games.
       "match:class ^(steam_app_), workspace 7 silent"
+      # Scroll nicely in the terminal — matches the upstream omarchy
+      # bindings.  Alacritty/kitty/foot use a faster scroll factor
+      # (1.5); ghostty uses a slower factor (0.2) to keep the t14
+      # touchpad feel close to other terminals.
+      "match:class (Alacritty|kitty|foot), scroll_touchpad 1.5"
+      "match:class com.mitchellh.ghostty, scroll_touchpad 0.2"
+      # Full opacity for all windows by default; terminals with
+      # explicit transparency in their own config still apply.
+      "opacity 1.0 1.0, match:tag default-opacity"
     ];
   };
 }
