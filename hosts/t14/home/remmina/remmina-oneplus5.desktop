@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=oneplus5
+Comment=RDP connection to 172.16.0.12
+Exec=remmina -c /home/glats/.local/share/remmina/group_rdp_oneplus5_172-16-0-12.remmina
+Icon=remmina
+Categories=Network;RemoteAccess;
+Terminal=false
+StartupWMClass=remmina

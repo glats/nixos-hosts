@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=thinkcentre
+Comment=RDP connection to 172.16.0.11
+Exec=remmina -c /home/glats/.local/share/remmina/group_rdp_thinkcentre_172-16-0-11.remmina
+Icon=remmina
+Categories=Network;RemoteAccess;
+Terminal=false
+StartupWMClass=remmina
