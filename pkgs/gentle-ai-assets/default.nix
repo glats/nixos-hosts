@@ -1,49 +1,10 @@
-{ lib, stdenvNoCC, writeText, vanilla, extraSkills ? null, extraCommands ? null }:
-
-let
-  # Nuestras reglas locales que se agregarán al principio
-  localPersonaRules = writeText "local-persona-rules" ''
-    ## Global Rules (ALWAYS FOLLOW)
-
-    ### Code Language Policy - ENGLISH ONLY
-
-    **All code must ALWAYS be in English. NO EXCEPTIONS.**
-
-    - Variable names: englishOnly
-    - Function names: useEnglishCamelCase()
-    - Class names: EnglishPascalCase
-    - Comments: // Always in English
-    - Documentation: Written in English
-    - Commit messages: english format (feat:, fix:, docs:)
-    - Log messages: English text
-    - Error strings: "Error message in English"
-    - Configuration descriptions: English descriptions
-    - File names: use-english-names.md
-    - ANY text inside code: ENGLISH
-
-    **NO SPANISH IN CODE.**
-    **NO MIXED LANGUAGES.**
-    **NO EMOJIS IN CODE OR OUTPUT.**
-
-    Even if user writes "crear función", output: `function createUser()` not `function crearUsuario()`.
-
-    ### No Emojis Policy
-
-    **NEVER use emojis.** This includes:
-    - No emojis in code
-    - No emojis in output
-    - No emojis in documentation
-    - No emojis in comments
-    - No emojis in file names
-    - No emojis in commit messages
-    - No emojis in responses to user
-
-    Use text indicators only: "WARNING:", "INFO:", "ERROR:", "SUCCESS:", not ⚠️ 🔥 ❌ ✅
-
-    ---
-
-  '';
-in
+{ lib
+, stdenvNoCC
+, vanilla
+, extraSkills ? null
+, extraCommands ? null
+,
+}:
 
 stdenvNoCC.mkDerivation {
   pname = "gentle-ai-assets";
@@ -68,12 +29,6 @@ stdenvNoCC.mkDerivation {
       chmod -R u+w "$TEMP_DIR/$(basename "$item")"
     done
 
-    # Prepend local persona rules to persona-gentleman.md
-    if [ -f "$TEMP_DIR/opencode/persona-gentleman.md" ]; then
-      cat ${localPersonaRules} "$TEMP_DIR/opencode/persona-gentleman.md" > "$TEMP_DIR/opencode/persona-gentleman.md.new"
-      mv "$TEMP_DIR/opencode/persona-gentleman.md.new" "$TEMP_DIR/opencode/persona-gentleman.md"
-    fi
-
     # Overlay local skills on top of vanilla skills
     if [ -n "${extraSkills}" ] && [ -d "${extraSkills}" ]; then
       for skill_dir in ${extraSkills}/*; do
@@ -87,15 +42,20 @@ stdenvNoCC.mkDerivation {
     fi
 
     # Overlay local commands on top of vanilla commands
-    if [ -n "${extraCommands}" ] && [ -d "${extraCommands}" ]; then
-      for cmd_file in ${extraCommands}/*; do
-        cmd_name=$(basename "$cmd_file")
-        # Remove existing if present (read-only from vanilla copy)
-        rm -f "$TEMP_DIR/opencode/commands/$cmd_name" 2>/dev/null || true
-        # Copy new version
-        cp "$cmd_file" "$TEMP_DIR/opencode/commands/"
-        chmod u+w "$TEMP_DIR/opencode/commands/$cmd_name"
-      done
+    # extraCommands defaults to null (no local command overrides)
+    if ${
+      lib.optionalString (extraCommands != null) ''
+        for cmd_file in ${extraCommands}/*; do
+          cmd_name=$(basename "$cmd_file")
+          # Remove existing if present (read-only from vanilla copy)
+          rm -f "$TEMP_DIR/opencode/commands/$cmd_name" 2>/dev/null || true
+          # Copy new version
+          cp "$cmd_file" "$TEMP_DIR/opencode/commands/"
+          chmod u+w "$TEMP_DIR/opencode/commands/$cmd_name"
+        done
+      ''
+    } true; then
+      :
     fi
 
     # Move to final destination

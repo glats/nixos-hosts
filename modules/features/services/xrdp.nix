@@ -1,4 +1,8 @@
-{ config, lib, pkgs, ... }:
+{ config
+, lib
+, pkgs
+, ...
+}:
 
 let
   # Common XRDP session preamble: dbus setup + disable screen blanking
@@ -110,21 +114,29 @@ let
 in
 
 {
-  services.xserver = {
-    enable = true;
-    updateDbusEnvironment = true;
-    desktopManager.mate.enable = true;
-    displayManager.lightdm.enable = false;
+  options.services.xrdp-custom = {
+    enable = lib.mkEnableOption "XRDP remote desktop with MATE session" // {
+      default = true;
+    };
   };
 
-  services.xrdp = {
-    enable = true;
-    defaultWindowManager = "${xrdpMateSession}";
-  };
+  config = lib.mkIf config.services.xrdp-custom.enable {
+    services.xserver = {
+      enable = true;
+      updateDbusEnvironment = true;
+      desktopManager.mate.enable = true;
+      displayManager.lightdm.enable = false;
+    };
 
-  environment.systemPackages = with pkgs; [
-    mate-polkit
-    xset
-    zenity
-  ];
+    services.xrdp = {
+      enable = true;
+      defaultWindowManager = "${xrdpMateSession}";
+    };
+
+    environment.systemPackages = with pkgs; [
+      mate-polkit
+      xset
+      zenity
+    ];
+  };
 }

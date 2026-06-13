@@ -1,9 +1,8 @@
-{
-  config,
-  lib,
-  pkgs,
-  inputs,
-  ...
+{ config
+, lib
+, pkgs
+, inputs
+, ...
 }:
 
 with lib;
@@ -11,12 +10,6 @@ with lib;
 let
   # Import centralized provider configuration
   providers = import ./opencode/providers.nix { inherit lib; };
-
-  # Pure library functions - no config references
-  opencodeLib = import ../pkgs/opencode-config {
-    inherit lib;
-    writeText = pkgs.writeText;
-  };
 
   # Single runtime configuration
   runtimeConfig = {
@@ -76,6 +69,7 @@ let
             provider = allProviders;
             mcp = enabledMcps;
             permission = cfg.permissions;
+            instructions = [ "SYSTEM_RULES.md" ];
           }
           // lib.optionalAttrs (cfg.disabledProviders != [ ]) { disabled_providers = cfg.disabledProviders; }
         )
@@ -95,18 +89,6 @@ let
         ".config/${runtimeCfg.dir}/SYSTEM_RULES.md" = {
           force = true;
           source = ./opencode/SYSTEM_RULES.md;
-        };
-        ".config/${runtimeCfg.dir}/CAVEMAN_RULES.md" = {
-          force = true;
-          source = ./opencode/CAVEMAN_RULES.md;
-        };
-        ".config/${runtimeCfg.dir}/PERSONA.md" = {
-          force = true;
-          text = ''
-            ${builtins.readFile ./opencode/IDENTITY.md}
-
-            ${builtins.readFile ./opencode/SYSTEM_RULES.md}
-          '';
         };
         ".config/${runtimeCfg.dir}/AGENTS.md" = {
           force = true;
@@ -151,7 +133,7 @@ let
             # the symlink points to the read-only nix store which OpenCode can't write to.
             # cmp guard is only used to skip unnecessary writes to already-real files
             # that haven't changed since the last build.
-            for file in opencode.json IDENTITY.md SYSTEM_RULES.md CAVEMAN_RULES.md PERSONA.md AGENTS.md package.json .gitignore tui.json; do
+            for file in opencode.json IDENTITY.md SYSTEM_RULES.md AGENTS.md package.json .gitignore tui.json; do
               target="$runtime_dir/$file"
               if [ -L "$target" ]; then
                 src="$(${pkgs.coreutils}/bin/readlink -f "$target")"

@@ -6,33 +6,10 @@
 }:
 
 let
-  hexToRgb =
-    hex:
-    let
-      r = lib.substring 0 2 hex;
-      g = lib.substring 2 2 hex;
-      b = lib.substring 4 2 hex;
-      toDec = h: lib.fromHexString h;
-    in
-    "rgb(${toString (toDec r)},${toString (toDec g)},${toString (toDec b)})";
-  doubleHex =
-    hex:
-    lib.concatStrings (
-      lib.concatMap
-        (c: [
-          c
-          c
-        ])
-        (lib.stringToCharacters hex)
-    );
-  byteDoubleHex =
-    hex:
-    let
-      r = lib.substring 0 2 hex;
-      g = lib.substring 2 2 hex;
-      b = lib.substring 4 2 hex;
-    in
-    "${r}${r}${g}${g}${b}${b}";
+  colors = import ../lib/colors.nix { inherit lib; };
+  hexToRgb = colors.hexToRgb;
+  doubleHex = colors.doubleHex;
+  byteDoubleHex = colors.byteDoubleHex;
 in
 {
   dconf.settings = {
@@ -233,7 +210,7 @@ in
     };
 
     "org/mate/panel/toplevels/bottom/background" = {
-      color = "${hexToRgb config.colorScheme.palette.base00}";
+      color = "rgb(${hexToRgb config.colorScheme.palette.base00})";
       type = "color";
     };
 

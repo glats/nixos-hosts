@@ -1,38 +1,27 @@
 # Home Manager configuration for macOS
-# Aggregates all home-darwin modules
-{
-  pkgs,
-  lib,
-  primaryUser,
-  ...
+# Aggregates all home-darwin modules.
+{ pkgs
+, lib
+, inputs
+, primaryUser
+, ...
 }:
 let
   # Toggle: set to false to disable Spotlight indexing for HM apps
   hmSpotlightIndexEnable = true;
+  # Canonical base list (see ./shared-modules.nix). Both flake.nix
+  # (`darwinHomeModules`) and this file import from the same source
+  # to keep paths in sync.
+  baseModules = import ./shared-modules.nix { inherit inputs; };
   baseConfig = {
-    imports = [
-      ./theme.nix
-      ./ghostty.nix
-      ./leaf-theme.nix
-      ./git.nix
-      ./gpg.nix
-      ./ssh.nix
-      ./mise-tools.nix
-      ./packages.nix
-      ./neovim.nix
-      ./shell.nix
-      ./tmux.nix
-      ./vscode.nix
-      ./windsurf.nix
-      ./opencode.nix # Provides option definitions and activation scripts
-      ./opencode/mcps-extra.nix # macOS-specific MCPs (atlassian, chrome-devtools, etc.)
-      ./opencode-profile.nix # Provides plugin/TUI enablement settings
-      ./sops.nix
-      ./github-mcp-server-wrapper.nix
-    ]
-    ++ lib.optionals hmSpotlightIndexEnable [
-      ./spotlight-index.nix
-    ];
+    imports =
+      baseModules
+      ++ lib.optionals hmSpotlightIndexEnable [
+        ./spotlight-index.nix
+      ]
+      ++ [
+        ./opencode/mcps-extra.nix
+      ];
 
     # Minimal home fragment; tmux is configured in ./tmux.nix
     home.username = primaryUser;
@@ -47,7 +36,7 @@ let
     # (home-manager uses builtins.derivation for options.json without proper store context)
     manual.manpages.enable = false;
 
-    # Silenciar warning de version mismatch entre home-manager y nixpkgs
+    # Silence version mismatch warning between home-manager and nixpkgs
     home.enableNixpkgsReleaseCheck = false;
 
     # create .hushlogin file to suppress login messages

@@ -1,4 +1,9 @@
-{ lib, stdenvNoCC, gentle-ai-src }:
+{ lib
+, stdenvNoCC
+, gentle-ai-src
+, caveman-src
+,
+}:
 
 stdenvNoCC.mkDerivation {
   pname = "gentle-ai-assets-vanilla";
@@ -39,6 +44,18 @@ stdenvNoCC.mkDerivation {
         cp -r $src/internal/assets/$dir/* $out/share/gentle-ai/$dir/
       fi
     done
+
+    # Copy caveman skills from caveman-src
+    if [ -d ${caveman-src}/skills ]; then
+      mkdir -p $out/share/gentle-ai/skills
+      cp -r ${caveman-src}/skills/* $out/share/gentle-ai/skills/ 2>/dev/null || true
+    fi
+
+    # Copy caveman commands
+    if [ -d ${caveman-src}/commands ]; then
+      mkdir -p $out/share/gentle-ai/opencode/commands
+      cp -r ${caveman-src}/commands/* $out/share/gentle-ai/opencode/commands/ 2>/dev/null || true
+    fi
   '';
 
   meta = with lib; {

@@ -1,59 +1,90 @@
-{ lib, pkgs, ... }:
+# T14 — ThinkPad T14 with GNOME + OpenCode.
+# Migrating progressively from minimal GNOME to full dev stack.
+{ config
+, lib
+, pkgs
+, ...
+}:
 
 {
   imports = [
     ./hardware-configuration.nix
 
-    # Base (transversal modules)
+    # === BASE (minimal viable) ===
     ../../modules/base/cachix.nix
-    ../../modules/base/home-manager.nix
-    ../../modules/base/logind.nix
-    ../../modules/base/nh.nix
     ../../modules/base/nix.nix
-    ../../modules/base/packages.nix
     ../../modules/base/polkit.nix
-    ../../modules/base/shutdown-fix.nix
+    ../../modules/base/sops.nix
     ../../modules/base/users.nix
     ../../modules/base/zsh.nix
+    ../../modules/base/packages.nix
+    # NOTE: modules/base/home-manager.nix is NOT imported — we use our
+    # own home-manager config below with a targeted set.
 
-    # Hardware
-    ../../modules/hardware/amd-laptop.nix
-
-    # Desktop
-    ../../modules/desktop/fonts.nix
+    # === DESKTOP ===
+    ../../modules/desktop/gnome.nix
     ../../modules/desktop/i18n.nix
+    ../../modules/desktop/fonts.nix
     ../../modules/desktop/kmscon.nix
 
-    # Networking
-    ../../modules/networking/avahi.nix
-    ../../modules/networking/firewall.nix
-    ../../modules/networking/openssh.nix
+    # === HARDWARE ===
+    ../../modules/hardware/amd-laptop.nix
 
-    # Boot shared config
+    # === NETWORKING (minimal) ===
+    ../../modules/networking/openssh.nix
+    ../../modules/networking/avahi.nix
+
+    # === HOST SECRETS (empty for now) ===
+    ./secrets.nix
+
+    # === BOOT ===
+    # Required: the system will not boot without bootloader configured.
     ../../modules/features/boot.nix
+
+    # === MCP REQUIREMENTS ===
+    ../../modules/features/services/github-mcp-server.nix
+    ../../modules/virtualisation/docker.nix
   ];
 
-  boot-settings = {
-    enable = true;
-    includeAcpiOsi = false;
+  networking = {
+    hostName = "t14";
+    networkmanager.enable = true;
+    # No firewall on t14 (user decision: development environment,
+    # single-user machine on controlled networks).
+    firewall.enable = false;
   };
 
   nixpkgs.config = {
     allowUnfree = true;
+    # fonts.nix includes joypixels; requires explicit license acceptance.
     allowUnfreePackages = [ "joypixels" ];
     joypixels.acceptLicense = true;
   };
 
-  networking.hostName = "t14";
+  # Enable the imported boot module (systemd-boot, plymouth, zen kernel)
+  boot-settings.enable = true;
 
-  # Minimal T14 - just a TTY terminal
-  # No display manager, no Hyprland, no Omarchy
+  # t14-specific keymap: latam (Chile) layout. modules/desktop/i18n.nix
+  # uses "es" for compatibility with rog/thinkcentre; we force latam here.
+  services.xserver.xkb = {
+    layout = lib.mkForce "latam";
+    variant = "";
+  };
+  console.keyMap = lib.mkForce "la-latin1";
 
-  home-manager.users.glats = {
-    imports = [
-      ./home/minimal.nix
-    ];
+  # === HOME-MANAGER ===
+  # GNOME + OpenCode stack imported via ./home/gnome.nix.
+  # The NixOS home-manager module is loaded by lib/mkHost.nix.
+  home-manager = {
+    useGlobalPkgs = true;
+    useUserPackages = true;
+    extraSpecialArgs = {
+      hostName = config.networking.hostName;
+    };
+    users.glats = {
+      imports = [ ./home/gnome.nix ];
+    };
   };
 
-  system.stateVersion = "25.05";
+  system.stateVersion = "26.05";
 }

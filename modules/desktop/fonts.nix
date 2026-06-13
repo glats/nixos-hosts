@@ -1,5 +1,133 @@
-{ config, pkgs, ... }:
+{ config
+, pkgs
+, lib
+, ...
+}:
 
+let
+  # Font families to reject (rejected in <rejectfont> blocks)
+  rejectedFonts = [
+    "Liberation Sans"
+    "Liberation Serif"
+    "Liberation Mono"
+    "DejaVu Sans"
+    "DejaVu Serif"
+    "DejaVu Sans Mono"
+    "Arimo"
+    "Tinos"
+    "Cousine"
+  ];
+
+  # Font names that should be remapped to a generic family
+  sansSerifAliases = [
+    "Arial"
+    "Helvetica"
+    "Helvetica Neue"
+    "Verdana"
+    "Tahoma"
+    "Geneva"
+    "Cantarell"
+  ];
+
+  serifAliases = [
+    "Times New Roman"
+    "Times"
+  ];
+
+  monospaceAliases = [
+    "Courier New"
+    "Courier"
+    "Terminal"
+  ];
+
+  # Force these names to resolve to the monospace font
+  monoForceNames = [
+    "monospace"
+    "mono"
+  ];
+  monoFont = "CaskaydiaCove Nerd Font";
+
+  # Strong aliases (preference order) per family
+  familyPrefs = {
+    "sans-serif" = [
+      "Source Sans 3"
+      "Noto Sans"
+    ];
+    sans = [
+      "Source Sans 3"
+      "Noto Sans"
+    ];
+    serif = [
+      "Source Sans 3"
+      "Noto Serif"
+    ];
+    monospace = [
+      monoFont
+      "Noto Sans Mono"
+    ];
+  };
+
+  # Emoji fallbacks (weak accept aliases)
+  emojiFonts = [
+    "JoyPixels"
+    "Noto Color Emoji"
+  ];
+  emojiFamilies = [
+    "sans-serif"
+    "sans"
+    "serif"
+    "monospace"
+  ];
+
+  # XML generators
+  mkRejectPattern = font: ''
+    <pattern>
+      <patelt name="family">
+        <string>${font}</string>
+      </patelt>
+    </pattern>
+  '';
+
+  mkMatchRedirect = from: to: ''
+    <match target="pattern">
+      <test name="family" qual="any">
+        <string>${from}</string>
+      </test>
+      <edit name="family" mode="assign" binding="same">
+        <string>${to}</string>
+      </edit>
+    </match>
+  '';
+
+  mkForceMatch = from: to: ''
+    <match target="pattern">
+      <test name="family" compare="eq">
+        <string>${from}</string>
+      </test>
+      <edit name="family" mode="assign" binding="same">
+        <string>${to}</string>
+      </edit>
+    </match>
+  '';
+
+  mkStrongAlias = family: prefers: ''
+    <alias binding="strong">
+      <family>${family}</family>
+      <prefer>
+        ${lib.concatMapStringsSep "\n          " (p: "<family>${p}</family>") prefers}
+      </prefer>
+    </alias>
+  '';
+
+  mkWeakAlias = family: accepts: ''
+    <alias binding="weak">
+      <family>${family}</family>
+      <accept>
+        ${lib.concatMapStringsSep "\n          " (a: "<family>${a}</family>") accepts}
+      </accept>
+    </alias>
+  '';
+in
 {
   fonts = {
     fontconfig = {
@@ -21,239 +149,44 @@
           <!-- Reject fonts we don't want to use -->
           <selectfont>
             <rejectfont>
-              <!-- Reject Liberation fonts -->
-              <pattern>
-                <patelt name="family">
-                  <string>Liberation Sans</string>
-                </patelt>
-              </pattern>
-              <pattern>
-                <patelt name="family">
-                  <string>Liberation Serif</string>
-                </patelt>
-              </pattern>
-              <pattern>
-                <patelt name="family">
-                  <string>Liberation Mono</string>
-                </patelt>
-              </pattern>
-              <!-- Reject DejaVu fonts -->
-              <pattern>
-                <patelt name="family">
-                  <string>DejaVu Sans</string>
-                </patelt>
-              </pattern>
-              <pattern>
-                <patelt name="family">
-                  <string>DejaVu Serif</string>
-                </patelt>
-              </pattern>
-              <pattern>
-                <patelt name="family">
-                  <string>DejaVu Sans Mono</string>
-                </patelt>
-              </pattern>
-              <!-- Reject other common fallback fonts -->
-              <pattern>
-                <patelt name="family">
-                  <string>Arimo</string>
-                </patelt>
-              </pattern>
-              <pattern>
-                <patelt name="family">
-                  <string>Tinos</string>
-                </patelt>
-              </pattern>
-              <pattern>
-                <patelt name="family">
-                  <string>Cousine</string>
-                </patelt>
-              </pattern>
+              ${lib.concatMapStringsSep "\n              " mkRejectPattern rejectedFonts}
             </rejectfont>
           </selectfont>
 
           <!-- Redirect common font names to our preferred families -->
-          <match target="pattern">
-            <test name="family" qual="any">
-              <string>Arial</string>
-            </test>
-            <edit name="family" mode="assign" binding="same">
-              <string>sans-serif</string>
-            </edit>
-          </match>
-          <match target="pattern">
-            <test name="family" qual="any">
-              <string>Helvetica</string>
-            </test>
-            <edit name="family" mode="assign" binding="same">
-              <string>sans-serif</string>
-            </edit>
-          </match>
-          <match target="pattern">
-            <test name="family" qual="any">
-              <string>Helvetica Neue</string>
-            </test>
-            <edit name="family" mode="assign" binding="same">
-              <string>sans-serif</string>
-            </edit>
-          </match>
-          <match target="pattern">
-            <test name="family" qual="any">
-              <string>Verdana</string>
-            </test>
-            <edit name="family" mode="assign" binding="same">
-              <string>sans-serif</string>
-            </edit>
-          </match>
-          <match target="pattern">
-            <test name="family" qual="any">
-              <string>Tahoma</string>
-            </test>
-            <edit name="family" mode="assign" binding="same">
-              <string>sans-serif</string>
-            </edit>
-          </match>
-          <match target="pattern">
-            <test name="family" qual="any">
-              <string>Geneva</string>
-            </test>
-            <edit name="family" mode="assign" binding="same">
-              <string>sans-serif</string>
-            </edit>
-          </match>
-          <match target="pattern">
-            <test name="family" qual="any">
-              <string>Cantarell</string>
-            </test>
-            <edit name="family" mode="assign" binding="same">
-              <string>sans-serif</string>
-            </edit>
-          </match>
-          <match target="pattern">
-            <test name="family" qual="any">
-              <string>Times New Roman</string>
-            </test>
-            <edit name="family" mode="assign" binding="same">
-              <string>serif</string>
-            </edit>
-          </match>
-          <match target="pattern">
-            <test name="family" qual="any">
-              <string>Times</string>
-            </test>
-            <edit name="family" mode="assign" binding="same">
-              <string>serif</string>
-            </edit>
-          </match>
-          <match target="pattern">
-            <test name="family" qual="any">
-              <string>Courier New</string>
-            </test>
-            <edit name="family" mode="assign" binding="same">
-              <string>monospace</string>
-            </edit>
-          </match>
-          <match target="pattern">
-            <test name="family" qual="any">
-              <string>Courier</string>
-            </test>
-            <edit name="family" mode="assign" binding="same">
-              <string>monospace</string>
-            </edit>
-          </match>
-          <match target="pattern">
-            <test name="family" qual="any">
-              <string>Terminal</string>
-            </test>
-            <edit name="family" mode="assign" binding="same">
-              <string>monospace</string>
-            </edit>
-          </match>
+          ${lib.concatMapStringsSep "\n          " (f: mkMatchRedirect f "sans-serif") sansSerifAliases}
+          ${lib.concatMapStringsSep "\n          " (f: mkMatchRedirect f "serif") serifAliases}
+          ${lib.concatMapStringsSep "\n          " (f: mkMatchRedirect f "monospace") monospaceAliases}
 
           <!-- Force monospace family -->
-          <match target="pattern">
-            <test name="family" compare="eq">
-              <string>monospace</string>
-            </test>
-            <edit name="family" mode="assign" binding="same">
-              <string>CaskaydiaCove Nerd Font</string>
-            </edit>
-          </match>
-          <match target="pattern">
-            <test name="family" compare="eq">
-              <string>mono</string>
-            </test>
-            <edit name="family" mode="assign" binding="same">
-              <string>CaskaydiaCove Nerd Font</string>
-            </edit>
-          </match>
+          ${lib.concatMapStringsSep "\n          " (f: mkForceMatch f monoFont) monoForceNames}
 
           <!-- Define font family preferences -->
-          <alias binding="strong">
-            <family>sans-serif</family>
-            <prefer>
-              <family>Source Sans 3</family>
-              <family>Noto Sans</family>
-            </prefer>
-          </alias>
-          <alias binding="strong">
-            <family>sans</family>
-            <prefer>
-              <family>Source Sans 3</family>
-              <family>Noto Sans</family>
-            </prefer>
-          </alias>
-          <alias binding="strong">
-            <family>serif</family>
-            <prefer>
-              <family>Source Sans 3</family>
-              <family>Noto Serif</family>
-            </prefer>
-          </alias>
-          <alias binding="strong">
-            <family>monospace</family>
-            <prefer>
-              <family>CaskaydiaCove Nerd Font</family>
-              <family>Noto Sans Mono</family>
-            </prefer>
-          </alias>
+          ${lib.concatMapStringsSep "\n          " (entry: mkStrongAlias entry.family entry.prefer) (
+            lib.mapAttrsToList (family: prefer: { inherit family prefer; }) familyPrefs
+          )}
 
           <!-- Emoji fallbacks -->
-          <alias binding="weak">
-            <family>sans-serif</family>
-            <accept>
-              <family>JoyPixels</family>
-              <family>Noto Color Emoji</family>
-            </accept>
-          </alias>
-          <alias binding="weak">
-            <family>sans</family>
-            <accept>
-              <family>JoyPixels</family>
-              <family>Noto Color Emoji</family>
-            </accept>
-          </alias>
-          <alias binding="weak">
-            <family>serif</family>
-            <accept>
-              <family>JoyPixels</family>
-              <family>Noto Color Emoji</family>
-            </accept>
-          </alias>
-          <alias binding="weak">
-            <family>monospace</family>
-            <accept>
-              <family>JoyPixels</family>
-              <family>Noto Color Emoji</family>
-            </accept>
-          </alias>
+          ${lib.concatMapStringsSep "\n          " (f: mkWeakAlias f emojiFonts) emojiFamilies}
         </fontconfig>
       '';
       defaultFonts = {
-        serif = [ "Source Sans 3" "Noto Serif" ];
-        sansSerif = [ "Source Sans 3" "Noto Sans" ];
-        monospace = [ "CaskaydiaCove Nerd Font" "Noto Sans Mono" ];
-        emoji = [ "JoyPixels" "Noto Color Emoji" ];
+        serif = [
+          "Source Sans 3"
+          "Noto Serif"
+        ];
+        sansSerif = [
+          "Source Sans 3"
+          "Noto Sans"
+        ];
+        monospace = [
+          "CaskaydiaCove Nerd Font"
+          "Noto Sans Mono"
+        ];
+        emoji = [
+          "JoyPixels"
+          "Noto Color Emoji"
+        ];
       };
     };
     fontDir.enable = true;

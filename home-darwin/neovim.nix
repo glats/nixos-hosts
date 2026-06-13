@@ -1,18 +1,30 @@
-{
-  pkgs,
-  inputs,
-  lib,
-  ...
+{ pkgs
+, inputs
+, ...
 }:
+let
+  # Build the upstream nvim config as a Nix store path so ~/.config/nvim
+  # is reproducible, content-addressed, and never touches the network at
+  # activation time. Replaces the previous activation-script that did a
+  # git clone + pull against github.com/j1cs/nvim.
+  nvim-config = pkgs.stdenvNoCC.mkDerivation {
+    pname = "nvim-config";
+    version = "unstable";
+    src = inputs.nvim-config;
+    dontBuild = true;
+    installPhase = ''
+      cp -r . $out
+    '';
+  };
+in
 {
   programs.neovim = {
     enable = true;
     defaultEditor = false;
-    sideloadInitLua = true;
     vimAlias = true; # provide `vim` command
     viAlias = true; # provide `vi` command
 
-    # Explicitar comportamiento legacy para silenciar warnings de stateVersion < 26.05
+    # Pin legacy behavior to silence warnings for stateVersion < 26.05
     withRuby = false;
     withPython3 = false;
 
@@ -28,41 +40,5 @@
     ];
   };
 
-  # Bootstrap ~/.config/nvim from your Git repo and update if clean.
-  # Also clone if the folder exists but is empty.
-  home.activation."install-nvim-config" =
-    let
-      dst = "$HOME/.config/nvim";
-      repo = "https://github.com/j1cs/nvim.git";
-    in
-    lib.hm.dag.entryAfter [ "linkGeneration" ] ''
-      echo "> Ensuring Neovim config at ${dst} (repo: ${repo})"
-      # Clone if directory is missing OR empty
-      if [ ! -d "${dst}" ] || [ -z "$(ls -A "${dst}" 2>/dev/null)" ]; then
-        echo "> Cloning ${repo} into ${dst}"
-        mkdir -p "${dst}"
-        # If it was an empty dir, clear it to avoid git complaining
-        rmdir "${dst}" 2>/dev/null || true
-        "${pkgs.git}/bin/git" clone "${repo}" "${dst}" || true
-      else
-        if [ -d "${dst}/.git" ]; then
-          current_remote=$("${pkgs.git}/bin/git" -C "${dst}" remote get-url origin 2>/dev/null || true)
-          if [ "$current_remote" = "${repo}" ]; then
-            # Only update if working tree is clean
-            if "${pkgs.git}/bin/git" -C "${dst}" diff --quiet && [ -z "$(${pkgs.git}/bin/git -C "${dst}" status --porcelain)" ]; then
-              echo "> Updating ${dst} (git pull --ff-only)"
-              "${pkgs.git}/bin/git" -C "${dst}" pull --ff-only || true
-            else
-              echo "> Skipping update: local changes present in ${dst}"
-            fi
-          else
-            echo "> Skipping update: origin is $current_remote, not ${repo}"
-          fi
-        else
-          # Non-git and non-empty: leave as-is (user-managed)
-          echo "> ${dst} exists and is not a git repo; leaving as-is"
-        fi
-      fi
-      chmod -R u+rwX "${dst}" 2>/dev/null || true
-    '';
+  home.file.".config/nvim".source = nvim-config;
 }

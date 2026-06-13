@@ -8,18 +8,8 @@
   imports = [
     ./hardware-configuration.nix
 
-    # Base (transversal modules)
-    ../../modules/base/cachix.nix
-    ../../modules/base/home-manager.nix
-    ../../modules/base/logind.nix
-    ../../modules/base/nh.nix
-    ../../modules/base/nix.nix
-    ../../modules/base/packages.nix
-    ../../modules/base/polkit.nix
-    ../../modules/base/shutdown-fix.nix
-    ../../modules/base/sops.nix
-    ../../modules/base/users.nix
-    ../../modules/base/zsh.nix
+    # Shared profile (base + desktop + server)
+    ../../modules/profiles/server.nix
 
     # Rog secrets
     ./secrets.nix
@@ -34,13 +24,6 @@
     ../../modules/hardware/nvidia.nix
     ../../modules/hardware/rog-shutdown.nix
     ../../modules/hardware/asus-fan-control.nix
-    ../../modules/hardware/keyring.nix
-
-    # Desktop
-    ../../modules/desktop/fonts.nix
-    ../../modules/desktop/i18n.nix
-    ../../modules/desktop/kmscon.nix
-    ../../modules/features/services/xrdp.nix
 
     # Services (rog-specific)
     ./services/arr-stack.nix
@@ -53,7 +36,6 @@
     ./services/fileshelter.nix
     ./services/flaresolverr.nix
     ./services/ftp.nix
-    ./services/github-mcp-server.nix
     ./services/gonic.nix
     ./services/guacamole.nix
     ./services/jellyfin.nix
@@ -65,18 +47,8 @@
     ./services/wetty.nix
     ./services/wireguard.nix
 
-    # Virtualisation
-    ../../modules/virtualisation/docker.nix
+    # Virtualisation (rog-specific)
     ../../modules/virtualisation/libvirt.nix
-
-    # Networking
-    ../../modules/networking/avahi.nix
-    ../../modules/networking/firewall.nix
-    ../../modules/networking/openssh.nix
-    ../../modules/networking/wol.nix
-
-    # Boot shared config
-    ../../modules/features/boot.nix
   ];
 
   boot-settings = {
@@ -103,6 +75,8 @@
     hostName = "rog";
     networkmanager.enable = true;
   };
+
+  services.wol-custom.interface = "enp3s0";
 
   fileSystems."/run/media/library" = {
     device = "/dev/disk/by-uuid/608cd7cf-3cb4-4589-8f36-c558fb4e32a3";
@@ -140,9 +114,9 @@
 
   system.stateVersion = "25.05";
 
-  # Fix 1: Extender timeouts para prevenir exit status 4 en nixos-rebuild switch
-  # Ver: investigación de fallos intermitentes systemd-run switch-to-configuration
-  # Usar mkForce para override los defaults del módulo oci-containers
+  # Fix 1: Extend timeouts to prevent exit status 4 in nixos-rebuild switch
+  # See: investigation of intermittent systemd-run switch-to-configuration failures
+  # Use mkForce to override the oci-containers module defaults
   systemd.services.nginx.serviceConfig.TimeoutStartSec = lib.mkForce "300";
   systemd.services."acme-glats.org".serviceConfig.TimeoutStartSec = lib.mkForce "300";
   systemd.services."docker-droppy".serviceConfig.TimeoutStartSec = lib.mkForce "300";
@@ -150,8 +124,8 @@
   systemd.services."docker-jellyfin".serviceConfig.TimeoutStartSec = lib.mkForce "300";
   systemd.services."docker-jellyseerr".serviceConfig.TimeoutStartSec = lib.mkForce "300";
 
-  # Prevenir restart loops que consumen tiempo durante switch
-  # Usar mkForce porque nginx ya define este valor
+  # Prevent restart loops that consume time during switch
+  # Use mkForce because nginx already defines this value
   systemd.services.nginx.startLimitIntervalSec = lib.mkForce 0;
   systemd.services."docker-droppy".startLimitIntervalSec = lib.mkForce 0;
   systemd.services."docker-jellyfin".startLimitIntervalSec = lib.mkForce 0;

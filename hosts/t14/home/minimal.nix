@@ -10,7 +10,7 @@
     ../../../home-linux/tmux.nix
     ../../../home-linux/neovim.nix
     ../../../home-linux/git.nix
-    ../../../home-linux/opencode.nix
+    ../../../shared/opencode.nix
     ../../../home-linux/ssh.nix
   ];
 

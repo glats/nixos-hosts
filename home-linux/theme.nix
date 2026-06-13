@@ -23,23 +23,23 @@
 
       /* Fix: selected items invisible when window unfocused (backdrop state) */
       /* Redefinir colores del tema para selecciones sin foco */
-      @define-color theme_unfocused_selected_bg_color #505050;
-      @define-color theme_unfocused_selected_fg_color #ffffff;
+      @define-color theme_unfocused_selected_bg_color #${config.colorScheme.palette.base02};
+      @define-color theme_unfocused_selected_fg_color #${config.colorScheme.palette.base07};
 
       /* Override generico para cualquier seleccion en backdrop */
       *:backdrop:selected {
-        background-color: #505050 !important;
-        color: #ffffff !important;
+        background-color: #${config.colorScheme.palette.base02} !important;
+        color: #${config.colorScheme.palette.base07} !important;
       }
 
       .view:backdrop:selected {
-        background-color: #505050 !important;
-        color: #ffffff !important;
+        background-color: #${config.colorScheme.palette.base02} !important;
+        color: #${config.colorScheme.palette.base07} !important;
       }
 
       row:backdrop:selected {
-        background-color: #505050 !important;
-        color: #ffffff !important;
+        background-color: #${config.colorScheme.palette.base02} !important;
+        color: #${config.colorScheme.palette.base07} !important;
       }
     '';
     gtk4.extraConfig = {

@@ -1,167 +1,19 @@
-{ config, lib, pkgs, ... }:
+{ config
+, lib
+, pkgs
+, ...
+}:
 
 let
-  isRog = config.networking.hostName == "rog";
-
-  # MATE packages not installed by services.xserver.desktopManager.mate.enable
-  matePkgs = with pkgs; [
-    atril
-    caja
-    engrampa
-    eom
-    marco
-    pluma
-    mate-panel
-    mate-sensors-applet
-    mate-user-share
-  ];
-
-  cliTools = with pkgs; [
-    fzf
-    bat
-    delta
-    curl
-    wget
-    fastfetch
-    htop
-    btop
-    jq
-    yq
-    lsd
-    util-linux
-    nil
-    nix-output-monitor
-    nixpkgs-fmt
-    statix
-    deadnix
-    coreutils
-    findutils
-    binutils
-    pciutils
-    usbutils
-    lshw
-    file
-    tree
-    ncdu
-    duf
-    iproute2
-    iputils
-    dnsutils
-    nettools
-    nmap
-    wakeonlan
-    ethtool
-    aria2
-    zip
-    unzip
-    p7zip
-    rar
-    unrar
-    xz
-    iotop
-    iftop
-    nethogs
-    lsof
-    sysstat
-    nix-search-cli
-    systemctl-tui
-    cmatrix
-    dex
-    sshfs
-    libsecret
-    google-cloud-sdk
-    xclip
-    imagemagick
-    home-manager
-    ffmpeg
-    avahi
-    tcpdump
-    lazygit
-    lazydocker
-    thttpd
-    sqlite
-    xxd
-  ];
-
-  devTooling = with pkgs; [
-    gcc
-    gnumake
-    cmake
-    meson
-    ninja
-    autoconf
-    automake
-    libtool
-    pkg-config
-    go
-    nodejs
-    codex
-    dotnet-sdk_8
-    godot_4-mono
-  ];
-
-  desktopApps = with pkgs; [
-    ghostty
-    mpv
-    wiremix
-    flatpak
-    meld
-    xdg-user-dirs
-    windsurf
-    hicolor-icon-theme
-    papirus-icon-theme
-    materia-theme
-    gnome-themes-extra
-    gtk-engine-murrine
-    adwaita-icon-theme
-    flameshot
-    copyq
-    gpaste
-    conky
-    scrot
-    networkmanagerapplet
-    gparted
-    hexchat
-    popsicle
-  ];
-
-  mediaSupport = with pkgs; [
-    intel-vaapi-driver
-    libva-vdpau-driver
-    libva-utils
-    intel-gpu-tools
-    gst_all_1.gst-plugins-base
-    gst_all_1.gst-plugins-good
-  ];
-
-  virtualization = with pkgs; [
-    qemu_kvm
-    virt-manager
-    virt-viewer
-    spice-gtk
-    dnsmasq
-    bridge-utils
-    vde2
-  ];
-
-  browsers = with pkgs; [
-    google-chrome
-    microsoft-edge
-    chromium
-    brave
-  ];
+  # Profile composition. Each profile is a function `{ pkgs }: [ ... ]` that
+  # returns a flat list of packages. Hosts can opt-out of specific profiles
+  # in their own configuration (out of scope for the current change).
+  basePkgs = import ./profiles/base.nix { inherit pkgs; };
+  devPkgs = import ./profiles/dev.nix { inherit pkgs; };
+  mediaPkgs = import ./profiles/media.nix { inherit pkgs; };
+  virtPkgs = import ./profiles/virt.nix { inherit pkgs; };
+  browserPkgs = import ./profiles/browsers.nix { inherit pkgs; };
 in
-
 {
-  environment.systemPackages = with pkgs; [
-    git
-    neovim
-    nodejs_22
-    bun
-    docker
-    opencode
-    openfang
-    asus-fan-control
-    pipewire-module-xrdp
-  ] ++ matePkgs ++ cliTools ++ devTooling ++ desktopApps ++ mediaSupport ++ browsers ++ virtualization;
+  environment.systemPackages = basePkgs ++ devPkgs ++ mediaPkgs ++ virtPkgs ++ browserPkgs;
 }
