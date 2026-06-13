@@ -30,14 +30,19 @@
       color6 = "#${config.colorScheme.palette.base0C}";
       color7 = "#${config.colorScheme.palette.base05}";
 
-      # Bright colors (8-15)
+      # Bright colors (8-15).  `brightGreen`, `brightYellow`, etc. are
+      # present in the project's `shared/palette.nix` (used by rog /
+      # thinkcentre / mact2) but absent in standard nix-colors presets
+      # (e.g. tokyo-night used on t14).  Fall back to the
+      # corresponding base color so the shared module evaluates on
+      # any palette.
       color8 = "#${config.colorScheme.palette.base03}";
       color9 = "#${config.colorScheme.palette.base09}";
-      color10 = "#${config.colorScheme.palette.brightGreen}";
-      color11 = "#${config.colorScheme.palette.brightYellow}";
-      color12 = "#${config.colorScheme.palette.brightBlue}";
-      color13 = "#${config.colorScheme.palette.brightMagenta}";
-      color14 = "#${config.colorScheme.palette.brightCyan}";
+      color10 = "#${config.colorScheme.palette.brightGreen or config.colorScheme.palette.base0B}";
+      color11 = "#${config.colorScheme.palette.brightYellow or config.colorScheme.palette.base0A}";
+      color12 = "#${config.colorScheme.palette.brightBlue or config.colorScheme.palette.base0D}";
+      color13 = "#${config.colorScheme.palette.brightMagenta or config.colorScheme.palette.base0E}";
+      color14 = "#${config.colorScheme.palette.brightCyan or config.colorScheme.palette.base0C}";
       color15 = "#${config.colorScheme.palette.base07}";
     };
   };

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=rog
+Comment=RDP connection to 172.16.0.5
+Exec=remmina -c /home/glats/.local/share/remmina/group_rdp_rog_172-16-0-5.remmina
+Icon=remmina
+Categories=Network;RemoteAccess;
+Terminal=false
+StartupWMClass=remmina
