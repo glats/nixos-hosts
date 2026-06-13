@@ -22,6 +22,16 @@
       inputs.home-manager.follows = "home-manager";
     };
 
+    # nixos-hardware — community-maintained hardware profiles.
+    # t14 imports the lenovo-thinkpad-t14-amd-gen4 profile via extraModules
+    # to merge with the existing hardware-configuration.nix (preserves
+    # btrfs subvolumes, swap, and EFI) and modules/hardware/amd-laptop.nix
+    # (provides fwupd, zramSwap, power-profiles-daemon).
+    nixos-hardware = {
+      url = "github:NixOS/nixos-hardware/master";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # gentle-ai upstream (for skills, commands, plugins)
     # Must match version in pkgs/gentle-ai/default.nix
     gentle-ai-src = {
@@ -100,10 +110,11 @@
   };
 
   outputs =
-    inputs@{ self
-    , nixpkgs
-    , home-manager
-    , ...
+    inputs@{
+      self,
+      nixpkgs,
+      home-manager,
+      ...
     }:
     let
       # --- Builders ---
@@ -192,7 +203,17 @@
         thinkcentre = mkNixosHost { hostname = "thinkcentre"; };
         t14 = mkNixosHost {
           hostname = "t14";
-          # Minimal config - no extra modules
+          # Omarchy + hardware-specific modules.
+          #   - omarchy-nix: Hyprland-based desktop environment (NixOS module).
+          #   - nixos-hardware T14 AMD gen4 profile: amdgpu initrd, 32-bit
+          #     graphics, fstrim, amd_pstate=active, backlight, touchpad.
+          # Both modules use mkDefault for overlapping settings (graphics,
+          # microcode) so they merge cleanly with hardware-configuration.nix
+          # and modules/hardware/amd-laptop.nix.
+          extraModules = [
+            inputs.omarchy-nix.nixosModules.default
+            inputs.nixos-hardware.nixosModules.lenovo-thinkpad-t14-amd-gen4
+          ];
         };
       };
 

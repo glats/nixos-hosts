@@ -1,0 +1,30 @@
+/* Glats theme - Walker stylesheet.
+ *
+ * Deployed to ~/.config/omarchy/themes/glats/walker.css by
+ * hosts/t14/home/omarchy.nix.  Without this file walker prints
+ * "Theme parser error: style.css:1:1-73: Failed to import" at every
+ * launch because the runtime symlink
+ * ~/.config/omarchy/current/theme/walker.css resolves to the active
+ * theme's walker.css, and the glats theme previously did not ship one.
+ *
+ * IMPORTANT: this is CSS, not a shell script. GTK CSS uses C-style
+ * block comments (slash-star ... star-slash), not the shell hash
+ * form. The first revision used the hash form and walker printed
+ * "Theme parser error: walker.css:1:1-2: Expected a valid selector"
+ * at every launch, so SUPER+SPACE opened an empty window with no
+ * styles. Do not put slash-star inside a comment either.
+ *
+ * Glats palette (monochrome, accent-only):
+ *   bg          #000000
+ *   fg          #dddddd
+ *   accent      #0d73cc
+ *   selection   #505050
+ *   dim         #8a8a8a
+ */
+@define-color selected-text #dddddd;
+@define-color text #dddddd;
+@define-color base #000000;
+@define-color border #505050;
+@define-color foreground #dddddd;
+@define-color background #000000;
+@define-color accent #0d73cc;
