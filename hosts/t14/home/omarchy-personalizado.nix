@@ -5,10 +5,18 @@
 # overlays already present in home/default.nix.
 #
 # Selective shared-module imports:
-#   * Imported: shell, git, ssh, neovim, tmux, opencode, sops, base
+#   * Imported: theme (t14-specific ./theme.nix that ONLY sets
+#     `config.colorScheme` from `shared/palette.nix` — the project's
+#     glats palette.  We can't import the shared `home-linux/theme.nix`
+#     because it also configures GTK/Qt/dconf, which collides with
+#     omarchy's `gtk.theme.name = "Adwaita-dark"`.  By scoping the
+#     colorScheme assignment to a t14-local module we get the same
+#     `config.colorScheme.palette` resolution for
+#     t14/home/ghostty.nix, t14/home/kitty.nix, and shared/tmux.nix
+#     without fighting omarchy's GTK theming);
+#     shell, git, ssh, neovim, tmux, opencode, sops, base
 #     (matches what the old gnome.nix preserved).
-#   * Excluded:  theme (omarchy owns GTK/Qt theming via nix-colors),
-#                ghostty (t14/home/ghostty.nix sets it via lib.mkForce
+#   * Excluded:  ghostty (t14/home/ghostty.nix sets it via lib.mkForce
 #                so the nix-colors palette wins over omarchy's runtime
 #                theme symlink),
 #                kitty (t14/home/kitty.nix sets it via lib.mkForce so
@@ -16,7 +24,10 @@
 #                rofi (omarchy uses walker instead),
 #                mate (GNOME/MATE only — incompatible with Hyprland),
 #                chrome-apps (webapps are managed by omarchy webapp
-#                tooling; the home-linux list is for rog/thinkcentre).
+#                tooling; the home-linux list is for rog/thinkcentre),
+#                home-linux/theme.nix (its GTK config collides with
+#                omarchy's gtk.theme.name — see ./theme.nix for the
+#                colorScheme-only replacement).
 #
 # The omarchy HM module is imported FIRST so that any conflicting
 # definitions from t14/home/default.nix can be overridden via
@@ -50,8 +61,15 @@
     # Compatible shared modules from home-linux/.  These are the same
     # modules the previous gnome.nix imported; we keep them so that
     # shell, git, ssh, neovim, tmux, opencode, and sops survive the
-    # migration.
+    # migration.  We do NOT import the shared `theme.nix` because it
+    # also configures GTK/Qt/dconf — those collide with omarchy's
+    # own gtk.theme.name = "Adwaita-dark" and would abort evaluation.
+    # Instead `./theme.nix` (defined right here) only sets
+    # `config.colorScheme` from `shared/palette.nix` (the project's
+    # glats palette) — that is the only piece the t14 terminal and
+    # tmux overlays actually read from.
     ../../../home-linux/base.nix
+    ./theme.nix
     ../../../home-linux/shell.nix
     ../../../home-linux/tmux.nix
     ../../../home-linux/neovim.nix
