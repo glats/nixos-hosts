@@ -156,7 +156,7 @@ let
         sdd-verify = "opencode/nemotron-3-ultra-free";
         sdd-archive = "opencode/deepseek-v4-flash-free";
         sdd-onboard = "opencode/deepseek-v4-flash-free";
-        neutral = "opencode-go/deepseek-v4-flash";
+        neutral = "opencode/deepseek-v4-flash-free";
       };
     }
   ];
