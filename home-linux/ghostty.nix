@@ -27,11 +27,17 @@
         "7=#${config.colorScheme.palette.base05}"
         "8=#${config.colorScheme.palette.base03}"
         "9=#${config.colorScheme.palette.base09}"
-        "10=#${config.colorScheme.palette.brightGreen}"
-        "11=#${config.colorScheme.palette.brightYellow}"
-        "12=#${config.colorScheme.palette.brightBlue}"
-        "13=#${config.colorScheme.palette.brightMagenta}"
-        "14=#${config.colorScheme.palette.brightCyan}"
+        # `brightGreen`, `brightYellow`, etc. are present in the
+        # project's `shared/palette.nix` (used by rog / thinkcentre /
+        # mact2) but absent in standard nix-colors presets
+        # (e.g. tokyo-night used on t14).  Fall back to the
+        # corresponding base color so the shared module evaluates on
+        # any palette.
+        "10=#${config.colorScheme.palette.brightGreen or config.colorScheme.palette.base0B}"
+        "11=#${config.colorScheme.palette.brightYellow or config.colorScheme.palette.base0A}"
+        "12=#${config.colorScheme.palette.brightBlue or config.colorScheme.palette.base0D}"
+        "13=#${config.colorScheme.palette.brightMagenta or config.colorScheme.palette.base0E}"
+        "14=#${config.colorScheme.palette.brightCyan or config.colorScheme.palette.base0C}"
         "15=#${config.colorScheme.palette.base07}"
       ];
       background = "#${config.colorScheme.palette.base00}";
