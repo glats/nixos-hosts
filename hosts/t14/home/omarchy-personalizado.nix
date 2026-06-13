@@ -8,15 +8,19 @@
 #   * Imported: shell, git, ssh, neovim, tmux, opencode, sops, base
 #     (matches what the old gnome.nix preserved).
 #   * Excluded:  theme (omarchy owns GTK/Qt theming via nix-colors),
-#                ghostty (t14/home/default.nix sets it via mkDefault),
-#                kitty (omarchy supplies its own kitty module),
+#                ghostty (t14/home/ghostty.nix sets it via lib.mkForce
+#                so the nix-colors palette wins over omarchy's runtime
+#                theme symlink),
+#                kitty (t14/home/kitty.nix sets it via lib.mkForce so
+#                the colorScheme palette wins over omarchy's `include`),
 #                rofi (omarchy uses walker instead),
 #                mate (GNOME/MATE only — incompatible with Hyprland),
 #                chrome-apps (webapps are managed by omarchy webapp
 #                tooling; the home-linux list is for rog/thinkcentre).
 #
 # The omarchy HM module is imported FIRST so that any conflicting
-# definitions from t14/home/default.nix can be overridden via mkDefault.
+# definitions from t14/home/default.nix can be overridden via
+# lib.mkForce (terminal theme + colors).
 {
   config,
   pkgs,
@@ -31,18 +35,16 @@
     # elephant, ghostty, alacritty, kitty, btop, neovim, fcitx5,
     # and all the user-level defaults.  Imported first so subsequent
     # t14-specific fragments can override.
-    # Note: starship is intentionally NOT in the t14 fragments list —
-    # the user does not use starship (the upstream omarchy module still
-    # enables it; we just do not layer t14-specific starship config on
-    # top).  Disable per-module in a follow-up if the prompt becomes
-    # visible at all.
     inputs.omarchy-nix.homeManagerModules.default
 
     # t14-specific overlays on top of omarchy.
+    # ghostty.nix and kitty.nix are imported via ./default.nix (which
+    # transitively imports the shared home-linux/ghostty.nix and
+    # home-linux/kitty.nix and uses lib.mkForce to keep the nix-colors
+    # palette ahead of omarchy's runtime theme).
     ./default.nix
     ./elephant.nix
     ./alacritty.nix
-    ./kitty.nix
     ./fcitx5.nix
 
     # Compatible shared modules from home-linux/.  These are the same

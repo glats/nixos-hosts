@@ -4,7 +4,11 @@
 #   - Hyprland t14-specific config fragments (monitor, input, bindings, looknfeel)
 #   - Local waybar config additions (kb-layout module)
 #   - Helper scripts (window-switcher, monitor-hotplug-handler, kb-*, mouse-wiggle)
-#   - Ghostty non-theme settings (font, opacity, backend)
+#   - Ghostty settings (imported via ./ghostty.nix; theme + non-theme)
+#   - Kitty settings (imported via ./kitty.nix; colorScheme + font)
+#   - Starship prompt (./starship.nix)
+#   - Wiremix audio mixer config (./wiremix.nix)
+#   - Remmina remote-desktop launchers + connection files (./remmina.nix)
 #   - mouse-wiggle launcher and its systemd user service
 {
   lib,
@@ -13,9 +17,6 @@
   ...
 }:
 
-let
-  inherit (lib) mkDefault;
-in
 {
   imports = [
     ./hypr/monitors.nix
@@ -30,6 +31,10 @@ in
     ./waybar.nix
     ./btop.nix
     ./ghostty.nix
+    ./kitty.nix
+    ./starship.nix
+    ./wiremix.nix
+    ./remmina.nix
     ./mouse-wiggle.nix
   ];
 
@@ -75,31 +80,6 @@ in
     ".config/hypr/kb-toggle.sh" = {
       source = ./scripts/kb-toggle.sh;
       executable = true;
-    };
-  };
-
-  # ------------------------------------------------------------------
-  # Ghostty — omarchy handles the theme; we add only non-theme settings
-  # ------------------------------------------------------------------
-  programs.ghostty = {
-    enable = true;
-    settings = {
-      # Font — slightly larger than omarchy default for the laptop screen
-      font-family = mkDefault "JetBrainsMono Nerd Font";
-      font-size = 10;
-
-      # Opacity for the laptop display
-      background-opacity = 0.92;
-
-      # NOTE: `renderer = "OpenGL"` and `gtk-theme = "dark"` were removed.
-      # Ghostty 1.3.1 rejects both as unknown INI fields:
-      #   * `renderer` is no longer a top-level config option (the
-      #     renderer is selected at build time, see `ghostty +show-config`).
-      #   * `gtk-theme` was removed in favor of a single `theme = "name"`
-      #     option that controls both libadwaita and the terminal palette;
-      #     the theme itself is supplied by omarchy's runtime symlink
-      #     (~/.config/omarchy/current/theme/ghostty.conf) and would
-      #     conflict with `theme = TokyoNight` written there.
     };
   };
 
