@@ -104,6 +104,73 @@
     "ghostty/themes/glats" = {
       source = ./ghostty-themes/glats;
     };
+  };
+
+  # ====================================================================
+  # Suppress omarchy's recursive home.file sources.
+  # ====================================================================
+  # The omarchy-nix HM module ships waybar via
+  #   home.file.".config/waybar/" = { source = ...; recursive = true; }
+  # and walker via programs.walker.settings which writes to
+  # home.file.".config/walker/config.toml".  Both are designed to be
+  # overridden from user configs.
+  #
+  # Two layering details make this tricky:
+  #
+  # 1. lib.mkForce on individual child paths (e.g. .config/waybar/config)
+  #    is not enough.  Home Manager's home-file build script uses
+  #    `home.fileOverlapResolution = "ignore"` by default, which keeps
+  #    the recursively linked file and silently discards any later
+  #    non-recursive entry that targets the same path.  We confirmed
+  #    this empirically: omarchy's `config` and `style.css` remain at
+  #    ~/.config/waybar/ even after rebuild, and the user's
+  #    `config.jsonc` is inert at runtime (waybar's loader checks
+  #    `config` before `config.jsonc`).
+  #
+  # 2. Setting `home.fileOverlapResolution = "override"` builds the
+  #    `home-manager-files.drv` correctly but the build script's
+  #    `rm` fails with Permission denied on the read-only Nix store
+  #    paths that `lndir` created, causing the build to abort.
+  #
+  # The cleanest fix is to override the PARENT recursive entry with
+  # lib.mkForce and replace it with our own non-recursive source that
+  # contains only the files the user actually wants at runtime. The
+  # `indicators/` subdirectory omarchy ships in config/waybar/ is not
+  # referenced by the user's config.jsonc (it uses
+  # $OMARCHY_PATH/default/waybar/indicators/ instead), so dropping it
+  # is safe. The theme.css symlink omarchy writes via xdg.configFile
+  # is unaffected by this override (different attribute path).
+  #
+  # The waybar-t14/ directory mirrors the layout omarchy expects at
+  # ~/.config/waybar/ but contains only the user's files. We use a
+  # dedicated subdirectory (rather than symlinking) to keep the
+  # override atomic: any future addition to the user's waybar config
+  # is a single-file edit + flake rebuild.
+  #
+  # Reference: see waybar-t14/config.jsonc for the $OMARCHY_PATH and
+  # ~/.config/hypr/kb-layout.sh script references. Those scripts are
+  # deployed by hosts/t14/home/default.nix to
+  # ~/.local/share/omarchy/bin/ (not ~/.config/hypr/), so the
+  # exec/on-click targets in the user's config resolve via the
+  # existing PATH (kb-toggle.sh) or via the symlink
+  # ~/.config/hypr/kb-layout.sh that default.nix also deploys.
+  home.file = {
+    # Suppress omarchy's `home.file.".config/waybar/"` recursive
+    # source entirely.  The replacement source contains only the
+    # files the user wants at runtime (config.jsonc, style.css).
+    ".config/waybar/" = lib.mkForce {
+      source = ./waybar-t14;
+      recursive = true;
+    };
+
+    # The omarchy HM module ships walker/config.toml via home.file
+    # (programs.walker.settings writes a file at the same path).
+    # Override it with the user's personal walker config.  No
+    # recursive source to fight here, so a plain lib.mkForce on the
+    # specific target is enough.
+    ".config/walker/config.toml" = lib.mkForce {
+      source = ./walker-config.toml;
+    };
 
     # ==================================================================
     # PATH injection for the systemd user manager.
