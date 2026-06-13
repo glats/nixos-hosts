@@ -1,7 +1,8 @@
-{ config
-, pkgs
-, lib
-, ...
+{
+  config,
+  pkgs,
+  lib,
+  ...
 }:
 
 let
@@ -198,4 +199,17 @@ in
       noto-fonts-cjk-sans
     ];
   };
+
+  # Font audit note (T3-007): the Home Manager module brought in by
+  # omarchy-nix (modules/home-manager/fonts.nix) installs its own copy
+  # of noto-fonts, noto-fonts-color-emoji, nerd-fonts.caskaydia-mono,
+  # and nerd-fonts.jetbrains-mono at the user level.  This NixOS module
+  # intentionally keeps the system-level font packages separate so
+  # that the console / kmscon / early-boot text rendering can resolve
+  # fonts without depending on the user session.
+  #
+  # The two scopes are:
+  #   * NixOS (this file): console, kmscon, getty, display managers.
+  #   * HM (omarchy):      GTK apps, ghostty, waybar, hyprland text.
+  # No deduplication is needed because they serve different scopes.
 }
