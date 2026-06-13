@@ -6,7 +6,12 @@
 #   - Helper scripts (window-switcher, monitor-hotplug-handler, kb-*, mouse-wiggle)
 #   - Ghostty non-theme settings (font, opacity, backend)
 #   - mouse-wiggle launcher and its systemd user service
-{ lib, pkgs, inputs, ... }:
+{
+  lib,
+  pkgs,
+  inputs,
+  ...
+}:
 
 let
   inherit (lib) mkDefault;
@@ -66,11 +71,15 @@ in
       # Opacity for the laptop display
       background-opacity = 0.92;
 
-      # OpenGL backend for AMD iGPU
-      renderer = "OpenGL";
-
-      # GTK theming
-      gtk-theme = "dark";
+      # NOTE: `renderer = "OpenGL"` and `gtk-theme = "dark"` were removed.
+      # Ghostty 1.3.1 rejects both as unknown INI fields:
+      #   * `renderer` is no longer a top-level config option (the
+      #     renderer is selected at build time, see `ghostty +show-config`).
+      #   * `gtk-theme` was removed in favor of a single `theme = "name"`
+      #     option that controls both libadwaita and the terminal palette;
+      #     the theme itself is supplied by omarchy's runtime symlink
+      #     (~/.config/omarchy/current/theme/ghostty.conf) and would
+      #     conflict with `theme = TokyoNight` written there.
     };
   };
 
