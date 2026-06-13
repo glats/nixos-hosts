@@ -1,0 +1,86 @@
+/* Glats theme - Waybar stylesheet.
+ *
+ * Deployed to ~/.config/omarchy/themes/glats/waybar.css by
+ * hosts/t14/home/omarchy.nix. Activated by running
+ * `omarchy-theme-set glats` (or symlinking
+ * ~/.config/omarchy/current -> ~/.config/omarchy/themes/glats).
+ *
+ * IMPORTANT: this is CSS, not a shell script. GTK CSS uses C-style
+ * block comments (slash-star ... star-slash), not the shell hash
+ * form. Earlier revisions used the hash form and waybar crashed
+ * with "waybar.css:3:15Expected a valid selector" on every launch,
+ * leaving the bar invisible. Do not put slash-star inside a comment
+ * either - that re-opens the block and produces
+ * "waybar.css:N:M slash-star in comment block".
+ *
+ * Glats palette (monochrome, accent-only):
+ *   bg          #000000
+ *   fg          #dddddd
+ *   accent      #0d73cc
+ *   selection   #505050
+ *   dim         #8a8a8a
+ */
+* {
+  border: none;
+  border-radius: 0;
+  font-family: "CaskaydiaCove Nerd Font", "JetBrainsMono Nerd Font", monospace;
+  font-size: 12px;
+  min-height: 0;
+}
+
+window#waybar {
+  background-color: #000000;
+  color: #dddddd;
+  border-bottom: 1px solid #505050;
+}
+
+#workspaces button {
+  padding: 0 8px;
+  color: #dddddd;
+  background-color: transparent;
+}
+
+#workspaces button.active {
+  background-color: #0d73cc;
+  color: #dddddd;
+  border-radius: 4px;
+}
+
+#workspaces button:hover {
+  background-color: #505050;
+}
+
+#clock,
+#battery,
+#network,
+#pulseaudio,
+#tray,
+#backlight {
+  padding: 0 8px;
+  color: #dddddd;
+}
+
+#clock {
+  font-weight: bold;
+  color: #dddddd;
+}
+
+#battery.charging {
+  color: #dddddd;
+}
+
+#battery.warning:not(.charging) {
+  color: #8a8a8a;
+}
+
+#battery.critical:not(.charging) {
+  color: #dddddd;
+}
+
+#network.disconnected {
+  color: #dddddd;
+}
+
+#pulseaudio.muted {
+  color: #8a8a8a;
+}
