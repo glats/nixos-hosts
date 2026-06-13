@@ -1,5 +1,5 @@
-{ lib ? throw "providers-base.nix must be imported with lib"
-,
+{
+  lib ? throw "providers-base.nix must be imported with lib",
 }:
 
 let
@@ -54,7 +54,7 @@ let
 
   allProviders = nvidiaProvider;
 
-  activeProviderName = "opencode-go2";
+  activeProviderName = "opencode-free";
 
   providers = [
     {
@@ -126,47 +126,44 @@ let
       };
     }
     {
-      name = "free";
+      name = "opencode-go3";
       phases = {
-        gentle-orchestrator = "opencode/minimax-m3-free";
-        sdd-init = "opencode/mimo-v2.5-free";
-        sdd-explore = "opencode/minimax-m3-free";
-        sdd-propose = "opencode/nemotron-3-super-free";
-        sdd-spec = "opencode/nemotron-3-super-free";
-        sdd-design = "opencode/nemotron-3-super-free";
-        sdd-tasks = "opencode/minimax-m3-free";
-        sdd-apply = "opencode/minimax-m3-free";
-        sdd-verify = "opencode/minimax-m3-free";
-        sdd-archive = "opencode/minimax-m3-free";
-        sdd-onboard = "opencode/minimax-m3-free";
-        neutral = "opencode/mimo-v2.5-free";
+        gentle-orchestrator = "opencode-go/kimi-k2.6";
+        sdd-init = "opencode-go/deepseek-v4-flash";
+        sdd-explore = "opencode-go/qwen3.7-plus";
+        sdd-propose = "opencode-go/kimi-k2.6";
+        sdd-spec = "opencode-go/qwen3.7-plus";
+        sdd-design = "opencode-go/kimi-k2.6";
+        sdd-tasks = "opencode-go/kimi-k2.6";
+        sdd-apply = "opencode-go/minimax-m3";
+        sdd-verify = "opencode-go/kimi-k2.6";
+        sdd-archive = "opencode-go/deepseek-v4-flash";
+        sdd-onboard = "opencode-go/deepseek-v4-flash";
+        neutral = "opencode-go/deepseek-v4-flash";
       };
     }
     {
-      name = "deepseekfree";
+      name = "opencode-free";
       phases = {
-        gentle-orchestrator = "opencode/deepseek-v4-flash-free";
+        gentle-orchestrator = "opencode-go/kimi-k2.6";
         sdd-init = "opencode/deepseek-v4-flash-free";
-        sdd-explore = "opencode/deepseek-v4-flash-free";
-        sdd-propose = "opencode/deepseek-v4-flash-free";
-        sdd-spec = "opencode/deepseek-v4-flash-free";
-        sdd-design = "opencode/deepseek-v4-flash-free";
-        sdd-tasks = "opencode/deepseek-v4-flash-free";
-        sdd-apply = "opencode/deepseek-v4-flash-free";
-        sdd-verify = "opencode/deepseek-v4-flash-free";
+        sdd-explore = "opencode-go/qwen3.7-plus";
+        sdd-propose = "opencode-go/kimi-k2.6";
+        sdd-spec = "opencode-go/qwen3.7-plus";
+        sdd-design = "opencode/nemotron-3-ultra-free";
+        sdd-tasks = "opencode-go/kimi-k2.6";
+        sdd-apply = "opencode-go/minimax-m3";
+        sdd-verify = "opencode/nemotron-3-ultra-free";
         sdd-archive = "opencode/deepseek-v4-flash-free";
         sdd-onboard = "opencode/deepseek-v4-flash-free";
-        neutral = "opencode/deepseek-v4-flash-free";
+        neutral = "opencode-go/deepseek-v4-flash";
       };
     }
   ];
 
-  activeProvider = builtins.foldl'
-    (
-      acc: p: if p.name == activeProviderName then p else acc
-    )
-    null
-    providers;
+  activeProvider = builtins.foldl' (
+    acc: p: if p.name == activeProviderName then p else acc
+  ) null providers;
   getModelForPhase =
     phase: provider: if provider == null then null else provider.phases.${phase} or null;
 
