@@ -93,8 +93,12 @@
       gitNewBranchBugfix() { git checkout -b bugfix/$1 }
       gitNewBranchHotfix() { git checkout -b hotfix/$1 }
 
-      # Redefine worktree functions (omarchy bash/fns/worktrees fails due to alias conflict)
-      ga() {
+      # Redefine worktree functions. Use the `function NAME` syntax because
+      # zsh refuses to define a function with `name()` syntax when an alias
+      # with the same name already exists (e.g. ga='git add' from the
+      # oh-my-zsh git plugin loaded via zplug). The omarchy bash worktrees
+      # file fails for the same reason, so we override ga/gd here.
+      function ga {
         if [[ -z "$1" ]]; then
           echo "Usage: ga [branch name]"
           return 1
@@ -107,7 +111,7 @@
         cd "$wt_path"
       }
 
-      gd() {
+      function gd {
         if command -v gum >/dev/null && gum confirm "Remove worktree and branch?"; then
           local cwd worktree root branch
           cwd="$(pwd)"
@@ -122,11 +126,11 @@
         fi
       }
 
-      gaa() { git add -A :/ "$@" }
+      function gaa { git add -A :/ "$@" }
 
       gpo() { git push origin "$(git branch --show-current)" "$@" }
 
-      glog() {
+      function glog {
         git log --topo-order --pretty='format:%C(auto)%h%d %s %C(8)%cr %C(bold blue)%an' "$@"
       }
 
