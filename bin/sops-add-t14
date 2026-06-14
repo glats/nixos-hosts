@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+git pull
+sops updatekeys secrets/user/opencode.yaml
+git add secrets/user/opencode.yaml
+git commit -m "Add host_t14 to user secrets"
+git push
