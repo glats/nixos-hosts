@@ -37,8 +37,13 @@ let
           uninhibit
         else
           inhibit
-          xdotool mousemove_relative 1 1 2>/dev/null || \
-            hyprctl dispatch movecursor 1 1 2>/dev/null || true
+          # Move cursor by 1px relative to current position.
+          # hyprctl dispatch movecursor is ABSOLUTE, so we must read
+          # current position first, then add 1 to each axis.
+          CURSOR_POS=$(hyprctl cursorpos 2>/dev/null || echo "0,0")
+          X=$(echo "$CURSOR_POS" | cut -d',' -f1)
+          Y=$(echo "$CURSOR_POS" | cut -d',' -f2)
+          hyprctl dispatch movecursor "$((X + 1))" "$((Y + 1))" 2>/dev/null || true
         fi
         sleep 50
       done
