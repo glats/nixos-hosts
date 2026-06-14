@@ -42,6 +42,7 @@
 
     # === HARDWARE ===
     ../../modules/hardware/amd-laptop.nix
+    ../../modules/hardware/keyring.nix
 
     # === NETWORKING ===
     ../../modules/networking/openssh.nix
