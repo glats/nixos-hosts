@@ -59,6 +59,15 @@ in
           TERM = "xterm-256color";
         };
       };
+      "172.16.0.10" = {
+        HostName = "172.16.0.10";
+        User = "glats";
+        IdentityFile = "${sshDir}/t14";
+        IdentitiesOnly = true;
+        SetEnv = {
+          TERM = "xterm-256color";
+        };
+      };
 
       "t14.local" = {
         HostName = "t14.local";
