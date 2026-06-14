@@ -130,4 +130,12 @@
   # and stop falling back to the Adwaita default.  Key name is
   # `icon-theme` (with hyphen) per the gsettings schema.
   dconf.settings."org/gnome/desktop/interface".icon-theme = lib.mkForce "Papirus-Dark";
+
+  # Pin GTK_THEME in the session environment so it overrides any
+  # default the toolkit picks at startup.  Without this, GTK apps
+  # that read GTK_THEME before the home-manager GTK settings land
+  # (e.g. Nautilus spawned from a shell) fall back to Adwaita, which
+  # leaks Adwaita-styled window borders even though settings.ini
+  # and our CSS both say Materia-dark.
+  home.sessionVariables.GTK_THEME = "Materia-dark";
 }
