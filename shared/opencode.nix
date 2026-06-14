@@ -1,8 +1,9 @@
-{ config
-, lib
-, pkgs
-, inputs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
 }:
 
 with lib;
@@ -171,6 +172,15 @@ let
                             rm -f "$target/$rel"
                           fi
                         done
+                      done
+
+                      # Patch sdd-apply and sdd-verify: remove <!-- section:model-capable -->
+                      # marker from line 1 so OpenCode v1.17+ can detect YAML frontmatter.
+                      for skill in sdd-apply sdd-verify; do
+                        skill_file="$runtime_dir/skills/$skill/SKILL.md"
+                        if [ -f "$skill_file" ] && head -1 "$skill_file" | grep -q '^<!-- section:model-capable -->$'; then
+                          ${pkgs.gnused}/bin/sed -i '1{/^<!-- section:model-capable -->$/d}' "$skill_file"
+                        fi
                       done
           '';
 
