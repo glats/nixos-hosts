@@ -26,6 +26,7 @@
       setw -gq xterm-keys on
 
       set -g mouse on
+      set -g status-position bottom
 
       # base16 theme
       set -g status-style fg=#${config.colorScheme.palette.base05},bg=#${config.colorScheme.palette.base01}
