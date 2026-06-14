@@ -1,7 +1,8 @@
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }:
 
 {
@@ -95,11 +96,11 @@
       gitNewBranchBugfix() { git checkout -b bugfix/$1 }
       gitNewBranchHotfix() { git checkout -b hotfix/$1 }
 
-      gaa() { git add -A :/ "$@" }
+      function gaa { git add -A :/ "$@" }
 
-      gpo() { git push origin "$(git branch --show-current)" "$@" }
+      function gpo { git push origin "$(git branch --show-current)" "$@" }
 
-      glog() {
+      function glog {
         git log --topo-order --pretty='format:%C(auto)%h%d %s %C(8)%cr %C(bold blue)%an' "$@"
       }
 
