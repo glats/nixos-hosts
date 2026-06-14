@@ -1,7 +1,8 @@
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }:
 
 {
@@ -26,9 +27,8 @@
         "syntax-highlighting"
         "history-substring-search"
         "autosuggestions"
-        "git"
       ];
-      prompt.theme = "suse";
+      prompt.theme = "off";
       editor = {
         keymap = "emacs";
         dotExpansion = true;
@@ -41,10 +41,8 @@
       vi = "nvim";
       gst = "git status";
       gsts = "git status --short";
-      gd = "git diff";
       gcl = "git clone --recursive";
       gadd = "git add --all";
-      ga = "git add";
       gl = "git pull";
       glr = "git pull --rebase";
       gp = "git push";
@@ -94,6 +92,35 @@
       gitNewBranchFeature() { git checkout -b feature/$1 }
       gitNewBranchBugfix() { git checkout -b bugfix/$1 }
       gitNewBranchHotfix() { git checkout -b hotfix/$1 }
+
+      # Redefine worktree functions (omarchy bash/fns/worktrees fails due to alias conflict)
+      ga() {
+        if [[ -z "$1" ]]; then
+          echo "Usage: ga [branch name]"
+          return 1
+        fi
+        local branch="$1"
+        local base="$(basename "$PWD")"
+        local wt_path="../''${base}--''${branch}"
+        git worktree add -b "$branch" "$wt_path"
+        mise trust "$wt_path" 2>/dev/null || true
+        cd "$wt_path"
+      }
+
+      gd() {
+        if command -v gum >/dev/null && gum confirm "Remove worktree and branch?"; then
+          local cwd worktree root branch
+          cwd="$(pwd)"
+          worktree="$(basename "$cwd")"
+          root="''${worktree%%--*}"
+          branch="''${worktree#*--}"
+          if [[ "$root" != "$worktree" ]]; then
+            cd "../$root"
+            git worktree remove "$cwd" --force || return 1
+            git branch -D "$branch"
+          fi
+        fi
+      }
 
       gaa() { git add -A :/ "$@" }
 
