@@ -18,6 +18,9 @@ let
         "z-ai/glm-5.1" = {
           name = "GLM 5.1";
         };
+        "minimaxai/minimax-m3" = {
+          name = "MiniMax M3";
+        };
         "minimaxai/minimax-m2.7" = {
           name = "MiniMax M2.7";
         };
