@@ -1118,6 +1118,27 @@
         "type": "github"
       }
     },
+    "opencode-src": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1781390337,
+        "narHash": "sha256-Go5zeXVM6zAGLmfTYhesP28VkAhxYrjAr9JTO57wJzw=",
+        "owner": "anomalyco",
+        "repo": "opencode",
+        "rev": "23471d674c1a9f5e9a3e90c609e60dd6aaa6af23",
+        "type": "github"
+      },
+      "original": {
+        "owner": "anomalyco",
+        "ref": "v1.17.6",
+        "repo": "opencode",
+        "type": "github"
+      }
+    },
     "pipewire-module-xrdp-src": {
       "flake": false,
       "locked": {
@@ -1176,6 +1197,7 @@
         "nixpkgs": "nixpkgs_2",
         "nvim-config": "nvim-config",
         "omarchy-nix": "omarchy-nix",
+        "opencode-src": "opencode-src",
         "pipewire-module-xrdp-src": "pipewire-module-xrdp-src",
         "sops-nix": "sops-nix",
         "sub-agent-statusline": "sub-agent-statusline"

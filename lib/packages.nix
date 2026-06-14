@@ -8,13 +8,18 @@
 #     packages.x86_64-linux = packages.linuxPackages;
 #     packages.x86_64-darwin = packages.darwinPackages;
 #   }
-{ inputs
-, pkgsFor
-, ...
+{
+  inputs,
+  pkgsFor,
+  ...
 }:
 let
   linuxPkgs = pkgsFor "x86_64-linux";
   darwinPkgs = pkgsFor "x86_64-darwin";
+
+  opencodeFor =
+    system:
+    inputs.opencode-src.packages.${system}.opencode or (throw "opencode not available for ${system}");
 
   # Cross-platform shared inputs
   sharedOpencodePaths = {
@@ -44,6 +49,7 @@ let
     };
     secret-guard-assets = linuxPkgs.callPackage ../pkgs/secret-guard-assets { };
     opencode-npm-packages = linuxPkgs.callPackage ../pkgs/opencode-npm-packages { };
+    opencode = opencodeFor "x86_64-linux";
     openfang = linuxPkgs.callPackage ../pkgs/openfang { };
   };
 
@@ -67,6 +73,7 @@ let
     };
     secret-guard-assets = darwinPkgs.callPackage ../pkgs/secret-guard-assets { };
     opencode-npm-packages = darwinPkgs.callPackage ../pkgs/opencode-npm-packages { };
+    opencode = opencodeFor "x86_64-darwin";
   };
 in
 {

@@ -19,5 +19,6 @@ in
     engram-assets
     secret-guard-assets
     opencode-npm-packages
+    opencode
     ;
 }
