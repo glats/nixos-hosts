@@ -114,6 +114,7 @@ with pkgs;
   hexchat
   popsicle
   hypridle
+  remmina
 
   # System utilities (hardware + xrdp audio)
   asus-fan-control
