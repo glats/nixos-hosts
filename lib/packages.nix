@@ -8,10 +8,9 @@
 #     packages.x86_64-linux = packages.linuxPackages;
 #     packages.x86_64-darwin = packages.darwinPackages;
 #   }
-{
-  inputs,
-  pkgsFor,
-  ...
+{ inputs
+, pkgsFor
+, ...
 }:
 let
   linuxPkgs = pkgsFor "x86_64-linux";
@@ -20,7 +19,8 @@ let
   opencodeFor =
     system:
     let
-      upstream = inputs.opencode-src.packages.${system}.opencode or (throw "opencode not available for ${system}");
+      upstream =
+        inputs.opencode-src.packages.${system}.opencode or (throw "opencode not available for ${system}");
     in
     upstream.overrideAttrs (oldAttrs: {
       postPatch = (oldAttrs.postPatch or "") + ''
