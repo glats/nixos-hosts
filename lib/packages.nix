@@ -19,7 +19,21 @@ let
 
   opencodeFor =
     system:
-    inputs.opencode-src.packages.${system}.opencode or (throw "opencode not available for ${system}");
+    let
+      upstream = inputs.opencode-src.packages.${system}.opencode or (throw "opencode not available for ${system}");
+    in
+    upstream.overrideAttrs (oldAttrs: {
+      postPatch = (oldAttrs.postPatch or "") + ''
+        # Relax bun version requirement (nixpkgs has 1.3.13, opencode wants 1.3.14)
+        if [ -f packages/script/src/index.ts ]; then
+          sed -i 's/expectedBunVersion = .*/expectedBunVersion = "1.3.13"/' packages/script/src/index.ts || true
+        fi
+        # Also check for any other bun version checks
+        find . -name "*.ts" -o -name "*.js" | xargs grep -l "bun@.*1.3.14" 2>/dev/null | while read f; do
+          sed -i 's/bun@.*1.3.14/bun@1.3.13/g' "$f" || true
+        done
+      '';
+    });
 
   # Cross-platform shared inputs
   sharedOpencodePaths = {
