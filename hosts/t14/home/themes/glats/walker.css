@@ -21,7 +21,7 @@
  *   selection   #505050
  *   dim         #8a8a8a
  */
-@define-color selected-text #dddddd;
+@define-color selected-text #ffffff;
 @define-color text #dddddd;
 @define-color base #000000;
 @define-color border #505050;
