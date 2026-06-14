@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(dirname "$SCRIPT_DIR")"
+HOST=$(hostname)
+
+cd "$REPO_ROOT"
+
+if [[ $# -ne 1 ]]; then
+  echo "Usage: $0 <server-endpoint>" >&2
+  echo "Example: $0 vpn.mydomain.com" >&2
+  echo "Example: $0 1.2.3.4" >&2
+  exit 2
+fi
+
+SERVER_ENDPOINT="$1"
+OUTPUT_FILE="thinkpad-wireguard.conf"
+
+# --- Decrypt server private key & derive public key ---
+echo "> Decrypting server private key..."
+SERVER_PRIV=$(sops -d secrets/host/rog/wireguard.yaml | yq -r '.wireguard.server_private_key')
+SERVER_PUB=$(echo "$SERVER_PRIV" | wg pubkey)
+
+# --- Decrypt thinkpad preshared key ---
+echo "> Decrypting thinkpad preshared key..."
+THINKPAD_PSK=$(sops -d secrets/host/rog/wireguard.yaml | yq -r '.wireguard.peer_thinkpad_psk')
+
+# --- Generate fresh client keypair ---
+echo "> Generating fresh client keypair..."
+CLIENT_PRIV=$(wg genkey)
+CLIENT_PUB=$(echo "$CLIENT_PRIV" | wg pubkey)
+
+# --- Generate .conf ---
+cat > "$OUTPUT_FILE" << EOF
+[Interface]
+Address = 10.13.13.4/32
+PrivateKey = ${CLIENT_PRIV}
+DNS = 10.13.13.1
+
+[Peer]
+PublicKey = ${SERVER_PUB}
+PresharedKey = ${THINKPAD_PSK}
+AllowedIPs = 10.13.13.0/24
+Endpoint = ${SERVER_ENDPOINT}:51820
+PersistentKeepalive = 25
+EOF
+
+chmod 600 "$OUTPUT_FILE"
+echo "> Created: $OUTPUT_FILE"
+
+# --- Update public key in wireguard.nix ---
+WIREGUARD_NIX="hosts/rog/services/wireguard.nix"
+echo "> Updating thinkpad public key in $WIREGUARD_NIX..."
+
+python3 -c "
+import re, sys
+nix_file = sys.argv[1]
+new_pub = sys.argv[2]
+with open(nix_file) as f:
+  content = f.read()
+content = re.sub(
+  r'(# thinkpad.*?publicKey = )\".*?\";',
+  r'\1\"' + new_pub + r'\";',
+  content,
+  flags=re.DOTALL
+)
+with open(nix_file, 'w') as f:
+  f.write(content)
+" "$WIREGUARD_NIX" "$CLIENT_PUB"
+
+# --- Summary ---
+echo ""
+echo "=== Ready ==="
+echo ""
+echo "  1. Copy this file to the thinkpad and import:"
+echo "     scp $OUTPUT_FILE thinkpad:/etc/wireguard/wg0.conf"
+echo ""
+echo "  2. On the thinkpad, start the tunnel:"
+echo "     sudo wg-quick up wg0"
+echo ""
+echo "  3. Rebuild rog with new public key:"
+echo "     sudo nixos-rebuild switch --flake '/etc/nixos#${HOST}'"
+echo ""
+echo "  4. Verify connection:"
+echo "     sudo wg show"
