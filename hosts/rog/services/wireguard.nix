@@ -1,5 +1,55 @@
-{ config, pkgs, ... }:
+{ config
+, pkgs
+, lib
+, ...
+}:
 
+let
+  inherit (lib) mapAttrsToList;
+  wgTools = pkgs.wireguard-tools;
+
+  # --- Peer definitions (single source of truth) ---
+  peers = {
+    oneplus9 = {
+      ip = "10.13.13.2";
+      publicKey = "de+Fwke7uLseeAd4LxWpUIFMXqOZfxAGqY1IOWmS6zc=";
+      psk = config.sops.secrets."wireguard/peer_oneplus9_psk";
+    };
+    mac = {
+      ip = "10.13.13.3";
+      publicKey = "/8U4mjny+N01cXgqqFsQ+cZKZWBzJLrVu1YsjVfnDXA=";
+      psk = config.sops.secrets."wireguard/peer_mac_psk";
+    };
+    thinkpad = {
+      ip = "10.13.13.4";
+      publicKey = "QFMVaBmcZq4B9Ku4fhXzM+Zd8vPq4MMoLCcTxDOQRF8=";
+      psk = config.sops.secrets."wireguard/peer_thinkpad_psk";
+    };
+    samsung = {
+      ip = "10.13.13.5";
+      publicKey = "L2Ven52rFTK4JCtnHZ7JC3fttcWaljFspj0PRZiX+Xw=";
+      psk = config.sops.secrets."wireguard/peer_samsung_psk";
+    };
+    thinkphone = {
+      ip = "10.13.13.6";
+      publicKey = "zvRP554xr2NbuKisHEawwhsBmSqDZRy/mr9aGNEkR3w=";
+      psk = config.sops.secrets."wireguard/peer_thinkphone_psk";
+    };
+  };
+
+  # WireGuard interface IP
+  serverIP = "10.13.13.1";
+  serverEndpoint = "guard.glats.org";
+
+  # Convert peers attrset to NixOS peer configs
+  mkWireGuardPeers = mapAttrsToList (
+    _: p: {
+      publicKey = p.publicKey;
+      presharedKeyFile = p.psk.path;
+      allowedIPs = [ "${p.ip}/32" ];
+    }
+  );
+in
 {
   # Enable IP forwarding
   boot.kernel.sysctl = {
@@ -12,7 +62,7 @@
   # to support multiple network interfaces: ethernet and WiFi)
   networking.nat = {
     enable = true;
-    internalIPs = [ "10.13.13.0/24" ];
+    internalIPs = [ "${serverIP}/24" ];
   };
 
   # DNS for WireGuard peers
@@ -20,49 +70,51 @@
     enable = true;
     resolveLocalQueries = false;
     settings = {
-      listen-address = "10.13.13.1";
+      listen-address = serverIP;
       bind-interfaces = true;
-      server = [ "1.1.1.1" "8.8.8.8" ];
+      server = [
+        "1.1.1.1"
+        "8.8.8.8"
+      ];
     };
   };
 
   # WireGuard interface
   networking.wireguard.interfaces.wg0 = {
-    ips = [ "10.13.13.1/24" ];
+    ips = [ "${serverIP}/24" ];
     listenPort = 51820;
     privateKeyFile = config.sops.secrets."wireguard/server_private_key".path;
-
-    peers = [
-      {
-        # oneplus9
-        publicKey = "de+Fwke7uLseeAd4LxWpUIFMXqOZfxAGqY1IOWmS6zc=";
-        presharedKeyFile = config.sops.secrets."wireguard/peer_oneplus9_psk".path;
-        allowedIPs = [ "10.13.13.2/32" ];
-      }
-      {
-        # mac
-        publicKey = "/8U4mjny+N01cXgqqFsQ+cZKZWBzJLrVu1YsjVfnDXA=";
-        presharedKeyFile = config.sops.secrets."wireguard/peer_mac_psk".path;
-        allowedIPs = [ "10.13.13.3/32" ];
-      }
-      {
-        # thinkpad
-        publicKey = "QFMVaBmcZq4B9Ku4fhXzM+Zd8vPq4MMoLCcTxDOQRF8=";
-        presharedKeyFile = config.sops.secrets."wireguard/peer_thinkpad_psk".path;
-        allowedIPs = [ "10.13.13.4/32" ];
-      }
-      {
-        # samsung
-        publicKey = "L2Ven52rFTK4JCtnHZ7JC3fttcWaljFspj0PRZiX+Xw=";
-        presharedKeyFile = config.sops.secrets."wireguard/peer_samsung_psk".path;
-        allowedIPs = [ "10.13.13.5/32" ];
-      }
-      {
-        # thinkphone
-        publicKey = "zvRP554xr2NbuKisHEawwhsBmSqDZRy/mr9aGNEkR3w=";
-        presharedKeyFile = config.sops.secrets."wireguard/peer_thinkphone_psk".path;
-        allowedIPs = [ "10.13.13.6/32" ];
-      }
-    ];
+    peers = mkWireGuardPeers peers;
   };
+
+  # --- Generate client configs at activation time ---
+  # Produces /etc/wireguard/clients/<name>.conf for each peer.
+  # Client private key must be generated on the client itself.
+  system.activationScripts.wireguard-client-configs = ''
+    mkdir -p /etc/wireguard/clients
+
+    SERVER_PUB=$(${wgTools}/bin/wg pubkey < ${config.sops.secrets."wireguard/server_private_key".path})
+
+    ${builtins.concatStringsSep "\n" (
+      mapAttrsToList (name: p: ''
+            PSK=$(cat ${p.psk.path})
+            cat > /etc/wireguard/clients/${name}.conf << CONF
+        [Interface]
+        Address = ${p.ip}/32
+        # PrivateKey = /etc/wireguard/${name}.key
+        # Generate: wg genkey | sudo tee /etc/wireguard/${name}.key | wg pubkey
+        DNS = ${serverIP}
+
+        [Peer]
+        PublicKey = $SERVER_PUB
+        PresharedKey = $PSK
+        AllowedIPs = 10.13.13.0/24
+        Endpoint = ${serverEndpoint}:51820
+        PersistentKeepalive = 25
+        CONF
+      '') peers
+    )}
+
+    chmod 600 /etc/wireguard/clients/*
+  '';
 }
