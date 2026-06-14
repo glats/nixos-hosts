@@ -29,9 +29,10 @@ let
           sed -i 's/expectedBunVersion = .*/expectedBunVersion = "1.3.13"/' packages/script/src/index.ts || true
         fi
         # Also check for any other bun version checks
-        find . -name "*.ts" -o -name "*.js" | xargs grep -l "bun@.*1.3.14" 2>/dev/null | while read f; do
+        # Use grep -r (no xargs) so an empty match returns non-zero cleanly, and || true on the whole chain
+        grep -rl "bun@.*1.3.14" --include="*.ts" --include="*.js" . 2>/dev/null | while read f; do
           sed -i 's/bun@.*1.3.14/bun@1.3.13/g' "$f" || true
-        done
+        done || true
       '';
     });
 
