@@ -1,8 +1,7 @@
-{
-  config,
-  lib,
-  pkgs,
-  ...
+{ config
+, lib
+, pkgs
+, ...
 }:
 
 with lib;
@@ -37,14 +36,17 @@ let
       active = providersConfig.activeProvider;
     in
     if active != null then
-      builtins.mapAttrs (phase: _: providersConfig.getModelForPhase phase active) (
-        builtins.listToAttrs (
-          map (p: {
-            name = p;
-            value = null;
-          }) sddPhases
+      builtins.mapAttrs (phase: _: providersConfig.getModelForPhase phase active)
+        (
+          builtins.listToAttrs (
+            map
+              (p: {
+                name = p;
+                value = null;
+              })
+              sddPhases
+          )
         )
-      )
     else
       { };
 
