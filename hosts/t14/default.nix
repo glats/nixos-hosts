@@ -31,7 +31,7 @@
     # own home-manager config below with a targeted set.
 
     # === DESKTOP ===
-    # Omarchy provides greetd + Hyprland + PipeWire + NetworkManager (iwd
+    # Omarchy provides Hyprland + PipeWire + NetworkManager (iwd
     # backend) + Bluetooth + printing + gvfs. The previous GNOME module
     # (modules/desktop/gnome.nix) and avahi module
     # (modules/networking/avahi.nix) are no longer imported because
@@ -85,26 +85,6 @@
     variant = "";
   };
   console.keyMap = lib.mkForce "la-latin1";
-
-  # === GREETD KEYBOARD FIX (v2) ===
-  # systemd-vconsole-setup.service skips VT1 because it's occupied by greetd
-  # during boot, so console.keyMap alone doesn't load the keymap. The wrapper
-  # script runs as 'greeter' user who lacks CAP_SYS_TTY_CONFIG, so loadkeys
-  # fails silently. We add ExecStartPre to the greetd service so loadkeys
-  # runs as root before tuigreet starts.
-  systemd.services.greetd.serviceConfig.ExecStartPre = [
-    "${pkgs.kbd}/bin/loadkeys la-latin1"
-  ];
-
-  # lib.mkForce on the entire default_session is required because
-  # services.greetd.settings uses a freeform attrsOf TOML-value type
-  # where mkOverride on nested leaf sub-paths does not win the merge
-  # against the greetd module's built-in defaults. The user field must
-  # be included since mkForce replaces the entire attrset.
-  services.greetd.settings.default_session = lib.mkForce {
-    command = "${pkgs.greetd.tuigreet}/bin/tuigreet --time --cmd Hyprland";
-    user = "greeter";
-  };
 
   # === OMARCHY CONFIG BLOCK ===
   # Omarchy reads these options from the imported NixOS module to decide
@@ -184,6 +164,19 @@
       imports = [ ./home/omarchy-personalizado.nix ];
     };
   };
+
+  # === DISPLAY MANAGER: kmscon (greetd disabled) ===
+  # Omarchy unconditionally enables greetd. We force it off.
+  # The PAM placeholder prevents an evaluation error from omarchy's
+  # unconditional security.pam.services.greetd.enableGnomeKeyring = true.
+  services.greetd.enable = lib.mkForce false;
+  security.pam.services.greetd = { };
+
+  # kmscon.nix eagerly instantiates tty2-6 but not tty1 because greetd
+  # normally occupies it. With greetd disabled, ensure kmscon is
+  # also eagerly instantiated on tty1 so a login prompt is available
+  # immediately after boot.
+  systemd.services."kmsconvt@tty1".wantedBy = [ "multi-user.target" ];
 
   system.stateVersion = "26.05";
 }
