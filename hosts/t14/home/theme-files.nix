@@ -25,7 +25,7 @@ in
       @define-color base #${p.base00};
     '';
 
-    # waybar.css - color variables + minimal selectors
+    # waybar.css - color variables only (selectors live in style.css)
     "omarchy/themes/glats/waybar.css".text = ''
       @define-color background #${p.base00};
       @define-color foreground #${p.base05};
@@ -38,20 +38,6 @@ in
       @define-color selected #${p.base02};
       @define-color active-bg #${p.base0D};
       @define-color hover-bg #${p.base02};
-
-      window#waybar {
-        background-color: #${p.base00};
-        color: #${p.base05};
-        border-bottom: 1px solid #${p.base02};
-      }
-
-      #workspaces button.active {
-        background-color: #${p.base0D};
-      }
-
-      #workspaces button:hover {
-        background-color: #${p.base02};
-      }
     '';
 
     # hyprland.conf - color-only (no structural keys)
