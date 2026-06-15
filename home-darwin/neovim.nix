@@ -1,44 +1,21 @@
-{ pkgs
-, inputs
-, ...
-}:
-let
-  # Build the upstream nvim config as a Nix store path so ~/.config/nvim
-  # is reproducible, content-addressed, and never touches the network at
-  # activation time. Replaces the previous activation-script that did a
-  # git clone + pull against github.com/j1cs/nvim.
-  nvim-config = pkgs.stdenvNoCC.mkDerivation {
-    pname = "nvim-config";
-    version = "unstable";
-    src = inputs.nvim-config;
-    dontBuild = true;
-    installPhase = ''
-      cp -r . $out
-    '';
-  };
-in
+{ pkgs, lib, ... }:
 {
-  programs.neovim = {
-    enable = true;
-    defaultEditor = false;
-    vimAlias = true; # provide `vim` command
-    viAlias = true; # provide `vi` command
+  home.packages = with pkgs; [
+    neovim
+    fd
+    tree-sitter
+    python3
+  ];
 
-    # Pin legacy behavior to silence warnings for stateVersion < 26.05
-    withRuby = false;
-    withPython3 = false;
-
-    # Useful external tools for many plugins
-    extraPackages = with pkgs; [
-      ripgrep
-      fd
-      tree-sitter
-      nodejs
-      python3
-      git
-      nixfmt
-    ];
-  };
-
-  home.file.".config/nvim".source = nvim-config;
+  home.activation.ensureNvimConfig = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+    GIT="${pkgs.git}/bin/git"
+    if [ ! -d "$HOME/.config/nvim" ]; then
+      $DRY_RUN_CMD $GIT clone https://github.com/glats/nvim "$HOME/.config/nvim"
+    else
+      if $GIT -C "$HOME/.config/nvim" rev-parse --git-dir >/dev/null 2>&1; then
+        $DRY_RUN_CMD $GIT -C "$HOME/.config/nvim" fetch --depth=1 origin
+        $DRY_RUN_CMD $GIT -C "$HOME/.config/nvim" merge --ff-only origin/main 2>/dev/null || true
+      fi
+    fi
+  '';
 }

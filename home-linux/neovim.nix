@@ -1,28 +1,24 @@
-{ pkgs
-, inputs
-, lib
-, ...
+{
+  pkgs,
+  lib,
+  ...
 }:
+{
+  home.packages = with pkgs; [
+    ripgrep
+    fd
+    tree-sitter
+    nodejs
+    python3
+    git
+    imagemagick
+    lua5_1
+    luarocks
+    icu
+  ];
 
-let
-  # Derivation that merges upstream nvim config with local customizations
-  nvim-with-custom = pkgs.stdenvNoCC.mkDerivation {
-    pname = "nvim-config-merged";
-    version = "unstable";
-
-    src = inputs.nvim-config;
-
-    installPhase = ''
-        mkdir -p $out
-
-        # Copy all upstream files
-        cp -r ./* $out/
-
-        # Create directory for custom nix plugins
-        mkdir -p $out/lua/plugins/nix
-
-        # Write custom snacks.lua
-        cat > $out/lua/plugins/nix/snacks.lua <<'EOF'
+  home.file.".config/nvim/lua/plugins/nix/snacks.lua" = {
+    text = ''
       return {
         "folke/snacks.nvim",
         opts = {
@@ -32,10 +28,12 @@ let
           },
         },
       }
-      EOF
+    '';
+    force = true;
+  };
 
-        # Write custom image.lua
-        cat > $out/lua/plugins/nix/image.lua <<'EOF'
+  home.file.".config/nvim/lua/plugins/nix/image.lua" = {
+    text = ''
       return {
         "3rd/image.nvim",
         build = "luarocks --lua-version 5.1 install magick",
@@ -56,26 +54,19 @@ let
           window_overlap_level = 3,
         },
       }
-      EOF
     '';
-
-    dontBuild = true;
+    force = true;
   };
-in
-{
-  # Neovim config from merged derivation
-  home.file.".config/nvim".source = nvim-with-custom;
 
-  home.packages = with pkgs; [
-    ripgrep
-    fd
-    tree-sitter
-    nodejs
-    python3
-    git
-    imagemagick
-    lua5_1
-    luarocks
-    icu # Required for .NET-based LSPs like marksman
-  ];
+  home.activation.ensureNvimConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    GIT="${pkgs.git}/bin/git"
+    if [ ! -d "$HOME/.config/nvim" ]; then
+      $DRY_RUN_CMD $GIT clone https://github.com/glats/nvim "$HOME/.config/nvim"
+    else
+      if $GIT -C "$HOME/.config/nvim" rev-parse --git-dir >/dev/null 2>&1; then
+        $DRY_RUN_CMD $GIT -C "$HOME/.config/nvim" fetch --depth=1 origin
+        $DRY_RUN_CMD $GIT -C "$HOME/.config/nvim" merge --ff-only origin/main 2>/dev/null || true
+      fi
+    fi
+  '';
 }
