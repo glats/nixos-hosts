@@ -165,12 +165,11 @@
     };
   };
 
-  # === DISPLAY MANAGER: kmscon (greetd disabled) ===
-  # Omarchy unconditionally enables greetd. We force it off.
-  # The PAM placeholder prevents an evaluation error from omarchy's
-  # unconditional security.pam.services.greetd.enableGnomeKeyring = true.
-  services.greetd.enable = lib.mkForce false;
-  security.pam.services.greetd = { };
+  # === DISPLAY MANAGER: greetd + tuigreet ===
+  # Re-enabling greetd after fixing the systemd autovt conflict.
+  # The keyboard issue may have been caused by the kmsconvt conflict,
+  # not by greetd itself. Testing with default tuigreet configuration.
+  services.greetd.enable = true;
 
   system.stateVersion = "26.05";
 }
