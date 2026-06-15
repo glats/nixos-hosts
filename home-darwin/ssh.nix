@@ -33,6 +33,12 @@ in
         IdentityFile = "${sshDir}/glats-rog";
       };
 
+      "t14.local" = {
+        HostName = "t14.local";
+        User = "glats";
+        IdentityFile = "${sshDir}/t14";
+      };
+
       "CLFTCC02G54THMD6N.local" = {
         HostName = "CLFTCC02G54THMD6N.local";
         User = primaryUser;
