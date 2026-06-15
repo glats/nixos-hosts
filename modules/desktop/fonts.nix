@@ -193,6 +193,8 @@ in
     packages = with pkgs; [
       source-sans
       nerd-fonts.caskaydia-cove
+      nerd-fonts.symbols-only
+      symbola
       joypixels
       noto-fonts
       noto-fonts-cjk-sans
