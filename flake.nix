@@ -75,11 +75,6 @@
       flake = false;
     };
 
-    nvim-config = {
-      url = "github:j1cs/nvim";
-      flake = false;
-    };
-
     # --- macOS-only inputs ---
     nix-darwin = {
       url = "github:nix-darwin/nix-darwin/master";
