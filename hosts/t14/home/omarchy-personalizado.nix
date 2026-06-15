@@ -32,11 +32,12 @@
 # The omarchy HM module is imported FIRST so that any conflicting
 # definitions from t14/home/default.nix can be overridden via
 # lib.mkForce (terminal theme + colors).
-{ config
-, pkgs
-, lib
-, inputs
-, ...
+{
+  config,
+  pkgs,
+  lib,
+  inputs,
+  ...
 }:
 
 {
@@ -111,6 +112,12 @@
       source = ./ghostty-themes/glats;
     };
   };
+
+  # ====================================================================
+  # Silences hyprland.configType migration warning.
+  # 25.05 (< 26.05) defaults to "hyprlang"; explicit opt-in keeps current
+  # behavior and suppresses the eval warning.
+  wayland.windowManager.hyprland.configType = "hyprlang";
 
   # ====================================================================
   # Suppress omarchy's recursive home.file sources.

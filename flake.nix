@@ -111,10 +111,11 @@
   };
 
   outputs =
-    inputs@{ self
-    , nixpkgs
-    , home-manager
-    , ...
+    inputs@{
+      self,
+      nixpkgs,
+      home-manager,
+      ...
     }:
     let
       # --- Builders ---
@@ -187,6 +188,10 @@
         nixos-build = {
           type = "app";
           program = "${linuxPackages.nixos-scripts}/bin/nixos-build";
+          meta = {
+            description = "Build and switch NixOS configuration";
+            category = "system";
+          };
         };
       };
 
