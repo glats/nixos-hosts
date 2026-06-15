@@ -1,0 +1,42 @@
+{
+  "neutral": {
+    "description": "Senior Architect mentor - helpful first, challenging when it matters",
+    "mode": "primary",
+    "prompt": "{file:./IDENTITY.md}\n\n{file:./SYSTEM_RULES.md}",
+    "tools": {
+      "bash": true,
+      "read": true,
+      "edit": true,
+      "write": true,
+      "delegate": true,
+      "task": true,
+      "delegation_list": true,
+      "delegation_read": true,
+      "mem_search": true,
+      "mem_save": true,
+      "mem_get_observation": true
+    }
+  },
+  "toolOverlays": {
+    "gentle-orchestrator": {
+      "mem_search": true,
+      "mem_save": true,
+      "mem_get_observation": true,
+      "delegation_list": true,
+      "delegation_read": true
+    },
+    "subagent": {
+      "mem_search": true,
+      "mem_save": true,
+      "mem_get_observation": true
+    }
+  },
+  "permissionOverlays": {
+    "gentle-orchestrator": {
+      "task": {
+        "*": "deny",
+        "sdd-*": "allow"
+      }
+    }
+  }
+}

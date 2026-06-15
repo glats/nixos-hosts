@@ -1,7 +1,8 @@
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }:
 
 with lib;
@@ -36,17 +37,14 @@ let
       active = providersConfig.activeProvider;
     in
     if active != null then
-      builtins.mapAttrs (phase: _: providersConfig.getModelForPhase phase active)
-        (
-          builtins.listToAttrs (
-            map
-              (p: {
-                name = p;
-                value = null;
-              })
-              sddPhases
-          )
+      builtins.mapAttrs (phase: _: providersConfig.getModelForPhase phase active) (
+        builtins.listToAttrs (
+          map (p: {
+            name = p;
+            value = null;
+          }) sddPhases
         )
+      )
     else
       { };
 
@@ -61,20 +59,8 @@ let
     else
       throw "No active provider found. Check activeProviderName in shared/opencode/providers-base.nix";
 
-  # Local tools to overlay on all agents (mem tools for engram integration)
-  localOrchestratorTools = {
-    mem_search = true;
-    mem_save = true;
-    mem_get_observation = true;
-    delegation_list = true;
-    delegation_read = true;
-  };
-
-  localSubAgentTools = {
-    mem_search = true;
-    mem_save = true;
-    mem_get_observation = true;
-  };
+  # Local overlays loaded from external JSON (upstream purity principle)
+  localOverlays = builtins.fromJSON (builtins.readFile ./local-agent-overlays.json);
 
   # Smart merge: respect upstream __replace__ markers
   # __replace__ means the upstream value is a complete unit;
@@ -98,21 +84,12 @@ let
       localModel = models.${name} or null;
       localTools =
         if name == "gentle-orchestrator" then
-          localOrchestratorTools
+          localOverlays.toolOverlays.gentle-orchestrator or { }
         else if upstream.mode or "" == "subagent" then
-          localSubAgentTools
+          localOverlays.toolOverlays.subagent or { }
         else
           { };
-      localPermission =
-        if name == "gentle-orchestrator" then
-          {
-            task = {
-              "*" = "deny";
-              "sdd-*" = "allow";
-            };
-          }
-        else
-          { };
+      localPermission = localOverlays.permissionOverlays.${name} or { };
     in
     stripReplace (
       (removeAttrs upstream [ ])
@@ -125,24 +102,8 @@ let
       }
     );
 
-  # Neutral agent (local-only, not in upstream JSON)
-  neutralAgent = {
-    description = "Senior Architect mentor - helpful first, challenging when it matters";
-    mode = "primary";
-    prompt = "{file:./IDENTITY.md}\n\n{file:./SYSTEM_RULES.md}";
-    tools = {
-      bash = true;
-      read = true;
-      edit = true;
-      write = true;
-      delegate = true;
-      task = true;
-      delegation_list = true;
-      delegation_read = true;
-      mem_search = true;
-      mem_save = true;
-      mem_get_observation = true;
-    };
+  # Neutral agent (loaded from local-agent-overlays.json)
+  neutralAgent = localOverlays.neutral // {
     model = models.neutral;
   };
 
