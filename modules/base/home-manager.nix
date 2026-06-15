@@ -1,8 +1,9 @@
-{ config
-, lib
-, pkgs
-, inputs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
 }:
 
 let
@@ -16,6 +17,9 @@ in
   home-manager = {
     useGlobalPkgs = true;
     useUserPackages = true;
+    # Pre-existing unmanaged files block HM's symlink activation with
+    # "would be clobbered" errors. Rename colliding files to <path>.backup.
+    backupFileExtension = "backup";
     extraSpecialArgs = {
       inherit inputs;
       hostName = config.networking.hostName;

@@ -1,8 +1,9 @@
-{ config
-, lib
-, pkgs
-, inputs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
 }:
 
 with lib;
@@ -108,10 +109,13 @@ let
             bun.lock
           '';
         };
-        ".config/${runtimeCfg.dir}/tui.json".text = builtins.toJSON {
-          "$schema" = "https://opencode.ai/tui.json";
-          theme = "system";
-          plugin = lib.attrNames tuiPluginsToInstall;
+        ".config/${runtimeCfg.dir}/tui.json" = {
+          force = true;
+          text = builtins.toJSON {
+            "$schema" = "https://opencode.ai/tui.json";
+            theme = "system";
+            plugin = lib.attrNames tuiPluginsToInstall;
+          };
         };
         # Plugin .ts files are copied by activation script below, not as symlinks
       };
