@@ -35,13 +35,13 @@
     # gentle-ai upstream (for skills, commands, plugins)
     # Must match version in pkgs/gentle-ai/default.nix
     gentle-ai-src = {
-      url = "github:Gentleman-Programming/gentle-ai/v1.36.6";
+      url = "github:Gentleman-Programming/gentle-ai/v1.40.2";
       flake = false;
     };
 
     # opencode upstream binary (replaces nixpkgs opencode)
     opencode-src = {
-      url = "github:anomalyco/opencode/v1.17.6";
+      url = "github:anomalyco/opencode/v1.17.7";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -54,7 +54,7 @@
     # engram upstream (for OpenCode plugin)
     # Must match version in pkgs/engram/default.nix
     engram-src = {
-      url = "github:Gentleman-Programming/engram/v1.16.1";
+      url = "github:Gentleman-Programming/engram/v1.16.3";
       flake = false;
     };
 
