@@ -1075,22 +1075,6 @@
         "type": "github"
       }
     },
-    "nvim-config": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1776049188,
-        "narHash": "sha256-7CUGbV9DibuERk0s7uwSDAzwMzz05XkX1wqRwmyTEpc=",
-        "owner": "j1cs",
-        "repo": "nvim",
-        "rev": "b1892b256e14cc5cae2f00578762b1aecbf663e0",
-        "type": "github"
-      },
-      "original": {
-        "owner": "j1cs",
-        "repo": "nvim",
-        "type": "github"
-      }
-    },
     "omarchy-nix": {
       "inputs": {
         "elephant": "elephant",
@@ -1195,7 +1179,6 @@
         "nix-vscode-extensions": "nix-vscode-extensions",
         "nixos-hardware": "nixos-hardware",
         "nixpkgs": "nixpkgs_2",
-        "nvim-config": "nvim-config",
         "omarchy-nix": "omarchy-nix",
         "opencode-src": "opencode-src",
         "pipewire-module-xrdp-src": "pipewire-module-xrdp-src",
