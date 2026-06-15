@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
   programs = {
@@ -17,12 +22,24 @@
     isNormalUser = true;
     home = "/home/glats";
     description = "Glats user";
-    extraGroups = [ "input" "networkmanager" "sound" "tty" "wheel" "audio" "video" "docker" "libvirtd" ];
+    extraGroups = [
+      "input"
+      "networkmanager"
+      "sound"
+      "tty"
+      "wheel"
+      "audio"
+      "video"
+      "docker"
+      "libvirtd"
+    ];
     shell = pkgs.zsh;
-    hashedPasswordFile = lib.mkIf (config ? sops && config.sops.secrets ? "glats_hashed_password")
-      config.sops.secrets."glats_hashed_password".path;
+    hashedPasswordFile = lib.mkIf (
+      config ? sops && config.sops.secrets ? "glats_hashed_password"
+    ) config.sops.secrets."glats_hashed_password".path;
     openssh.authorizedKeys.keys = [
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMmEZnnbGhOicYhWnRFRQ7f8DEDHElwqQ5mHp9Zr+Xwi glats@nixos-rog"
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKtoFLEVCeMwSVSCEdiUQgauZoKzU/aYZG8PBMN7CHQu glats@mac-t14"
     ];
   };
 
