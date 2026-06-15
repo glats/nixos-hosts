@@ -1,6 +1,7 @@
-{ pkgs
-, lib
-, ...
+{
+  pkgs,
+  lib,
+  ...
 }:
 {
   home.packages = with pkgs; [
@@ -15,6 +16,10 @@
     luarocks
     icu
   ];
+
+  # Prevent omarchy-nix programs.neovim from generating a minimal
+  # init.lua that would overwrite the git-cloned LazyVim config.
+  programs.neovim.enable = lib.mkForce false;
 
   home.file.".config/nvim/lua/plugins/nix/snacks.lua" = {
     text = ''
