@@ -150,9 +150,9 @@ let
       phases = {
         gentle-orchestrator = "opencode-go/kimi-k2.6";
         sdd-init = "opencode/deepseek-v4-flash-free";
-        sdd-explore = "opencode-go/qwen3.7-plus";
+        sdd-explore = "opencode-go/qwen3.7-max";
         sdd-propose = "opencode-go/kimi-k2.6";
-        sdd-spec = "opencode-go/qwen3.7-plus";
+        sdd-spec = "opencode-go/qwen3.7-max";
         sdd-design = "opencode-go/kimi-k2.6";
         sdd-tasks = "opencode-go/kimi-k2.6";
         sdd-apply = "opencode-go/mimo-v2.5-pro";

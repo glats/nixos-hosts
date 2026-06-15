@@ -28,7 +28,7 @@
     # TUI plugins
     tuiPlugins = {
       subAgentStatusline.enable = true;
-      sddEngramManage.enable = true;
+      sddEngramManage.enable = false;
     };
   };
 }
