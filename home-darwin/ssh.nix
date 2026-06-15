@@ -28,8 +28,8 @@ in
       };
 
       "rog.local" = {
-        HostName = "172.16.0.5";
-        User = primaryUser;
+        HostName = "rog.local";
+        User = "glats";
         IdentityFile = "${sshDir}/glats-rog";
       };
 
