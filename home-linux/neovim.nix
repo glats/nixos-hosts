@@ -57,7 +57,7 @@
     force = true;
   };
 
-  home.activation.ensureNvimConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+  home.activation.ensureNvimConfig = lib.hm.dag.entryBefore [ "linkGeneration" ] ''
     GIT="${pkgs.git}/bin/git"
     if [ ! -d "$HOME/.config/nvim" ]; then
       $DRY_RUN_CMD $GIT clone https://github.com/glats/nvim "$HOME/.config/nvim"
