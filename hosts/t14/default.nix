@@ -172,11 +172,5 @@
   services.greetd.enable = lib.mkForce false;
   security.pam.services.greetd = { };
 
-  # kmscon.nix eagerly instantiates tty2-6 but not tty1 because greetd
-  # normally occupies it. With greetd disabled, ensure kmscon is
-  # also eagerly instantiated on tty1 so a login prompt is available
-  # immediately after boot.
-  systemd.services."kmsconvt@tty1".wantedBy = [ "multi-user.target" ];
-
   system.stateVersion = "26.05";
 }
