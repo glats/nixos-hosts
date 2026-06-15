@@ -165,10 +165,9 @@
     };
   };
 
-  # === DISPLAY MANAGER: greetd + tuigreet ===
-  # Re-enabling greetd after fixing the systemd autovt conflict.
-  # The keyboard issue may have been caused by the kmsconvt conflict,
-  # not by greetd itself. Testing with default tuigreet configuration.
+  # === DISPLAY MANAGER ===
+  # Omarchy provides greetd + tuigreet. The T14 keyboard layout (latam)
+  # is configured via console.keyMap and services.xserver.xkb.
   services.greetd.enable = true;
 
   system.stateVersion = "26.05";
