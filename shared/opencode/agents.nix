@@ -1,7 +1,8 @@
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }:
 
 with lib;
@@ -10,28 +11,13 @@ let
   # Import centralized provider configuration
   providersConfig = import ./providers.nix { inherit lib; };
 
-  # Project context injected into all SDD sub-agent prompts
-  # Prevents path hallucination (e.g. /home/gl1ats/ instead of /home/glats/)
-  # and ensures agents know the correct working directory
-  projectContext = ''
-    ENVIRONMENT: User home is ${config.home.homeDirectory}. Username is ${config.home.username}.
-    All file paths MUST use this home directory. NEVER guess or hallucinate paths.'';
+  # Read upstream agent definitions from vanilla assets
+  upstreamOverlay = builtins.fromJSON (
+    builtins.readFile "${pkgs.gentle-ai-assets-vanilla}/share/gentle-ai/opencode/sdd-overlay-single.json"
+  );
+  upstreamAgents = upstreamOverlay.agent or { };
 
-  # Generate SDD sub-agent prompt with project context
-  mkSddPrompt = phase: ''
-    You are an SDD executor for the ${phase} phase, not the orchestrator. Do this phase's work yourself. Do NOT delegate, Do NOT call task/delegate, and Do NOT launch sub-agents. Read your skill file at ~/.config/opencode/skills/sdd-${phase}/SKILL.md and follow it exactly.
-
-    ${projectContext}
-
-    {file:./SYSTEM_RULES.md}'';
-
-  # Import orchestrator prompt from extracted file
-  upstreamOrchestratorPrompt = import ./orchestrator-prompt.nix { inherit config; };
-
-  # Get model for a specific phase from a provider entry
-  getModelForPhase = phase: provider: provider.phases.${phase} or null;
-
-  # Get all SDD phase names
+  # SDD phase names (for model assignment lookup)
   sddPhases = [
     "sdd-init"
     "sdd-explore"
@@ -45,119 +31,122 @@ let
     "sdd-onboard"
   ];
 
-  # Build agent models attrset from providers
-  # Uses active provider's models (set in providers.nix)
+  # Build agent models from active provider
   agentModels =
     let
       active = providersConfig.activeProvider;
     in
     if active != null then
-      builtins.mapAttrs (phase: _: getModelForPhase phase active)
-        (
-          builtins.listToAttrs (
-            map
-              (p: {
-                name = p;
-                value = null;
-              })
-              sddPhases
-          )
+      builtins.mapAttrs (phase: _: providersConfig.getModelForPhase phase active) (
+        builtins.listToAttrs (
+          map (p: {
+            name = p;
+            value = null;
+          }) sddPhases
         )
+      )
     else
       { };
 
-  # Final models - sourced exclusively from providers.nix
-  # If no provider is active, returns empty set (build will fail with clear error)
+  # Final model assignments for all agents
   models =
     if providersConfig.activeProvider != null then
       agentModels
       // {
-        neutral = getModelForPhase "neutral" providersConfig.activeProvider;
-        gentle-orchestrator = getModelForPhase "gentle-orchestrator" providersConfig.activeProvider;
+        neutral = providersConfig.getModelForPhase "neutral" providersConfig.activeProvider;
+        gentle-orchestrator = providersConfig.getModelForPhase "gentle-orchestrator" providersConfig.activeProvider;
       }
     else
-    # No active provider - this is an error condition
-    # Check activeProviderName in providers.nix
-      throw "No active provider found. Check activeProviderName in modules/home/opencode/providers.nix";
+      throw "No active provider found. Check activeProviderName in shared/opencode/providers-base.nix";
 
-  # Standard SDD sub-agent toolset (shared by all 10 sub-agents)
-  sddToolset = {
-    bash = true;
-    edit = true;
-    read = true;
-    write = true;
+  # Local tools to overlay on all agents (mem tools for engram integration)
+  localOrchestratorTools = {
+    mem_search = true;
+    mem_save = true;
+    mem_get_observation = true;
+    delegation_list = true;
+    delegation_read = true;
+  };
+
+  localSubAgentTools = {
     mem_search = true;
     mem_save = true;
     mem_get_observation = true;
   };
 
-  # Generate an SDD sub-agent from a phase + description.
-  # Optional promptSuffix for phases that need extra prompt text.
-  # Optional maxSteps for phases with step budgets.
-  mkSddAgent =
-    { phase
-    , description
-    , promptSuffix ? ""
-    , maxSteps ? null
-    ,
-    }:
-    {
-      inherit description;
-      hidden = true;
-      mode = "subagent";
-      prompt = mkSddPrompt phase + promptSuffix;
-      tools = sddToolset;
-      model = models.${"sdd-" + phase};
-    }
-    // lib.optionalAttrs (maxSteps != null) { inherit maxSteps; };
+  # Smart merge: respect upstream __replace__ markers
+  # __replace__ means the upstream value is a complete unit;
+  # local values are merged on top of that unit.
+  smartMerge =
+    local: upstream:
+    if upstream ? "__replace__" then
+      lib.recursiveUpdate upstream.__replace__ local
+    else
+      lib.recursiveUpdate upstream local;
 
-  # sdd-explore's prompt suffix: enforces a strict step budget
-  sddExploreSuffix = "\n\nCRITICAL: You have a limited step budget. Be EFFICIENT with reads:\n- Use Grep/Glob to FIND relevant files first, then read ONLY the specific sections you need\n- NEVER read entire large files (200+ lines) — use offset/limit parameters to read targeted sections\n- If a file is long, read the first 50 lines to understand structure, then use Grep for specifics\n- Prioritize breadth (scan many files) over depth (reading whole files)";
+  # Recursively strip __replace__ markers from a nested attrset
+  # so they don't leak into the final JSON.
+  stripReplace =
+    val: if isAttrs val then mapAttrs (_: stripReplace) (removeAttrs val [ "__replace__" ]) else val;
 
-  # The 10 SDD sub-agents, generated via mkSddAgent
-  sddAgents = {
-    sdd-init = mkSddAgent {
-      phase = "init";
-      description = "Bootstrap SDD context and project configuration";
+  # Overlay an upstream agent with local fields
+  overlayAgent =
+    name: upstream:
+    let
+      localModel = models.${name} or null;
+      localTools =
+        if name == "gentle-orchestrator" then
+          localOrchestratorTools
+        else if upstream.mode or "" == "subagent" then
+          localSubAgentTools
+        else
+          { };
+      localPermission =
+        if name == "gentle-orchestrator" then
+          {
+            task = {
+              "*" = "deny";
+              "sdd-*" = "allow";
+            };
+          }
+        else
+          { };
+    in
+    stripReplace (
+      (removeAttrs upstream [ ])
+      // lib.optionalAttrs (localModel != null) { model = localModel; }
+      // lib.optionalAttrs (localTools != { }) {
+        tools = smartMerge localTools (upstream.tools or { });
+      }
+      // lib.optionalAttrs (localPermission != { }) {
+        permission = smartMerge localPermission (upstream.permission or { });
+      }
+    );
+
+  # Neutral agent (local-only, not in upstream JSON)
+  neutralAgent = {
+    description = "Senior Architect mentor - helpful first, challenging when it matters";
+    mode = "primary";
+    prompt = "{file:./IDENTITY.md}\n\n{file:./SYSTEM_RULES.md}";
+    tools = {
+      bash = true;
+      read = true;
+      edit = true;
+      write = true;
+      delegate = true;
+      task = true;
+      delegation_list = true;
+      delegation_read = true;
+      mem_search = true;
+      mem_save = true;
+      mem_get_observation = true;
     };
-    sdd-explore = mkSddAgent {
-      phase = "explore";
-      description = "Investigate codebase and think through ideas";
-      maxSteps = 15;
-      promptSuffix = sddExploreSuffix;
-    };
-    sdd-propose = mkSddAgent {
-      phase = "propose";
-      description = "Create change proposals from explorations";
-    };
-    sdd-spec = mkSddAgent {
-      phase = "spec";
-      description = "Write detailed specifications from proposals";
-    };
-    sdd-design = mkSddAgent {
-      phase = "design";
-      description = "Create technical design from proposals";
-    };
-    sdd-tasks = mkSddAgent {
-      phase = "tasks";
-      description = "Break down specs and designs into implementation tasks";
-    };
-    sdd-apply = mkSddAgent {
-      phase = "apply";
-      description = "Implement code changes from task definitions";
-    };
-    sdd-verify = mkSddAgent {
-      phase = "verify";
-      description = "Validate implementation against specs";
-    };
-    sdd-archive = mkSddAgent {
-      phase = "archive";
-      description = "Archive completed change artifacts";
-    };
-    sdd-onboard = mkSddAgent {
-      phase = "onboard";
-      description = "Guide user through a complete SDD cycle using their real codebase";
-    };
+    model = models.neutral;
+  };
+
+  # Final agent set: upstream + model overlay + tools overlay + neutral
+  defaultAgents = (lib.mapAttrs overlayAgent upstreamAgents) // {
+    neutral = neutralAgent;
   };
 in
 {
@@ -188,52 +177,5 @@ in
     '';
   };
 
-  config.home.opencode.agents =
-    let
-      manualAgents = {
-        neutral = {
-          description = "Senior Architect mentor - helpful first, challenging when it matters";
-          mode = "primary";
-          prompt = "{file:./IDENTITY.md}\n\n{file:./SYSTEM_RULES.md}";
-          tools = {
-            bash = true;
-            read = true;
-            edit = true;
-            write = true;
-            delegate = true;
-            task = true;
-            delegation_list = true;
-            delegation_read = true;
-          };
-          model = models.neutral;
-        };
-
-        gentle-orchestrator = {
-          description = "Agent Teams Orchestrator - coordinates sub-agents, never does work inline";
-          mode = "primary";
-          permission = {
-            task = {
-              "*" = "deny";
-              "sdd-*" = "allow";
-            };
-          };
-          prompt = upstreamOrchestratorPrompt;
-          tools = {
-            bash = true;
-            delegate = true;
-            task = true;
-            delegation_list = true;
-            delegation_read = true;
-            edit = true;
-            read = true;
-            write = true;
-            mem_search = true;
-            mem_save = true;
-            mem_get_observation = true;
-          };
-          model = models.gentle-orchestrator;
-        };
-      };
-    in
-    lib.recursiveUpdate (manualAgents // sddAgents) config.home.opencode.agentOverrides;
+  config.home.opencode.agents = lib.recursiveUpdate defaultAgents config.home.opencode.agentOverrides;
 }

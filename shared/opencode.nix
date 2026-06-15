@@ -1,9 +1,8 @@
-{
-  config,
-  lib,
-  pkgs,
-  inputs,
-  ...
+{ config
+, lib
+, pkgs
+, inputs
+, ...
 }:
 
 with lib;
@@ -95,6 +94,10 @@ let
           force = true;
           source = "${pkgs.gentle-ai-assets}/share/gentle-ai/AGENTS.md";
         };
+        ".config/${runtimeCfg.dir}/sdd-orchestrator.md" = {
+          force = true;
+          source = "${pkgs.gentle-ai-assets-vanilla}/share/gentle-ai/opencode/sdd-orchestrator.md";
+        };
         # skills/ and commands/ are managed entirely by makeOpencodeConfigMutable activation
         # (not via home.file) because HM cannot overwrite existing real directories with symlinks
         ".config/${runtimeCfg.dir}/package.json" = {
@@ -137,7 +140,7 @@ let
             # the symlink points to the read-only nix store which OpenCode can't write to.
             # cmp guard is only used to skip unnecessary writes to already-real files
             # that haven't changed since the last build.
-            for file in opencode.json IDENTITY.md SYSTEM_RULES.md AGENTS.md package.json .gitignore tui.json; do
+            for file in opencode.json IDENTITY.md SYSTEM_RULES.md AGENTS.md sdd-orchestrator.md package.json .gitignore tui.json; do
               target="$runtime_dir/$file"
               if [ -L "$target" ]; then
                 src="$(${pkgs.coreutils}/bin/readlink -f "$target")"
