@@ -57,6 +57,11 @@
     ./alacritty.nix
     ./fcitx5.nix
 
+    # Theme file generators — produces all glats theme files from
+    # config.colorScheme.palette (nix-colors).  Replaces the static
+    # files that previously lived in themes/glats/.
+    ./theme-files.nix
+
     # Compatible shared modules from home-linux/.  These are the same
     # modules the previous gnome.nix imported; we keep them so that
     # shell, git, ssh, neovim, tmux, opencode, and sops survive the
@@ -100,24 +105,6 @@
   # The theme files (waybar.css, hyprland.conf, ghostty-theme, btop.theme,
   # backgrounds/) are deployed by the xdg.configFile entries below.
   xdg.configFile = {
-    # Glats theme — applied by the user via `omarchy-theme-set glats`
-    # (or by setting omarchy.theme = "tokyo-night" and symlinking
-    # current -> glats). The theme files live under themes/glats/.
-    "omarchy/themes/glats" = {
-      source = ./themes/glats;
-      recursive = true;
-    };
-
-    # Walker stylesheet for the glats theme — added via a separate
-    # home.file entry because the walker.css in themes/glats/ is
-    # tracked in git only after the user commits it; until then the
-    # recursive source = ./themes/glats pickup misses it. Once the
-    # user commits walker.css this entry is redundant but harmless
-    # (it writes the same file to the same target).
-    "omarchy/themes/glats/walker.css" = {
-      source = ./themes/glats/walker.css;
-    };
-
     # Ghostty custom 16-color palette (separate from omarchy themes
     # because ghostty is invoked directly with --theme=glats).
     "ghostty/themes/glats" = {
