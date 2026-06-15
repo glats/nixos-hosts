@@ -32,11 +32,12 @@
 # The omarchy HM module is imported FIRST so that any conflicting
 # definitions from t14/home/default.nix can be overridden via
 # lib.mkForce (terminal theme + colors).
-{ config
-, pkgs
-, lib
-, inputs
-, ...
+{
+  config,
+  pkgs,
+  lib,
+  inputs,
+  ...
 }:
 
 {
@@ -113,6 +114,12 @@
   };
 
   # ====================================================================
+  # Override resolution: let omarchy-nix deploy recursive sources (e.g.
+  # ~/.config/waybar/indicators/) while we override individual files.
+  # ====================================================================
+  home.fileOverlapResolution = "override";
+
+  # ====================================================================
   # Silences hyprland.configType migration warning.
   # 25.05 (< 26.05) defaults to "hyprlang"; explicit opt-in keeps current
   # behavior and suppresses the eval warning.
@@ -167,13 +174,11 @@
   # existing PATH (kb-toggle.sh) or via the symlink
   # ~/.config/hypr/kb-layout.sh that default.nix also deploys.
   home.file = {
-    # Suppress omarchy's `home.file.".config/waybar/"` recursive
-    # source entirely.  The replacement source contains only the
-    # files the user wants at runtime (config.jsonc, style.css).
-    ".config/waybar/" = lib.mkForce {
-      source = ./waybar-t14;
-      recursive = true;
-    };
+    # Override specific waybar files while letting omarchy-nix deploy
+    # the indicators/ directory and other files.
+    # Uses home.fileOverlapResolution = "override" (set above) to merge.
+    ".config/waybar/config".text = builtins.readFile ./waybar-t14/config.jsonc;
+    ".config/waybar/style.css".source = ./waybar-t14/style.css;
 
     # The omarchy HM module ships walker/config.toml via home.file
     # (programs.walker.settings writes a file at the same path).
