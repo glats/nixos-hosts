@@ -86,23 +86,23 @@
   };
   console.keyMap = lib.mkForce "la-latin1";
 
-  # === GREETD KEYBOARD FIX ===
-  # tuigreet is a TUI greeter that runs on the Linux virtual console (VT),
-  # not on X11. It relies on the VT keymap, not services.xserver.xkb.
-  # The T14 config forces latam layout, but the greetd service may not
-  # have the keymap loaded when tuigreet starts. This wrapper ensures
-  # loadkeys is called before tuigreet, so the login screen matches
-  # the physical keyboard layout.
+  # === GREETD KEYBOARD FIX (v2) ===
+  # systemd-vconsole-setup.service skips VT1 because it's occupied by greetd
+  # during boot, so console.keyMap alone doesn't load the keymap. The wrapper
+  # script runs as 'greeter' user who lacks CAP_SYS_TTY_CONFIG, so loadkeys
+  # fails silently. We add ExecStartPre to the greetd service so loadkeys
+  # runs as root before tuigreet starts.
+  systemd.services.greetd.serviceConfig.ExecStartPre = [
+    "${pkgs.kbd}/bin/loadkeys la-latin1"
+  ];
+
   # lib.mkForce on the entire default_session is required because
   # services.greetd.settings uses a freeform attrsOf TOML-value type
   # where mkOverride on nested leaf sub-paths does not win the merge
   # against the greetd module's built-in defaults. The user field must
   # be included since mkForce replaces the entire attrset.
   services.greetd.settings.default_session = lib.mkForce {
-    command = "${pkgs.writeShellScriptBin "tuigreet-latam" ''
-      ${pkgs.kbd}/bin/loadkeys la-latin1
-      exec ${pkgs.greetd.tuigreet}/bin/tuigreet --time --cmd Hyprland
-    ''}/bin/tuigreet-latam";
+    command = "${pkgs.greetd.tuigreet}/bin/tuigreet --time --cmd Hyprland";
     user = "greeter";
   };
 
