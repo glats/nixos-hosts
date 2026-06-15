@@ -17,10 +17,9 @@
 {
   wayland.windowManager.hyprland.settings = {
     exec-once = [
-      # Kept intentionally empty.  The custom T14 hotplug handler
-      # was removed: omarchy's `omarchy-hyprland-monitor-watch`
-      # covers the same use case without requiring a daemon-PATH
-      # hack.  Add new t14-specific exec-once commands here.
+      # Start hypridle manually (matches original omarchy behavior).
+      # Disabled systemd service because omarchy scripts expect manual management.
+      "uwsm-app -- hypridle"
     ];
   };
 }
