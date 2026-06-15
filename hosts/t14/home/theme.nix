@@ -100,12 +100,39 @@
     };
   };
 
-  # Border-radius override (titlebar / window-frame only).
-  # Sourced verbatim from the user's external drive
-  # `~/.config/gtk-{3,4}.0/gtk.css` so the visual matches what they
-  # had on Arch.  Using `xdg.configFile` instead of `gtk.extraCss`
-  # because omarchy doesn't enable the `gtk` home-manager program.
+  # ====================================================================
+  # Font configuration — override omarchy-nix HM defaults.
+  # ====================================================================
+  # Omarchy's HM module sets monospace to "Caskaydia Mono Nerd Font"
+  # via fonts.fontconfig.defaultFonts. Our system-level fonts.nix uses
+  # "CaskaydiaCove Nerd Font". We force the HM defaults to match the
+  # system, and deploy granular conf.d files (matching the user's Arch
+  # disk) that use binding="strong" for reliable font resolution.
+  fonts.fontconfig.defaultFonts = {
+    monospace = lib.mkForce [
+      "CaskaydiaCove Nerd Font"
+      "Noto Sans Mono"
+    ];
+    serif = lib.mkForce [
+      "Source Sans 3"
+      "Noto Serif"
+    ];
+    sansSerif = lib.mkForce [
+      "Source Sans 3"
+      "Noto Sans"
+    ];
+    emoji = lib.mkForce [
+      "JoyPixels"
+      "Noto Color Emoji"
+    ];
+  };
+
+  # Border-radius override (titlebar / window-frame only) +
+  # granular fontconfig conf.d files.
+  # Using `xdg.configFile` instead of `gtk.extraCss` because omarchy
+  # doesn't enable the `gtk` home-manager program.
   xdg.configFile = {
+    # GTK border-radius — sourced from the Arch disk config.
     "gtk-3.0/gtk.css".text = ''
       .titlebar, .titlebar .background, .window-frame, .window-frame:backdrop, decoration, window, window.background, window.titlebar {
           border-radius: 0px;
@@ -118,6 +145,109 @@
           box-shadow: none; /* Optional: Remove any associated shadow */
       }
     '';
+
+    # Granular fontconfig conf.d files — mirrors the Arch disk layout.
+    # These use binding="strong" to ensure the correct fonts resolve
+    # regardless of what other modules set at lower priority.
+    "fontconfig/conf.d/61-monospace.conf".text = ''
+      <?xml version="1.0"?>
+      <!DOCTYPE fontconfig SYSTEM "fonts.dtd">
+      <fontconfig>
+        <match target="pattern">
+          <test name="family" compare="eq">
+            <string>monospace</string>
+          </test>
+          <edit name="family" mode="assign" binding="same">
+            <string>CaskaydiaCove Nerd Font</string>
+          </edit>
+        </match>
+        <match target="pattern">
+          <test name="family" compare="eq">
+            <string>mono</string>
+          </test>
+          <edit name="family" mode="assign" binding="same">
+            <string>CaskaydiaCove Nerd Font</string>
+          </edit>
+        </match>
+        <alias binding="strong">
+          <family>monospace</family>
+          <prefer>
+            <family>CaskaydiaCove Nerd Font</family>
+            <family>Symbols Nerd Font</family>
+            <family>Symbola</family>
+          </prefer>
+        </alias>
+      </fontconfig>
+    '';
+    "fontconfig/conf.d/63-sans.conf".text = ''
+      <?xml version="1.0"?>
+      <!DOCTYPE fontconfig SYSTEM "fonts.dtd">
+      <fontconfig>
+        <alias binding="strong">
+          <family>sans</family>
+          <prefer>
+            <family>Source Sans 3</family>
+            <family>Noto Sans</family>
+          </prefer>
+        </alias>
+      </fontconfig>
+    '';
+    "fontconfig/conf.d/63-sans-serif.conf".text = ''
+      <?xml version="1.0" encoding="UTF-8"?>
+      <!DOCTYPE fontconfig SYSTEM "fonts.dtd">
+      <fontconfig>
+        <alias binding="strong">
+          <family>sans-serif</family>
+          <prefer>
+            <family>Source Sans 3</family>
+            <family>Noto Sans</family>
+          </prefer>
+        </alias>
+      </fontconfig>
+    '';
+    "fontconfig/conf.d/63-serif.conf".text = ''
+      <?xml version="1.0"?>
+      <!DOCTYPE fontconfig SYSTEM "fonts.dtd">
+      <fontconfig>
+        <alias binding="strong">
+          <family>serif</family>
+          <prefer>
+            <family>Source Sans 3</family>
+            <family>Noto Serif</family>
+          </prefer>
+        </alias>
+      </fontconfig>
+    '';
+    "fontconfig/conf.d/69-emoji.conf".text = ''
+      <?xml version="1.0"?>
+      <!DOCTYPE fontconfig SYSTEM "fonts.dtd">
+      <fontconfig>
+        <alias binding="weak">
+          <family>sans-serif</family>
+          <prefer>
+            <family>JoyPixels</family>
+          </prefer>
+        </alias>
+        <alias binding="weak">
+          <family>serif</family>
+          <prefer>
+            <family>JoyPixels</family>
+          </prefer>
+        </alias>
+        <alias binding="weak">
+          <family>monospace</family>
+          <prefer>
+            <family>JoyPixels</family>
+          </prefer>
+        </alias>
+      </fontconfig>
+    '';
+  };
+
+  # GTK font — match the Arch disk config.
+  gtk.font = lib.mkForce {
+    name = "Source Sans 3";
+    size = 11;
   };
 
   # Qt integration: route Qt6 theming through GTK so Qt apps
