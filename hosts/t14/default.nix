@@ -100,11 +100,11 @@
     # overrides the runtime theme files without changing this enum.
     theme = "tokyo-night";
 
-    # Built-in 14" 1920x1200 panel; external monitors are managed by
+    # Built-in 14" 1920x1080 panel; external monitors are managed by
     # monitor-hotplug-handler.sh (see hosts/t14/home/hypr/autostart.nix).
-    monitors = [ "DP-2,preferred,auto,1" ];
+    monitors = [ "eDP-1,preferred,auto,1" ];
 
-    # Laptop panel is 1x scale (1920x1200 native).
+    # Laptop panel is 1x scale (1920x1080 native).
     scale = 1;
 
     browser = "brave";
