@@ -160,7 +160,7 @@
       hostName = config.networking.hostName;
     };
     users.glats = {
-      imports = [ ./home/omarchy-personalizado.nix ];
+      imports = [ ./home/omarchy.nix ];
     };
   };
 
