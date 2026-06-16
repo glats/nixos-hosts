@@ -67,17 +67,6 @@
     firewall.enable = false;
   };
 
-  nixpkgs.overlays = [
-    (self: super: {
-      xdg-desktop-portal-gtk = super.xdg-desktop-portal-gtk.overrideAttrs (oldAttrs: {
-        postInstall = (oldAttrs.postInstall or "") + ''
-          sed -i 's/UseIn=gnome/UseIn=gnome;hyprland/' \
-            $out/share/xdg-desktop-portal/portals/gtk.portal
-        '';
-      });
-    })
-  ];
-
   nixpkgs.config = {
     allowUnfree = true;
     # fonts.nix includes joypixels; requires explicit license acceptance.
