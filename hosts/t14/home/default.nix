@@ -6,7 +6,6 @@
 #   - Helper scripts (window-switcher, monitor-hotplug-handler, kb-*, mouse-wiggle)
 #   - Ghostty settings (imported via ./ghostty.nix; theme + non-theme)
 #   - Kitty settings (imported via ./kitty.nix; colorScheme + font)
-#   - Starship prompt (./starship.nix)
 #   - Wiremix audio mixer config (./wiremix.nix)
 #   - Remmina remote-desktop launchers + connection files (./remmina.nix)
 #   - mouse-wiggle launcher and its systemd user service
@@ -31,7 +30,6 @@
     ./btop.nix
     ./ghostty.nix
     ./kitty.nix
-    ./starship.nix
     ./wiremix.nix
     ./remmina.nix
     ./mouse-wiggle.nix
