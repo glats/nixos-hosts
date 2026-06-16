@@ -26,9 +26,10 @@
         "syntax-highlighting"
         "history-substring-search"
         "autosuggestions"
+        "ssh"
         "git"
       ];
-      prompt.theme = "suse";
+      prompt.theme = "minimal";
       editor = {
         keymap = "emacs";
         dotExpansion = true;

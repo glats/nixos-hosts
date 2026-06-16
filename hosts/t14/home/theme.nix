@@ -16,7 +16,7 @@
 #     tmux status colors do not match the project's glats palette.
 #   * Omarchy's home-manager module sets `gtk.theme.name = "Adwaita-dark"`
 #     and ships no icon theme.  The shared `home-linux/theme.nix` sets
-#     `gtk.theme.name = "Materia-dark-compact"` and
+#     `gtk.theme.name = "adw-gtk3-dark"` and
 #     `gtk.iconTheme.name = "Papirus-Dark"`, but importing it directly
 #     would conflict with omarchy's GTK theming and abort evaluation.
 #     So we use `lib.mkForce` on each individual attribute to override
@@ -69,8 +69,9 @@
   # Force GTK3/GTK4 / icon theme overrides on top of omarchy's
   # defaults.  Omarchy sets `gtk.theme.name = "Adwaita-dark"` and
   # `gtk.theme.package = gnome-themes-extra` (the Adwaita package),
-  # and ships no icon theme; we want Materia-dark + Papirus-Dark
-  # to match the user's external drive (rog/thinkcentre) setup.
+  # and ships no icon theme; we want adw-gtk3-dark + Papirus-Dark.
+  # adw-gtk3 is required for Nautilus (libadwaita) compatibility —
+  # Materia-dark is ignored by libadwaita apps.
   #
   # `gtk.gtk4.theme` is a sub-attrset, not a top-level option — the
   # older flat `gtk4.theme = lib.mkForce ...` form fails with
@@ -87,16 +88,16 @@
       package = lib.mkForce pkgs.papirus-icon-theme;
     };
     theme = {
-      name = lib.mkForce "Materia-dark";
-      package = lib.mkForce pkgs.materia-theme;
+      name = lib.mkForce "adw-gtk3-dark";
+      package = lib.mkForce pkgs.adw-gtk3;
     };
     gtk2.theme = {
-      name = lib.mkForce "Materia-dark";
-      package = lib.mkForce pkgs.materia-theme;
+      name = lib.mkForce "adw-gtk3-dark";
+      package = lib.mkForce pkgs.adw-gtk3;
     };
     gtk4.theme = lib.mkForce {
-      name = "Materia-dark";
-      package = pkgs.materia-theme;
+      name = "adw-gtk3-dark";
+      package = pkgs.adw-gtk3;
     };
   };
 
@@ -266,6 +267,6 @@
   # that read GTK_THEME before the home-manager GTK settings land
   # (e.g. Nautilus spawned from a shell) fall back to Adwaita, which
   # leaks Adwaita-styled window borders even though settings.ini
-  # and our CSS both say Materia-dark.
-  home.sessionVariables.GTK_THEME = "Materia-dark";
+  # and our CSS both say adw-gtk3-dark.
+  home.sessionVariables.GTK_THEME = lib.mkForce "adw-gtk3-dark";
 }
