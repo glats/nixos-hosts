@@ -66,7 +66,7 @@ let
 
   allProviders = nvidiaProvider // opencodeProvider;
 
-  activeProviderName = "opencode-free2";
+  activeProviderName = "opencode-go3";
 
   providers = [
     {
@@ -124,7 +124,7 @@ let
       name = "opencode-go2";
       phases = {
         gentle-orchestrator = "opencode-go/kimi-k2.6";
-        sdd-init = "opencode-go/deepseek-v4-flash";
+        sdd-init = "opencode-go/deepseek-v4-flash-flash";
         sdd-explore = "opencode-go/qwen3.7-plus";
         sdd-propose = "opencode-go/qwen3.7-plus";
         sdd-spec = "opencode-go/qwen3.7-plus";
@@ -141,17 +141,17 @@ let
       name = "opencode-go3";
       phases = {
         gentle-orchestrator = "opencode-go/kimi-k2.6";
-        sdd-init = "opencode-go/deepseek-v4-flash";
+        sdd-init = "opencode/deepseek-v4-flash-free";
         sdd-explore = "opencode-go/qwen3.7-plus";
         sdd-propose = "opencode-go/kimi-k2.6";
         sdd-spec = "opencode-go/qwen3.7-plus";
         sdd-design = "opencode-go/kimi-k2.6";
         sdd-tasks = "opencode-go/kimi-k2.6";
         sdd-apply = "opencode-go/minimax-m3";
-        sdd-verify = "opencode-go/kimi-k2.6";
-        sdd-archive = "opencode-go/deepseek-v4-flash";
-        sdd-onboard = "opencode-go/deepseek-v4-flash";
-        neutral = "opencode-go/deepseek-v4-flash";
+        sdd-verify = "opencode/nemotron-3-ultra-free";
+        sdd-archive = "opencode/deepseek-v4-flash-free";
+        sdd-onboard = "opencode/deepseek-v4-flash-free";
+        neutral = "opencode/deepseek-v4-flash-free";
       };
     }
     {
