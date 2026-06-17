@@ -32,10 +32,10 @@
       set -g status-style fg=#${config.colorScheme.palette.base05},bg=#${config.colorScheme.palette.base01}
       setw -g window-status-style fg=#${config.colorScheme.palette.base05},bg=#${config.colorScheme.palette.base01}
       setw -g window-status-current-style fg=#${config.colorScheme.palette.base0D},bg=#${config.colorScheme.palette.base01}
-      set -g pane-border-style fg=#${config.colorScheme.palette.base01}
+      set -g pane-border-style fg=#${config.colorScheme.palette.base02}
       set -g pane-active-border-style fg=#${config.colorScheme.palette.base04}
       set -g message-style fg=#${config.colorScheme.palette.base05},bg=#${config.colorScheme.palette.base02}
-      set -g mode-style fg=#${config.colorScheme.palette.base04},bg=#${config.colorScheme.palette.base02}
+      set -g mode-style fg=#${config.colorScheme.palette.base07},bg=#${config.colorScheme.palette.base02}
       setw -g clock-mode-colour '#${config.colorScheme.palette.base0D}'
 
       set -g @resurrect-capture-pane-contents 'on'
