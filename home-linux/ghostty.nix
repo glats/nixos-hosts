@@ -17,6 +17,7 @@
 
     themes.nix-colors = {
       palette = [
+        # Normal (0-7)
         "0=#${config.colorScheme.palette.base00}"
         "1=#${config.colorScheme.palette.base08}"
         "2=#${config.colorScheme.palette.base0B}"
@@ -25,25 +26,28 @@
         "5=#${config.colorScheme.palette.base0E}"
         "6=#${config.colorScheme.palette.base0C}"
         "7=#${config.colorScheme.palette.base05}"
+        # Bright (8-15) — standard base16 reuses same colors as normal
         "8=#${config.colorScheme.palette.base03}"
-        "9=#${config.colorScheme.palette.base09}"
-        # `brightGreen`, `brightYellow`, etc. are present in the
-        # project's `shared/palette.nix` (used by rog / thinkcentre /
-        # mact2) but absent in standard nix-colors presets
-        # (e.g. tokyo-night used on t14).  Fall back to the
-        # corresponding base color so the shared module evaluates on
-        # any palette.
-        "10=#${config.colorScheme.palette.brightGreen or config.colorScheme.palette.base0B}"
-        "11=#${config.colorScheme.palette.brightYellow or config.colorScheme.palette.base0A}"
-        "12=#${config.colorScheme.palette.brightBlue or config.colorScheme.palette.base0D}"
-        "13=#${config.colorScheme.palette.brightMagenta or config.colorScheme.palette.base0E}"
-        "14=#${config.colorScheme.palette.brightCyan or config.colorScheme.palette.base0C}"
+        "9=#${config.colorScheme.palette.base08}"
+        "10=#${config.colorScheme.palette.base0B}"
+        "11=#${config.colorScheme.palette.base0A}"
+        "12=#${config.colorScheme.palette.base0D}"
+        "13=#${config.colorScheme.palette.base0E}"
+        "14=#${config.colorScheme.palette.base0C}"
         "15=#${config.colorScheme.palette.base07}"
+        # Extended 256-color space (16-21)
+        "16=#${config.colorScheme.palette.base09}"
+        "17=#${config.colorScheme.palette.base0F}"
+        "18=#${config.colorScheme.palette.base01}"
+        "19=#${config.colorScheme.palette.base02}"
+        "20=#${config.colorScheme.palette.base04}"
+        "21=#${config.colorScheme.palette.base06}"
       ];
       background = "#${config.colorScheme.palette.base00}";
       foreground = "#${config.colorScheme.palette.base05}";
       cursor-color = "#${config.colorScheme.palette.base05}";
       selection-background = "#${config.colorScheme.palette.base02}";
+      selection-foreground = "#${config.colorScheme.palette.base00}";
     };
   };
 }
