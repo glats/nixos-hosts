@@ -119,21 +119,6 @@
     firewall.enable = false;
   };
 
-  # === UWSM ===
-  # The omarchy-nix NixOS module (modules/nixos/system.nix) only enables
-  # `programs.uwsm` when `omarchy.seamless_boot.enable = true`. On this
-  # host we deliberately keep seamless_boot off (no Plymouth / auto-login),
-  # but the omarchy userland scripts (omarchy-launch-walker, omarchy-toggle-*,
-  # omarchy-restart-app, etc.) all invoke `uwsm-app` to start GUI daemons
-  # as detached children of the session. Without `uwsm-app` on PATH the
-  # walker gapplication-service daemon never starts, so SUPER+SPACE opens
-  # a walker client that cannot find the service and silently exits without
-  # a window — the launcher appears "broken". Add `pkgs.uwsm` to the system
-  # PATH so the scripts work without enabling seamless_boot. This does NOT
-  # change the login manager or the boot flow; it only makes the binary
-  # available on PATH for the user session.
-  environment.systemPackages = [ pkgs.uwsm ];
-
   # === HOME-MANAGER ===
   # Omarchy + t14 Hyprland overlays imported via ./home/omarchy.nix.
   # The NixOS home-manager module is loaded by lib/mkHost.nix.
@@ -156,11 +141,6 @@
       imports = [ ./home/omarchy.nix ];
     };
   };
-
-  # === DISPLAY MANAGER ===
-  # Omarchy provides greetd + tuigreet. The T14 keyboard layout (latam)
-  # is configured via console.keyMap and services.xserver.xkb.
-  services.greetd.enable = true;
 
   system.stateVersion = "26.05";
 }
