@@ -4,7 +4,10 @@
 #   - Hyprland t14-specific config fragments (monitor, input, bindings, looknfeel)
 #   - Helper scripts (window-switcher, monitor-hotplug-handler, kb-*, mouse-wiggle)
 #   - Ghostty settings (imported via ./ghostty.nix; non-theme)
-#   - Kitty settings (imported via ./kitty.nix; colorScheme + font)
+#   - Kitty settings (imported directly from ../../../home-linux/kitty.nix
+#     because omarchy-nix does not pull in that shared module — without this
+#     import, t14 would only see omarchy's defaults and lose the nix-colors
+#     palette and CaskaydiaCove font + size 11)
 #   - Remmina remote-desktop launchers + connection files (./remmina.nix)
 #   - mouse-wiggle launcher and its systemd user service
 {
@@ -26,7 +29,7 @@
     ./hypr/hyprsunset.nix
     ./hypr/xdph.nix
     ./ghostty.nix
-    ./kitty.nix
+    ../../../home-linux/kitty.nix
     ./remmina.nix
     ./mouse-wiggle.nix
   ];
