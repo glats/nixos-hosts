@@ -82,6 +82,7 @@
       nfu = "nixos-build upgrade";
       ngc = "nix-collect-garbage";
       ngd = "nix-collect-garbage --delete-old";
+      ncf = "cd ~/.nixos";
     };
 
     sessionVariables = {
