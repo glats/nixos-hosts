@@ -8,10 +8,11 @@
 #   - XKB layout forced to "latam" (Chile) since i18n.nix defaults to "es"
 #   - btrfs swap, fonts, kmscon, and amd-laptop settings inherited from base
 #   - home-manager wired to ./home/omarchy.nix (replaces ./home/gnome.nix)
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }:
 
 {
@@ -132,16 +133,6 @@
   # change the login manager or the boot flow; it only makes the binary
   # available on PATH for the user session.
   environment.systemPackages = [ pkgs.uwsm ];
-
-  # === OMARCHY PATH ===
-  # Hyprland's `exec` dispatcher runs commands in a non-interactive shell
-  # that does NOT source ~/.zshrc or ~/.profile, so it does NOT see the
-  # PATH injected by Home Manager's `home.sessionPath`. The result is that
-  # all `bindd = SUPER, ..., exec, omarchy-launch-*` bindings fail because
-  # the bare script names cannot be resolved. We add the directory to the
-  # global session PATH so every shell (interactive or not) spawned by
-  # Hyprland can find the omarchy helpers.
-  environment.sessionVariables.PATH = "/home/glats/.local/share/omarchy/bin:/home/glats/.nix-profile/bin:/nix/profile/bin:/home/glats/.local/state/nix/profile/bin:/etc/profiles/per-user/glats/bin:/nix/var/nix/profiles/default/bin:/run/current-system/sw/bin";
 
   # === HOME-MANAGER ===
   # Omarchy + t14 Hyprland overlays imported via ./home/omarchy.nix.
