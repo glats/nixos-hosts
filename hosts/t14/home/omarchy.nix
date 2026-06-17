@@ -44,9 +44,12 @@
     inputs.omarchy-nix.homeManagerModules.default
 
     # t14-specific overlays on top of omarchy.
-    # ghostty.nix and kitty.nix are imported via ./default.nix (which
-    # transitively imports the shared home-linux/ghostty.nix and
-    # home-linux/kitty.nix).
+    # kitty.nix is imported via ./default.nix (which transitively
+    # re-imports the shared home-linux/kitty.nix because omarchy-nix
+    # does not include it).
+    # Ghostty is NOT touched locally: omarchy-nix owns ghostty config
+    # end-to-end (the previous local overlay was a no-op due to merge
+    # order shadowing every override).
     ./default.nix
 
     # Compatible shared modules from home-linux/.  These are the same
