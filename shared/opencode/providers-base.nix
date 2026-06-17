@@ -55,7 +55,16 @@ let
     };
   };
 
-  allProviders = nvidiaProvider;
+  opencodeProvider = {
+    opencode = {
+      options = {
+        timeout = 3600000;
+        chunkTimeout = 3600000;
+      };
+    };
+  };
+
+  allProviders = nvidiaProvider // opencodeProvider;
 
   activeProviderName = "opencode-free2";
 
@@ -152,8 +161,8 @@ let
         sdd-init = "opencode/deepseek-v4-flash-free";
         sdd-explore = "opencode/deepseek-v4-flash-free";
         sdd-propose = "opencode/nemotron-3-ultra-free";
-        sdd-spec = "opencode/nemotron-3-ultra-free";
-        sdd-design = "opencode/nemotron-3-ultra-free";
+        sdd-spec = "opencode/deepseek-v4-flash-free";
+        sdd-design = "opencode/mimo-v2.5-free";
         sdd-tasks = "opencode/mimo-v2.5-free";
         sdd-apply = "opencode/north-mini-code-free";
         sdd-verify = "opencode/nemotron-3-ultra-free";
