@@ -1,7 +1,8 @@
-{ config
-, pkgs
-, lib
-, ...
+{
+  config,
+  pkgs,
+  lib,
+  ...
 }:
 
 {
@@ -18,7 +19,7 @@
       wantedBy = [ "multi-user.target" ];
       serviceConfig = {
         Type = "oneshot";
-        ExecStart = "${pkgs.asus-fan-control}/bin/asus-fan-control";
+        ExecStart = "${pkgs.asus-fan-control}/bin/asus-fan-control set-temps default";
         RemainAfterExit = true;
       };
     };
