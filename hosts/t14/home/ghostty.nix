@@ -1,35 +1,37 @@
 # T14 ghostty overlay.
 #
-# Imports the shared `home-linux/ghostty.nix` module (which sets the
-# nix-colors theme palette) and applies t14-specific settings.  The
-# shared module's `theme = "nix-colors"` is the canonical reference
-# to the nix-colors palette block; omarchy-nix's ghostty config
-# (when present) takes effect via the normal merge order without
-# needing a local lib.mkForce.
+# Imports the shared `home-linux/ghostty.nix` module — the single source
+# of truth for ghostty config across every Linux host.  The shared
+# module sets the nix-colors theme palette, font family / size /
+# features, scrollback limit, and window padding defaults.  This
+# overlay only adds t14-specific hardware tweaks on top.
 #
-# T14-specific overrides (kept from the previous t14 ghostty module):
-#   * font-family    = CaskaydiaCove Nerd Font
-#   * font-size      = 11
-#   * font-feature   = "liga"  (programming ligatures)
-#   * background-opacity = 0.9  (laptop panel translucency)
-#   * async-backend  = "epoll"  (best Linux input + render throughput)
-#   * scrollback-limit = 4294967295  (u32 max, effectively unlimited)
-#   * mouse-scroll-multiplier = 0.95  (slightly slower scroll for the
-#     laptop touchpad)
-{ ... }:
+# omarchy-nix also pulls in a `programs.ghostty` block (via its
+# `homeManagerModules.default`).  The shared file uses
+# `lib.mkForce` on `programs.ghostty.themes` to drop omarchy's
+# `themes.omarchy` so it never reaches the static config, and the
+# import order makes per-key `settings` resolve in favor of this
+# module.  The t14-specific values that need to override shared
+# defaults use `lib.mkForce` here for the same reason.
+{
+  lib,
+  ...
+}:
 
 {
   imports = [ ../../../home-linux/ghostty.nix ];
 
   programs.ghostty.settings = {
-    # T14-specific settings — override the shared defaults where the
-    # laptop differs from the desktop.
-    font-family = "CaskaydiaCove Nerd Font";
-    font-size = 11;
-    font-feature = "liga";
-    background-opacity = 0.9;
+    # T14 laptop panel translucency — overrides the shared 0.8.
+    background-opacity = lib.mkForce 0.9;
+
+    # Best Linux input + render throughput.  Not set in the shared
+    # file (omarchy sets it to "epoll" too, so the value matches),
+    # but pinned here so a future omarchy change cannot silently
+    # break the laptop.
     async-backend = "epoll";
-    scrollback-limit = 4294967295;
-    mouse-scroll-multiplier = 0.95;
+
+    # Slightly slower scroll for the laptop touchpad.
+    mouse-scroll-multiplier = lib.mkForce 0.95;
   };
 }
