@@ -4,39 +4,35 @@
 # omarchy-nix homeManagerModules.default alongside the t14-specific
 # overlays already present in home/default.nix.
 #
-# Selective shared-module imports:
-#   * Imported: theme (t14-specific ./theme.nix that ONLY sets
-#     `config.colorScheme` from `shared/palette.nix` — the project's
-#     glats palette.  We can't import the shared `home-linux/theme.nix`
-#     because it also configures GTK/Qt/dconf, which collides with
-#     omarchy's `gtk.theme.name = "Adwaita-dark"`.  By scoping the
-#     colorScheme assignment to a t14-local module we get the same
-#     `config.colorScheme.palette` resolution for
-#     t14/home/ghostty.nix, t14/home/kitty.nix, and shared/tmux.nix
-#     without fighting omarchy's GTK theming);
-#     shell, git, ssh, neovim, tmux, opencode, sops, base
-#     (matches what the old gnome.nix preserved).
-#   * Excluded:  ghostty (t14/home/ghostty.nix sets it via lib.mkForce
-#                so the nix-colors palette wins over omarchy's runtime
-#                theme symlink),
-#                kitty (t14/home/kitty.nix sets it via lib.mkForce so
-#                the colorScheme palette wins over omarchy's `include`),
-#                rofi (omarchy uses walker instead),
+# The glats theme is handled natively by omarchy-nix via
+# `omarchy.theme = "glats"` (see hosts/t14/default.nix).  Previously
+# the local t14/home/theme.nix + theme-files.nix pair was required
+# to (a) override omarchy's colorScheme with the custom glats palette
+# and (b) deploy theme files to ~/.config/omarchy/themes/glats/.
+# After the upstream omarchy-nix PR that added native glats support,
+# both files were deleted and no local override is needed.
+#
+# Selective shared-module imports (matches what the old gnome.nix
+# preserved):
+#   * Imported: base, shell, git, gh, ssh, neovim, tmux, opencode, sops.
+#   * Excluded:  rofi (omarchy uses walker instead),
 #                mate (GNOME/MATE only — incompatible with Hyprland),
 #                chrome-apps (webapps are managed by omarchy webapp
 #                tooling; the home-linux list is for rog/thinkcentre),
-#                home-linux/theme.nix (its GTK config collides with
-#                omarchy's gtk.theme.name — see ./theme.nix for the
-#                colorScheme-only replacement).
+#                home-linux/theme.nix (it configures GTK/Qt/dconf and
+#                `colorScheme = shared/palette.nix`; the former is
+#                owned by omarchy and the latter is now driven by
+#                omarchy.theme = "glats" too).
 #
 # The omarchy HM module is imported FIRST so that any conflicting
 # definitions from t14/home/default.nix can be overridden via
-# lib.mkForce (terminal theme + colors).
-{ config
-, pkgs
-, lib
-, inputs
-, ...
+# lib.mkForce when needed.
+{
+  config,
+  pkgs,
+  lib,
+  inputs,
+  ...
 }:
 
 {
@@ -50,30 +46,17 @@
     # t14-specific overlays on top of omarchy.
     # ghostty.nix and kitty.nix are imported via ./default.nix (which
     # transitively imports the shared home-linux/ghostty.nix and
-    # home-linux/kitty.nix and uses lib.mkForce to keep the nix-colors
-    # palette ahead of omarchy's runtime theme).
+    # home-linux/kitty.nix).
     ./default.nix
     ./elephant.nix
     ./alacritty.nix
     ./fcitx5.nix
 
-    # Theme file generators — produces all glats theme files from
-    # config.colorScheme.palette (nix-colors).  Replaces the static
-    # files that previously lived in themes/glats/.
-    ./theme-files.nix
-
     # Compatible shared modules from home-linux/.  These are the same
     # modules the previous gnome.nix imported; we keep them so that
     # shell, git, ssh, neovim, tmux, opencode, and sops survive the
-    # migration.  We do NOT import the shared `theme.nix` because it
-    # also configures GTK/Qt/dconf — those collide with omarchy's
-    # own gtk.theme.name = "Adwaita-dark" and would abort evaluation.
-    # Instead `./theme.nix` (defined right here) only sets
-    # `config.colorScheme` from `shared/palette.nix` (the project's
-    # glats palette) — that is the only piece the t14 terminal and
-    # tmux overlays actually read from.
+    # migration.
     ../../../home-linux/base.nix
-    ./theme.nix
     ../../../home-linux/shell.nix
     ../../../home-linux/tmux.nix
     ../../../home-linux/neovim.nix
@@ -92,21 +75,15 @@
   sops.age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
 
   # ====================================================================
-  # Custom "glats" theme deployment.
+  # Ghostty theme override.
   # ====================================================================
-  # The omarchy.theme NixOS option is "tokyo-night" (it must be in the
-  # upstream enum). Omarchy's theme runtime loads from
-  # ~/.config/omarchy/current/theme/. The theme-switcher resolves the
-  # "current" symlink to one of the entries in ~/.config/omarchy/themes/.
-  # By placing a "glats" directory in ~/.config/omarchy/themes/ and
-  # pointing "current" at it, we can ship our own visual identity
-  # without forking omarchy-nix.
-  #
-  # The theme files (waybar.css, hyprland.conf, ghostty-theme, btop.theme,
-  # backgrounds/) are deployed by the xdg.configFile entries below.
+  # Omarchy's theme runtime deploys theme files to
+  # ~/.config/omarchy/current/theme/ and ghostty uses the "glats"
+  # theme by reference (invoked with --theme=glats).  We deploy a
+  # custom 16-color palette at ~/.config/ghostty/themes/glats so
+  # ghostty finds the theme regardless of what omarchy's runtime
+  # symlink points at.
   xdg.configFile = {
-    # Ghostty custom 16-color palette (separate from omarchy themes
-    # because ghostty is invoked directly with --theme=glats).
     "ghostty/themes/glats" = {
       source = ./ghostty-themes/glats;
     };
