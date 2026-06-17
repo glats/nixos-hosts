@@ -1,5 +1,5 @@
-{
-  lib ? throw "providers-base.nix must be imported with lib",
+{ lib ? throw "providers-base.nix must be imported with lib"
+,
 }:
 
 let
@@ -207,9 +207,12 @@ let
     }
   ];
 
-  activeProvider = builtins.foldl' (
-    acc: p: if p.name == activeProviderName then p else acc
-  ) null providers;
+  activeProvider = builtins.foldl'
+    (
+      acc: p: if p.name == activeProviderName then p else acc
+    )
+    null
+    providers;
   getModelForPhase =
     phase: provider: if provider == null then null else provider.phases.${phase} or null;
 

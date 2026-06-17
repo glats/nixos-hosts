@@ -71,5 +71,13 @@
   # Use SSH host key for sops decryption (matches host_t14 in .sops.yaml).
   sops.age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
 
+  # Disable omarchy's zsh extras that conflict with shell.nix prezto setup.
+  # rog/thinkcentre use pure prezto (no starship, no zplug). Match them.
+  programs.zsh.zplug.enable = lib.mkForce false;
+  programs.starship.enable = lib.mkForce false;
 
+  # Disable HM-level fontconfig — rely on system-level fonts.nix (same as rog).
+  # omarchy-nix's HM fonts module overrides defaults with different fonts;
+  # rog/thinkcentre only use the system-level config from modules/desktop/fonts.nix.
+  fonts.fontconfig.enable = lib.mkForce false;
 }
