@@ -21,6 +21,7 @@
   ./neovim.nix
   ./shell.nix
   ./tmux.nix
+  ./btop.nix
   ./vscode.nix
   ./windsurf.nix
   ../shared/opencode.nix
