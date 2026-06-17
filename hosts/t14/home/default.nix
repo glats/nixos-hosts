@@ -3,7 +3,8 @@
 # ghostty theme).  This module adds only the non-visual delta:
 #   - Hyprland t14-specific config fragments (monitor, input, bindings, looknfeel)
 #   - Helper scripts (window-switcher, monitor-hotplug-handler, kb-*, mouse-wiggle)
-#   - Ghostty settings (imported via ./ghostty.nix; non-theme)
+#   - Ghostty t14 hardware tweaks on top of the shared
+#     home-linux/ghostty.nix (imported via ./ghostty.nix)
 #   - Kitty settings (imported directly from ../../../home-linux/kitty.nix
 #     because omarchy-nix does not pull in that shared module — without this
 #     import, t14 would only see omarchy's defaults and lose the nix-colors
