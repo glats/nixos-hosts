@@ -8,10 +8,11 @@
 #   - XKB layout forced to "latam" (Chile) since i18n.nix defaults to "es"
 #   - btrfs swap, fonts, kmscon, and amd-laptop settings inherited from base
 #   - home-manager wired to ./home/omarchy.nix (replaces ./home/gnome.nix)
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }:
 
 {
@@ -95,10 +96,12 @@
     full_name = "Glats";
     email_address = "glats@local";
 
-    # tokyo-night is the upstream base; the custom "glats" theme is
-    # deployed via xdg.configFile in hosts/t14/home/omarchy.nix and
-    # overrides the runtime theme files without changing this enum.
-    theme = "tokyo-night";
+    # "glats" is a first-class theme in upstream omarchy-nix after
+    # the native-glats PR was merged.  The colorScheme is now driven
+    # by omarchy-nix from the active theme; the local
+    # hosts/t14/home/theme.nix + theme-files.nix pair was removed
+    # because omarchy-nix generates the theme files dynamically.
+    theme = "glats";
 
     # Built-in 14" 1920x1080 panel; external monitors are managed by
     # monitor-hotplug-handler.sh (see hosts/t14/home/hypr/autostart.nix).
