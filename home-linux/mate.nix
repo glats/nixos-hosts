@@ -1,8 +1,9 @@
-{ config
-, lib
-, pkgs
-, hostName
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  hostName,
+  ...
 }:
 
 let
@@ -251,7 +252,7 @@ in
       default-show-menubar = false;
       font = "CaskaydiaCove Nerd Font 11";
       foreground-color = "#${doubleHex config.colorScheme.palette.base05}";
-      palette = "#${doubleHex config.colorScheme.palette.base00}:#${doubleHex config.colorScheme.palette.base08}:#${doubleHex config.colorScheme.palette.base0B}:#${doubleHex config.colorScheme.palette.base0A}:#${doubleHex config.colorScheme.palette.base0D}:#${doubleHex config.colorScheme.palette.base0E}:#${doubleHex config.colorScheme.palette.base0C}:#${doubleHex config.colorScheme.palette.base05}:#${doubleHex config.colorScheme.palette.base03}:#${byteDoubleHex config.colorScheme.palette.base09}:#${byteDoubleHex config.colorScheme.palette.brightGreen}:#${byteDoubleHex config.colorScheme.palette.brightYellow}:#${byteDoubleHex config.colorScheme.palette.brightBlue}:#${byteDoubleHex config.colorScheme.palette.brightMagenta}:#${byteDoubleHex config.colorScheme.palette.brightCyan}:#${doubleHex config.colorScheme.palette.base07}";
+      palette = "#${doubleHex config.colorScheme.palette.base00}:#${doubleHex config.colorScheme.palette.base08}:#${doubleHex config.colorScheme.palette.base0B}:#${doubleHex config.colorScheme.palette.base0A}:#${doubleHex config.colorScheme.palette.base0D}:#${doubleHex config.colorScheme.palette.base0E}:#${doubleHex config.colorScheme.palette.base0C}:#${doubleHex config.colorScheme.palette.base05}:#${doubleHex config.colorScheme.palette.base03}:#${doubleHex config.colorScheme.palette.base08}:#${doubleHex config.colorScheme.palette.base0B}:#${doubleHex config.colorScheme.palette.base0A}:#${doubleHex config.colorScheme.palette.base0D}:#${doubleHex config.colorScheme.palette.base0E}:#${doubleHex config.colorScheme.palette.base0C}:#${doubleHex config.colorScheme.palette.base07}";
       show-menubar = false;
       use-system-font = false;
       use-theme-colors = false;
