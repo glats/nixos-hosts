@@ -140,7 +140,7 @@ let
     {
       name = "opencode-go3";
       phases = {
-        gentle-orchestrator = "opencode-go/kimi-k2.6";
+        gentle-orchestrator = "opencode/deepseek-v4-flash-free";
         sdd-init = "opencode/deepseek-v4-flash-free";
         sdd-explore = "opencode-go/qwen3.7-plus";
         sdd-propose = "opencode-go/kimi-k2.6";
