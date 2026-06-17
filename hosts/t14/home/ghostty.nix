@@ -25,12 +25,6 @@
     # T14 laptop panel translucency — overrides the shared 0.8.
     background-opacity = lib.mkForce 0.9;
 
-    # Best Linux input + render throughput.  Not set in the shared
-    # file (omarchy sets it to "epoll" too, so the value matches),
-    # but pinned here so a future omarchy change cannot silently
-    # break the laptop.
-    async-backend = "epoll";
-
     # Slightly slower scroll for the laptop touchpad.
     mouse-scroll-multiplier = lib.mkForce 0.95;
   };
