@@ -7,7 +7,7 @@ let
       background-alt: #${config.colorScheme.palette.base02};
       foreground: #${config.colorScheme.palette.base05};
       foreground-alt: #${config.colorScheme.palette.base03};
-      selected: #${config.colorScheme.palette.base02};
+      selected: #${config.colorScheme.palette.base0D};
       active: #${config.colorScheme.palette.base02};
       urgent: #${config.colorScheme.palette.base08};
       border: 0;
