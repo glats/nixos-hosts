@@ -132,7 +132,7 @@ in
       nvml_measure_pcie_speeds = true
       rsmi_measure_pcie_speeds = true
       gpu_mirror_graph = true
-      shown_gpus = "nvidia amd intel apple"
+      shown_gpus = "nvidia amd intel"
       custom_gpu_name0 = ""
       custom_gpu_name1 = ""
       custom_gpu_name2 = ""
