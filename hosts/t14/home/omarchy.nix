@@ -47,9 +47,13 @@
     # kitty.nix is imported via ./default.nix (which transitively
     # re-imports the shared home-linux/kitty.nix because omarchy-nix
     # does not include it).
-    # Ghostty is NOT touched locally: omarchy-nix owns ghostty config
-    # end-to-end (the previous local overlay was a no-op due to merge
-    # order shadowing every override).
+    # Ghostty is owned by `home-linux/ghostty.nix` (the single source
+    # of truth across all Linux hosts).  The shared file uses
+    # `lib.mkForce` on `programs.ghostty.themes` to drop omarchy's
+    # `themes.omarchy`, and the import order makes per-key settings
+    # resolve in favor of the shared file.  `./ghostty.nix` only adds
+    # t14-specific hardware tweaks (background-opacity, async-backend,
+    # mouse-scroll-multiplier) on top.
     ./default.nix
 
     # Compatible shared modules from home-linux/.  These are the same
