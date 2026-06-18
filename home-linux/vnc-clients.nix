@@ -25,4 +25,17 @@
       exec ${pkgs.remmina}/bin/remmina -c vnc://t14:5900
     '';
   };
+
+  # Desktop entry for the application menu
+  xdg.desktopEntries.connect-wayvnc-t14 = {
+    name = "Connect to t14 (VNC)";
+    comment = "Remote desktop to t14 via wayvnc";
+    exec = "connect-wayvnc-t14";
+    icon = "remmina";
+    categories = [
+      "Network"
+      "RemoteAccess"
+    ];
+    terminal = false;
+  };
 }
