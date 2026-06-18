@@ -67,6 +67,12 @@
     ../../../home-linux/git.nix
     ../../../home-linux/gh.nix
     ../../../home-linux/ssh.nix
+    # btop is imported directly from home-linux/ to override
+    # omarchy-nix's own btop module.  The shared file uses `lib.mkForce`
+    # on every `programs.btop.settings.*` key, so omarchy's values for
+    # the same keys are dropped at eval time.  This keeps rog /
+    # thinkcentre / t14 visually identical (one source of truth).
+    ../../../home-linux/btop.nix
 
     # OpenCode stack
     ../../../shared/opencode.nix
