@@ -3,40 +3,32 @@
 #
 # rog / thinkcentre pick this up transitively via
 # `home-linux/shared-modules.nix` -> `flake.nix` linuxHomeModules.
-# t14 imports it from `hosts/t14/home/ghostty.nix` (which adds t14
-# hardware tweaks on top).
+# t14 imports it from `hosts/t14/home/ghostty.nix`.
 #
 # On t14, omarchy-nix's `homeManagerModules.default` also pulls in
 # its own `programs.ghostty` block (JetBrainsMono 9, `themes.omarchy`,
-# keybinds, padding defaults, etc.).  home-manager's
-# `programs.ghostty.settings` type serialises lists of values as
-# duplicate TOML keys, so letting the two modules' values merge
-# produces lines like:
-#
-#   font-family = CaskaydiaCove Nerd Font
-#   font-family = JetBrainsMono Nerd Font
-#
-# in `~/.config/ghostty/config` — the visible "duplicate settings"
-# bug.  The `lib.mkForce` calls below pin each key this file owns
-# to its own value, so omarchy's contribution to the same key is
-# dropped at eval time.  Keys this file does not set
-# (window-padding-x, cursor-style, keybind, …) keep omarchy's values
-# on t14, which is the desired behaviour.
+# keybinds, padding defaults, cursor-style, etc.).  The settings
+# attrset below is wrapped in `lib.mkForce` so the entire attrset
+# replaces whatever omarchy-nix contributed — every key this file
+# does not define (window-padding-x, cursor-style, keybind, …) is
+# dropped on t14, producing byte-identical ghostty config across
+# rog / thinkcentre / t14.  The `themes` attrset is also forced to
+# drop omarchy's `themes.omarchy`.
 { config, lib, ... }:
 
 {
   programs.ghostty = {
     enable = true;
-    settings = {
-      theme = lib.mkForce "nix-colors";
-      font-family = lib.mkForce "CaskaydiaCove Nerd Font";
-      font-size = lib.mkForce 11;
-      font-feature = lib.mkForce "+liga";
+    settings = lib.mkForce {
       background-opacity = 0.8;
-      maximize = lib.mkForce true;
-      scrollback-limit = lib.mkForce 4294967295;
-      window-padding-balance = lib.mkForce true;
-      window-padding-color = lib.mkForce "extend";
+      font-family = "CaskaydiaCove Nerd Font";
+      font-feature = "+liga";
+      font-size = 11;
+      maximize = true;
+      scrollback-limit = 4294967295;
+      theme = "nix-colors";
+      window-padding-balance = true;
+      window-padding-color = "extend";
     };
 
     themes = lib.mkForce {

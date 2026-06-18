@@ -2,30 +2,16 @@
 #
 # Imports the shared `home-linux/ghostty.nix` module — the single source
 # of truth for ghostty config across every Linux host.  The shared
-# module sets the nix-colors theme palette, font family / size /
-# features, scrollback limit, and window padding defaults.  This
-# overlay only adds t14-specific hardware tweaks on top.
+# module wraps `programs.ghostty.settings` in `lib.mkForce` so the
+# entire attrset replaces whatever omarchy-nix contributed via
+# `inputs.omarchy-nix.homeManagerModules.default`.  t14 therefore
+# gets byte-identical ghostty config to rog / thinkcentre.
 #
-# omarchy-nix also pulls in a `programs.ghostty` block (via its
-# `homeManagerModules.default`).  The shared file uses
-# `lib.mkForce` on `programs.ghostty.themes` to drop omarchy's
-# `themes.omarchy` so it never reaches the static config, and the
-# import order makes per-key `settings` resolve in favor of this
-# module.  The t14-specific values that need to override shared
-# defaults use `lib.mkForce` here for the same reason.
-{
-  lib,
-  ...
-}:
-
+# This file intentionally defines no overrides — the t14-specific
+# `background-opacity = 0.9` and `mouse-scroll-multiplier = 0.95`
+# tweaks that used to live here were dropped to keep t14 in sync
+# with the rog set.  Touchpad scroll speed is now controlled via
+# Hyprland (`hosts/t14/home/hypr/input.nix`, `scroll_touchpad 0.2`).
 {
   imports = [ ../../../home-linux/ghostty.nix ];
-
-  programs.ghostty.settings = {
-    # T14 laptop panel translucency — overrides the shared 0.8.
-    background-opacity = lib.mkForce 0.9;
-
-    # Slightly slower scroll for the laptop touchpad.
-    mouse-scroll-multiplier = lib.mkForce 0.95;
-  };
 }
