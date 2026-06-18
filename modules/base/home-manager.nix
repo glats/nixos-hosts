@@ -1,8 +1,9 @@
-{ config
-, lib
-, pkgs
-, inputs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
 }:
 
 let
@@ -34,6 +35,7 @@ in
       ++ lib.optionals (config.networking.hostName == "rog") [
         ../../home-linux/conky-rog.nix
         ../../home-linux/openfang.nix
+        ../../home-linux/wayvnc-client.nix
       ]
       ++ lib.optionals (config.networking.hostName == "thinkcentre") [
         ../../home-linux/conky-thinkcentre.nix
