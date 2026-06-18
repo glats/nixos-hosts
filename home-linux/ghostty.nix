@@ -72,7 +72,7 @@
         foreground = "#${config.colorScheme.palette.base05}";
         cursor-color = "#${config.colorScheme.palette.base05}";
         selection-background = "#${config.colorScheme.palette.base02}";
-        selection-foreground = "#${config.colorScheme.palette.base00}";
+        selection-foreground = "#${config.colorScheme.palette.base05}";
       };
     };
   };
