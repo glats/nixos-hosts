@@ -21,8 +21,9 @@
       # Disabled systemd service because omarchy scripts expect manual management.
       "uwsm-app -- hypridle"
       # wayvnc — VNC server capturing Wayland screen via wlroots screencopy.
-      # Binds to all interfaces on port 5900 (VNC default).
-      "uwsm-app -- wayvnc 0.0.0.0 5900"
+      # Reads address/port/enable_pam from ~/.config/wayvnc/config
+      # (no positional args to avoid clobbering config-file settings).
+      "uwsm-app -- wayvnc"
     ];
   };
 }

@@ -4,10 +4,5 @@
 { ... }:
 
 {
-  xdg.configFile."wayvnc/config".text = ''
-    use_relative_paths=true
-    address=0.0.0.0
-    port=5900
-    enable_pam=true
-  '';
+  xdg.configFile."wayvnc/config".source = ./config;
 }

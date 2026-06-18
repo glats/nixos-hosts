@@ -33,7 +33,7 @@
     ../../../home-linux/kitty.nix
     ./remmina.nix
     ./mouse-wiggle.nix
-    ./wayvnc.nix
+    ./wayvnc
   ];
 
   # ------------------------------------------------------------------
