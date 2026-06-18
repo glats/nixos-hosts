@@ -140,8 +140,8 @@
 
       # Base16 syntax highlighting styles (explicit hex to avoid bold=bright issues)
       ZSH_HIGHLIGHT_STYLES[comment]="fg=#${config.colorScheme.palette.base03}"
-      ZSH_HIGHLIGHT_STYLES[alias]="fg=#${config.colorScheme.palette.base0A}"
-      ZSH_HIGHLIGHT_STYLES[builtin]="fg=#${config.colorScheme.palette.base0A}"
+      ZSH_HIGHLIGHT_STYLES[alias]="fg=#${config.colorScheme.palette.base0D}"
+      ZSH_HIGHLIGHT_STYLES[builtin]="fg=#${config.colorScheme.palette.base0D}"
       ZSH_HIGHLIGHT_STYLES[function]="fg=#${config.colorScheme.palette.base0D}"
       ZSH_HIGHLIGHT_STYLES[command]="fg=#${config.colorScheme.palette.base0D}"
       ZSH_HIGHLIGHT_STYLES[path]="fg=#${config.colorScheme.palette.base0C}"
@@ -149,6 +149,13 @@
       ZSH_HIGHLIGHT_STYLES[double-quoted-argument]="fg=#${config.colorScheme.palette.base0B}"
       ZSH_HIGHLIGHT_STYLES[unknown-token]="fg=#${config.colorScheme.palette.base08}"
       ZSH_HIGHLIGHT_STYLES[reserved-word]="fg=#${config.colorScheme.palette.base0E}"
+      ZSH_HIGHLIGHT_STYLES[precommand]="fg=#${config.colorScheme.palette.base0D}"
+      ZSH_HIGHLIGHT_STYLES[commandseparator]="fg=#${config.colorScheme.palette.base0E}"
+      ZSH_HIGHLIGHT_STYLES[globbing]="fg=#${config.colorScheme.palette.base0D}"
+      ZSH_HIGHLIGHT_STYLES[history-expansion]="fg=#${config.colorScheme.palette.base0E}"
+      ZSH_HIGHLIGHT_STYLES[single-hyphen-option]="fg=#${config.colorScheme.palette.base09}"
+      ZSH_HIGHLIGHT_STYLES[double-hyphen-option]="fg=#${config.colorScheme.palette.base09}"
+      ZSH_HIGHLIGHT_STYLES[redirection]="fg=#${config.colorScheme.palette.base09}"
     '';
   };
 }

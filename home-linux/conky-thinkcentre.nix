@@ -1,7 +1,8 @@
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }:
 
 let
@@ -225,7 +226,7 @@ let
 
     ''${voffset 60}
     ''${goto 40}''${color #${colors.dark}}STORAGE''${color}''${goto 440}''${color #${colors.tertiary}}NETWORK''${color}''${goto 840}''${color #${colors.primary}}TOP PROCESSES''${color}
-    ''${goto 40}''${color #${colors.light}}root:''${goto 140}''${color} ''${fs_used /}/''${fs_size /}''${goto 440}''${color #${colors.light}}Interface:''${goto 540}''${color} ''${if_up enp0s31f6}enp0s31f6''${else}''${if_up wlp2s0}wlp2s0''${else}offline''${endif}''${endif}''${goto 840}''${color lightgrey}Name''${goto 990}CPU%''${goto 1060}MEM%
+    ''${goto 40}''${color #${colors.light}}root:''${goto 140}''${color} ''${fs_used /}/''${fs_size /}''${goto 440}''${color #${colors.light}}Interface:''${goto 540}''${color} ''${if_up enp0s31f6}enp0s31f6''${else}''${if_up wlp2s0}wlp2s0''${else}offline''${endif}''${endif}''${goto 840}''${color #${config.colorScheme.palette.base04}}Name''${goto 990}CPU%''${goto 1060}MEM%
     ''${goto 40}''${color #${colors.dark}}''${fs_bar 5,200 /}''${color}''${goto 440}''${color #${colors.light}}Up:''${goto 540}''${color} ''${if_up enp0s31f6}''${upspeed enp0s31f6}''${else}''${if_up wlp2s0}''${upspeed wlp2s0}''${else}0''${endif}''${endif}''${goto 840}''${color #${colors.light}}''${top name 1}''${goto 990}''${top cpu 1}%''${goto 1060}''${top mem 1}%
     ''${goto 40}''${color #${colors.light}}home:''${goto 140}''${color} ''${fs_used /home}/''${fs_size /home}''${goto 440}''${color #${colors.light}}Down:''${goto 540}''${color} ''${if_up enp0s31f6}''${downspeed enp0s31f6}''${else}''${if_up wlp2s0}''${downspeed wlp2s0}''${else}0''${endif}''${endif}''${goto 840}''${color #${colors.light}}''${top name 2}''${goto 990}''${top cpu 2}%''${goto 1060}''${top mem 2}%
     ''${goto 40}''${color #${colors.secondary}}''${fs_bar 5,200 /home}''${color}''${goto 440}''${color #${colors.light}}IP:''${goto 540}''${color} ''${if_up enp0s31f6}''${addr enp0s31f6}''${else}''${if_up wlp2s0}''${addr wlp2s0}''${else}n/a''${endif}''${endif}''${goto 840}''${color #${colors.light}}''${top name 3}''${goto 990}''${top cpu 3}%''${goto 1060}''${top mem 3}%
