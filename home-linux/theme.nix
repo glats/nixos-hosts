@@ -1,7 +1,8 @@
-{ config
-, pkgs
-, inputs
-, ...
+{
+  config,
+  pkgs,
+  inputs,
+  ...
 }:
 
 {
@@ -19,7 +20,7 @@
       gtk-application-prefer-dark-theme = true;
     };
     gtk3.extraCss = ''
-      .caja-desktop.view .entry, .caja-navigation-window .view .entry {caret-color: white;}
+      .caja-desktop.view .entry, .caja-navigation-window .view .entry {caret-color: #${config.colorScheme.palette.base07};}
 
       /* Fix: selected items invisible when window unfocused (backdrop state) */
       /* Redefinir colores del tema para selecciones sin foco */
