@@ -20,6 +20,9 @@
       # Start hypridle manually (matches original omarchy behavior).
       # Disabled systemd service because omarchy scripts expect manual management.
       "uwsm-app -- hypridle"
+      # wayvnc — VNC server capturing Wayland screen via wlroots screencopy.
+      # Binds to all interfaces on port 5900 (VNC default).
+      "uwsm-app -- wayvnc 0.0.0.0 5900"
     ];
   };
 }

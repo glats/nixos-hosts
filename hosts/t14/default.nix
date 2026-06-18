@@ -31,8 +31,8 @@
     # own home-manager config below with a targeted set.
 
     # === DESKTOP ===
-    # Omarchy provides Hyprland + PipeWire + NetworkManager (iwd
-    # backend) + Bluetooth + printing + gvfs. The previous GNOME module
+    # Omarchy provides Hyprland + PipeWire + NetworkManager + Bluetooth
+    # + printing + gvfs. The previous GNOME module
     # (modules/desktop/gnome.nix) and avahi module
     # (modules/networking/avahi.nix) are no longer imported because
     # omarchy's system.nix supersedes them.
@@ -62,19 +62,11 @@
   networking = {
     hostName = "t14";
     networkmanager.enable = true;
-    # WiFi managed by iwd directly — NM must ignore wlan0 to prevent the
-    # two supplicants from fighting over the interface (see iwd-corrpution
-    # root cause analysis).
-    networkmanager.unmanaged = [ "interface-name:wlan0" ];
     # Defense-in-depth: keep host firewall off. Omarchy's firewall is
     # explicitly disabled below via omarchy.firewall.enable = false, but
     # this line ensures the NixOS-level firewall also stays off.
     firewall.enable = false;
   };
-
-  # iwd manages WiFi directly (NM ignores wlan0). Enable iwd's built-in
-  # DHCP client so the interface gets an IP after layer-2 association.
-  networking.wireless.iwd.settings.Network.EnableNetworkConfiguration = true;
 
   nixpkgs.config = {
     allowUnfree = true;
@@ -82,6 +74,10 @@
     allowUnfreePackages = [ "joypixels" ];
     joypixels.acceptLicense = true;
   };
+
+  # VNC server — captures Wayland screen via wlroots screencopy.
+  # Runs inside Hyprland session (autostart.nix) on 0.0.0.0:5900.
+  programs.wayvnc.enable = true;
 
   # Enable the imported boot module (systemd-boot, plymouth, zen kernel)
   boot-settings.enable = true;
@@ -111,6 +107,11 @@
     # because omarchy-nix generates the theme files dynamically.
     theme = "glats";
 
+    # WiFi: iwd standalone for impala compatibility. NM ignores wlan0
+    # and handles ethernet/Docker. iwd manages connections, DHCP, and
+    # DNS via systemd-resolved on its own.
+    wifi.backend = "standalone-iwd";
+
     # Built-in 14" 1920x1080 panel; external monitors are managed by
     # monitor-hotplug-handler.sh (see hosts/t14/home/hypr/autostart.nix).
     monitors = [ "eDP-1,preferred,auto,1" ];
@@ -126,6 +127,12 @@
     # opt out of omarchy's mkIf-guarded firewall module.
     firewall.enable = false;
   };
+
+  # xdg-desktop-portal-gtk provides the org.freedesktop.portal.Settings
+  # D-Bus interface that libadwaita (Nautilus) needs to read color-scheme.
+  # xdg-desktop-portal-hyprland does NOT implement Settings — without this
+  # portal, Nautilus ignores the dark mode preference.
+  xdg.portal.extraPortals = with pkgs; [ xdg-desktop-portal-gtk ];
 
   # === HOME-MANAGER ===
   # Omarchy + t14 Hyprland overlays imported via ./home/omarchy.nix.
