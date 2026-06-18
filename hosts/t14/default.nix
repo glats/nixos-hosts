@@ -62,11 +62,19 @@
   networking = {
     hostName = "t14";
     networkmanager.enable = true;
+    # WiFi managed by iwd directly — NM must ignore wlan0 to prevent the
+    # two supplicants from fighting over the interface (see iwd-corrpution
+    # root cause analysis).
+    networkmanager.unmanaged = [ "interface-name:wlan0" ];
     # Defense-in-depth: keep host firewall off. Omarchy's firewall is
     # explicitly disabled below via omarchy.firewall.enable = false, but
     # this line ensures the NixOS-level firewall also stays off.
     firewall.enable = false;
   };
+
+  # iwd manages WiFi directly (NM ignores wlan0). Enable iwd's built-in
+  # DHCP client so the interface gets an IP after layer-2 association.
+  networking.wireless.iwd.settings.Network.EnableNetworkConfiguration = true;
 
   nixpkgs.config = {
     allowUnfree = true;
