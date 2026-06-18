@@ -13,6 +13,7 @@
   xdg.configFile."wayvnc/config".source = ./config;
 
   # Systemd user service for wayvnc.
+  # Passes Wayland env vars so wayvnc can attach to the compositor.
   systemd.user.services.wayvnc = {
     Unit = {
       Description = "wayvnc VNC server for Wayland";
@@ -21,6 +22,12 @@
     };
     Service = {
       Type = "simple";
+      PassEnvironment = [
+        "WAYLAND_DISPLAY"
+        "XDG_RUNTIME_DIR"
+        "DISPLAY"
+      ];
+      ExecStartPre = "${pkgs.bash}/bin/bash -c 'pkill wayvnc 2>/dev/null || true'";
       ExecStart = "${pkgs.wayvnc}/bin/wayvnc";
       Restart = "on-failure";
       RestartSec = 5;
