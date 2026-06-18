@@ -27,7 +27,6 @@
   ../shared/opencode.nix
   ../shared/opencode-profile.nix
   ./chrome-apps.nix
-  ./vnc-clients.nix
   ./ssh.nix
   ../shared/sops.nix
   inputs.sops-nix.homeManagerModules.sops
