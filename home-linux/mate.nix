@@ -1,8 +1,9 @@
-{ config
-, lib
-, pkgs
-, hostName
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  hostName,
+  ...
 }:
 
 let
@@ -82,8 +83,8 @@ in
       color-shading-type = "solid";
       picture-filename = "";
       picture-options = "none";
-      primary-color = "#000000";
-      secondary-color = "#000000";
+      primary-color = "#${config.colorScheme.palette.base00}";
+      secondary-color = "#${config.colorScheme.palette.base00}";
       show-desktop-icons = false;
     };
 
