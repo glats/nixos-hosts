@@ -39,6 +39,10 @@
       setw -g clock-mode-colour '#${config.colorScheme.palette.base0D}'
 
       set -g @resurrect-capture-pane-contents 'on'
+
+      # Universal bindings
+      bind -T copy-mode-vi v send -X begin-selection
+      bind P paste-buffer
     '';
   };
 }
