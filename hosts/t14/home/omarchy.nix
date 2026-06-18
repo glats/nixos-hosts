@@ -102,4 +102,14 @@
     name = "Papirus-Dark";
     package = pkgs.papirus-icon-theme;
   };
+
+  # Enable dark mode entries for both GTK3 and GTK4 settings.ini.
+  # Without this, GTK4 settings.ini has no gtk-theme-name (HM 26.05
+  # silences gtk4.theme by default) and no gtk-application-prefer-dark-theme.
+  # Nautilus (libadwaita) reads these to determine dark mode.
+  gtk.colorScheme = "dark";
+
+  # Fix: home-manager escribe gtk-interface-color-scheme=2 (integer) pero
+  # GTK4 espera el string "dark" — sin esto libadwaita ignora el dark mode.
+  gtk.gtk4.extraConfig."gtk-interface-color-scheme" = "dark";
 }
