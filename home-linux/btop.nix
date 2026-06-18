@@ -1,4 +1,9 @@
-{ config, hostName, lib, ... }:
+{
+  config,
+  hostName,
+  lib,
+  ...
+}:
 
 let
   btopTheme = ''
@@ -13,16 +18,16 @@ let
     theme[inactive_fg]="#${config.colorScheme.palette.base03}"
     theme[graph_text]="#${config.colorScheme.palette.base04}"
     theme[proc_misc]="#${config.colorScheme.palette.base04}"
-    theme[cpu_box]="#${config.colorScheme.palette.base0D}"
-    theme[mem_box]="#${config.colorScheme.palette.base0B}"
+    theme[cpu_box]="#${config.colorScheme.palette.base0B}"
+    theme[mem_box]="#${config.colorScheme.palette.base09}"
     theme[net_box]="#${config.colorScheme.palette.base0E}"
     theme[proc_box]="#${config.colorScheme.palette.base0C}"
     theme[div_line]="#${config.colorScheme.palette.base02}"
     theme[temp_start]="#${config.colorScheme.palette.base0B}"
     theme[temp_mid]="#${config.colorScheme.palette.base0A}"
     theme[temp_end]="#${config.colorScheme.palette.base08}"
-    theme[cpu_start]="#${config.colorScheme.palette.base0D}"
-    theme[cpu_mid]="#${config.colorScheme.palette.base0E}"
+    theme[cpu_start]="#${config.colorScheme.palette.base0B}"
+    theme[cpu_mid]="#${config.colorScheme.palette.base0A}"
     theme[cpu_end]="#${config.colorScheme.palette.base08}"
     theme[free_start]="#${config.colorScheme.palette.base0B}"
     theme[free_mid]="#${config.colorScheme.palette.base0A}"
@@ -36,12 +41,12 @@ let
     theme[used_start]="#${config.colorScheme.palette.base08}"
     theme[used_mid]="#${config.colorScheme.palette.base09}"
     theme[used_end]="#${config.colorScheme.palette.base0A}"
-    theme[download_start]="#${config.colorScheme.palette.base0B}"
-    theme[download_mid]="#${config.colorScheme.palette.base0C}"
-    theme[download_end]="#${config.colorScheme.palette.base0D}"
+    theme[download_start]="#${config.colorScheme.palette.base0E}"
+    theme[download_mid]="#${config.colorScheme.palette.base0D}"
+    theme[download_end]="#${config.colorScheme.palette.base0C}"
     theme[upload_start]="#${config.colorScheme.palette.base0E}"
-    theme[upload_mid]="#${config.colorScheme.palette.base0F}"
-    theme[upload_end]="#${config.colorScheme.palette.base08}"
+    theme[upload_mid]="#${config.colorScheme.palette.base0D}"
+    theme[upload_end]="#${config.colorScheme.palette.base0C}"
     theme[process_start]="#${config.colorScheme.palette.base0B}"
     theme[process_mid]="#${config.colorScheme.palette.base0A}"
     theme[process_end]="#${config.colorScheme.palette.base08}"
@@ -50,7 +55,8 @@ in
 {
   home.file = {
     ".config/btop/themes/nix-colors.theme".text = btopTheme;
-  } // lib.optionalAttrs (hostName != "t14") {
+  }
+  // lib.optionalAttrs (hostName != "t14") {
     ".config/btop/btop.conf".text = ''
       color_theme = "nix-colors"
       theme_background = true
