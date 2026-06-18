@@ -93,4 +93,13 @@
   # omarchy-nix's HM fonts module overrides defaults with different fonts;
   # rog/thinkcentre only use the system-level config from modules/desktop/fonts.nix.
   fonts.fontconfig.enable = lib.mkForce false;
+
+  # Set icon theme explicitly — omarchy-nix manages gtk.theme and gtk.cursorTheme
+  # but does NOT set gtk.iconTheme. Papirus-Dark is already installed system-wide
+  # (via modules/base/profiles/base.nix) but never activated on t14 because
+  # home-linux/theme.nix is excluded (omarchy owns the visual layer).
+  gtk.iconTheme = {
+    name = "Papirus-Dark";
+    package = pkgs.papirus-icon-theme;
+  };
 }
