@@ -22,7 +22,9 @@
       # Connect to wayvnc on t14 (port 5900, PAM auth).
       # Server is enabled via programs.wayvnc on t14; PAM uses the
       # unix password of the glats account on t14.
-      exec ${pkgs.remmina}/bin/remmina -c vnc://t14:5900
+      # NOTE: t14 resolves to 127.0.0.2 in /etc/hosts, so we use the
+      #       direct IP 172.16.0.109 instead of hostname.
+      exec ${pkgs.remmina}/bin/remmina -c vnc://172.16.0.109:5900
     '';
   };
 
