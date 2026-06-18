@@ -10,7 +10,14 @@
 { pkgs, ... }:
 
 {
-  xdg.configFile."wayvnc/config".source = ./config;
+  # Config file generated declaratively by Nix.
+  # wayvnc reads this at startup (default location: ~/.config/wayvnc/config).
+  xdg.configFile."wayvnc/config".text = ''
+    use_relative_paths=true
+    address=0.0.0.0
+    port=5900
+    enable_pam=true
+  '';
 
   # Systemd user service for wayvnc.
   # Passes Wayland env vars so wayvnc can attach to the compositor.
