@@ -55,6 +55,7 @@
       "zoom"
       "drawio"
       "losslesscut"
+      "kitty"
     ];
   };
 }
