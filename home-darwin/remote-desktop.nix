@@ -4,7 +4,7 @@
 # VNC connections use TigerVNC (Homebrew cask) which supports VeNCrypt/TLS
 # required by wayvnc's PAM auth. macOS native Screen Sharing.app does not.
 # RDP connections use sdl-freerdp (FreeRDP SDL3/Metal client, no X11 needed).
-{ pkgs, ... }:
+{ config, pkgs, ... }:
 
 let
   mkRemoteApp =
@@ -13,7 +13,7 @@ let
       protocol,
       host,
       port ? "",
-      username ? "glats",
+      username ? config.home.username,
     }:
     let
       conn =
