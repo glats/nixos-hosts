@@ -56,6 +56,7 @@
       "drawio"
       "losslesscut"
       "kitty"
+      "microsoft-remote-desktop"
     ];
   };
 }
