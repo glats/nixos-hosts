@@ -23,7 +23,6 @@ in
       docker-compose
       lazydocker
       freerdp
-      tigervnc
       colima
       docker
       maven
