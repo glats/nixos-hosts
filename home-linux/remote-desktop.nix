@@ -166,7 +166,8 @@ let
       Name=${name}
       Comment=${comment}
       Exec=${exec}
-      Icon=remmina
+      TryExec=${pkgs.remmina}/bin/remmina
+      Icon=${pkgs.remmina}/share/icons/hicolor/scalable/apps/org.remmina.Remmina.svg
       Categories=Network;RemoteAccess;
       Terminal=false
       StartupWMClass=remmina
@@ -209,7 +210,10 @@ in
   # (modules/hardware/keyring.nix) already installs libsecret, but
   # adding it here makes the dependency explicit at the HM boundary
   # and survives host configs that drop the hardware module.
-  home.packages = [ pkgs.libsecret ];
+  home.packages = [
+    pkgs.remmina
+    pkgs.libsecret
+  ];
 
   home.file = {
     # === RDP profiles ===
@@ -252,35 +256,35 @@ in
       text = mkDesktop {
         name = "rog";
         comment = "RDP connection to 172.16.0.5";
-        exec = "remmina -c /home/glats/.local/share/remmina/rdp-rog.remmina";
+        exec = "${pkgs.remmina}/bin/remmina -c /home/glats/.local/share/remmina/rdp-rog.remmina";
       };
     };
     ".local/share/applications/remote-oneplus5.desktop" = {
       text = mkDesktop {
         name = "oneplus5";
         comment = "RDP connection to 172.16.0.12";
-        exec = "remmina -c /home/glats/.local/share/remmina/rdp-oneplus5.remmina";
+        exec = "${pkgs.remmina}/bin/remmina -c /home/glats/.local/share/remmina/rdp-oneplus5.remmina";
       };
     };
     ".local/share/applications/remote-thinkcentre.desktop" = {
       text = mkDesktop {
         name = "thinkcentre";
         comment = "RDP connection to 172.16.0.11";
-        exec = "remmina -c /home/glats/.local/share/remmina/rdp-thinkcentre.remmina";
+        exec = "${pkgs.remmina}/bin/remmina -c /home/glats/.local/share/remmina/rdp-thinkcentre.remmina";
       };
     };
     ".local/share/applications/remote-t14.desktop" = {
       text = mkDesktop {
         name = "t14";
         comment = "VNC connection to 172.16.0.109:5900";
-        exec = "remmina -c /home/glats/.local/share/remmina/vnc-t14.remmina";
+        exec = "${pkgs.remmina}/bin/remmina -c /home/glats/.local/share/remmina/vnc-t14.remmina";
       };
     };
     ".local/share/applications/remote-mact2.desktop" = {
       text = mkDesktop {
         name = "mact2";
         comment = "VNC connection to mact2.local";
-        exec = "remmina -c /home/glats/.local/share/remmina/vnc-mact2.remmina";
+        exec = "${pkgs.remmina}/bin/remmina -c /home/glats/.local/share/remmina/vnc-mact2.remmina";
       };
     };
   };
