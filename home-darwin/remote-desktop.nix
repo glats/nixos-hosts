@@ -19,7 +19,7 @@ let
         if protocol == "vnc" then
           "open vnc://${host}${if port != "" then ":${port}" else ""}"
         else
-          "${pkgs.freerdp}/bin/xfreerdp /v:${host} /u:glats /cert-ignore /sec:nla +clipboard +home-drive";
+          "${pkgs.freerdp}/bin/xfreerdp /v:${host} /u:glats /cert:ignore";
     in
     pkgs.runCommand "remote-${name}.app" { } ''
       mkdir -p $out/remote-${name}.app/Contents/MacOS
