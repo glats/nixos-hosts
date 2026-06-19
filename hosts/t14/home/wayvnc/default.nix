@@ -1,6 +1,11 @@
 # wayvnc configuration — VNC server for wlroots-based Wayland compositors.
 # wayvnc captures the actual screen via wlroots screencopy protocol.
-# Auth uses PAM (unix password) as configured by programs.wayvnc.enable.
+#
+# Auth uses VeNCrypt + PAM (enable_pam=true) for secure connections.
+# Clients (e.g. TigerVNC's vncviewer on macOS) negotiate TLS with
+# username/password over the encrypted channel; wayvnc validates the
+# credentials against the host's PAM stack. macOS Screen Sharing.app
+# does NOT support VeNCrypt — use TigerVNC on the Mac side.
 #
 # Run as a systemd user service (not exec-once) so it:
 #   - starts after the graphical session is ready (gets Wayland env)
