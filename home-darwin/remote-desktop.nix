@@ -1,7 +1,9 @@
 # Remote desktop client launchers for Darwin (macOS).
 #
 # Creates .app bundles that appear in Spotlight.
-# VNC connections use the native Screen Sharing.app (via `open vnc://`).
+# VNC connections use TigerVNC's vncviewer (VeNCrypt/TLS-capable),
+# which is needed for wayvnc's PAM auth — macOS Screen Sharing.app
+# does not support VeNCrypt.
 # RDP connections use sdl-freerdp (FreeRDP SDL3/Metal client, no X11 needed).
 { pkgs, ... }:
 
@@ -17,9 +19,9 @@ let
     let
       conn =
         if protocol == "vnc" then
-          "open vnc://${host}${if port != "" then ":${port}" else ""}"
+          "${pkgs.tigervnc}/bin/vncviewer ${host}${if port != "" then ":${port}" else ""}"
         else
-          "${pkgs.freerdp}/bin/sdl-freerdp /v:${host} /u:${username} /p: /cert:ignore /sound:sys:mac /clipboard /w:1920 /h:1080 /smart-sizing /gfx:AVC444";
+          "${pkgs.freerdp}/bin/sdl-freerdp /v:${host} /u:${username} /p: /cert:ignore /sound:sys:mac /clipboard /w:1920 /h:1080 /smart-sizing /gfx:progressive /bpp:32 /kbd:layout:0x0000040A,lang:0x040A";
     in
     pkgs.runCommand "remote-${name}.app" { } ''
       mkdir -p $out/remote-${name}.app/Contents/MacOS
