@@ -1,9 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=mact2
-Comment=GVNC connection to mact2.local
-Exec=remmina -c /home/glats/.local/share/remmina/group_gvnc_mact2_mact2-local.remmina
-Icon=remmina
-Categories=Network;RemoteAccess;
-Terminal=false
-StartupWMClass=remmina
