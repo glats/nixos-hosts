@@ -20,24 +20,47 @@ let
   mkRemoteApp =
     {
       name,
+      displayName,
       protocol,
       host,
       port ? "",
+      viewer ? "tigervnc",
       username ? config.home.username,
     }:
     let
       conn =
         if protocol == "vnc" then
+          let
+            # TigerVNC: /Applications/TigerVNC.app/Contents/MacOS/vncviewer
+            # RealVNC Viewer: /Applications/VNC Viewer.app/Contents/MacOS/vncviewer
+            isRealVnc = viewer == "realvnc";
+            vncBin =
+              if isRealVnc then
+                "/Applications/VNC Viewer.app/Contents/MacOS/vncviewer"
+              else
+                "/Applications/TigerVNC.app/Contents/MacOS/vncviewer";
+            # TigerVNC accepts `:display` (port=5900 -> :0) and `:port` (it
+            # treats values >99 as a port). RealVNC requires `::port` for
+            # explicit port — `:5900` would be parsed as display 5900 (invalid).
+            vncTarget = "${host}${
+              if port == "" then
+                ""
+              else if isRealVnc then
+                "::${port}"
+              else
+                ":${port}"
+            }";
+            vncFlags = if isRealVnc then "" else "-FullScreen -FullscreenSystemKeys -RemoteResize";
+            caskHint = if isRealVnc then "brew install --cask vnc-viewer" else "brew install --cask tigervnc";
+          in
           ''
-            VNC_BIN="/Applications/TigerVNC.app/Contents/MacOS/vncviewer"
+            VNC_BIN="${vncBin}"
             if [ ! -x "$VNC_BIN" ]; then
-              echo "ERROR: TigerVNC no encontrado en $VNC_BIN" >&2
-              echo "       Instalar con: brew install --cask tigervnc" >&2
+              echo "ERROR: VNC viewer no encontrado en $VNC_BIN" >&2
+              echo "       Instalar con: ${caskHint}" >&2
               exit 1
             fi
-            exec "$VNC_BIN" -FullScreen -FullscreenSystemKeys -RemoteResize "${host}${
-              if port != "" then ":${port}" else ""
-            }"
+            exec "$VNC_BIN" ${vncFlags} "${vncTarget}"
           ''
         else
           ''
@@ -56,7 +79,7 @@ let
         <key>CFBundleName</key>
         <string>remote-${name}</string>
         <key>CFBundleDisplayName</key>
-        <string>${name} (${protocol})</string>
+        <string>${displayName}</string>
         <key>CFBundleIdentifier</key>
         <string>com.glats.remote.${name}</string>
         <key>CFBundleVersion</key>
@@ -80,29 +103,55 @@ let
     '';
 
   apps = [
+    # VNC hosts: dual launchers (TigerVNC + RealVNC Viewer) per host for
+    # side-by-side comparison. wayvnc on t14 / mact2 supports both clients
+    # via the standard VNC RFB protocol.
     {
-      name = "t14";
+      name = "t14-tigervnc";
+      displayName = "t14 (TigerVNC)";
       protocol = "vnc";
+      viewer = "tigervnc";
       host = "172.16.0.109";
       port = "5900";
     }
     {
-      name = "mact2";
+      name = "t14-realvnc";
+      displayName = "t14 (RealVNC)";
       protocol = "vnc";
+      viewer = "realvnc";
+      host = "172.16.0.109";
+      port = "5900";
+    }
+    {
+      name = "mact2-tigervnc";
+      displayName = "mact2 (TigerVNC)";
+      protocol = "vnc";
+      viewer = "tigervnc";
       host = "mact2.local";
     }
     {
+      name = "mact2-realvnc";
+      displayName = "mact2 (RealVNC)";
+      protocol = "vnc";
+      viewer = "realvnc";
+      host = "mact2.local";
+    }
+    # RDP hosts: single launcher each
+    {
       name = "oneplus5";
+      displayName = "oneplus5 (RDP)";
       protocol = "rdp";
       host = "172.16.0.12";
     }
     {
       name = "rog";
+      displayName = "rog (RDP)";
       protocol = "rdp";
       host = "172.16.0.5";
     }
     {
       name = "thinkcentre";
+      displayName = "thinkcentre (RDP)";
       protocol = "rdp";
       host = "172.16.0.11";
     }
