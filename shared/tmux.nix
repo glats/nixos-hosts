@@ -43,6 +43,11 @@
       # Universal bindings
       bind -T copy-mode-vi v send -X begin-selection
       bind P paste-buffer
+
+      # vim-tmux-navigator key bindings (C-h/C-j/C-k/C-l) are
+      # auto-installed by the plugin itself when sourced by Home
+      # Manager (nixpkgs plugins) or TPM.  We do NOT duplicate them
+      # here to avoid double-bind warnings.
     '';
   };
 }

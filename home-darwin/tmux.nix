@@ -1,9 +1,8 @@
-{
-  pkgs,
-  lib,
-  config,
-  primaryUser,
-  ...
+{ pkgs
+, lib
+, config
+, primaryUser
+, ...
 }:
 
 {
@@ -73,6 +72,7 @@
       set -g @plugin 'tmux-plugins/tmux-resurrect'
       set -g @plugin 'tmux-plugins/tmux-sessionist'
       set -g @plugin 'tmux-plugins/tmux-yank'
+      set -g @plugin 'christoomey/vim-tmux-navigator'
 
       set-environment -g TMUX_PLUGIN_MANAGER_PATH "$HOME/.config/tmux/plugins"
 
