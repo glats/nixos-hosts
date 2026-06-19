@@ -31,7 +31,7 @@ let
           ''
         else
           ''
-            export HOME="''${HOME: -/Users/${username}}"
+            export HOME="''${HOME:-/Users/${username}}"
             cd "$HOME"
             exec ${pkgs.freerdp}/bin/sdl-freerdp /v:${host} /u:${username} /p: /cert:ignore /sound:sys:mac /clipboard /w:1920 /h:1080 /smart-sizing /gfx:progressive /bpp:32 /kbd:layout:0x0000040A,lang:0x040A >>"$HOME/Library/Logs/remote-${name}.log" 2>&1
           '';
