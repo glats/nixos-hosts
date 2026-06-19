@@ -30,7 +30,6 @@
     ./hypr/xdph.nix
     ./ghostty.nix
     ../../../home-linux/kitty.nix
-    ./remmina.nix
     ./mouse-wiggle.nix
     ./wayvnc
   ];
