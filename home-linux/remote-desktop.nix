@@ -9,7 +9,7 @@
 let
   # Settings common to ALL remote desktop connections.
   commonDefaults = {
-    scale = 2;
+    scale = 0;
     viewmode = 1;
     window_maximize = 1;
     keyboard_grab = 0;
