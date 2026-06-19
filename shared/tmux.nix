@@ -28,10 +28,10 @@
       set -g mouse on
       set -g status-position bottom
 
-      # base16 theme (omarchy-style transparent with blue accents)
-      set -g status-style fg=#${config.colorScheme.palette.base05},bg=default
-      setw -g window-status-style fg=#${config.colorScheme.palette.base05},bg=default
-      setw -g window-status-current-style fg=#${config.colorScheme.palette.base0D},bg=default
+      # base16 theme (community standard: base00 bg with blue accents)
+      set -g status-style fg=#${config.colorScheme.palette.base05},bg=#${config.colorScheme.palette.base00}
+      setw -g window-status-style fg=#${config.colorScheme.palette.base05},bg=#${config.colorScheme.palette.base00}
+      setw -g window-status-current-style fg=#${config.colorScheme.palette.base0D},bg=#${config.colorScheme.palette.base00}
       set -g pane-border-style fg=#${config.colorScheme.palette.base02}
       set -g pane-active-border-style fg=#${config.colorScheme.palette.base0D}
       set -g message-style fg=#${config.colorScheme.palette.base0D},bg=default
