@@ -66,7 +66,7 @@ let
 
   allProviders = nvidiaProvider // opencodeProvider;
 
-  activeProviderName = "opencode-go3";
+  activeProviderName = "opencode-go2";
 
   providers = [
     {
