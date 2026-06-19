@@ -38,6 +38,29 @@
       set -g mode-style fg=#${config.colorScheme.palette.base07},bg=#${config.colorScheme.palette.base02}
       setw -g clock-mode-colour '#${config.colorScheme.palette.base0D}'
 
+      # Status bar layout and content
+      set -g status-interval 5
+      set -g status-left-length 30
+      set -g status-right-length 50
+      set -g window-status-separator ""
+
+      # Automatic window rename based on current path
+      setw -g automatic-rename on
+      setw -g automatic-rename-format '#{b:pane_current_path}'
+
+      # Left: colored session name block
+      set -g status-left "#[fg=#${config.colorScheme.palette.base00},bg=#${config.colorScheme.palette.base0D},bold] #S #[bg=default] "
+
+      # Right: mode indicators (COPY, PREFIX, ZOOM) + hostname
+      set -g status-right "#[fg=#${config.colorScheme.palette.base0D}]#{?pane_in_mode,COPY ,}#{?client_prefix,PREFIX ,}#{?window_zoomed_flag,ZOOM ,}#[fg=#${config.colorScheme.palette.base03}]#h "
+
+      # Window status format
+      setw -g window-status-format "#[fg=#${config.colorScheme.palette.base03}] #I:#W "
+      setw -g window-status-current-format "#[fg=#${config.colorScheme.palette.base0D},bold] #I:#W "
+
+      # Message command style
+      set -g message-command-style "bg=#${config.colorScheme.palette.base02},fg=#${config.colorScheme.palette.base0D}"
+
       set -g @resurrect-capture-pane-contents 'on'
 
       # Universal bindings
