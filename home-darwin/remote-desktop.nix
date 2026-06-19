@@ -1,14 +1,7 @@
 # Remote desktop client launchers for Darwin (macOS).
 #
-# Creates .app bundles that appear in Spotlight. Real bundles (not symlinks)
-# are deployed to ~/Applications and ad-hoc signed, so macOS Local Network
-# Privacy prompts resolve cleanly.
-#
-# VNC connections: dual launchers (TigerVNC + RealVNC Viewer) per host for
-# side-by-side comparison. Both are Homebrew casks (`tigervnc`, `vnc-viewer`).
-# TigerVNC supports VeNCrypt/TLS required by wayvnc's PAM auth; macOS
-# native Screen Sharing.app does not.
-# RDP connections: sdl-freerdp (FreeRDP SDL3/Metal client, no X11 needed).
+# Creates .app bundles that appear in Spotlight. Uses native C launchers
+# instead of shell scripts to satisfy macOS Sequoia Launch Constraints.
 {
   config,
   pkgs,
@@ -17,10 +10,10 @@
 }:
 
 let
-  mkRemoteApp =
+  # Generate C source for native Mach-O launcher
+  mkLauncherC =
     {
       name,
-      displayName,
       protocol,
       host,
       port ? "",
@@ -28,49 +21,110 @@ let
       username ? config.home.username,
     }:
     let
-      conn =
-        if protocol == "vnc" then
-          let
-            # TigerVNC: /Applications/TigerVNC.app/Contents/MacOS/vncviewer
-            # RealVNC Viewer: /Applications/VNC Viewer.app/Contents/MacOS/vncviewer
-            isRealVnc = viewer == "realvnc";
-            vncBin =
-              if isRealVnc then
-                "/Applications/VNC Viewer.app/Contents/MacOS/vncviewer"
-              else
-                "/Applications/TigerVNC.app/Contents/MacOS/vncviewer";
-            # TigerVNC accepts `:display` (port=5900 -> :0) and `:port` (it
-            # treats values >99 as a port). RealVNC requires `::port` for
-            # explicit port — `:5900` would be parsed as display 5900 (invalid).
-            vncTarget = "${host}${
-              if port == "" then
-                ""
-              else if isRealVnc then
-                "::${port}"
-              else
-                ":${port}"
-            }";
-            vncFlags = if isRealVnc then "" else "-FullScreen -FullscreenSystemKeys -RemoteResize";
-            caskHint = if isRealVnc then "brew install --cask vnc-viewer" else "brew install --cask tigervnc";
-          in
+      vncHost = "${host}${if port != "" then ":${port}" else ""}";
+      execCommand =
+        if protocol == "vnc" && viewer == "realvnc" then
           ''
-            VNC_BIN="${vncBin}"
-            if [ ! -x "$VNC_BIN" ]; then
-              echo "ERROR: VNC viewer no encontrado en $VNC_BIN" >&2
-              echo "       Instalar con: ${caskHint}" >&2
-              exit 1
-            fi
-            exec "$VNC_BIN" ${vncFlags} "${vncTarget}"
+            const char *vncbin = "/Applications/VNC Viewer.app/Contents/MacOS/vncviewer";
+            const char *args[] = {
+              vncbin,
+              "${vncHost}",
+              NULL
+            };
+            execv(vncbin, (char *const *)args);
+          ''
+        else if protocol == "vnc" then
+          ''
+            const char *vncbin = "/Applications/TigerVNC.app/Contents/MacOS/vncviewer";
+            const char *args[] = {
+              vncbin,
+              "-FullScreen",
+              "-FullscreenSystemKeys",
+              "-RemoteResize",
+              "${vncHost}",
+              NULL
+            };
+            execv(vncbin, (char *const *)args);
           ''
         else
           ''
-            export HOME="''${HOME:-/Users/${username}}"
-            cd "$HOME"
-            exec ${pkgs.freerdp}/bin/sdl-freerdp /v:${host} /u:${username} /p: /cert:ignore /sound:sys:mac /clipboard /w:1920 /h:1080 /smart-sizing /gfx:progressive /bpp:32 /kbd:layout:0x0000040A,lang:0x040A >>"$HOME/Library/Logs/remote-${name}.log" 2>&1
+            const char *rdpbin = "${pkgs.freerdp}/bin/sdl-freerdp";
+            const char *args[] = {
+              rdpbin,
+              "/v:${host}",
+              "/u:${username}",
+              "/p:",
+              "/cert:ignore",
+              "/sound:sys:mac",
+              "/clipboard",
+              "/w:1920",
+              "/h:1080",
+              "/smart-sizing",
+              "/gfx:progressive",
+              "/bpp:32",
+              "/kbd:layout:0x0000040A,lang:0x040A",
+              NULL
+            };
+            execv(rdpbin, (char *const *)args);
           '';
+    in
+    ''
+      #include <stdio.h>
+      #include <stdlib.h>
+      #include <unistd.h>
+      #include <pwd.h>
+      #include <string.h>
+
+      int main(int argc, char *argv[]) {
+          struct passwd *pw = getpwuid(getuid());
+          if (pw) {
+              setenv("HOME", pw->pw_dir, 1);
+              chdir(pw->pw_dir);
+          }
+
+          if (pw) {
+              char logpath[1024];
+              snprintf(logpath, sizeof(logpath), "%s/Library/Logs/remote-${name}.log", pw->pw_dir);
+              FILE *log = fopen(logpath, "a");
+              if (log) {
+                  dup2(fileno(log), STDOUT_FILENO);
+                  dup2(fileno(log), STDERR_FILENO);
+                  fclose(log);
+              }
+          }
+
+          ${execCommand}
+
+          perror("execv failed");
+          return 1;
+      }
+    '';
+
+  mkRemoteApp =
+    {
+      name,
+      protocol,
+      host,
+      port ? "",
+      viewer ? "tigervnc",
+      username ? config.home.username,
+    }:
+    let
+      launcherC = mkLauncherC {
+        inherit
+          name
+          protocol
+          host
+          port
+          viewer
+          username
+          ;
+      };
     in
     pkgs.runCommand "remote-${name}.app" { } ''
       mkdir -p $out/remote-${name}.app/Contents/MacOS
+      mkdir -p $out/remote-${name}.app/Contents/Resources
+
       cat > $out/remote-${name}.app/Contents/Info.plist <<'EOF'
       <?xml version="1.0" encoding="UTF-8"?>
       <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -79,7 +133,7 @@ let
         <key>CFBundleName</key>
         <string>remote-${name}</string>
         <key>CFBundleDisplayName</key>
-        <string>${displayName}</string>
+        <string>${name} (${protocol})</string>
         <key>CFBundleIdentifier</key>
         <string>com.glats.remote.${name}</string>
         <key>CFBundleVersion</key>
@@ -95,20 +149,15 @@ let
       </dict>
       </plist>
       EOF
-      cat > $out/remote-${name}.app/Contents/MacOS/launcher <<'LAUNCHER'
-      #!/bin/sh
-      ${conn}
-      LAUNCHER
-      chmod +x $out/remote-${name}.app/Contents/MacOS/launcher
+
+      cat > $out/remote-${name}.app/Contents/Resources/launcher.c <<'CSOURCE'
+      ${launcherC}
+      CSOURCE
     '';
 
   apps = [
-    # VNC hosts: dual launchers (TigerVNC + RealVNC Viewer) per host for
-    # side-by-side comparison. wayvnc on t14 / mact2 supports both clients
-    # via the standard VNC RFB protocol.
     {
       name = "t14-tigervnc";
-      displayName = "t14 (TigerVNC)";
       protocol = "vnc";
       viewer = "tigervnc";
       host = "172.16.0.109";
@@ -116,7 +165,6 @@ let
     }
     {
       name = "t14-realvnc";
-      displayName = "t14 (RealVNC)";
       protocol = "vnc";
       viewer = "realvnc";
       host = "172.16.0.109";
@@ -124,34 +172,28 @@ let
     }
     {
       name = "mact2-tigervnc";
-      displayName = "mact2 (TigerVNC)";
       protocol = "vnc";
       viewer = "tigervnc";
       host = "mact2.local";
     }
     {
       name = "mact2-realvnc";
-      displayName = "mact2 (RealVNC)";
       protocol = "vnc";
       viewer = "realvnc";
       host = "mact2.local";
     }
-    # RDP hosts: single launcher each
     {
       name = "oneplus5";
-      displayName = "oneplus5 (RDP)";
       protocol = "rdp";
       host = "172.16.0.12";
     }
     {
       name = "rog";
-      displayName = "rog (RDP)";
       protocol = "rdp";
       host = "172.16.0.5";
     }
     {
       name = "thinkcentre";
-      displayName = "thinkcentre (RDP)";
       protocol = "rdp";
       host = "172.16.0.11";
     }
@@ -166,8 +208,6 @@ let
 
 in
 {
-  # Use home.activation to copy real app bundles (not symlinks) and sign them.
-  # Symlinks don't work well with macOS Local Network Privacy and Spotlight.
   home.activation.deployRemoteDesktopApps = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     appsDir="$HOME/Applications"
     mkdir -p "$appsDir"
@@ -176,22 +216,25 @@ in
       src="${appSources.${app.name}}/remote-${app.name}.app"
       dst="$appsDir/remote-${app.name}.app"
 
-      # Remove old symlink or bundle if present
       if [ -L "$dst" ] || [ -e "$dst" ]; then
         rm -rf "$dst"
       fi
 
-      # Copy real bundle (not symlink)
       cp -R "$src" "$dst"
 
-      # Remove quarantine bits
-      xattr -cr "$dst" 2>/dev/null || true
+      # Compile native C launcher
+      /usr/bin/cc -O2 -o "$dst/Contents/MacOS/launcher" \
+        "$dst/Contents/Resources/launcher.c" 2>/dev/null
 
-      # Ad-hoc sign the bundle so macOS can identify it for Local Network Privacy
+      if [ ! -x "$dst/Contents/MacOS/launcher" ]; then
+        echo "ERROR: Failed to compile launcher for remote-${app.name}" >&2
+        exit 1
+      fi
+
+      xattr -cr "$dst" 2>/dev/null || true
       /usr/bin/codesign --force --sign - "$dst" 2>/dev/null || true
     '') apps}
 
-    # Re-index for Spotlight
     mdimport "$appsDir" 2>/dev/null || true
   '';
 }
