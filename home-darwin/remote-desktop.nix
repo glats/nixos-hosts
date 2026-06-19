@@ -221,6 +221,7 @@ in
       fi
 
       cp -R "$src" "$dst"
+      chmod -R +w "$dst"
 
       # Compile native C launcher
       /usr/bin/cc -O2 -o "$dst/Contents/MacOS/launcher" \
