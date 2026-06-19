@@ -55,6 +55,8 @@ let
         <string>launcher</string>
         <key>LSUIElement</key>
         <true/>
+        <key>NSLocalNetworkUsageDescription</key>
+        <string>Remote desktop needs local network access to connect to your machines.</string>
       </dict>
       </plist>
       EOF
@@ -63,6 +65,7 @@ let
       ${conn}
       LAUNCHER
       chmod +x $out/remote-${name}.app/Contents/MacOS/launcher
+      /usr/bin/codesign --force --sign - $out/remote-${name}.app || true
     '';
 in
 {
