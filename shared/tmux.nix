@@ -28,14 +28,14 @@
       set -g mouse on
       set -g status-position bottom
 
-      # base16 theme
-      set -g status-style fg=#${config.colorScheme.palette.base05},bg=#${config.colorScheme.palette.base01}
-      setw -g window-status-style fg=#${config.colorScheme.palette.base05},bg=#${config.colorScheme.palette.base01}
-      setw -g window-status-current-style fg=#${config.colorScheme.palette.base0D},bg=#${config.colorScheme.palette.base01}
+      # base16 theme (omarchy-style transparent with blue accents)
+      set -g status-style fg=#${config.colorScheme.palette.base05},bg=default
+      setw -g window-status-style fg=#${config.colorScheme.palette.base05},bg=default
+      setw -g window-status-current-style fg=#${config.colorScheme.palette.base0D},bg=default
       set -g pane-border-style fg=#${config.colorScheme.palette.base02}
-      set -g pane-active-border-style fg=#${config.colorScheme.palette.base04}
-      set -g message-style fg=#${config.colorScheme.palette.base05},bg=#${config.colorScheme.palette.base02}
-      set -g mode-style fg=#${config.colorScheme.palette.base07},bg=#${config.colorScheme.palette.base02}
+      set -g pane-active-border-style fg=#${config.colorScheme.palette.base0D}
+      set -g message-style fg=#${config.colorScheme.palette.base0D},bg=default
+      set -g mode-style fg=#${config.colorScheme.palette.base00},bg=#${config.colorScheme.palette.base0D}
       setw -g clock-mode-colour '#${config.colorScheme.palette.base0D}'
 
       # Status bar layout and content
