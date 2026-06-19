@@ -15,8 +15,6 @@ let
       port ? "",
     }:
     let
-      # VNC: use macOS native Screen Sharing.app
-      # RDP: use xfreerdp from nixpkgs
       conn =
         if protocol == "vnc" then
           "open vnc://${host}${if port != "" then ":${port}" else ""}"
@@ -54,86 +52,53 @@ let
 in
 {
   home.file = {
-    # === VNC connections (native Screen Sharing.app) ===
     "Applications/remote-t14.app" = {
-      source =
-        "$${
+      source = "${
         mkRemoteApp {
-          name = " t14 ";
-          protocol = " vnc
-          ";
-          host = "
-          172.16
-          .0
-          .109
-          ";
-          port = "
-          5900
-          ";
+          name = "t14";
+          protocol = "vnc";
+          host = "172.16.0.109";
+          port = "5900";
         }
       }/remote-t14.app";
       recursive = true;
     };
     "Applications/remote-mact2.app" = {
-      source =
-        "$${
+      source = "${
         mkRemoteApp {
-          name = " mact2 ";
-          protocol = " vnc
-          ";
-          host = "
-          mact2.local
-          ";
+          name = "mact2";
+          protocol = "vnc";
+          host = "mact2.local";
         }
       }/remote-mact2.app";
       recursive = true;
     };
-
-    # === RDP connections (xfreerdp) ===
     "Applications/remote-oneplus5.app" = {
-      source =
-        "$${
+      source = "${
         mkRemoteApp {
-          name = " oneplus5 ";
-          protocol = " rdp
-          ";
-          host = "
-          172.16
-          .0
-          .12
-          ";
+          name = "oneplus5";
+          protocol = "rdp";
+          host = "172.16.0.12";
         }
       }/remote-oneplus5.app";
       recursive = true;
     };
     "Applications/remote-rog.app" = {
-      source =
-        "$${
+      source = "${
         mkRemoteApp {
-          name = " rog ";
-          protocol = " rdp
-          ";
-          host = "
-          172.16
-          .0
-          .5
-          ";
+          name = "rog";
+          protocol = "rdp";
+          host = "172.16.0.5";
         }
       }/remote-rog.app";
       recursive = true;
     };
     "Applications/remote-thinkcentre.app" = {
-      source =
-        "$${
+      source = "${
         mkRemoteApp {
-          name = " thinkcentre ";
-          protocol = " rdp
-          ";
-          host = "
-          172.16
-          .0
-          .11
-          ";
+          name = "thinkcentre";
+          protocol = "rdp";
+          host = "172.16.0.11";
         }
       }/remote-thinkcentre.app";
       recursive = true;
