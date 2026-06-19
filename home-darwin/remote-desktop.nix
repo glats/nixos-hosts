@@ -25,9 +25,7 @@ let
               echo "       Instalar con: brew install --cask tigervnc" >&2
               exit 1
             fi
-            exec "$VNC_BIN" -FullScreen -FullscreenSystemKeys -RemoteResize "${host}${
-              if port != "" then ":${port}" else ""
-            }"
+            exec "$VNC_BIN" -Maximize -RemoteResize "${host}${if port != "" then ":${port}" else ""}"
           ''
         else
           ''
