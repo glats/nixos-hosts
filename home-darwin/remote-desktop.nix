@@ -18,7 +18,15 @@ let
     let
       conn =
         if protocol == "vnc" then
-          "open -a TigerVNC vnc://${host}${if port != "" then ":${port}" else ""}"
+          ''
+            VNC_BIN="/Applications/TigerVNC.app/Contents/MacOS/vncviewer"
+            if [ ! -x "$VNC_BIN" ]; then
+              echo "ERROR: TigerVNC no encontrado en $VNC_BIN" >&2
+              echo "       Instalar con: brew install --cask tigervnc" >&2
+              exit 1
+            fi
+            exec "$VNC_BIN" "${host}${if port != "" then "::${port}" else ""}"
+          ''
         else
           "${pkgs.freerdp}/bin/sdl-freerdp /v:${host} /u:${username} /p: /cert:ignore /sound:sys:mac /clipboard /w:1920 /h:1080 /smart-sizing /gfx:progressive /bpp:32 /kbd:layout:0x0000040A,lang:0x040A";
     in
