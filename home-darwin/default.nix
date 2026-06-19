@@ -1,10 +1,11 @@
 # Home Manager configuration for macOS
 # Aggregates all home-darwin modules.
-{ pkgs
-, lib
-, inputs
-, primaryUser
-, ...
+{
+  pkgs,
+  lib,
+  inputs,
+  primaryUser,
+  ...
 }:
 let
   # Toggle: set to false to disable Spotlight indexing for HM apps
@@ -35,6 +36,10 @@ let
     # Prepend user-local bin to PATH so scripts dropped in ~/.local/bin
     # are resolvable on Darwin hosts (mact2). Mirrors home-linux/base.nix.
     home.sessionPath = [ "$HOME/.local/bin" ];
+
+    # Use symlinks instead of copying app bundles to ~/Applications.
+    # Prevents permission issues on macOS when home-manager updates apps.
+    targets.darwin.linkApps.enable = true;
 
     # Disable man page generation — triggers boost::too_few_args in Nix 2.31
     # (home-manager uses builtins.derivation for options.json without proper store context)
