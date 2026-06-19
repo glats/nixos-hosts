@@ -1,7 +1,8 @@
 # Remote desktop client launchers for Darwin (macOS).
 #
-# Creates .app bundles that appear in Spotlight and launch
-# xfreerdp (RDP) or vncviewer (VNC) from nixpkgs.
+# Creates .app bundles that appear in Spotlight.
+# VNC connections use the native Screen Sharing.app (via `open vnc://`).
+# RDP connections use xfreerdp from nixpkgs.
 { pkgs, ... }:
 
 let
@@ -14,15 +15,13 @@ let
       port ? "",
     }:
     let
-      execName = if protocol == "rdp" then "xfreerdp" else "vncviewer";
-      pkg = if protocol == "rdp" then pkgs.freerdp else pkgs.tigervnc;
-      execPath = "${pkg}/bin/${execName}";
-      # Build connection string
+      # VNC: use macOS native Screen Sharing.app
+      # RDP: use xfreerdp from nixpkgs
       conn =
-        if protocol == "rdp" then
-          "${execPath} /v:${host} /u:glats /cert-ignore /sec:nla +clipboard +home-drive"
+        if protocol == "vnc" then
+          "open vnc://${host}${if port != "" then ":${port}" else ""}"
         else
-          "${execPath} ${host}${if port != "" then ":${port}" else ""}";
+          "${pkgs.freerdp}/bin/xfreerdp /v:${host} /u:glats /cert-ignore /sec:nla +clipboard +home-drive";
     in
     pkgs.runCommand "remote-${name}.app" { } ''
       mkdir -p $out/remote-${name}.app/Contents/MacOS
@@ -55,56 +54,86 @@ let
 in
 {
   home.file = {
-    # === VNC connections ===
+    # === VNC connections (native Screen Sharing.app) ===
     "Applications/remote-t14.app" = {
-      source = "${
+      source =
+        "$${
         mkRemoteApp {
-          name = "t14";
-          protocol = "vnc";
-          host = "172.16.0.109";
-          port = "5900";
+          name = " t14 ";
+          protocol = " vnc
+          ";
+          host = "
+          172.16
+          .0
+          .109
+          ";
+          port = "
+          5900
+          ";
         }
       }/remote-t14.app";
       recursive = true;
     };
     "Applications/remote-mact2.app" = {
-      source = "${
+      source =
+        "$${
         mkRemoteApp {
-          name = "mact2";
-          protocol = "vnc";
-          host = "mact2.local";
+          name = " mact2 ";
+          protocol = " vnc
+          ";
+          host = "
+          mact2.local
+          ";
         }
       }/remote-mact2.app";
       recursive = true;
     };
 
-    # === RDP connections ===
+    # === RDP connections (xfreerdp) ===
     "Applications/remote-oneplus5.app" = {
-      source = "${
+      source =
+        "$${
         mkRemoteApp {
-          name = "oneplus5";
-          protocol = "rdp";
-          host = "172.16.0.12";
+          name = " oneplus5 ";
+          protocol = " rdp
+          ";
+          host = "
+          172.16
+          .0
+          .12
+          ";
         }
       }/remote-oneplus5.app";
       recursive = true;
     };
     "Applications/remote-rog.app" = {
-      source = "${
+      source =
+        "$${
         mkRemoteApp {
-          name = "rog";
-          protocol = "rdp";
-          host = "172.16.0.5";
+          name = " rog ";
+          protocol = " rdp
+          ";
+          host = "
+          172.16
+          .0
+          .5
+          ";
         }
       }/remote-rog.app";
       recursive = true;
     };
     "Applications/remote-thinkcentre.app" = {
-      source = "${
+      source =
+        "$${
         mkRemoteApp {
-          name = "thinkcentre";
-          protocol = "rdp";
-          host = "172.16.0.11";
+          name = " thinkcentre ";
+          protocol = " rdp
+          ";
+          host = "
+          172.16
+          .0
+          .11
+          ";
         }
       }/remote-thinkcentre.app";
       recursive = true;
