@@ -1,8 +1,7 @@
-{
-  config,
-  hostName,
-  lib,
-  ...
+{ config
+, hostName
+, lib
+, ...
 }:
 
 let

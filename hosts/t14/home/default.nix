@@ -11,11 +11,10 @@
 #     palette and CaskaydiaCove font + size 11)
 #   - Remmina remote-desktop launchers + connection files (./remmina.nix)
 #   - mouse-wiggle launcher and its systemd user service
-{
-  lib,
-  pkgs,
-  inputs,
-  ...
+{ lib
+, pkgs
+, inputs
+, ...
 }:
 
 {
