@@ -24,6 +24,7 @@
   ./btop.nix
   ./vscode.nix
   ./windsurf.nix
+  ./remote-desktop.nix
   ../shared/opencode.nix
   ../shared/opencode-profile.nix
   ./sops.nix
