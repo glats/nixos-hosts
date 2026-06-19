@@ -1,7 +1,8 @@
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }:
 
 {
@@ -29,7 +30,7 @@
         "ssh"
         "git"
       ];
-      prompt.theme = "minimal";
+      prompt.theme = "suse";
       editor = {
         keymap = "emacs";
         dotExpansion = true;
