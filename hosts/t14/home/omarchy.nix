@@ -27,11 +27,12 @@
 # The omarchy HM module is imported FIRST so that any conflicting
 # definitions from t14/home/default.nix can be overridden via
 # lib.mkForce when needed.
-{ config
-, pkgs
-, lib
-, inputs
-, ...
+{
+  config,
+  pkgs,
+  lib,
+  inputs,
+  ...
 }:
 
 {
@@ -72,6 +73,11 @@
     # the same keys are dropped at eval time.  This keeps rog /
     # thinkcentre / t14 visually identical (one source of truth).
     ../../../home-linux/btop.nix
+    # Remmina remote-desktop clients + connection files.  rog and
+    # thinkcentre get this transitively via modules/base/home-manager.nix,
+    # but t14 has its own curated import list and must include it
+    # explicitly to deploy ~/.config/remmina and the .desktop launchers.
+    ../../../home-linux/remote-desktop.nix
 
     # OpenCode stack
     ../../../shared/opencode.nix
