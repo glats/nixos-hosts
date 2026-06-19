@@ -4,7 +4,18 @@
 # Settings common to all connections are defined once in Nix and merged
 # into each .remmina profile.  This avoids the URI limitation where
 # Remmina forces sound=off and ignores other defaults.
-{ lib, ... }:
+#
+# Password storage: Remmina uses libsecret (gnome-keyring) to persist
+# credentials.  The `disablepasswordstoring=0` flag in each profile
+# allows the libsecret plugin to save the password to the user's
+# default keyring collection on first connect.  The keyring daemon
+# itself is enabled system-wide by `modules/hardware/keyring.nix`
+# (services.gnome.gnome-keyring.enable) and unlocked via PAM on
+# lightdm/xrdp-sesman logins.  `pkgs.libsecret` is added to
+# home.packages so the libsecret shared library is always resolvable
+# in the user session even if a host config drops the system-level
+# keyring module.
+{ lib, pkgs, ... }:
 
 let
   # Settings common to ALL remote desktop connections.
@@ -175,6 +186,10 @@ in
     confirm_close=false
     main_maximize=true
     hide_connection_toolbar=true
+    hide_searchbar=true
+    hide_toolbar=true
+    always_show_tab=false
+    tab_mode=3
     scale_quality=3
     default_action=0
     resolutions=640x480,800x600,1024x768,1280x960,1920x1080
@@ -184,6 +199,17 @@ in
     name=
     ignore-tls-errors=1
   '';
+
+  # libsecret is required by Remmina's glibsecret plugin (the
+  # remmina-plugin-secret.so) to read/write passwords in the user's
+  # default keyring collection.  The plugin is built into the
+  # remmina package (buildInputs includes libsecret) but the library
+  # must be present in the user environment for D-Bus activation to
+  # resolve the secret schema.  The system-level keyring module
+  # (modules/hardware/keyring.nix) already installs libsecret, but
+  # adding it here makes the dependency explicit at the HM boundary
+  # and survives host configs that drop the hardware module.
+  home.packages = [ pkgs.libsecret ];
 
   home.file = {
     # === RDP profiles ===
