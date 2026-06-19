@@ -57,6 +57,7 @@
       "losslesscut"
       "kitty"
       "tigervnc"
+      "vnc-viewer"
     ];
   };
 }

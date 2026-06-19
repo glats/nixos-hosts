@@ -1,10 +1,20 @@
 # Remote desktop client launchers for Darwin (macOS).
 #
-# Creates .app bundles that appear in Spotlight.
-# VNC connections use TigerVNC (Homebrew cask) which supports VeNCrypt/TLS
-# required by wayvnc's PAM auth. macOS native Screen Sharing.app does not.
-# RDP connections use sdl-freerdp (FreeRDP SDL3/Metal client, no X11 needed).
-{ config, pkgs, ... }:
+# Creates .app bundles that appear in Spotlight. Real bundles (not symlinks)
+# are deployed to ~/Applications and ad-hoc signed, so macOS Local Network
+# Privacy prompts resolve cleanly.
+#
+# VNC connections: dual launchers (TigerVNC + RealVNC Viewer) per host for
+# side-by-side comparison. Both are Homebrew casks (`tigervnc`, `vnc-viewer`).
+# TigerVNC supports VeNCrypt/TLS required by wayvnc's PAM auth; macOS
+# native Screen Sharing.app does not.
+# RDP connections: sdl-freerdp (FreeRDP SDL3/Metal client, no X11 needed).
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 let
   mkRemoteApp =
@@ -25,7 +35,9 @@ let
               echo "       Instalar con: brew install --cask tigervnc" >&2
               exit 1
             fi
-            exec "$VNC_BIN" -Maximize -RemoteResize "${host}${if port != "" then ":${port}" else ""}"
+            exec "$VNC_BIN" -FullScreen -FullscreenSystemKeys -RemoteResize "${host}${
+              if port != "" then ":${port}" else ""
+            }"
           ''
         else
           ''
@@ -65,61 +77,72 @@ let
       ${conn}
       LAUNCHER
       chmod +x $out/remote-${name}.app/Contents/MacOS/launcher
-      /usr/bin/codesign --force --sign - $out/remote-${name}.app || true
     '';
+
+  apps = [
+    {
+      name = "t14";
+      protocol = "vnc";
+      host = "172.16.0.109";
+      port = "5900";
+    }
+    {
+      name = "mact2";
+      protocol = "vnc";
+      host = "mact2.local";
+    }
+    {
+      name = "oneplus5";
+      protocol = "rdp";
+      host = "172.16.0.12";
+    }
+    {
+      name = "rog";
+      protocol = "rdp";
+      host = "172.16.0.5";
+    }
+    {
+      name = "thinkcentre";
+      protocol = "rdp";
+      host = "172.16.0.11";
+    }
+  ];
+
+  appSources = lib.listToAttrs (
+    map (app: {
+      name = app.name;
+      value = mkRemoteApp app;
+    }) apps
+  );
+
 in
 {
-  home.file = {
-    "Applications/remote-t14.app" = {
-      source = "${
-        mkRemoteApp {
-          name = "t14";
-          protocol = "vnc";
-          host = "172.16.0.109";
-          port = "5900";
-        }
-      }/remote-t14.app";
-      recursive = true;
-    };
-    "Applications/remote-mact2.app" = {
-      source = "${
-        mkRemoteApp {
-          name = "mact2";
-          protocol = "vnc";
-          host = "mact2.local";
-        }
-      }/remote-mact2.app";
-      recursive = true;
-    };
-    "Applications/remote-oneplus5.app" = {
-      source = "${
-        mkRemoteApp {
-          name = "oneplus5";
-          protocol = "rdp";
-          host = "172.16.0.12";
-        }
-      }/remote-oneplus5.app";
-      recursive = true;
-    };
-    "Applications/remote-rog.app" = {
-      source = "${
-        mkRemoteApp {
-          name = "rog";
-          protocol = "rdp";
-          host = "172.16.0.5";
-        }
-      }/remote-rog.app";
-      recursive = true;
-    };
-    "Applications/remote-thinkcentre.app" = {
-      source = "${
-        mkRemoteApp {
-          name = "thinkcentre";
-          protocol = "rdp";
-          host = "172.16.0.11";
-        }
-      }/remote-thinkcentre.app";
-      recursive = true;
-    };
-  };
+  # Use home.activation to copy real app bundles (not symlinks) and sign them.
+  # Symlinks don't work well with macOS Local Network Privacy and Spotlight.
+  home.activation.deployRemoteDesktopApps = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    appsDir="$HOME/Applications"
+    mkdir -p "$appsDir"
+
+    ${lib.concatMapStrings (app: ''
+      src="${appSources.${app.name}}/remote-${app.name}.app"
+      dst="$appsDir/remote-${app.name}.app"
+
+      # Remove old symlink or bundle if present
+      if [ -L "$dst" ] || [ -e "$dst" ]; then
+        rm -rf "$dst"
+      fi
+
+      # Copy real bundle (not symlink)
+      cp -R "$src" "$dst"
+
+      # Remove quarantine bits
+      xattr -cr "$dst" 2>/dev/null || true
+
+      # Ad-hoc sign the bundle so macOS can identify it for Local Network Privacy
+      /usr/bin/codesign --force --sign - "$dst" 2>/dev/null || true
+    '') apps}
+
+    # Re-index for Spotlight
+    mdimport "$appsDir" 2>/dev/null || true
+  '';
 }
