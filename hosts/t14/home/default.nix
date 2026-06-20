@@ -10,11 +10,12 @@
 #     import, t14 would only see omarchy's defaults and lose the nix-colors
 #     palette and CaskaydiaCove font + size 11)
 #   - Remmina remote-desktop launchers + connection files (./remmina.nix)
-#   - mouse-wiggle launcher and its systemd user service
-{ lib
-, pkgs
-, inputs
-, ...
+#   - mouse-wiggle launcher
+{
+  lib,
+  pkgs,
+  inputs,
+  ...
 }:
 
 {
@@ -24,7 +25,6 @@
     ./hypr/bindings.nix
     ./hypr/looknfeel.nix
     ./hypr/autostart.nix
-    ./hypr/hypridle.nix
     ./hypr/hyprlock.nix
     ./hypr/hyprsunset.nix
     ./hypr/xdph.nix
