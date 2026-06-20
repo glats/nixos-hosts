@@ -42,5 +42,10 @@
     # working directory.  Mirrors the upstream omarchy bindd for
     # file-manager-cwd.
     bindd = SUPER ALT SHIFT, F, File manager (cwd), exec, uwsm-app -- nautilus --new-window "$(omarchy-cmd-terminal-cwd)"
+
+    # TODO: add a manual mouse-wiggle toggle binding here once a key is chosen.
+    # Keep this commented so upstream SUPER CTRL, I remains the only active
+    # idle toggle binding managed by omarchy-nix.
+    # bind = SUPER SHIFT, ?, exec, mouse-wiggle
   '';
 }

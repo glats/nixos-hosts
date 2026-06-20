@@ -66,7 +66,7 @@ let
 
   allProviders = nvidiaProvider // opencodeProvider;
 
-  activeProviderName = "opencode-free2";
+  activeProviderName = "github-copilot";
 
   providers = [
     {
