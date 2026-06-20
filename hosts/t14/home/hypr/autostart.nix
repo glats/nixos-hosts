@@ -15,14 +15,4 @@
 { ... }:
 
 {
-  wayland.windowManager.hyprland.settings = {
-    exec-once = [
-      # Start hypridle manually (matches original omarchy behavior).
-      # Disabled systemd service because omarchy scripts expect manual management.
-      "uwsm-app -- hypridle"
-      # wayvnc is now a systemd user service (see hosts/t14/home/wayvnc/default.nix)
-      # started by graphical-session.target. It is intentionally NOT in exec-once
-      # so it gets the right Wayland env and restarts on failure.
-    ];
-  };
 }
