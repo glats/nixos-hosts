@@ -1,11 +1,10 @@
 # Home Manager configuration for macOS
 # Aggregates all home-darwin modules.
-{
-  pkgs,
-  lib,
-  inputs,
-  primaryUser,
-  ...
+{ pkgs
+, lib
+, inputs
+, primaryUser
+, ...
 }:
 let
   # Toggle: set to false to disable Spotlight indexing for HM apps

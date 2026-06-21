@@ -112,7 +112,7 @@ in
     "org/mate/marco/general" = {
       action-double-click-titlebar = "toggle_maximize";
       button-layout = "menu:minimize,maximize,close";
-      compositing-manager = true;
+      compositing-manager = false;
       theme = config.gtk.theme.name;
     };
 
@@ -130,16 +130,6 @@ in
     };
 
     "org/mate/panel/general" = {
-      history-mate-run = [
-        "conky"
-        "pkill conky"
-        "pkill config"
-        "mate-control-center"
-        "scrot -d 3"
-        "flameshot"
-        "brave"
-        "rofi"
-      ];
       object-id-list = [
         "object-0"
         "notification-area"
