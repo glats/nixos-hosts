@@ -14,5 +14,4 @@
 # mako notifications and let omarchy's watcher own hotplug handling.
 { ... }:
 
-{
-}
+{ }
