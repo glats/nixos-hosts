@@ -112,7 +112,6 @@ in
     "org/mate/marco/general" = {
       action-double-click-titlebar = "toggle_maximize";
       button-layout = "menu:minimize,maximize,close";
-      compositing-manager = true;
       theme = config.gtk.theme.name;
     };
 
