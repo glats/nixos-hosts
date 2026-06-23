@@ -64,8 +64,10 @@
       set -g @resurrect-capture-pane-contents 'on'
 
       # Universal bindings
+      unbind [
+      bind s copy-mode
       bind -T copy-mode-vi v send -X begin-selection
-      bind P paste-buffer
+      bind p paste-buffer
 
       # vim-tmux-navigator key bindings (C-h/C-j/C-k/C-l) are
       # auto-installed by the plugin itself when sourced by Home
