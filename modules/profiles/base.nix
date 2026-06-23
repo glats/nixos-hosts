@@ -2,6 +2,7 @@
   imports = [
     # Base (transversal modules)
     ../base/cachix.nix
+    ../base/dconf.nix
     ../base/home-manager.nix
     ../base/logind.nix
     ../base/nh.nix
