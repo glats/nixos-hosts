@@ -27,12 +27,11 @@
 # The omarchy HM module is imported FIRST so that any conflicting
 # definitions from t14/home/default.nix can be overridden via
 # lib.mkForce when needed.
-{
-  config,
-  pkgs,
-  lib,
-  inputs,
-  ...
+{ config
+, pkgs
+, lib
+, inputs
+, ...
 }:
 
 {
@@ -82,6 +81,9 @@
     # but t14 has its own curated import list and must include it
     # explicitly to deploy ~/.config/remmina and the .desktop launchers.
     ../../../home-linux/remote-desktop.nix
+
+    # Shared shell aliases (now extracted from home-linux/shell.nix)
+    ../../../shared/shell-aliases.nix
 
     # OpenCode stack
     ../../../shared/opencode.nix

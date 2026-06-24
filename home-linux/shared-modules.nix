@@ -24,6 +24,7 @@
   ./gh.nix
   ./ghostty.nix
   ./kitty.nix
+  ../shared/shell-aliases.nix
   ../shared/opencode.nix
   ../shared/opencode-profile.nix
   ./chrome-apps.nix
