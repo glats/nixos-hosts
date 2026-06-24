@@ -61,6 +61,24 @@ let
         timeout = 36000000;
         chunkTimeout = 36000000;
       };
+      models = {
+        "qwen3.7-plus" = {
+          name = "Qwen 3.7 Plus";
+          options = {
+            thinking = {
+              type = "disabled";
+            };
+          };
+        };
+        "qwen3.7-max" = {
+          name = "Qwen 3.7 Max";
+          options = {
+            thinking = {
+              type = "disabled";
+            };
+          };
+        };
+      };
     };
   };
 
