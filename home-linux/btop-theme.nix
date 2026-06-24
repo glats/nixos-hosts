@@ -5,8 +5,9 @@
 # host via `home-linux/shared-modules.nix`. Has no host conditionals
 # — btop variants per host live in `btop-file.nix` (rog, thinkcentre)
 # and `btop-settings.nix` (t14).
-{ config
-, ...
+{
+  config,
+  ...
 }:
 let
   palette = config.colorScheme.palette;
