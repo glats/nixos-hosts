@@ -1,16 +1,8 @@
-{ config
-, lib
-, pkgs
-, inputs
-, ...
+{
+  config,
+  inputs,
+  ...
 }:
-
-let
-  # Canonical base list of shared Home Manager modules (see
-  # home-linux/shared-modules.nix). flake.nix uses the same list to keep
-  # NixOS-integrated and standalone home-manager setups in sync.
-  baseModules = import ../../home-linux/shared-modules.nix { inherit inputs; };
-in
 
 {
   home-manager = {
@@ -29,17 +21,8 @@ in
       username = "glats";
       # Force rebuild: 2026-05-03
     };
-    users.glats.imports =
-      baseModules
-      ++ [
-        ../../home-linux/remote-desktop.nix
-      ]
-      ++ lib.optionals (config.networking.hostName == "rog") [
-        ../../home-linux/conky-rog.nix
-        ../../home-linux/openfang.nix
-      ]
-      ++ lib.optionals (config.networking.hostName == "thinkcentre") [
-        ../../home-linux/conky-thinkcentre.nix
-      ];
+    users.glats.imports = import ../../hosts/${config.networking.hostName}/home/modules.nix {
+      inherit inputs;
+    };
   };
 }
