@@ -8,10 +8,11 @@
 #   - XKB layout forced to "latam" (Chile) since i18n.nix defaults to "es"
 #   - btrfs swap, fonts, kmscon, and amd-laptop settings inherited from base
 #   - home-manager wired to ./home/omarchy.nix (replaces ./home/gnome.nix)
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }:
 
 {
@@ -77,6 +78,17 @@
   # VNC server — captures Wayland screen via wlroots screencopy.
   # Runs inside Hyprland session (autostart.nix) on 0.0.0.0:5900.
   programs.wayvnc.enable = true;
+
+  # Override omarchy's Hyprland flake package with the nixpkgs package.
+  # The upstream omarchy module currently pins Hyprland 0.54.3 from its
+  # flake input, which trips a Nix 2.34.x evaluation bug while reading
+  # `${finalAttrs.src}/VERSION` during `nix flake check --no-build`.
+  # Using the nixpkgs-provided Hyprland + portal pair keeps the NixOS and
+  # Home Manager sides aligned once HM points `package = null`/`portalPackage = null`.
+  programs.hyprland = {
+    package = lib.mkForce pkgs.hyprland;
+    portalPackage = lib.mkForce pkgs.xdg-desktop-portal-hyprland;
+  };
 
   # Enable the imported boot module (systemd-boot, plymouth, zen kernel)
   boot-settings.enable = true;
