@@ -16,8 +16,16 @@
 
     nix-colors.url = "github:misterio77/nix-colors";
 
+    # Source from the local clone because the boundary-fix commit
+    # 5b9bad0468c0cedc9c46c4d40bf378de1aeadfb8 has not yet been pushed
+    # to github.com/glats/omarchy-nix (no push credentials in this
+    # environment). The omarchy-nix NixOS module is now the SOLE owner
+    # of programs.hyprland.{package,portalPackage} and the HM module
+    # defers via lib.mkDefault null, so local t14 overrides were
+    # removed. After the upstream commit is pushed, swap this URL back
+    # to `github:glats/omarchy-nix` and run `nix flake update`.
     omarchy-nix = {
-      url = "github:glats/omarchy-nix";
+      url = "path:/tmp/opencode/omarchy-nix";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.home-manager.follows = "home-manager";
     };
@@ -111,10 +119,11 @@
   };
 
   outputs =
-    inputs@{ self
-    , nixpkgs
-    , home-manager
-    , ...
+    inputs@{
+      self,
+      nixpkgs,
+      home-manager,
+      ...
     }:
     let
       # --- Builders ---
