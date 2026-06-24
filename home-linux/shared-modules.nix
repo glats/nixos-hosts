@@ -19,7 +19,6 @@
   ./tmux.nix
   ./neovim.nix
   ./mate.nix
-  ./picom.nix
   ./rofi.nix
   ./git.nix
   ./gh.nix
