@@ -1,8 +1,8 @@
-{
-  lib,
-  stdenvNoCC,
-  fetchurl,
-  pkgs,
+{ lib
+, stdenvNoCC
+, fetchurl
+, pkgs
+,
 }:
 
 let
