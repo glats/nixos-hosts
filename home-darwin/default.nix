@@ -30,6 +30,7 @@ let
     home.stateVersion = "25.05";
     home.sessionVariables = {
       VISUAL = lib.mkForce "nvim -u NONE";
+      NIXOS_REPO = "$HOME/.config/nix";
     };
 
     # Prepend user-local bin to PATH so scripts dropped in ~/.local/bin
