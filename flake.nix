@@ -35,7 +35,7 @@
     # gentle-ai upstream (for skills, commands, plugins)
     # Must match version in pkgs/gentle-ai/default.nix
     gentle-ai-src = {
-      url = "github:Gentleman-Programming/gentle-ai/v1.40.2";
+      url = "github:Gentleman-Programming/gentle-ai/v1.42.0";
       flake = false;
     };
 
@@ -111,11 +111,10 @@
   };
 
   outputs =
-    inputs@{
-      self,
-      nixpkgs,
-      home-manager,
-      ...
+    inputs@{ self
+    , nixpkgs
+    , home-manager
+    , ...
     }:
     let
       # --- Builders ---
