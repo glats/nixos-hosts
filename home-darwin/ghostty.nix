@@ -6,6 +6,7 @@
     font-family = "CaskaydiaCove Nerd Font"
     font-feature = "liga"
     background-opacity = 0.8
+    clipboard-write = allow
     scrollback-limit = 4294967295
     window-padding-balance = true
     window-padding-color = extend

@@ -58,14 +58,8 @@
       set -g default-terminal "screen-256color"
       set -as terminal-overrides ',xterm-ghostty:XT'
 
-      # macOS clipboard integration (pbcopy)
-      set -s set-clipboard on
+      # macOS clipboard integration via OSC 52 (set-clipboard already set in shared/tmux.nix)
       bind -T copy-mode-vi v send -X begin-selection
-      bind -T copy-mode-vi y send-keys -X copy-pipe-and-cancel "pbcopy"
-      bind -T copy-mode-vi Enter send-keys -X copy-pipe-and-cancel "pbcopy"
-      bind -T copy-mode-vi MouseDragEnd1Pane send-keys -X copy-pipe-and-cancel "pbcopy"
-      bind -T copy-mode y send-keys -X copy-pipe-and-cancel "pbcopy"
-      bind -T copy-mode Enter send-keys -X copy-pipe-and-cancel "pbcopy"
 
       # TPM plugin declarations
       set -g @plugin 'tmux-plugins/tpm'
