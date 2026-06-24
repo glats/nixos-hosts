@@ -45,3 +45,7 @@ cmd/
 openspec/
 sdd/
 .atl/
+
+# Local omarchy-nix checkout (used for in-repo flake input while the
+# boundary-fix commit is still unpushed; safe to remove after push).
+omarchy-nix/
