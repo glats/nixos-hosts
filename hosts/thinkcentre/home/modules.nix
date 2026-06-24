@@ -8,4 +8,5 @@ baseModules
   ../../../home-linux/remote-desktop.nix
   ../../../home-linux/picom.nix
   ../../../home-linux/conky-thinkcentre.nix
+  ../../../home-linux/btop-file.nix
 ]
