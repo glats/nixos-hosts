@@ -12,6 +12,8 @@
 
     extraConfig = ''
       set -g allow-passthrough on
+      set -s set-clipboard on
+      set -g @override_copy_command "printf '\033]52;c;%s\033\\' \"$(base64 | tr -d '\012')\" >/dev/tty"
 
       set -g exit-empty off
       set -g exit-unattached off

@@ -21,6 +21,7 @@
     enable = true;
     settings = lib.mkForce {
       background-opacity = 0.8;
+      clipboard-write = "allow";
       font-family = "CaskaydiaCove Nerd Font";
       font-feature = "+liga";
       font-size = 11;
