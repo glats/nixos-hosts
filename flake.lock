@@ -1089,17 +1089,14 @@
         "walker": "walker"
       },
       "locked": {
-        "lastModified": 1781756414,
-        "narHash": "sha256-lpULQuEnzE7WN+k9qRAB8sl7+I3VxdEMQXkE44zvxbg=",
-        "owner": "glats",
-        "repo": "omarchy-nix",
-        "rev": "b90134b93676a2474f6d5e1bb11e8e02e8a31ca6",
-        "type": "github"
+        "lastModified": 1782262440,
+        "narHash": "sha256-WdqbjQAKCTjetrJAfYiEV54G4vuo3TOqlKNI2gXsWBg=",
+        "path": "/tmp/opencode/omarchy-nix",
+        "type": "path"
       },
       "original": {
-        "owner": "glats",
-        "repo": "omarchy-nix",
-        "type": "github"
+        "path": "/tmp/opencode/omarchy-nix",
+        "type": "path"
       }
     },
     "opencode-src": {
