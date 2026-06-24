@@ -99,18 +99,6 @@
   # rog/thinkcentre only use the system-level config from modules/desktop/fonts.nix.
   fonts.fontconfig.enable = lib.mkForce false;
 
-  # Let the NixOS Hyprland module own the Hyprland and portal packages.
-  # Home Manager still manages the user config, but pointing HM at `null`
-  # avoids re-evaluating the upstream Hyprland flake package from the user
-  # profile path.  This matches Hyprland's documented NixOS+HM pattern and
-  # fixes the current `nix flake check --no-build` blocker where evaluation
-  # aborts while reading `${finalAttrs.src}/VERSION` from the Hyprland flake
-  # package.
-  wayland.windowManager.hyprland = {
-    package = lib.mkForce null;
-    portalPackage = lib.mkForce null;
-  };
-
   # Omarchy-nix's tmux module is "neutralized" by home-linux/tmux.nix
   # (imported above): it uses `lib.mkForce` on `programs.tmux.extraConfig`
   # and `programs.tmux.plugins` to drop the omarchy prefix/status/theme
