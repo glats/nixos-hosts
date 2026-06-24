@@ -15,7 +15,7 @@
   ./base.nix
   ./shell.nix
   ./theme.nix
-  ./btop.nix
+  ./btop-theme.nix
   ./tmux.nix
   ./neovim.nix
   ./mate.nix

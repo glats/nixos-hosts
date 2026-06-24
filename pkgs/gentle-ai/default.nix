@@ -6,7 +6,7 @@
 }:
 
 let
-  version = "1.40.2";
+  version = "1.42.0";
 
   system = stdenvNoCC.hostPlatform.system;
   isLinux = lib.hasSuffix "linux" system;
@@ -16,12 +16,12 @@ let
     if isLinux then
       {
         url = "https://github.com/Gentleman-Programming/gentle-ai/releases/download/v${version}/gentle-ai_${version}_linux_amd64.tar.gz";
-        sha256 = "sha256-HUJs4hZ0GCmcFuqirPl9xhaVUnafdI7YzoGKomyKgz8=";
+        sha256 = "sha256-MPOuO68430MlWSyEcJzyRphZZFKB4zM69ygLgi6OM1k=";
       }
     else if isDarwin then
       {
         url = "https://github.com/Gentleman-Programming/gentle-ai/releases/download/v${version}/gentle-ai_${version}_darwin_amd64.tar.gz";
-        sha256 = "sha256-xsTIiNwltRV1v4muEe8kz0/qJFdaeG+QFcqbG5KaIhE=";
+        sha256 = "sha256-XSxDRBSqTRBw0SeYeMhOXnqS1+anjorkM4NjBQjAgKg=";
       }
     else
       throw "Unsupported system: ${system}";
