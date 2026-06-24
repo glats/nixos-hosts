@@ -1090,13 +1090,17 @@
       },
       "locked": {
         "lastModified": 1782262440,
-        "narHash": "sha256-WdqbjQAKCTjetrJAfYiEV54G4vuo3TOqlKNI2gXsWBg=",
-        "path": "/tmp/opencode/omarchy-nix",
-        "type": "path"
+        "narHash": "sha256-+vg7svXP9H7zq6fzryPGo6DEZydZj36QkEDPVG6OjG0=",
+        "owner": "glats",
+        "repo": "omarchy-nix",
+        "rev": "5b9bad0468c0cedc9c46c4d40bf378de1aeadfb8",
+        "type": "github"
       },
       "original": {
-        "path": "/tmp/opencode/omarchy-nix",
-        "type": "path"
+        "owner": "glats",
+        "repo": "omarchy-nix",
+        "rev": "5b9bad0468c0cedc9c46c4d40bf378de1aeadfb8",
+        "type": "github"
       }
     },
     "opencode-src": {
