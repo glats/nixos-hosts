@@ -44,15 +44,7 @@ in
     # lib.mkForce replaces the merged extraConfig.  On t14 this drops
     # omarchy's prefix C-Space, status-position top, base16-overriding
     # status colours, and the rest of its config/tmux/tmux.conf.
-    # Result on all Linux hosts: shared base16 theme + xclip bindings.
-    extraConfig = lib.mkForce (sharedExtraConfig + ''
-
-      # Linux clipboard (xclip) bindings for copy-mode
-      bind -T copy-mode-vi y send-keys -X copy-pipe-and-cancel "xclip -i -selection clipboard"
-      bind -T copy-mode-vi Enter send-keys -X copy-pipe-and-cancel "xclip -i -selection clipboard"
-      bind -T copy-mode y send-keys -X copy-pipe-and-cancel "xclip -i -selection clipboard"
-      bind -T copy-mode Enter send-keys -X copy-pipe-and-cancel "xclip -i -selection clipboard"
-      bind -T copy-mode-vi MouseDragEnd1Pane send-keys -X copy-pipe-and-cancel "xclip -i -selection clipboard"
-    '');
+    # Result on all Linux hosts: shared base16 theme (clipboard via OSC 52).
+    extraConfig = lib.mkForce sharedExtraConfig;
   };
 }
