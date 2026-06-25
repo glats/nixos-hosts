@@ -1,8 +1,9 @@
-{ config
-, lib
-, pkgs
-, inputs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
 }:
 
 with lib;
@@ -302,6 +303,16 @@ in
       type = types.lines;
       default = "";
       description = "Extra zsh initContent appended after API key exports. Use for platform-specific shell setup.";
+    };
+
+    activeProviderName = mkOption {
+      type = types.str;
+      default = lib.mkDefault "opencode-go";
+      description = ''
+        Name of the active OpenCode provider tier (e.g. "opencode-go",
+        "github-copilot"). Per-host plain assignments override this default
+        without needing `mkForce`.
+      '';
     };
   };
 
