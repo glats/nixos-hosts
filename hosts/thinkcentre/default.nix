@@ -1,7 +1,8 @@
-{ config
-, pkgs
-, lib
-, ...
+{
+  config,
+  pkgs,
+  lib,
+  ...
 }:
 
 {
@@ -50,8 +51,8 @@
   # shared/opencode/providers.nix (base providers)
   # home-darwin/opencode/providers-extra.nix (macOS extras)
   #
-  # To change provider or model:
-  # 1. Edit providers-base.nix to enable/disable providers or change models per phase
-  # 2. Set activeProviderName to select which provider tier is active
-  # 3. Both providers use OAuth via /connect command - no API keys needed
+  # To change the active provider tier per host, set the HM option:
+  #   home.opencode.activeProviderName = "github-copilot";
+  # in the host's default.nix (e.g. darwin/default.nix for mact2).
+  # Both providers use OAuth via /connect command - no API keys needed.
 }

@@ -1,5 +1,6 @@
 {
   lib ? throw "providers-base.nix must be imported with lib",
+  activeProviderName ? "opencode-go",
 }:
 
 let
@@ -79,8 +80,6 @@ let
   };
 
   allProviders = nvidiaProvider // opencodeProvider;
-
-  activeProviderName = "opencode-go";
 
   providers = [
     {
