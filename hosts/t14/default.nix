@@ -132,15 +132,22 @@
   # xdg-desktop-portal-hyprland does NOT implement Settings — without this
   # portal, Nautilus ignores the dark mode preference.
   #
-  # We install our own gtk.portal with UseIn=gnome;hyprland so that
-  # the portal actually serves Hyprland sessions, and wire
-  # xdg.portal.config.hyprland to route Settings through the gtk portal.
-  environment.etc."xdg/xdg-desktop-portal/portals/gtk.portal".text = ''
-    [portal]
-    DBusName=org.freedesktop.impl.portal.desktop.gtk
-    Interfaces=org.freedesktop.impl.portal.FileChooser;org.freedesktop.impl.portal.AppChooser;org.freedesktop.impl.portal.Print;org.freedesktop.impl.portal.Notification;org.freedesktop.impl.portal.Inhibit;org.freedesktop.impl.portal.Access;org.freedesktop.impl.portal.Account;org.freedesktop.impl.portal.Email;org.freedesktop.impl.portal.DynamicLauncher;org.freedesktop.impl.portal.Lockdown;org.freedesktop.impl.portal.Settings;org.freedesktop.impl.portal.Wallpaper;
-    UseIn=gnome;hyprland
-  '';
+  # On NixOS the portal uses NIX_XDG_DESKTOP_PORTAL_DIR (user profile)
+  # instead of the standard XDG_DATA_DIRS search, so we must ensure the
+  # gtk portal appears there with UseIn=hyprland. We do this by adding a
+  # tiny derivation that provides only the patched .portal file to the
+  # user's home.packages (required by portal's user-profile lookup).
+  home-manager.users.glats.home.packages = [
+    (pkgs.runCommand "gtk-portal-hyprland" { } ''
+          mkdir -p "$out/share/xdg-desktop-portal/portals"
+          cat > "$out/share/xdg-desktop-portal/portals/gtk.portal" << 'INNEREOF'
+      [portal]
+      DBusName=org.freedesktop.impl.portal.desktop.gtk
+      Interfaces=org.freedesktop.impl.portal.FileChooser;org.freedesktop.impl.portal.AppChooser;org.freedesktop.impl.portal.Print;org.freedesktop.impl.portal.Notification;org.freedesktop.impl.portal.Inhibit;org.freedesktop.impl.portal.Access;org.freedesktop.impl.portal.Account;org.freedesktop.impl.portal.Email;org.freedesktop.impl.portal.DynamicLauncher;org.freedesktop.impl.portal.Lockdown;org.freedesktop.impl.portal.Settings;org.freedesktop.impl.portal.Wallpaper;
+      UseIn=gnome;hyprland
+      INNEREOF
+    '')
+  ];
 
   xdg.portal.config.hyprland = {
     default = lib.mkForce [
