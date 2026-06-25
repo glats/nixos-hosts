@@ -145,6 +145,11 @@
     ];
   };
 
+  # Kill screensaver when hypridle stops (e.g., via Ctrl+Super+I toggle).
+  # Without this, the screensaver keeps running even after idle is disabled.
+  systemd.user.services.hypridle.Service.ExecStopPost =
+    lib.mkForce "${pkgs.pkgsBuildBuild.bash}/bin/bash -c 'pkill -f omarchy-screensaver 2>/dev/null || true'";
+
   # Set icon theme explicitly — omarchy-nix manages gtk.theme and gtk.cursorTheme
   # but does NOT set gtk.iconTheme. Papirus-Dark is already installed system-wide
   # (via modules/base/profiles/base.nix) but never activated on t14 because
