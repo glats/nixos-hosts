@@ -8,10 +8,11 @@
 #   - XKB layout forced to "latam" (Chile) since i18n.nix defaults to "es"
 #   - btrfs swap, fonts, kmscon, and amd-laptop settings inherited from base
 #   - home-manager wired to ./home/omarchy.nix (replaces ./home/gnome.nix)
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }:
 
 {
@@ -73,6 +74,21 @@
     allowUnfreePackages = [ "joypixels" ];
     joypixels.acceptLicense = true;
   };
+
+  # Patch xdg-desktop-portal to allow non-flatpak callers for the
+  # Settings portal. xdp 1.20.x added an authorization callback that
+  # resolves the caller's app ID via /proc/PID/root/.flatpak-info.
+  # For non-flatpak apps (native Nautilus on Hyprland), this fails
+  # and the portal denies Settings.Read with AccessDenied.
+  nixpkgs.overlays = [
+    (final: prev: {
+      xdg-desktop-portal = prev.xdg-desktop-portal.overrideAttrs (old: {
+        patches = (old.patches or [ ]) ++ [
+          ../../patches/xdg-desktop-portal/settings-allow-unsandboxed.patch
+        ];
+      });
+    })
+  ];
 
   # VNC server — captures Wayland screen via wlroots screencopy.
   # Runs inside Hyprland session (autostart.nix) on 0.0.0.0:5900.
