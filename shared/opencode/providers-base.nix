@@ -58,38 +58,17 @@ let
   opencodeProvider = {
     opencode = {
       options = {
-        timeout = 36000000;
-        chunkTimeout = 36000000;
-      };
-      models = {
-        "qwen3.7-plus" = {
-          name = "Qwen 3.7 Plus";
-          options = {
-            thinking = {
-              type = "disabled";
-            };
-          };
-        };
-        "qwen3.7-max" = {
-          name = "Qwen 3.7 Max";
-          options = {
-            thinking = {
-              type = "disabled";
-            };
-          };
-        };
+        timeout = 3600000;
+        chunkTimeout = 3600000;
       };
     };
   };
 
   allProviders = nvidiaProvider // opencodeProvider;
 
-  activeProviderName = "opencode-go";
+  activeProviderName = "opencode-free2";
 
   providers = [
-    # ---------------------------------------------------------------------------
-    # nvidia — backup / uso ocasional (NVIDIA NIM)
-    # ---------------------------------------------------------------------------
     {
       name = "nvidia";
       phases = {
@@ -107,9 +86,6 @@ let
         neutral = "nvidia/deepseek-ai/deepseek-v4-pro";
       };
     }
-    # ---------------------------------------------------------------------------
-    # github-copilot — Copilot Pro (créditos)
-    # ---------------------------------------------------------------------------
     {
       name = "github-copilot";
       phases = {
@@ -119,37 +95,31 @@ let
         sdd-propose = "github-copilot/claude-sonnet-4.6";
         sdd-spec = "github-copilot/claude-sonnet-4.6";
         sdd-design = "github-copilot/claude-sonnet-4.6";
-        sdd-tasks = "github-copilot/gpt-5.4-mini";
-        sdd-apply = "github-copilot/gpt-5.3-codex";
-        sdd-verify = "github-copilot/gpt-5.4";
+        sdd-tasks = "github-copilot/claude-sonnet-4.6";
+        sdd-apply = "github-copilot/gpt-5.4";
+        sdd-verify = "github-copilot/gpt-5.4-mini";
         sdd-archive = "github-copilot/claude-haiku-4.5";
-        sdd-onboard = "github-copilot/gpt-5.4";
-        neutral = "github-copilot/gpt-5.4";
+        sdd-onboard = "github-copilot/gpt-5.4-mini";
+        neutral = "github-copilot/claude-sonnet-4.6";
       };
     }
-    # ---------------------------------------------------------------------------
-    # opencode-go — daily driver (pure Go paid)
-    # ---------------------------------------------------------------------------
     {
       name = "opencode-go";
       phases = {
-        gentle-orchestrator = "opencode-go/deepseek-v4-pro";
+        gentle-orchestrator = "opencode-go/kimi-k2.6";
         sdd-init = "opencode-go/deepseek-v4-flash";
-        sdd-explore = "opencode-go/minimax-m3";
-        sdd-propose = "opencode-go/minimax-m3";
-        sdd-spec = "opencode-go/mimo-v2.5-pro";
-        sdd-design = "opencode-go/deepseek-v4-pro";
-        sdd-tasks = "opencode-go/minimax-m3";
-        sdd-apply = "opencode-go/minimax-m3";
-        sdd-verify = "opencode-go/deepseek-v4-pro";
-        sdd-archive = "opencode-go/deepseek-v4-flash";
-        sdd-onboard = "opencode-go/deepseek-v4-pro";
-        neutral = "opencode-go/deepseek-v4-pro";
+        sdd-explore = "opencode-go/deepseek-v4-flash";
+        sdd-propose = "opencode-go/qwen3.7-max";
+        sdd-spec = "opencode-go/qwen3.7-max";
+        sdd-design = "opencode-go/qwen3.7-max";
+        sdd-tasks = "opencode-go/deepseek-v4-pro";
+        sdd-apply = "opencode-go/mimo-v2.5-pro";
+        sdd-verify = "opencode-go/qwen3.7-max";
+        sdd-archive = "opencode-go/minimax-m3";
+        sdd-onboard = "opencode-go/minimax-m3";
+        neutral = "opencode-go/minimax-m3";
       };
     }
-    # ---------------------------------------------------------------------------
-    # opencode-go2 — backup con Qwen (thinking disabled)
-    # ---------------------------------------------------------------------------
     {
       name = "opencode-go2";
       phases = {
@@ -167,20 +137,68 @@ let
         neutral = "opencode-go/kimi-k2.6";
       };
     }
-    # ---------------------------------------------------------------------------
-    # opencode-free — ahorro (pure free/open models)
-    # ---------------------------------------------------------------------------
     {
-      name = "opencode-free";
+      name = "opencode-go3";
+      phases = {
+        gentle-orchestrator = "opencode/deepseek-v4-flash-free";
+        sdd-init = "opencode/deepseek-v4-flash-free";
+        sdd-explore = "opencode-go/qwen3.7-plus";
+        sdd-propose = "opencode-go/kimi-k2.6";
+        sdd-spec = "opencode-go/qwen3.7-plus";
+        sdd-design = "opencode-go/kimi-k2.6";
+        sdd-tasks = "opencode-go/kimi-k2.6";
+        sdd-apply = "opencode-go/minimax-m3";
+        sdd-verify = "opencode/nemotron-3-ultra-free";
+        sdd-archive = "opencode/deepseek-v4-flash-free";
+        sdd-onboard = "opencode/deepseek-v4-flash-free";
+        neutral = "opencode/deepseek-v4-flash-free";
+      };
+    }
+    {
+      name = "opencode-free2";
       phases = {
         gentle-orchestrator = "opencode/deepseek-v4-flash-free";
         sdd-init = "opencode/deepseek-v4-flash-free";
         sdd-explore = "opencode/deepseek-v4-flash-free";
         sdd-propose = "opencode/nemotron-3-ultra-free";
-        sdd-spec = "opencode/nemotron-3-ultra-free";
-        sdd-design = "opencode/nemotron-3-ultra-free";
+        sdd-spec = "opencode/deepseek-v4-flash-free";
+        sdd-design = "opencode/mimo-v2.5-free";
         sdd-tasks = "opencode/mimo-v2.5-free";
         sdd-apply = "opencode/mimo-v2.5-free";
+        sdd-verify = "opencode/nemotron-3-ultra-free";
+        sdd-archive = "opencode/deepseek-v4-flash-free";
+        sdd-onboard = "opencode/deepseek-v4-flash-free";
+        neutral = "opencode/deepseek-v4-flash-free";
+      };
+    }
+    {
+      name = "opencode-free4";
+      phases = {
+        gentle-orchestrator = "nvidia/moonshotai/kimi-k2.6";
+        sdd-init = "opencode/deepseek-v4-flash-free";
+        sdd-explore = "opencode-go/deepseek-v4-pro";
+        sdd-propose = "nvidia/moonshotai/kimi-k2.6";
+        sdd-spec = "opencode-go/qwen3.7-plus";
+        sdd-design = "opencode/nemotron-3-ultra-free";
+        sdd-tasks = "nvidia/moonshotai/kimi-k2.6";
+        sdd-apply = "nvidia/minimaxai/minimax-m3";
+        sdd-verify = "opencode/nemotron-3-ultra-free";
+        sdd-archive = "opencode/deepseek-v4-flash-free";
+        sdd-onboard = "opencode/deepseek-v4-flash-free";
+        neutral = "opencode/deepseek-v4-flash-free";
+      };
+    }
+    {
+      name = "opencode-free";
+      phases = {
+        gentle-orchestrator = "nvidia/moonshotai/kimi-k2.6";
+        sdd-init = "opencode/deepseek-v4-flash-free";
+        sdd-explore = "opencode-go/deepseek-v4-pro";
+        sdd-propose = "nvidia/moonshotai/kimi-k2.6";
+        sdd-spec = "opencode-go/qwen3.7-plus";
+        sdd-design = "opencode/nemotron-3-ultra-free";
+        sdd-tasks = "nvidia/moonshotai/kimi-k2.6";
+        sdd-apply = "nvidia/minimaxai/minimax-m3";
         sdd-verify = "opencode/nemotron-3-ultra-free";
         sdd-archive = "opencode/deepseek-v4-flash-free";
         sdd-onboard = "opencode/deepseek-v4-flash-free";
