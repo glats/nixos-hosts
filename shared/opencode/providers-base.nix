@@ -160,7 +160,7 @@ let
         gentle-orchestrator = "opencode/deepseek-v4-flash-free";
         sdd-init = "opencode/deepseek-v4-flash-free";
         sdd-explore = "opencode/deepseek-v4-flash-free";
-        sdd-propose = "opencode/nemotron-3-ultra-free";
+        sdd-propose = "opencode/mimo-v2.5-free";
         sdd-spec = "opencode/deepseek-v4-flash-free";
         sdd-design = "opencode/mimo-v2.5-free";
         sdd-tasks = "opencode/mimo-v2.5-free";
