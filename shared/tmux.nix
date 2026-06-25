@@ -46,15 +46,15 @@
       set -g status-right-length 50
       set -g window-status-separator ""
 
-      # Automatic window rename based on current path
+      # Automatic window rename: folder when idle, command name when running
       setw -g automatic-rename on
-      setw -g automatic-rename-format '#{b:pane_current_path}'
+      setw -g automatic-rename-format '#{?#{==:#{pane_current_command},zsh},#{b:pane_current_path},#{pane_current_command}}'
 
       # Left: colored session name block
       set -g status-left "#[fg=#${config.colorScheme.palette.base00},bg=#${config.colorScheme.palette.base0D},bold] #S #[bg=default] "
 
-      # Right: mode indicators (COPY, PREFIX, ZOOM) + hostname
-      set -g status-right "#[fg=#${config.colorScheme.palette.base0D}]#{?pane_in_mode,COPY ,}#{?client_prefix,PREFIX ,}#{?window_zoomed_flag,ZOOM ,}#[fg=#${config.colorScheme.palette.base03}]#h "
+      # Right: mode indicators (COPY, PREFIX, ZOOM) + hostname + datetime
+      set -g status-right "#[fg=#${config.colorScheme.palette.base0D}]#{?pane_in_mode,COPY ,}#{?client_prefix,PREFIX ,}#{?window_zoomed_flag,ZOOM ,}#[fg=#${config.colorScheme.palette.base03}]#h #[fg=#${config.colorScheme.palette.base03}]#(date '+%d %b %H:%M') "
 
       # Window status format
       setw -g window-status-format "#[fg=#${config.colorScheme.palette.base03}] #I:#W "
