@@ -83,9 +83,6 @@ let
   activeProviderName = "opencode-go";
 
   providers = [
-    # ---------------------------------------------------------------------------
-    # nvidia NIM — backup (deepseek-v4-pro 1M ctx)
-    # ---------------------------------------------------------------------------
     {
       name = "nvidia";
       phases = {
@@ -103,9 +100,6 @@ let
         neutral = "nvidia/deepseek-ai/deepseek-v4-pro";
       };
     }
-    # ---------------------------------------------------------------------------
-    # github-copilot — Copilot Pro créditos
-    # ---------------------------------------------------------------------------
     {
       name = "github-copilot";
       phases = {
@@ -123,9 +117,6 @@ let
         neutral = "github-copilot/gpt-5.4";
       };
     }
-    # ---------------------------------------------------------------------------
-    # opencode-go — daily driver activo (pure Go paid)
-    # ---------------------------------------------------------------------------
     {
       name = "opencode-go";
       phases = {
@@ -143,9 +134,6 @@ let
         neutral = "opencode-go/deepseek-v4-pro";
       };
     }
-    # ---------------------------------------------------------------------------
-    # opencode-go2 — backup Qwen (pure Go paid)
-    # ---------------------------------------------------------------------------
     {
       name = "opencode-go2";
       phases = {
@@ -163,9 +151,6 @@ let
         neutral = "opencode-go/deepseek-v4-pro";
       };
     }
-    # ---------------------------------------------------------------------------
-    # opencode-free — ahorro (free + open models)
-    # ---------------------------------------------------------------------------
     {
       name = "opencode-free";
       phases = {
