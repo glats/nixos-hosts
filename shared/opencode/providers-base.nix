@@ -169,12 +169,12 @@ let
     {
       name = "opencode-free";
       phases = {
-        gentle-orchestrator = "opencode/nemotron-3-ultra-free";
+        gentle-orchestrator = "opencode/deepseek-v4-flash-free";
         sdd-init = "opencode/deepseek-v4-flash-free";
         sdd-explore = "opencode/deepseek-v4-flash-free";
-        sdd-propose = "opencode/nemotron-3-ultra-free";
-        sdd-spec = "opencode/nemotron-3-ultra-free";
-        sdd-design = "opencode/nemotron-3-ultra-free";
+        sdd-propose = "opencode/deepseek-v4-flash-free";
+        sdd-spec = "opencode/deepseek-v4-flash-free";
+        sdd-design = "opencode/deepseek-v4-flash-free";
         sdd-tasks = "opencode/mimo-v2.5-free";
         sdd-apply = "opencode/mimo-v2.5-free";
         sdd-verify = "opencode/nemotron-3-ultra-free";
