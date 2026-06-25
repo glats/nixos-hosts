@@ -8,10 +8,11 @@
 #   - XKB layout forced to "latam" (Chile) since i18n.nix defaults to "es"
 #   - btrfs swap, fonts, kmscon, and amd-laptop settings inherited from base
 #   - home-manager wired to ./home/omarchy.nix (replaces ./home/gnome.nix)
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }:
 
 {
@@ -131,7 +132,24 @@
   # D-Bus interface that libadwaita (Nautilus) needs to read color-scheme.
   # xdg-desktop-portal-hyprland does NOT implement Settings — without this
   # portal, Nautilus ignores the dark mode preference.
-  xdg.portal.extraPortals = with pkgs; [ xdg-desktop-portal-gtk ];
+  #
+  # We install our own gtk.portal with UseIn=gnome;hyprland so that
+  # the portal actually serves Hyprland sessions, and wire
+  # xdg.portal.config.hyprland to route Settings through the gtk portal.
+  environment.etc."xdg/xdg-desktop-portal/portals/gtk.portal".text = ''
+    [portal]
+    DBusName=org.freedesktop.impl.portal.desktop.gtk
+    Interfaces=org.freedesktop.impl.portal.FileChooser;org.freedesktop.impl.portal.AppChooser;org.freedesktop.impl.portal.Print;org.freedesktop.impl.portal.Notification;org.freedesktop.impl.portal.Inhibit;org.freedesktop.impl.portal.Access;org.freedesktop.impl.portal.Account;org.freedesktop.impl.portal.Email;org.freedesktop.impl.portal.DynamicLauncher;org.freedesktop.impl.portal.Lockdown;org.freedesktop.impl.portal.Settings;org.freedesktop.impl.portal.Wallpaper;
+    UseIn=gnome;hyprland
+  '';
+
+  xdg.portal.config.hyprland = {
+    default = lib.mkForce [
+      "hyprland"
+      "gtk"
+    ];
+    "org.freedesktop.impl.portal.Settings" = lib.mkForce [ "gtk" ];
+  };
 
   # === HOME-MANAGER ===
   # Omarchy + t14 Hyprland overlays imported via ./home/omarchy.nix.
