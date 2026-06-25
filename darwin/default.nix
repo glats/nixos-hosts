@@ -1,10 +1,11 @@
-{ pkgs
-, inputs
-, self
-, primaryUser
-, javaVersion
-, lib
-, ...
+{
+  pkgs,
+  inputs,
+  self,
+  primaryUser,
+  javaVersion,
+  lib,
+  ...
 }:
 {
   imports = [
@@ -51,6 +52,9 @@
       ];
       # Define stateVersion here to satisfy early Home Manager assertions
       home.stateVersion = "25.05";
+      # Per-host provider override: mact2 uses GitHub Copilot tier.
+      # See `home.opencode.activeProviderName` in shared/opencode.nix.
+      home.opencode.activeProviderName = "github-copilot";
     };
     extraSpecialArgs = {
       inherit
