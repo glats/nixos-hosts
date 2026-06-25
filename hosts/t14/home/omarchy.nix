@@ -89,6 +89,7 @@
     # OpenCode stack
     ../../../shared/opencode.nix
     ../../../shared/opencode-profile.nix
+    ({ home.opencode.activeProviderName = "opencode-free"; })
     ../../../shared/sops.nix
     inputs.sops-nix.homeManagerModules.sops
   ];

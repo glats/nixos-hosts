@@ -1,14 +1,19 @@
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }:
 
 with lib;
 
 let
-  # Import centralized provider configuration
-  providersConfig = import ./providers.nix { inherit lib; };
+  # Import centralized provider configuration, threaded with the per-host
+  # activeProviderName HM option so provider tier is host-driven.
+  providersConfig = import ./providers.nix {
+    inherit lib;
+    activeProviderName = config.home.opencode.activeProviderName;
+  };
 
   # Read upstream agent definitions from vanilla assets
   upstreamOverlay = builtins.fromJSON (
@@ -36,17 +41,14 @@ let
       active = providersConfig.activeProvider;
     in
     if active != null then
-      builtins.mapAttrs (phase: _: providersConfig.getModelForPhase phase active)
-        (
-          builtins.listToAttrs (
-            map
-              (p: {
-                name = p;
-                value = null;
-              })
-              sddPhases
-          )
+      builtins.mapAttrs (phase: _: providersConfig.getModelForPhase phase active) (
+        builtins.listToAttrs (
+          map (p: {
+            name = p;
+            value = null;
+          }) sddPhases
         )
+      )
     else
       { };
 
