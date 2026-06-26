@@ -29,4 +29,14 @@
   # on this host that means every service that refuses SIGTERM stretches
   # shutdown by 1m30s. 20s is still generous for clean termination.
   systemd.settings.Manager.DefaultTimeoutStopSec = lib.mkDefault "20s";
+
+  # Persist journal across reboots so we have something to read when a
+  # shutdown hangs. Without this the journal only lives in /run/journal/
+  # and is lost on every boot. Capped at 500M / 2 weeks so it cannot
+  # fill the root volume.
+  services.journald.extraConfig = ''
+    Storage=persistent
+    SystemMaxUse=500M
+    MaxRetentionSec=2week
+  '';
 }

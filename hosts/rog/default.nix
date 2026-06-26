@@ -26,6 +26,11 @@
     ../../modules/hardware/rog-shutdown.nix
     ../../modules/hardware/asus-fan-control.nix
 
+    # Shutdown diagnostics — captures journal/dmesg/ps/mounts to
+    # /var/log/shutdown-debug/{boot-id}/ at end of shutdown. Rog-only
+    # because the hang is observed on this host; thinkcentre is clean.
+    ../../modules/base/shutdown-debug.nix
+
     # Services (rog-specific)
     ./services/arr-stack.nix
     ./services/authelia.nix
@@ -56,7 +61,15 @@
     enable = true;
     includeAcpiOsi = true;
     includePoweroffFix = true;
+    # Verbose kernel/systemd logging to the console for shutdown-hang
+    # post-mortem. Pairs with modules/base/shutdown-debug.nix which
+    # snapshots the journal to /var/log/ at end of shutdown.
+    includeDiagLogging = true;
   };
+
+  # Enable the shutdown-debug-capture service. Without this the
+  # imported module is a no-op.
+  my.shutdownDebug.enable = true;
 
   boot = {
     extraModulePackages = with config.boot.kernelPackages; [ acpi_call ];
