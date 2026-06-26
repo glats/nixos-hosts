@@ -88,7 +88,7 @@
     # OpenCode stack
     ../../../shared/opencode.nix
     ../../../shared/opencode-profile.nix
-    ({ home.opencode.activeProviderName = "opencode-free"; })
+    ({ home.opencode.activeProviderName = "opencode-go"; })
     ../../../shared/sops.nix
     inputs.sops-nix.homeManagerModules.sops
   ];
