@@ -1,4 +1,4 @@
-{ config, ... }:
+{ config, pkgs, ... }:
 
 {
   programs.kitty = {
@@ -47,5 +47,21 @@
       color20 = "#${config.colorScheme.palette.base04}";
       color21 = "#${config.colorScheme.palette.base06}";
     };
+    keybindings = {
+      "kitty_mod+f10" = "toggle_maximized";
+    };
   };
+
+  xdg.dataFile."applications/kitty.desktop".text = ''
+    [Desktop Entry]
+    Name=Kitty
+    Comment=Fast, feature-rich terminal emulator
+    Exec=${pkgs.kitty}/bin/kitty --start-as maximized %U
+    Icon=kitty
+    Type=Application
+    Categories=System;TerminalEmulator;
+    Terminal=false
+    StartupNotify=true
+    StartupWMClass=kitty
+  '';
 }
