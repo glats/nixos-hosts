@@ -122,9 +122,9 @@ let
         gentle-orchestrator = "opencode-go/deepseek-v4-pro";
         sdd-init = "opencode-go/deepseek-v4-flash";
         sdd-explore = "opencode-go/minimax-m3";
-        sdd-propose = "opencode-go/minimax-m3";
-        sdd-spec = "opencode-go/mimo-v2.5-pro";
-        sdd-design = "opencode-go/deepseek-v4-pro";
+        sdd-propose = "opencode-go/qwen3.7-plus";
+        sdd-spec = "opencode-go/qwen3.7-plus";
+        sdd-design = "opencode-go/qwen3.7-plus";
         sdd-tasks = "opencode-go/minimax-m3";
         sdd-apply = "opencode-go/minimax-m3";
         sdd-verify = "opencode-go/deepseek-v4-pro";
