@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Glats <glats@local>
-Date: 2026-06-24
+Date: 2026-06-26
 Subject: [PATCH] settings: allow non-flatpak callers for Settings.Read
 
 xdg-desktop-portal 1.20.x introduced an authorization callback that resolves
@@ -14,24 +14,26 @@ the caller's app info.
 
 See: https://github.com/flatpak/xdg-desktop-portal/issues/1752
 ---
- src/xdg-desktop-portal.c | 13 +++++++++++++
- 1 file changed, 13 insertions(+)
+ src/xdg-desktop-portal.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
 diff --git a/src/xdg-desktop-portal.c b/src/xdg-desktop-portal.c
-index 45df252..e851493 100644
+index fc3dd4f..27c85d9 100644
 --- a/src/xdg-desktop-portal.c
 +++ b/src/xdg-desktop-portal.c
-@@ -119,6 +119,19 @@ authorize_callback (GDBusInterfaceSkeleton *interface,
+@@ -138,6 +138,16 @@ authorize_callback (GDBusInterfaceSkeleton *interface,
                      GDBusMethodInvocation  *invocation,
                      gpointer                user_data)
  {
-+  /* The Settings interface doesn't require caller authentication.
++  /* The Settings interface does not require caller authentication.
 +     Non-flatpak apps (e.g. native Nautilus on Hyprland) need to read
-+     color-scheme via the portal, but xdp_invocation_ensure_app_info_sync
-+     fails for non-sandboxed processes. Skip the check for Settings. */
++     color-scheme via the portal, but ensure_app_info_sync fails for
++     non-sandboxed processes. Skip the check for Settings. */
 +  if (g_strcmp0 (g_dbus_method_invocation_get_interface_name (invocation),
-+                 "org.freedesktop.portal.Settings") == 0)
-+    return TRUE;
++               "org.freedesktop.portal.Settings") == 0)
++    {
++      return TRUE;
++    }
 +
    g_autoptr(XdpAppInfo) app_info = NULL;
    g_autoptr(GError) error = NULL;
