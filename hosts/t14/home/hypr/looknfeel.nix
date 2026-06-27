@@ -31,6 +31,14 @@
       gaps_out = lib.mkForce 2.5;
     };
 
+    # T14: override omarchy decoration — disable blur/shadow so no
+    # window has transparency or glass effects.
+    decoration = lib.mkForce {
+      rounding = 0;
+      shadow.enabled = false;
+      blur.enabled = false;
+    };
+
     # T14: disable Hyprland's automatic workspace tracking so the
     # initial workspace does not follow the focused window when
     # restoring a session.  Matches the user's source looknfeel.conf

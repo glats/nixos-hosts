@@ -93,9 +93,15 @@
       # touchpad feel close to other terminals.
       "match:class (Alacritty|kitty|foot), scroll_touchpad 1.5"
       "match:class com.mitchellh.ghostty, scroll_touchpad 0.2"
-      # Full opacity for all windows by default; terminals with
-      # explicit transparency in their own config still apply.
-      "opacity 1.0 1.0, match:tag default-opacity"
     ];
+
   };
+
+  # Opacity override: omarchy's windows.nix sets opacity 0.97 0.90
+  # via extraConfig (appended after settings, so its rule wins over
+  # any windowrule in the settings block above).  We append a final
+  # extraConfig override to keep everything fully opaque.
+  wayland.windowManager.hyprland.extraConfig = lib.mkAfter ''
+    windowrule = opacity 1.0 1.0, match:tag default-opacity
+  '';
 }
