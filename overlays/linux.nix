@@ -35,13 +35,12 @@ final: prev: {
   # in modules/features/boot.nix. The file IS a valid bzImage — just
   # named vmlinuz. The kernel stays in cache.nixos.org.
 
-  # Symbola font: archive.org snapshot 20221006174450 returns HTTP 503.
-  # Try alternate archive.org snapshot from 20201013230756 (Gentoo ebuild).
-  # Upstream dn-works.com changes the zip without version bumps, so archive.org
-  # snapshots may drift. If hash mismatches, nix will report the correct one.
+  # Symbola font: archive.org snapshots of dn-works.com URLs are brittle and
+  # frequently dropped. Use the same snapshot as nixpkgs master (20221006174450).
+  # If hash mismatches, nix will report the correct one.
   symbola = prev.symbola.overrideAttrs (oldAttrs: {
     src = prev.fetchzip {
-      url = "https://web.archive.org/web/20201013230756/https://dn-works.com/wp-content/uploads/2020/UFAS-Fonts/Symbola.zip";
+      url = "https://web.archive.org/web/20221006174450/https://dn-works.com/wp-content/uploads/2020/UFAS-Fonts/Symbola.zip";
       stripRoot = false;
       hash = "sha256-TsHWmzkEyMa8JOZDyjvk7PDhm239oH/FNllizNFf398=";
     };
