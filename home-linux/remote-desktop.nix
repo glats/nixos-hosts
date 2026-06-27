@@ -180,26 +180,29 @@ in
   # for *new* connections created from URIs.  It is NOT used when loading
   # a .remmina file directly, which is why every profile below embeds the
   # full defaults via mkRemminaProfile.
-  xdg.configFile."remmina/remmina.pref".text = ''
-    [remmina_pref]
-    datadir_path=/home/glats/.local/share/remmina
-    save_view_mode=true
-    confirm_close=false
-    main_maximize=true
-    hide_connection_toolbar=true
-    hide_searchbar=true
-    hide_toolbar=true
-    always_show_tab=false
-    tab_mode=3
-    scale_quality=3
-    default_action=0
-    resolutions=640x480,800x600,1024x768,1280x960,1920x1080
-    rdp_keyboard_layout=40A
+  xdg.configFile."remmina/remmina.pref" = {
+    force = true;
+    text = ''
+        [remmina_pref]
+      datadir_path=/home/glats/.local/share/remmina
+      save_view_mode=true
+      confirm_close=false
+      main_maximize=true
+      hide_connection_toolbar=true
+      hide_searchbar=true
+      hide_toolbar=true
+      always_show_tab=false
+      tab_mode=3
+      scale_quality=3
+      default_action=0
+      resolutions=640x480,800x600,1024x768,1280x960,1920x1080
+      rdp_keyboard_layout=40A
 
-    [remmina]
-    name=
-    ignore-tls-errors=1
-  '';
+      [remmina]
+      name=
+      ignore-tls-errors=1
+    '';
+  };
 
   # libsecret is required by Remmina's glibsecret plugin (the
   # remmina-plugin-secret.so) to read/write passwords in the user's
