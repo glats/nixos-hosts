@@ -242,6 +242,21 @@
           thinkcentre = baseHomeConfig "thinkcentre" "x86_64-linux" "glats" [
             ./home-linux/conky-thinkcentre.nix
           ];
+          # t14 uses NixOS-integrated HM.  The standalone entry is
+          # required by the `hms` alias (home-manager switch --flake .#t14).
+          # omarchy.nix is self-contained (imports omarchy-nix HM module
+          # + selective shared modules) so we do NOT use baseHomeConfig
+          # (which would prepend linuxHomeModules and cause duplicate
+          # module errors).
+          t14 = home-manager.lib.homeManagerConfiguration {
+            pkgs = pkgsFor "x86_64-linux";
+            modules = [ ./hosts/t14/home/omarchy.nix ];
+            extraSpecialArgs = {
+              inherit inputs;
+              hostName = "t14";
+              username = "glats";
+            };
+          };
           mact2 = baseHomeConfig "mact2" "x86_64-darwin" "jcuzmar" [
             # Include home-darwin/default.nix so the standalone
             # home-manager build for mact2 picks up the per-host base

@@ -44,5 +44,10 @@
     # restoring a session.  Matches the user's source looknfeel.conf
     # and prevents focus jumping when reopening apps.
     misc.initial_workspace_tracking = false;
+
+    # T14: suppress DEBUG-level messages from hyprutils' CLogger.
+    # hyprutils defaults to LOG_DEBUG when this is not set, which
+    # floods stdout/stderr with noise on every Hyprland startup.
+    misc.log_level = "info";
   };
 }
