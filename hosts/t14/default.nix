@@ -96,6 +96,11 @@
   # Enable the imported boot module (systemd-boot, plymouth, zen kernel)
   boot-settings.enable = true;
 
+  # Ensure XFS kernel module is available in the initrd (stage 1).
+  # Without this, boot fails with "an error occurred at stage 1"
+  # because the kernel can't mount the XFS root filesystem.
+  boot.initrd.supportedFilesystems = [ "xfs" ];
+
   # t14-specific keymap: latam (Chile) layout. modules/desktop/i18n.nix
   # uses "es" for compatibility with rog/thinkcentre; we force latam here.
   services.xserver.xkb = {
