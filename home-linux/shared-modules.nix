@@ -15,7 +15,10 @@
   ./base.nix
   ./shell.nix
   ./theme.nix
-  ./btop-theme.nix
+  # btop theme + settings owned by omarchy-nix (homeManagerModules.btop).
+  # Imports nix-colors.homeManagerModules.default internally; the local
+  # theme.nix must be listed before this entry so colorScheme.palette is set.
+  inputs.omarchy-nix.homeManagerModules.btop
   ./tmux.nix
   ./neovim.nix
   ./mate.nix
