@@ -10,5 +10,4 @@ baseModules
   ../../../home-linux/mate-rog-autostart.nix
   ../../../home-linux/conky-rog.nix
   ../../../home-linux/openfang.nix
-  ../../../home-linux/btop-file.nix
 ]

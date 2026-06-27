@@ -66,16 +66,11 @@
     ../../../home-linux/git.nix
     ../../../home-linux/gh.nix
     ../../../home-linux/ssh.nix
-    # btop is imported directly from home-linux/ to override
-    # omarchy-nix's own btop module.  The shared file uses `lib.mkForce`
-    # on every `programs.btop.settings.*` key, so omarchy's values for
-    # the same keys are dropped at eval time.  This keeps rog /
-    # thinkcentre / t14 visually identical (one source of truth).
-    # Split into the shared theme fragment (also imported via
-    # `shared-modules.nix` on rog/thinkcentre) and the t14-specific
-    # settings fragment, which `lib.mkForce`s each key.
-    ../../../home-linux/btop-theme.nix
-    ../../../home-linux/btop-settings.nix
+    # btop theme + settings are now owned by omarchy-nix's updated
+    # btop module (imported via homeManagerModules.default above).
+    # The module uses the glats theme with the nixos-hosts preferred
+    # settings (semantic rainbow mapping, save_config_on_exit=false,
+    # update_ms=200, vim_keys=false, etc.).  No local overrides needed.
     # Remmina remote-desktop clients + connection files.  rog and
     # thinkcentre get this transitively via modules/base/home-manager.nix,
     # but t14 has its own curated import list and must include it

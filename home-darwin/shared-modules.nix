@@ -21,7 +21,10 @@
   ./neovim.nix
   ./shell.nix
   ./tmux.nix
-  ./btop.nix
+  # btop theme + settings owned by omarchy-nix (homeManagerModules.btop).
+  # Imports nix-colors.homeManagerModules.default internally; the local
+  # theme.nix must be listed before this entry so colorScheme.palette is set.
+  inputs.omarchy-nix.homeManagerModules.btop
   ./vscode.nix
   ./windsurf.nix
   ./remote-desktop.nix
