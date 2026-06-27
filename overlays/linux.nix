@@ -28,6 +28,20 @@ final: prev: {
     pipewire-module-xrdp-src = inputs.pipewire-module-xrdp-src;
   };
 
+  # Workaround for linux-zen 7.0.12 producing vmlinuz instead of bzImage
+  # See https://github.com/NixOS/nixpkgs/issues/521113
+  linuxPackages_zen = prev.linuxPackages_zen.extend (
+    _: ksuper: {
+      kernel = ksuper.kernel.overrideAttrs (old: {
+        postInstall = (old.postInstall or "") + ''
+          if [ -f "$out/vmlinuz" ] && [ ! -e "$out/bzImage" ]; then
+            ln -s vmlinuz "$out/bzImage"
+          fi
+        '';
+      });
+    }
+  );
+
   # Symbola font: archive.org snapshot 20221006174450 returns HTTP 503.
   # Try alternate archive.org snapshot from 20201013230756 (Gentoo ebuild).
   # Upstream dn-works.com changes the zip without version bumps, so archive.org
