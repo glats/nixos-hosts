@@ -32,8 +32,8 @@
     mode = "0400";
   };
 
-  # Cloudflare API token for acme
-  sops.secrets."cloudflare_api_token" = {
+  # Cloudflare DNS API token for ACME
+  sops.secrets."cloudflare_dns_api_token" = {
     sopsFile = ../../secrets/host/rog/cloudflare.yaml;
     owner = "acme";
   };
