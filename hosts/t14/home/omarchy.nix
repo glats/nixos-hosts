@@ -167,4 +167,14 @@
   # Fix: home-manager escribe gtk-interface-color-scheme=2 (integer) pero
   # GTK4 espera el string "dark" — sin esto libadwaita ignora el dark mode.
   gtk.gtk4.extraConfig."gtk-interface-color-scheme" = "dark";
+
+  # Override copyScreensaverTxt: upstream runs it after writeBoundary but
+  # before linkGeneration, so the home.file symlinks (logo.txt) don't exist
+  # yet on first activation. Run after linkGeneration instead.
+  home.activation.copyScreensaverTxt = lib.mkForce (lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+    if [ ! -f "$HOME/.config/omarchy/branding/screensaver.txt" ]; then
+      mkdir -p "$HOME/.config/omarchy/branding"
+      cp "$HOME/.local/share/omarchy/logo.txt" "$HOME/.config/omarchy/branding/screensaver.txt"
+    fi
+  '');
 }
