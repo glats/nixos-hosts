@@ -16,6 +16,13 @@ let
   linuxPkgs = pkgsFor "x86_64-linux";
   darwinPkgs = pkgsFor "x86_64-darwin";
 
+  # Platform-specific FOD hashes for node_modules.
+  # bun installs platform-specific deps (esbuild, etc.) so hashes differ.
+  opencodeNodeModulesHashes = {
+    x86_64-linux = "sha256-7NVMnjK24+42ti8nz+dXlTE5mocqO8LlfI3HevbyZJc=";
+    x86_64-darwin = "sha256-wpffD8nTebCVg+JnffB3BERh8L5jKD/YMg4kw2qwV60=";
+  };
+
   opencodeFor =
     system:
     let
@@ -27,7 +34,7 @@ let
       # Remove the flag and pin the recomputed FOD hash.
       patchedNodeModules = upstream.node_modules.overrideAttrs (oldAttrs: {
         buildPhase = builtins.replaceStrings [ "--frozen-lockfile" ] [ "" ] oldAttrs.buildPhase;
-        outputHash = "sha256-wpffD8nTebCVg+JnffB3BERh8L5jKD/YMg4kw2qwV60=";
+        outputHash = opencodeNodeModulesHashes.${system} or (throw "no opencode node_modules hash for ${system}");
       });
     in
     (upstream.override { node_modules = patchedNodeModules; }).overrideAttrs (oldAttrs: {
