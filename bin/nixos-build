@@ -2,7 +2,8 @@
 # nixos-build - Helper to build NixOS configuration from main repo or worktree
 # Auto-detects if in worktree and uses correct flake path
 # Auto-detects hostname for multi-host configuration
-# Auto-detects nix-output-monitor (nom) for better build output
+# Auto-detects nh (default) vs nixos-rebuild (--raw) as the build driver
+# Auto-detects nix-output-monitor (nom) for better build output (--raw only)
 
 set -euo pipefail
 
@@ -37,32 +38,54 @@ FLAKE_PATH=$(get_flake_path)
 # Detect hostname for multi-host configuration
 HOSTNAME=$(hostname)
 
-# Auto-detect nix-output-monitor (nom)
+# Default build driver: `nh os` (if installed). `nh` auto-detects the
+# flake via NH_FLAKE (set by `programs.nh.flake` in modules/base/nh.nix)
+# and the hostname, so calls like `nh os switch` need no extra args.
+# `--raw` forces the legacy `nixos-rebuild` path. If `nh` is not
+# available, fall back to `nixos-rebuild` automatically.
+USE_NH=true
+if ! command -v nh &>/dev/null; then
+  USE_NH=false
+fi
+
+# Auto-detect nix-output-monitor (nom) for the --raw fallback path.
+# `nh` has nom integration built in (toggle with `nh ... --no-nom`),
+# so the nom wrapper is only relevant for nixos-rebuild.
 USE_NOM=false
 if command -v nom &>/dev/null; then
   USE_NOM=true
 fi
 
-# Parse --no-nom flag before command
+# Parse flags before command
+USE_RAW=false
 for arg in "$@"; do
-  if [[ "$arg" == "--no-nom" ]]; then
-    USE_NOM=false
-  fi
+  case "$arg" in
+    --raw)
+      USE_RAW=true
+      USE_NH=false
+      ;;
+    --no-nom)
+      USE_NOM=false
+      ;;
+  esac
 done
 
-# Filter out --no-nom from arguments
+# Filter out known flags from arguments
 ARGS=()
 for arg in "$@"; do
-  if [[ "$arg" != "--no-nom" ]]; then
-    ARGS+=("$arg")
-  fi
+  case "$arg" in
+    --raw|--no-nom) ;;
+    *) ARGS+=("$arg") ;;
+  esac
 done
 set -- "${ARGS[@]}"
 
 # Parse command
 COMMAND="${1:-switch}"
 
-# Helper to run command with nom if available
+# Helper to run a command with nom piped in (raw mode only).
+# When using `nh`, omit this wrapper — nh ships with its own nom
+# integration, and double-piping breaks nh's progress display.
 run_with_nom() {
   if [[ "$USE_NOM" == "true" ]]; then
     "$@" |& nom
@@ -73,60 +96,111 @@ run_with_nom() {
 
 # Validate command
 if [[ "$COMMAND" == "help" ]] || [[ "$COMMAND" == "-h" ]] || [[ "$COMMAND" == "--help" ]]; then
-  echo "Usage: nixos-build [command] [--no-nom]"
-  echo ""
-  echo "Commands:"
-  echo "  switch     Build and activate (default)"
-  echo "  boot       Build and activate on next boot"
-  echo "  test       Build and activate in test environment"
-  echo "  upgrade    Update flake inputs then rebuild"
-  echo "  dry        Dry-activate (show changes only)"
-  echo "  check      Validate flake"
-  echo "  build      Dry-build only"
-  echo "  safe       Sequential: check -> build -> dry -> switch (stops on failure)"
-  echo ""
-  echo "Options:"
-  echo "  --no-nom   Disable nix-output-monitor even if available"
-  echo ""
-  echo "Auto-detects:"
-  echo "  - Hostname: selects correct nixosConfiguration"
-  echo "  - Worktree: uses current directory (else /etc/nixos)"
-  echo "  - nom: uses nix-output-monitor if available (pass --no-nom to disable)"
+  cat <<'EOF'
+Usage: nixos-build [command] [--raw] [--no-nom]
+
+Commands:
+  switch     Build and activate (default)
+  boot       Build and activate on next boot
+  test       Build and activate in test environment
+  upgrade    Update flake inputs then rebuild
+  dry        Dry-activate (show changes only)
+  check      Validate flake
+  build      Dry-build only
+  safe       Sequential: check -> build -> dry -> switch (stops on failure)
+
+Options:
+  --raw      Use nixos-rebuild instead of nh (escape hatch for edge cases)
+  --no-nom   Disable nix-output-monitor even if available (--raw only)
+
+Auto-detects:
+  - Hostname: selects correct nixosConfiguration
+  - Worktree: uses current directory (else /etc/nixos)
+  - nh: uses `nh os` by default (if installed); nh has built-in nom
+  - nom: only used in --raw mode; `nh` integrates nom natively
+EOF
   exit 0
 fi
+
+# Build-driver dispatch helpers. Branches on USE_NH so every command
+# stays a one-liner with no duplicated logic.
+nh_run() {
+  if [[ "$USE_NH" == "true" ]]; then
+    nh "$@"
+  else
+    sudo nixos-rebuild "${@}" --flake "$FLAKE_PATH#$HOSTNAME"
+  fi
+}
 
 case "$COMMAND" in
   switch)
     echo ""
     echo "> Building NixOS configuration (switch)..."
-    echo "> Using flake: $FLAKE_PATH#$HOSTNAME"
-    run_with_nom sudo nixos-rebuild switch --flake "$FLAKE_PATH#$HOSTNAME"
+    if [[ "$USE_NH" == "true" ]]; then
+      echo "> Driver: nh os switch (flake locked via NH_FLAKE)"
+    else
+      echo "> Driver: nixos-rebuild switch (--raw)"
+      echo "> Using flake: $FLAKE_PATH#$HOSTNAME"
+    fi
+    if [[ "$USE_NH" == "true" ]]; then
+      nh os switch
+    else
+      run_with_nom sudo nixos-rebuild switch --flake "$FLAKE_PATH#$HOSTNAME"
+    fi
     ;;
   boot)
     echo ""
     echo "> Building NixOS configuration (boot)..."
-    echo "> Using flake: $FLAKE_PATH#$HOSTNAME"
-    run_with_nom sudo nixos-rebuild boot --flake "$FLAKE_PATH#$HOSTNAME"
+    if [[ "$USE_NH" == "true" ]]; then
+      echo "> Driver: nh os boot (flake locked via NH_FLAKE)"
+    else
+      echo "> Driver: nixos-rebuild boot (--raw)"
+      echo "> Using flake: $FLAKE_PATH#$HOSTNAME"
+    fi
+    if [[ "$USE_NH" == "true" ]]; then
+      nh os boot
+    else
+      run_with_nom sudo nixos-rebuild boot --flake "$FLAKE_PATH#$HOSTNAME"
+    fi
     ;;
   test)
     echo ""
     echo "> Building NixOS configuration (test)..."
-    echo "> Using flake: $FLAKE_PATH#$HOSTNAME"
-    run_with_nom sudo nixos-rebuild test --flake "$FLAKE_PATH#$HOSTNAME"
+    if [[ "$USE_NH" == "true" ]]; then
+      echo "> Driver: nh os test (flake locked via NH_FLAKE)"
+    else
+      echo "> Driver: nixos-rebuild test (--raw)"
+      echo "> Using flake: $FLAKE_PATH#$HOSTNAME"
+    fi
+    if [[ "$USE_NH" == "true" ]]; then
+      nh os test
+    else
+      run_with_nom sudo nixos-rebuild test --flake "$FLAKE_PATH#$HOSTNAME"
+    fi
     ;;
   upgrade)
     echo ""
-    echo "> Updating flake inputs..."
-    nix flake update
-    echo ""
-    echo "> Building NixOS configuration (upgrade)..."
-    echo "> Using flake: $FLAKE_PATH#$HOSTNAME"
-    run_with_nom sudo nixos-rebuild switch --flake "$FLAKE_PATH#$HOSTNAME"
+    if [[ "$USE_NH" == "true" ]]; then
+      echo "> Updating flake inputs and rebuilding (nh os switch --update)..."
+      nh os switch --update
+    else
+      echo "> Updating flake inputs..."
+      nix flake update
+      echo ""
+      echo "> Building NixOS configuration (upgrade)..."
+      echo "> Using flake: $FLAKE_PATH#$HOSTNAME"
+      run_with_nom sudo nixos-rebuild switch --flake "$FLAKE_PATH#$HOSTNAME"
+    fi
     ;;
   dry)
-    echo "> Dry-activating (showing changes)..."
-    echo "> Using flake: $FLAKE_PATH#$HOSTNAME"
-    sudo nixos-rebuild dry-activate --flake "$FLAKE_PATH#$HOSTNAME"
+    if [[ "$USE_NH" == "true" ]]; then
+      echo "> Dry-activating (showing changes via nh)..."
+      nh os switch --dry
+    else
+      echo "> Dry-activating (showing changes)..."
+      echo "> Using flake: $FLAKE_PATH#$HOSTNAME"
+      sudo nixos-rebuild dry-activate --flake "$FLAKE_PATH#$HOSTNAME"
+    fi
     ;;
   check)
     echo "> Validating flake..."
@@ -134,7 +208,11 @@ case "$COMMAND" in
     ;;
   build)
     echo "> Dry-building..."
-    run_with_nom nix build "$FLAKE_PATH#nixosConfigurations.$HOSTNAME.config.system.build.toplevel"
+    if [[ "$USE_NH" == "true" ]]; then
+      nh build "$FLAKE_PATH#nixosConfigurations.$HOSTNAME.config.system.build.toplevel"
+    else
+      run_with_nom nix build "$FLAKE_PATH#nixosConfigurations.$HOSTNAME.config.system.build.toplevel"
+    fi
     ;;
   safe)
     echo ""
@@ -150,26 +228,50 @@ case "$COMMAND" in
     echo ""
 
     echo "> [2/4] Building..."
-    if ! run_with_nom nix build "$FLAKE_PATH#nixosConfigurations.$HOSTNAME.config.system.build.toplevel"; then
-      echo ""
-      echo "> ERROR: Build failed. Stopping."
-      exit 1
+    if [[ "$USE_NH" == "true" ]]; then
+      if ! nh build "$FLAKE_PATH#nixosConfigurations.$HOSTNAME.config.system.build.toplevel"; then
+        echo ""
+        echo "> ERROR: Build failed. Stopping."
+        exit 1
+      fi
+    else
+      if ! run_with_nom nix build "$FLAKE_PATH#nixosConfigurations.$HOSTNAME.config.system.build.toplevel"; then
+        echo ""
+        echo "> ERROR: Build failed. Stopping."
+        exit 1
+      fi
     fi
     echo ""
 
     echo "> [3/4] Dry-activating..."
-    if ! sudo nixos-rebuild dry-activate --flake "$FLAKE_PATH#$HOSTNAME"; then
-      echo ""
-      echo "> ERROR: Dry-activate failed. Stopping."
-      exit 1
+    if [[ "$USE_NH" == "true" ]]; then
+      if ! nh os switch --dry; then
+        echo ""
+        echo "> ERROR: Dry-activate failed. Stopping."
+        exit 1
+      fi
+    else
+      if ! sudo nixos-rebuild dry-activate --flake "$FLAKE_PATH#$HOSTNAME"; then
+        echo ""
+        echo "> ERROR: Dry-activate failed. Stopping."
+        exit 1
+      fi
     fi
     echo ""
 
     echo "> [4/4] Switching..."
-    if ! run_with_nom sudo nixos-rebuild switch --flake "$FLAKE_PATH#$HOSTNAME"; then
-      echo ""
-      echo "> ERROR: Switch failed. Stopping."
-      exit 1
+    if [[ "$USE_NH" == "true" ]]; then
+      if ! nh os switch; then
+        echo ""
+        echo "> ERROR: Switch failed. Stopping."
+        exit 1
+      fi
+    else
+      if ! run_with_nom sudo nixos-rebuild switch --flake "$FLAKE_PATH#$HOSTNAME"; then
+        echo ""
+        echo "> ERROR: Switch failed. Stopping."
+        exit 1
+      fi
     fi
 
     echo ""
