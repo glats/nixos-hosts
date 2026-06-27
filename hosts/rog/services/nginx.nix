@@ -1,7 +1,8 @@
-{ config
-, pkgs
-, lib
-, ...
+{
+  config,
+  pkgs,
+  lib,
+  ...
 }:
 
 let
@@ -16,12 +17,12 @@ let
 
   # Generate a simple proxy vhost (port + optional locExtra/vhostExtra)
   mkProxyVhost =
-    { port
-    , locExtra ? ""
-    , vhostExtra ? ""
-    , frame ? "SAMEORIGIN"
-    , basicAuth ? null
-    ,
+    {
+      port,
+      locExtra ? "",
+      vhostExtra ? "",
+      frame ? "SAMEORIGIN",
+      basicAuth ? null,
     }:
     {
       useACMEHost = domain;
@@ -51,15 +52,13 @@ let
     prowlarr = 9696;
     bazarr = 6767;
   };
-  arrVhosts = lib.mapAttrs'
-    (name: port: {
-      name = "${name}.${domain}";
-      value = mkProxyVhost {
-        inherit port;
-        locExtra = arrLocExtra;
-      };
-    })
-    arrServices;
+  arrVhosts = lib.mapAttrs' (name: port: {
+    name = "${name}.${domain}";
+    value = mkProxyVhost {
+      inherit port;
+      locExtra = arrLocExtra;
+    };
+  }) arrServices;
 
   # Qbit has extra X-Real-IP and X-Forwarded-For headers
   qbitLocExtra = ''
@@ -87,7 +86,7 @@ in
     acceptTerms = true;
     defaults.email = "glats.walker@gmail.com";
     defaults.dnsProvider = "cloudflare";
-    defaults.environmentFile = config.sops.secrets."cloudflare_api_token".path;
+    defaults.environmentFile = config.sops.secrets."cloudflare_dns_api_token".path;
 
     certs."glats.org" = {
       domain = "glats.org";
