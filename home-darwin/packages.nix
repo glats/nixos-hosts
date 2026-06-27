@@ -28,7 +28,7 @@ in
       maven
       gradle
       micronaut
-      nixfmt-rfc-style
+      nixfmt
       fastfetch
       wget
       jq
