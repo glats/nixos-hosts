@@ -28,6 +28,18 @@ final: prev: {
     pipewire-module-xrdp-src = inputs.pipewire-module-xrdp-src;
   };
 
+  # Workaround for linux-zen 7.0.12 producing vmlinuz instead of bzImage
+  # See https://github.com/NixOS/nixpkgs/issues/521113
+  linuxPackages_zen = prev.linuxPackages_zen.extend (_: ksuper: {
+    kernel = ksuper.kernel.overrideAttrs (old: {
+      postInstall = (old.postInstall or "") + ''
+        if [ -f "$out/vmlinuz" ] && [ ! -e "$out/bzImage" ]; then
+          ln -s vmlinuz "$out/bzImage"
+        fi
+      '';
+    });
+  });
+
   libmateweather = prev.libmateweather.overrideAttrs (oldAttrs: {
     # Fix pointer offset bug in METAR parsing
     postPatch = (oldAttrs.postPatch or "") + ''
