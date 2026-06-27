@@ -1,8 +1,8 @@
 # Linux-specific overlay
 # Provides packages and overrides needed by NixOS hosts
-{ self
-, inputs
-,
+{
+  self,
+  inputs,
 }:
 final: prev: {
   # Cross-platform packages from flake outputs
@@ -27,6 +27,18 @@ final: prev: {
   pipewire-module-xrdp = final.callPackage ../pkgs/pipewire-module-xrdp {
     pipewire-module-xrdp-src = inputs.pipewire-module-xrdp-src;
   };
+
+  # Symbola font: archive.org snapshot 20221006174450 returns HTTP 503.
+  # Try alternate archive.org snapshot from 20201013230756 (Gentoo ebuild).
+  # Upstream dn-works.com changes the zip without version bumps, so archive.org
+  # snapshots may drift. If hash mismatches, nix will report the correct one.
+  symbola = prev.symbola.overrideAttrs (oldAttrs: {
+    src = prev.fetchzip {
+      url = "https://web.archive.org/web/20201013230756/https://dn-works.com/wp-content/uploads/2020/UFAS-Fonts/Symbola.zip";
+      stripRoot = false;
+      hash = "sha256-TsHWmzkEyMa8JOZDyjvk7PDhm239oH/FNllizNFf398=";
+    };
+  });
 
   libmateweather = prev.libmateweather.overrideAttrs (oldAttrs: {
     # Fix pointer offset bug in METAR parsing

@@ -8,9 +8,10 @@
 #     packages.x86_64-linux = packages.linuxPackages;
 #     packages.x86_64-darwin = packages.darwinPackages;
 #   }
-{ inputs
-, pkgsFor
-, ...
+{
+  inputs,
+  pkgsFor,
+  ...
 }:
 let
   linuxPkgs = pkgsFor "x86_64-linux";
@@ -21,8 +22,16 @@ let
     let
       upstream =
         inputs.opencode-src.packages.${system}.opencode or (throw "opencode not available for ${system}");
+      # Work around bun bug oven-sh/bun#19088: --frozen-lockfile falsely
+      # reports "lockfile had changes" when bun version differs from what
+      # generated the lockfile (nixpkgs has 1.3.13, upstream expects 1.3.14).
+      # Remove the flag and pin the recomputed FOD hash.
+      patchedNodeModules = upstream.node_modules.overrideAttrs (oldAttrs: {
+        buildPhase = builtins.replaceStrings [ "--frozen-lockfile" ] [ "" ] oldAttrs.buildPhase;
+        outputHash = "sha256-7NVMnjK24+42ti8nz+dXlTE5mocqO8LlfI3HevbyZJc=";
+      });
     in
-    upstream.overrideAttrs (oldAttrs: {
+    (upstream.override { node_modules = patchedNodeModules; }).overrideAttrs (oldAttrs: {
       postPatch = (oldAttrs.postPatch or "") + ''
         # Relax bun version requirement (nixpkgs has 1.3.13, opencode wants 1.3.14)
         if [ -f packages/script/src/index.ts ]; then
