@@ -155,10 +155,10 @@ let
 
   # Desktop entry text (common shape)
   mkDesktop =
-    { name
-    , comment
-    , exec
-    ,
+    {
+      name,
+      comment,
+      exec,
     }:
     ''
       [Desktop Entry]
@@ -221,12 +221,14 @@ in
   home.file = {
     # === RDP profiles ===
     ".local/share/remmina/rdp-rog.remmina" = {
+      force = true;
       text = mkRemminaProfile rdpDefaults {
         name = "rog";
         server = "172.16.0.5";
       };
     };
     ".local/share/remmina/rdp-oneplus5.remmina" = {
+      force = true;
       text = mkRemminaProfile rdpDefaults {
         name = "oneplus5";
         server = "172.16.0.12";
@@ -234,6 +236,7 @@ in
       };
     };
     ".local/share/remmina/rdp-thinkcentre.remmina" = {
+      force = true;
       text = mkRemminaProfile rdpDefaults {
         name = "thinkcentre";
         server = "172.16.0.11";
@@ -242,12 +245,14 @@ in
 
     # === VNC profiles ===
     ".local/share/remmina/vnc-t14.remmina" = {
+      force = true;
       text = mkRemminaProfile vncDefaults {
         name = "t14";
         server = "172.16.0.109:5900";
       };
     };
     ".local/share/remmina/vnc-mact2.remmina" = {
+      force = true;
       text = mkRemminaProfile vncDefaults {
         name = "mact2";
         server = "mact2.local";
@@ -256,6 +261,7 @@ in
 
     # === Desktop launchers ===
     ".local/share/applications/remote-rog.desktop" = {
+      force = true;
       text = mkDesktop {
         name = "rog";
         comment = "RDP connection to 172.16.0.5";
@@ -263,6 +269,7 @@ in
       };
     };
     ".local/share/applications/remote-oneplus5.desktop" = {
+      force = true;
       text = mkDesktop {
         name = "oneplus5";
         comment = "RDP connection to 172.16.0.12";
@@ -270,6 +277,7 @@ in
       };
     };
     ".local/share/applications/remote-thinkcentre.desktop" = {
+      force = true;
       text = mkDesktop {
         name = "thinkcentre";
         comment = "RDP connection to 172.16.0.11";
@@ -277,6 +285,7 @@ in
       };
     };
     ".local/share/applications/remote-t14.desktop" = {
+      force = true;
       text = mkDesktop {
         name = "t14";
         comment = "VNC connection to 172.16.0.109:5900";
@@ -284,6 +293,7 @@ in
       };
     };
     ".local/share/applications/remote-mact2.desktop" = {
+      force = true;
       text = mkDesktop {
         name = "mact2";
         comment = "VNC connection to mact2.local";
