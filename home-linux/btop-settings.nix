@@ -8,8 +8,9 @@
 # Imported by `hosts/t14/home/omarchy.nix`. The `glats` theme
 # file is written by the shared `home-linux/btop-theme.nix` module
 # (also imported by `omarchy.nix`).
-{ lib
-, ...
+{
+  lib,
+  ...
 }:
 {
   programs.btop.settings = {
