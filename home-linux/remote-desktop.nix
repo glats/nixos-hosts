@@ -25,7 +25,7 @@ let
     window_maximize = 1;
     keyboard_grab = 0;
     disableclipboard = 0;
-    resolution_mode = 2;
+    resolution_mode = 0;
     network = "none";
     ignore-tls-errors = 1;
     disableautoreconnect = 0;
