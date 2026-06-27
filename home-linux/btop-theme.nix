@@ -1,6 +1,6 @@
 # Shared btop theme fragment.
 #
-# Writes `~/.config/btop/themes/nix-colors.theme` from
+# Writes `~/.config/btop/themes/glats.theme` from
 # `config.colorScheme.palette` base16 colors. Imported by every Linux
 # host via `home-linux/shared-modules.nix`. Has no host conditionals
 # — btop variants per host live in `btop-file.nix` (rog, thinkcentre)
@@ -58,5 +58,8 @@ let
   '';
 in
 {
-  home.file."~/.config/btop/themes/nix-colors.theme".text = btopTheme;
+  # NOTE: on t14 this same path is also written by
+  # `inputs.omarchy-nix/modules/home-manager/btop.nix` from the
+  # byte-identical glats palette — convergence, not a conflict.
+  home.file."~/.config/btop/themes/glats.theme".text = btopTheme;
 }
