@@ -28,19 +28,12 @@ final: prev: {
     pipewire-module-xrdp-src = inputs.pipewire-module-xrdp-src;
   };
 
-  # Workaround for linux-zen 7.0.12 producing vmlinuz instead of bzImage
-  # See https://github.com/NixOS/nixpkgs/issues/521113
-  linuxPackages_zen = prev.linuxPackages_zen.extend (
-    _: ksuper: {
-      kernel = ksuper.kernel.overrideAttrs (old: {
-        postInstall = (old.postInstall or "") + ''
-          if [ -f "$out/vmlinuz" ] && [ ! -e "$out/bzImage" ]; then
-            ln -s vmlinuz "$out/bzImage"
-          fi
-        '';
-      });
-    }
-  );
+  # linuxPackages_zen is used as-is from nixpkgs (pinned via flake.lock).
+  # No overlay needed — the kernel is in cache.nixos.org.
+  # Previously had a workaround for vmlinuz → bzImage (nixpkgs#521113),
+  # but the fix was upstreamed and the current pinned version produces
+  # bzImage correctly. Keeping the overlay forced a from-source rebuild
+  # on every nixos-rebuild (~30-60 min).
 
   # Symbola font: archive.org snapshot 20221006174450 returns HTTP 503.
   # Try alternate archive.org snapshot from 20201013230756 (Gentoo ebuild).
