@@ -1,8 +1,7 @@
-{
-  config,
-  pkgs,
-  lib,
-  ...
+{ config
+, pkgs
+, lib
+, ...
 }:
 
 let
@@ -17,12 +16,12 @@ let
 
   # Generate a simple proxy vhost (port + optional locExtra/vhostExtra)
   mkProxyVhost =
-    {
-      port,
-      locExtra ? "",
-      vhostExtra ? "",
-      frame ? "SAMEORIGIN",
-      basicAuth ? null,
+    { port
+    , locExtra ? ""
+    , vhostExtra ? ""
+    , frame ? "SAMEORIGIN"
+    , basicAuth ? null
+    ,
     }:
     {
       useACMEHost = domain;
@@ -52,13 +51,15 @@ let
     prowlarr = 9696;
     bazarr = 6767;
   };
-  arrVhosts = lib.mapAttrs' (name: port: {
-    name = "${name}.${domain}";
-    value = mkProxyVhost {
-      inherit port;
-      locExtra = arrLocExtra;
-    };
-  }) arrServices;
+  arrVhosts = lib.mapAttrs'
+    (name: port: {
+      name = "${name}.${domain}";
+      value = mkProxyVhost {
+        inherit port;
+        locExtra = arrLocExtra;
+      };
+    })
+    arrServices;
 
   # Qbit has extra X-Real-IP and X-Forwarded-For headers
   qbitLocExtra = ''
