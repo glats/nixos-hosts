@@ -8,10 +8,11 @@
 #   - XKB layout forced to "latam" (Chile) since i18n.nix defaults to "es"
 #   - btrfs swap, fonts, kmscon, and amd-laptop settings inherited from base
 #   - home-manager wired to ./home/omarchy.nix (replaces ./home/gnome.nix)
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }:
 
 {
@@ -144,18 +145,19 @@
 
   # xdg-desktop-portal-gtk provides the org.freedesktop.portal.Settings
   # D-Bus interface that libadwaita (Nautilus) needs to read color-scheme.
-  # xdg-desktop-portal-hyprland does NOT implement Settings — without this
-  # portal, Nautilus ignores the dark mode preference.
+  # xdg-desktop-portal-hyprland does NOT implement Settings — without
+  # this portal, Nautilus ignores the dark mode preference.
   #
-  # On NixOS the portal uses NIX_XDG_DESKTOP_PORTAL_DIR (user profile)
-  # instead of the standard XDG_DATA_DIRS search, so we must ensure the
-  # gtk portal appears there with UseIn=hyprland. We do this by adding a
-  # tiny derivation that provides only the patched .portal file to the
-  # user's home.packages (required by portal's user-profile lookup).
-  home-manager.users.glats.home.packages = [
+  # NixOS sets NIX_XDG_DESKTOP_PORTAL_DIR to the system profile
+  # (/run/current-system/sw/share/xdg-desktop-portal/portals/). The
+  # default gtk.portal from xdg-desktop-portal-gtk uses UseIn=gnome,
+  # which excludes Hyprland. We inject a patched gtk.portal via
+  # extraPortals so the portal finds the GTK backend and the Settings
+  # interface is available for libadwaita dark-mode queries.
+  xdg.portal.extraPortals = [
     (pkgs.runCommand "gtk-portal-hyprland" { } ''
-          mkdir -p "$out/share/xdg-desktop-portal/portals"
-          cat > "$out/share/xdg-desktop-portal/portals/gtk.portal" << 'INNEREOF'
+            mkdir -p "$out/share/xdg-desktop-portal/portals"
+            cat > "$out/share/xdg-desktop-portal/portals/gtk.portal" << 'INNEREOF'
       [portal]
       DBusName=org.freedesktop.impl.portal.desktop.gtk
       Interfaces=org.freedesktop.impl.portal.FileChooser;org.freedesktop.impl.portal.AppChooser;org.freedesktop.impl.portal.Print;org.freedesktop.impl.portal.Notification;org.freedesktop.impl.portal.Inhibit;org.freedesktop.impl.portal.Access;org.freedesktop.impl.portal.Account;org.freedesktop.impl.portal.Email;org.freedesktop.impl.portal.DynamicLauncher;org.freedesktop.impl.portal.Lockdown;org.freedesktop.impl.portal.Settings;org.freedesktop.impl.portal.Wallpaper;
