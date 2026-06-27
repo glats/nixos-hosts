@@ -5,7 +5,7 @@
 # thinkcentre / t14 visuals stay in sync.  The rofile-based variant
 # in `btop-file.nix` is used by the other Linux hosts instead.
 #
-# Imported by `hosts/t14/home/omarchy.nix`. The `nix-colors` theme
+# Imported by `hosts/t14/home/omarchy.nix`. The `glats` theme
 # file is written by the shared `home-linux/btop-theme.nix` module
 # (also imported by `omarchy.nix`).
 { lib
@@ -13,7 +13,7 @@
 }:
 {
   programs.btop.settings = {
-    color_theme = lib.mkForce "nix-colors";
+    color_theme = lib.mkForce "glats";
     theme_background = lib.mkForce true;
     truecolor = lib.mkForce true;
     force_tty = lib.mkForce false;

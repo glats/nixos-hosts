@@ -9,12 +9,12 @@
 #   * `hosts/rog/home/modules.nix`
 #   * `hosts/thinkcentre/home/modules.nix`
 #
-# The `nix-colors` theme file is written by the shared
+# The `glats` theme file is written by the shared
 # `home-linux/btop-theme.nix` module.
 { ... }:
 {
   home.file."~/.config/btop/btop.conf".text = ''
-    color_theme = "nix-colors"
+    color_theme = "glats"
     theme_background = true
     truecolor = true
     force_tty = false
