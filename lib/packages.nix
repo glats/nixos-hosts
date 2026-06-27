@@ -8,9 +8,10 @@
 #     packages.x86_64-linux = packages.linuxPackages;
 #     packages.x86_64-darwin = packages.darwinPackages;
 #   }
-{ inputs
-, pkgsFor
-, ...
+{
+  inputs,
+  pkgsFor,
+  ...
 }:
 let
   linuxPkgs = pkgsFor "x86_64-linux";
@@ -27,7 +28,7 @@ let
       # Remove the flag and pin the recomputed FOD hash.
       patchedNodeModules = upstream.node_modules.overrideAttrs (oldAttrs: {
         buildPhase = builtins.replaceStrings [ "--frozen-lockfile" ] [ "" ] oldAttrs.buildPhase;
-        outputHash = "sha256-wpffD8nTebCVg+JnffB3BERh8L5jKD/YMg4kw2qwV60=";
+        outputHash = "sha256-7NVMnjK24+42ti8nz+dXlTE5mocqO8LlfI3HevbyZJc=";
       });
     in
     (upstream.override { node_modules = patchedNodeModules; }).overrideAttrs (oldAttrs: {
