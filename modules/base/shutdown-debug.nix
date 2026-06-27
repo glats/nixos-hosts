@@ -1,7 +1,8 @@
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }:
 let
   cfg = config.my.shutdownDebug;
@@ -71,7 +72,6 @@ in
       after = [
         "local-fs.target"
         "systemd-journald.service"
-        "shutdown.target"
       ];
       before = [ "shutdown.target" ];
       wantedBy = [ "shutdown.target" ];
