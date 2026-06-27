@@ -22,7 +22,7 @@
   ./shell.nix
   ./tmux.nix
   # btop theme + settings owned by omarchy-nix (homeManagerModules.btop).
-  # Imports nix-colors.homeManagerModules.default internally; the local
+  # Reads config.colorScheme.palette (nix-colors provided by theme.nix below);
   # theme.nix must be listed before this entry so colorScheme.palette is set.
   inputs.omarchy-nix.homeManagerModules.btop
   ./vscode.nix
