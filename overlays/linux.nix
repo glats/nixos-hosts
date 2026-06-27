@@ -29,11 +29,11 @@ final: prev: {
   };
 
   # linuxPackages_zen is used as-is from nixpkgs (pinned via flake.lock).
-  # No overlay needed — the kernel is in cache.nixos.org.
-  # Previously had a workaround for vmlinuz → bzImage (nixpkgs#521113),
-  # but the fix was upstreamed and the current pinned version produces
-  # bzImage correctly. Keeping the overlay forced a from-source rebuild
-  # on every nixos-rebuild (~30-60 min).
+  # The kernel produces vmlinuz instead of bzImage on 7.x (nixpkgs#521113).
+  # Instead of overriding the kernel (which changes the hash and forces a
+  # from-source rebuild), we set system.boot.loader.kernelFile = "vmlinuz"
+  # in modules/features/boot.nix. The file IS a valid bzImage — just
+  # named vmlinuz. The kernel stays in cache.nixos.org.
 
   # Symbola font: archive.org snapshot 20221006174450 returns HTTP 503.
   # Try alternate archive.org snapshot from 20201013230756 (Gentoo ebuild).
