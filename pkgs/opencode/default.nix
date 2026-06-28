@@ -1,17 +1,17 @@
-{
-  lib,
-  stdenvNoCC,
-  fetchurl,
-  autoPatchelfHook,
-  makeBinaryWrapper,
-  unzip,
-  zlib,
-  openssl,
-  icu,
-  stdenv,
-  ripgrep,
-  darwin ? { },
-  pkgs,
+{ lib
+, stdenvNoCC
+, fetchurl
+, autoPatchelfHook
+, makeBinaryWrapper
+, unzip
+, zlib
+, openssl
+, icu
+, stdenv
+, ripgrep
+, darwin ? { }
+, pkgs
+,
 }:
 
 let
@@ -39,8 +39,7 @@ let
         url = "https://github.com/anomalyco/opencode/releases/download/v${version}/opencode-darwin-arm64.zip";
         sha256 = "sha256-QHI0RgE96oJS7qTxgNcH916AWvVO6FoU/XwSZRO6g0I=";
       };
-    }
-    .${system} or (throw "Unsupported system: ${system}");
+    }.${system} or (throw "Unsupported system: ${system}");
 
   binPath = lib.makeBinPath (
     [ ripgrep ] ++ lib.optionals (isDarwin && darwin ? sysctl) [ darwin.sysctl ]
