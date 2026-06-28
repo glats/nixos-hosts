@@ -153,6 +153,10 @@
     # systemd user service + config file). Port 5900 + enable_pam = true
     # match upstream defaults; set explicitly here for documentation.
     wayvnc.enable = true;
+
+    # Greeter: regreet (greeter for Hyprland). Selects the regreet-based
+    # login flow instead of the default tuigreet.
+    greeter.type = "regreet";
   };
 
   # Desktop suite — t14 uses GNOME apps alongside omarchy/Hyprland.
