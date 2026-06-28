@@ -29,4 +29,5 @@
   conky
   gtk-engine-murrine
   hexchat
+  networkmanagerapplet
 ])
