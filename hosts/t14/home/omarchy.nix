@@ -27,11 +27,12 @@
 # The omarchy HM module is imported FIRST so that any conflicting
 # definitions from t14/home/default.nix can be overridden via
 # lib.mkForce when needed.
-{ config
-, pkgs
-, lib
-, inputs
-, ...
+{
+  config,
+  pkgs,
+  lib,
+  inputs,
+  ...
 }:
 
 {
@@ -101,6 +102,14 @@
   # rog/thinkcentre only use the system-level config from modules/desktop/fonts.nix.
   fonts.fontconfig.enable = lib.mkForce false;
 
+  # Per-component font family overrides for t14.
+  # Default omarchy-nix uses "monospace" everywhere; we switch GUI surfaces to sans.
+  omarchy.fonts.waybar = lib.mkForce "sans";
+  omarchy.fonts.swayosd = lib.mkForce "sans";
+  omarchy.fonts.mako = lib.mkForce "sans";
+  omarchy.fonts.rofi = lib.mkForce "sans";
+  # walker, hyprlock, alacritty, ghostty, kitty keep default "monospace"
+
   # Omarchy-nix's tmux module is "neutralized" by home-linux/tmux.nix
   # (imported above): it uses `lib.mkForce` on `programs.tmux.extraConfig`
   # and `programs.tmux.plugins` to drop the omarchy prefix/status/theme
@@ -166,10 +175,12 @@
   # Override copyScreensaverTxt: upstream runs it after writeBoundary but
   # before linkGeneration, so the home.file symlinks (logo.txt) don't exist
   # yet on first activation. Run after linkGeneration instead.
-  home.activation.copyScreensaverTxt = lib.mkForce (lib.hm.dag.entryAfter [ "linkGeneration" ] ''
-    if [ ! -f "$HOME/.config/omarchy/branding/screensaver.txt" ]; then
-      mkdir -p "$HOME/.config/omarchy/branding"
-      cp "$HOME/.local/share/omarchy/logo.txt" "$HOME/.config/omarchy/branding/screensaver.txt"
-    fi
-  '');
+  home.activation.copyScreensaverTxt = lib.mkForce (
+    lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+      if [ ! -f "$HOME/.config/omarchy/branding/screensaver.txt" ]; then
+        mkdir -p "$HOME/.config/omarchy/branding"
+        cp "$HOME/.local/share/omarchy/logo.txt" "$HOME/.config/omarchy/branding/screensaver.txt"
+      fi
+    ''
+  );
 }
