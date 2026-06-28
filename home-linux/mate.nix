@@ -1,7 +1,8 @@
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }:
 
 let
@@ -290,6 +291,15 @@ in
       StartupWMClass=flameshot
       OnlyShowIn=MATE;
       X-MATE-Autostart-enabled=true
+    '';
+
+    # Flameshot v14 uses xdg-desktop-portal Screenshot by default.
+    # X11/xrdp sessions have no portal backend for Screenshot.
+    # Fall back to legacy X11 capture path.
+    "flameshot/flameshot.ini".text = ''
+      [General]
+      contrastOpacity=188
+      useX11LegacyScreenshot=true
     '';
 
     # Disable mate-screensaver in xrdp sessions - causes disconnection issues
