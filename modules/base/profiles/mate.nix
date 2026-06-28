@@ -1,9 +1,11 @@
 # MATE desktop suite profile.
 # Selected by: my.desktop.suite = "mate";
-# Provides: MATE DE packages + materia theme (consumed by home-linux/theme.nix).
+# Provides: MATE DE + X11/MATE apps + materia theme + CLI extras
+# (cli-extra tools that omarchy-nix would have provided on t14, but
+# MATE hosts do not run omarchy).
 { pkgs }:
-with pkgs;
-[
+(import ./cli-extra.nix { inherit pkgs; })
+++ (with pkgs; [
   # MATE desktop
   atril
   caja
@@ -17,4 +19,14 @@ with pkgs;
 
   # Theme (consumed by home-linux/theme.nix on MATE hosts)
   materia-theme
-]
+
+  # X11 tools (MATE session only)
+  scrot
+  xclip
+  flameshot
+  copyq
+  gpaste
+  conky
+  gtk-engine-murrine
+  hexchat
+])
