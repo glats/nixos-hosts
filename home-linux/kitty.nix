@@ -8,15 +8,14 @@
 # dropped on t14, producing byte-identical kitty config across
 # rog / thinkcentre / t14.
 #
-# `enable` and `font.name` are intentionally NOT set here:
-#   - t14: omarchy-nix sets `enable = mkDefault true` and
-#     `font.name = mkDefault cfg.fonts.kitty` (overridden in
-#     `hosts/t14/home/omarchy.nix` to "CaskaydiaCove Nerd Font").
-#   - rog / thinkcentre: do NOT import omarchy-nix. Verify that
-#     kitty is still enabled (HM default for `programs.kitty.enable`
-#     is false; on those hosts kitty will be disabled and the rest
-#     of this file is dormant). If that's wrong, add
-#     `enable = lib.mkDefault true;` back.
+# `enable` and `font.name` use `lib.mkDefault` so:
+#   - t14: omarchy-nix's `mkDefault` for both is overridden by
+#     `omarchy.fonts.kitty = "CaskaydiaCove Nerd Font"` (set in
+#     `hosts/t14/home/omarchy.nix`). `lib.mkForce` on `settings`
+#     drops omarchy defaults not re-declared here.
+#   - rog / thinkcentre: no omarchy-nix — `lib.mkDefault` is the
+#     effective value. Both hosts get CaskaydiaCove 11, same
+#     settings, byte-identical config.
 {
   config,
   lib,
@@ -26,6 +25,8 @@
 
 {
   programs.kitty = {
+    enable = lib.mkDefault true;
+
     settings = lib.mkForce {
       # User preferences
       background_opacity = "0.6";
@@ -80,7 +81,10 @@
     # Override omarchy's `mkDefault 12` with our 11. Standalone
     # mkForce (not inside settings) because `font.size` is a
     # separate attr from `settings` in the HM kitty module.
-    font.size = lib.mkForce 11;
+    font = {
+      name = lib.mkDefault "CaskaydiaCove Nerd Font";
+      size = lib.mkForce 11;
+    };
 
     keybindings = {
       "kitty_mod+f10" = "toggle_maximized";
