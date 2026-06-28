@@ -39,12 +39,6 @@
       flake = false;
     };
 
-    # opencode upstream binary (replaces nixpkgs opencode)
-    opencode-src = {
-      url = "github:anomalyco/opencode/v1.17.7";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     # Caveman ultra-compressed communication skills
     caveman-src = {
       url = "github:JuliusBrussee/caveman";

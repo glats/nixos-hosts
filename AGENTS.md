@@ -78,4 +78,4 @@ secrets/                         # sops-nix (encrypted — never edit directly)
 | `nixos-hardware` | T14 AMD gen4 profile |
 | `nix-colors` | Color schemes |
 | `gentle-ai-src` / `engram-src` / `caveman-src` | OpenCode skills/plugins |
-| `opencode-src` | OpenCode binary |
+| `opencode` | Pre-built CLI from upstream releases (`fetchurl` in `pkgs/opencode/default.nix`) |
