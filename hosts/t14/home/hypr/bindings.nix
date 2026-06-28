@@ -19,13 +19,12 @@
     # deployed by `home.file` in default.nix).
     bind = SUPER, M, exec, window-switcher.sh
 
-    # T14: Lid switch -> omarchy monitor handling.  The `on` handler
-    # turns off the internal panel and routes to external monitors; the
-    # `off` handler restores the internal panel when no external
-    # monitor is connected.  `bindl` runs even when the session is
-    # locked.
-    bindl = , switch:on:Lid Switch, exec, omarchy-hw-external-monitors && omarchy-hyprland-monitor-internal off
-    bindl = , switch:off:Lid Switch, exec, omarchy-hw-external-monitors || omarchy-hyprland-monitor-internal on
+    # T14: Lid switch -> direct hyprctl keyword (bypasses omarchy flag-file
+    # mechanism to avoid stale state across boots).  The `off` handler
+    # restores the internal panel when no external monitor is connected.
+    # Flag file is kept for omarchy recover() compatibility on undock.
+    bindl = , switch:on:Lid Switch, exec, omarchy-hw-external-monitors && bash -c 'echo "monitor=eDP-1,disable" > "$HOME/.local/state/omarchy/toggles/hypr/internal-monitor-disable.conf" && hyprctl keyword monitor "eDP-1, disable"'
+    bindl = , switch:off:Lid Switch, exec, omarchy-hw-external-monitors || hyprctl keyword monitor "eDP-1, preferred, 4920x420, 1"
 
     # T14: SUPER+SHIFT+R -> wofi run dialog (overrides the omarchy
     # SUPER,R calculator binding with a run launcher).  Intentional
