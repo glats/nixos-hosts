@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+RES="${2:-1280x720}"
+
+# First arg = device, or auto-detect first available
+if [ -n "${1:-}" ]; then
+  DEVICE="$1"
+else
+  DEVICE=""
+  for d in /dev/video[0-9]*; do
+    [ -e "$d" ] || continue
+    DEVICE="$d"
+    break
+  done
+fi
+
+if [ -z "$DEVICE" ] || [ ! -e "$DEVICE" ]; then
+  echo "Error: no webcam device found"
+  echo "Available devices:"
+  nix-shell -p v4l-utils --run "v4l2-ctl --list-devices" 2>/dev/null
+  exit 1
+fi
+
+exec mpv --no-osc --no-osd-bar --really-quiet \
+  --demuxer-lavf-format="video4linux2" \
+  --demuxer-lavf-o="input_format=mjpeg,video_size=$RES,framerate=30" \
+  "av://v4l2:$DEVICE"
