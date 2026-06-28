@@ -1,6 +1,6 @@
 # T14 Hyprland monitor configuration.
-# Primary display: built-in 14" 1920x1080 panel.
-# External monitors are hot-plugged via monitor-hotplug-handler.sh.
+# eDP-1 enable/disable driven by hyprlang conditionals + persisted settings.conf
+# instead of exec-once + sleep, so monitor state is correct at config parse time.
 { lib, ... }:
 
 let
@@ -26,32 +26,50 @@ in
 
 {
   wayland.windowManager.hyprland.settings = {
-    # T14 built-in display — 1920x1080 @ 60Hz
-    # This is the laptop panel that should always be active.
-    # External monitors added with desc: matching for stable identification
-    # across reconnects (connector names like DP-3/DP-4/DP-5 shift on hot-plug).
-    # y=420 centra los landscape (1080px alto) verticalmente con DP-5
-    # (rotado, 1920px alto post-rotación) para evitar dead zone del cursor.
+    # External monitors — always configured regardless of lid state.
+    # eDP-1 (laptop panel) is configured in extraConfig via hyprlang
+    # conditionals that read persisted lid state from settings.conf.
     monitor = lib.mkForce [
-      "eDP-1,preferred,4920x420,1"
       "desc:AOC 24P1W1 OTNQ4HA000101,1920x1080@60,0x0,1,transform,1"
       "desc:Lenovo Group Limited LEN G24-10 U5B4GWF1,1920x1080@60,1080x420,1"
       "desc:AOC 2470W GGZM3HA438259,1920x1080@60,3000x420,1"
     ];
 
     # Workspace → monitor bindings (cyclic distribution).
-    # eDP-1 (laptop) has no fixed workspaces — when no external monitors
-    # are connected the lid-switch handler keeps eDP-1 active and workspace
-    # 1 lands there by default (only one monitor active).
+    # eDP-1 has no fixed workspaces — when only the laptop panel is
+    # active, workspaces land there by default.
     workspace = mkWorkspaceRules;
 
     # Explicit GDK_SCALE=1 to prevent GTK apps from using default scaling.
     # The T14 panel is 1920x1080 @ 1x — no HiDPI scaling needed.
-    # This list merges with looknfeel.nix's env via Nix attrset union.
     env = [ "GDK_SCALE,1" ];
   };
 
   wayland.windowManager.hyprland.extraConfig = ''
-    exec-once = bash -c 'sleep 2 && if grep -q closed /proc/acpi/button/lid/LID*/state 2>/dev/null && omarchy-hw-external-monitors; then echo "monitor=eDP-1,disable" > "$HOME/.local/state/omarchy/toggles/hypr/internal-monitor-disable.conf" && hyprctl keyword monitor "eDP-1, disable"; fi'
+    # Persisted lid state — updated by lid-switch bindings and startup
+    # validator.  Read at config parse time so eDP-1 starts disabled
+    # when the lid was closed at last logout.
+    source = /home/glats/.config/hypr/settings.conf
+
+    # Conditional eDP-1: enabled when lid open, disabled when closed
+    # (e.g. docked with externals).  The startup validator below fixes
+    # state mismatches (lid changed between sessions).
+    # hyprlang if ENABLE_LAPTOP
+    monitor = eDP-1, preferred, 4920x420, 1
+    # hyprlang endif
+
+    # hyprlang if !ENABLE_LAPTOP
+    monitor = eDP-1, disable
+    # hyprlang endif
+
+    # Lid close — persist + runtime disable
+    bindl = , switch:on:.*lid.*, exec, printf '$ENABLE_LAPTOP = 0\n' > $HOME/.config/hypr/settings.conf && hyprctl keyword monitor "eDP-1, disable"
+    # Lid open — persist + runtime enable (eDP-1 at 4920x420 aligns with externals)
+    bindl = , switch:off:.*lid.*, exec, printf '$ENABLE_LAPTOP = 1\n' > $HOME/.config/hypr/settings.conf && hyprctl keyword monitor "eDP-1, preferred, 4920x420, 1"
+
+    # Startup state validator — runs immediately (no sleep) to catch lid
+    # state changes between sessions.  Most of the time state matches and
+    # this is a fast no-op (one grep + one comparison).
+    exec-once = bash -c 's=$(grep -o "[01]" $HOME/.config/hypr/settings.conf 2>/dev/null); grep -q closed /proc/acpi/button/lid/LID*/state 2>/dev/null && l=0 || l=1; omarchy-hw-external-monitors && e=1 || e=0; if [ "$e" = 0 ]; then [ "$s" != 1 ] && echo "\$ENABLE_LAPTOP = 1" > "$HOME/.config/hypr/settings.conf" && hyprctl keyword monitor "eDP-1, preferred, 4920x420, 1"; elif [ "$l" = 1 ]; then [ "$s" != 1 ] && echo "\$ENABLE_LAPTOP = 1" > "$HOME/.config/hypr/settings.conf" && hyprctl keyword monitor "eDP-1, preferred, 4920x420, 1"; else [ "$s" != 0 ] && echo "\$ENABLE_LAPTOP = 0" > "$HOME/.config/hypr/settings.conf" && hyprctl keyword monitor "eDP-1, disable"; fi'
   '';
 }

@@ -18,12 +18,23 @@
     ../../../home-linux/ghostty.nix
     ../../../home-linux/kitty.nix
     ./mouse-wiggle.nix
+    ../../../home-linux/webcam-rog.nix
   ];
 
   # ------------------------------------------------------------------
   # Helper scripts (accessible from PATH via omarchy's bin directory)
   # ------------------------------------------------------------------
   home.file = {
+    # ------------------------------------------------------------------
+    # Hyprlang settings sourced at config parse time — persists lid
+    # state across sessions so eDP-1 is disabled from the start when
+    # the lid was closed at last logout.
+    # Updated by lid-switch bindl and manual toggle bindd.
+    # ------------------------------------------------------------------
+    ".config/hypr/settings.conf" = {
+      text = "$ENABLE_LAPTOP = 1";
+    };
+
     # Keyboard layout toggle (es <-> latam)
     ".local/share/omarchy/bin/kb-toggle.sh" = {
       source = ./scripts/kb-toggle.sh;
