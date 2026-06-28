@@ -15,5 +15,11 @@ let
   browserPkgs = import ./profiles/browsers.nix { inherit pkgs; };
 in
 {
+  # Import the my.* option declarations so every host that pulls in
+  # packages.nix (rog, thinkcentre, t14) sees them — t14 does not go
+  # through modules/profiles/base.nix and would otherwise miss the
+  # my.desktop.suite option declared in modules/base/options.nix.
+  imports = [ ./options.nix ];
+
   environment.systemPackages = basePkgs ++ devPkgs ++ mediaPkgs ++ virtPkgs ++ browserPkgs;
 }
