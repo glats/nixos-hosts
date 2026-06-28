@@ -70,6 +70,9 @@
   # imported module is a no-op.
   my.shutdownDebug.enable = true;
 
+  # Desktop suite — rog uses MATE via XRDP
+  my.desktop.suite = "mate";
+
   boot = {
     extraModulePackages = with config.boot.kernelPackages; [ acpi_call ];
     kernelModules = [ "acpi_call" ];

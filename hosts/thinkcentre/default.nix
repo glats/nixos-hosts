@@ -29,6 +29,9 @@
     includeAcpiOsi = false;
   };
 
+  # Desktop suite — thinkcentre uses MATE via XRDP
+  my.desktop.suite = "mate";
+
   zramSwap.enable = true;
 
   nixpkgs.config = {
