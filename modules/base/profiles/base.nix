@@ -4,18 +4,32 @@
 # - CLI utilities (file, network, archive, process, nix tooling)
 # - Desktop applications (terminals, themes, screenshot tools)
 # - System utilities (git, fan control, xrdp audio passthrough module)
-{ pkgs }:
+#
+# Packages that overlap with what omarchy-nix provides on t14 (suite =
+# "gnome") are gated with `lib.mkIf (cfg != "gnome")` so they install
+# on rog/thinkcentre but are skipped on t14. omarchy-nix already ships
+# fzf, curl, wget, unzip, fastfetch, btop, coreutils, lazygit,
+# lazydocker, jq, ghostty — see omarchy-nix/modules/packages.nix.
+{ pkgs
+, config
+, lib
+, ...
+}:
+let
+  cfg = config.my.desktop.suite;
+  nonGnome = p: lib.mkIf (cfg != "gnome") p;
+in
 with pkgs;
 [
   # CLI utilities - file/archive operations
-  fzf
+  (nonGnome fzf)
   bat
   delta
-  curl
-  wget
+  (nonGnome curl)
+  (nonGnome wget)
   aria2
   zip
-  unzip
+  (nonGnome unzip)
   p7zip
   rar
   unrar
@@ -27,9 +41,9 @@ with pkgs;
   imagemagick
 
   # CLI utilities - system/process info
-  fastfetch
+  (nonGnome fastfetch)
   htop
-  btop
+  (nonGnome btop)
   iotop
   iftop
   nethogs
@@ -39,7 +53,7 @@ with pkgs;
   pciutils
   usbutils
   util-linux
-  coreutils
+  (nonGnome coreutils)
   findutils
   binutils
   lsd
@@ -71,19 +85,19 @@ with pkgs;
   statix
   deadnix
   nix-search-cli
-  lazygit
-  lazydocker
+  (nonGnome lazygit)
+  (nonGnome lazydocker)
   home-manager
 
   # Misc
-  jq
+  (nonGnome jq)
   yq
   libsecret
   google-cloud-sdk
   dex
 
   # Desktop applications
-  ghostty
+  (nonGnome ghostty)
   windsurf
   flatpak
   meld
