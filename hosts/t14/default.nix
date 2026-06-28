@@ -91,7 +91,9 @@
 
   # VNC server — captures Wayland screen via wlroots screencopy.
   # Runs inside Hyprland session (autostart.nix) on 0.0.0.0:5900.
-  programs.wayvnc.enable = true;
+  # The actual `programs.wayvnc.enable = true` lives in
+  # omarchy-nix:modules/nixos/wayvnc.nix, gated by `omarchy.wayvnc.enable`
+  # (set below in the omarchy = { … } block).
 
   # Enable the imported boot module (systemd-boot, plymouth, zen kernel)
   boot-settings.enable = true;
@@ -145,6 +147,12 @@
     # REQ-003: omarchy.firewall.enable = false is the canonical way to
     # opt out of omarchy's mkIf-guarded firewall module.
     firewall.enable = false;
+
+    # VNC server — opt-in to omarchy.wayvnc (NixOS module enables
+    # programs.wayvnc + systemPackages; HM module deploys the
+    # systemd user service + config file). Port 5900 + enable_pam = true
+    # match upstream defaults; set explicitly here for documentation.
+    wayvnc.enable = true;
   };
 
   # Desktop suite — t14 uses GNOME apps alongside omarchy/Hyprland.
