@@ -23,11 +23,9 @@
     ./hypr/input.nix
     ./hypr/bindings.nix
     ./hypr/looknfeel.nix
-    ./hypr/autostart.nix
     ./hypr/hyprlock.nix
     ./hypr/hyprsunset.nix
-    ./hypr/xdph.nix
-    ./ghostty.nix
+    ../../../home-linux/ghostty.nix
     ../../../home-linux/kitty.nix
     ./mouse-wiggle.nix
   ];
@@ -36,18 +34,6 @@
   # Helper scripts (accessible from PATH via omarchy's bin directory)
   # ------------------------------------------------------------------
   home.file = {
-    # Window switcher — uses omarchy's walker menu backend
-    ".local/share/omarchy/bin/window-switcher.sh" = {
-      source = ./scripts/window-switcher.sh;
-      executable = true;
-    };
-
-    # Monitor hotplug handler — calls omarchy's monitor management
-    ".local/share/omarchy/bin/monitor-hotplug-handler.sh" = {
-      source = ./scripts/monitor-hotplug-handler.sh;
-      executable = true;
-    };
-
     # Keyboard layout toggle (es <-> latam)
     ".local/share/omarchy/bin/kb-toggle.sh" = {
       source = ./scripts/kb-toggle.sh;
