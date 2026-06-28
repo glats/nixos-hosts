@@ -79,3 +79,9 @@ secrets/                         # sops-nix (encrypted — never edit directly)
 | `nix-colors` | Color schemes |
 | `gentle-ai-src` / `engram-src` / `caveman-src` | OpenCode skills/plugins |
 | `opencode` | Pre-built CLI from upstream releases (`fetchurl` in `pkgs/opencode/default.nix`) |
+
+## Owned Repos
+
+| Repo | Permission |
+|------|-----------|
+| `github.com/glats/omarchy-nix` | Full clone & push access — changes involving this repo can be committed and pushed directly | |
