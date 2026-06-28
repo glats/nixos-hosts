@@ -293,15 +293,6 @@ in
       X-MATE-Autostart-enabled=true
     '';
 
-    # Flameshot v14 uses xdg-desktop-portal Screenshot by default.
-    # X11/xrdp sessions have no portal backend for Screenshot.
-    # Fall back to legacy X11 capture path.
-    "flameshot/flameshot.ini".text = ''
-      [General]
-      contrastOpacity=188
-      useX11LegacyScreenshot=true
-    '';
-
     # Disable mate-screensaver in xrdp sessions - causes disconnection issues
     "autostart/mate-screensaver.desktop".text = ''
       [Desktop Entry]
@@ -327,4 +318,22 @@ in
       Hidden=true
     '';
   };
+
+  # Flameshot v14 uses xdg-desktop-portal Screenshot by default.
+  # X11/xrdp sessions have no portal backend for Screenshot.
+  # Use activation script instead of xdg.configFile so flameshot can
+  # write its own settings through the GUI without being overwritten.
+  home.activation.ensureFlameshotX11Legacy = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    ini="$HOME/.config/flameshot/flameshot.ini"
+    mkdir -p "$(dirname "$ini")"
+    if [ ! -f "$ini" ]; then
+      printf '[General]\ncontrastOpacity=188\nuseX11LegacyScreenshot=true\n' > "$ini"
+    elif ! grep -q '^useX11LegacyScreenshot=true' "$ini"; then
+      if grep -q '^\[General\]' "$ini"; then
+        sed -i '/^\[General\]/a useX11LegacyScreenshot=true' "$ini"
+      else
+        printf '\n[General]\nuseX11LegacyScreenshot=true\n' >> "$ini"
+      fi
+    fi
+  '';
 }
