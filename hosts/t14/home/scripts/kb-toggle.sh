@@ -2,19 +2,16 @@
 # kb-toggle.sh — Toggle keyboard layout between ES and LatAm on t14.
 #
 # Usage: kb-toggle.sh
-# Reads current layout from hyprctl and cycles to the next one.
+# Reads current layout name from hyprctl and toggles to the other one.
 #
-# Assumes omarchy has set up xkb layout groups. This script
-# wraps hyprctl to do the actual switch.
+# Uses the same hyprctl command as kb-layout.sh for consistency.
 
 set -euo pipefail
 
-# The layout groups defined in input.kb_layout = "es,latam".
-LAYOUTS="es,latam"
+CURRENT=$(hyprctl keyboard-layout 2>/dev/null | grep -oE 'keyboard: [a-z]+' | awk '{print $2}' || echo "es")
 
-# Get current keyboard group. hyprland uses group 0 for first layout.
-CURRENT_GROUP=$(hyprctl keyboard-layout groups 2>/dev/null | grep -oE '[0-9]+' | head -1 || echo 0)
-
-# Toggle between group 0 (es) and group 1 (latam)
-NEXT_GROUP=$(( (CURRENT_GROUP + 1) % 2 ))
-hyprctl switchxkblayout keyboard group "$NEXT_GROUP" 2>/dev/null || true
+case "$CURRENT" in
+  es)   hyprctl switchxkblayout keyboard group 1 2>/dev/null || true ;;
+  latam) hyprctl switchxkblayout keyboard group 0 2>/dev/null || true ;;
+  *)    hyprctl switchxkblayout keyboard group 1 2>/dev/null || true ;; # default: switch to latam
+esac
