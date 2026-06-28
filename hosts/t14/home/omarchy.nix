@@ -108,7 +108,13 @@
   omarchy.fonts.swayosd = lib.mkForce "sans";
   omarchy.fonts.mako = lib.mkForce "sans";
   omarchy.fonts.rofi = lib.mkForce "sans";
-  # walker, hyprlock, alacritty, ghostty, kitty keep default "monospace"
+  # Terminals get an explicit Nerd Font (CaskaydiaCove) so glyphs render
+  # correctly. alacritty + ghostty are owned by the shared home-linux
+  # modules; kitty is also resolved by `home-linux/kitty.nix` (which
+  # uses `lib.mkForce` on `programs.kitty.settings` but does not set
+  # `programs.kitty.font.name` — omarchy.fonts.kitty supplies it).
+  omarchy.fonts.kitty = lib.mkForce "CaskaydiaCove Nerd Font";
+  # walker, hyprlock keep default "monospace"
 
   # Omarchy-nix's tmux module is "neutralized" by home-linux/tmux.nix
   # (imported above): it uses `lib.mkForce` on `programs.tmux.extraConfig`
