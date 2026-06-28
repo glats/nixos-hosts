@@ -13,7 +13,6 @@
   imports = [
     ./hypr/monitors.nix
     ./hypr/input.nix
-    ./hypr/bindings.nix
     ./hypr/looknfeel.nix
     ./hypr/hyprlock.nix
     ./hypr/hyprsunset.nix
