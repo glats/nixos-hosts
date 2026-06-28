@@ -1,23 +1,12 @@
-# Base system profile
-# Essential packages that every Linux host gets by default:
-# - MATE desktop support (not installed by services.xserver.desktopManager.mate.enable)
+# Base system profile — host-agnostic shared packages.
+# Suite-specific packages (MATE, GNOME) live in profiles/mate.nix and
+# profiles/gnome.nix, selected by the my.desktop.suite option.
 # - CLI utilities (file, network, archive, process, nix tooling)
-# - Desktop applications (terminals, file managers, themes, screenshot tools)
+# - Desktop applications (terminals, themes, screenshot tools)
 # - System utilities (git, fan control, xrdp audio passthrough module)
 { pkgs }:
 with pkgs;
 [
-  # MATE desktop support
-  atril
-  caja
-  engrampa
-  eom
-  marco
-  pluma
-  mate-panel
-  mate-sensors-applet
-  mate-user-share
-
   # CLI utilities - file/archive operations
   fzf
   bat
@@ -101,7 +90,6 @@ with pkgs;
   xdg-user-dirs
   hicolor-icon-theme
   papirus-icon-theme
-  materia-theme
   gnome-themes-extra
   gtk-engine-murrine
   adwaita-icon-theme

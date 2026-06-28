@@ -147,6 +147,11 @@
     firewall.enable = false;
   };
 
+  # Desktop suite — t14 uses GNOME apps alongside omarchy/Hyprland.
+  # omarchy-nix provides nautilus, calculator, evince, etc.;
+  # this adds gnome-system-monitor via modules/base/profiles/gnome.nix.
+  my.desktop.suite = "gnome";
+
   # xdg-desktop-portal-gtk provides the org.freedesktop.portal.Settings
   # D-Bus interface that libadwaita (Nautilus) needs to read color-scheme.
   # xdg-desktop-portal-hyprland does NOT implement Settings — without
