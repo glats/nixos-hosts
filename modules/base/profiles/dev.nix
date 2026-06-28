@@ -1,12 +1,23 @@
 # Development profile
 # Build toolchains, language runtimes, and editor/AI tools.
 # Used by hosts where the user actively develops software.
-{ pkgs }:
+#
+# `gnumake` and `nodejs` are gated with `lib.mkIf (cfg != "gnome")`
+# because omarchy-nix already provides them on t14 (suite = "gnome").
+{ pkgs
+, config
+, lib
+, ...
+}:
+let
+  cfg = config.my.desktop.suite;
+  nonGnome = p: lib.mkIf (cfg != "gnome") p;
+in
 with pkgs;
 [
   # Native toolchain
   gcc
-  gnumake
+  (nonGnome gnumake)
   cmake
   meson
   ninja
@@ -17,7 +28,7 @@ with pkgs;
 
   # Language runtimes
   go
-  nodejs
+  (nonGnome nodejs)
   nodejs_22
   bun
 

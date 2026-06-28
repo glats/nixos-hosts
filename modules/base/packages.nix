@@ -7,14 +7,28 @@
 let
   cfg = config.my.desktop.suite;
 
-  # Profile composition. Each profile is a function `{ pkgs }: [ ... ]` that
-  # returns a flat list of packages. Hosts can opt-out of specific profiles
-  # in their own configuration (out of scope for the current change).
-  basePkgs = import ./profiles/base.nix { inherit pkgs; };
-  devPkgs = import ./profiles/dev.nix { inherit pkgs; };
-  mediaPkgs = import ./profiles/media.nix { inherit pkgs; };
-  virtPkgs = import ./profiles/virt.nix { inherit pkgs; };
-  browserPkgs = import ./profiles/browsers.nix { inherit pkgs; };
+  # Profile composition. Each profile is a function
+  # `{ pkgs, config, lib, ... }: [ ... ]` that returns a flat list of
+  # packages. `config` and `lib` are threaded through so profiles can
+  # gate individual entries with `lib.mkIf (cfg != "gnome")` to skip
+  # packages that omarchy-nix already provides on t14. Hosts can opt
+  # out of specific profiles in their own configuration (out of scope
+  # for the current change).
+  basePkgs = import ./profiles/base.nix {
+    inherit pkgs config lib;
+  };
+  devPkgs = import ./profiles/dev.nix {
+    inherit pkgs config lib;
+  };
+  mediaPkgs = import ./profiles/media.nix {
+    inherit pkgs config lib;
+  };
+  virtPkgs = import ./profiles/virt.nix {
+    inherit pkgs;
+  };
+  browserPkgs = import ./profiles/browsers.nix {
+    inherit pkgs config lib;
+  };
 
   # Suite profile selection — driven by my.desktop.suite. Hosts that
   # need no suite (headless servers, future hosts) get an empty list.
