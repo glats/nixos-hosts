@@ -5,7 +5,6 @@
 #   - Helper scripts (kb-toggle, kb-layout)
 #   - Ghostty + kitty settings (imported directly from home-linux/ because
 #     t14's curated import list omits home-linux/shared-modules.nix)
-#   - iwd-wifi waybar indicator script (iwd-specific, not in omarchy)
 #   - mouse-wiggle launcher
 { ... }:
 
@@ -53,29 +52,5 @@
       source = ./scripts/kb-toggle.sh;
       executable = true;
     };
-  };
-
-  # ------------------------------------------------------------------
-  # Waybar — iwd WiFi status indicator
-  # ------------------------------------------------------------------
-  # omarchy-nix owns the waybar config via home.file (recursive dir
-  # copy of config/waybar/). We add only the iwd-wifi indicator
-  # script (iwd-specific, not in upstream). The script deploys but is
-  # not yet referenced by upstream's waybar modules-right
-  # (follow-up: patch upstream waybar config to include
-  # custom/iwd-wifi).
-  home.file.".config/waybar/indicators/iwd-wifi.sh" = {
-    text = ''
-      #!/bin/bash
-      # waybar custom module: iwd WiFi status
-      state=$(iwctl station wlan0 show 2>/dev/null | awk '/State/ {print $2}')
-      ssid=$(iwctl station wlan0 show 2>/dev/null | awk '/Connected network/ {$1=""; $2=""; print}' | xargs)
-      if [ "$state" = "connected" ] && [ -n "$ssid" ]; then
-        echo "{\"text\": \" $ssid\", \"class\": \"connected\", \"tooltip\": \"WiFi: $ssid (iwd)\"}"
-      else
-        echo "{\"text\": \"󰤮\", \"class\": \"disconnected\", \"tooltip\": \"WiFi disconnected\"}"
-      fi
-    '';
-    executable = true;
   };
 }
