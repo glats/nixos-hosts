@@ -30,7 +30,6 @@
     ./ghostty.nix
     ../../../home-linux/kitty.nix
     ./mouse-wiggle.nix
-    ./wayvnc
   ];
 
   # ------------------------------------------------------------------

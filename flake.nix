@@ -244,33 +244,15 @@
           # module errors).
           #
           # The omarchy-nix HM module copies osConfig.omarchy into HM
-          # config (lib.mkIf (osConfig ? omarchy) { ... }). In standalone
-          # HM, osConfig = {} so the sync is skipped. We inject the
-          # necessary omarchy values explicitly here to match what the
-          # NixOS path provides.
+          # config (lib.mkIf (osConfig ? omarchy) { ... omarchy = osConfig.omarchy or {}; ... }).
+          # In standalone HM, osConfig = {} so the sync short-circuits.
+          # We inject the necessary omarchy values explicitly here to
+          # match what the NixOS path provides.
           t14 = home-manager.lib.homeManagerConfiguration {
             pkgs = pkgsFor "x86_64-linux";
             modules = [
               ./hosts/t14/home/omarchy.nix
-              # The omarchy-nix HM module (flake.nix:55-57) copies
-              # osConfig.omarchy into HM config via
-              #   lib.mkIf (osConfig ? omarchy) { omarchy = osConfig.omarchy; }
-              # HM sets _module.args.osConfig = lib.mkDefault null (see
-              # submodule-support.nix), so osConfig is always present as
-              # null — never using the module function's osConfig ? {}
-              # default.
-              #
-              # Worse: nixpkgs's pushDownProperties uses
-              # builtins.mapAttrs (which forces ALL values) before mkIf
-              # can short-circuit, so osConfig.omarchy is always
-              # evaluated. We work around this by seeding osConfig with
-              # an omarchy key (even though it's empty), then our own
-              # omarchy block below overrides with the real values.
               {
-                _module.args.osConfig = nixpkgs.lib.mkForce {
-                  omarchy = { };
-                  services.xserver.videoDrivers = [ ];
-                };
                 omarchy = {
                   theme = "glats";
                   username = "glats";
@@ -281,6 +263,7 @@
                   monitors = [ "eDP-1,preferred,auto,1" ];
                   scale = 1;
                   light_theme_detection.enable = false;
+                  wayvnc.enable = true;
                 };
               }
             ];
