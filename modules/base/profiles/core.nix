@@ -79,7 +79,6 @@ with pkgs;
   papirus-icon-theme
   gnome-themes-extra
   adwaita-icon-theme
-  networkmanagerapplet
   gparted
   popsicle
   hypridle
