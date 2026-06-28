@@ -2,17 +2,38 @@
 # (t14, rog, thinkcentre).
 #
 # Mirrors the proven `home-linux/ghostty.nix` pattern: wrap
-# `programs.kitty.settings` in `lib.mkForce` so on t14 the entire
-# attrset replaces whatever omarchy-nix contributed. Every key this
-# file does not define (omarchy's `include`, opacity 0.95, etc.) is
-# dropped on t14, producing byte-identical kitty config across
-# rog / thinkcentre / t14.
+# `programs.kitty.settings` in `lib.mkDefault` so on t14 the
+# attrset merges with whatever omarchy-nix contributed (via
+# attrset union). Keys unique to either side survive; keys
+# with matching values merge cleanly; `include` (declared only
+# by omarchy-nix) survives — enabling `omarchy-theme-set` to
+# recolor kitty at runtime without a rebuild.
+#
+# The natural attrset merge in NixOS module system rejects
+# equal-priority scalar conflicts rather than picking a winner.
+# Since both modules also declare `window_padding_width`,
+# `repaint_delay`, `input_delay`, `sync_to_monitor`, and
+# `background_opacity` at `mkDefault`, we use `lib.mkForce`
+# inline on `background_opacity` so the nixos-hosts value
+# ("0.9") wins on every host. The other four keys happen to
+# match between omarchy-nix and nixos-hosts, so they merge
+# without conflict.
+#
+# omarchy-nix's keybindings (`ctrl+insert` → copy,
+# `shift+insert` → paste) are additive to nixos-hosts's
+# `kitty_mod+f10` → maximize and merge via attrset union.
+#
+# On rog / thinkcentre, no omarchy-nix is imported, so
+# `lib.mkDefault` on `settings` is the effective priority and
+# the resulting kitty config is byte-identical to a
+# `mkForce`-style layout (minus the inline `mkForce` on
+# `background_opacity`, which is a no-op without a competitor).
 #
 # `enable` and `font.name` use `lib.mkDefault` so:
 #   - t14: omarchy-nix's `mkDefault` for both is overridden by
 #     `omarchy.fonts.kitty = "CaskaydiaCove Nerd Font"` (set in
-#     `hosts/t14/home/omarchy.nix`). `lib.mkForce` on `settings`
-#     drops omarchy defaults not re-declared here.
+#     `hosts/t14/home/omarchy.nix`). `lib.mkDefault` on `settings`
+#     merges omarchy defaults in alongside nixos-hosts's keys.
 #   - rog / thinkcentre: no omarchy-nix — `lib.mkDefault` is the
 #     effective value. Both hosts get CaskaydiaCove 11, same
 #     settings, byte-identical config.
@@ -26,16 +47,20 @@
   programs.kitty = {
     enable = lib.mkDefault true;
 
-    settings = lib.mkForce {
+    settings = lib.mkDefault {
       # User preferences
-      background_opacity = "0.6";
+      # background_opacity is lib.mkForce so the 0.9 value wins on
+      # t14 too (omarchy-nix's mkDefault "0.95" would otherwise
+      # conflict at equal priority and fail evaluation).
+      background_opacity = lib.mkForce "0.9";
       background_tint = "0.2";
       scrollback_lines = -1;
       cursor_shape = "block";
       disable_ligatures = "never";
 
-      # Omarchy defaults that must be re-declared inside mkForce
-      # or they get dropped on t14.
+      # Padding / delay / sync keys are also declared by
+      # omarchy-nix. Re-declared here so nixos-hosts's values win
+      # via later-import priority at the same mkDefault level.
       window_padding_width = 10;
       repaint_delay = 10;
       input_delay = 3;
