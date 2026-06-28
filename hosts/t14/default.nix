@@ -160,38 +160,6 @@
   # this adds gnome-system-monitor via modules/base/profiles/gnome.nix.
   my.desktop.suite = "gnome";
 
-  # xdg-desktop-portal-gtk provides the org.freedesktop.portal.Settings
-  # D-Bus interface that libadwaita (Nautilus) needs to read color-scheme.
-  # xdg-desktop-portal-hyprland does NOT implement Settings — without
-  # this portal, Nautilus ignores the dark mode preference.
-  #
-  # NOTE: The NixOS xdg.portal.extraPortals adds the patched gtk.portal
-  # to the SYSTEM profile, but HM's xdg.portal module overrides
-  # NIX_XDG_DESKTOP_PORTAL_DIR to point to the USER profile. Therefore
-  # the portal never finds this system-level gtk.portal. The *effective*
-  # fix is in home-manager.users.glats.xdg.portal.extraPortals below,
-  # which deploys the same patched .portal file to the user profile.
-  # We keep this system-level entry for any non-HM setup.
-  xdg.portal.extraPortals = [
-    (pkgs.runCommand "gtk-portal-hyprland" { } ''
-            mkdir -p "$out/share/xdg-desktop-portal/portals"
-            cat > "$out/share/xdg-desktop-portal/portals/gtk.portal" << 'INNEREOF'
-      [portal]
-      DBusName=org.freedesktop.impl.portal.desktop.gtk
-      Interfaces=org.freedesktop.impl.portal.FileChooser;org.freedesktop.impl.portal.AppChooser;org.freedesktop.impl.portal.Print;org.freedesktop.impl.portal.Notification;org.freedesktop.impl.portal.Inhibit;org.freedesktop.impl.portal.Access;org.freedesktop.impl.portal.Account;org.freedesktop.impl.portal.Email;org.freedesktop.impl.portal.DynamicLauncher;org.freedesktop.impl.portal.Lockdown;org.freedesktop.impl.portal.Settings;org.freedesktop.impl.portal.Wallpaper;
-      UseIn=gnome;hyprland
-      INNEREOF
-    '')
-  ];
-
-  xdg.portal.config.hyprland = {
-    default = lib.mkForce [
-      "hyprland"
-      "gtk"
-    ];
-    "org.freedesktop.impl.portal.Settings" = lib.mkForce [ "gtk" ];
-  };
-
   # === HOME-MANAGER ===
   # Omarchy + t14 Hyprland overlays imported via ./home/omarchy.nix.
   # The NixOS home-manager module is loaded by lib/mkHost.nix.
@@ -212,32 +180,6 @@
     };
     users.glats = {
       imports = [ ./home/omarchy.nix ];
-
-      # Inject patched gtk.portal into the HM profile (user profile).
-      #
-      # ROOT CAUSE: HM's xdg.portal module (enabled by omarchy-nix) sets
-      # NIX_XDG_DESKTOP_PORTAL_DIR to the HM user profile
-      # (/etc/profiles/per-user/glats/share/xdg-desktop-portal/portals).
-      # This overrides the NixOS system-level value set by
-      # xdg.portal.enable. The portal therefore ONLY searches the USER
-      # profile for .portal files — the system profile's gtk.portal
-      # (added by NixOS xdg.portal.extraPortals) is NEVER found.
-      #
-      # By adding the patched gtk.portal to HM's extraPortals (NOT
-      # NixOS's), it lands in the user profile where HM's env var
-      # points, and the portal finds the gtk backend with the
-      # org.freedesktop.impl.portal.Settings interface for Hyprland.
-      xdg.portal.extraPortals = [
-        (pkgs.runCommand "gtk-portal-hyprland" { } ''
-            mkdir -p "$out/share/xdg-desktop-portal/portals"
-            cat > "$out/share/xdg-desktop-portal/portals/gtk.portal" << 'INNEREOF'
-          [portal]
-          DBusName=org.freedesktop.impl.portal.desktop.gtk
-          Interfaces=org.freedesktop.impl.portal.FileChooser;org.freedesktop.impl.portal.AppChooser;org.freedesktop.impl.portal.Print;org.freedesktop.impl.portal.Notification;org.freedesktop.impl.portal.Inhibit;org.freedesktop.impl.portal.Access;org.freedesktop.impl.portal.Account;org.freedesktop.impl.portal.Email;org.freedesktop.impl.portal.DynamicLauncher;org.freedesktop.impl.portal.Lockdown;org.freedesktop.impl.portal.Settings;org.freedesktop.impl.portal.Wallpaper;
-          UseIn=gnome;hyprland
-          INNEREOF
-        '')
-      ];
     };
   };
 
