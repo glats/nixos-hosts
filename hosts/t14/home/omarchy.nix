@@ -27,11 +27,12 @@
 # The omarchy HM module is imported FIRST so that any conflicting
 # definitions from t14/home/default.nix can be overridden via
 # lib.mkForce when needed.
-{ config
-, pkgs
-, lib
-, inputs
-, ...
+{
+  config,
+  pkgs,
+  lib,
+  inputs,
+  ...
 }:
 
 {
@@ -114,6 +115,11 @@
   # `programs.kitty.font.name` — omarchy.fonts.kitty supplies it).
   omarchy.fonts.kitty = lib.mkForce "CaskaydiaCove Nerd Font";
   # walker, hyprlock keep default "monospace"
+
+  # Keep wallpaper static across Hyprland sessions — user-chosen
+  # backgrounds (via SUPER+CTRL+SPACE walker or omarchy-theme-bg-set)
+  # persist across logins instead of advancing on every session start.
+  omarchy.rotate_on_start = lib.mkForce false;
 
   # Omarchy-nix's tmux module is "neutralized" by home-linux/tmux.nix
   # (imported above): it uses `lib.mkForce` on `programs.tmux.extraConfig`
