@@ -58,9 +58,9 @@ with pkgs;
   binutils
   lsd
   cmatrix
-  scrot
+  (nonGnome scrot)
   systemctl-tui
-  xclip
+  (nonGnome xclip)
   xxd
 
   # CLI utilities - networking
@@ -105,15 +105,15 @@ with pkgs;
   hicolor-icon-theme
   papirus-icon-theme
   gnome-themes-extra
-  gtk-engine-murrine
+  (nonGnome gtk-engine-murrine)
   adwaita-icon-theme
-  flameshot
-  copyq
-  gpaste
-  conky
+  (nonGnome flameshot)
+  (nonGnome copyq)
+  (nonGnome gpaste)
+  (nonGnome conky)
   networkmanagerapplet
   gparted
-  hexchat
+  (nonGnome hexchat)
   popsicle
   hypridle
   remmina
