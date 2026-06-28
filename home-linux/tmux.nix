@@ -36,6 +36,7 @@ in
     # darwin host, but via TPM plugin declarations.
     plugins = lib.mkForce (with pkgs.tmuxPlugins; [
       resurrect
+      continuum
       sessionist
       yank
       vim-tmux-navigator
