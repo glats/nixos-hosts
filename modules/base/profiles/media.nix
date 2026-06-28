@@ -1,24 +1,16 @@
 # Media profile
 # Audio/video tools and GPU acceleration for media playback.
 #
-# `mpv`, `wiremix`, and `ffmpeg` are gated with `lib.mkIf (cfg !=
-# "gnome")` because omarchy-nix already provides them on t14 (suite =
-# "gnome"). See omarchy-nix/modules/packages.nix.
-{ pkgs
-, config
-, lib
-, ...
-}:
-let
-  cfg = config.my.desktop.suite;
-  nonGnome = p: lib.mkIf (cfg != "gnome") p;
-in
+# Note: mpv, wiremix, and ffmpeg are now ungated. t14 evaluates them
+# from BOTH nixos-hosts and omarchy-nix; the Nix store deduplicates
+# the derivations, so there is no runtime cost.
+{ pkgs }:
 with pkgs;
 [
   # Playback
-  (nonGnome mpv)
-  (nonGnome wiremix)
-  (nonGnome ffmpeg)
+  mpv
+  wiremix
+  ffmpeg
 
   # GPU acceleration (Intel iGPU)
   intel-vaapi-driver

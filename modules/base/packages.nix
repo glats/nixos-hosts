@@ -8,37 +8,27 @@ let
   cfg = config.my.desktop.suite;
 
   # Profile composition. Each profile is a function
-  # `{ pkgs, config, lib, ... }: [ ... ]` that returns a flat list of
-  # packages. `config` and `lib` are threaded through so profiles can
-  # gate individual entries with `lib.mkIf (cfg != "gnome")` to skip
-  # packages that omarchy-nix already provides on t14. Hosts can opt
-  # out of specific profiles in their own configuration (out of scope
-  # for the current change).
-  basePkgs = import ./profiles/base.nix {
-    inherit pkgs config lib;
-  };
-  devPkgs = import ./profiles/dev.nix {
-    inherit pkgs config lib;
-  };
-  mediaPkgs = import ./profiles/media.nix {
-    inherit pkgs config lib;
-  };
-  virtPkgs = import ./profiles/virt.nix {
-    inherit pkgs;
-  };
-  browserPkgs = import ./profiles/browsers.nix {
-    inherit pkgs config lib;
-  };
-
-  # Suite profile selection — driven by my.desktop.suite. Hosts that
-  # need no suite (headless servers, future hosts) get an empty list.
-  suitePkgs =
+  # `{ pkgs }: [ ... ]` that returns a flat list of packages.
+  # Suite-level decisions happen here: shared profiles are always
+  # imported, suite-specific profiles are appended based on
+  # my.desktop.suite. Profiles themselves contain NO conditions.
+  sharedProfiles = [
+    ./profiles/core.nix
+    ./profiles/dev.nix
+    ./profiles/media.nix
+    ./profiles/virt.nix
+    ./profiles/browsers.nix
+  ];
+  suiteProfile =
     if cfg == "mate" then
-      import ./profiles/mate.nix { inherit pkgs; }
+      [ ./profiles/mate.nix ]
     else if cfg == "gnome" then
-      import ./profiles/gnome.nix { inherit pkgs; }
+      [ ./profiles/gnome.nix ]
     else
       [ ];
+
+  allProfiles = sharedProfiles ++ suiteProfile;
+  profilePkgs = lib.concatMap (p: import p { inherit pkgs; }) allProfiles;
 in
 {
   # Import the my.* option declarations so every host that pulls in
@@ -47,6 +37,5 @@ in
   # my.desktop.suite option declared in modules/base/options.nix.
   imports = [ ./options.nix ];
 
-  environment.systemPackages =
-    basePkgs ++ suitePkgs ++ devPkgs ++ mediaPkgs ++ virtPkgs ++ browserPkgs;
+  environment.systemPackages = profilePkgs;
 }
