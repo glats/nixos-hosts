@@ -65,6 +65,11 @@
 
       set -g @resurrect-capture-pane-contents 'on'
 
+      # tmux-continuum: continuous saving + auto-restore
+      set -g @continuum-save-interval '15'
+      set -g @continuum-restore-on-startup on
+      set -g @continuum-save-on-close on
+
       # Universal bindings
       unbind [
       bind s copy-mode
