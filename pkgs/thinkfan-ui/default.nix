@@ -34,8 +34,9 @@ stdenv.mkDerivation {
   # qtbase must be in buildInputs so wrapQtAppsHook can resolve
   # `qtPluginPrefix` and set QT_PLUGIN_PATH for PyQt6 to discover the
   # xcb/wayland platform plugins.
-  # hicolor-icon-theme provides share/icons/hicolor/index.theme so
-  # QIcon.fromTheme("thinkfan-ui") can resolve the SVG icon at runtime.
+  # hicolor-icon-theme is present so we can copy its index.theme into our
+  # $out/share/icons/hicolor — QIcon.fromTheme() needs the index.theme and
+  # the SVG file in the same directory tree.
   buildInputs = [ qtbase hicolor-icon-theme ];
 
   dontBuild = true;
@@ -52,7 +53,13 @@ stdenv.mkDerivation {
       $out/share/applications/thinkfan-ui.desktop
 
     # SVG icon (from upstream linux_packaging/, installed into hicolor theme
-    # so Freedesktop icon lookup finds it without any theme-specific config)
+    # so Freedesktop icon lookup finds it without any theme-specific config).
+    # We also copy the hicolor index.theme into our $out so QIcon.fromTheme()
+    # finds everything in a single directory tree — Qt resolves icons only
+    # within the directory where it first finds the index.theme file.
+    mkdir -p $out/share/icons/hicolor/scalable/apps
+    cp ${hicolor-icon-theme}/share/icons/hicolor/index.theme \
+      $out/share/icons/hicolor/
     install -Dm644 linux_packaging/thinkfan-ui.svg \
       $out/share/icons/hicolor/scalable/apps/thinkfan-ui.svg
 
