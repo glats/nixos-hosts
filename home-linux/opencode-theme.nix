@@ -30,24 +30,24 @@ in
 
       # ── Text ─────────────────────────────────────────────────────────
       text = h p.base05;
-      # DEBUG: bumped to near-white — if this still isn't visible
-      # the theme file is not being loaded at all.
-      textMuted = h p.base05;
-      syntaxComment = h p.base05;
+      # textMuted: #b4b4b4 matches the system theme's computed value.
+      # It is visible on the t14 panel while still reading as "dimmed".
+      textMuted = "#b4b4b4";
+      syntaxComment = "#b4b4b4";
 
-      # ── Backgrounds (dark, matching original opencode theme's subtle panels) ─
-      # base01 = 10% grey — used for panels/elements/menus
-      # Keep backgrounds dark; the fix is for BORDERS to be visible, not panels
-      # background: match system-theme behavior — let terminal bg show through
-      background = "#000000";
-      backgroundPanel = h p.base01;
-      backgroundElement = h p.base01;
-      backgroundMenu = h p.base01;
+      # ── Backgrounds ──────────────────────────────────────────────────
+      # background = "none" lets the terminal bg show through (matches
+      # system theme's transparent).  This is required for the input
+      # placeholder to be visible.
+      background = "none";
+      # DEBUG: bumped backgroundPanel/Element/Menu to #333333 to
+      # force contrast.  If the input box still shows no text, the
+      # placeholder is being rendered black-on-black by OpenCode.
+      backgroundPanel = "#333333";
+      backgroundElement = "#333333";
+      backgroundMenu = "#333333";
 
-      # ── Borders (the actual fix — these must be visible against dark bg) ─
-      # borderSubtle=base02  (#505050) — visible but not glaring
-      # border=base03        (#767676) — clearly visible
-      # borderActive=base04  (#a0a0a0) — very visible
+      # ── Borders (visible against dark bg) ────────────────────────────
       borderSubtle = h p.base02;
       border = h p.base03;
       borderActive = h p.base04;
@@ -62,7 +62,7 @@ in
       diffAddedBg = h p.base01;
       diffRemovedBg = h p.base01;
       diffContextBg = h p.base01;
-      diffLineNumber = h p.base05;
+      diffLineNumber = "#b4b4b4";
       diffAddedLineNumberBg = h p.base01;
       diffRemovedLineNumberBg = h p.base01;
 
