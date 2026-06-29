@@ -27,11 +27,12 @@
 # The omarchy HM module is imported FIRST so that any conflicting
 # definitions from t14/home/default.nix can be overridden via
 # lib.mkForce when needed.
-{ config
-, pkgs
-, lib
-, inputs
-, ...
+{
+  config,
+  pkgs,
+  lib,
+  inputs,
+  ...
 }:
 
 {
@@ -216,6 +217,14 @@
   # see modules/base/profiles/media.nix for the full VA-API stack notes
   # and modules/hardware/amd-laptop.nix for the verification recipe.
   xdg.configFile."mpv/mpv.conf".text = "hwdec=vaapi\n";
+
+  # Cycle VNC outputs during a wayvnc remote session so the viewer can
+  # switch between built-in and external monitors without touching t14.
+  # wayvncctl is provided by pkgs.wayvnc (installed via omarchy.wayvnc
+  # upstream module).  SUPER CTRL, R is unassigned in omarchy bindings.nix.
+  wayland.windowManager.hyprland.settings.bind = [
+    "SUPER CTRL, R, exec, wayvncctl output-cycle"
+  ];
 
   # Override copyScreensaverTxt: upstream runs it after writeBoundary but
   # before linkGeneration, so the home.file symlinks (logo.txt) don't exist
