@@ -116,7 +116,7 @@
   # The polkit rule in modules/base/polkit.nix allows wheel users to
   # run any action without password, but without the setuid bit the
   # pkexec binary fails with "pkexec must be setuid root".
-  security.wrappers.pkexec.enable = true;
+  security.wrappers.pkexec.enable = lib.mkForce true;
 
   # t14-specific keymap: latam (Chile) layout. modules/desktop/i18n.nix
   # uses "es" for compatibility with rog/thinkcentre; we force latam here.
