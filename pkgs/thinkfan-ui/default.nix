@@ -8,6 +8,7 @@
 , wrapQtAppsHook
 , python3
 , qtbase
+, hicolor-icon-theme
 , lm_sensors
 , thinkfan-ui-src
 ,
@@ -33,7 +34,9 @@ stdenv.mkDerivation {
   # qtbase must be in buildInputs so wrapQtAppsHook can resolve
   # `qtPluginPrefix` and set QT_PLUGIN_PATH for PyQt6 to discover the
   # xcb/wayland platform plugins.
-  buildInputs = [ qtbase ];
+  # hicolor-icon-theme provides share/icons/hicolor/index.theme so
+  # QIcon.fromTheme("thinkfan-ui") can resolve the SVG icon at runtime.
+  buildInputs = [ qtbase hicolor-icon-theme ];
 
   dontBuild = true;
 
