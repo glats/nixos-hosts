@@ -14,10 +14,11 @@
 # Since both modules also declare `window_padding_width`,
 # `repaint_delay`, `input_delay`, `sync_to_monitor`, and
 # `background_opacity` at `mkDefault`, we use `lib.mkForce`
-# inline on `background_opacity` so the nixos-hosts value
-# ("0.9") wins on every host. The other four keys happen to
-# match between omarchy-nix and nixos-hosts, so they merge
-# without conflict.
+# inline on `background_opacity` ("0.9") and `window_padding_width`
+# (0) so the nixos-hosts values win on every host. The other
+# three keys (`repaint_delay`, `input_delay`, `sync_to_monitor`)
+# happen to match between omarchy-nix and nixos-hosts, so they
+# merge without conflict.
 #
 # omarchy-nix's keybindings (`ctrl+insert` → copy,
 # `shift+insert` → paste) are additive to nixos-hosts's
@@ -58,10 +59,10 @@
       cursor_shape = "block";
       disable_ligatures = "never";
 
-      # Padding / delay / sync keys are also declared by
-      # omarchy-nix. Re-declared here so nixos-hosts's values win
-      # via later-import priority at the same mkDefault level.
-      window_padding_width = 0;
+      # Padding: lib.mkForce to override omarchy-nix's default (10→0).
+      # delay / sync keys also declared by omarchy-nix but values match,
+      # so they merge at equal mkDefault priority without conflict.
+      window_padding_width = lib.mkForce 0;
       repaint_delay = 10;
       input_delay = 3;
       sync_to_monitor = "yes";
