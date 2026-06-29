@@ -2,6 +2,7 @@
 {
   # Manage Ghostty configuration declaratively (Application Support)
   home.file."Library/Application Support/com.mitchellh.ghostty/config".text = ''
+    bold-color = bright
     theme = customColor
     font-family = "CaskaydiaCove Nerd Font"
     font-feature = "liga"
