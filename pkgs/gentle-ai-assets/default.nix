@@ -3,6 +3,7 @@
 , vanilla
 , extraSkills ? null
 , extraCommands ? null
+, extraAssets ? null
 ,
 }:
 
@@ -53,6 +54,19 @@ stdenvNoCC.mkDerivation {
           cp "$cmd_file" "$TEMP_DIR/opencode/commands/"
           chmod u+w "$TEMP_DIR/opencode/commands/$cmd_name"
         done
+      ''
+    } true; then
+      :
+    fi
+
+    # Overlay local extra assets (arbitrary file overrides at any depth).
+    # extraAssets directory structure MUST mirror $out/share/gentle-ai/ —
+    # any file path present in extraAssets overwrites the vanilla copy.
+    if ${
+      lib.optionalString (extraAssets != null) ''
+        if [ -d "${extraAssets}" ]; then
+          cp -r ${extraAssets}/. $TEMP_DIR/
+        fi
       ''
     } true; then
       :

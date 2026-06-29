@@ -20,6 +20,11 @@ let
   # Cross-platform shared inputs
   sharedOpencodePaths = {
     extraSkills = ./../shared/opencode/skills;
+    # Arbitrary file overrides layered on top of vanilla gentle-ai assets.
+    # Directory structure MUST mirror $out/share/gentle-ai/ (e.g.
+    # shared/opencode/assets/opencode/sdd-orchestrator.md overwrites
+    # $out/share/gentle-ai/opencode/sdd-orchestrator.md).
+    extraAssets = ./../shared/opencode/assets;
     # extraCommands: no local command forks; commands come from upstream
     # gentle-ai-src and caveman-src via gentle-ai-assets-vanilla.
   };
@@ -34,7 +39,7 @@ let
     };
     gentle-ai-assets = linuxPkgs.callPackage ../pkgs/gentle-ai-assets/default.nix {
       vanilla = linuxPackages.gentle-ai-assets-vanilla;
-      inherit (sharedOpencodePaths) extraSkills;
+      inherit (sharedOpencodePaths) extraSkills extraAssets;
     };
     engram-assets-vanilla = linuxPkgs.callPackage ../pkgs/engram-assets/vanilla.nix {
       engram-src = inputs.engram-src;
@@ -64,7 +69,7 @@ let
     };
     gentle-ai-assets = darwinPkgs.callPackage ../pkgs/gentle-ai-assets/default.nix {
       vanilla = darwinPackages.gentle-ai-assets-vanilla;
-      inherit (sharedOpencodePaths) extraSkills;
+      inherit (sharedOpencodePaths) extraSkills extraAssets;
     };
     engram-assets-vanilla = darwinPkgs.callPackage ../pkgs/engram-assets/vanilla.nix {
       engram-src = inputs.engram-src;
