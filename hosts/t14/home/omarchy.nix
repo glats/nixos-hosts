@@ -183,15 +183,15 @@
   # /proc/acpi/ibm/fan. Mutually exclusive with `services.thinkfan`.
   home.packages = with pkgs; [ thinkfan-ui ];
 
-  # Autostart the GUI on Hyprland login so the system-tray icon lands in
-  # the waybar tray. XDG Autostart is respected by Hyprland via its
-  # xdg-autostart hook (enabled by default). thinkfan-ui defaults to
-  # tray mode (use --no-tray to disable).
+  # Autostart to tray only on Hyprland login — `--hide` starts the app
+  # minimized so the window doesn't pop up, only the system-tray icon
+  # appears in waybar. XDG Autostart is respected by Hyprland via its
+  # xdg-autostart hook (enabled by default).
   xdg.configFile."autostart/thinkfan-ui.desktop".text = ''
     [Desktop Entry]
     Name=ThinkFan UI
     Comment=ThinkPad Fan Control GUI
-    Exec=thinkfan-ui
+    Exec=thinkfan-ui --hide
     Icon=thinkfan-ui
     Terminal=false
     Type=Application
