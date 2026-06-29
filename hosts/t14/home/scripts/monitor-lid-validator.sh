@@ -33,7 +33,13 @@ move_to_y0() {
   hyprctl keyword monitor "desc:AOC 2470W GGZM3HA438259,1920x1080@60,3000x0,1"
 }
 
-persist() { printf '$ENABLE_LAPTOP = %s\n' "$1" > "$SETTINGS"; }
+persist() {
+  if [ "$1" = "1" ]; then
+    printf '$ENABLE_LAPTOP = 1\n' > "$SETTINGS"
+  else
+    printf '$ENABLE_LAPTOP =\n' > "$SETTINGS"
+  fi
+}
 
 # ----- main ------------------------------------------------------------
 

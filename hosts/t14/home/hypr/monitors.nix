@@ -69,7 +69,7 @@ in
 
     # Lid close — persist + runtime disable eDP-1, move externals to y=0.
     # Hyprland emits "switch:on:Lid Switch" (capital L) — regex must match.
-    bindl = , switch:on:.*[Ll]id.*, exec, printf '$ENABLE_LAPTOP = 0\n' > $HOME/.config/hypr/settings.conf && hyprctl keyword monitor "eDP-1,disable" && hyprctl keyword monitor "desc:AOC 24P1W1 OTNQ4HA000101,1920x1080@60,0x0,1,transform,1" && hyprctl keyword monitor "desc:Lenovo Group Limited LEN G24-10 U5B4GWF1,1920x1080@60,1080x0,1" && hyprctl keyword monitor "desc:AOC 2470W GGZM3HA438259,1920x1080@60,3000x0,1"
+    bindl = , switch:on:.*[Ll]id.*, exec, printf '$ENABLE_LAPTOP =\n' > $HOME/.config/hypr/settings.conf && hyprctl keyword monitor "eDP-1,disable" && hyprctl keyword monitor "desc:AOC 24P1W1 OTNQ4HA000101,1920x1080@60,0x0,1,transform,1" && hyprctl keyword monitor "desc:Lenovo Group Limited LEN G24-10 U5B4GWF1,1920x1080@60,1080x0,1" && hyprctl keyword monitor "desc:AOC 2470W GGZM3HA438259,1920x1080@60,3000x0,1"
     # Lid open — persist + runtime enable eDP-1, move externals to y=420.
     bindl = , switch:off:.*[Ll]id.*, exec, printf '$ENABLE_LAPTOP = 1\n' > $HOME/.config/hypr/settings.conf && hyprctl keyword monitor "eDP-1,preferred,4920x420,1" && hyprctl keyword monitor "desc:AOC 24P1W1 OTNQ4HA000101,1920x1080@60,0x420,1,transform,1" && hyprctl keyword monitor "desc:Lenovo Group Limited LEN G24-10 U5B4GWF1,1920x1080@60,1080x420,1" && hyprctl keyword monitor "desc:AOC 2470W GGZM3HA438259,1920x1080@60,3000x420,1"
   '';
