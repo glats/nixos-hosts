@@ -177,6 +177,28 @@
   # GTK4 espera el string "dark" — sin esto libadwaita ignora el dark mode.
   gtk.gtk4.extraConfig."gtk-interface-color-scheme" = "dark";
 
+  # thinkfan-ui — PyQt6 GUI for manual ThinkPad fan control. Pairs with
+  # `boot.extraModprobeConfig = "options thinkpad_acpi fan_control=1"`
+  # in hosts/t14/default.nix. The two together enable writes to
+  # /proc/acpi/ibm/fan. Mutually exclusive with `services.thinkfan`.
+  home.packages = with pkgs; [ thinkfan-ui ];
+
+  # Autostart the GUI on Hyprland login so the system-tray icon lands in
+  # the waybar tray. XDG Autostart is respected by Hyprland via its
+  # xdg-autostart hook (enabled by default). thinkfan-ui defaults to
+  # tray mode (use --no-tray to disable).
+  xdg.configFile."autostart/thinkfan-ui.desktop".text = ''
+    [Desktop Entry]
+    Name=ThinkFan UI
+    Comment=ThinkPad Fan Control GUI
+    Exec=thinkfan-ui
+    Icon=thinkfan-ui
+    Terminal=false
+    Type=Application
+    Categories=System;Monitor;
+    X-GNOME-Autostart-enabled=true
+  '';
+
   # Override copyScreensaverTxt: upstream runs it after writeBoundary but
   # before linkGeneration, so the home.file symlinks (logo.txt) don't exist
   # yet on first activation. Run after linkGeneration instead.

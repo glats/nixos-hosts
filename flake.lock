@@ -1162,7 +1162,8 @@
         "omarchy-nix": "omarchy-nix",
         "pipewire-module-xrdp-src": "pipewire-module-xrdp-src",
         "sops-nix": "sops-nix",
-        "sub-agent-statusline": "sub-agent-statusline"
+        "sub-agent-statusline": "sub-agent-statusline",
+        "thinkfan-ui-src": "thinkfan-ui-src"
       }
     },
     "sops-nix": {
@@ -1259,6 +1260,22 @@
       "original": {
         "owner": "nix-systems",
         "repo": "default-linux",
+        "type": "github"
+      }
+    },
+    "thinkfan-ui-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1760570195,
+        "narHash": "sha256-VNh/9oO88FG/2ZUVQj8d6HeMp5J3YEv1Kb/2PvnP8Bk=",
+        "owner": "zocker-160",
+        "repo": "thinkfan-ui",
+        "rev": "35c86b322e6b5869a56b043a51a06c62c420b07d",
+        "type": "github"
+      },
+      "original": {
+        "owner": "zocker-160",
+        "repo": "thinkfan-ui",
         "type": "github"
       }
     },

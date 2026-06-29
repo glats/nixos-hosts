@@ -47,6 +47,11 @@ let
     opencode-npm-packages = linuxPkgs.callPackage ../pkgs/opencode-npm-packages { };
     opencode = linuxPkgs.callPackage ../pkgs/opencode { };
     openfang = linuxPkgs.callPackage ../pkgs/openfang { };
+    thinkfan-ui = linuxPkgs.callPackage ../pkgs/thinkfan-ui {
+      thinkfan-ui-src = inputs.thinkfan-ui-src;
+      wrapQtAppsHook = linuxPkgs.qt6.wrapQtAppsHook;
+      qtbase = linuxPkgs.qt6.qtbase;
+    };
   };
 
   darwinPackages = rec {
