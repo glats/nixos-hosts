@@ -8,8 +8,6 @@
 , wrapQtAppsHook
 , python3
 , qtbase
-, hicolor-icon-theme
-, gtk3
 , lm_sensors
 , thinkfan-ui-src
 ,
@@ -17,8 +15,6 @@
 
 let
   # Build a Python interpreter with PyQt6 baked into site-packages.
-  # This is the standard nixpkgs pattern for Python GUI apps and avoids
-  # the need to set PYTHONPATH at runtime.
   pythonEnv = python3.withPackages (ps: [ ps.pyqt6 ]);
 in
 stdenv.mkDerivation {
@@ -30,16 +26,9 @@ stdenv.mkDerivation {
   nativeBuildInputs = [
     makeWrapper
     wrapQtAppsHook
-    gtk3  # for gtk-update-icon-cache
   ];
 
-  # qtbase must be in buildInputs so wrapQtAppsHook can resolve
-  # `qtPluginPrefix` and set QT_PLUGIN_PATH for PyQt6 to discover the
-  # xcb/wayland platform plugins.
-  # hicolor-icon-theme is present so we can copy its index.theme into our
-  # $out/share/icons/hicolor — QIcon.fromTheme() needs the index.theme and
-  # the SVG file in the same directory tree.
-  buildInputs = [ qtbase hicolor-icon-theme ];
+  buildInputs = [ qtbase ];
 
   dontBuild = true;
 
@@ -50,25 +39,29 @@ stdenv.mkDerivation {
     mkdir -p $out/share/thinkfan-ui
     cp -r src/* $out/share/thinkfan-ui/
 
-    # Desktop file (from upstream linux_packaging/)
-    install -Dm644 linux_packaging/thinkfan-ui.desktop \
-      $out/share/applications/thinkfan-ui.desktop
-
-    # SVG icon (from upstream linux_packaging/, installed into hicolor theme
-    # so Freedesktop icon lookup finds it without any theme-specific config).
-    # We also copy the hicolor index.theme into our $out so QIcon.fromTheme()
-    # finds everything in a single directory tree — Qt resolves icons only
-    # within the directory where it first finds the index.theme file.
-    mkdir -p $out/share/icons/hicolor/scalable/apps
-    cp ${hicolor-icon-theme}/share/icons/hicolor/index.theme \
-      $out/share/icons/hicolor/
+    # Install SVG icon for desktop file and tray patching
     install -Dm644 linux_packaging/thinkfan-ui.svg \
-      $out/share/icons/hicolor/scalable/apps/thinkfan-ui.svg
+      $out/share/icons/thinkfan-ui.svg
 
-    # Wrapper: replace the upstream /opt/thinkfan-ui shim with a Nix-relative
-    # launcher. pythonEnv has PyQt6 baked in. PATH gets `sensors` from
-    # lm_sensors (CPU temp reading) and `pkexec` from polkit (already in the
-    # default PATH on NixOS, added here for explicitness).
+    # Patch systray to use a direct icon path instead of QIcon.fromTheme().
+    # QIcon.fromTheme("thinkfan-ui") relies on the hicolor icon theme
+    # discovery mechanism, which is fragile on NixOS (multiple store paths,
+    # missing caches, missing index.theme in the right directory).
+    # A direct QIcon(path) bypasses the entire theme system.
+    substituteInPlace $out/share/thinkfan-ui/ui/systray.py \
+      --replace-fail \
+        'QIcon.fromTheme("thinkfan-ui")' \
+        'QIcon("'"$out"'/share/icons/thinkfan-ui.svg")'
+
+    # Desktop file (from upstream linux_packaging/).  Use the direct icon
+    # path so the .desktop file works without an icon theme.
+    mkdir -p $out/share/applications
+    sed "s|Icon=thinkfan-ui|Icon=$out/share/icons/thinkfan-ui.svg|" \
+      linux_packaging/thinkfan-ui.desktop \
+      > $out/share/applications/thinkfan-ui.desktop
+
+    # Wrapper: pythonEnv has PyQt6 baked in. PATH gets `sensors` from
+    # lm_sensors (CPU temp reading).
     mkdir -p $out/bin
     makeWrapper ${pythonEnv}/bin/python3 $out/bin/thinkfan-ui \
       --set PYTHONPATH "$out/share/thinkfan-ui" \
@@ -77,13 +70,6 @@ stdenv.mkDerivation {
       --add-flags "$out/share/thinkfan-ui/main.py"
 
     runHook postInstall
-  '';
-
-  postInstall = ''
-    # Generate the hicolor icon theme cache so QIcon.fromTheme() can
-    # find our thinkfan-ui.svg without scanning the filesystem.
-    # Qt 5.7+ reads GTK's icon-theme.cache for fast icon lookup.
-    gtk-update-icon-cache $out/share/icons/hicolor
   '';
 
   meta = with lib; {

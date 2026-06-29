@@ -192,7 +192,7 @@
     Name=ThinkFan UI
     Comment=ThinkPad Fan Control GUI
     Exec=thinkfan-ui --hide
-    Icon=thinkfan-ui
+    Icon=${pkgs.thinkfan-ui}/share/icons/thinkfan-ui.svg
     Terminal=false
     Type=Application
     Categories=System;Monitor;
