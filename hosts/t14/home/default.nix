@@ -57,7 +57,10 @@
     Service = {
       Type = "oneshot";
       ExecStart = "${config.home.homeDirectory}/.local/bin/monitor-lid-validator.sh";
-      Environment = "PATH=${config.home.homeDirectory}/.local/bin:/run/current-system/sw/bin";
+      Environment = [
+        "PATH=${config.home.homeDirectory}/.local/bin:/run/current-system/sw/bin"
+        "XDG_RUNTIME_DIR=%t"
+      ];
     };
     Install.WantedBy = [ "graphical-session.target" ];
   };
