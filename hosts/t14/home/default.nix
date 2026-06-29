@@ -57,6 +57,7 @@
     Service = {
       Type = "oneshot";
       ExecStart = "${config.home.homeDirectory}/.local/bin/monitor-lid-validator.sh";
+      Environment = "PATH=${config.home.homeDirectory}/.local/bin:/run/current-system/sw/bin";
     };
     Install.WantedBy = [ "graphical-session.target" ];
   };
