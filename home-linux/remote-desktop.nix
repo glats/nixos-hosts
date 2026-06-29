@@ -155,10 +155,10 @@ let
 
   # Desktop entry text (common shape)
   mkDesktop =
-    { name
-    , comment
-    , exec
-    ,
+    {
+      name,
+      comment,
+      exec,
     }:
     ''
       [Desktop Entry]
@@ -291,6 +291,17 @@ in
         comment = "VNC connection to 172.16.0.109:5900";
         exec = "${pkgs.remmina}/bin/remmina -c /home/glats/.local/share/remmina/vnc-t14.remmina";
       };
+    };
+
+    # Shell launcher so `connect-wayvnc-t14` works from any terminal.
+    # The .desktop entry above serves the app menu; this wraps the same
+    # Remmina profile for keyboard-driven access.
+    ".local/bin/connect-wayvnc-t14" = {
+      executable = true;
+      text = ''
+        #!/usr/bin/env bash
+        exec remmina -c /home/glats/.local/share/remmina/vnc-t14.remmina
+      '';
     };
     ".local/share/applications/remote-mact2.desktop" = {
       force = true;
