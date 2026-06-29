@@ -46,6 +46,13 @@ in
     # omarchy's prefix C-Space, status-position top, base16-overriding
     # status colours, and the rest of its config/tmux/tmux.conf.
     # Result on all Linux hosts: shared base16 theme (clipboard via OSC 52).
-    extraConfig = lib.mkForce sharedExtraConfig;
+    #
+    # Continuum's run-shell below is repeated here deliberately: Home
+    # Manager places plugin run-shells BEFORE extraConfig, but continuum
+    # needs to modify status-right AFTER extraConfig sets it.  Running it
+    # again at the end fixes the save interpolation that gets overwritten.
+    extraConfig = lib.mkForce (sharedExtraConfig + ''
+      run-shell ${pkgs.tmuxPlugins.continuum}/share/tmux-plugins/continuum/continuum.tmux
+    '');
   };
 }
