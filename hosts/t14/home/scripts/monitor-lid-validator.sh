@@ -11,6 +11,12 @@
 
 SETTINGS="$HOME/.config/hypr/settings.conf"
 
+# ----- ensure hyprctl can find the compositor ---------------------------
+
+if [ -z "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; then
+  export HYPRLAND_INSTANCE_SIGNATURE=$(ls -t "$XDG_RUNTIME_DIR/hypr/" 2>/dev/null | head -1)
+fi
+
 # ----- detect state ----------------------------------------------------
 
 LID_STATE=$(grep -o 'open\|closed' /proc/acpi/button/lid/LID*/state 2>/dev/null || echo "open")
