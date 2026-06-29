@@ -196,6 +196,12 @@
         "desc:AOC 2470W GGZM3HA438259,1920x1080@60,3000x420,1"
       ];
       cursor.theme = "Bibata-Modern-Ice";
+
+      # Pre-login VNC: wayvnc runs inside the greeter Hyprland session
+      # (on the same port 5900 as the user-session wayvnc). Remmina
+      # auto-reconnects across the ~1s handoff when the user logs in.
+      # Defaults for address/port/enable_pam come from omarchy-nix.
+      wayvnc.enable = true;
     };
   };
 
