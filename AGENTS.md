@@ -47,6 +47,7 @@ secrets/                         # sops-nix (encrypted — never edit directly)
 - ALWAYS: Run `nix flake check --no-build` before finishing
 - ALWAYS: Run `format-nix` after editing .nix files
 - ALWAYS: Ask before running `nixos-build switch` — builds can take a long time
+- ALWAYS: If a command is not installed, run `nix-shell -p <pkg>`
 - ASK: Before editing `hardware-configuration.nix` (auto-generated)
 - NEVER: Edit files in `secrets/` directly (use `sops secrets/secrets.yaml`)
 
