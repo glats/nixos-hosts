@@ -96,7 +96,7 @@ let
         };
         ".config/${runtimeCfg.dir}/sdd-orchestrator.md" = {
           force = true;
-          source = "${pkgs.gentle-ai-assets-vanilla}/share/gentle-ai/opencode/sdd-orchestrator.md";
+          source = "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/sdd-orchestrator.md";
         };
         # skills/ and commands/ are managed entirely by makeOpencodeConfigMutable activation
         # (not via home.file) because HM cannot overwrite existing real directories with symlinks
