@@ -74,6 +74,6 @@ in
     bindl = , switch:off:.*[Ll]id.*, exec, printf '$ENABLE_LAPTOP = 1\n' > $HOME/.config/hypr/settings.conf && hyprctl keyword monitor "eDP-1,preferred,4920x420,1" && hyprctl keyword monitor "desc:AOC 24P1W1 OTNQ4HA000101,1920x1080@60,0x420,1,transform,1" && hyprctl keyword monitor "desc:Lenovo Group Limited LEN G24-10 U5B4GWF1,1920x1080@60,1080x420,1" && hyprctl keyword monitor "desc:AOC 2470W GGZM3HA438259,1920x1080@60,3000x420,1"
 
     # Startup lid validator — oneshot, no uwsm wrapping needed.
-    exec-once = $HOME/.local/bin/monitor-lid-validator.sh
+    exec-once = /home/glats/.local/bin/monitor-lid-validator.sh
   '';
 }
