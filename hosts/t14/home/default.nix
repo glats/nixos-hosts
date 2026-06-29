@@ -36,6 +36,15 @@
     fi
   '';
 
+  # Ensure DRM devices are fully probed before Hyprland starts.
+  # Without this, /sys/class/drm may not list external monitors yet
+  # at exec-once time, causing omarchy-hw-external-monitors to return
+  # false negatives.  The - prefix makes it non-fatal (fail-open).
+  xdg.configFile."systemd/user/wayland-wm@hyprland.desktop.service.d/udev-settle.conf".text = ''
+    [Service]
+    ExecStartPre=-/run/current-system/sw/bin/udevadm settle --timeout=10
+  '';
+
   home.file = {
 
     # Keyboard layout toggle (es <-> latam)
