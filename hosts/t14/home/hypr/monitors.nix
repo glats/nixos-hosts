@@ -73,10 +73,7 @@ in
     # Lid open — persist + runtime enable eDP-1, move externals to y=420.
     bindl = , switch:off:.*[Ll]id.*, exec, printf '$ENABLE_LAPTOP = 1\n' > $HOME/.config/hypr/settings.conf && hyprctl keyword monitor "eDP-1,preferred,4920x420,1" && hyprctl keyword monitor "desc:AOC 24P1W1 OTNQ4HA000101,1920x1080@60,0x420,1,transform,1" && hyprctl keyword monitor "desc:Lenovo Group Limited LEN G24-10 U5B4GWF1,1920x1080@60,1080x420,1" && hyprctl keyword monitor "desc:AOC 2470W GGZM3HA438259,1920x1080@60,3000x420,1"
 
-    # Startup state validator — lid-state driven only (no DRM check).
-    # External monitor detection via /sys/class/drm races with EDID
-    # probing at boot; udevadm settle only covers device creation, not
-    # connector state.  Lid state is always available and unambiguous.
-    exec-once = bash -c 's=$(grep -o "[01]" $HOME/.config/hypr/settings.conf 2>/dev/null); grep -q closed /proc/acpi/button/lid/LID*/state 2>/dev/null && l=0 || l=1; if [ "$l" = 1 ]; then [ "$s" != 1 ] && echo "\$ENABLE_LAPTOP = 1" > "$HOME/.config/hypr/settings.conf" && hyprctl keyword monitor "eDP-1,preferred,4920x420,1" && hyprctl keyword monitor "desc:AOC 24P1W1 OTNQ4HA000101,1920x1080@60,0x420,1,transform,1" && hyprctl keyword monitor "desc:Lenovo Group Limited LEN G24-10 U5B4GWF1,1920x1080@60,1080x420,1" && hyprctl keyword monitor "desc:AOC 2470W GGZM3HA438259,1920x1080@60,3000x420,1"; else [ "$s" != 0 ] && echo "\$ENABLE_LAPTOP = 0" > "$HOME/.config/hypr/settings.conf" && hyprctl keyword monitor "eDP-1,disable" && hyprctl keyword monitor "desc:AOC 24P1W1 OTNQ4HA000101,1920x1080@60,0x0,1,transform,1" && hyprctl keyword monitor "desc:Lenovo Group Limited LEN G24-10 U5B4GWF1,1920x1080@60,1080x0,1" && hyprctl keyword monitor "desc:AOC 2470W GGZM3HA438259,1920x1080@60,3000x0,1"; fi'
+    # Startup lid validator — delegates to ~/.local/bin/monitor-lid-validator.sh
+    exec-once = uwsm-app -- monitor-lid-validator.sh
   '';
 }
