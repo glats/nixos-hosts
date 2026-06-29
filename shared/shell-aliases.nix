@@ -100,8 +100,8 @@
       ZSH_HIGHLIGHT_STYLES[commandseparator]="fg=#${config.colorScheme.palette.base03}"
       ZSH_HIGHLIGHT_STYLES[globbing]="fg=#${config.colorScheme.palette.base0D}"
       ZSH_HIGHLIGHT_STYLES[history-expansion]="fg=#${config.colorScheme.palette.base0D}"
-      ZSH_HIGHLIGHT_STYLES[single-hyphen-option]="fg=#${config.colorScheme.palette.base04}"
-      ZSH_HIGHLIGHT_STYLES[double-hyphen-option]="fg=#${config.colorScheme.palette.base04}"
+      ZSH_HIGHLIGHT_STYLES[single-hyphen-option]="fg=#${config.colorScheme.palette.base09}"
+      ZSH_HIGHLIGHT_STYLES[double-hyphen-option]="fg=#${config.colorScheme.palette.base09}"
       ZSH_HIGHLIGHT_STYLES[redirection]="fg=#${config.colorScheme.palette.base09}"
     '';
   };
