@@ -67,8 +67,7 @@
 
       # tmux-continuum: continuous saving + auto-restore
       set -g @continuum-save-interval '15'
-      set -g @continuum-restore-on-startup on
-      set -g @continuum-save-on-close on
+      set -g @continuum-restore on
 
       # Universal bindings
       unbind [
