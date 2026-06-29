@@ -30,6 +30,13 @@
       set -g mouse on
       set -g status-position bottom
 
+      # 256-color capable default terminal and RGB terminal-overrides.
+      # Without this, tmux falls back to 8-color "screen" and approximates
+      # hex colors to the nearest ANSI palette entry — causing wrong colors
+      # when SSHing from terminals like Ghostty (xterm-ghostty) or Kitty.
+      set -g default-terminal "screen-256color"
+      set -as terminal-overrides ",*:Tc"
+
       # base16 theme (community standard: base00 bg with blue accents)
       set -g status-style fg=#${config.colorScheme.palette.base05},bg=#${config.colorScheme.palette.base00}
       setw -g window-status-style fg=#${config.colorScheme.palette.base05},bg=#${config.colorScheme.palette.base00}
