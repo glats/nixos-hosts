@@ -173,8 +173,16 @@
     # login flow instead of the default tuigreet.
     greeter = {
       type = "regreet";
-      keyboard.layouts = [ "es" "latam" ];
-      keyboard.options = "grp:alt_shift_toggle,compose:caps";
+      keyboard = {
+        layouts = [ "es" "latam" ];
+        options = "grp:alt_shift_toggle,compose:caps";
+      };
+      monitors = [
+        # Lenovo GSync first — hosts ReGreet when docked
+        "desc:Lenovo Group Limited LEN G24-10 U5B4GWF1,1920x1080@60,1080x420,1"
+        "desc:AOC 24P1W1 OTNQ4HA000101,1920x1080@60,0x0,1,transform,1"
+        "desc:AOC 2470W GGZM3HA438259,1920x1080@60,3000x420,1"
+      ];
     };
   };
 
