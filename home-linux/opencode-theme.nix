@@ -30,20 +30,24 @@ in
 
       # ── Text ─────────────────────────────────────────────────────────
       text = h p.base05;
-      textMuted = h p.base04;
+      # DEBUG: bumped to near-white — if this still isn't visible
+      # the theme file is not being loaded at all.
+      textMuted = h p.base05;
+      syntaxComment = h p.base05;
 
-      # ── Backgrounds (visible greys from the palette) ─────────────────
-      # base01 = 10% grey — used for panels (was grays[2]=#111111)
-      # base02 = 31% grey — used for elements/menus (was grays[3]=#191919)
-      background = h p.base00;
+      # ── Backgrounds (dark, matching original opencode theme's subtle panels) ─
+      # base01 = 10% grey — used for panels/elements/menus
+      # Keep backgrounds dark; the fix is for BORDERS to be visible, not panels
+      # background: match system-theme behavior — let terminal bg show through
+      background = "#000000";
       backgroundPanel = h p.base01;
-      backgroundElement = h p.base02;
-      backgroundMenu = h p.base02;
+      backgroundElement = h p.base01;
+      backgroundMenu = h p.base01;
 
-      # ── Borders (much lighter than the system theme's computed greys) ─
-      # borderSubtle=base02  replaced grays[6]=#333333
-      # border=base03        replaced grays[7]=#3b3b3b
-      # borderActive=base04  replaced grays[8]=#444444
+      # ── Borders (the actual fix — these must be visible against dark bg) ─
+      # borderSubtle=base02  (#505050) — visible but not glaring
+      # border=base03        (#767676) — clearly visible
+      # borderActive=base04  (#a0a0a0) — very visible
       borderSubtle = h p.base02;
       border = h p.base03;
       borderActive = h p.base04;
@@ -58,7 +62,7 @@ in
       diffAddedBg = h p.base01;
       diffRemovedBg = h p.base01;
       diffContextBg = h p.base01;
-      diffLineNumber = h p.base04;
+      diffLineNumber = h p.base05;
       diffAddedLineNumberBg = h p.base01;
       diffRemovedLineNumberBg = h p.base01;
 
@@ -79,7 +83,6 @@ in
       markdownCodeBlock = h p.base05;
 
       # ── Syntax ───────────────────────────────────────────────────────
-      syntaxComment = h p.base03;
       syntaxKeyword = h p.base0E;
       syntaxFunction = h p.base0D;
       syntaxVariable = h p.base05;

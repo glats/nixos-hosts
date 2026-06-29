@@ -116,7 +116,7 @@ let
           force = true;
           text = builtins.toJSON {
             "$schema" = "https://opencode.ai/tui.json";
-            theme = "system";
+            theme = "glats";
             plugin = lib.attrNames tuiPluginsToInstall;
           };
         };
@@ -287,6 +287,7 @@ in
     ./opencode/mcps.nix
     ./opencode/permissions.nix
     ./opencode/plugins.nix
+    ../home-linux/opencode-theme.nix
   ];
 
   options.home.opencode = {
