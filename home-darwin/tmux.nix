@@ -51,13 +51,6 @@
     escapeTime = 10;
 
     extraConfig = ''
-      # Use a 256-color capable default and ensure terminals that advertise
-      # a custom name (like Ghostty's "xterm-ghostty") are treated like xterm
-      # so tmux enables modern features (SGR mouse / 1006). This fixes mouse
-      # events when the terminal reports a non-standard TERM name.
-      set -g default-terminal "screen-256color"
-      set -as terminal-overrides ',xterm-ghostty:XT'
-
       # macOS clipboard integration via OSC 52 (set-clipboard already set in shared/tmux.nix)
       bind -T copy-mode-vi v send -X begin-selection
 

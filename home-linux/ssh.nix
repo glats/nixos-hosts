@@ -15,9 +15,6 @@ in
         User = "glats";
         IdentityFile = "${sshDir}/oneplus5";
         IdentitiesOnly = true;
-        SetEnv = {
-          TERM = "xterm-256color";
-        };
       };
 
       "172.16.0.12" = {
@@ -25,9 +22,6 @@ in
         User = "glats";
         IdentityFile = "${sshDir}/oneplus5";
         IdentitiesOnly = true;
-        SetEnv = {
-          TERM = "xterm-256color";
-        };
       };
 
       "thinkcentre.local" = {
@@ -35,9 +29,6 @@ in
         User = "glats";
         IdentityFile = "${sshDir}/thinkcentre";
         IdentitiesOnly = true;
-        SetEnv = {
-          TERM = "xterm-256color";
-        };
       };
 
       "mact2.local" = {
@@ -45,9 +36,6 @@ in
         User = "jcuzmar";
         IdentityFile = "${sshDir}/mact2";
         IdentitiesOnly = true;
-        SetEnv = {
-          TERM = "xterm-256color";
-        };
       };
 
       "rog.local" = {
@@ -55,18 +43,12 @@ in
         User = "glats";
         IdentityFile = "${sshDir}/rog";
         IdentitiesOnly = true;
-        SetEnv = {
-          TERM = "xterm-256color";
-        };
       };
       "172.16.0.10" = {
         HostName = "172.16.0.10";
         User = "glats";
         IdentityFile = "${sshDir}/t14";
         IdentitiesOnly = true;
-        SetEnv = {
-          TERM = "xterm-256color";
-        };
       };
 
       "t14.local" = {
@@ -74,9 +56,6 @@ in
         User = "glats";
         IdentityFile = "${sshDir}/t14";
         IdentitiesOnly = true;
-        SetEnv = {
-          TERM = "xterm-256color";
-        };
       };
     };
   };
