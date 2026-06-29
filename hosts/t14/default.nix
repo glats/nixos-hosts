@@ -103,6 +103,14 @@
   # because the kernel can't mount the XFS root filesystem.
   boot.initrd.supportedFilesystems = [ "xfs" ];
 
+  # Enable manual fan control for thinkfan-ui (PyQt6 GUI). The kernel
+  # `thinkpad_acpi` module exposes the fan interface under
+  # /proc/acpi/ibm/fan, but only when `fan_control=1` is set. thinkfan-ui
+  # (installed via home.packages in omarchy.nix) is the sole writer — the
+  # `services.thinkfan` NixOS module must NOT be enabled alongside it
+  # (they share the same write target and would race).
+  boot.extraModprobeConfig = "options thinkpad_acpi fan_control=1";
+
   # t14-specific keymap: latam (Chile) layout. modules/desktop/i18n.nix
   # uses "es" for compatibility with rog/thinkcentre; we force latam here.
   services.xserver.xkb = {

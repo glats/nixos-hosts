@@ -69,6 +69,13 @@
       flake = false;
     };
 
+    # thinkfan-ui — PyQt6 GUI for ThinkPad fan control
+    # (writes to /proc/acpi/ibm/fan; mutually exclusive with services.thinkfan)
+    thinkfan-ui-src = {
+      url = "github:zocker-160/thinkfan-ui";
+      flake = false;
+    };
+
     # --- macOS-only inputs ---
     nix-darwin = {
       url = "github:nix-darwin/nix-darwin/master";

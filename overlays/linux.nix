@@ -27,6 +27,11 @@ final: prev: {
   pipewire-module-xrdp = final.callPackage ../pkgs/pipewire-module-xrdp {
     pipewire-module-xrdp-src = inputs.pipewire-module-xrdp-src;
   };
+  thinkfan-ui = final.callPackage ../pkgs/thinkfan-ui {
+    thinkfan-ui-src = inputs.thinkfan-ui-src;
+    wrapQtAppsHook = final.qt6.wrapQtAppsHook;
+    qtbase = final.qt6.qtbase;
+  };
 
   # linuxPackages_zen is used as-is from nixpkgs (pinned via flake.lock).
   # The kernel produces vmlinuz instead of bzImage on 7.x (nixpkgs#521113).
