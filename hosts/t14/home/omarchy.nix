@@ -27,11 +27,12 @@
 # The omarchy HM module is imported FIRST so that any conflicting
 # definitions from t14/home/default.nix can be overridden via
 # lib.mkForce when needed.
-{ config
-, pkgs
-, lib
-, inputs
-, ...
+{
+  config,
+  pkgs,
+  lib,
+  inputs,
+  ...
 }:
 
 {
@@ -119,6 +120,17 @@
   # backgrounds (via SUPER+CTRL+SPACE walker or omarchy-theme-bg-set)
   # persist across logins instead of advancing on every session start.
   omarchy.rotate_on_start = lib.mkForce false;
+
+  # fcitx5 IME — accented characters (dead keys, backtick) and
+  # multi-layout switching. The omarchy-nix module provides packages,
+  # env vars, config, and autostart; we just opt in.
+  # lib.mkForce required: the osConfig sync in
+  # omarchy-nix.homeManagerModules.default copies NixOS-level omarchy.*
+  # into HM at the same priority as user-defined options, which would
+  # conflict with the submodule's `enable = false` default when
+  # osConfig.omarchy doesn't carry fcitx5 itself. mkForce wins the
+  # priority tug-of-war. Same pattern as omarchy.rotate_on_start above.
+  omarchy.fcitx5.enable = lib.mkForce true;
 
   # Omarchy-nix's tmux module is "neutralized" by home-linux/tmux.nix
   # (imported above): it uses `lib.mkForce` on `programs.tmux.extraConfig`
