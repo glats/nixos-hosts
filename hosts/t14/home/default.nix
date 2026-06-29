@@ -6,7 +6,7 @@
 #   - Ghostty + kitty settings (imported directly from home-linux/ because
 #     t14's curated import list omits home-linux/shared-modules.nix)
 #   - mouse-wiggle launcher
-{ ... }:
+{ lib, ... }:
 
 {
   imports = [
@@ -24,16 +24,19 @@
   # ------------------------------------------------------------------
   # Helper scripts (accessible from PATH via omarchy's bin directory)
   # ------------------------------------------------------------------
+
+  # Seed settings.conf at activation time (NOT via home.file — that
+  # would make it a read-only Nix store symlink).  The file must be
+  # writable so the lid-switch bindl and exec-once validator can update
+  # $ENABLE_LAPTOP at runtime.
+  home.activation.seedHyprSettings = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    if [ ! -f "$HOME/.config/hypr/settings.conf" ]; then
+      mkdir -p "$HOME/.config/hypr"
+      printf '$ENABLE_LAPTOP = 1\n' > "$HOME/.config/hypr/settings.conf"
+    fi
+  '';
+
   home.file = {
-    # ------------------------------------------------------------------
-    # Hyprlang settings sourced at config parse time — persists lid
-    # state across sessions so eDP-1 is disabled from the start when
-    # the lid was closed at last logout.
-    # Updated by lid-switch bindl and manual toggle bindd.
-    # ------------------------------------------------------------------
-    ".config/hypr/settings.conf" = {
-      text = "$ENABLE_LAPTOP = 1";
-    };
 
     # Keyboard layout toggle (es <-> latam)
     ".local/share/omarchy/bin/kb-toggle.sh" = {

@@ -67,14 +67,14 @@ in
     monitor = desc:AOC 2470W GGZM3HA438259,1920x1080@60,3000x0,1
     # hyprlang endif
 
-    # Lid close — persist + runtime disable
-    bindl = , switch:on:.*lid.*, exec, printf '$ENABLE_LAPTOP = 0\n' > $HOME/.config/hypr/settings.conf && hyprctl keyword monitor "eDP-1, disable"
-    # Lid open — persist + runtime enable (eDP-1 at 4920x420 aligns with externals)
-    bindl = , switch:off:.*lid.*, exec, printf '$ENABLE_LAPTOP = 1\n' > $HOME/.config/hypr/settings.conf && hyprctl keyword monitor "eDP-1, preferred, 4920x420, 1"
+    # Lid close — persist + runtime disable eDP-1, move externals to y=0.
+    # Hyprland emits "switch:on:Lid Switch" (capital L) — regex must match.
+    bindl = , switch:on:.*[Ll]id.*, exec, printf '$ENABLE_LAPTOP = 0\n' > $HOME/.config/hypr/settings.conf && hyprctl keyword monitor "eDP-1,disable" && hyprctl keyword monitor "desc:AOC 24P1W1 OTNQ4HA000101,1920x1080@60,0x0,1,transform,1" && hyprctl keyword monitor "desc:Lenovo Group Limited LEN G24-10 U5B4GWF1,1920x1080@60,1080x0,1" && hyprctl keyword monitor "desc:AOC 2470W GGZM3HA438259,1920x1080@60,3000x0,1"
+    # Lid open — persist + runtime enable eDP-1, move externals to y=420.
+    bindl = , switch:off:.*[Ll]id.*, exec, printf '$ENABLE_LAPTOP = 1\n' > $HOME/.config/hypr/settings.conf && hyprctl keyword monitor "eDP-1,preferred,4920x420,1" && hyprctl keyword monitor "desc:AOC 24P1W1 OTNQ4HA000101,1920x1080@60,0x420,1,transform,1" && hyprctl keyword monitor "desc:Lenovo Group Limited LEN G24-10 U5B4GWF1,1920x1080@60,1080x420,1" && hyprctl keyword monitor "desc:AOC 2470W GGZM3HA438259,1920x1080@60,3000x420,1"
 
-    # Startup state validator — runs immediately (no sleep) to catch lid
-    # state changes between sessions.  Most of the time state matches and
-    # this is a fast no-op (one grep + one comparison).
-    exec-once = bash -c 's=$(grep -o "[01]" $HOME/.config/hypr/settings.conf 2>/dev/null); grep -q closed /proc/acpi/button/lid/LID*/state 2>/dev/null && l=0 || l=1; omarchy-hw-external-monitors && e=1 || e=0; if [ "$e" = 0 ]; then [ "$s" != 1 ] && echo "\$ENABLE_LAPTOP = 1" > "$HOME/.config/hypr/settings.conf" && hyprctl keyword monitor "eDP-1, preferred, 4920x420, 1"; elif [ "$l" = 1 ]; then [ "$s" != 1 ] && echo "\$ENABLE_LAPTOP = 1" > "$HOME/.config/hypr/settings.conf" && hyprctl keyword monitor "eDP-1, preferred, 4920x420, 1"; else [ "$s" != 0 ] && echo "\$ENABLE_LAPTOP = 0" > "$HOME/.config/hypr/settings.conf" && hyprctl keyword monitor "eDP-1, disable"; fi'
+    # Startup state validator — catches lid-state mismatches from
+    # previous session.  Repositions externals to match lid state.
+    exec-once = bash -c 's=$(grep -o "[01]" $HOME/.config/hypr/settings.conf 2>/dev/null); grep -q closed /proc/acpi/button/lid/LID*/state 2>/dev/null && l=0 || l=1; omarchy-hw-external-monitors && e=1 || e=0; if [ "$e" = 0 ]; then [ "$s" != 1 ] && echo "\$ENABLE_LAPTOP = 1" > "$HOME/.config/hypr/settings.conf" && hyprctl keyword monitor "eDP-1,preferred,4920x420,1" && hyprctl keyword monitor "desc:AOC 24P1W1 OTNQ4HA000101,1920x1080@60,0x420,1,transform,1" && hyprctl keyword monitor "desc:Lenovo Group Limited LEN G24-10 U5B4GWF1,1920x1080@60,1080x420,1" && hyprctl keyword monitor "desc:AOC 2470W GGZM3HA438259,1920x1080@60,3000x420,1"; elif [ "$l" = 1 ]; then [ "$s" != 1 ] && echo "\$ENABLE_LAPTOP = 1" > "$HOME/.config/hypr/settings.conf" && hyprctl keyword monitor "eDP-1,preferred,4920x420,1" && hyprctl keyword monitor "desc:AOC 24P1W1 OTNQ4HA000101,1920x1080@60,0x420,1,transform,1" && hyprctl keyword monitor "desc:Lenovo Group Limited LEN G24-10 U5B4GWF1,1920x1080@60,1080x420,1" && hyprctl keyword monitor "desc:AOC 2470W GGZM3HA438259,1920x1080@60,3000x420,1"; else [ "$s" != 0 ] && echo "\$ENABLE_LAPTOP = 0" > "$HOME/.config/hypr/settings.conf" && hyprctl keyword monitor "eDP-1,disable" && hyprctl keyword monitor "desc:AOC 24P1W1 OTNQ4HA000101,1920x1080@60,0x0,1,transform,1" && hyprctl keyword monitor "desc:Lenovo Group Limited LEN G24-10 U5B4GWF1,1920x1080@60,1080x0,1" && hyprctl keyword monitor "desc:AOC 2470W GGZM3HA438259,1920x1080@60,3000x0,1"; fi'
   '';
 }
