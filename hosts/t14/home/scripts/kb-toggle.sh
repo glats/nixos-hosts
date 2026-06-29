@@ -2,16 +2,26 @@
 # kb-toggle.sh — Toggle keyboard layout between ES and LatAm on t14.
 #
 # Usage: kb-toggle.sh
-# Reads current layout name from hyprctl and toggles to the other one.
-#
-# Uses the same hyprctl command as kb-layout.sh for consistency.
+# Finds the main keyboard device and toggles between
+# layout index 0 (es) and 1 (latam).
 
 set -euo pipefail
 
-CURRENT=$(hyprctl keyboard-layout 2>/dev/null | grep -oE 'keyboard: [a-z]+' | awk '{print $2}' || echo "es")
+# Find the main keyboard device (marked "main: yes")
+DEVICE=$(hyprctl devices 2>/dev/null | awk '
+  /Keyboard at/               { kb_main=0; dev="" }
+  /^[[:space:]]+[-a-z0-9]+$/  { dev=$0; sub(/^[[:space:]]+/, "", dev) }
+  /main: yes/ && dev != ""    { kb_main=1; print dev; exit }
+')
 
-case "$CURRENT" in
-  es)   hyprctl switchxkblayout keyboard group 1 2>/dev/null || true ;;
-  latam) hyprctl switchxkblayout keyboard group 0 2>/dev/null || true ;;
-  *)    hyprctl switchxkblayout keyboard group 1 2>/dev/null || true ;; # default: switch to latam
-esac
+# Get current layout index from that device
+CURRENT=$(hyprctl devices 2>/dev/null | awk -v dev="$DEVICE" '
+  /Keyboard at/               { in_block=0; block_dev="" }
+  /^[[:space:]]+[-a-z0-9]+$/  { block_dev=$0; sub(/^[[:space:]]+/, "", block_dev) }
+  block_dev == dev            { in_block=1 }
+  in_block && /active layout index/ { print $NF; exit }
+')
+
+# Toggle: 0 -> 1, 1 -> 0
+NEXT=$(( (${CURRENT:-0} + 1) % 2 ))
+hyprctl switchxkblayout "$DEVICE" "$NEXT" 2>/dev/null || true
