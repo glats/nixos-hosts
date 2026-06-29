@@ -111,6 +111,13 @@
   # (they share the same write target and would race).
   boot.extraModprobeConfig = "options thinkpad_acpi fan_control=1";
 
+  # Enable the pkexec setuid wrapper so thinkfan-ui can chown
+  # /proc/acpi/ibm/fan via its built-in updatePermissions() function.
+  # The polkit rule in modules/base/polkit.nix allows wheel users to
+  # run any action without password, but without the setuid bit the
+  # pkexec binary fails with "pkexec must be setuid root".
+  security.wrappers.pkexec.enable = true;
+
   # t14-specific keymap: latam (Chile) layout. modules/desktop/i18n.nix
   # uses "es" for compatibility with rog/thinkcentre; we force latam here.
   services.xserver.xkb = {
