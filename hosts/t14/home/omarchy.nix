@@ -27,12 +27,11 @@
 # The omarchy HM module is imported FIRST so that any conflicting
 # definitions from t14/home/default.nix can be overridden via
 # lib.mkForce when needed.
-{
-  config,
-  pkgs,
-  lib,
-  inputs,
-  ...
+{ config
+, pkgs
+, lib
+, inputs
+, ...
 }:
 
 {
@@ -104,7 +103,7 @@
 
   # Per-component font family overrides for t14.
   # Default omarchy-nix uses "monospace" everywhere; we switch GUI surfaces to sans.
-  omarchy.fonts.waybar = lib.mkForce "sans";
+  omarchy.fonts.waybar = lib.mkForce "Source Sans 3 Semibold";
   omarchy.fonts.swayosd = lib.mkForce "sans";
   omarchy.fonts.mako = lib.mkForce "sans";
   omarchy.fonts.rofi = lib.mkForce "sans";

@@ -14,10 +14,14 @@
     kb_options = lib.mkForce "grp:alt_shift_toggle";
   };
 
-  # Opacity override: omarchy's windows.nix sets opacity 0.97 0.90
-  # via extraConfig (appended after settings). We append a final
-  # override via mkAfter to keep everything fully opaque.
+  # Opacity override: omarchy's windows.nix + apps.conf set per-app
+  # opacity rules (0.97/0.9 for most windows, 1.0/0.97 for browsers,
+  # 0.97/0.9 for terminals, etc).  Those rules use `tag -default-opacity`
+  # to opt out of the default tag, so a `match:tag default-opacity` rule
+  # alone is insufficient.  This final match-all rule is appended via
+  # lib.mkAfter to ensure it comes after ALL of omarchy's extraConfig
+  # and forces full opacity on every window.
   wayland.windowManager.hyprland.extraConfig = lib.mkAfter ''
-    windowrule = opacity 1.0 1.0, match:tag default-opacity
+    windowrule = opacity 1.0 1.0, match:class .*
   '';
 }
