@@ -1,15 +1,11 @@
 #!/usr/bin/env bash
-# monitor-lid-validator.sh — Align monitor layout with lid state at startup.
-#
-# Called via systemd oneshot service after graphical-session.target.
-# Reads lid state from ACPI and settings.conf. If they disagree,
-# repositions all monitors and updates the persisted state.
-#
-# Layouts:
-#   lid open  → eDP-1 enabled at (4920,420), externals at y=420
-#   lid closed → eDP-1 disabled,              externals at y=0
+# monitor-lid-validator.sh
+exec 2>/tmp/monitor-lid-validator.log
+set -x
+echo "=== start $(date) HIS=${HYPRLAND_INSTANCE_SIGNATURE:-unset} ==="
 
 SETTINGS="$HOME/.config/hypr/settings.conf"
+echo "HOME=$HOME XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR HIS=${HYPRLAND_INSTANCE_SIGNATURE:-unset}"
 
 # ----- ensure hyprctl can find the compositor ---------------------------
 
