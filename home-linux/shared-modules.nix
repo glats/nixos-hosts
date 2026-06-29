@@ -15,6 +15,7 @@
   ./base.nix
   ./shell.nix
   ./theme.nix
+  ./opencode-theme.nix
   # btop theme + settings owned by omarchy-nix (homeManagerModules.btop).
   # Imports nix-colors.homeManagerModules.default internally; the local
   # theme.nix must be listed before this entry so colorScheme.palette is set.
