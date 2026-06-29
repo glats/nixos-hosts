@@ -190,6 +190,7 @@
         "desc:AOC 24P1W1 OTNQ4HA000101,1920x1080@60,1920x0,1,transform,1"
         "desc:AOC 2470W GGZM3HA438259,1920x1080@60,3000x420,1"
       ];
+      cursor.theme = "Bibata-Modern-Ice";
     };
   };
 
