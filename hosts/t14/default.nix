@@ -8,11 +8,10 @@
 #   - XKB layout forced to "latam" (Chile) since i18n.nix defaults to "es"
 #   - btrfs swap, fonts, kmscon, and amd-laptop settings inherited from base
 #   - home-manager wired to ./home/omarchy.nix (replaces ./home/gnome.nix)
-{
-  config,
-  lib,
-  pkgs,
-  ...
+{ config
+, lib
+, pkgs
+, ...
 }:
 
 {
@@ -179,6 +178,9 @@
     # login flow instead of the default tuigreet.
     greeter = {
       type = "regreet";
+      # Matches "Lenovo Group Limited LEN G24-10 U5B4GWF1" from monitors below.
+      # When empty (default) the selection phase is a no-op — current behaviour.
+      focusMonitor = "LEN G24";
       keyboard = {
         layouts = [
           "es"
