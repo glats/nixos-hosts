@@ -38,3 +38,6 @@ CURRENT=$(hyprctl devices 2>/dev/null | awk -v dev="$DEVICE" '
 # Toggle
 NEXT=$(( (${CURRENT:-0} + 1) % 2 ))
 hyprctl switchxkblayout "$DEVICE" "$NEXT" 2>/dev/null
+
+# Trigger immediate waybar refresh (signal 12 matches the module config)
+pkill -RTMIN+12 waybar 2>/dev/null || true
