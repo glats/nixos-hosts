@@ -177,6 +177,9 @@
         layouts = [ "es" "latam" ];
         options = "grp:alt_shift_toggle,compose:caps";
       };
+      monitors = [
+        "desc:Lenovo Group Limited LEN G24-10 U5B4GWF1,1920x1080@60,0x0,1"
+      ];
     };
   };
 
