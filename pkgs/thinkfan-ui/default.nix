@@ -8,6 +8,7 @@
 , wrapQtAppsHook
 , python3
 , qtbase
+, qtsvg
 , lm_sensors
 , thinkfan-ui-src
 ,
@@ -28,7 +29,13 @@ stdenv.mkDerivation {
     wrapQtAppsHook
   ];
 
-  buildInputs = [ qtbase ];
+  # qtbase must be in buildInputs so wrapQtAppsHook can resolve
+  # `qtPluginPrefix` and set QT_PLUGIN_PATH for PyQt6 to discover the
+  # xcb/wayland platform plugins.
+  # qtsvg provides the SVG image format plugin (libqsvg.so) which
+  # QIcon needs to load .svg files. Without it, QIcon(path-to-svg)
+  # returns null and QSystemTrayIcon shows "No Icon set".
+  buildInputs = [ qtbase qtsvg ];
 
   dontBuild = true;
 

@@ -31,6 +31,7 @@ final: prev: {
     thinkfan-ui-src = inputs.thinkfan-ui-src;
     wrapQtAppsHook = final.qt6.wrapQtAppsHook;
     qtbase = final.qt6.qtbase;
+    qtsvg = final.qt6.qtsvg;
   };
 
   # linuxPackages_zen is used as-is from nixpkgs (pinned via flake.lock).

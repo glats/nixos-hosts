@@ -51,6 +51,7 @@ let
       thinkfan-ui-src = inputs.thinkfan-ui-src;
       wrapQtAppsHook = linuxPkgs.qt6.wrapQtAppsHook;
       qtbase = linuxPkgs.qt6.qtbase;
+      qtsvg = linuxPkgs.qt6.qtsvg;
     };
   };
 
