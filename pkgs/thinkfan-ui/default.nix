@@ -9,6 +9,7 @@
 , python3
 , qtbase
 , hicolor-icon-theme
+, gtk3
 , lm_sensors
 , thinkfan-ui-src
 ,
@@ -29,6 +30,7 @@ stdenv.mkDerivation {
   nativeBuildInputs = [
     makeWrapper
     wrapQtAppsHook
+    gtk3  # for gtk-update-icon-cache
   ];
 
   # qtbase must be in buildInputs so wrapQtAppsHook can resolve
@@ -75,6 +77,13 @@ stdenv.mkDerivation {
       --add-flags "$out/share/thinkfan-ui/main.py"
 
     runHook postInstall
+  '';
+
+  postInstall = ''
+    # Generate the hicolor icon theme cache so QIcon.fromTheme() can
+    # find our thinkfan-ui.svg without scanning the filesystem.
+    # Qt 5.7+ reads GTK's icon-theme.cache for fast icon lookup.
+    gtk-update-icon-cache $out/share/icons/hicolor
   '';
 
   meta = with lib; {
