@@ -8,10 +8,11 @@
 #   - XKB layout forced to "latam" (Chile) since i18n.nix defaults to "es"
 #   - btrfs swap, fonts, kmscon, and amd-laptop settings inherited from base
 #   - home-manager wired to ./home/omarchy.nix (replaces ./home/gnome.nix)
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }:
 
 {
@@ -151,6 +152,11 @@
     # Built-in 14" 1920x1080 panel; external monitors are managed by
     # monitor-hotplug-handler.sh (see hosts/t14/home/hypr/autostart.nix).
     monitors = [ "eDP-1,preferred,auto,1" ];
+
+    # T14 provides its own lid-switch bindl in monitors.nix that writes
+    # settings.conf + calls hyprctl keyword directly. Disable omarchy's
+    # default lid-switch bindl to eliminate the dual-writer race.
+    hyprland.lidSwitch.enable = false;
 
     # Laptop panel is 1x scale (1920x1080 native).
     scale = 1;
