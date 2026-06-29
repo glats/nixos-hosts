@@ -14,17 +14,23 @@
 # dropped on t14, producing byte-identical ghostty config across
 # rog / thinkcentre / t14.  The `themes` attrset is also forced to
 # drop omarchy's `themes.omarchy`.
-{ config, lib, ... }:
-
 {
+  config,
+  lib,
+  ...
+}: {
   programs.ghostty = {
     enable = true;
     settings = lib.mkForce {
       background-opacity = 0.8;
+      clipboard-paste-protection = false;
       clipboard-write = "allow";
       font-family = "CaskaydiaCove Nerd Font";
       font-feature = "+liga";
       font-size = 11;
+      keybind = [
+        "shift+insert=paste_from_clipboard"
+      ];
       maximize = true;
       scrollback-limit = 4294967295;
       theme = "nix-colors";
