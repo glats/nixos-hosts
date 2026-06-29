@@ -1,8 +1,9 @@
-{ config
-, lib
-, pkgs
-, inputs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
 }:
 
 with lib;
@@ -116,7 +117,7 @@ let
           force = true;
           text = builtins.toJSON {
             "$schema" = "https://opencode.ai/tui.json";
-            theme = "glats";
+            theme = "system";
             plugin = lib.attrNames tuiPluginsToInstall;
           };
         };
@@ -287,7 +288,6 @@ in
     ./opencode/mcps.nix
     ./opencode/permissions.nix
     ./opencode/plugins.nix
-    ../home-linux/opencode-theme.nix
   ];
 
   options.home.opencode = {
