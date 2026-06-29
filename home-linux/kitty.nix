@@ -61,7 +61,7 @@
       # Padding / delay / sync keys are also declared by
       # omarchy-nix. Re-declared here so nixos-hosts's values win
       # via later-import priority at the same mkDefault level.
-      window_padding_width = 10;
+      window_padding_width = 0;
       repaint_delay = 10;
       input_delay = 3;
       sync_to_monitor = "yes";
