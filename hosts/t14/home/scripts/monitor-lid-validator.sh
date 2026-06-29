@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# monitor-lid-validator.sh
-exec 2>/tmp/monitor-lid-validator.log
-set -x
-echo "=== start $(date) HIS=${HYPRLAND_INSTANCE_SIGNATURE:-unset} ==="
+# monitor-lid-validator.sh — Align monitor layout with lid state at startup.
+#
+# Called via systemd oneshot service after graphical-session.target.
+# Always applies the correct layout — idempotent (hyprctl keyword is no-op
+# if monitors are already at the target position).
 
 SETTINGS="$HOME/.config/hypr/settings.conf"
-echo "HOME=$HOME XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR HIS=${HYPRLAND_INSTANCE_SIGNATURE:-unset}"
 
 # ----- ensure hyprctl can find the compositor ---------------------------
 
@@ -16,7 +16,6 @@ fi
 # ----- detect state ----------------------------------------------------
 
 LID_STATE=$(grep -o 'open\|closed' /proc/acpi/button/lid/LID*/state 2>/dev/null || echo "open")
-CURRENT=$(grep -o '[01]' "$SETTINGS" 2>/dev/null || echo "1")
 
 # ----- helpers ---------------------------------------------------------
 
@@ -40,15 +39,11 @@ persist() { printf '$ENABLE_LAPTOP = %s\n' "$1" > "$SETTINGS"; }
 
 case "$LID_STATE" in
   closed)
-    if [ "$CURRENT" != "0" ]; then
-      persist 0
-      move_to_y0
-    fi
+    persist 0
+    move_to_y0
     ;;
   *)
-    if [ "$CURRENT" != "1" ]; then
-      persist 1
-      move_to_y420
-    fi
+    persist 1
+    move_to_y420
     ;;
 esac
