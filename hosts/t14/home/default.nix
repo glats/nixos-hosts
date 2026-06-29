@@ -6,7 +6,7 @@
 #   - Ghostty + kitty settings (imported directly from home-linux/ because
 #     t14's curated import list omits home-linux/shared-modules.nix)
 #   - mouse-wiggle launcher
-{ lib, ... }:
+{ config, lib, ... }:
 
 {
   imports = [
@@ -43,6 +43,23 @@
     [Service]
     ExecStartPre=-/run/current-system/sw/bin/udevadm settle --timeout=10
   '';
+
+  # Oneshot service that aligns monitors with lid state after Hyprland
+  # is fully started.  exec-once proved unreliable for this script
+  # (multiple format variations all silently skipped); systemd AFTER
+  # graphical-session.target guarantees hyprctl is available.
+  systemd.user.services.monitor-lid-validator = {
+    Unit = {
+      Description = "Align monitors with lid state";
+      After = [ "graphical-session.target" ];
+      PartOf = [ "graphical-session.target" ];
+    };
+    Service = {
+      Type = "oneshot";
+      ExecStart = "${config.home.homeDirectory}/.local/bin/monitor-lid-validator.sh";
+    };
+    Install.WantedBy = [ "graphical-session.target" ];
+  };
 
   home.file = {
 
