@@ -1089,11 +1089,11 @@
         "walker": "walker"
       },
       "locked": {
-        "lastModified": 1782696141,
-        "narHash": "sha256-O5gebhqKyjJ6eh+lB9olHZ+Tb025dS7UZLqG+SuBkHw=",
+        "lastModified": 1782699407,
+        "narHash": "sha256-J0CzqKI+dJOzn54dICkl1eVSZslsmnqbkt2zIFgQWto=",
         "owner": "glats",
         "repo": "omarchy-nix",
-        "rev": "aced534a61f966be0c5a1b3f770a3644797a895c",
+        "rev": "ae38cf1443b251200ac510945c44483cd7b87e2a",
         "type": "github"
       },
       "original": {
