@@ -171,7 +171,11 @@
 
     # Greeter: regreet (greeter for Hyprland). Selects the regreet-based
     # login flow instead of the default tuigreet.
-    greeter.type = "regreet";
+    greeter = {
+      type = "regreet";
+      keyboard.layouts = [ "es" "latam" ];
+      keyboard.options = "grp:alt_shift_toggle,compose:caps";
+    };
   };
 
   # Desktop suite — t14 uses GNOME apps alongside omarchy/Hyprland.
