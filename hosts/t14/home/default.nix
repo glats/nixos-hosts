@@ -22,7 +22,8 @@
   ];
 
   # ------------------------------------------------------------------
-  # Helper scripts (accessible from PATH via omarchy's bin directory)
+  # Helper scripts (deployed to ~/.local/bin via home.file, accessible
+  # from PATH via home.sessionPath in base.nix)
   # ------------------------------------------------------------------
 
   # Seed settings.conf at activation time (NOT via home.file — that
@@ -36,10 +37,8 @@
     fi
   '';
 
-  # Ensure DRM devices are fully probed before Hyprland starts.
-  # Without this, /sys/class/drm may not list external monitors yet
-  # at exec-once time, causing omarchy-hw-external-monitors to return
-  # false negatives.  The - prefix makes it non-fatal (fail-open).
+  # Ensure DRM devices are probed before Hyprland starts.  The - prefix
+  # makes it non-fatal — Hyprland still starts if udevadm is unavailable.
   xdg.configFile."systemd/user/wayland-wm@hyprland.desktop.service.d/udev-settle.conf".text = ''
     [Service]
     ExecStartPre=-/run/current-system/sw/bin/udevadm settle --timeout=10
@@ -50,6 +49,12 @@
     # Keyboard layout toggle (es <-> latam)
     ".local/share/omarchy/bin/kb-toggle.sh" = {
       source = ./scripts/kb-toggle.sh;
+      executable = true;
+    };
+
+    # Monitor layout validator — aligns monitors with lid state at startup.
+    ".local/bin/monitor-lid-validator.sh" = {
+      source = ./scripts/monitor-lid-validator.sh;
       executable = true;
     };
 
