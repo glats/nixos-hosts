@@ -100,6 +100,16 @@ let
       width: 0px;
       border: 0px;
     }
+
+    configuration {
+      drun {
+        /** Disable DBusActivatable — some apps (ghostty) don't report
+         *  back correctly after D-Bus activation, causing rofi to time
+         *  out (1.5s) and fall back to Exec= spawn, which re-triggers
+         *  D-Bus activation and opens a second window. */
+        DBusActivatable: false;
+      }
+    }
   '';
 in
 
