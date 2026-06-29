@@ -26,15 +26,6 @@ in
 
 {
   wayland.windowManager.hyprland.settings = {
-    # External monitors — always configured regardless of lid state.
-    # eDP-1 (laptop panel) is configured in extraConfig via hyprlang
-    # conditionals that read persisted lid state from settings.conf.
-    monitor = lib.mkForce [
-      "desc:AOC 24P1W1 OTNQ4HA000101,1920x1080@60,0x0,1,transform,1"
-      "desc:Lenovo Group Limited LEN G24-10 U5B4GWF1,1920x1080@60,1080x420,1"
-      "desc:AOC 2470W GGZM3HA438259,1920x1080@60,3000x420,1"
-    ];
-
     # Workspace → monitor bindings (cyclic distribution).
     # eDP-1 has no fixed workspaces — when only the laptop panel is
     # active, workspaces land there by default.
@@ -60,6 +51,20 @@ in
 
     # hyprlang if !ENABLE_LAPTOP
     monitor = eDP-1, disable
+    # hyprlang endif
+
+    # External monitors positioned below eDP-1 (laptop panel at y=0..1080)
+    # hyprlang if ENABLE_LAPTOP
+    monitor = desc:AOC 24P1W1 OTNQ4HA000101,1920x1080@60,0x420,1,transform,1
+    monitor = desc:Lenovo Group Limited LEN G24-10 U5B4GWF1,1920x1080@60,1080x420,1
+    monitor = desc:AOC 2470W GGZM3HA438259,1920x1080@60,3000x420,1
+    # hyprlang endif
+
+    # External monitors at y=0 (eDP-1 disabled — docked, lid closed)
+    # hyprlang if !ENABLE_LAPTOP
+    monitor = desc:AOC 24P1W1 OTNQ4HA000101,1920x1080@60,0x0,1,transform,1
+    monitor = desc:Lenovo Group Limited LEN G24-10 U5B4GWF1,1920x1080@60,1080x0,1
+    monitor = desc:AOC 2470W GGZM3HA438259,1920x1080@60,3000x0,1
     # hyprlang endif
 
     # Lid close — persist + runtime disable
