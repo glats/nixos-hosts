@@ -9,12 +9,23 @@
 #   lid open  → eDP-1 enabled at (4920,420), externals at y=420
 #   lid closed → eDP-1 disabled,              externals at y=0
 
-set -euo pipefail
-
 SETTINGS="$HOME/.config/hypr/settings.conf"
-LID_STATE=$(grep -o 'open\|closed' /proc/acpi/button/lid/LID*/state 2>/dev/null || echo "open")
 
-# Current persisted value (0 or 1)
+# ----- wait for hyprctl -------------------------------------------------
+
+# exec-once fires early — hyprctl socket may not be ready yet.
+wait_hyprctl() {
+  for i in $(seq 1 60); do
+    hyprctl monitors >/dev/null 2>&1 && return 0
+    sleep 0.5
+  done
+  return 1
+}
+wait_hyprctl || exit 0  # give up silently after 30s
+
+# ----- detect state ----------------------------------------------------
+
+LID_STATE=$(grep -o 'open\|closed' /proc/acpi/button/lid/LID*/state 2>/dev/null || echo "open")
 CURRENT=$(grep -o '[01]' "$SETTINGS" 2>/dev/null || echo "1")
 
 # ----- helpers -------------------------------------------------------
