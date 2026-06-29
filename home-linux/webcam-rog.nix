@@ -38,6 +38,6 @@ in
     exec = "${script}/bin/webcam";
     icon = "camera-web";
     terminal = true;
-    categories = [ "Video" "Graphics" ];
+    categories = [ "AudioVideo" ];
   };
 }
