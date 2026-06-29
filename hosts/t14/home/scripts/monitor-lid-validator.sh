@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 # monitor-lid-validator.sh — Align monitor layout with lid state at startup.
+exec &>/tmp/monitor-lid-validator.log
+set -x
+echo "=== monitor-lid-validator starting at $(date) ==="
 #
 # Called once via exec-once. Reads lid state from ACPI and settings.conf
 # from the persisted config file. If they disagree, repositions all
