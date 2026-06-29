@@ -7,8 +7,11 @@
   wayland.windowManager.hyprland.settings.input = {
     # Chile: es (Spain) + latam (Latin America); Alt+Shift toggles.
     # mkForce required because omarchy's input.nix sets kb_layout = "us".
+    # compose:caps is removed: it would remap CAPS LOCK to the Compose key,
+    # breaking the dead-key sequence (backtick+letter) that produces accented
+    # characters in GTK apps. fcitx5 supplies the accented IME layer.
     kb_layout = lib.mkForce "es,latam";
-    kb_options = lib.mkForce "grp:alt_shift_toggle,compose:caps";
+    kb_options = lib.mkForce "grp:alt_shift_toggle";
   };
 
   # Opacity override: omarchy's windows.nix sets opacity 0.97 0.90

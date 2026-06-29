@@ -8,10 +8,11 @@
 #   - XKB layout forced to "latam" (Chile) since i18n.nix defaults to "es"
 #   - btrfs swap, fonts, kmscon, and amd-laptop settings inherited from base
 #   - home-manager wired to ./home/omarchy.nix (replaces ./home/gnome.nix)
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }:
 
 {
@@ -174,8 +175,15 @@
     greeter = {
       type = "regreet";
       keyboard = {
-        layouts = [ "es" "latam" ];
-        options = "grp:alt_shift_toggle,compose:caps";
+        layouts = [
+          "es"
+          "latam"
+        ];
+        # compose:caps removed: it would remap CAPS LOCK to Compose at
+        # the login screen, breaking dead-key accented input there too.
+        # Hyprland session's kb_options matches (no compose:caps) so the
+        # greeter and the session behave identically.
+        options = "grp:alt_shift_toggle";
       };
       monitors = [
         "desc:Lenovo Group Limited LEN G24-10 U5B4GWF1,1920x1080@60,0x0,1"
