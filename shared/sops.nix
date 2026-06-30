@@ -42,4 +42,10 @@
   sops.secrets."opencode/kilo_api_key" = {
     mode = "0400";
   };
+
+  # GitHub PAT (also declared at NixOS level for MCP wrapper)
+  sops.secrets."github/pat" = {
+    sopsFile = ../secrets/shared/passwords.yaml;
+    mode = "0400";
+  };
 }
