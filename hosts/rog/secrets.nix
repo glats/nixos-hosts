@@ -46,14 +46,6 @@
     sopsFile = ../../secrets/host/rog/guacamole.yaml;
   };
 
-  # Git credentials for homemanager git module
-  sops.secrets."git-credentials" = {
-    sopsFile = ../../secrets/shared/git-credentials.yaml;
-    owner = "glats";
-    group = "users";
-    mode = "0600";
-  };
-
   # Authelia SSO secrets
   sops.secrets."authelia/jwt_secret" = {
     sopsFile = ../../secrets/host/rog/authelia.yaml;
