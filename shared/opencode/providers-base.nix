@@ -1,5 +1,5 @@
 { lib ? throw "providers-base.nix must be imported with lib"
-, activeProviderName ? "opencode-go"
+, activeProviderName ? "opencode-go-medium"
 ,
 }:
 
@@ -59,6 +59,47 @@ let
   opencodeProvider = {
     opencode = {
       models = {
+        "glm-5.2" = {
+          name = "GLM 5.2";
+          thinking = false;
+        };
+        "glm-5.1" = {
+          name = "GLM 5.1";
+          thinking = false;
+        };
+        "kimi-k2.6" = {
+          name = "Kimi K2.6";
+          thinking = false;
+        };
+        "kimi-k2.7-code" = {
+          name = "Kimi K2.7 Code";
+          thinking = false;
+        };
+        "deepseek-v4-pro" = {
+          name = "DeepSeek V4 Pro";
+          thinking = false;
+        };
+        "deepseek-v4-flash" = {
+          name = "DeepSeek V4 Flash";
+          thinking = false;
+        };
+        "mimo-v2.5" = {
+          name = "MiMo V2.5";
+          thinking = false;
+        };
+        "mimo-v2.5-pro" = {
+          name = "MiMo V2.5 Pro";
+          thinking = false;
+        };
+        # BROKEN (upstream): Qwen 3.6+/3.7+ models on the opencode-go endpoint use
+        # Anthropic Messages transport which emits content-block shapes the AI SDK
+        # rejects (invalid_union, discriminator "type"). When upstream fixes land,
+        # re-enable by swapping phase assignments below. See:
+        #   opencode/opencode#23960 — anthropic-sdk content-block union mismatch
+        #   opencode/opencode#32418 — reasoning_content in content_block_start
+        #   opencode/opencode#29754 — Qwen reasoning block shape
+        #   opencode/opencode#33055 — Cloudflare 524 HTML in text blocks
+        #   opencode/opencode#33303 — content_block_delta missing fields
         "qwen3.7-plus" = {
           name = "Qwen 3.7 Plus";
           thinking = false;
@@ -117,37 +158,54 @@ let
       };
     }
     {
-      name = "opencode-go";
+      name = "opencode-go-full";
       phases = {
-        gentle-orchestrator = "opencode-go/deepseek-v4-pro";
-        sdd-init = "opencode-go/deepseek-v4-flash";
-        sdd-explore = "opencode-go/minimax-m3";
-        sdd-propose = "opencode-go/qwen3.7-plus";
-        sdd-spec = "opencode-go/qwen3.7-plus";
-        sdd-design = "opencode-go/qwen3.7-plus";
-        sdd-tasks = "opencode-go/minimax-m3";
-        sdd-apply = "opencode-go/minimax-m3";
-        sdd-verify = "opencode-go/deepseek-v4-pro";
-        sdd-archive = "opencode-go/deepseek-v4-flash";
-        sdd-onboard = "opencode-go/deepseek-v4-pro";
-        neutral = "opencode-go/deepseek-v4-pro";
+        gentle-orchestrator = "kimi-k2.6";
+        sdd-init = "deepseek-v4-flash";
+        sdd-explore = "glm-5.2";
+        sdd-propose = "deepseek-v4-pro";
+        sdd-spec = "deepseek-v4-pro";
+        sdd-design = "glm-5.2";
+        sdd-tasks = "kimi-k2.6";
+        sdd-apply = "kimi-k2.6";
+        sdd-verify = "glm-5.2";
+        sdd-archive = "deepseek-v4-flash";
+        sdd-onboard = "kimi-k2.6";
+        neutral = "kimi-k2.6";
       };
     }
     {
-      name = "opencode-go2";
+      name = "opencode-go-medium";
       phases = {
-        gentle-orchestrator = "opencode-go/deepseek-v4-pro";
-        sdd-init = "opencode-go/deepseek-v4-flash";
-        sdd-explore = "opencode-go/qwen3.7-plus";
-        sdd-propose = "opencode-go/qwen3.7-plus";
-        sdd-spec = "opencode-go/qwen3.8-ultra";
-        sdd-design = "opencode-go/qwen3.8-ultra";
-        sdd-tasks = "opencode-go/qwen3.7-plus";
-        sdd-apply = "opencode-go/minimax-m3";
-        sdd-verify = "opencode-go/qwen3.7-plus";
-        sdd-archive = "opencode-go/deepseek-v4-flash";
-        sdd-onboard = "opencode-go/deepseek-v4-pro";
-        neutral = "opencode-go/deepseek-v4-pro";
+        gentle-orchestrator = "kimi-k2.6";
+        sdd-init = "deepseek-v4-flash";
+        sdd-explore = "kimi-k2.6";
+        sdd-propose = "deepseek-v4-pro";
+        sdd-spec = "deepseek-v4-pro";
+        sdd-design = "deepseek-v4-pro";
+        sdd-tasks = "kimi-k2.6";
+        sdd-apply = "kimi-k2.6";
+        sdd-verify = "kimi-k2.6";
+        sdd-archive = "deepseek-v4-flash";
+        sdd-onboard = "deepseek-v4-flash";
+        neutral = "deepseek-v4-flash";
+      };
+    }
+    {
+      name = "opencode-go-light";
+      phases = {
+        gentle-orchestrator = "kimi-k2.6";
+        sdd-init = "deepseek-v4-flash";
+        sdd-explore = "deepseek-v4-flash";
+        sdd-propose = "deepseek-v4-pro";
+        sdd-spec = "deepseek-v4-pro";
+        sdd-design = "deepseek-v4-pro";
+        sdd-tasks = "deepseek-v4-flash";
+        sdd-apply = "kimi-k2.6";
+        sdd-verify = "deepseek-v4-flash";
+        sdd-archive = "deepseek-v4-flash";
+        sdd-onboard = "deepseek-v4-flash";
+        neutral = "deepseek-v4-flash";
       };
     }
     {

@@ -306,9 +306,9 @@ in
 
     activeProviderName = mkOption {
       type = types.str;
-      default = lib.mkDefault "opencode-go";
+      default = lib.mkDefault "opencode-go-medium";
       description = ''
-        Name of the active OpenCode provider tier (e.g. "opencode-go",
+        Name of the active OpenCode provider tier (e.g. "opencode-go-full",
         "github-copilot"). Per-host plain assignments override this default
         without needing `mkForce`.
       '';
