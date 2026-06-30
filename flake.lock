@@ -1089,11 +1089,11 @@
         "walker": "walker"
       },
       "locked": {
-        "lastModified": 1782853595,
-        "narHash": "sha256-Bxx3IfWhCKicuyyIWN3Se9NVwAZbNp+9Wu3Cvxdk4qQ=",
+        "lastModified": 1782853923,
+        "narHash": "sha256-L04m/7zg+WuuLzh70jgrLAab0jaAQ98VV4uTzJjP6XE=",
         "owner": "glats",
         "repo": "omarchy-nix",
-        "rev": "0eb57ea70c6a9300b6f3c4f4c00ecc78683e5c26",
+        "rev": "dc730dd894188eab009d329584f2865d254d7a6e",
         "type": "github"
       },
       "original": {
@@ -1163,7 +1163,8 @@
         "pipewire-module-xrdp-src": "pipewire-module-xrdp-src",
         "sops-nix": "sops-nix",
         "sub-agent-statusline": "sub-agent-statusline",
-        "thinkfan-ui-src": "thinkfan-ui-src"
+        "thinkfan-ui-src": "thinkfan-ui-src",
+        "waybar-src": "waybar-src"
       }
     },
     "sops-nix": {
@@ -1297,6 +1298,22 @@
         "owner": "abenz1267",
         "ref": "v2.15.2",
         "repo": "walker",
+        "type": "github"
+      }
+    },
+    "waybar-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1777929458,
+        "narHash": "sha256-51R3mIt8cLNvh/X5qe9vOqeJCj0U9KRyemVE5y+OhiU=",
+        "owner": "Alexays",
+        "repo": "Waybar",
+        "rev": "05945748dccce28bf96d26d8f64a9e69a8dd49ba",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Alexays",
+        "repo": "Waybar",
         "type": "github"
       }
     },
