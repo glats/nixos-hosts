@@ -25,6 +25,7 @@ Even if user writes "crear función", output: `function createUser()` not `funct
 ### No Emojis Policy
 
 **NEVER use emojis.** This includes:
+
 - No emojis in code
 - No emojis in output
 - No emojis in documentation
@@ -69,12 +70,14 @@ Core principle: **does this inflate my context without need?** If yes → use `d
 | Bash for execution (test, build, install) | — | ✅ via `task` |
 
 **When to use `task` vs `delegate`:**
+
 - `task()` — synchronous; block until sub-agent returns; use when you need the result before next step
 - `delegate()` — asynchronous; fire-and-forget; use when you don't need immediate result
 
 **Default**: Use `delegate` (async) for most work. Use `task` only when you need the output before your next action.
 
 **Anti-patterns** — these ALWAYS inflate context:
+
 - Reading 4+ files to "understand" inline → delegate an exploration
 - Writing a feature across multiple files inline → delegate
 - Running tests or builds inline → delegate
@@ -94,6 +97,13 @@ live inside this NixOS repository. The skill is exclusively for verifying Nix la
 
 Load skills BEFORE writing code. Apply ALL patterns. Multiple skills can apply simultaneously.
 
+## Exploration
+
+In the exploration ALWAYS find the best practices, examples and suggestions for the current feature requested. ALWAYS use these MCP TOOLS:
+
+- github
+- context7
+- exa
 <!-- gentle-ai:engram-protocol -->
 ## Engram Persistent Memory — Protocol
 
