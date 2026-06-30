@@ -81,6 +81,10 @@
         echo "> Staying in worktree: $worktree_name"
         echo "> Run 'finish-work' to save or 'abort-work' to discard"
       }
+
+      if [ -f "${config.sops.secrets."github/pat".path}" ]; then
+        export GH_TOKEN="$(cat ${config.sops.secrets."github/pat".path})"
+      fi
     '';
   };
 }
