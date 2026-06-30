@@ -109,6 +109,12 @@
       url = "github:ghostty-org/ghostty";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # waybar-src — master branch with Hyprland 0.55 workspace fixes (PR #5013)
+    waybar-src = {
+      url = "github:Alexays/Waybar";
+      flake = false;
+    };
   };
 
   outputs =
