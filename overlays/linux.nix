@@ -117,6 +117,8 @@ final: prev: {
     src = inputs.waybar-src;
     # master added cava subproject dependency post-0.15.0; disable it.
     mesonFlags = (old.mesonFlags or [ ]) ++ [ "-Dcava=disabled" ];
+    # Skip version check — waybar reports v0.15.0 regardless of source.
+    doInstallCheck = false;
   });
 
   # cffsubr 0.4.0 ships a bundled `tx` (from afdko 5.0.1) with hard-coded
