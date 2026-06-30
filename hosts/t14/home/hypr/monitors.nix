@@ -51,6 +51,10 @@ in
     # (e.g. docked with externals).  The startup validator below fixes
     # state mismatches (lid changed between sessions).
     # hyprlang if ENABLE_LAPTOP
+    # Workspace bindings for the laptop panel when undocked.
+    workspace = 1, monitor:eDP-1, default:true, persistent:true
+    workspace = 2, monitor:eDP-1, persistent:true
+    workspace = 3, monitor:eDP-1, persistent:true
     monitor = eDP-1, preferred, 4920x420, 1
     # hyprlang endif
 
