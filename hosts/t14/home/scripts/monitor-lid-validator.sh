@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 # monitor-lid-validator.sh — Align monitor layout with lid state.
 #
-# Runs once at startup, then listens on Hyprland socket2 for
-# monitoradded/monitorremoved events and re-applies the correct
-# layout on every dock/undock cycle.
+# --daemon      Run once, then poll every 2s and re-apply on changes.
+# --apply-once  Apply once and exit (called by daemon on hotplug).
+# (no args)     Apply once and exit (for systemd oneshot restart).
 
 SETTINGS="$HOME/.config/hypr/settings.conf"
+HIS_DIR="$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE"
 
 # ----- ensure hyprctl can find the compositor ---------------------------
 
 if [ -z "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; then
   export HYPRLAND_INSTANCE_SIGNATURE=$(ls -t "$XDG_RUNTIME_DIR/hypr/" 2>/dev/null | head -1)
 fi
-SOCKET="$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket2.sock"
 
 # ----- helpers ---------------------------------------------------------
 
@@ -47,17 +47,25 @@ apply() {
   hyprctl reload
 }
 
-# ----- initial run -----------------------------------------------------
+monitor_snapshot() {
+  hyprctl monitors -j 2>/dev/null | grep '"name"' | sort
+}
 
-apply
+# ----- main ------------------------------------------------------------
 
-# ----- event loop ------------------------------------------------------
-
-socat -U - "UNIX-CONNECT:$SOCKET" 2>/dev/null | while read -r event; do
-  case "$event" in
-    monitoradded\>\>*|monitoraddedv2\>\>*|monitorremoved\>\>*|monitorremovedv2\>\>*)
-      sleep 0.5  # let Hyprland settle after hotplug
-      apply
-      ;;
-  esac
-done
+case "${1:-}" in
+  --apply-once) apply; exit 0 ;;
+  --daemon)
+    apply
+    LAST=$(monitor_snapshot)
+    while true; do
+      sleep 2
+      NOW=$(monitor_snapshot)
+      if [ "$NOW" != "$LAST" ]; then
+        apply
+        LAST="$NOW"
+      fi
+    done
+    ;;
+  *) apply; exit 0 ;;
+esac

@@ -55,7 +55,7 @@
     };
     Service = {
       Type = "simple";
-      ExecStart = "${config.home.homeDirectory}/.local/bin/monitor-lid-validator.sh";
+      ExecStart = "${config.home.homeDirectory}/.local/bin/monitor-lid-validator.sh --daemon";
       Environment = [
         "PATH=${config.home.homeDirectory}/.local/bin:/run/current-system/sw/bin"
         "XDG_RUNTIME_DIR=%t"
