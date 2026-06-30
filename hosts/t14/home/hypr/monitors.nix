@@ -17,10 +17,12 @@ let
     lib.mapAttrsToList
       (
         monitor: workspaces:
-        lib.imap1 (
-          idx: w:
-          "${toString w}, monitor:desc:${monitor}, default:${lib.boolToString (idx == 1)}, persistent:${lib.boolToString (w <= 5)}"
-        ) workspaces
+          lib.imap1
+            (
+              idx: w:
+                "${toString w}, monitor:desc:${monitor}, default:${lib.boolToString (idx == 1)}, persistent:${lib.boolToString (w <= 5)}"
+            )
+            (builtins.filter (w: w > 3) workspaces)
       )
       {
         "AOC 24P1W1 OTNQ4HA000101" = genSeq 1 3 maxWorkspace;
