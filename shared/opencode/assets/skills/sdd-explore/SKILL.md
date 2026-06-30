@@ -43,7 +43,7 @@ The orchestrator will give you:
 
 > Follow **Section B** (retrieval) and **Section C** (persistence) from `skills/_shared/sdd-phase-common.md`.
 
-- **engram**: Optionally read `sdd-init/{project}` for project context. Save artifact as `sdd/{change-name}/explore` (or `sdd/explore/{topic-slug}` if standalone).
+- **engram**: Optionally `mem_get_observation` the Engram topic `sdd-init/{project}` for project context. Save the new artifact with `mem_save(topic_key="sdd/{change-name}/explore", ...)` (or `sdd/explore/{topic-slug}` if standalone). Do NOT create or read filesystem paths under `sdd/` — use `openspec/` for filesystem artifact searches.
 - **openspec**: Read and follow `skills/_shared/openspec-convention.md`.
 - **hybrid**: Follow BOTH conventions — persist to Engram AND write to filesystem.
 - **none**: Return result only.
@@ -52,7 +52,7 @@ The orchestrator will give you:
 
 > Follow **Section B** from `skills/_shared/sdd-phase-common.md` for retrieval.
 
-- **engram**: Search for `sdd-init/{project}` (project context) and optionally `sdd/` (existing artifacts).
+- **engram**: Use `mem_search` for Engram topic key `sdd-init/{project}` (project context) and optionally any `sdd/*` topic key. Do NOT grep or glob the filesystem for `sdd/` — use `openspec/` for filesystem artifact searches.
 - **openspec**: Read `openspec/config.yaml` and `openspec/specs/`.
 - **none**: Use whatever context the orchestrator passed in the prompt.
 
