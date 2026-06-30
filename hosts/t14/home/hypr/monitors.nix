@@ -19,7 +19,7 @@ let
         monitor: workspaces:
         lib.imap1 (
           idx: w:
-          "${toString w}, monitor:desc:${monitor}, default:${lib.boolToString (idx == 1)}, persistent:${lib.boolToString (idx == 1)}"
+          "${toString w}, monitor:desc:${monitor}, default:${lib.boolToString (idx == 1)}, persistent:${lib.boolToString (w <= 5)}"
         ) workspaces
       )
       {
