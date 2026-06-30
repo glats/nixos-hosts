@@ -44,10 +44,9 @@
     ExecStartPre=-/run/current-system/sw/bin/udevadm settle --timeout=10
   '';
 
-  # Oneshot service that aligns monitors with lid state after Hyprland
-  # is fully started.  exec-once proved unreliable for this script
-  # (multiple format variations all silently skipped); systemd AFTER
-  # graphical-session.target guarantees hyprctl is available.
+  # Daemon that aligns monitors with lid state at startup and on every
+  # dock/undock cycle.  Listens on Hyprland socket2 for monitor add/remove
+  # events (complements omarchy-hyprland-monitor-watch which only reloads).
   systemd.user.services.monitor-lid-validator = {
     Unit = {
       Description = "Align monitors with lid state";
@@ -55,12 +54,14 @@
       PartOf = [ "graphical-session.target" ];
     };
     Service = {
-      Type = "oneshot";
+      Type = "simple";
       ExecStart = "${config.home.homeDirectory}/.local/bin/monitor-lid-validator.sh";
       Environment = [
         "PATH=${config.home.homeDirectory}/.local/bin:/run/current-system/sw/bin"
         "XDG_RUNTIME_DIR=%t"
       ];
+      Restart = "on-failure";
+      RestartSec = 5;
     };
     Install.WantedBy = [ "graphical-session.target" ];
   };
