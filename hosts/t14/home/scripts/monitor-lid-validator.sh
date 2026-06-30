@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# monitor-lid-validator.sh — Align monitor layout with lid state at startup.
+# monitor-lid-validator.sh — Align monitor layout with lid state.
 #
-# Called via systemd oneshot service after graphical-session.target.
-# Always applies the correct layout — idempotent (hyprctl keyword is no-op
-# if monitors are already at the target position).
+# Runs once at startup, then listens on Hyprland socket2 for
+# monitoradded/monitorremoved events and re-applies the correct
+# layout on every dock/undock cycle.
 
 SETTINGS="$HOME/.config/hypr/settings.conf"
 
@@ -12,10 +12,7 @@ SETTINGS="$HOME/.config/hypr/settings.conf"
 if [ -z "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; then
   export HYPRLAND_INSTANCE_SIGNATURE=$(ls -t "$XDG_RUNTIME_DIR/hypr/" 2>/dev/null | head -1)
 fi
-
-# ----- detect state ----------------------------------------------------
-
-LID_STATE=$(grep -o 'open\|closed' /proc/acpi/button/lid/LID*/state 2>/dev/null || echo "open")
+SOCKET="$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket2.sock"
 
 # ----- helpers ---------------------------------------------------------
 
@@ -41,15 +38,25 @@ persist() {
   fi
 }
 
-# ----- main ------------------------------------------------------------
+apply() {
+  LID_STATE=$(grep -o 'open\|closed' /proc/acpi/button/lid/LID*/state 2>/dev/null || echo "open")
+  case "$LID_STATE" in
+    closed) persist 0; move_to_y0 ;;
+    *)      persist 1; move_to_y420 ;;
+  esac
+}
 
-case "$LID_STATE" in
-  closed)
-    persist 0
-    move_to_y0
-    ;;
-  *)
-    persist 1
-    move_to_y420
-    ;;
-esac
+# ----- initial run -----------------------------------------------------
+
+apply
+
+# ----- event loop ------------------------------------------------------
+
+socat -U - "UNIX-CONNECT:$SOCKET" 2>/dev/null | while read -r event; do
+  case "$event" in
+    monitoradded\>\>*|monitoraddedv2\>\>*|monitorremoved\>\>*|monitorremovedv2\>\>*)
+      sleep 0.5  # let Hyprland settle after hotplug
+      apply
+      ;;
+  esac
+done
