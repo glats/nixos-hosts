@@ -15,7 +15,12 @@ let
 
   mkWorkspaceRules = lib.flatten (
     lib.mapAttrsToList
-      (monitor: workspaces: map (w: "${toString w}, monitor:desc:${monitor}") workspaces)
+      (monitor: workspaces:
+        lib.imap1
+          (idx: w:
+            "${toString w}, monitor:desc:${monitor}, default:${lib.boolToString (idx == 1)}, persistent:true"
+          )
+          workspaces)
       {
         "AOC 24P1W1 OTNQ4HA000101" = genSeq 1 3 maxWorkspace;
         "Lenovo Group Limited LEN G24-10 U5B4GWF1" = genSeq 2 3 maxWorkspace;
