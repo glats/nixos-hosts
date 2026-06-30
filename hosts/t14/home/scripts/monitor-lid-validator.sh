@@ -44,6 +44,7 @@ apply() {
     closed) persist 0; move_to_y0 ;;
     *)      persist 1; move_to_y420 ;;
   esac
+  hyprctl reload
 }
 
 # ----- initial run -----------------------------------------------------
