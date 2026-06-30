@@ -38,7 +38,7 @@ Run this phase when the orchestrator/user asks to initialize SDD in a project. Y
 - In `engram` mode, do **not** create `openspec/`.
 - In `openspec` mode, follow `../_shared/openspec-convention.md` and write file artifacts.
 - In `hybrid` mode, write both openspec files and Engram observations.
-- Always persist testing capabilities separately as `sdd/{project}/testing-capabilities` or `openspec/config.yaml` `testing:`.
+- Always persist testing capabilities separately to **Engram** with `mem_save(topic_key="sdd/{project}/testing-capabilities", ...)`, or to `openspec/config.yaml` under `testing:` for the openspec/hybrid path. Do NOT write to a filesystem path called `sdd/` — use `openspec/` for filesystem artifact writes.
 - Always build `.atl/skill-registry.md`; also save `skill-registry` to Engram when available.
 - Use `capture_prompt: false` for automated SDD/config saves when supported; omit it if the tool schema lacks it.
 - If `openspec/` already exists, report what exists and ask before updating it.
