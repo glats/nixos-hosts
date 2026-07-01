@@ -180,6 +180,12 @@ case "$COMMAND" in
     ;;
   upgrade)
     echo ""
+    echo "> Updating npm packages to latest..."
+    UPDATE_SCRIPT=$(nix build "$FLAKE_PATH#opencode-npm-packages.updateScript" --no-link --print-out-paths 2>/dev/null || true)
+    if [[ -n "$UPDATE_SCRIPT" ]]; then
+      "$UPDATE_SCRIPT"
+    fi
+    echo ""
     if [[ "$USE_NH" == "true" ]]; then
       echo "> Updating flake inputs and rebuilding (nh os switch --update)..."
       nh os switch --update

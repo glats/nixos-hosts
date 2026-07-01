@@ -1,4 +1,4 @@
-{ lib, stdenvNoCC, fetchurl }:
+{ lib, stdenvNoCC, fetchurl, pkgs }:
 
 let
   versions = lib.importJSON ./versions.json;
@@ -54,6 +54,61 @@ stdenvNoCC.mkDerivation {
   '';
 
   installPhase = "true";
+
+  passthru.updateScript = pkgs.writeScript "update-opencode-npm-packages" ''
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    FLAKE_ROOT="$PWD"
+    while [ "$FLAKE_ROOT" != "/" ]; do
+      if [ -d "$FLAKE_ROOT/.git" ] || [ -f "$FLAKE_ROOT/flake.nix" ]; then
+        break
+      fi
+      FLAKE_ROOT="$(dirname "$FLAKE_ROOT")"
+    done
+
+    PKG_DIR="$FLAKE_ROOT/pkgs/opencode-npm-packages"
+
+    if [ ! -f "$PKG_DIR/versions.json" ]; then
+      echo "Error: Could not find $PKG_DIR/versions.json"
+      exit 1
+    fi
+
+    updated=false
+
+    for name in $(cat "$PKG_DIR/versions.json" | ${pkgs.jq}/bin/jq -r 'keys[]'); do
+      current=$(cat "$PKG_DIR/versions.json" | ${pkgs.jq}/bin/jq -r ".[\"$name\"]")
+      url="https://registry.npmjs.org/$name/latest"
+      latest=$(${pkgs.curl}/bin/curl -s "$url" | ${pkgs.jq}/bin/jq -r .version)
+
+      if [ "$latest" = "null" ] || [ -z "$latest" ]; then
+        echo "Warning: Could not fetch latest version for $name"
+        continue
+      fi
+
+      if [ "$latest" != "$current" ]; then
+        echo "Updating $name: $current -> $latest"
+        encodedName=$(echo "$name" | ${pkgs.gnused}/bin/sed 's|/|%2F|g')
+        tarballName=$(echo "$name" | ${pkgs.gnused}/bin/sed 's|.*/||')
+        tarballUrl="https://registry.npmjs.org/$encodedName/-/$tarballName-$latest.tgz"
+        hash=$(${pkgs.nix}/bin/nix-prefetch-url "$tarballUrl")
+        sri=$(${pkgs.nix}/bin/nix hash to-sri --type sha256 "$hash")
+
+        ${pkgs.gnused}/bin/sed -i "s|\"$name\": \"$current\"|\"$name\": \"$latest\"|" "$PKG_DIR/versions.json"
+        ${pkgs.gnused}/bin/sed -i "s|\"$name\": \"[^\"]*\"|\"$name\": \"$sri\"|" "$PKG_DIR/node-modules.json"
+
+        updated=true
+      fi
+    done
+
+    if [ "$updated" = true ]; then
+      echo "Updated npm packages. Changed files:"
+      echo "  $PKG_DIR/versions.json"
+      echo "  $PKG_DIR/node-modules.json"
+    else
+      echo "All npm packages are already at latest versions."
+    fi
+  '';
 
   meta = with lib; {
     description = "OpenCode npm packages — @opencode-ai/sdk, @opencode-ai/plugin, unique-names-generator, TUI plugins";
