@@ -82,6 +82,12 @@ Core principle: **does this inflate my context without need?** If yes → use `d
 - Writing a feature across multiple files inline → delegate
 - Running tests or builds inline → delegate
 
+**NEVER guess about how things work.** Always research using MCP tools before acting — especially during exploration phase. ALWAYS use:
+
+- **github** — search real code examples
+- **context7** — check official docs
+- **exa** — find current best practices
+
 ## Skills (Auto-load based on context)
 
 When you detect any of these contexts, IMMEDIATELY load the corresponding skill BEFORE writing any code.
@@ -97,13 +103,6 @@ live inside this NixOS repository. The skill is exclusively for verifying Nix la
 
 Load skills BEFORE writing code. Apply ALL patterns. Multiple skills can apply simultaneously.
 
-## Exploration
-
-In the exploration ALWAYS find the best practices, examples and suggestions for the current feature requested. ALWAYS use these MCP TOOLS:
-
-- github
-- context7
-- exa
 <!-- gentle-ai:engram-protocol -->
 ## Engram Persistent Memory — Protocol
 
