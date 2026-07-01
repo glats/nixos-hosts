@@ -1,13 +1,29 @@
 #!/usr/bin/env bash
-# nixos-build - Helper to build NixOS configuration from main repo or worktree
-# Auto-detects if in worktree and uses correct flake path
-# Auto-detects hostname for multi-host configuration
-# Auto-detects nh (default) vs nixos-rebuild (--raw) as the build driver
-# Auto-detects nix-output-monitor (nom) for better build output (--raw only)
+# nixos-build - Helper to build NixOS or Darwin configuration
+# Auto-detects platform (Linux vs Darwin), worktree, hostname, and tools (nh, nom)
+#
+# Usage:
+#   nixos-build [command] [--raw] [--no-nom]
+#
+# Commands:
+#   switch     Build and activate (default)
+#   boot       Build and activate on next boot (NixOS only)
+#   test       Build in test environment (NixOS only)
+#   upgrade    Update npm packages + flake inputs + rebuild
+#   dry        Dry-activate (show changes only)
+#   check      Validate flake
+#   build      Dry-build only
+#   safe       Sequential: check -> build -> dry -> switch (stops on failure)
 
 set -euo pipefail
 
-# Detect repo root: env var > git detection from CWD > conventional fallback
+# --- Platform detection ---
+IS_DARWIN=false
+if [[ "$(uname)" == "Darwin" ]]; then
+  IS_DARWIN=true
+fi
+
+# --- Repo root ---
 REPO_ROOT="${NIXOS_REPO:-}"
 if [[ -z "$REPO_ROOT" ]]; then
   REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || true)
@@ -16,61 +32,42 @@ if [[ -z "$REPO_ROOT" ]]; then
   REPO_ROOT="$HOME/.nixos"
 fi
 
-# Detect if we're in a worktree
+# --- Flake path (worktree-aware) ---
 get_flake_path() {
   local current_dir="$PWD"
-
-  # Check if we're in a worktree
   if [[ "$current_dir" == "$REPO_ROOT/.worktrees"* ]]; then
-    # In worktree - use current directory
     echo "."
   elif [[ "$current_dir" == "$REPO_ROOT"* ]]; then
-    # In main repo
-    echo "/etc/nixos"
+    echo "$REPO_ROOT"
   else
-    # Outside repo - assume main repo
-    echo "/etc/nixos"
+    echo "$REPO_ROOT"
   fi
 }
 
 FLAKE_PATH=$(get_flake_path)
-
-# Detect hostname for multi-host configuration
 HOSTNAME=$(hostname)
 
-# Default build driver: `nh os` (if installed). `nh` auto-detects the
-# flake via NH_FLAKE (set by `programs.nh.flake` in modules/base/nh.nix)
-# and the hostname, so calls like `nh os switch` need no extra args.
-# `--raw` forces the legacy `nixos-rebuild` path. If `nh` is not
-# available, fall back to `nixos-rebuild` automatically.
-USE_NH=true
-if ! command -v nh &>/dev/null; then
-  USE_NH=false
-fi
-
-# Auto-detect nix-output-monitor (nom) for the --raw fallback path.
-# `nh` has nom integration built in (toggle with `nh ... --no-nom`),
-# so the nom wrapper is only relevant for nixos-rebuild.
+# --- Tool detection (Linux only) ---
+USE_NH=false
 USE_NOM=false
-if command -v nom &>/dev/null; then
-  USE_NOM=true
+if ! $IS_DARWIN; then
+  if command -v nh &>/dev/null; then
+    USE_NH=true
+  fi
+  if command -v nom &>/dev/null; then
+    USE_NOM=true
+  fi
 fi
 
-# Parse flags before command
+# --- Parse flags ---
 USE_RAW=false
 for arg in "$@"; do
   case "$arg" in
-    --raw)
-      USE_RAW=true
-      USE_NH=false
-      ;;
-    --no-nom)
-      USE_NOM=false
-      ;;
+    --raw) USE_RAW=true; USE_NH=false ;;
+    --no-nom) USE_NOM=false ;;
   esac
 done
 
-# Filter out known flags from arguments
 ARGS=()
 for arg in "$@"; do
   case "$arg" in
@@ -80,12 +77,9 @@ for arg in "$@"; do
 done
 set -- "${ARGS[@]}"
 
-# Parse command
 COMMAND="${1:-switch}"
 
-# Helper to run a command with nom piped in (raw mode only).
-# When using `nh`, omit this wrapper — nh ships with its own nom
-# integration, and double-piping breaks nh's progress display.
+# --- Helpers ---
 run_with_nom() {
   if [[ "$USE_NOM" == "true" ]]; then
     "$@" |& nom
@@ -94,132 +88,147 @@ run_with_nom() {
   fi
 }
 
-# Validate command
-if [[ "$COMMAND" == "help" ]] || [[ "$COMMAND" == "-h" ]] || [[ "$COMMAND" == "--help" ]]; then
-  cat <<'EOF'
-Usage: nixos-build [command] [--raw] [--no-nom]
-
-Commands:
-  switch     Build and activate (default)
-  boot       Build and activate on next boot
-  test       Build and activate in test environment
-  upgrade    Update flake inputs then rebuild
-  dry        Dry-activate (show changes only)
-  check      Validate flake
-  build      Dry-build only
-  safe       Sequential: check -> build -> dry -> switch (stops on failure)
-
-Options:
-  --raw      Use nixos-rebuild instead of nh (escape hatch for edge cases)
-  --no-nom   Disable nix-output-monitor even if available (--raw only)
-
-Auto-detects:
-  - Hostname: selects correct nixosConfiguration
-  - Worktree: uses current directory (else /etc/nixos)
-  - nh: uses `nh os` by default (if installed); nh has built-in nom
-  - nom: only used in --raw mode; `nh` integrates nom natively
-EOF
-  exit 0
-fi
-
-# Build-driver dispatch helpers. Branches on USE_NH so every command
-# stays a one-liner with no duplicated logic.
-nh_run() {
-  if [[ "$USE_NH" == "true" ]]; then
-    nh "$@"
-  else
-    sudo nixos-rebuild "${@}" --flake "$FLAKE_PATH#$HOSTNAME"
+update_npm_packages() {
+  echo "> Updating npm packages to latest..."
+  UPDATE_SCRIPT=$(nix build "$FLAKE_PATH#opencode-npm-packages.updateScript" --no-link --print-out-paths 2>/dev/null || true)
+  if [[ -n "$UPDATE_SCRIPT" ]]; then
+    "$UPDATE_SCRIPT"
   fi
 }
 
+darwin_build() {
+  sudo darwin-rebuild "$@" --flake "$FLAKE_PATH#$HOSTNAME"
+}
+
+# --- Help ---
+if [[ "$COMMAND" == "help" || "$COMMAND" == "-h" || "$COMMAND" == "--help" ]]; then
+  echo "Usage: nixos-build [command] [--raw] [--no-nom]"
+  echo ""
+  echo "Commands:"
+  echo "  switch     Build and activate (default)"
+  echo "  boot       Build and activate on next boot (NixOS only)"
+  echo "  test       Build and activate in test environment (NixOS only)"
+  echo "  upgrade    Update npm packages + flake inputs + rebuild"
+  echo "  dry        Dry-activate (show changes only)"
+  echo "  check      Validate flake"
+  echo "  build      Dry-build only"
+  echo "  safe       Sequential: check -> build -> dry -> switch"
+  echo ""
+  echo "Options:"
+  echo "  --raw      Use nixos-rebuild instead of nh (Linux only)"
+  echo "  --no-nom   Disable nix-output-monitor"
+  exit 0
+fi
+
+# --- Command dispatch ---
 case "$COMMAND" in
   switch)
     echo ""
-    echo "> Building NixOS configuration (switch)..."
-    if [[ "$USE_NH" == "true" ]]; then
-      echo "> Driver: nh os switch (flake locked via NH_FLAKE)"
+    if $IS_DARWIN; then
+      echo "> Building Darwin configuration (switch)..."
+      darwin_build switch
+      echo ""
+      echo "> Switching home-manager..."
+      home-manager switch --flake "$FLAKE_PATH#$HOSTNAME"
     else
-      echo "> Driver: nixos-rebuild switch (--raw)"
-      echo "> Using flake: $FLAKE_PATH#$HOSTNAME"
-    fi
-    if [[ "$USE_NH" == "true" ]]; then
-      nh os switch
-    else
-      run_with_nom sudo nixos-rebuild switch --flake "$FLAKE_PATH#$HOSTNAME"
+      echo "> Building NixOS configuration (switch)..."
+      if [[ "$USE_NH" == "true" ]]; then
+        nh os switch
+      else
+        run_with_nom sudo nixos-rebuild switch --flake "$FLAKE_PATH#$HOSTNAME"
+      fi
     fi
     ;;
+
   boot)
+    if $IS_DARWIN; then
+      echo "> 'boot' not supported on Darwin. Use 'switch' instead."
+      exit 1
+    fi
     echo ""
     echo "> Building NixOS configuration (boot)..."
-    if [[ "$USE_NH" == "true" ]]; then
-      echo "> Driver: nh os boot (flake locked via NH_FLAKE)"
-    else
-      echo "> Driver: nixos-rebuild boot (--raw)"
-      echo "> Using flake: $FLAKE_PATH#$HOSTNAME"
-    fi
     if [[ "$USE_NH" == "true" ]]; then
       nh os boot
     else
       run_with_nom sudo nixos-rebuild boot --flake "$FLAKE_PATH#$HOSTNAME"
     fi
     ;;
+
   test)
+    if $IS_DARWIN; then
+      echo "> 'test' not supported on Darwin. Use 'switch' instead."
+      exit 1
+    fi
     echo ""
     echo "> Building NixOS configuration (test)..."
-    if [[ "$USE_NH" == "true" ]]; then
-      echo "> Driver: nh os test (flake locked via NH_FLAKE)"
-    else
-      echo "> Driver: nixos-rebuild test (--raw)"
-      echo "> Using flake: $FLAKE_PATH#$HOSTNAME"
-    fi
     if [[ "$USE_NH" == "true" ]]; then
       nh os test
     else
       run_with_nom sudo nixos-rebuild test --flake "$FLAKE_PATH#$HOSTNAME"
     fi
     ;;
+
   upgrade)
     echo ""
-    echo "> Updating npm packages to latest..."
-    UPDATE_SCRIPT=$(nix build "$FLAKE_PATH#opencode-npm-packages.updateScript" --no-link --print-out-paths 2>/dev/null || true)
-    if [[ -n "$UPDATE_SCRIPT" ]]; then
-      "$UPDATE_SCRIPT"
-    fi
+    update_npm_packages
     echo ""
-    if [[ "$USE_NH" == "true" ]]; then
-      echo "> Updating flake inputs and rebuilding (nh os switch --update)..."
-      nh os switch --update
-    else
+    if $IS_DARWIN; then
       echo "> Updating flake inputs..."
-      nix flake update
+      nix flake update --flake "$FLAKE_PATH"
       echo ""
-      echo "> Building NixOS configuration (upgrade)..."
-      echo "> Using flake: $FLAKE_PATH#$HOSTNAME"
-      run_with_nom sudo nixos-rebuild switch --flake "$FLAKE_PATH#$HOSTNAME"
-    fi
-    ;;
-  dry)
-    if [[ "$USE_NH" == "true" ]]; then
-      echo "> Dry-activating (showing changes via nh)..."
-      nh os switch --dry
+      echo "> Building Darwin configuration (upgrade)..."
+      darwin_build switch
+      echo ""
+      echo "> Switching home-manager..."
+      home-manager switch --flake "$FLAKE_PATH#$HOSTNAME"
     else
-      echo "> Dry-activating (showing changes)..."
-      echo "> Using flake: $FLAKE_PATH#$HOSTNAME"
-      sudo nixos-rebuild dry-activate --flake "$FLAKE_PATH#$HOSTNAME"
+      if [[ "$USE_NH" == "true" ]]; then
+        echo "> Updating flake inputs and rebuilding (nh os switch --update)..."
+        nh os switch --update
+      else
+        echo "> Updating flake inputs..."
+        nix flake update
+        echo ""
+        echo "> Building NixOS configuration (upgrade)..."
+        run_with_nom sudo nixos-rebuild switch --flake "$FLAKE_PATH#$HOSTNAME"
+      fi
     fi
     ;;
+
+  dry)
+    echo ""
+    if $IS_DARWIN; then
+      echo "> Checking Darwin configuration (dry run)..."
+      darwin_build check
+    else
+      if [[ "$USE_NH" == "true" ]]; then
+        echo "> Dry-activating (nh)..."
+        nh os switch --dry
+      else
+        echo "> Dry-activating..."
+        sudo nixos-rebuild dry-activate --flake "$FLAKE_PATH#$HOSTNAME"
+      fi
+    fi
+    ;;
+
   check)
     echo "> Validating flake..."
     nix flake check
     ;;
+
   build)
     echo "> Dry-building..."
-    if [[ "$USE_NH" == "true" ]]; then
-      nh build "$FLAKE_PATH#nixosConfigurations.$HOSTNAME.config.system.build.toplevel"
+    if $IS_DARWIN; then
+      run_with_nom nix build "$FLAKE_PATH#darwinConfigurations.$HOSTNAME.config.system.build.toplevel"
     else
-      run_with_nom nix build "$FLAKE_PATH#nixosConfigurations.$HOSTNAME.config.system.build.toplevel"
+      if [[ "$USE_NH" == "true" ]]; then
+        nh build "$FLAKE_PATH#nixosConfigurations.$HOSTNAME.config.system.build.toplevel"
+      else
+        run_with_nom nix build "$FLAKE_PATH#nixosConfigurations.$HOSTNAME.config.system.build.toplevel"
+      fi
     fi
     ;;
+
   safe)
     echo ""
     echo "> Running safe build workflow..."
@@ -234,55 +243,83 @@ case "$COMMAND" in
     echo ""
 
     echo "> [2/4] Building..."
-    if [[ "$USE_NH" == "true" ]]; then
-      if ! nh build "$FLAKE_PATH#nixosConfigurations.$HOSTNAME.config.system.build.toplevel"; then
+    if $IS_DARWIN; then
+      if ! run_with_nom nix build "$FLAKE_PATH#darwinConfigurations.$HOSTNAME.config.system.build.toplevel"; then
         echo ""
         echo "> ERROR: Build failed. Stopping."
         exit 1
       fi
     else
-      if ! run_with_nom nix build "$FLAKE_PATH#nixosConfigurations.$HOSTNAME.config.system.build.toplevel"; then
-        echo ""
-        echo "> ERROR: Build failed. Stopping."
-        exit 1
+      if [[ "$USE_NH" == "true" ]]; then
+        if ! nh build "$FLAKE_PATH#nixosConfigurations.$HOSTNAME.config.system.build.toplevel"; then
+          echo ""
+          echo "> ERROR: Build failed. Stopping."
+          exit 1
+        fi
+      else
+        if ! run_with_nom nix build "$FLAKE_PATH#nixosConfigurations.$HOSTNAME.config.system.build.toplevel"; then
+          echo ""
+          echo "> ERROR: Build failed. Stopping."
+          exit 1
+        fi
       fi
     fi
     echo ""
 
     echo "> [3/4] Dry-activating..."
-    if [[ "$USE_NH" == "true" ]]; then
-      if ! nh os switch --dry; then
+    if $IS_DARWIN; then
+      if ! darwin_build check; then
         echo ""
         echo "> ERROR: Dry-activate failed. Stopping."
         exit 1
       fi
     else
-      if ! sudo nixos-rebuild dry-activate --flake "$FLAKE_PATH#$HOSTNAME"; then
-        echo ""
-        echo "> ERROR: Dry-activate failed. Stopping."
-        exit 1
+      if [[ "$USE_NH" == "true" ]]; then
+        if ! nh os switch --dry; then
+          echo ""
+          echo "> ERROR: Dry-activate failed. Stopping."
+          exit 1
+        fi
+      else
+        if ! sudo nixos-rebuild dry-activate --flake "$FLAKE_PATH#$HOSTNAME"; then
+          echo ""
+          echo "> ERROR: Dry-activate failed. Stopping."
+          exit 1
+        fi
       fi
     fi
     echo ""
 
     echo "> [4/4] Switching..."
-    if [[ "$USE_NH" == "true" ]]; then
-      if ! nh os switch; then
+    if $IS_DARWIN; then
+      if ! darwin_build switch; then
         echo ""
         echo "> ERROR: Switch failed. Stopping."
         exit 1
       fi
+      echo ""
+      echo "> Switching home-manager..."
+      home-manager switch --flake "$FLAKE_PATH#$HOSTNAME"
     else
-      if ! run_with_nom sudo nixos-rebuild switch --flake "$FLAKE_PATH#$HOSTNAME"; then
-        echo ""
-        echo "> ERROR: Switch failed. Stopping."
-        exit 1
+      if [[ "$USE_NH" == "true" ]]; then
+        if ! nh os switch; then
+          echo ""
+          echo "> ERROR: Switch failed. Stopping."
+          exit 1
+        fi
+      else
+        if ! run_with_nom sudo nixos-rebuild switch --flake "$FLAKE_PATH#$HOSTNAME"; then
+          echo ""
+          echo "> ERROR: Switch failed. Stopping."
+          exit 1
+        fi
       fi
     fi
 
     echo ""
     echo "> Safe build completed successfully!"
     ;;
+
   *)
     echo "Unknown command: $COMMAND"
     echo "Run 'nixos-build help' for usage"

@@ -51,26 +51,11 @@
       }
 
       nix-switch() {
-        local cmd="''${1:-switch}"
-        if [[ "$(uname)" == "Darwin" ]]; then
-          sudo darwin-rebuild switch --flake "$NIXOS_REPO#$(hostname)"
-        else
-          nixos-build "$cmd"
-        fi
+        nixos-build "''${1:-switch}"
       }
 
       nix-upgrade() {
-        if [[ "$(uname)" == "Darwin" ]]; then
-          UPDATE_SCRIPT=$(nix build "$NIXOS_REPO#opencode-npm-packages.updateScript" --no-link --print-out-paths 2>/dev/null || true)
-          if [[ -n "$UPDATE_SCRIPT" ]]; then
-            "$UPDATE_SCRIPT"
-          fi
-          nix flake update --flake "$NIXOS_REPO"
-          sudo darwin-rebuild switch --flake "$NIXOS_REPO#$(hostname)"
-          home-manager switch --flake "$NIXOS_REPO#$(hostname)"
-        else
-          nixos-build upgrade
-        fi
+        nixos-build upgrade
       }
 
       hms() {
