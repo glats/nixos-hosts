@@ -40,9 +40,8 @@
     };
 
     # gentle-ai upstream (for skills, commands, plugins)
-    # Must match version in pkgs/gentle-ai/default.nix
     gentle-ai-src = {
-      url = "github:Gentleman-Programming/gentle-ai/v1.42.0";
+      url = "github:Gentleman-Programming/gentle-ai/main";
       flake = false;
     };
 
@@ -53,9 +52,8 @@
     };
 
     # engram upstream (for OpenCode plugin)
-    # Must match version in pkgs/engram/default.nix
     engram-src = {
-      url = "github:Gentleman-Programming/engram/v1.16.3";
+      url = "github:Gentleman-Programming/engram/main";
       flake = false;
     };
 

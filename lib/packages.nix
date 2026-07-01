@@ -31,8 +31,12 @@ let
 
   linuxPackages = rec {
     nixos-scripts = linuxPkgs.callPackage ../pkgs/nixos-scripts { };
-    gentle-ai = linuxPkgs.callPackage ../pkgs/gentle-ai { };
-    engram = linuxPkgs.callPackage ../pkgs/engram { };
+    gentle-ai = linuxPkgs.callPackage ../pkgs/gentle-ai {
+      gentle-ai-src = inputs.gentle-ai-src;
+    };
+    engram = linuxPkgs.callPackage ../pkgs/engram {
+      engram-src = inputs.engram-src;
+    };
     gentle-ai-assets-vanilla = linuxPkgs.callPackage ../pkgs/gentle-ai-assets/vanilla.nix {
       gentle-ai-src = inputs.gentle-ai-src;
       caveman-src = inputs.caveman-src;
@@ -61,8 +65,12 @@ let
   };
 
   darwinPackages = rec {
-    gentle-ai = darwinPkgs.callPackage ../pkgs/gentle-ai { };
-    engram = darwinPkgs.callPackage ../pkgs/engram { };
+    gentle-ai = darwinPkgs.callPackage ../pkgs/gentle-ai {
+      gentle-ai-src = inputs.gentle-ai-src;
+    };
+    engram = darwinPkgs.callPackage ../pkgs/engram {
+      engram-src = inputs.engram-src;
+    };
     gentle-ai-assets-vanilla = darwinPkgs.callPackage ../pkgs/gentle-ai-assets/vanilla.nix {
       gentle-ai-src = inputs.gentle-ai-src;
       caveman-src = inputs.caveman-src;
