@@ -32,6 +32,13 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # HyprDynamicMonitors — Hyprland monitor profile daemon with
+    # UPower lid-event support and EDID-based description matching.
+    hyprdynamicmonitors = {
+      url = "github:fiffeek/hyprdynamicmonitors";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # gentle-ai upstream (for skills, commands, plugins)
     # Must match version in pkgs/gentle-ai/default.nix
     gentle-ai-src = {
