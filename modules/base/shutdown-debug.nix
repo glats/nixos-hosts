@@ -1,7 +1,8 @@
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }:
 let
   cfg = config.my.shutdownDebug;
@@ -16,21 +17,24 @@ let
 
     # All commands are best-effort. Each MUST use `|| true` so a single
     # hung or missing tool cannot block the shutdown sequence.
-    journalctl -b -o short-precise > journal.log 2>&1 || true
-    dmesg -T                            > dmesg.log    2>&1 || true
-    ${pkgs.psmisc}/bin/pstree -ap       > pstree.log   2>&1 || true
-    ps auxf                             > ps.log       2>&1 || true
-    lsmod                               > lsmod.log    2>&1 || true
-    mount                               > mount.log    2>&1 || true
-    df -h                               > df.log       2>&1 || true
-    ${pkgs.lsof}/bin/lsof +L1           > lsof-deleted.log 2>&1 || true
-    cat /proc/cmdline                   > cmdline.log  2>&1 || true
-    cat /proc/acpi/wakeup               > acpi-wakeup.log 2>&1 || true
-    ${pkgs.lm_sensors}/bin/sensors       > sensors.log  2>&1 || true
+    # ALL commands use full Nix store paths because writeShellScript
+    # does not include non-stdenv tools in PATH automatically.
+    ${pkgs.systemd}/bin/journalctl -b -o short-precise > journal.log 2>&1 || true
+    ${pkgs.util-linux}/bin/dmesg -T                > dmesg.log    2>&1 || true
+    ${pkgs.psmisc}/bin/pstree -ap                  > pstree.log   2>&1 || true
+    ${pkgs.procps}/bin/ps auxf                     > ps.log       2>&1 || true
+    ${pkgs.kmod}/bin/lsmod                         > lsmod.log    2>&1 || true
+    ${pkgs.util-linux}/bin/mount                   > mount.log    2>&1 || true
+    ${pkgs.coreutils}/bin/df -h                    > df.log       2>&1 || true
+    ${pkgs.lsof}/bin/lsof +L1                      > lsof-deleted.log 2>&1 || true
+    cat /proc/cmdline                              > cmdline.log  2>&1 || true
+    cat /proc/acpi/wakeup                          > acpi-wakeup.log 2>&1 || true
+    ${pkgs.lm_sensors}/bin/sensors                 > sensors.log  2>&1 || true
 
-    # Optional: nvidia-smi only present on hosts with the proprietary driver
+    # Optional: nvidia-smi only present on hosts with the proprietary driver.
+    # Use absolute path so the check matches the actual binary location.
     if [ -x /run/current-system/sw/bin/nvidia-smi ]; then
-      nvidia-smi > nvidia-smi.log 2>&1 || true
+      /run/current-system/sw/bin/nvidia-smi > nvidia-smi.log 2>&1 || true
     fi
 
     # Self-clean: keep last 7 days of diagnostic dirs
