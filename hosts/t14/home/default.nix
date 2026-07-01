@@ -6,11 +6,10 @@
 #   - Ghostty + kitty settings (imported directly from home-linux/ because
 #     t14's curated import list omits home-linux/shared-modules.nix)
 #   - mouse-wiggle launcher
-{
-  config,
-  lib,
-  pkgs,
-  ...
+{ config
+, lib
+, pkgs
+, ...
 }:
 
 {
@@ -38,11 +37,11 @@
     enable = lib.mkDefault true;
     configFile = ../hdm/config.toml;
     extraFiles = {
-      "hyprconfigs/docked-lid-open.conf" = ../hdm/hyprconfigs/docked-lid-open.conf;
-      "hyprconfigs/docked-lid-closed.conf" = ../hdm/hyprconfigs/docked-lid-closed.conf;
-      "hyprconfigs/undocked-lid-open.conf" = ../hdm/hyprconfigs/undocked-lid-open.conf;
-      "hyprconfigs/undocked-lid-closed.conf" = ../hdm/hyprconfigs/undocked-lid-closed.conf;
-      "hyprconfigs/fallback.conf" = ../hdm/hyprconfigs/fallback.conf;
+      "hyprdynamicmonitors/hyprconfigs/docked-lid-open.conf" = ../hdm/hyprconfigs/docked-lid-open.conf;
+      "hyprdynamicmonitors/hyprconfigs/docked-lid-closed.conf" = ../hdm/hyprconfigs/docked-lid-closed.conf;
+      "hyprdynamicmonitors/hyprconfigs/undocked-lid-open.conf" = ../hdm/hyprconfigs/undocked-lid-open.conf;
+      "hyprdynamicmonitors/hyprconfigs/undocked-lid-closed.conf" = ../hdm/hyprconfigs/undocked-lid-closed.conf;
+      "hyprdynamicmonitors/hyprconfigs/fallback.conf" = ../hdm/hyprconfigs/fallback.conf;
     };
     extraFlags = [ "--enable-lid-events" ];
     installExamples = false;
