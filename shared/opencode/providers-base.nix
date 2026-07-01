@@ -1,6 +1,6 @@
-{ lib ? throw "providers-base.nix must be imported with lib"
-, activeProviderName ? "opencode-go-medium"
-,
+{
+  lib ? throw "providers-base.nix must be imported with lib",
+  activeProviderName ? "opencode-go-medium",
 }:
 
 let
@@ -59,6 +59,7 @@ let
   opencodeProvider = {
     opencode = {
       models = {
+        # RISKY: glm-5.2 — cache bug opencode#33998 causes context drops. Do not assign to orchestrator, design, or explore.
         "glm-5.2" = {
           name = "GLM 5.2";
           thinking = false;
@@ -67,6 +68,7 @@ let
           name = "GLM 5.1";
           thinking = false;
         };
+        # BLOCKED: kimi-k2.6 onboard — hermes-agent#35180 (HTTP 400 on thinking toggle). Re-evaluate when merged.
         "kimi-k2.6" = {
           name = "Kimi K2.6";
           thinking = false;
@@ -160,32 +162,32 @@ let
     {
       name = "opencode-go-full";
       phases = {
-        gentle-orchestrator = "opencode-go/kimi-k2.6";
+        gentle-orchestrator = "opencode-go/deepseek-v4-pro";
         sdd-init = "opencode-go/deepseek-v4-flash";
-        sdd-explore = "opencode-go/glm-5.2";
+        sdd-explore = "opencode-go/deepseek-v4-pro";
         sdd-propose = "opencode-go/deepseek-v4-pro";
         sdd-spec = "opencode-go/deepseek-v4-pro";
-        sdd-design = "opencode-go/glm-5.2";
-        sdd-tasks = "opencode-go/kimi-k2.6";
-        sdd-apply = "opencode-go/kimi-k2.6";
-        sdd-verify = "opencode-go/glm-5.2";
+        sdd-design = "opencode-go/glm-5.1";
+        sdd-tasks = "opencode-go/deepseek-v4-pro";
+        sdd-apply = "opencode-go/deepseek-v4-pro";
+        sdd-verify = "opencode-go/glm-5.1";
         sdd-archive = "opencode-go/deepseek-v4-flash";
-        sdd-onboard = "opencode-go/kimi-k2.6";
-        neutral = "opencode-go/kimi-k2.6";
+        sdd-onboard = "opencode-go/deepseek-v4-flash";
+        neutral = "opencode-go/deepseek-v4-pro";
       };
     }
     {
       name = "opencode-go-medium";
       phases = {
-        gentle-orchestrator = "opencode-go/kimi-k2.6";
+        gentle-orchestrator = "opencode-go/deepseek-v4-pro";
         sdd-init = "opencode-go/deepseek-v4-flash";
-        sdd-explore = "opencode-go/kimi-k2.6";
+        sdd-explore = "opencode-go/deepseek-v4-pro";
         sdd-propose = "opencode-go/deepseek-v4-pro";
         sdd-spec = "opencode-go/deepseek-v4-pro";
-        sdd-design = "opencode-go/deepseek-v4-pro";
-        sdd-tasks = "opencode-go/kimi-k2.6";
-        sdd-apply = "opencode-go/kimi-k2.6";
-        sdd-verify = "opencode-go/kimi-k2.6";
+        sdd-design = "opencode-go/glm-5.1";
+        sdd-tasks = "opencode-go/deepseek-v4-flash";
+        sdd-apply = "opencode-go/deepseek-v4-flash";
+        sdd-verify = "opencode-go/deepseek-v4-pro";
         sdd-archive = "opencode-go/deepseek-v4-flash";
         sdd-onboard = "opencode-go/deepseek-v4-flash";
         neutral = "opencode-go/deepseek-v4-flash";
@@ -194,15 +196,15 @@ let
     {
       name = "opencode-go-light";
       phases = {
-        gentle-orchestrator = "opencode-go/kimi-k2.6";
+        gentle-orchestrator = "opencode-go/deepseek-v4-flash";
         sdd-init = "opencode-go/deepseek-v4-flash";
-        sdd-explore = "opencode-go/deepseek-v4-flash";
+        sdd-explore = "opencode-go/deepseek-v4-pro";
         sdd-propose = "opencode-go/deepseek-v4-pro";
         sdd-spec = "opencode-go/deepseek-v4-pro";
         sdd-design = "opencode-go/deepseek-v4-pro";
         sdd-tasks = "opencode-go/deepseek-v4-flash";
-        sdd-apply = "opencode-go/kimi-k2.6";
-        sdd-verify = "opencode-go/deepseek-v4-flash";
+        sdd-apply = "opencode-go/deepseek-v4-flash";
+        sdd-verify = "opencode-go/deepseek-v4-pro";
         sdd-archive = "opencode-go/deepseek-v4-flash";
         sdd-onboard = "opencode-go/deepseek-v4-flash";
         neutral = "opencode-go/deepseek-v4-flash";
@@ -227,12 +229,9 @@ let
     }
   ];
 
-  activeProvider = builtins.foldl'
-    (
-      acc: p: if p.name == activeProviderName then p else acc
-    )
-    null
-    providers;
+  activeProvider = builtins.foldl' (
+    acc: p: if p.name == activeProviderName then p else acc
+  ) null providers;
   getModelForPhase =
     phase: provider: if provider == null then null else provider.phases.${phase} or null;
 
