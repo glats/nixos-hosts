@@ -8,10 +8,12 @@
 #   - XKB layout forced to "latam" (Chile) since i18n.nix defaults to "es"
 #   - btrfs swap, fonts, kmscon, and amd-laptop settings inherited from base
 #   - home-manager wired to ./home/omarchy.nix (replaces ./home/gnome.nix)
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
 }:
 
 {
@@ -152,9 +154,9 @@
     # monitor-hotplug-handler.sh (see hosts/t14/home/hypr/autostart.nix).
     monitors = [ "eDP-1,preferred,auto,1" ];
 
-    # T14 provides its own lid-switch bindl in monitors.nix that writes
-    # settings.conf + calls hyprctl keyword directly. Disable omarchy's
-    # default lid-switch bindl to eliminate the dual-writer race.
+    # T14 delegates lid-switch handling to HDM (UPower D-Bus).
+    # Disable omarchy's default lid-switch bindl to eliminate
+    # dual-writer races.
     hyprland.lidSwitch.enable = false;
 
     # Laptop panel is 1x scale (1920x1080 native).
@@ -231,9 +233,23 @@
       hostName = config.networking.hostName;
     };
     users.glats = {
-      imports = [ ./home/omarchy.nix ];
+      imports = [
+        ./home/omarchy.nix
+        inputs.hyprdynamicmonitors.homeManagerModules.default
+      ];
     };
   };
+
+  # HDM lid events depend on UPower D-Bus.  The amd-laptop module
+  # (modules/hardware/amd-laptop.nix) enables services.upower by default,
+  # but this assertion catches any accidental disable that would silently
+  # degrade lid-event handling.
+  assertions = [
+    {
+      assertion = config.services.upower.enable;
+      message = "UPower must be enabled for HDM lid events — see modules/hardware/amd-laptop.nix";
+    }
+  ];
 
   system.stateVersion = "26.05";
 }

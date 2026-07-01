@@ -6,7 +6,12 @@
 #   - Ghostty + kitty settings (imported directly from home-linux/ because
 #     t14's curated import list omits home-linux/shared-modules.nix)
 #   - mouse-wiggle launcher
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
   imports = [
@@ -26,44 +31,21 @@
   # from PATH via home.sessionPath in base.nix)
   # ------------------------------------------------------------------
 
-  # Seed settings.conf at activation time (NOT via home.file — that
-  # would make it a read-only Nix store symlink).  The file must be
-  # writable so the lid-switch bindl and exec-once validator can update
-  # $ENABLE_LAPTOP at runtime.
-  home.activation.seedHyprSettings = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    if [ ! -f "$HOME/.config/hypr/settings.conf" ]; then
-      mkdir -p "$HOME/.config/hypr"
-      printf '$ENABLE_LAPTOP = 1\n' > "$HOME/.config/hypr/settings.conf"
-    fi
-  '';
-
-  # Ensure DRM devices are probed before Hyprland starts.  The - prefix
-  # makes it non-fatal — Hyprland still starts if udevadm is unavailable.
-  xdg.configFile."systemd/user/wayland-wm@hyprland.desktop.service.d/udev-settle.conf".text = ''
-    [Service]
-    ExecStartPre=-/run/current-system/sw/bin/udevadm settle --timeout=10
-  '';
-
-  # Daemon that aligns monitors with lid state at startup and on every
-  # dock/undock cycle.  Listens on Hyprland socket2 for monitor add/remove
-  # events (complements omarchy-hyprland-monitor-watch which only reloads).
-  systemd.user.services.monitor-lid-validator = {
-    Unit = {
-      Description = "Align monitors with lid state";
-      After = [ "graphical-session.target" ];
-      PartOf = [ "graphical-session.target" ];
+  # HyprDynamicMonitors — event-driven monitor profile daemon.
+  # Detects lid state via UPower D-Bus and monitor hotplug via
+  # native Hyprland IPC. Profiles + hyprconfigs deployed from ./hdm/.
+  home.hyprdynamicmonitors = {
+    enable = lib.mkDefault true;
+    configFile = ../hdm/config.toml;
+    extraFiles = {
+      "hyprconfigs/docked-lid-open.conf" = ../hdm/hyprconfigs/docked-lid-open.conf;
+      "hyprconfigs/docked-lid-closed.conf" = ../hdm/hyprconfigs/docked-lid-closed.conf;
+      "hyprconfigs/undocked-lid-open.conf" = ../hdm/hyprconfigs/undocked-lid-open.conf;
+      "hyprconfigs/undocked-lid-closed.conf" = ../hdm/hyprconfigs/undocked-lid-closed.conf;
+      "hyprconfigs/fallback.conf" = ../hdm/hyprconfigs/fallback.conf;
     };
-    Service = {
-      Type = "simple";
-      ExecStart = "${config.home.homeDirectory}/.local/bin/monitor-lid-validator.sh --daemon";
-      Environment = [
-        "PATH=${config.home.homeDirectory}/.local/bin:/run/current-system/sw/bin"
-        "XDG_RUNTIME_DIR=%t"
-      ];
-      Restart = "on-failure";
-      RestartSec = 5;
-    };
-    Install.WantedBy = [ "graphical-session.target" ];
+    extraFlags = [ "--enable-lid-events" ];
+    installExamples = false;
   };
 
   systemd.user.services.waybar = {
@@ -89,16 +71,9 @@
   };
 
   home.file = {
-
     # Keyboard layout toggle (es <-> latam)
     ".local/share/omarchy/bin/kb-toggle.sh" = {
       source = ./scripts/kb-toggle.sh;
-      executable = true;
-    };
-
-    # Monitor layout validator — aligns monitors with lid state at startup.
-    ".local/bin/monitor-lid-validator.sh" = {
-      source = ./scripts/monitor-lid-validator.sh;
       executable = true;
     };
 

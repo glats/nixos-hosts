@@ -1,0 +1,78 @@
+[general]
+debounce_time_ms = 1500
+
+[lid_events]
+enabled = true
+
+[scoring]
+lid_state_match = 10
+monitor_match = 5
+description_match = 5
+
+[fallback_profile]
+config_file = "hyprconfigs/fallback.conf"
+config_file_type = "static"
+
+[profiles.docked_lid_open]
+config_file = "hyprconfigs/docked-lid-open.conf"
+config_file_type = "static"
+
+[profiles.docked_lid_open.conditions]
+lid_state = "Opened"
+
+[[profiles.docked_lid_open.conditions.required_monitors]]
+description = "Lenovo Group Limited 0x40A9"
+
+[[profiles.docked_lid_open.conditions.required_monitors]]
+description = "AOC 24P1W1.*OTNQ4HA000101"
+match_description_using_regex = true
+
+[[profiles.docked_lid_open.conditions.required_monitors]]
+description = "Lenovo Group Limited LEN G24-10.*U5B4GWF1"
+match_description_using_regex = true
+
+[[profiles.docked_lid_open.conditions.required_monitors]]
+description = "AOC 2470W.*GGZM3HA438259"
+match_description_using_regex = true
+
+[profiles.docked_lid_closed]
+config_file = "hyprconfigs/docked-lid-closed.conf"
+config_file_type = "static"
+
+[profiles.docked_lid_closed.conditions]
+lid_state = "Closed"
+
+[[profiles.docked_lid_closed.conditions.required_monitors]]
+description = "Lenovo Group Limited 0x40A9"
+
+[[profiles.docked_lid_closed.conditions.required_monitors]]
+description = "AOC 24P1W1.*OTNQ4HA000101"
+match_description_using_regex = true
+
+[[profiles.docked_lid_closed.conditions.required_monitors]]
+description = "Lenovo Group Limited LEN G24-10.*U5B4GWF1"
+match_description_using_regex = true
+
+[[profiles.docked_lid_closed.conditions.required_monitors]]
+description = "AOC 2470W.*GGZM3HA438259"
+match_description_using_regex = true
+
+[profiles.undocked_lid_open]
+config_file = "hyprconfigs/undocked-lid-open.conf"
+config_file_type = "static"
+
+[profiles.undocked_lid_open.conditions]
+lid_state = "Opened"
+
+[[profiles.undocked_lid_open.conditions.required_monitors]]
+description = "Lenovo Group Limited 0x40A9"
+
+[profiles.undocked_lid_closed]
+config_file = "hyprconfigs/undocked-lid-closed.conf"
+config_file_type = "static"
+
+[profiles.undocked_lid_closed.conditions]
+lid_state = "Closed"
+
+[[profiles.undocked_lid_closed.conditions.required_monitors]]
+description = "Lenovo Group Limited 0x40A9"
