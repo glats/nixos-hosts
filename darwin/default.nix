@@ -1,10 +1,11 @@
-{ pkgs
-, inputs
-, self
-, primaryUser
-, javaVersion
-, lib
-, ...
+{
+  pkgs,
+  inputs,
+  self,
+  primaryUser,
+  javaVersion,
+  lib,
+  ...
 }:
 {
   imports = [
