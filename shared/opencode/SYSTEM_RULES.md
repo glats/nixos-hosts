@@ -36,15 +36,52 @@ Even if user writes "crear función", output: `function createUser()` not `funct
 
 Use text indicators only: "WARNING:", "INFO:", "ERROR:", "SUCCESS:", not ⚠️ 🔥 ❌ ✅
 
-## Rules
+## Operating Protocol
 
-- Never add "Co-Authored-By" or AI attribution to commits. Use conventional commits only.
-- Never build after changes.
-- When asking a question, STOP and wait for response. Never continue or assume answers.
-- Never agree with user claims without verification. Say "déjame verificar" and check code/docs first.
+### Plan Before Act
+
+Before any tool call, decide ALL files and resources you will need. Batch independent reads together in parallel. Only make sequential calls when you truly cannot know the next file without seeing a result first.
+
+### Respond to User
+
+- When user gives a direction, do NOT stop to ask clarifying questions about obvious things. Proactively gather context, plan, implement, and verify.
+- If legitimately blocked (missing information, ambiguous requirement), ask ONE question at a time, then STOP and wait.
+- Default to short answers. Start with the minimum useful response. Expand only when asked or when the task genuinely requires it.
+- Do NOT present option menus, exhaustive lists, or multiple approaches unless there is a real fork with meaningful tradeoffs.
+- NEVER agree with user claims without verification. Say "déjame verificar" and check code/docs first.
 - If user is wrong, explain WHY with evidence. If you were wrong, acknowledge with proof.
 - Always propose alternatives with tradeoffs when relevant.
-- Verify technical claims before stating them. If unsure, investigate first.
+- Never add "Co-Authored-By" or AI attribution to commits. Use conventional commits only.
+- Never build after changes.
+
+### Research First
+
+**NEVER guess about how things work.** Before stating a technical claim, choosing an approach, or implementing a feature, research using MCP tools:
+
+- **github** — search real code examples
+- **context7** — check official docs
+- **exa** — find current best practices
+
+This applies in EVERY phase: exploration, design, implementation, review. If you catch yourself thinking "I think it works like X", stop and verify via MCP instead.
+
+### Verify Before Done
+
+After every implementation task:
+
+1. Run `nix flake check --no-build` to validate
+2. Run `format-nix` to format
+3. Verify the change actually solves the original problem
+4. If tests exist, run them
+
+Do NOT declare done until verification passes. If verification fails, fix and re-verify.
+
+### When Blocked (Escalation)
+
+If you cannot proceed (missing info, permission denied, error you cannot resolve):
+
+1. First try an alternative approach
+2. If still blocked, report CLEARLY: what you tried, what failed, what you need
+3. Ask exactly ONE question to unblock
 
 ## Secret Handling
 
@@ -57,7 +94,7 @@ Use text indicators only: "WARNING:", "INFO:", "ERROR:", "SUCCESS:", not ⚠️ 
 
 ## Delegation Rules
 
-Core principle: **does this inflate my context without need?** If yes → use `delegate` or `task`. If no → do it inline.
+Core principle: **does this inflate my context without need?**
 
 | Action | Inline | Delegate |
 |--------|--------|----------|
@@ -82,11 +119,7 @@ Core principle: **does this inflate my context without need?** If yes → use `d
 - Writing a feature across multiple files inline → delegate
 - Running tests or builds inline → delegate
 
-**NEVER guess about how things work.** Always research using MCP tools before acting — especially during exploration phase. ALWAYS use:
-
-- **github** — search real code examples
-- **context7** — check official docs
-- **exa** — find current best practices
+**Decision rule**: When unsure, ask "will the output of this fit in < 50 lines and do I need it immediately?" If yes → inline. If no → delegate.
 
 ## Skills (Auto-load based on context)
 
