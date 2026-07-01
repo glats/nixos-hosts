@@ -71,7 +71,6 @@ with pkgs;
   dex
 
   # Desktop applications
-  windsurf
   flatpak
   meld
   xdg-user-dirs
