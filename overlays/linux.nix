@@ -110,17 +110,6 @@ final: prev: {
     dontUsePytestCheck = true;
   });
 
-  # waybar from master — includes Hyprland 0.55 workspace fixes (PR #5013).
-  # TODO: remove when nixpkgs waybar > 0.15.0 includes the fix.
-  waybar = prev.waybar.overrideAttrs (old: {
-    version = "0.15.0-${builtins.substring 0 7 inputs.waybar-src.rev}";
-    src = inputs.waybar-src;
-    # master added cava subproject dependency post-0.15.0; disable it.
-    mesonFlags = (old.mesonFlags or [ ]) ++ [ "-Dcava=disabled" ];
-    # Skip version check — waybar reports v0.15.0 regardless of source.
-    doInstallCheck = false;
-  });
-
   # cffsubr 0.4.0 ships a bundled `tx` (from afdko 5.0.1) with hard-coded
   # paths to afdko 5.0.1's site-packages. Rebuild cffsubr against the
   # 4.0.3 afdko above so its wrapper points at the 4.0.3 path.
