@@ -16,39 +16,54 @@ let
         };
       };
       models = {
+        # RISKY: glm-5.1 "gives up too quickly" on failures. OK for spec, not for apply/verify.
         "z-ai/glm-5.1" = {
           name = "GLM 5.1";
         };
         "minimaxai/minimax-m3" = {
           name = "MiniMax M3";
         };
+        # BROKEN: minimax-m2.7 — TUI crash concurrent tools (opencode#19463), stops mid-plan (oh-my-openagent#3198).
+        # Do not assign to explore or any phase requiring parallel tool calls.
         "minimaxai/minimax-m2.7" = {
           name = "MiniMax M2.7";
         };
         "deepseek-ai/deepseek-v4-flash" = {
           name = "DeepSeek V4 Flash";
         };
+        # RISKY on NIM: deepseek-v4-pro — tool-call streaming may not continue in agent workflows
+        # (NVIDIA forum Apr 27), requires chat_template_kwargs or hangs (opencode#24264).
+        # Use nemotron-3-ultra for orchestration/reasoning phases instead.
         "deepseek-ai/deepseek-v4-pro" = {
           name = "DeepSeek V4 Pro";
         };
         "nvidia/nemotron-3-ultra-550b-a55b" = {
           name = "Nemotron 3 Ultra";
         };
+        # RISKY: step-3.7-flash — 11B active = low knowledge storage. Fragile on long multi-turn.
+        # Terminal-Bench gap (59.5 vs 82.7). Best with Advisor Mode. Use only for tasks with clear scope.
         "stepfun-ai/step-3.7-flash" = {
           name = "Step 3.7 Flash";
         };
         "mistralai/mistral-medium-3.5-128b" = {
           name = "Mistral Medium 3.5";
         };
+        # RISKY: gemma-4 — mixed implementation quality. Best as "coding partner" not autonomous agent.
         "google/gemma-4-31b-it" = {
           name = "Gemma 4";
         };
+        # BROKEN: qwen3.5 on hosted NIM — "System message must be at beginning" (opencode#16560, #20785).
+        # Fix PR #16981 not merged. Tool calls fail silently without custom chat template. Do not assign.
         "qwen/qwen3.5-397b-a17b" = {
           name = "Qwen 3.5";
         };
+        # BROKEN: gpt-oss-120b multi-turn — subagent stops mid-reasoning (opencode#27210).
+        # Requires Responses API, not Chat Completions. Do not assign to any phase.
         "openai/gpt-oss-120b" = {
           name = "GPT OSS 120b";
         };
+        # BROKEN: kimi-k2.6 on NIM — HTTP 500 "unhashable type: 'dict'" (opencode#26662, #26405),
+        # infinite "!!!" repetition loops, 30 RPH. Do not assign to any phase.
         "moonshotai/kimi-k2.6" = {
           name = "Kimi K2.6";
         };
@@ -128,18 +143,18 @@ let
     {
       name = "nvidia";
       phases = {
-        gentle-orchestrator = "nvidia/deepseek-ai/deepseek-v4-pro";
+        gentle-orchestrator = "nvidia/nvidia/nemotron-3-ultra-550b-a55b";
         sdd-init = "nvidia/deepseek-ai/deepseek-v4-flash";
-        sdd-explore = "nvidia/minimaxai/minimax-m3";
-        sdd-propose = "nvidia/deepseek-ai/deepseek-v4-pro";
-        sdd-spec = "nvidia/deepseek-ai/deepseek-v4-pro";
-        sdd-design = "nvidia/deepseek-ai/deepseek-v4-pro";
+        sdd-explore = "nvidia/nvidia/nemotron-3-ultra-550b-a55b";
+        sdd-propose = "nvidia/nvidia/nemotron-3-ultra-550b-a55b";
+        sdd-spec = "nvidia/mistralai/mistral-medium-3.5-128b";
+        sdd-design = "nvidia/mistralai/mistral-medium-3.5-128b";
         sdd-tasks = "nvidia/minimaxai/minimax-m3";
         sdd-apply = "nvidia/minimaxai/minimax-m3";
-        sdd-verify = "nvidia/deepseek-ai/deepseek-v4-pro";
+        sdd-verify = "nvidia/nvidia/nemotron-3-ultra-550b-a55b";
         sdd-archive = "nvidia/deepseek-ai/deepseek-v4-flash";
-        sdd-onboard = "nvidia/deepseek-ai/deepseek-v4-pro";
-        neutral = "nvidia/deepseek-ai/deepseek-v4-pro";
+        sdd-onboard = "nvidia/deepseek-ai/deepseek-v4-flash";
+        neutral = "nvidia/nvidia/nemotron-3-ultra-550b-a55b";
       };
     }
     {
