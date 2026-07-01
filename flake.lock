@@ -209,16 +209,16 @@
     "engram-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1781347092,
-        "narHash": "sha256-qk3pnrE/2Vzn+sOHsVp+pXyqCEFVLpaecb/AbAQPds0=",
+        "lastModified": 1782822586,
+        "narHash": "sha256-I/fq3+rN3oYGMlhtqjfaF6lHwvbOdeFIWnKX/eFYeHI=",
         "owner": "Gentleman-Programming",
         "repo": "engram",
-        "rev": "d38bbab8891215a169ceefe373f1c7dfe12981d1",
+        "rev": "6fc70fbcf042f569882a9ea80b2306bafbbf4f94",
         "type": "github"
       },
       "original": {
         "owner": "Gentleman-Programming",
-        "ref": "v1.16.3",
+        "ref": "main",
         "repo": "engram",
         "type": "github"
       }
@@ -313,16 +313,16 @@
     "gentle-ai-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1782165808,
-        "narHash": "sha256-74nCSfhy3NHiJPPYPPQC+XydmepyubZhDQouMkoV7lk=",
+        "lastModified": 1782902314,
+        "narHash": "sha256-8GCeWMkiUdRhuxGYzjqCPfl/q32MnvdJzeyeRwjMto8=",
         "owner": "Gentleman-Programming",
         "repo": "gentle-ai",
-        "rev": "aa33ce5b2350ba60a4ce45f6d67e57c61c4c2efe",
+        "rev": "84fcf3df058312883268df0ba5785142daeb0cb8",
         "type": "github"
       },
       "original": {
         "owner": "Gentleman-Programming",
-        "ref": "v1.42.0",
+        "ref": "main",
         "repo": "gentle-ai",
         "type": "github"
       }
