@@ -1202,7 +1202,6 @@
         "omarchy-nix": "omarchy-nix",
         "pipewire-module-xrdp-src": "pipewire-module-xrdp-src",
         "sops-nix": "sops-nix",
-        "sub-agent-statusline": "sub-agent-statusline",
         "thinkfan-ui-src": "thinkfan-ui-src"
       }
     },
@@ -1223,22 +1222,6 @@
       "original": {
         "owner": "Mic92",
         "repo": "sops-nix",
-        "type": "github"
-      }
-    },
-    "sub-agent-statusline": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1782771317,
-        "narHash": "sha256-OgbL3PUtEHPvVyghOhltNLSSGMmKMnxqX1lc902wAxQ=",
-        "owner": "Joaquinvesapa",
-        "repo": "sub-agent-statusline",
-        "rev": "fcf0bd65a35677ca59509341a65a00240ad3ea18",
-        "type": "github"
-      },
-      "original": {
-        "owner": "Joaquinvesapa",
-        "repo": "sub-agent-statusline",
         "type": "github"
       }
     },

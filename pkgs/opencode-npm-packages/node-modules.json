@@ -1,7 +1,7 @@
 {
-  "@opencode-ai/sdk": "sha256-5SXpnByaBmZuwSavWrvQfc+meghDzum3J+EU5K8soQ4=",
-  "@opencode-ai/plugin": "sha256-+i70+xWjrGKhZ+BdZQ3cHeQvRoYy/Ml8cCEesM1RfyM=",
+  "@opencode-ai/sdk": "sha256-qnVhMt57GLWwdn38LGUrQEcaRoQ02Qa74GHoUJlSEyQ=",
+  "@opencode-ai/plugin": "sha256-H39xQzMu6rYxmBveBQGzA0XlAxaZ3ESxb3fG5mKpBKE=",
   "unique-names-generator": "sha256-lMgTsgNpjzJGOIwvQKCwhU9Ze/aq0oPGh0JLNdBUecY=",
-  "opencode-subagent-statusline": "sha256-1aQSpXO7G4WEehH0gcTAEqjh06uzv+P5WVUyJPaHRXc=",
-  "opencode-sdd-engram-manage": "sha256-KK2DBAORcPHGQVOFg4MG7icXYvoaGPC6kv6VucuXv8U="
+  "opencode-subagent-statusline": "sha256-vy74WT69lkYjGBbfhaMPkgdIjVenvkFbBSI19cYGNCo=",
+  "opencode-sdd-engram-manage": "sha256-5Q6/e8Xuger/p/LkWshP+phniI7PAzF7xYaHtM1m4zM="
 }
