@@ -32,6 +32,13 @@
   };
 
   config = lib.mkIf config.boot-settings.enable {
+    # linuxPackages_zen on 7.x produces vmlinuz instead of bzImage
+    # (nixpkgs#521113). Without this, the toplevel check fails with
+    # "The bootloader cannot find the proper kernel image".
+    # The file IS a valid x86 bzImage — just named vmlinuz.
+    # See overlays/linux.nix for the rationale (avoiding overlay = staying in cache).
+    system.boot.loader.kernelFile = lib.mkForce "vmlinuz";
+
     boot = {
       loader.systemd-boot = {
         enable = true;
@@ -41,6 +48,7 @@
       plymouth.enable = true;
       consoleLogLevel = 0;
       initrd.verbose = false;
+      kernelPackages = pkgs.linuxPackages_zen;
       kernelParams = [
         "quiet"
         "splash"
