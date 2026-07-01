@@ -20,9 +20,9 @@ Runnable Briefing; refer to that document for the full operational queries.
 
 | Label | Connector | Description | WS-Alias |
 |-------|-----------|-------------|----------|
-| AOC 24P1W1 (rotated) | DP-5 | `desc:AOC 24P1W1 OTNQ4HA000101` | 1,4,7,10,13,16,19 |
-| Lenovo G24-10 | DP-4 | `desc:Lenovo Group Limited LEN G24-10 U5B4GWF1` | 2,5,8,11,14,17,20 |
-| AOC 2470W | DP-3 | `desc:AOC 2470W GGZM3HA438259` | 3,6,9,12,15,18 |
+| AOC 24P1W1 (rotated) | varies (DP-*) | `desc:AOC 24P1W1 OTNQ4HA000101` | 1,4,7,10,13,16,19 |
+| Lenovo G24-10 | varies (DP-*) | `desc:Lenovo Group Limited LEN G24-10 U5B4GWF1` | 2,5,8,11,14,17,20 |
+| AOC 2470W | varies (DP-*) | `desc:AOC 2470W GGZM3HA438259` | 3,6,9,12,15,18 |
 | T14 built-in | eDP-1 | `Lenovo Group Limited 0x40A9` | none (free) |
 
 ## Positions
