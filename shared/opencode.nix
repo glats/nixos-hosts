@@ -1,8 +1,9 @@
-{ config
-, lib
-, pkgs
-, inputs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
 }:
 
 with lib;
@@ -69,7 +70,10 @@ let
             provider = allProviders;
             mcp = enabledMcps;
             permission = cfg.permissions;
-            instructions = [ "SYSTEM_RULES.md" ];
+            instructions = [
+              "SYSTEM_RULES.md"
+              "sdd-review-policy.md"
+            ];
           }
           // lib.optionalAttrs (cfg.disabledProviders != [ ]) { disabled_providers = cfg.disabledProviders; }
         )
@@ -89,6 +93,10 @@ let
         ".config/${runtimeCfg.dir}/SYSTEM_RULES.md" = {
           force = true;
           source = ./opencode/SYSTEM_RULES.md;
+        };
+        ".config/${runtimeCfg.dir}/sdd-review-policy.md" = {
+          force = true;
+          source = ./opencode/sdd-review-policy.md;
         };
         ".config/${runtimeCfg.dir}/AGENTS.md" = {
           force = true;
@@ -140,7 +148,7 @@ let
             # the symlink points to the read-only nix store which OpenCode can't write to.
             # cmp guard is only used to skip unnecessary writes to already-real files
             # that haven't changed since the last build.
-            for file in opencode.json IDENTITY.md SYSTEM_RULES.md AGENTS.md sdd-orchestrator.md package.json .gitignore tui.json; do
+            for file in opencode.json IDENTITY.md SYSTEM_RULES.md AGENTS.md sdd-orchestrator.md sdd-review-policy.md package.json .gitignore tui.json; do
               target="$runtime_dir/$file"
               if [ -L "$target" ]; then
                 src="$(${pkgs.coreutils}/bin/readlink -f "$target")"
