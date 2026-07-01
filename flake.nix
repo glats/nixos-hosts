@@ -94,8 +94,8 @@
       inputs.brew-src.follows = "homebrew-brew";
     };
     homebrew-brew = {
-      # Fix commit: "cleanup undefined-method-to_sym-for-nil" (5.1.10 + 17 commits)
-      url = "github:Homebrew/brew/3f0f2574bc0c89f75271cd7ee21695bfdade50f6";
+      # Master incluye fix de `to_sym for nil` y `--force-cleanup` (nix-darwin requerido)
+      url = "github:Homebrew/brew/master";
       flake = false;
     };
 
@@ -113,10 +113,11 @@
   };
 
   outputs =
-    inputs@{ self
-    , nixpkgs
-    , home-manager
-    , ...
+    inputs@{
+      self,
+      nixpkgs,
+      home-manager,
+      ...
     }:
     let
       # --- Builders ---
