@@ -1,6 +1,6 @@
-{
-  lib ? throw "providers-base.nix must be imported with lib",
-  activeProviderName ? "opencode-go-medium",
+{ lib ? throw "providers-base.nix must be imported with lib"
+, activeProviderName ? "opencode-go-medium"
+,
 }:
 
 let
@@ -244,9 +244,12 @@ let
     }
   ];
 
-  activeProvider = builtins.foldl' (
-    acc: p: if p.name == activeProviderName then p else acc
-  ) null providers;
+  activeProvider = builtins.foldl'
+    (
+      acc: p: if p.name == activeProviderName then p else acc
+    )
+    null
+    providers;
   getModelForPhase =
     phase: provider: if provider == null then null else provider.phases.${phase} or null;
 

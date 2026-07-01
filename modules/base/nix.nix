@@ -65,8 +65,9 @@
     # Resiliencia ante red lenta
     stalled-download-timeout = 30; # default 300s — falla rápido en descargas colgadas
     http-connections = 50; # default 25 — más descargas paralelas
-    download-attempts = 10; # default 5 — más reintentos
-    connect-timeout = 15; # timeout de conexión
+    download-attempts = 3; # default 5 — menos reintentos para no colgarse
+    connect-timeout = 5; # timeout de conexión — fallar rápido
+    fallback = true; # si un caché falla, compilar local
   };
 
   # Pin the system-wide flake registry so that bare references like

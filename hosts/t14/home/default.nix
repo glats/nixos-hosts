@@ -72,13 +72,13 @@
       PartOf = [ "graphical-session.target" ];
       After = [ "graphical-session.target" ];
       ConditionEnvironment = [ "WAYLAND_DISPLAY" ];
+      StartLimitBurst = 20;
+      StartLimitIntervalSec = "5s";
     };
     Service = {
       ExecStart = "${pkgs.waybar}/bin/waybar";
       Restart = "always";
       RestartSec = "100ms";
-      StartLimitBurst = 20;
-      StartLimitIntervalSec = "5s";
       StandardOutput = "null";
       StandardError = "journal";
       SyslogIdentifier = "waybar";
