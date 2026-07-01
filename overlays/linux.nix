@@ -34,13 +34,12 @@ final: prev: {
     qtsvg = final.qt6.qtsvg;
   };
 
-  # All hosts use the default kernel (linuxPackages) for binary cache
-  # compatibility. Default kernel produces bzImage — no kernelFile override
-  # needed. Previously used linuxPackages_zen but it forced NVIDIA legacy_580
-  # (GTX 1050) to rebuild from source on every nixpkgs update because zen
-  # changes frequently and Hydra doesn't cache legacy_580 for every kernel.
-  # Default kernel is stable + cached → fast system builds.
-  # See: AGENTS.md strategy history
+  # linuxPackages_zen is used as-is from nixpkgs (pinned via flake.lock).
+  # The kernel produces vmlinuz instead of bzImage on 7.x (nixpkgs#521113).
+  # Instead of overriding the kernel (which changes the hash and forces a
+  # from-source rebuild), we set system.boot.loader.kernelFile = "vmlinuz"
+  # in modules/features/boot.nix. The file IS a valid bzImage — just
+  # named vmlinuz. The kernel stays in cache.nixos.org.
 
   # Symbola font: archive.org is unreliable and frequently drops snapshots or
   # times out. Use a stable mirror (Slackware UK Salix) instead.
