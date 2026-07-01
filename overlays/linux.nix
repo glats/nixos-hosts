@@ -35,11 +35,10 @@ final: prev: {
   };
 
   # linuxPackages_zen is used as-is from nixpkgs (pinned via flake.lock).
-  # The kernel produces vmlinuz instead of bzImage on 7.x (nixpkgs#521113).
-  # Instead of overriding the kernel (which changes the hash and forces a
-  # from-source rebuild), we set system.boot.loader.kernelFile = "vmlinuz"
-  # in modules/features/boot.nix. The file IS a valid bzImage — just
-  # named vmlinuz. The kernel stays in cache.nixos.org.
+  # Previous versions of zen (early 7.x) produced vmlinuz instead of bzImage
+  # (nixpkgs#521113), requiring a kernelFile override. Zen 7.1.2+ produces
+  # bzImage again — no override needed. Keep an eye on future zen releases
+  # in case the vmlinuz regression re-appears.
 
   # Symbola font: archive.org is unreliable and frequently drops snapshots or
   # times out. Use a stable mirror (Slackware UK Salix) instead.
