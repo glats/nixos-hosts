@@ -26,7 +26,7 @@
   # theme.nix must be listed before this entry so colorScheme.palette is set.
   inputs.omarchy-nix.homeManagerModules.btop
   ./vscode.nix
-  ./windsurf.nix
+  #./windsurf.nix
   ./remote-desktop.nix
   ../shared/shell-aliases.nix
   ../shared/opencode.nix
