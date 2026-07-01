@@ -57,12 +57,6 @@
       flake = false;
     };
 
-    # TUI plugins for OpenCode
-    sub-agent-statusline = {
-      url = "github:Joaquinvesapa/sub-agent-statusline";
-      flake = false;
-    };
-
     # --- NixOS-only inputs ---
     asus-fan-control-src = {
       url = "github:dominiksalvet/asus-fan-control";
