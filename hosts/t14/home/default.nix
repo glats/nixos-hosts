@@ -6,7 +6,7 @@
 #   - Ghostty + kitty settings (imported directly from home-linux/ because
 #     t14's curated import list omits home-linux/shared-modules.nix)
 #   - mouse-wiggle launcher
-{ config, lib, ... }:
+{ config, lib, pkgs, ... }:
 
 {
   imports = [
@@ -64,6 +64,28 @@
       RestartSec = 5;
     };
     Install.WantedBy = [ "graphical-session.target" ];
+  };
+
+  systemd.user.services.waybar = {
+    Unit = {
+      Description = "Waybar status bar";
+      PartOf = [ "graphical-session.target" ];
+      After = [ "graphical-session.target" ];
+      ConditionEnvironment = [ "WAYLAND_DISPLAY" ];
+    };
+    Service = {
+      ExecStart = "${pkgs.waybar}/bin/waybar";
+      Restart = "always";
+      RestartSec = "100ms";
+      StartLimitBurst = 20;
+      StartLimitIntervalSec = "5s";
+      StandardOutput = "null";
+      StandardError = "journal";
+      SyslogIdentifier = "waybar";
+    };
+    Install = {
+      WantedBy = [ "graphical-session.target" ];
+    };
   };
 
   home.file = {
