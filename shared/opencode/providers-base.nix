@@ -160,52 +160,52 @@ let
     {
       name = "opencode-go-full";
       phases = {
-        gentle-orchestrator = "kimi-k2.6";
-        sdd-init = "deepseek-v4-flash";
-        sdd-explore = "glm-5.2";
-        sdd-propose = "deepseek-v4-pro";
-        sdd-spec = "deepseek-v4-pro";
-        sdd-design = "glm-5.2";
-        sdd-tasks = "kimi-k2.6";
-        sdd-apply = "kimi-k2.6";
-        sdd-verify = "glm-5.2";
-        sdd-archive = "deepseek-v4-flash";
-        sdd-onboard = "kimi-k2.6";
-        neutral = "kimi-k2.6";
+        gentle-orchestrator = "opencode/kimi-k2.6";
+        sdd-init = "opencode/deepseek-v4-flash";
+        sdd-explore = "opencode/glm-5.2";
+        sdd-propose = "opencode/deepseek-v4-pro";
+        sdd-spec = "opencode/deepseek-v4-pro";
+        sdd-design = "opencode/glm-5.2";
+        sdd-tasks = "opencode/kimi-k2.6";
+        sdd-apply = "opencode/kimi-k2.6";
+        sdd-verify = "opencode/glm-5.2";
+        sdd-archive = "opencode/deepseek-v4-flash";
+        sdd-onboard = "opencode/kimi-k2.6";
+        neutral = "opencode/kimi-k2.6";
       };
     }
     {
       name = "opencode-go-medium";
       phases = {
-        gentle-orchestrator = "kimi-k2.6";
-        sdd-init = "deepseek-v4-flash";
-        sdd-explore = "kimi-k2.6";
-        sdd-propose = "deepseek-v4-pro";
-        sdd-spec = "deepseek-v4-pro";
-        sdd-design = "deepseek-v4-pro";
-        sdd-tasks = "kimi-k2.6";
-        sdd-apply = "kimi-k2.6";
-        sdd-verify = "kimi-k2.6";
-        sdd-archive = "deepseek-v4-flash";
-        sdd-onboard = "deepseek-v4-flash";
-        neutral = "deepseek-v4-flash";
+        gentle-orchestrator = "opencode/kimi-k2.6";
+        sdd-init = "opencode/deepseek-v4-flash";
+        sdd-explore = "opencode/kimi-k2.6";
+        sdd-propose = "opencode/deepseek-v4-pro";
+        sdd-spec = "opencode/deepseek-v4-pro";
+        sdd-design = "opencode/deepseek-v4-pro";
+        sdd-tasks = "opencode/kimi-k2.6";
+        sdd-apply = "opencode/kimi-k2.6";
+        sdd-verify = "opencode/kimi-k2.6";
+        sdd-archive = "opencode/deepseek-v4-flash";
+        sdd-onboard = "opencode/deepseek-v4-flash";
+        neutral = "opencode/deepseek-v4-flash";
       };
     }
     {
       name = "opencode-go-light";
       phases = {
-        gentle-orchestrator = "kimi-k2.6";
-        sdd-init = "deepseek-v4-flash";
-        sdd-explore = "deepseek-v4-flash";
-        sdd-propose = "deepseek-v4-pro";
-        sdd-spec = "deepseek-v4-pro";
-        sdd-design = "deepseek-v4-pro";
-        sdd-tasks = "deepseek-v4-flash";
-        sdd-apply = "kimi-k2.6";
-        sdd-verify = "deepseek-v4-flash";
-        sdd-archive = "deepseek-v4-flash";
-        sdd-onboard = "deepseek-v4-flash";
-        neutral = "deepseek-v4-flash";
+        gentle-orchestrator = "opencode/kimi-k2.6";
+        sdd-init = "opencode/deepseek-v4-flash";
+        sdd-explore = "opencode/deepseek-v4-flash";
+        sdd-propose = "opencode/deepseek-v4-pro";
+        sdd-spec = "opencode/deepseek-v4-pro";
+        sdd-design = "opencode/deepseek-v4-pro";
+        sdd-tasks = "opencode/deepseek-v4-flash";
+        sdd-apply = "opencode/kimi-k2.6";
+        sdd-verify = "opencode/deepseek-v4-flash";
+        sdd-archive = "opencode/deepseek-v4-flash";
+        sdd-onboard = "opencode/deepseek-v4-flash";
+        neutral = "opencode/deepseek-v4-flash";
       };
     }
     {
