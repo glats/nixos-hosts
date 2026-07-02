@@ -223,6 +223,8 @@ in
     appsDir="$HOME/Applications"
     mkdir -p "$appsDir"
 
+    lsregister_path="/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister"
+
     ${lib.concatMapStrings (app: ''
       src="${appSources.${app.name}}/remote-${app.name}.app"
       dst="$appsDir/remote-${app.name}.app"
@@ -236,13 +238,14 @@ in
 
       xattr -cr "$dst" 2>/dev/null || true
       /usr/bin/codesign --force --sign - "$dst" 2>/dev/null || true
+
+      # Register with LaunchServices so Spotlight resolves to
+      # ~/Applications, not stale /nix/store paths.
+      if [ -x "$lsregister_path" ]; then
+        "$lsregister_path" -f "$dst" 2>/dev/null || true
+      fi
     '') apps}
 
     mdimport "$appsDir" 2>/dev/null || true
-
-    lsregister_path="/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister"
-    if [ -x "$lsregister_path" ]; then
-      "$lsregister_path" -gc -R -v -apps u 2>/dev/null || true
-    fi
   '';
 }
