@@ -11,4 +11,7 @@ baseModules
   ../../../home-linux/conky-rog.nix
   ../../../home-linux/openfang.nix
   ../../../home-linux/webcam-rog.nix
+
+  # Override active OpenCode provider for this host
+  #{ home.opencode.activeProviderName = "nvidia"; }
 ]
