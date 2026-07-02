@@ -58,6 +58,7 @@ let
               "/cert:ignore",
               "/w:1680",
               "/h:1050",
+              "/smart-sizing",
               "/gfx:AVC444",
               "/network:auto",
               "/bpp:32",
