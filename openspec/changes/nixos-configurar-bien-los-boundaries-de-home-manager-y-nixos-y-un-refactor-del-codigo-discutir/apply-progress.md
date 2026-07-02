@@ -30,5 +30,7 @@
 
 - Repository: `glats/.nixos`
 - Branch: `master`
-- Commit: `1f7d7fd8d31fc9f0872981a5123e8636d29b351b`
-- Push: `origin/master` updated (`6a7f5c8..1f7d7fd`)
+- Commits:
+  - `1f7d7fd8d31fc9f0872981a5123e8636d29b351b` (`refactor(flake): align linux standalone HM composition`)
+  - `bb740eee8ef53d722c1576e2a52ddfc525e6eb35` (`docs(openspec): record apply slice commit metadata`)
+- Push: `origin/master` updated (`6a7f5c8..bb740ee`)
