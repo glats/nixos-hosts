@@ -93,6 +93,17 @@ let
               }
           }
 
+          /* Trigger macOS Local Network Privacy dialog via Bonjour browse.
+             Fork a child that runs dns-sd -B; this prompts the user to grant
+             local network access. Once granted, subsequent launches skip this. */
+          pid_t child = fork();
+          if (child == 0) {
+              close(STDOUT_FILENO); close(STDERR_FILENO);
+              execlp("dns-sd", "dns-sd", "-B", "_http._tcp", "local", NULL);
+              _exit(1);
+          }
+          sleep(2);
+
           ${execCommand}
 
           perror("execv failed");
