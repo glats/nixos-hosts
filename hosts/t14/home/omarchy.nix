@@ -135,6 +135,19 @@
   # priority tug-of-war. Same pattern as omarchy.rotate_on_start above.
   omarchy.fcitx5.enable = lib.mkForce true;
 
+  # Fcitx5: disable notificationitem addon to remove the tray icon
+  # from Waybar while keeping IME functional for accented characters.
+  # The omarchy-nix fcitx5 module also sets xdg.configFile."fcitx5/config";
+  # we mkForce it to inject disabledAddons.
+  xdg.configFile."fcitx5/config" = lib.mkForce {
+    text = ''
+      [Behavior]
+      TriggerWhenFocus=True
+      ShowInputMethodInformation=True
+      disabledAddons=notificationitem
+    '';
+  };
+
   # Omarchy-nix's tmux module is "neutralized" by home-linux/tmux.nix
   # (imported above): it uses `lib.mkForce` on `programs.tmux.extraConfig`
   # and `programs.tmux.plugins` to drop the omarchy prefix/status/theme
