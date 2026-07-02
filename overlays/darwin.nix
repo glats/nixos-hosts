@@ -18,6 +18,7 @@ in
 
   # Cross-platform packages from flake outputs
   inherit (self.packages.${system})
+    nixos-scripts
     gentle-ai
     engram
     gentle-ai-assets-vanilla
