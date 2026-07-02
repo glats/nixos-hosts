@@ -56,6 +56,7 @@ let
               "/p:",
               "/cert:ignore",
               "/size:1920x1080",
+              "/smart-sizing:1920x1080",
               "/network:lan",
               "/bpp:16",
               "/sound:sys:mac",
