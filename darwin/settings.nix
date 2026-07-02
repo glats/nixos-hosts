@@ -1,9 +1,10 @@
-{ self
-, system
-, primaryUser
-, host
-, lib
-, ...
+{
+  self,
+  system,
+  primaryUser,
+  host,
+  lib,
+  ...
 }:
 let
   primaryHome = "/Users/${primaryUser}";
@@ -80,6 +81,9 @@ in
         "com.apple.dock" = {
           mru-spaces = false;
         };
+      };
+      CustomSystemPreferences."com.apple.network.local-network" = {
+        AllowedEthernetLocalNetworkAddresses = [ "172.16.0.0/12" ];
       };
       dock = {
         autohide = true;
