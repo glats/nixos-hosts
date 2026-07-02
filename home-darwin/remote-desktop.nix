@@ -56,9 +56,8 @@ let
               "/p:",
               "/cert:ignore",
               "/f",
+              "/smart-sizing:1920x1080",
               "/network:lan",
-              "/dynamic-resolution",
-              "/gfx",
               "/bpp:16",
               "/sound:sys:mac",
               "/clipboard",
@@ -67,7 +66,6 @@ let
               "-fonts",
               "-wallpaper",
               "-themes",
-              "-decorations",
               "/kbd:layout:0x0000040A,lang:0x040A",
               NULL
             };
