@@ -1,5 +1,7 @@
 { config, pkgs, lib, ... }:
 {
+  home.packages = [ pkgs.nixos-scripts ];
+
   programs.zsh = {
     enable = true;
     enableCompletion = true;
