@@ -65,6 +65,7 @@ let
   };
 
   darwinPackages = rec {
+    nixos-scripts = darwinPkgs.callPackage ../pkgs/nixos-scripts { };
     gentle-ai = darwinPkgs.callPackage ../pkgs/gentle-ai {
       gentle-ai-src = inputs.gentle-ai-src;
     };
