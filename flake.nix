@@ -150,10 +150,15 @@
         ;
 
       # --- Home module lists ---
-      # Canonical base list of shared Home Manager modules. See
-      # `home-linux/shared-modules.nix` for the full list. The
-      # NixOS-integrated home-manager module (`modules/base/home-manager.nix`)
-      # imports the same list, so both code paths stay in sync.
+      # Canonical base list of shared Home Manager modules for Linux. See
+      # `home-linux/shared-modules.nix` for the full list.
+      # NOTE: After the Linux HM composition alignment refactor,
+      # `linuxHomeModules` is no longer the sync mechanism for Linux
+      # standalone entries. `rog` and `thinkcentre` now import their
+      # per-host `hosts/<host>/home/modules.nix` files directly, and the
+      # NixOS-integrated path (`modules/base/home-manager.nix`) does the same.
+      # This binding is retained because `mkHomeConfig` still references it in
+      # the platform-conditional branch.
       linuxHomeModules = import ./home-linux/shared-modules.nix {
         inherit inputs;
       };
@@ -236,13 +241,29 @@
             mkHomeConfig hostname system username extraModules;
         in
         {
-          rog = baseHomeConfig "rog" "x86_64-linux" "glats" [
-            ./home-linux/conky-rog.nix
-            ./home-linux/openfang.nix
-          ];
-          thinkcentre = baseHomeConfig "thinkcentre" "x86_64-linux" "glats" [
-            ./home-linux/conky-thinkcentre.nix
-          ];
+          # Standalone HM for rog derives from the same per-host modules source
+          # used by the NixOS-integrated HM path.
+          rog = home-manager.lib.homeManagerConfiguration {
+            pkgs = pkgsFor "x86_64-linux";
+            modules = import ./hosts/rog/home/modules.nix { inherit inputs; };
+            extraSpecialArgs = {
+              inherit inputs;
+              hostName = "rog";
+              username = "glats";
+            };
+          };
+          # Standalone HM for thinkcentre follows the same ownership model.
+          thinkcentre = home-manager.lib.homeManagerConfiguration {
+            pkgs = pkgsFor "x86_64-linux";
+            modules = import ./hosts/thinkcentre/home/modules.nix { inherit inputs; };
+            extraSpecialArgs = {
+              inherit inputs;
+              hostName = "thinkcentre";
+              username = "glats";
+            };
+          };
+          # t14 is an intentional exception to the per-host modules.nix
+          # ownership rule used for rog and thinkcentre.
           # t14 uses NixOS-integrated HM.  The standalone entry is
           # required by the `hms` alias (home-manager switch --flake .#t14).
           # omarchy.nix is self-contained (imports omarchy-nix HM module
