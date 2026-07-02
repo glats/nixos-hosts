@@ -1,0 +1,11 @@
+{
+  "change_name": "fix-screensaver-idle-lock",
+  "description": "Fix idle lock screensaver activating despite caffeine shortcut (Super+Ctrl+I) + screensaver only appearing on laptop display, not external monitors — Omarchy/Hyprland on t14",
+  "artifact_store": "hybrid",
+  "delivery_strategy": "direct-commits",
+  "target_branch": "main",
+  "review_budget": "normal",
+  "execution_mode": "ask",
+  "created": "2026-06-28",
+  "host": "t14"
+}
