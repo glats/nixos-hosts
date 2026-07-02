@@ -108,7 +108,7 @@ let
       let
         instructionPrompt =
           if localInstructions != [ ] then
-            (lib.concatStringsSep "\n" (map (f: "{file:./${f}}") localInstructions)) + "\n\n"
+            (lib.concatStringsSep "\n\n" (map (f: builtins.readFile ./${f}) localInstructions)) + "\n\n"
           else "";
       in
       (removeAttrs upstream [ ])
