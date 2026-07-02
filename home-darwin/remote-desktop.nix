@@ -78,8 +78,6 @@ let
       #include <unistd.h>
       #include <pwd.h>
       #include <string.h>
-      #include <signal.h>
-      #include <sys/wait.h>
 
       int main(int argc, char *argv[]) {
           struct passwd *pw = getpwuid(getuid());
@@ -98,21 +96,6 @@ let
                   fclose(log);
               }
           }
-
-          /* Trigger macOS Local Network Privacy dialog via Bonjour browse.
-             Fork a child that runs dns-sd -B; this prompts the user to grant
-             local network access. Once granted, subsequent launches skip this. */
-          /* Trigger macOS Local Network Privacy dialog via Bonjour browse.
-             Killed after 2s — we just need the dialog to appear, not keep browsing. */
-          pid_t child = fork();
-          if (child == 0) {
-              close(STDOUT_FILENO); close(STDERR_FILENO);
-              execlp("dns-sd", "dns-sd", "-B", "_http._tcp", "local", NULL);
-              _exit(1);
-          }
-          sleep(2);
-          kill(child, SIGKILL);
-          waitpid(child, NULL, 0);
 
           ${execCommand}
 
