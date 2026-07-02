@@ -1,6 +1,7 @@
 { config
 , pkgs
 , lib
+, home
 , ...
 }:
 
@@ -148,12 +149,4 @@
   systemd.services."docker-guacamoledb".startLimitIntervalSec = lib.mkForce 0;
   systemd.services."docker-jellyseerr".startLimitIntervalSec = lib.mkForce 0;
 
-  # OpenCode LLM provider configuration is managed centrally in
-  # shared/opencode/providers.nix (base providers)
-  # home-darwin/opencode/providers-extra.nix (macOS extras)
-  #
-  # To change the active provider tier per host, set the HM option:
-  #   home.opencode.activeProviderName = "github-copilot";
-  # in the host's default.nix (e.g. darwin/default.nix for mact2).
-  # Both providers use OAuth via /connect command - no API keys needed.
 }
