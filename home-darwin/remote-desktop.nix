@@ -59,7 +59,6 @@ let
               "/dynamic-resolution",
               "/sound:sys:mac",
               "/clipboard",
-              "/smart-sizing",
               "/gfx:AVC444",
               "/bpp:32",
               "/kbd:layout:0x0000040A,lang:0x040A",
