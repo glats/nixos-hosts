@@ -11,7 +11,11 @@ baseModules
   ../../../home-linux/conky-rog.nix
   ../../../home-linux/openfang.nix
   ../../../home-linux/webcam-rog.nix
+  ../../../home-linux/shell-gpt.nix
 
   # Override active OpenCode provider for this host
   #{ home.opencode.activeProviderName = "nvidia"; }
+
+  # Uncomment to enable shell-gpt (nvidia NIM nemotron-3-ultra)
+  #{ home.shell-gpt.enable = true; }
 ]
