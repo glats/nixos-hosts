@@ -55,7 +55,7 @@ let
               "/u:${username}",
               "/p:",
               "/cert:ignore",
-              "/size:1920x1080",
+              "/f",
               "/smart-sizing:1920x1080",
               "/network:lan",
               "/bpp:16",
@@ -175,14 +175,14 @@ let
       name = "t14-tigervnc";
       protocol = "vnc";
       viewer = "tigervnc";
-      host = "172.16.0.109";
+      host = "172.16.0.10";
       port = "5900";
     }
     {
       name = "t14-realvnc";
       protocol = "vnc";
       viewer = "realvnc";
-      host = "172.16.0.109";
+      host = "172.16.0.10";
       port = "5900";
     }
     {
