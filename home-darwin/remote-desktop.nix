@@ -55,14 +55,18 @@ let
               "/u:${username}",
               "/p:",
               "/cert:ignore",
+              "/f",
+              "/scale:200",
+              "/scale-desktop:200",
+              "/scale-device:200",
+              "/dynamic-resolution",
               "/sound:sys:mac",
               "/clipboard",
-              "/w:1920",
-              "/h:1080",
               "/smart-sizing",
-              "/gfx:progressive",
+              "/gfx:AVC444",
               "/bpp:32",
               "/kbd:layout:0x0000040A,lang:0x040A",
+              "/network:auto",
               NULL
             };
             execv(rdpbin, (char *const *)args);
