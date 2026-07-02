@@ -2,22 +2,23 @@
 #
 # Creates .app bundles that appear in Spotlight. Uses native C launchers
 # instead of shell scripts to satisfy macOS Sequoia Launch Constraints.
-{ config
-, pkgs
-, lib
-, ...
+{
+  config,
+  pkgs,
+  lib,
+  ...
 }:
 
 let
   # Generate C source for native Mach-O launcher
   mkLauncherC =
-    { name
-    , protocol
-    , host
-    , port ? ""
-    , viewer ? "tigervnc"
-    , username ? config.home.username
-    ,
+    {
+      name,
+      protocol,
+      host,
+      port ? "",
+      viewer ? "tigervnc",
+      username ? config.home.username,
     }:
     let
       vncHost = "${host}${if port != "" then ":${port}" else ""}";
@@ -100,13 +101,13 @@ let
     '';
 
   mkRemoteApp =
-    { name
-    , protocol
-    , host
-    , port ? ""
-    , viewer ? "tigervnc"
-    , username ? config.home.username
-    ,
+    {
+      name,
+      protocol,
+      host,
+      port ? "",
+      viewer ? "tigervnc",
+      username ? config.home.username,
     }:
     let
       launcherC = mkLauncherC {
@@ -120,39 +121,50 @@ let
           ;
       };
     in
-    pkgs.runCommand "remote-${name}.app" { } ''
-      mkdir -p $out/remote-${name}.app/Contents/MacOS
-      mkdir -p $out/remote-${name}.app/Contents/Resources
+    pkgs.stdenv.mkDerivation {
+      name = "remote-${name}.app";
+      phases = [
+        "buildPhase"
+        "installPhase"
+      ];
+      buildPhase = ''
+        cat > launcher.c <<'CSOURCE'
+        ${launcherC}
+        CSOURCE
+        $CC -O2 -o launcher launcher.c
+      '';
+      installPhase = ''
+        mkdir -p $out/remote-${name}.app/Contents/MacOS
+        mkdir -p $out/remote-${name}.app/Contents/Resources
 
-      cat > $out/remote-${name}.app/Contents/Info.plist <<'EOF'
-      <?xml version="1.0" encoding="UTF-8"?>
-      <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-      <plist version="1.0">
-      <dict>
-        <key>CFBundleName</key>
-        <string>remote-${name}</string>
-        <key>CFBundleDisplayName</key>
-        <string>${name} (${protocol})</string>
-        <key>CFBundleIdentifier</key>
-        <string>com.glats.remote.${name}</string>
-        <key>CFBundleVersion</key>
-        <string>1.0</string>
-        <key>CFBundlePackageType</key>
-        <string>APPL</string>
-        <key>CFBundleExecutable</key>
-        <string>launcher</string>
-        <key>LSUIElement</key>
-        <true/>
-        <key>NSLocalNetworkUsageDescription</key>
-        <string>Remote desktop needs local network access to connect to your machines.</string>
-      </dict>
-      </plist>
-      EOF
+        cp launcher $out/remote-${name}.app/Contents/MacOS/launcher
 
-      cat > $out/remote-${name}.app/Contents/Resources/launcher.c <<'CSOURCE'
-      ${launcherC}
-      CSOURCE
-    '';
+        cat > $out/remote-${name}.app/Contents/Info.plist <<'EOF'
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+          <key>CFBundleName</key>
+          <string>remote-${name}</string>
+          <key>CFBundleDisplayName</key>
+          <string>${name} (${protocol})</string>
+          <key>CFBundleIdentifier</key>
+          <string>com.glats.remote.${name}</string>
+          <key>CFBundleVersion</key>
+          <string>1.0</string>
+          <key>CFBundlePackageType</key>
+          <string>APPL</string>
+          <key>CFBundleExecutable</key>
+          <string>launcher</string>
+          <key>LSUIElement</key>
+          <true/>
+          <key>NSLocalNetworkUsageDescription</key>
+          <string>Remote desktop needs local network access to connect to your machines.</string>
+        </dict>
+        </plist>
+        EOF
+      '';
+    };
 
   apps = [
     {
@@ -199,12 +211,10 @@ let
   ];
 
   appSources = lib.listToAttrs (
-    map
-      (app: {
-        name = app.name;
-        value = mkRemoteApp app;
-      })
-      apps
+    map (app: {
+      name = app.name;
+      value = mkRemoteApp app;
+    }) apps
   );
 
 in
@@ -224,19 +234,15 @@ in
       cp -R "$src" "$dst"
       chmod -R +w "$dst"
 
-      # Compile native C launcher
-      /usr/bin/cc -O2 -o "$dst/Contents/MacOS/launcher" \
-        "$dst/Contents/Resources/launcher.c" 2>/dev/null
-
-      if [ ! -x "$dst/Contents/MacOS/launcher" ]; then
-        echo "ERROR: Failed to compile launcher for remote-${app.name}" >&2
-        exit 1
-      fi
-
       xattr -cr "$dst" 2>/dev/null || true
       /usr/bin/codesign --force --sign - "$dst" 2>/dev/null || true
     '') apps}
 
     mdimport "$appsDir" 2>/dev/null || true
+
+    lsregister_path="/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister"
+    if [ -x "$lsregister_path" ]; then
+      "$lsregister_path" -gc -R -v -apps u 2>/dev/null || true
+    fi
   '';
 }
