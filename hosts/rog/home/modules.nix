@@ -16,6 +16,5 @@ baseModules
   # Override active OpenCode provider for this host
   #{ home.opencode.activeProviderName = "nvidia"; }
 
-  # Uncomment to enable shell-gpt (nvidia NIM nemotron-3-ultra)
-  #{ home.shell-gpt.enable = true; }
+  { home.shell-gpt.enable = true; }
 ]
