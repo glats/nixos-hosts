@@ -30,8 +30,6 @@
 
 - Repository: `glats/.nixos`
 - Branch: `master`
-- Commits:
-  - `1f7d7fd8d31fc9f0872981a5123e8636d29b351b` (`refactor(flake): align linux standalone HM composition`)
-  - `bb740eee8ef53d722c1576e2a52ddfc525e6eb35` (`docs(openspec): record apply slice commit metadata`)
-  - `9b07d126ffa35d031c7c6a64cb85ffcea2c4afb6` (`docs(openspec): update apply progress with pushed commits`)
-- Push: `origin/master` updated (`a470f25..9b07d12`)
+- Implementation commit: `1f7d7fd8d31fc9f0872981a5123e8636d29b351b`
+- Tracking commits: `bb740eee8ef53d722c1576e2a52ddfc525e6eb35`, `9b07d126ffa35d031c7c6a64cb85ffcea2c4afb6`, `e7fe5b64ea3ea840ae3f8a5500df9ff82f82e67a`
+- Push status: committed and pushed to `origin/master`
