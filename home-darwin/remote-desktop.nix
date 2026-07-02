@@ -58,7 +58,6 @@ let
               "/cert:ignore",
               "/w:1680",
               "/h:1050",
-              "/smart-sizing",
               "/gfx:progressive",
               "/bpp:32",
               "/sound:sys:mac",
