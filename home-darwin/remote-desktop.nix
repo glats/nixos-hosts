@@ -56,6 +56,7 @@ let
               "/p:",
               "/cert:ignore",
               "/f",
+              "/scale-desktop:200",
               "/dynamic-resolution",
               "/sound:sys:mac",
               "/clipboard",
