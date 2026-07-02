@@ -1,6 +1,6 @@
-{ lib ? throw "providers-base.nix must be imported with lib"
-, activeProviderName ? "opencode-go-medium"
-,
+{
+  lib ? throw "providers-base.nix must be imported with lib",
+  activeProviderName ? "opencode-go-medium",
 }:
 
 let
@@ -157,21 +157,37 @@ let
         neutral = "nvidia/nvidia/nemotron-3-ultra-550b-a55b";
       };
     }
+    # PLAN DEPENDENCY: github-copilot model availability depends on Copilot plan:
+    #   Free/Student — only gpt-4.1, gpt-4o, gpt-4o-mini (none of the below work)
+    #   Pro — gpt-5.x (except 5.5), claude-sonnet-4.6, claude-haiku-4.5
+    #   Pro+/Max/Business/Enterprise — all models below including claude-opus-4.8
+    # Provider auth issues: Business/Enterprise may need token exchange (opencode#20759 OPEN).
+    # Verify with `opencode run -m github-copilot/<model> "hi"` if models fail to respond.
     {
       name = "github-copilot";
       phases = {
+        # gpt-5.4: fast execution + tool orchestration (binaryverseai), 400K ctx
         gentle-orchestrator = "github-copilot/gpt-5.4";
+        # gpt-5.4-mini: 0.33x cost, 400K ctx, budget king (Ray Busuttil guide)
         sdd-init = "github-copilot/gpt-5.4-mini";
+        # gpt-5.4: 400K ctx for large repo exploration, fast tool calls
         sdd-explore = "github-copilot/gpt-5.4";
+        # claude-sonnet-4.6: best architecture + code review (0.71 recall, agent-validator)
         sdd-propose = "github-copilot/claude-sonnet-4.6";
         sdd-spec = "github-copilot/claude-sonnet-4.6";
         sdd-design = "github-copilot/claude-sonnet-4.6";
+        # gpt-5.4-mini: 0.33x cost, fast for task decomposition
         sdd-tasks = "github-copilot/gpt-5.4-mini";
+        # gpt-5.3-codex: precision coding + terminal workflows (Stefan Stranger), 400K ctx
         sdd-apply = "github-copilot/gpt-5.3-codex";
-        sdd-verify = "github-copilot/gpt-5.4";
+        # claude-sonnet-4.6: better code-quality recall (0.71) than gpt-5.4 for spec-match
+        sdd-verify = "github-copilot/claude-sonnet-4.6";
+        # claude-haiku-4.5: 0.33x cost, 39s avg — fastest for simple file ops
         sdd-archive = "github-copilot/claude-haiku-4.5";
-        sdd-onboard = "github-copilot/gpt-5.4";
-        neutral = "github-copilot/gpt-5.4";
+        # gpt-5.4-mini: fast, cheap, good enough for guided walkthrough
+        sdd-onboard = "github-copilot/gpt-5.4-mini";
+        # claude-sonnet-4.6: balanced default — cross-family from orchestrator (Rubber Duck principle)
+        neutral = "github-copilot/claude-sonnet-4.6";
       };
     }
     {
@@ -244,12 +260,9 @@ let
     }
   ];
 
-  activeProvider = builtins.foldl'
-    (
-      acc: p: if p.name == activeProviderName then p else acc
-    )
-    null
-    providers;
+  activeProvider = builtins.foldl' (
+    acc: p: if p.name == activeProviderName then p else acc
+  ) null providers;
   getModelForPhase =
     phase: provider: if provider == null then null else provider.phases.${phase} or null;
 
