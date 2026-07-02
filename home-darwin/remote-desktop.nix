@@ -28,6 +28,7 @@ let
             const char *vncbin = "/Applications/VNC Viewer.app/Contents/MacOS/vncviewer";
             const char *args[] = {
               vncbin,
+              "ColorLevel=full",
               "${vncHost}",
               NULL
             };
@@ -57,8 +58,9 @@ let
               "/cert:ignore",
               "/f",
               "/smart-sizing:1920x1080",
+              "/gfx:RFX",
               "/network:lan",
-              "/bpp:16",
+              "/bpp:32",
               "/sound:sys:mac",
               "/clipboard",
               "+async-channels",
@@ -66,6 +68,9 @@ let
               "-fonts",
               "-wallpaper",
               "-themes",
+              "-decorations",
+              "/frame-ack:1",
+              "/max-fast-path-size:16384",
               "/kbd:layout:0x0000040A,lang:0x040A",
               NULL
             };
