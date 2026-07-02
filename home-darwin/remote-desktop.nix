@@ -62,13 +62,12 @@ let
               "/bpp:16",
               "/sound:sys:mac",
               "/clipboard",
-              "+async-input",
+              "+async-channels",
               "+async-update",
-              "+fonts",
-              "+aero",
-              "+window-drag",
-              "+menu-anims",
-              "+wallpaper",
+              "-fonts",
+              "-wallpaper",
+              "-themes",
+              "-decorations",
               "/kbd:layout:0x0000040A,lang:0x040A",
               NULL
             };
