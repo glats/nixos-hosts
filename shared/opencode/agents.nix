@@ -96,10 +96,26 @@ let
         else
           { };
       localPermission = localOverlays.permissionOverlays.${name} or { };
+      localInstructions =
+        if name == "gentle-orchestrator" then
+          localOverlays.instructionOverlays.gentle-orchestrator or [ ]
+        else if upstream.mode or "" == "subagent" then
+          localOverlays.instructionOverlays.subagent or [ ]
+        else
+          [ ];
     in
     stripReplace (
+      let
+        instructionPrompt =
+          if localInstructions != [ ] then
+            (lib.concatStringsSep "\n" (map (f: "{file:./${f}}") localInstructions)) + "\n\n"
+          else "";
+      in
       (removeAttrs upstream [ ])
       // lib.optionalAttrs (localModel != null) { model = localModel; }
+      // lib.optionalAttrs (instructionPrompt != "") {
+        prompt = instructionPrompt + (upstream.prompt or "");
+      }
       // lib.optionalAttrs (localTools != { }) {
         tools = smartMerge localTools (upstream.tools or { });
       }

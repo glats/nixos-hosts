@@ -97,6 +97,14 @@ let
           force = true;
           source = ./opencode/sdd-review-policy.md;
         };
+        ".config/${runtimeCfg.dir}/instructions/universal.md" = {
+          force = true;
+          source = ./opencode/instructions/universal.md;
+        };
+        ".config/${runtimeCfg.dir}/instructions/orchestrator.md" = {
+          force = true;
+          source = ./opencode/instructions/orchestrator.md;
+        };
         ".config/${runtimeCfg.dir}/AGENTS.md" = {
           force = true;
           source = "${pkgs.gentle-ai-assets}/share/gentle-ai/AGENTS.md";
@@ -147,7 +155,7 @@ let
             # the symlink points to the read-only nix store which OpenCode can't write to.
             # cmp guard is only used to skip unnecessary writes to already-real files
             # that haven't changed since the last build.
-            for file in opencode.json IDENTITY.md SYSTEM_RULES.md AGENTS.md sdd-orchestrator.md sdd-review-policy.md package.json .gitignore tui.json; do
+            for file in opencode.json IDENTITY.md SYSTEM_RULES.md AGENTS.md sdd-orchestrator.md sdd-review-policy.md instructions/universal.md instructions/orchestrator.md package.json .gitignore tui.json; do
               target="$runtime_dir/$file"
               if [ -L "$target" ]; then
                 src="$(${pkgs.coreutils}/bin/readlink -f "$target")"
