@@ -36,6 +36,7 @@ creation_rules:
           - *host_rog
           - *host_thinkcentre
           - *host_t14
+          - *host_mact2
 
   # Cross-platform user secrets
   - path_regex: secrets/user/opencode.yaml
