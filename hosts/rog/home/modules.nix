@@ -14,7 +14,7 @@ baseModules
   ../../../home-linux/shell-gpt.nix
 
   # Override active OpenCode provider for this host
-  #{ home.opencode.activeProviderName = "nvidia"; }
+  { home.opencode.activeProviderName = "github-copilot"; }
 
   { home.shell-gpt.enable = true; }
 ]
