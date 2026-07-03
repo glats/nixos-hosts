@@ -392,6 +392,59 @@ When launching `sdd-apply` for a continuation batch:
 2. If found, add: `"PREVIOUS APPLY-PROGRESS EXISTS at topic_key 'sdd/{change-name}/apply-progress'. You MUST read it first via mem_search + mem_get_observation, merge your new progress with the existing progress, and save the combined result. Do NOT overwrite - MERGE."`
 3. If not found, no extra instruction is needed
 
+#### Review-Checkpoint Gate (MANDATORY)
+
+After every `sdd-apply` slice returns and before launching any subsequent `sdd-apply`
+or `sdd-verify`, the orchestrator MUST locate and read the `review-checkpoint` artifact
+for the active change. This lookup MUST NOT be skipped regardless of apply outcome.
+
+**Step 1: Resolve artifact store and locate checkpoint**
+
+Use the active artifact store mode cached from session preflight:
+
+| Mode | Lookup method |
+| --- | --- |
+| `openspec` or `hybrid` | Read `openspec/changes/{change-name}/review-checkpoint.md` |
+| `engram` or `hybrid` | `mem_search("sdd/{change-name}/review-checkpoint")` then `mem_get_observation` |
+
+For `hybrid`, perform BOTH lookups. The `openspec` file is canonical for file-based
+state; the Engram result supplements it. If the store mode is unrecognized or absent,
+STOP and report the unrecognized mode — do NOT default to proceed.
+
+**Step 2: Parse verdict and apply decision table**
+
+After reading the checkpoint, apply the verdict decision table without discretion:
+
+| Verdict | Action |
+| --- | --- |
+| `approved` | Continue to next phase without user interaction |
+| `proceed` | Continue to next phase; record verdict as `proceed` |
+| `changes-requested` | STOP; present binary decision |
+| `blocked` | STOP; present binary decision |
+| `pending` | STOP; present binary decision |
+| missing / unreadable | STOP; report "no review-checkpoint found"; present binary decision |
+
+No intermediate action (inline fix, partial rework, silent continue) is permitted
+outside this table.
+
+**Step 3: Binary decision on stop**
+
+When the gate requires a stop, present exactly two options via the `question` tool:
+
+1. **full-iteration** — re-explore → re-apply (reads all previous artifacts as context;
+   each phase overwrites its artifact)
+2. **proceed** — skip the gate; record verdict as `proceed` and continue to next phase
+
+Do NOT offer a third option. Do NOT auto-advance. Do NOT launch `sdd-verify` until the
+user selects `proceed` or a completed `full-iteration` resolves with an approved
+checkpoint.
+
+**Verify gate hard block**
+
+The orchestrator MUST NOT launch `sdd-verify` unless the latest `review-checkpoint` for
+the active change has verdict `approved` or `proceed`. This applies even when the user
+has not explicitly asked for a review check.
+
 #### Engram Topic Key Format
 
 | Artifact        | Topic Key                          |

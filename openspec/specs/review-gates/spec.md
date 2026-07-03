@@ -87,20 +87,27 @@ Artifacts follow an overwrite model: `topic_key` upsert (Engram) or file overwri
 - WHEN full iteration overwrites other artifacts
 - THEN the checkpoint is preserved separately
 
-### RP-005: Policy as Instruction Text
+### RP-005: Orchestrator-Asset Enforcement
 
-The policy MUST be enforceable as instruction text the orchestrator reads from context. It MUST NOT require modifications to SDD skills (`sdd-apply`, `sdd-verify`, etc.). Guard lines in the review-checkpoint drive the orchestrator's decision point:
+The review-gate policy MUST be enforced via an explicit checkpoint-reading and routing section in the orchestrator runtime asset (`sdd-orchestrator.md`). Instruction text loaded as context is insufficient on its own. The policy MUST NOT require modifications to SDD skills (`sdd-apply`, `sdd-verify`, etc.). Guard lines in the review-checkpoint remain as the decision input:
 
 ```
 Rework level: explore|design|tasks|none
 Iteration decision needed: Yes|No
 ```
 
-#### Scenario: Enforced from context
+#### Scenario: Enforced from orchestrator asset
 
-- GIVEN policy deployed as global instruction
-- WHEN orchestrator runs an SDD change
-- THEN it reads and enforces the policy without modifying SDD skill files
+- GIVEN the `Review-Checkpoint Gate` section is present in `sdd-orchestrator.md`
+- WHEN the orchestrator returns from an `sdd-apply` slice
+- THEN it locates and reads the `review-checkpoint` artifact per store-mode lookup rules before launching any subsequent phase
+
+#### Scenario: Instruction text alone does not suffice
+
+- GIVEN `instructions/orchestrator.md` and `sdd-review-policy.md` are both loaded as context
+- AND `sdd-orchestrator.md` has no `Review-Checkpoint Gate` section
+- WHEN the orchestrator completes an `sdd-apply` slice
+- THEN the gate MAY be silently bypassed because there is no deterministic routing block in the main asset
 
 #### Scenario: Guard lines trigger user prompt
 
