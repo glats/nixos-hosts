@@ -59,12 +59,16 @@ let
               "/w:1680",
               "/h:1050",
               "/smart-sizing",
-              "/gfx:AVC420",
               "/network:auto",
-              "/frame-ack:0",
+              "/gfx:AVC444",
               "/bpp:32",
               "/sound:sys:mac",
               "/clipboard",
+              "+async-update",
+              "/rfx-mode:video",
+              "-wallpaper",
+              "-themes",
+              "-fonts",
               "/kbd:layout:0x0000040A,lang:0x040A",
               NULL
             };
