@@ -20,11 +20,6 @@ in
     cmakeFlags = old.cmakeFlags ++ [
       "-DWITH_VIDEOTOOLBOX=ON"
     ];
-    buildInputs =
-      old.buildInputs or [ ]
-      ++ (prev.lib.optionals prev.stdenv.hostPlatform.isDarwin [
-        prev.darwin.apple_sdk.frameworks.VideoToolbox
-      ]);
   });
 
   # Ghostty from flake input (macOS terminal emulator)
