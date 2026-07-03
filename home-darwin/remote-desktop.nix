@@ -56,6 +56,7 @@ let
               "/u:${username}",
               "/p:",
               "/cert:ignore",
+              "/workarea",
               "/w:1680",
               "/h:1050",
               "/smart-sizing",
