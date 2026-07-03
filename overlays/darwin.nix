@@ -13,6 +13,20 @@ in
     doCheck = false;
   });
 
+  # Enable VideoToolbox hardware H.264 decode on macOS.
+  # Without this, all decode is software (OpenH264), causing frame
+  # timing jitter and flickering in sdl-freerdp.
+  freerdp = prev.freerdp.overrideAttrs (old: {
+    cmakeFlags = old.cmakeFlags ++ [
+      "-DWITH_VIDEOTOOLBOX=ON"
+    ];
+    buildInputs =
+      old.buildInputs or [ ]
+      ++ (prev.lib.optionals prev.stdenv.hostPlatform.isDarwin [
+        prev.darwin.apple_sdk.frameworks.VideoToolbox
+      ]);
+  });
+
   # Ghostty from flake input (macOS terminal emulator)
   ghostty = inputs.ghostty.packages.${system}.default;
 
