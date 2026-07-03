@@ -62,7 +62,6 @@ let
               "/gfx:AVC420",
               "/network:auto",
               "/frame-ack:0",
-              "+gfx-thin-client",
               "/bpp:32",
               "/sound:sys:mac",
               "/clipboard",
