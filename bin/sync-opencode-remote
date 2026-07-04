@@ -34,6 +34,8 @@ REMOTE_HOST="${REMOTE_HOST:-172.16.0.12}"
 REMOTE_USER="${REMOTE_USER:-glats}"
 REMOTE_DIR="${REMOTE_DIR:-$HOME/.config/opencode}"
 LOCAL_DIR="${LOCAL_DIR:-$HOME/.config/opencode}"
+# MCP servers to disable on remote (not available on non-NixOS hosts)
+DISABLED_MCPS="${DISABLED_MCPS:-github nixos}"
 
 # --- Flags ---
 DRY_RUN=""
@@ -139,7 +141,7 @@ backup_remote() {
 
 # --- rsync transfer ---
 do_rsync() {
-  local label="[2/3]"
+  local label="[2/4]"
   if [[ -n "$DRY_RUN" ]]; then
     label="[DRY RUN]"
   fi
@@ -191,7 +193,7 @@ do_npm_install() {
     return 0
   fi
 
-  echo "[3/3] Installing dependencies on remote..."
+    echo "[3/4] Installing dependencies on remote..."
   if ssh "$REMOTE_USER@$REMOTE_HOST" "cd '$REMOTE_DIR' && npm install --only=prod"; then
     echo "      Dependencies installed."
   else
@@ -199,6 +201,49 @@ do_npm_install() {
     echo "         need to run 'npm install --only=prod' manually on the remote host." >&2
     exit 4
   fi
+}
+
+# --- Disable incompatible MCPs on remote ---
+disable_mcps_remote() {
+  if [[ -n "$DRY_RUN" ]]; then
+    echo "[*] Would disable MCPs on remote: $DISABLED_MCPS"
+    return 0
+  fi
+
+  if [[ -z "$DISABLED_MCPS" ]]; then
+    return 0
+  fi
+
+  local mcp_list=""
+  for mcp in $DISABLED_MCPS; do
+    mcp_list="${mcp_list:+$mcp_list,}\"$mcp\""
+  done
+
+  echo "[*] Disabling incompatible MCPs on remote: $DISABLED_MCPS"
+
+  local script
+  read -r -d '' script <<-PYEOF || true
+import json, sys
+path = "$REMOTE_DIR/opencode.json"
+try:
+    with open(path) as f:
+        cfg = json.load(f)
+    mcps = cfg.get('mcp', {})
+    disabled = [$mcp_list]
+    for name in disabled:
+        if name in mcps:
+            mcps[name]['enabled'] = False
+            print(f'  Disabled MCP: {name}')
+    with open(path, 'w') as f:
+        json.dump(cfg, f, indent=2)
+except Exception as e:
+    print(f'WARNING: Failed to patch MCPs: {e}', file=sys.stderr)
+    sys.exit(0)  # non-fatal
+PYEOF
+
+  ssh "$REMOTE_USER@$REMOTE_HOST" "python3 -c '${script//\'/\'\\\'\'}'" || {
+    echo "WARNING: Could not disable MCPs on remote (python3 required)." >&2
+  }
 }
 
 # --- Summary ---
@@ -232,4 +277,5 @@ preflight
 backup_remote
 do_rsync
 do_npm_install
+disable_mcps_remote
 print_summary
