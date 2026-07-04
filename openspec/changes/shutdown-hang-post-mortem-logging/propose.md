@@ -1,73 +1,157 @@
-# Proposal: Shutdown Hang Post-Mortem Logging
+# Proposal: Shutdown Hang — ASUS WMI Isolation + Late Shutdown Hook (Iteration 2)
 
 ## Intent
 
-The user's ASUS ROG laptop (host `rog`) hangs after Linux appears to shut down — OS claims poweroff but the laptop stays powered on. Two existing workarounds (`modules/base/shutdown-fix.nix` watchdog disable, `modules/hardware/rog-shutdown.nix` ACPI `\_SI._SST` S5 hack) have a service-ordering bug and **zero diagnostic capture**: kernel `loglevel=3`, volatile journald, S5 call fires too early. This change adds post-mortem logging and fixes the ordering bug.
+Host `rog` still hangs at poweroff after userspace shutdown completes. Iteration 1
+proved that service teardown, filesystems, swap, Docker, network, and NVIDIA GPU
+activity are all clean at hang time. The blocking point is now identified as the
+firmware/ACPI S5 boundary, with ASUS WMI/ATKD errors (`\_SB.ATKD.WMNB` divide-by-
+zero, `asus_wmi` fan-curve failures) as the primary software-level suspects. This
+iteration shifts from diagnostic instrumentation to active remediation: isolate
+ASUS WMI influence and replace the timing-incorrect `rog-shutdown.nix` service with
+a true very-late shutdown hook that fires after `systemd-shutdown` hands off to the
+kernel.
+
+## What Changed from Iteration 1
+
+| Item | Iteration 1 | Iteration 2 |
+|------|-------------|-------------|
+| Primary goal | Add diagnostics + fix service ordering | Remediate hang at ACPI/firmware boundary |
+| `rog-shutdown.nix` role | Primary fix vehicle (too early) | Replaced by a hook that runs after `systemd-shutdown` |
+| ASUS fan-control | Untouched | Add off switch; gate or disable before poweroff |
+| Diagnostic baseline | Not present | Fully working; treat as read-only unless a minor addition adds real evidence |
+| DSDT/SSDT override | Out of scope | Still out of scope — documented as explicit fallback only |
+| Success criterion | Logs exist on disk | Machine actually powers off |
 
 ## Scope
 
 ### In Scope
-- New `modules/base/shutdown-debug.nix`: oneshot at end of shutdown capturing journalctl + dmesg + ps/pstree + mounts + lsof +L1 + nvidia-smi + ACPI wakeup + sensors to `/var/log/shutdown-debug/{boot-id}/`.
-- Journald persistence in `shutdown-fix.nix`; new `boot-settings.includeDiagLogging` option (off by default).
-- Fix `rog-shutdown.nix` ordering: drop `before=[poweroff.target]`, use `requiredBy` of all three targets, add timeouts.
-- Wire new module into `hosts/rog/default.nix`.
+
+- Add `services.asus-fan-control-custom.enable = false` on `rog` OR add a
+  controlled shutdown-time disable path inside `asus-fan-control.nix` that
+  unloads/resets ASUS EC state before poweroff. The goal is to test whether
+  removing `asus-fan-control` influence at poweroff changes S5 behavior.
+- Replace the current `rog-shutdown.nix` `shutdown.target`-era service with a
+  `/usr/lib/systemd/system-shutdown/` hook script. This hook runs inside the
+  `systemd-shutdown` initramfs-like pivot, after all mounts are gone and before
+  the kernel issues the final poweroff syscall — the actual hang location.
+- The new hook: optionally unload ASUS WMI modules (`asus_nb_wmi`, `asus_wmi`,
+  `asus_armoury`, `acpi_call`) as a late cleanup step, then attempt the
+  `_SI._SST` ACPI call fallback as before.
+- Keep the existing `modules/base/shutdown-debug.nix` baseline intact. Add minor
+  hook-breadcrumb evidence to `/run/shutdown-hook-ran` only if needed to prove
+  the new hook executes.
+- Update `hosts/rog/default.nix` to wire the new module and flip the fan-control
+  experiment toggle.
 
 ### Out of Scope
-- Replacing the ACPI S5 hack (need working path first, then evidence).
-- Off-host log upload; `thinkcentre` changes (no hang observed).
-- Touching the existing watchdog disable (still correct).
+
+- DSDT/SSDT custom override — documented as next fallback if this iteration fails.
+- Touching `thinkcentre`, `t14`, or `mact2`.
+- Rewriting the diagnostic capture service.
+- Off-host log upload or remote collection.
+- Watchdog disable (`shutdown-fix.nix`) — already in place and correct.
 
 ## Capabilities
 
 ### New Capabilities
-- `shutdown-debug-capture`: systemd oneshot that snapshots diagnostic state to disk before poweroff/reboot/halt, persists across reboots.
+
+- `rog-poweroff-hook`: a `/usr/lib/systemd/system-shutdown/` script that runs at
+  the real end of shutdown (after `systemd-shutdown`, before kernel poweroff).
+  Optionally unloads ASUS WMI modules, then fires the `_SI._SST` ACPI call.
 
 ### Modified Capabilities
-None — `boot-settings` only adds a new opt-in option.
+
+- `asus-fan-control-custom.enable`: add an explicit host-level disable path so the
+  service can be turned off on `rog` without removing the module from the codebase.
+- `rog-shutdown.nix`: retire the `shutdown.target`-wired service once the new hook
+  is confirmed to run, or reduce it to a no-op shim. The new hook supersedes it.
 
 ## Approach
 
-1. **`modules/base/shutdown-debug.nix`** (new) — `systemd.services.shutdown-debug-capture` with `defaultDependencies=false`, `Type=oneshot`, `RemainAfterExit=yes`, `WantedBy=[shutdown.target]`, `after=[local-fs.target systemd-journald.service]`. `ExecStart` creates `/var/log/shutdown-debug/$(< /proc/sys/kernel/random/boot_id)/` and runs each diagnostic (`|| true`, `sync` between writes): `journalctl -b`, `dmesg`, `pstree -ap`, `ps auxf`, `lsmod`, `mount`, `df -h`, `lsof +L1`, `nvidia-smi` (if present), `/proc/cmdline`, `/proc/acpi/wakeup`, `sensors`. Adds `pkgs.lsof`.
+1. **New file: `modules/hardware/rog-poweroff-workaround.nix`**
+   - Installs a shell script to `${config.boot.kernelPackages}` store path via
+     `systemd.shutdownRamfs.contents` (NixOS native path for late shutdown scripts)
+     OR uses `environment.etc."systemd/system-shutdown/rog-poweroff"` depending on
+     which NixOS option correctly places it under `/usr/lib/systemd/system-shutdown/`.
+   - Script sequence: `rmmod asus_nb_wmi asus_armoury asus_wmi acpi_call 2>/dev/null || true`, then `modprobe acpi_call 2>/dev/null || true`, then `echo '\_SI._SST' > /proc/acpi/call 2>/dev/null || true`.
+   - Gate behind a new option `hardware.rog.poweroffWorkaround.enable` (default `false`).
+   - Research the correct NixOS option (`systemd.shutdownRamfs`) before writing.
 
-2. **`shutdown-fix.nix`** — add `services.journald.config` block.
+2. **Modify `modules/hardware/asus-fan-control.nix`**
+   - No behavior change for the default case.
+   - When the service is disabled (`enable = false`), add an explicit
+     `systemd.services.asus-fan-control.enable = false` guard so the unit is
+     not just inactive but absent from the shutdown graph.
 
-3. **`boot.nix`** — add `includeDiagLogging` option + conditional kernel params.
+3. **Modify `hosts/rog/default.nix`**
+   - Import `../../modules/hardware/rog-poweroff-workaround.nix`.
+   - Set `hardware.rog.poweroffWorkaround.enable = true`.
+   - Set `services.asus-fan-control-custom.enable = false` for the isolation test.
 
-4. **`rog-shutdown.nix`** — `requiredBy` of all three targets; add `TimeoutStartSec=0`, `TimeoutStopSec=10`.
+4. **Retire or reduce `modules/hardware/rog-shutdown.nix`**
+   - Once the new hook is in place, either remove the `shutdown.target`-wired
+     service (it fires too early to matter) or reduce it to a comment explaining
+     the architecture shift.
 
-5. **`hosts/rog/default.nix`** — import new module; enable `boot-settings.includeDiagLogging`.
+5. **Verify**
+   - `nix flake check --no-build` and `format-nix` clean.
+   - Confirm the hook script lands in the correct path in the Nix store / etc overlay.
+   - Test shutdown on `rog` and confirm the machine powers off.
 
 ## Affected Areas
 
-| Area | Impact | Description |
-|------|--------|-------------|
-| `modules/base/shutdown-debug.nix` | New | Diagnostic capture service |
-| `modules/base/shutdown-fix.nix` | Modified | +journald persistence |
-| `modules/features/boot.nix` | Modified | +`includeDiagLogging` option |
-| `modules/hardware/rog-shutdown.nix` | Modified | Fix service ordering |
-| `hosts/rog/default.nix` | Modified | Import new module |
+| File | Action | Reason |
+|------|--------|--------|
+| `modules/hardware/rog-poweroff-workaround.nix` | Create | True late hook replacing the too-early service |
+| `modules/hardware/rog-shutdown.nix` | Remove or reduce | Superseded by late hook |
+| `modules/hardware/asus-fan-control.nix` | Modify | Add clean disable path |
+| `hosts/rog/default.nix` | Modify | Wire new module, flip experiment toggles |
+| `modules/base/shutdown-debug.nix` | Read-only | Baseline diagnostics stay as-is |
 
 ## Risks
 
 | Risk | Likelihood | Mitigation |
 |------|------------|------------|
-| Capture service itself hangs | Med | `TimeoutStartSec=0` + `TimeoutStopSec=10`; every cmd `\|\| true` |
-| High loglevel breaks Plymouth | Med | `includeDiagLogging` opt-in, off for thinkcentre |
-| Journald fills disk | Low | `SystemMaxUse=500M` + `MaxRetentionSec=2week` |
-| S5 fix regresses shutdown | Med | Single-file revert; `sync` retained; call runs LAST |
-| `lsof` not in minimal profile | Low | Add `pkgs.lsof` in new module |
+| `systemd.shutdownRamfs` NixOS option path is wrong or not yet stable | Med | Research via `nixos_nix` MCP before writing; fall back to `environment.etc` path |
+| ASUS WMI module unload causes kernel panic or hung task | Low-Med | `rmmod` wrapped with `|| true`; if unload fails, script continues to ACPI call |
+| Disabling fan-control worsens thermals until confirmed | Low | Shutdown-only change; thermal risk is only during the few seconds before poweroff |
+| Late hook script does not execute at the right phase | Low | `/usr/lib/systemd/system-shutdown/` is the documented systemd hook path; test with breadcrumb |
+| DSDT firmware bug is deeper than module unload can fix | Med | This is acknowledged; if iteration 2 fails, DSDT override is the explicit next step |
+| Removing `rog-shutdown.nix` breaks something unexpected | Low | Grep for all imports before removal; module is self-contained |
 
 ## Rollback Plan
 
-`git revert` the merge commit. All changes additive except the S5 ordering fix (1 file, easy revert). Removing the new module import is one line. No migrations.
+- Revert `hosts/rog/default.nix` changes (one or two lines).
+- Delete `rog-poweroff-workaround.nix`.
+- Restore `rog-shutdown.nix` if removed (or it was never deleted — low-risk).
+- Re-enable `asus-fan-control-custom` if disabled.
+- `git revert` the commit if pushed.
+
+All changes are additive or host-scoped. No shared module behavior changes.
 
 ## Dependencies
 
-None. `pkgs.lsof`, `nvidia-smi` in nixpkgs. No flake changes.
+- `systemd.shutdownRamfs` NixOS option (needs verification before use).
+- `pkgs.acpi_call` or `acpi_call` kernel module already loaded on `rog`.
+- `pkgs.kmod` for `rmmod`/`modprobe` in the hook (or use full Nix store paths).
+- No new flake inputs.
+
+## DSDT Override — Explicit Fallback Statement
+
+If disabling ASUS fan-control and the late hook both fail to stop the hang, the
+next and final iteration will be a firmware-level workaround: `acpidump` on `rog`,
+inspect `_PTS` / `\_SB.ATKD` / `\_SB.PCI0.LPCB.EC0` AML for the divide-by-zero
+path, and ship a minimal SSDT override via `hardware.acpiTables`. This is
+deliberately deferred until the cheaper software path is exhausted.
 
 ## Success Criteria
 
-- [ ] `nix flake check --no-build` + `format-nix` clean; rebuild succeeds on rog
-- [ ] `/var/log/shutdown-debug/<boot-id>/` has ≥8 files on next shutdown (≥5 on forced hang)
-- [ ] `rog-shutdown.service` ordered after `systemd-shutdown.service`
-- [ ] Journal survives reboot (`journalctl --list-boots` shows multiple)
+- [ ] `nix flake check --no-build` and `format-nix` pass for all hosts
+- [ ] Hook script is present at `/usr/lib/systemd/system-shutdown/rog-poweroff`
+      (or equivalent Nix store symlink path) after rebuild
+- [ ] `rog` powers off completely after `shutdown -h now` (the primary bug)
+- [ ] If hang still occurs: breadcrumb file `/run/shutdown-hook-ran` proves the
+      hook at least executed, providing better fault isolation for iteration 3
+- [ ] Fan-control service is absent from systemd unit graph on `rog` during the
+      experiment

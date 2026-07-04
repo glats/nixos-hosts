@@ -24,6 +24,7 @@
     # Hardware (rog-specific)
     ../../modules/hardware/nvidia.nix
     ../../modules/hardware/rog-shutdown.nix
+    ../../modules/hardware/rog-poweroff-workaround.nix
     ../../modules/hardware/asus-fan-control.nix
 
     # Shutdown diagnostics — captures journal/dmesg/ps/mounts to
@@ -70,6 +71,9 @@
   # Enable the shutdown-debug-capture service. Without this the
   # imported module is a no-op.
   my.shutdownDebug.enable = true;
+
+  hardware.rog.poweroffWorkaround.enable = true;
+  services.asus-fan-control-custom.enable = false;
 
   # Desktop suite — rog uses MATE via XRDP
   my.desktop.suite = "mate";
