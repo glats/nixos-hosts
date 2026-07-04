@@ -13,7 +13,10 @@ in
 {
   systemd.services.rog-shutdown = {
     description = "ROG ACPI S5 poweroff fallback";
-    enable = true;
+    # Superseded by hardware.rog.poweroffWorkaround in
+    # modules/hardware/rog-poweroff-workaround.nix.
+    # That hook runs in shutdown ramfs at a later phase.
+    enable = false;
     # `wantedBy` pulls the service as a soft dependency — if it fails
     # the shutdown still proceeds. Previously `before=[poweroff.target]`
     # raced with unmounts; now we let systemd order it naturally late
