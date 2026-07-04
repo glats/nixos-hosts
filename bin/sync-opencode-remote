@@ -35,7 +35,9 @@ REMOTE_USER="${REMOTE_USER:-glats}"
 REMOTE_DIR="${REMOTE_DIR:-$HOME/.config/opencode}"
 LOCAL_DIR="${LOCAL_DIR:-$HOME/.config/opencode}"
 # MCP servers to disable on remote (not available on non-NixOS hosts)
-DISABLED_MCPS="${DISABLED_MCPS:-github nixos}"
+DISABLED_MCPS="${DISABLED_MCPS:-nixos}"
+# GitHub MCP server version to install on remote
+GITHUB_MCP_VERSION="${GITHUB_MCP_VERSION:-latest}"
 
 # --- Flags ---
 DRY_RUN=""
@@ -63,6 +65,10 @@ Prerequisites:
   - rsync installed locally
   - npm installed on remote
   - API keys configured on remote separately (not transferred)
+
+Notes:
+  - github-mcp-server is auto-installed on remote (ARM64 binary)
+  - nixos MCP is disabled on remote (NixOS-specific)
 EOF
 }
 
@@ -246,6 +252,51 @@ PYEOF
   }
 }
 
+# --- Install github-mcp-server on remote ---
+install_github_mcp_remote() {
+  if [[ -n "$DRY_RUN" ]]; then
+    echo "[*] Would install/update github-mcp-server on remote"
+    return 0
+  fi
+
+  # Check if already installed and recent
+  local needs_install=0
+  if ssh "$REMOTE_USER@$REMOTE_HOST" "command -v github-mcp-server &>/dev/null"; then
+    echo "[*] github-mcp-server already installed, checking version..."
+    if ! ssh "$REMOTE_USER@$REMOTE_HOST" "github-mcp-server --version 2>&1 | grep -qi 'Version: 1\.'"; then
+      needs_install=1
+    else
+      echo "      github-mcp-server is up to date."
+      return 0
+    fi
+  else
+    needs_install=1
+  fi
+
+  if [[ $needs_install -eq 1 ]]; then
+    echo "[*] Installing github-mcp-server (ARM64) on remote..."
+
+    local dl_cmd
+    if [[ "$GITHUB_MCP_VERSION" == "latest" ]]; then
+      dl_cmd="curl -sL https://api.github.com/repos/github/github-mcp-server/releases/latest |
+        grep -o 'https://.*Linux_arm64.tar.gz' | head -1 | xargs curl -sL"
+    else
+      dl_cmd="curl -sL https://github.com/github/github-mcp-server/releases/download/v${GITHUB_MCP_VERSION}/github-mcp-server_Linux_arm64.tar.gz"
+    fi
+
+    local install_cmd="mkdir -p ~/bin && \
+      ($dl_cmd) | tar -xzf - -C /tmp/ github-mcp-server && \
+      cp /tmp/github-mcp-server ~/bin/ && \
+      rm -f /tmp/github-mcp-server && \
+      chmod +x ~/bin/github-mcp-server && \
+      echo 'Installed: \$(~/bin/github-mcp-server --version 2>&1)'"
+
+    ssh "$REMOTE_USER@$REMOTE_HOST" "$install_cmd" || {
+      echo "WARNING: Failed to install github-mcp-server. GitHub MCP will be disabled." >&2
+    }
+  fi
+}
+
 # --- Summary ---
 print_summary() {
   if [[ -n "$DRY_RUN" ]]; then
@@ -277,5 +328,6 @@ preflight
 backup_remote
 do_rsync
 do_npm_install
+install_github_mcp_remote
 disable_mcps_remote
 print_summary
