@@ -1,0 +1,235 @@
+#!/usr/bin/env bash
+# sync-opencode-remote - Transfer NixOS-generated opencode config to a remote host
+#
+# Syncs the opencode configuration directory from the local rog host to a
+# remote postmarketOS host (aarch64, OnePlus5) via rsync over SSH.
+# Uses a whitelist-first include/exclude pattern so only known-good files
+# are transferred. node_modules/ is excluded (npm install runs on remote).
+#
+# Requirements:
+#   - opencode installed on remote host
+#   - SSH key-based auth to remote (no password prompts)
+#   - rsync on both local and remote
+#   - npm available on remote
+#   - API keys (OPENAI_API_KEY, etc.) must be set up on remote separately
+#
+# Usage:
+#   ./bin/sync-opencode-remote [--dry-run] [--help]
+#
+# Examples:
+#   ./bin/sync-opencode-remote                  # full sync + backup + npm
+#   ./bin/sync-opencode-remote --dry-run        # show what would be synced
+#
+# Exit codes:
+#   0 - success
+#   1 - configuration error (missing tool, bad args, local dir missing)
+#   2 - SSH error (unreachable, backup failed)
+#   3 - rsync transfer failed
+#   4 - npm install failed (non-fatal: config files are synced)
+
+set -euo pipefail
+
+# --- Configuration (override via environment) ---
+REMOTE_HOST="${REMOTE_HOST:-172.16.0.12}"
+REMOTE_USER="${REMOTE_USER:-glats}"
+REMOTE_DIR="${REMOTE_DIR:-$HOME/.config/opencode}"
+LOCAL_DIR="${LOCAL_DIR:-$HOME/.config/opencode}"
+
+# --- Flags ---
+DRY_RUN=""
+BACKUP_PATH=""
+
+# --- Usage ---
+usage() {
+  cat <<EOF
+Usage: $(basename "$0") [OPTIONS]
+
+Transfer opencode configuration from this host to a remote host via rsync.
+
+Options:
+  --dry-run    Show what would be synced without making changes
+  -h, --help   Show this help message
+
+Environment variables (override defaults):
+  REMOTE_HOST   Remote hostname or IP   (default: 172.16.0.12)
+  REMOTE_USER   Remote SSH user          (default: glats)
+  REMOTE_DIR    Remote config directory  (default: ~/.config/opencode)
+  LOCAL_DIR     Local config directory   (default: ~/.config/opencode)
+
+Prerequisites:
+  - SSH key-based auth to remote host
+  - rsync installed locally
+  - npm installed on remote
+  - API keys configured on remote separately (not transferred)
+EOF
+}
+
+# --- Argument parsing ---
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --dry-run)
+      DRY_RUN="--dry-run"
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "ERROR: Unknown argument: $1" >&2
+      usage >&2
+      exit 1
+      ;;
+  esac
+done
+
+# --- Pre-flight checks ---
+preflight() {
+  local failed=0
+
+  # rsync must be present
+  if ! command -v rsync &>/dev/null; then
+    echo "ERROR: rsync not found locally. Install rsync and try again." >&2
+    failed=1
+  fi
+
+  # local source directory must exist
+  if [[ ! -d "$LOCAL_DIR" ]]; then
+    echo "ERROR: Local config directory does not exist: $LOCAL_DIR" >&2
+    failed=1
+  fi
+
+  if [[ $failed -eq 1 ]]; then
+    exit 1
+  fi
+
+  # SSH reachability
+  if ! ssh -o ConnectTimeout=5 -q "$REMOTE_USER@$REMOTE_HOST" exit; then
+    echo "ERROR: Cannot reach $REMOTE_USER@$REMOTE_HOST via SSH (timeout 5s)." >&2
+    exit 2
+  fi
+}
+
+# --- Remote backup ---
+backup_remote() {
+  if [[ -n "$DRY_RUN" ]]; then
+    echo "[1/3] Backing up remote config (skipped in dry-run)..."
+    return 0
+  fi
+
+  local test_cmd="test -d '$REMOTE_DIR'"
+  if ! ssh "$REMOTE_USER@$REMOTE_HOST" "$test_cmd"; then
+    echo "[1/3] Remote config directory not found, skipping backup."
+    return 0
+  fi
+
+  local timestamp
+  timestamp=$(date +%Y%m%d-%H%M%S)
+  local bak_path="${REMOTE_DIR}.bak.${timestamp}"
+
+  echo "[1/3] Backing up remote config to $(basename "$bak_path")..."
+  if ! ssh "$REMOTE_USER@$REMOTE_HOST" "cp -a '$REMOTE_DIR' '$bak_path'"; then
+    echo "ERROR: Remote backup failed. Aborting to prevent data loss." >&2
+    exit 2
+  fi
+
+  BACKUP_PATH="$bak_path"
+  echo "      Backup saved: $bak_path"
+}
+
+# --- rsync transfer ---
+do_rsync() {
+  local label="[2/3]"
+  if [[ -n "$DRY_RUN" ]]; then
+    label="[DRY RUN]"
+  fi
+
+  echo "$label Syncing files to $REMOTE_USER@$REMOTE_HOST..."
+
+  if rsync -avz $DRY_RUN --delete \
+    --rsh="ssh" \
+    --include='opencode.json' \
+    --include='IDENTITY.md' \
+    --include='SYSTEM_RULES.md' \
+    --include='AGENTS.md' \
+    --include='sdd-orchestrator.md' \
+    --include='sdd-review-policy.md' \
+    --include='tui.json' \
+    --include='package.json' \
+    --include='.gitignore' \
+    --exclude='*.backup' \
+    --include='instructions/' \
+    --include='instructions/**' \
+    --include='skills/' \
+    --include='skills/**' \
+    --include='commands/' \
+    --include='commands/**' \
+    --include='plugins/' \
+    --include='plugins/**' \
+    --include='themes/' \
+    --include='themes/**' \
+    --exclude='node_modules/' \
+    --exclude='node_modules/**' \
+    --exclude='skills.backup/' \
+    --exclude='skills.backup/**' \
+    --exclude='.opencode/' \
+    --exclude='.opencode/**' \
+    --exclude='/*' \
+    "$LOCAL_DIR/" "$REMOTE_USER@$REMOTE_HOST:$REMOTE_DIR/"; then
+    return 0
+  else
+    echo "ERROR: rsync transfer failed (exit $?)." >&2
+    echo "       Backup is at: ${BACKUP_PATH:-none (backup not reached)}" >&2
+    exit 3
+  fi
+}
+
+# --- Post-transfer npm install ---
+do_npm_install() {
+  if [[ -n "$DRY_RUN" ]]; then
+    echo "[DRY RUN] Would run: npm install on remote"
+    return 0
+  fi
+
+  echo "[3/3] Installing dependencies on remote..."
+  if ssh "$REMOTE_USER@$REMOTE_HOST" "cd '$REMOTE_DIR' && npm install --only=prod"; then
+    echo "      Dependencies installed."
+  else
+    echo "WARNING: npm install failed. Platform config files are synced, but you may" >&2
+    echo "         need to run 'npm install --only=prod' manually on the remote host." >&2
+    exit 4
+  fi
+}
+
+# --- Summary ---
+print_summary() {
+  if [[ -n "$DRY_RUN" ]]; then
+    echo ""
+    echo "DRY RUN COMPLETE -- no changes were made."
+    echo "  Local:  $LOCAL_DIR"
+    echo "  Remote: $REMOTE_USER@$REMOTE_HOST:$REMOTE_DIR"
+    return 0
+  fi
+
+  echo ""
+  echo "Sync complete. Files transferred to $REMOTE_USER@$REMOTE_HOST."
+  if [[ -n "$BACKUP_PATH" ]]; then
+    echo "  Backup: $BACKUP_PATH"
+  fi
+  echo ""
+  echo "REMINDER: API keys (OPENAI_API_KEY, ANTHROPIC_API_KEY, etc.) are NOT"
+  echo "          transferred. Configure them on the remote host separately."
+}
+
+# --- Main ---
+echo "sync-opencode-remote: $LOCAL_DIR -> $REMOTE_USER@$REMOTE_HOST:$REMOTE_DIR"
+if [[ -n "$DRY_RUN" ]]; then
+  echo ">>> DRY RUN MODE -- no changes will be made <<<"
+  echo ""
+fi
+
+preflight
+backup_remote
+do_rsync
+do_npm_install
+print_summary
