@@ -36,6 +36,21 @@
     openFirewall = true;
   };
 
+  # DNS-SD service advertisement for SMB (mDNS/Linux discovery)
+  services.avahi.extraServiceFiles = {
+    smb = ''
+      <?xml version="1.0" standalone="no"?>
+      <!DOCTYPE service-group SYSTEM "avahi-service.dtd">
+      <service-group>
+        <name replace-wildcards="yes">SMB on %h</name>
+        <service>
+          <type>_smb._tcp</type>
+          <port>445</port>
+        </service>
+      </service-group>
+    '';
+  };
+
   # Ensure directory exists and has correct permissions
   systemd.tmpfiles.rules = [
     "d /run/media/stuff/samba 0775 glats glats -"
