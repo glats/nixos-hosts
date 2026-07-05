@@ -79,7 +79,7 @@
 
     # ShellGPT AI command assistant (nvidia NIM nemotron-3-ultra)
     ../../../home-linux/shell-gpt.nix
-    # Uncomment to enable: home.shell-gpt.enable = true;
+    ({ home.shell-gpt.enable = true; })
 
     # Shared shell aliases (now extracted from home-linux/shell.nix)
     ../../../shared/shell-aliases.nix
