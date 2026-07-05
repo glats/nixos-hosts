@@ -84,6 +84,10 @@
 
       if [ -f "${config.sops.secrets."github/pat".path}" ]; then
         export GH_TOKEN="$(cat ${config.sops.secrets."github/pat".path})"
+        # Non-blocking check: warn if token expired (async so it doesn't delay shell)
+        ( ${pkgs.gh}/bin/gh auth status --active --hostname github.com >/dev/null 2>&1 || \
+          echo "WARNING: GitHub token (glats) expired! Create new PAT and: sops edit secrets/shared/passwords.yaml && nixos-build switch" >&2
+        ) &
       fi
     '';
   };

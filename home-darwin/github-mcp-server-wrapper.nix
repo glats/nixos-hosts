@@ -18,6 +18,15 @@ let
       GITHUB_PERSONAL_ACCESS_TOKEN=$(cat "$GITHUB_PAT_FILE")
       export GITHUB_PERSONAL_ACCESS_TOKEN
 
+      # Pre-check: validate token before starting MCP server
+      if ! GH_TOKEN="$GITHUB_PERSONAL_ACCESS_TOKEN" \
+        ${pkgs.gh}/bin/gh auth status --active --hostname github.com >/dev/null 2>&1; then
+        echo "Error (${name}): GitHub PAT at $GITHUB_PAT_FILE is expired or invalid!" >&2
+        echo "" >&2
+        echo "  Create a new PAT at: https://github.com/settings/tokens" >&2
+        exit 1
+      fi
+
       exec ${pkgs.github-mcp-server}/bin/github-mcp-server "''${@:-stdio}"
     '';
 

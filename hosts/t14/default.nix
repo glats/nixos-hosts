@@ -56,6 +56,7 @@
 
     # === MCP REQUIREMENTS ===
     ../../modules/features/services/github-mcp-server.nix
+    ../../modules/features/services/github-token-check.nix
     ../../modules/virtualisation/docker.nix
   ];
 
