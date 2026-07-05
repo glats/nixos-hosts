@@ -87,7 +87,7 @@
     # OpenCode stack
     ../../../shared/opencode.nix
     ../../../shared/opencode-profile.nix
-    ({ home.opencode.activeProviderName = "opencode-go-full"; })
+    ({ home.opencode.activeProviderName = "opencode-free"; })
     ../../../shared/sops.nix
     inputs.sops-nix.homeManagerModules.sops
   ];
@@ -135,18 +135,12 @@
   # priority tug-of-war. Same pattern as omarchy.rotate_on_start above.
   omarchy.fcitx5.enable = lib.mkForce true;
 
-  # Fcitx5: disable notificationitem addon to remove the tray icon
+  # Fcitx5: pass --disable notificationitem to remove the tray icon
   # from Waybar while keeping IME functional for accented characters.
-  # The omarchy-nix fcitx5 module also sets xdg.configFile."fcitx5/config";
-  # we mkForce it to inject disabledAddons.
-  xdg.configFile."fcitx5/config" = lib.mkForce {
-    text = ''
-      [Behavior]
-      TriggerWhenFocus=True
-      ShowInputMethodInformation=True
-      disabledAddons=notificationitem
-    '';
-  };
+  # The --disable flag is more reliable than disabledAddons in the config
+  # file because it's parsed before addon loading.
+  systemd.user.services.fcitx5.Service.ExecStart =
+    lib.mkForce "${pkgs.fcitx5}/bin/fcitx5 --disable notificationitem";
 
   # Omarchy-nix's tmux module is "neutralized" by home-linux/tmux.nix
   # (imported above): it uses `lib.mkForce` on `programs.tmux.extraConfig`
