@@ -1,18 +1,14 @@
-{ pkgs, primaryUser, ... }:
-{
-  # create a separate git config fragment for Falabella-managed repos
-  home.file.".git-falabella".text = ''
-    [user]
-      name = ${toString primaryUser};
-      email = ${toString primaryUser}@falabella.cl
-    [user]
-      signingkey = B658D64F6FDBCFD1EBA53509A1D4ECB0118566C8
-    [commit]
-      gpgsign = true
-    [gpg]
-      program = ${pkgs.gnupg}/bin/gpg
-  '';
+{ pkgs
+, config
+, primaryUser
+, lib
+, ...
+}:
 
+let
+  identities = import ../shared/git-identity.nix;
+in
+{
   programs.git = {
     enable = true;
     lfs.enable = true;
@@ -20,12 +16,9 @@
     ignores = [ "**/.DS_STORE" ];
     settings = {
       user = {
-        name = primaryUser;
-        email = "${primaryUser}@falabella.cl";
+        name = identities.jcuzmar.name;
+        email = identities.jcuzmar.email;
       };
-
-      # include .git-falabella for repos under ~/Work/
-      includeIf."gitdir:~/Work/**".path = "~/.git-falabella";
 
       github.user = primaryUser;
       init.defaultBranch = "main";
@@ -34,8 +27,25 @@
     };
 
     signing = {
-      key = "B658D64F6FDBCFD1EBA53509A1D4ECB0118566C8"; # the GPG key we generated
+      key = builtins.readFile config.sops.secrets."github/gpg_key_fingerprint".path;
       signByDefault = true;
     };
+
+    includes = [
+      {
+        condition = "gitdir:~/Work/**";
+        contents = {
+          user.name = identities.jcuzmar.name;
+          user.email = identities.jcuzmar.email;
+        };
+      }
+      {
+        condition = "gitdir:~/Personal/**";
+        contents = {
+          user.name = identities.glats.name;
+          user.email = identities.glats.email;
+        };
+      }
+    ];
   };
 }

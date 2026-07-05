@@ -36,4 +36,8 @@
     sopsFile = ../secrets/user/atlassian.yaml;
     mode = "0400";
   };
+  sops.secrets."github/gpg_key_fingerprint" = {
+    sopsFile = ../secrets/shared/passwords.yaml;
+    mode = "0400";
+  };
 }

@@ -1,25 +1,40 @@
 { pkgs, config, ... }:
 
 let
-  githubMcpServerWrapped = pkgs.writeShellScriptBin "github-mcp-server-wrapped" ''
-    #!${pkgs.runtimeShell}
-    set -euo pipefail
+  # Helper: create a named GitHub MCP wrapper that reads PAT from a sops secret path
+  mkGithubMcpWrapper =
+    { name, secretPath }:
+    pkgs.writeShellScriptBin name ''
+      #!${pkgs.runtimeShell}
+      set -euo pipefail
 
-    GITHUB_TOKEN_FILE="${config.sops.secrets."github/token".path}"
+      GITHUB_PAT_FILE="${secretPath}"
 
-    if [ ! -f "$GITHUB_TOKEN_FILE" ]; then
-      echo "Error: GitHub token secret not found at $GITHUB_TOKEN_FILE" >&2
-      exit 1
-    fi
+      if [ ! -f "$GITHUB_PAT_FILE" ]; then
+        echo "Error: GitHub PAT secret not found at $GITHUB_PAT_FILE" >&2
+        exit 1
+      fi
 
-    GITHUB_PERSONAL_ACCESS_TOKEN=$(cat "$GITHUB_TOKEN_FILE")
-    export GITHUB_PERSONAL_ACCESS_TOKEN
+      GITHUB_PERSONAL_ACCESS_TOKEN=$(cat "$GITHUB_PAT_FILE")
+      export GITHUB_PERSONAL_ACCESS_TOKEN
 
-    exec ${pkgs.github-mcp-server}/bin/github-mcp-server "stdio" "''${@:-}"
-  '';
+      exec ${pkgs.github-mcp-server}/bin/github-mcp-server "''${@:-stdio}"
+    '';
+
+  githubMcpServerGlats = mkGithubMcpWrapper {
+    name = "github-mcp-server-glats";
+    secretPath = config.sops.secrets."github/pat".path;
+  };
+
+  # macOS jcuzmar reads github/token from atlassian.yaml (backward compat)
+  githubMcpServerJcuzmar = mkGithubMcpWrapper {
+    name = "github-mcp-server-jcuzmar";
+    secretPath = config.sops.secrets."github/token".path;
+  };
 in
 {
   home.packages = [
-    githubMcpServerWrapped
+    githubMcpServerGlats
+    githubMcpServerJcuzmar
   ];
 }

@@ -48,4 +48,8 @@
     sopsFile = ../secrets/shared/passwords.yaml;
     mode = "0400";
   };
+  sops.secrets."github/pat_jcuzmar" = {
+    sopsFile = ../secrets/shared/passwords.yaml;
+    mode = "0400";
+  };
 }
