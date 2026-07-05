@@ -43,12 +43,30 @@
     mode = "0400";
   };
 
-  # GitHub PAT (also declared at NixOS level for MCP wrapper)
+  # GitHub tokens
   sops.secrets."github/pat" = {
     sopsFile = ../secrets/shared/passwords.yaml;
     mode = "0400";
   };
   sops.secrets."github/pat_jcuzmar" = {
+    sopsFile = ../secrets/shared/passwords.yaml;
+    mode = "0400";
+  };
+
+  # GPG keys per identity
+  sops.secrets."github/gpg_jcuzmar_fingerprint" = {
+    sopsFile = ../secrets/shared/passwords.yaml;
+    mode = "0400";
+  };
+  sops.secrets."github/gpg_jcuzmar_key" = {
+    sopsFile = ../secrets/shared/passwords.yaml;
+    mode = "0400";
+  };
+  sops.secrets."github/gpg_glats_fingerprint" = {
+    sopsFile = ../secrets/shared/passwords.yaml;
+    mode = "0400";
+  };
+  sops.secrets."github/gpg_glats_key" = {
     sopsFile = ../secrets/shared/passwords.yaml;
     mode = "0400";
   };

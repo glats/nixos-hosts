@@ -24,6 +24,7 @@
   ./mate.nix
   ./rofi.nix
   ./git.nix
+  ./gpg.nix
   ./gh.nix
   ./ghostty.nix
   ./kitty.nix

@@ -26,26 +26,33 @@ in
       gpg.program = "${pkgs.gnupg}/bin/gpg";
     };
 
+    # Sign work commits with jcuzmar key by default
     signing = {
-      key = builtins.readFile config.sops.secrets."github/gpg_key_fingerprint".path;
+      key = identities.jcuzmar.signingKey;
       signByDefault = true;
     };
 
     includes = [
+      # Work repos also sign with jcuzmar key (same as default, explicit)
       {
         condition = "gitdir:~/Work/**";
         contents = {
           user.name = identities.jcuzmar.name;
           user.email = identities.jcuzmar.email;
+          user.signingKey = identities.jcuzmar.signingKey;
+          commit.gpgsign = true;
         };
       }
-      {
-        condition = "gitdir:~/Personal/**";
-        contents = {
-          user.name = identities.glats.name;
-          user.email = identities.glats.email;
-        };
-      }
-    ];
+    ]
+    # Personal repos sign with glats key if set
+    ++ lib.optional (identities.glats.signingKey != "") {
+      condition = "gitdir:~/Personal/**";
+      contents = {
+        user.name = identities.glats.name;
+        user.email = identities.glats.email;
+        user.signingKey = identities.glats.signingKey;
+        commit.gpgsign = true;
+      };
+    };
   };
 }
