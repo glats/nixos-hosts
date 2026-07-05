@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Glats <glats@local>
+Date: 2026-07-04
+Subject: [PATCH] smb: disable UseCCache during NTLMSSP anonymous fallback
+
+gvfs unconditionally sets smbc_setOptionUseCCache(smb_context, 1) at init.
+With samba 4.23+, when UseCCache=TRUE and no Kerberos credential cache
+exists, smbc_stat() returns EINVAL (errno=22) instead of falling back to
+NTLMSSP. This prevents anonymous/guest SMB mounting from gvfs.
+
+Fix: disable UseCCache when enabling NTLMSSP fallback for anonymous mounts.
+
+See: https://gitlab.gnome.org/GNOME/gvfs/-/work_items/857
+---
+ daemon/gvfsbackendsmb.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/daemon/gvfsbackendsmb.c b/daemon/gvfsbackendsmb.c
+index 48eaf6e..c6cd0b4 100644
+--- a/daemon/gvfsbackendsmb.c
++++ b/daemon/gvfsbackendsmb.c
+@@ -567,6 +567,9 @@ do_mount (GVfsBackend *backend,
+         {
+           g_debug ("do_mount - enabling NTLMSSP fallback\n");
+           smbc_setOptionFallbackAfterKerberos (op_backend->smb_context, 1);
++          /* Samba 4.23+ returns EINVAL when UseCCache is set but no Kerberos
++           * credential cache exists, preventing NTLMSSP anonymous fallback. */
++          smbc_setOptionUseCCache (op_backend->smb_context, 0);
+         }
+ 
+       op_backend->mount_try ++;
