@@ -75,6 +75,11 @@
   hardware.rog.poweroffWorkaround.enable = true;
   services.asus-fan-control-custom.enable = false;
 
+  # Blacklist non-essential ASUS WMI modules to prevent firmware
+  # ACPI interactions that cause shutdown hangs. asus_wmi + hid_asus
+  # (keyboard) remain loaded.
+  boot.blacklistedKernelModules = [ "asus_nb_wmi" "asus_armoury" ];
+
   # Desktop suite — rog uses MATE via XRDP
   my.desktop.suite = "mate";
 

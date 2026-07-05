@@ -1,303 +1,428 @@
-# Delta Specs: Shutdown Hang — ASUS WMI Isolation + Late Shutdown Hook (Iteration 2)
+# Delta Specs: Shutdown Hang — Iteration 3 (A+B+C+D)
 
-> **Iteration**: 2 (full re-spec after review checkpoint #1629)
-> **Supersedes**: iteration 1 spec entirely
-> **Established baseline**: `shutdown-debug-capture`, `boot-settings.includeDiagLogging`,
-> and persistent journal storage from iteration 1 are already deployed and treated as
-> read-only infrastructure. They are not re-specified here; they remain in place as
-> verification evidence for the new requirements below.
-
----
-
-## New Capability: `rog-poweroff-workaround`
-
-### REQ-1: Late Shutdown Hook Module
-
-A new NixOS module (`modules/hardware/rog-poweroff-workaround.nix`) MUST be created.
-The module MUST expose a boolean option `hardware.rog.poweroffWorkaround.enable` with
-default `false`. All behaviour in this module MUST be gated behind that option.
-
-#### Scenario 1-A: Option defaults to disabled
-
-- GIVEN the `rog-poweroff-workaround` module is imported
-- WHEN `hardware.rog.poweroffWorkaround.enable` is not set
-- THEN no hook script, no ramfs contents, and no unit stubs are installed
-- AND the evaluated configuration for any other host (thinkcentre, t14, mact2) is
-  unaffected if the module is absent from their imports
+> **Iteration**: 3
+> **Supersedes**: iteration 2 spec entirely
+> **Established baseline**: REQ-1 through REQ-10 from iteration 2 remain in place as read-only infrastructure (see Appendix A). This document specifies the delta — new capabilities, modifications to existing requirements, and apply-slice sequencing for the four neutral approach categories.
+>
+> **Stacking rule**: options A through D are designed to be **stacked cumulatively** across sequential apply slices. Slice 1 = A only; Slice 2 = A + B; Slice 3 = A + B + C; Slice 4 = A + B + C + D. No option is removed between slices.
 
 ---
 
-### REQ-2: Hook Delivery via `systemd.shutdownRamfs.contents`
+## Apply-Slice Sequencing
 
-When the option is enabled, the module MUST deliver the hook script via
-`systemd.shutdownRamfs.contents."/shutdown/rog-poweroff".source` (or the equivalent
-NixOS attribute path verified to land the file at
-`/usr/lib/systemd/system-shutdown/rog-poweroff` at runtime).
+### Slice 1 — Apply A (Module Blacklist Only)
 
-The installed file MUST be executable.
+| Option | Action | File |
+|--------|--------|------|
+| A | Add `boot.blacklistedKernelModules` | `hosts/rog/default.nix` |
+| B | No change | — |
+| C | No change | — |
+| D | No change | — |
 
-#### Scenario 2-A: Hook file lands at the correct path after rebuild
+Hook at `/usr/lib/systemd/system-shutdown/rog-poweroff` continues to run `rmmod` sequence + `\_SI._SST` as specified in REQ-3 through REQ-6 (iteration 2 baseline). The `rmmod` calls for blacklisted modules become no-ops (modules were never loaded), which is acceptable.
 
-- GIVEN `hardware.rog.poweroffWorkaround.enable = true`
-- WHEN the system is rebuilt
-- THEN `/usr/lib/systemd/system-shutdown/rog-poweroff` exists on the running system
-- AND the file has execute permissions (`-rwxr-xr-x` or equivalent)
+### Slice 2 — Apply B (Blacklist + OSI Policy)
 
-#### Scenario 2-B: Hook is absent when option is false
+| Option | Action | File |
+|--------|--------|------|
+| A | (retained from slice 1) | `hosts/rog/default.nix` |
+| B | Toggle `includeAcpiOsi = false` or adjust OSI string | `hosts/rog/default.nix` or `modules/features/boot.nix` |
+| C | No change | — |
+| D | No change | — |
 
-- GIVEN `hardware.rog.poweroffWorkaround.enable = false`
-- WHEN the system is rebuilt
-- THEN `/usr/lib/systemd/system-shutdown/rog-poweroff` does NOT exist
+### Slice 3 — Apply C (Blacklist + OSI + DSDT Override)
+
+| Option | Action | File |
+|--------|--------|------|
+| A | (retained) | `hosts/rog/default.nix` |
+| B | (retained) | — |
+| C | Import and enable DSDT-override module | New `modules/hardware/rog-dsdt-override.nix` + import in `hosts/rog/default.nix` |
+| D | No change | — |
+
+### Slice 4 — Apply D (All Four Options)
+
+| Option | Action | File |
+|--------|--------|------|
+| A | (retained) | — |
+| B | (retained) | — |
+| C | (retained) | — |
+| D | Replace hook body with direct port poweroff | `modules/hardware/rog-poweroff-workaround.nix` |
 
 ---
 
-### REQ-3: Hook Script — ASUS WMI Module Unload
+## ADDED Requirements
 
-The hook script MUST attempt to unload the following kernel modules in order:
-`asus_nb_wmi`, `asus_armoury`, `asus_wmi`, `acpi_call`.
+### REQ-11: Module Blacklist (Option A)
 
-Each unload invocation MUST be wrapped with `|| true` so that a failure (module
-already absent, busy, or unknown) does NOT stop script execution.
+`hosts/rog/default.nix` SHALL add `boot.blacklistedKernelModules = [ "asus_nb_wmi" "asus_armoury" ]` to prevent these modules from loading at any point during boot or runtime.
 
-The `rmmod` binary MUST be referenced by absolute Nix store path or resolved from
-the environment available in the shutdown ramfs; it MUST NOT assume `/usr/bin/rmmod`.
+The following modules MUST NOT be blacklisted:
+- `asus_wmi` — required for general WMI functionality (hotkeys, backlight)
+- `hid_asus` — required for keyboard input
+- `acpi_call` — required for the workaround hook's ACPI fallback in slices 1-3
 
-#### Scenario 3-A: Module unload is best-effort
+The existing hook script (REQ-3 baseline) MAY attempt `rmmod` on blacklisted modules. The `|| true` guard MUST absorb the non-zero exit (module not loaded -> rmmod returns error -> script continues). This is harmless and provides backward compatibility if the blacklist is removed.
 
-- GIVEN one or more of the target modules are not loaded at shutdown time
-- WHEN the hook script executes
-- THEN `rmmod` returns a non-zero exit code for those modules
-- AND the script continues to the next command
-- AND shutdown proceeds to completion without blocking
+#### Scenario 11-A: Blacklisted modules never load
 
-#### Scenario 3-B: Hook does not introduce a new shutdown block
+- GIVEN `boot.blacklistedKernelModules` contains `"asus_nb_wmi"` and `"asus_armoury"`
+- WHEN the system boots
+- THEN `lsmod | grep asus_nb_wmi` returns empty
+- AND `lsmod | grep asus_armoury` returns empty
 
-- GIVEN any `rmmod` call hangs (kernel bug, module locked)
+#### Scenario 11-B: Required modules remain available
+
+- GIVEN only `asus_nb_wmi` and `asus_armoury` are blacklisted
+- WHEN the system boots
+- THEN `lsmod | grep asus_wmi` returns non-empty
+- AND `lsmod | grep hid_asus` returns non-empty (if the module exists for this kernel)
+- AND keyboard input is functional
+
+#### Scenario 11-C: Hook tolerates absent blacklisted modules
+
+- GIVEN `asus_nb_wmi` is blacklisted AND `hardware.rog.poweroffWorkaround.enable = true`
+- WHEN the shutdown hook executes `rmmod asus_nb_wmi`
+- THEN the `rmmod` call exits non-zero (module not loaded)
+- AND the `|| true` guard prevents script termination
+- AND the hook continues to the next command
+
+#### Scenario 11-D: Cross-host safety
+
+- GIVEN the `thinkcentre` or `t14` host configuration
+- WHEN evaluated
+- THEN `boot.blacklistedKernelModules` does NOT contain `asus_nb_wmi` or `asus_armoury`
+- AND no non-rog host is affected
+
+#### Scenario 11-E: Reversible by config change
+
+- GIVEN `boot.blacklistedKernelModules` contains the blacklist
+- WHEN the line is removed from `hosts/rog/default.nix` and the system is rebuilt
+- THEN the next boot loads `asus_nb_wmi` and `asus_armoury` normally (if present in the kernel)
+
+---
+
+### REQ-12: ACPI OSI Policy Change (Option B)
+
+The ACPI OSI kernel parameters SHALL be changed on `rog` to alter how the firmware AML dispatches shutdown behavior.
+
+At least one of the following approaches SHALL be implemented (the design phase will choose which):
+
+**Approach 12-A: Remove OSI override entirely**
+- Set `boot-settings.includeAcpiOsi = false` in `hosts/rog/default.nix`
+- This removes both `acpi_osi=!` and `acpi_osi="Windows 2018"` from the kernel command line
+- The kernel falls back to its default ACPI OSI behavior (Linux-native)
+
+**Approach 12-B: Change the Windows version string**
+- Modify `modules/features/boot.nix` to change `"Windows 2018"` to a different version string (e.g., `"Windows 2019"` or `"Windows 2023"`)
+- Or add a configurable option `boot-settings.acpiOsiString` that accepts a string or null
+
+The chosen approach MUST be documented in the design.
+
+#### Scenario 12-A: OSI params absent from cmdline
+
+- GIVEN `boot-settings.includeAcpiOsi = false` on rog
+- WHEN `cat /proc/cmdline` is inspected after boot
+- THEN neither `acpi_osi=!` nor `acpi_osi=` appears in the output
+- AND the system boots successfully to multi-user.target
+
+#### Scenario 12-B: No other host affected
+
+- GIVEN any non-rog host configuration
+- WHEN evaluated
+- THEN its `boot-settings.includeAcpiOsi` setting is unchanged (default `false` or host-specific value)
+
+#### Scenario 12-C: Revision-safe toggle
+
+- GIVEN `boot-settings.includeAcpiOsi` is toggled to `false` and the system is rebuilt
+- WHEN the generation selector is used at boot to pick the previous generation
+- THEN the OSI params from the previous generation are present on the command line
+- AND recovery via generation rollback works
+
+#### Scenario 12-D: Behavior change observable in ACPI log
+
+- GIVEN OSI params have been changed
+- WHEN the system boots
+- THEN `dmesg | grep -i "acpi.*osi"` shows the new OSI string (or absence thereof)
+- AND this provides evidence that the firmware AML dispatch is using the new policy
+
+---
+
+### REQ-13: DSDT/SSDT Table Override (Option C)
+
+A new NixOS module `modules/hardware/rog-dsdt-override.nix` SHALL be created to inject a patched DSDT or SSDT table at boot, bypassing the buggy AML methods in the firmware.
+
+The module MUST expose a boolean option `hardware.rog.dsdtOverride.enable` with default `false`.
+
+When enabled, the module MUST:
+1. Accept a compiled `.aml` table file via an option (e.g., `hardware.rog.dsdtOverride.table` of type `path`)
+2. Wire the `.aml` file into the boot via `hardware.acpiTables` (the NixOS-native mechanism)
+   - The `.aml` file SHALL be discovered by the Linux ACPI table upgrade mechanism (CONFIG_ACPI_TABLE_UPGRADE=y required — the `linux_zen` kernel SHOULD have this enabled by default)
+3. Validate that the table signature and OEM ID match the target firmware (fail-closed: do not inject a mismatched table)
+
+The module file and enabling import SHALL be:
+- New file: `modules/hardware/rog-dsdt-override.nix`
+- Import added to `hosts/rog/default.nix`
+- Set `hardware.rog.dsdtOverride.enable = true`
+
+The `.aml` file itself is produced **offline** (not during Nix build):
+1. On the rog machine: dump the system DSDT via `acpidump` or by reading `/sys/firmware/acpi/tables/DSDT`
+2. Offline: decompile with `iasl -d`, patch the problematic methods (LPS0 handler, fan_curve, ATKD.WMNB where identified), recompile with `iasl -tc`
+3. The resulting `.aml` file SHALL be committed to the NixOS repo (under a path like `hosts/rog/acpi/rog-dsdt.aml`)
+4. A SHA256 hash or comment documenting the source firmware version MUST accompany the file
+
+#### Scenario 13-A: New module evaluates without error
+
+- GIVEN `modules/hardware/rog-dsdt-override.nix` is imported in `hosts/rog/default.nix`
+- WHEN `hardware.rog.dsdtOverride.enable` is set to `true`
+- AND a valid `.aml` path is provided
+- THEN `nix flake check --no-build` exits 0 for the `rog` host
+
+#### Scenario 13-B: Table injection at boot
+
+- GIVEN `hardware.rog.dsdtOverride.enable = true`
+- WHEN the system boots
+- THEN `dmesg | grep "ACPI.*override\|ACPI.*table\|ACPI.*DSDT"` shows that the custom table was loaded
+- AND the patched AML methods are in effect
+
+#### Scenario 13-C: Disabled does not inject
+
+- GIVEN `hardware.rog.dsdtOverride.enable = false`
+- WHEN the system boots
+- THEN `dmesg | grep "ACPI.*override\|ACPI.*table"` does NOT show any DSDT override
+- AND the system uses the firmware's native DSDT
+
+#### Scenario 13-D: Signature mismatch guard
+
+- GIVEN the provided `.aml` file has a DSDT signature or OEM ID that does not match the current firmware
+- WHEN the system boots
+- THEN either the NixOS build fails (if validation is done at build time) OR the kernel rejects the override (if validation is at boot time)
+- AND the system boots using the firmware's native DSDT without error
+
+#### Scenario 13-E: Reversible by disabling
+
+- GIVEN `hardware.rog.dsdtOverride.enable = true`
+- WHEN the option is set back to `false`, rebuilt, and rebooted
+- THEN the system boots entirely from the firmware's native DSDT
+- AND no ACPI table override is loaded
+
+#### Scenario 13-F: Cross-host safety
+
+- GIVEN the `thinkcentre` or `t14` host configuration
+- WHEN evaluated
+- THEN no DSDT override module is imported or enabled
+- AND `hardware.acpiTables` is empty for those hosts
+
+---
+
+### REQ-14: Direct Port Poweroff (Option D)
+
+The hook script in `modules/hardware/rog-poweroff-workaround.nix` SHALL be replaced (not appended) when option D is active. The replacement SHALL issue a chipset-level poweroff by writing to the x86 I/O port `0x604` instead of calling the ACPI `\_SI._SST` method.
+
+The implementation MUST satisfy:
+1. The hook SHALL write the value `0x2000` (or `0x2000` as the lower word — the exact value is implementation-specific per chipset) to I/O port `0x604`
+2. This SHALL be done via **one** of:
+   - A small C program compiled with `pkgs.writeCFlags` or `pkgs.stdenv.mkDerivation` that calls `iopl(3)` then `outw(0x2000, 0x604)`, OR
+   - A shell script using `printf '\x00\x20\x00\x00' > /dev/port` if `/dev/port` is accessible in the shutdown ramfs, OR
+   - A shell script using `setpci` (from `pciutils`) if the PCI configuration space mapping of port 0x604 is known
+3. The hook MUST remain a single executable file placed via `systemd.shutdownRamfs.contents`
+4. Every command MUST be wrapped with `|| true` (REQ-5 no-blocking guarantee extends to this implementation)
+5. **The module blacklist (REQ-11), OSI policy (REQ-12), and DSDT override (REQ-13) are all still active** when this option runs — they are not removed
+
+The mechanism to toggle between the ACPI hook (slices 1-3) and the direct port hook (slice 4) SHALL be:
+- Either a new option `hardware.rog.poweroffWorkaround.mode = "acpi" | "direct"` with default `"acpi"`, OR
+- Conditional logic within the hook script itself based on a kernel parameter or file presence
+
+The design phase will choose the mechanism.
+
+#### Scenario 14-A: Direct port poweroff triggers poweroff
+
+- GIVEN `hardware.rog.poweroffWorkaround.mode = "direct"` (or slice 4 equivalent)
+- WHEN `systemctl poweroff` is issued
+- THEN filesystems and services stop normally
+- AND the shutdown ramfs hook writes to port `0x604`
+- AND the machine powers off physically (fan stops, LEDs off)
+
+#### Scenario 14-B: Hook remains non-blocking
+
+- GIVEN port `0x604` is already powering off correctly
+- WHEN a failure occurs (port not accessible, permission denied, iopl fails)
+- THEN the hook command exits non-zero
+- AND the `|| true` guard absorbs the error
+- AND the system does not hang on the hook
+- AND the machine's poweroff behavior falls through to the kernel's default ACPI S5
+
+#### Scenario 14-C: ACPI mode is unaffected by D changes
+
+- GIVEN `hardware.rog.poweroffWorkaround.mode = "acpi"` (or pre-slice-4)
+- WHEN the system shuts down
+- THEN the hook runs the original rmmod + `\_SI._SST` sequence (REQ-3, REQ-4 baseline)
+- AND the direct port poweroff code is NOT executed
+- AND behavior is identical to pre-slice-4
+
+#### Scenario 14-D: Cross-slice compatibility
+
+- GIVEN all four options are active (slice 4)
+- WHEN the system boots
+- THEN blacklisted modules are absent (REQ-11)
+- AND the OSI policy is changed (REQ-12)
+- AND the DSDT override is loaded (REQ-13)
+- AND the hook uses direct port poweroff (REQ-14)
+- AND all four coexist without conflicts
+- AND `nix flake check --no-build` exits 0
+
+---
+
+## MODIFIED Requirements
+
+### REQ-3: Hook Script — Module Unload (Compatibility Note for Options A, D)
+
+REQ-3 from iteration 2 baseline stated: "The hook script MUST attempt to unload asus_nb_wmi, asus_armoury, asus_wmi, acpi_call in order."
+
+**For Option A (module blacklist):** The `rmmod` calls for blacklisted modules (`asus_nb_wmi`, `asus_armoury`) become no-ops because those modules were never loaded. This is ACCEPTABLE — the `|| true` guard absorbs the non-zero exit. No code change is required.
+
+**For Option D (direct port poweroff, all slices including A+B+C):** The hook body is REPLACED, not appended. The rmmod sequence is REMOVED. This is INTENTIONAL — the blacklist (REQ-11) already ensures these modules are absent, and the direct port poweroff bypasses ACPI entirely, so module state at shutdown is irrelevant for the poweroff mechanism.
+
+#### Scenario 3-D: Blacklist + unchanged hook (slice 1)
+
+- GIVEN `boot.blacklistedKernelModules` has `asus_nb_wmi` AND the hook is still the original ACPI version
 - WHEN the hook runs
-- THEN the `|| true` suffix MUST prevent the script from waiting indefinitely
-  (the caller — `systemd-shutdown` — will kill the hook if it exceeds its budget)
+- THEN `rmmod asus_nb_wmi` returns non-zero (module absent)
+- AND `rmmod asus_armoury` returns non-zero (module absent)
+- AND `rmmod asus_wmi` returns zero (module present)
+- AND the script continues past all failures
+
+#### Scenario 3-E: Direct port hook removes rmmod calls (slice 4)
+
+- GIVEN `hardware.rog.poweroffWorkaround.mode = "direct"` (or equivalent)
+- WHEN the hook script content is inspected
+- THEN it does NOT contain any `rmmod` invocation
+- AND it does NOT contain any `modprobe acpi_call` invocation
+- AND it does NOT contain any `\_SI._SST` echo
+- AND it does contain an `outw(0x2000, 0x604)` call or equivalent
 
 ---
 
-### REQ-4: Hook Script — ACPI `_SI._SST` Fallback
+### REQ-4: Hook Script — ACPI `_SI._SST` Fallback (Modified for Option D)
 
-After the module unload sequence, the hook MUST:
+REQ-4 from iteration 2 baseline stated: "After module unload: modprobe acpi_call || true, then echo '\_SI._SST' > /proc/acpi/call || true."
 
-1. Reload `acpi_call` via `modprobe acpi_call` (best-effort, `|| true`)
-2. Write the ACPI sleep-state notification: `echo '\_SI._SST' > /proc/acpi/call`
-   (best-effort, `|| true`)
+**For Option D:** This requirement is SUPERSEDED by the direct port poweroff. The ACPI call is replaced by I/O port write. The `acpi_call` module is no longer needed in the hook (though it may remain as a loaded kernel module if other services use it).
 
-All three invocations (`modprobe` and the `echo`) MUST redirect stderr to `/dev/null`
-before the `|| true` so that error output does not reach the console log.
+For slices 1-3 (without option D), REQ-4 remains fully in effect as specified in iteration 2.
 
-#### Scenario 4-A: ACPI call fires after modules are unloaded
+#### Scenario 4-C: Original ACPI path preserved in pre-D slices
 
-- GIVEN `asus_wmi` and related modules have been unloaded in REQ-3
-- WHEN the hook script reaches the `modprobe acpi_call` + ACPI write step
-- THEN `acpi_call` is loaded (or was already present)
+- GIVEN `hardware.rog.poweroffWorkaround.mode = "acpi"` (slices 1-3)
+- WHEN the hook runs
+- THEN `acpi_call` is loaded
 - AND `\_SI._SST` is written to `/proc/acpi/call`
-- AND the script exits 0
+- AND behavior matches iteration 2 REQ-4 exactly
 
-#### Scenario 4-B: ACPI call path missing (non-rog host or kernel without acpi_call)
+#### Scenario 4-D: Direct port hook has no ACPI call (slice 4)
 
-- GIVEN `/proc/acpi/call` does not exist
-- WHEN the hook script executes
-- THEN the `echo '...' > /proc/acpi/call || true` fails silently
-- AND the script exits 0
-- AND the machine proceeds to poweroff
-
----
-
-### REQ-5: Hook Script — No Blocking Guarantee
-
-Every command in the hook script MUST be followed by `|| true`. The script MUST NOT
-contain any `set -e` directive or equivalent that would cause early exit on failure.
-
-#### Scenario 5-A: Complete script walk-through without blocking
-
-- GIVEN all four module unloads fail AND modprobe fails AND the ACPI write fails
-- WHEN the hook script runs end-to-end
-- THEN the script exits 0
-- AND no output is written to stdout or stderr that would delay `systemd-shutdown`
+- GIVEN the hook uses direct port poweroff
+- WHEN the hook content is inspected
+- THEN it does NOT contain `\_SI._SST`
+- AND it does NOT contain `modprobe acpi_call`
 
 ---
 
-### REQ-6: Breadcrumb Evidence File
+### REQ-6: Breadcrumb Evidence File (Amended for Option D)
 
-The hook script MUST write a sentinel file `/run/shutdown-hook-ran` (with the value
-`ok\n` or equivalent non-empty content) as its LAST step before exit.
+REQ-6 from iteration 2 required writing `/run/shutdown-hook-ran` as the last step.
 
-Because `/run` is a tmpfs that does not persist across reboots, this sentinel is only
-meaningful when checked via the shutdown-debug log: the `lsof`/`mount`/`pstree`
-diagnostics captured by `shutdown-debug-capture` (iteration 1 baseline) run before
-the hook, so the sentinel's presence in the next boot's diagnostic snapshot would be
-anomalous. The sentinel's real purpose is to confirm hook execution DURING the
-shutdown session — e.g., via a `journalctl -b -1` lookup or via the debug capture's
-`lsmod.log` difference.
+**For Option D:** The breadcrumb SHOULD still be written, but its value SHALL be `direct-poweroff` (not `ok`) to distinguish slice-4 execution from pre-D slices. This provides forensic evidence of which hook variant ran during the last shutdown attempt.
 
-#### Scenario 6-A: Sentinel written on hook execution
+#### Scenario 6-B: Breadcrumb identifies direct port mode
 
-- GIVEN `hardware.rog.poweroffWorkaround.enable = true`
-- WHEN a shutdown completes and the system reboots
-- THEN the diagnostic snapshot at `/var/log/shutdown-debug/{prior-boot-id}/lsmod.log`
-  will show `acpi_call` absent from the loaded modules (proving unload ran)
-- AND a post-shutdown check can confirm `/run/shutdown-hook-ran` existed during that
-  shutdown session if the system did not actually power off
+- GIVEN slice 4 is deployed
+- WHEN the hook runs during shutdown
+- THEN `/run/shutdown-hook-ran` is written with content `direct-poweroff`
+- AND the sentinel file confirms the direct port path was executed
 
 ---
 
-## Delta: `asus-fan-control.nix` (MODIFIED)
+### REQ-8: Import and Enable (Modified for Options C, D)
 
-### REQ-7: Clean Disable Path for Fan-Control Service
+REQ-8 from iteration 2 baseline requires importing `rog-poweroff-workaround.nix` and setting `hardware.rog.poweroffWorkaround.enable = true`.
 
-`modules/hardware/asus-fan-control.nix` already wraps its `systemd.services.asus-fan-control`
-block inside `lib.mkIf config.services.asus-fan-control-custom.enable`. The existing
-`enable` option defaults to `true`.
+**For Option C:** `hosts/rog/default.nix` SHALL additionally import `../../modules/hardware/rog-dsdt-override.nix` and set `hardware.rog.dsdtOverride.enable = true`.
 
-The module MUST be verified to emit no service definition whatsoever when
-`services.asus-fan-control-custom.enable = false`. Specifically: the unit file MUST
-be absent from the systemd unit graph (not merely inactive) so it cannot appear as a
-dependency in the shutdown sequence.
+**For Option D:** No additional import (the existing workaround module is modified in place via the mode option). However, if a separate poweroff program binary is used (not a shell `printf`), `hosts/rog/default.nix` SHALL include any required path to that binary in its configuration.
 
-No code change is required if the existing `lib.mkIf` guard already satisfies this
-requirement. If a code change is required to achieve full unit absence, it MUST be
-made.
+#### Scenario 8-C: DSDT override imported and enabled
 
-#### Scenario 7-A: Service absent from graph when disabled
-
-- GIVEN `services.asus-fan-control-custom.enable = false`
-- WHEN the NixOS configuration is evaluated
-- THEN `systemd.services.asus-fan-control` is NOT defined in the output
-- AND `systemctl list-units --all | grep asus-fan-control` returns no output on the
-  running system
-
-#### Scenario 7-B: Default behavior unchanged
-
-- GIVEN `services.asus-fan-control-custom.enable` is not set (defaults to `true`)
-- WHEN the NixOS configuration is evaluated
-- THEN `systemd.services.asus-fan-control` is defined exactly as before
-- AND no change in behavior occurs for any host that does not set the option
+- GIVEN slice 3 or 4 is deployed
+- WHEN `hosts/rog/default.nix` is evaluated
+- THEN `rog-dsdt-override.nix` appears in the import list
+- AND `hardware.rog.dsdtOverride.enable` reads `true`
 
 ---
 
-## Delta: `hosts/rog/default.nix` (MODIFIED)
+### Baseline `boot-settings` Configuration (Modified for Option B)
 
-### REQ-8: Import and Enable the Late Poweroff Workaround
+The current `hosts/rog/default.nix` sets `includeAcpiOsi = true`. **For Option B**, this SHALL be changed. At minimum one of:
+1. `includeAcpiOsi = false` — removes both OSI params
+2. A new option or parameter change that alters the OSI string without removing it entirely
 
-`hosts/rog/default.nix` MUST import `../../modules/hardware/rog-poweroff-workaround.nix`
-and set `hardware.rog.poweroffWorkaround.enable = true`.
+The specific chosen approach SHALL be documented in the design phase.
 
-#### Scenario 8-A: Module is in rog's import list
+#### Scenario Baseline-B: OSI params match chosen approach
 
-- GIVEN the `rog` host configuration is evaluated
-- WHEN imports are resolved
-- THEN `rog-poweroff-workaround.nix` is in the module list
-
-#### Scenario 8-B: Option is enabled
-
-- GIVEN the `rog` host configuration
-- WHEN `hardware.rog.poweroffWorkaround.enable` is read
-- THEN its value is `true`
+- GIVEN option B has been deployed
+- WHEN `cat /proc/cmdline` is inspected after boot
+- THEN the ACPI OSI parameters match the chosen approach (absent if disabled, or new string if changed)
+- AND the system is stable at multi-user.target
 
 ---
 
-### REQ-9: Disable ASUS Fan-Control for Isolation Testing
+## REMOVED Restriction
 
-`hosts/rog/default.nix` MUST set `services.asus-fan-control-custom.enable = false`
-for the duration of this experiment.
+The iteration 2 "Non-Requirements" section listed "DSDT/SSDT custom override — documented as iteration 3 fallback only." This restriction IS REMOVED for iteration 3. DSDT override is now in scope as Option C.
 
-This is a deliberate isolation change: removing ASUS fan-control from the shutdown
-graph tests whether `asus_nb_wmi` / `asus_wmi` EC interactions at poweroff are a
-contributing cause of the hang.
-
-#### Scenario 9-A: Fan-control is disabled in rog config
-
-- GIVEN the `rog` host configuration
-- WHEN `services.asus-fan-control-custom.enable` is read
-- THEN its value is `false`
-
-#### Scenario 9-B: No other host is affected
-
-- GIVEN the `thinkcentre` host configuration (or any host that does not set this option)
-- WHEN the configuration is evaluated
-- THEN `services.asus-fan-control-custom.enable` defaults to `true`
-- AND the `asus-fan-control` unit is present in its graph unchanged
-
----
-
-## Delta: `rog-shutdown.nix` (MODIFIED — neutralized)
-
-### REQ-10: Retire the `shutdown.target`-Wired Service
-
-`modules/hardware/rog-shutdown.nix` currently defines `systemd.services.rog-shutdown`
-wired to `poweroff.target`, `reboot.target`, and `halt.target`. This service fires
-too early in the shutdown sequence (before `systemd-shutdown` takes over) and is
-superseded by the late hook in REQ-1 through REQ-6.
-
-The service MUST be neutralized so it no longer acts as a workaround vehicle. The
-preferred approach is to set `enable = false` on the service (making the unit file
-absent from the graph) while retaining the file for reference, OR to delete the file
-entirely if it is not imported by any other host.
-
-The `rog-shutdown.nix` module MUST NOT be the primary ACPI S5 workaround path after
-this change.
-
-#### Scenario 10-A: `rog-shutdown.service` is absent from shutdown graph
-
-- GIVEN `rog-shutdown.nix` has been neutralized
-- WHEN `systemctl list-units --all | grep rog-shutdown` is run after rebuild
-- THEN no output is returned (unit is absent, not merely inactive)
-
-#### Scenario 10-B: New hook takes over as sole late ACPI path
-
-- GIVEN `rog-shutdown.nix` is neutralized AND `rog-poweroff-workaround.nix` is enabled
-- WHEN `rog` shuts down
-- THEN the only ACPI `_SI._SST` invocation originates from the
-  `/usr/lib/systemd/system-shutdown/rog-poweroff` hook
-- AND the `rog-shutdown.service` does NOT also attempt the ACPI call
-
----
-
-## Established Baseline (Read-Only — From Iteration 1)
-
-The following requirements are ALREADY SATISFIED by the iteration 1 implementation
-and MUST NOT be regressed by iteration 2 changes. They are listed here for traceability
-and as the verification evidence layer for the new requirements.
-
-| Baseline requirement | Implemented in | Verification role in iter 2 |
-|----------------------|----------------|-----------------------------|
-| `shutdown-debug-capture` service captures journal/dmesg/ps/mounts | `modules/base/shutdown-debug.nix` | Captures lsmod before hook runs; proves module state at shutdown entry |
-| `boot-settings.includeDiagLogging = true` on rog | `hosts/rog/default.nix` | Console output visible during shutdown for real-time observation |
-| Persistent journal storage | `shutdown-fix.nix` (journald config) | `journalctl -b -1` available to inspect hook side effects |
-| `my.shutdownDebug.enable = true` on rog | `hosts/rog/default.nix` | Enables the capture service |
-
-These baseline items MUST remain present and unmodified in `hosts/rog/default.nix`
-and their respective modules after iteration 2 changes are applied.
-
----
-
-## Non-Requirements (Explicitly Out of Scope)
-
-- DSDT/SSDT custom override — documented as iteration 3 fallback only
-- Touching `thinkcentre`, `t14`, or `mact2` configurations
-- Modifying the `shutdown-debug-capture` capture script or its collected artifacts
-- Watchdog disable (already correct in `shutdown-fix.nix`)
-- Off-host log collection or upload
-- Changing boot kernel parameters beyond what iteration 1 already sets
+The iteration 2 "Non-Requirements" entries for "touching thinkcentre, t14, mact2" and "changing boot kernel parameters beyond iteration 1" remain in effect.
 
 ---
 
 ## Success Criteria
 
-All of the following MUST be true for iteration 2 to be considered done:
+All of the following MUST be true for iteration 3 to be considered done:
 
-1. `nix flake check --no-build` exits 0 for all hosts
-2. `format-nix` produces no diff (code is properly formatted)
-3. `/usr/lib/systemd/system-shutdown/rog-poweroff` exists and is executable on `rog`
-   after rebuild
-4. `systemctl list-units --all | grep asus-fan-control` returns no output on `rog`
-5. `systemctl list-units --all | grep rog-shutdown` returns no output on `rog`
-6. `rog` powers off completely after `shutdown -h now` (primary bug — requires live test)
-7. If the hang persists: `lsmod.log` in the diagnostic snapshot shows `asus_nb_wmi`
-   and `asus_wmi` absent, confirming the hook ran and providing fault isolation for
-   iteration 3 (DSDT override)
+1. `nix flake check --no-build` exits 0 for all hosts at every slice
+2. `format-nix` produces no diff
+3. **Slice 1**: `boot.blacklistedKernelModules` contains `asus_nb_wmi` and `asus_armoury` on rog; `lsmod` confirms they are absent after boot; `asus_wmi` and `hid_asus` remain loaded
+4. **Slice 2**: OSI kernel params reflect the chosen policy; system boots stably; change is reversible by generation rollback
+5. **Slice 3**: DSDT override loads at boot (dmesg confirms custom table); disabling the option restores native DSDT
+6. **Slice 4**: Direct port poweroff causes actual poweroff; hook breadcrumb confirms direct mode ran
+7. If the hang persists at any slice: the diagnostic capture (`/var/log/shutdown-debug/`) provides evidence of where execution stopped, proving each option's mechanism was or was not the cause
+
+---
+
+## Appendix A: Established Baseline (Read-Only — From Iteration 2)
+
+The following requirements from iteration 2 are ALREADY DEPLOYED and MUST NOT be regressed by iteration 3 changes. They are retained as the foundation on which options A-D are stacked.
+
+| ID | Requirement | Implemented In |
+|----|-------------|----------------|
+| REQ-1 | Late Shutdown Hook Module with `hardware.rog.poweroffWorkaround.enable` option | `modules/hardware/rog-poweroff-workaround.nix` |
+| REQ-2 | Hook delivery via `systemd.shutdownRamfs.contents` | `modules/hardware/rog-poweroff-workaround.nix` |
+| REQ-3 | Hook script: ASUS WMI module unload (rmmod sequence) | `modules/hardware/rog-poweroff-workaround.nix` |
+| REQ-4 | Hook script: ACPI `_SI._SST` fallback via acpi_call | `modules/hardware/rog-poweroff-workaround.nix` |
+| REQ-5 | No blocking: all commands wrap `|| true` | `modules/hardware/rog-poweroff-workaround.nix` |
+| REQ-6 | Breadcrumb `/run/shutdown-hook-ran` sentinel | `modules/hardware/rog-poweroff-workaround.nix` |
+| REQ-7 | Clean disable path for `asus-fan-control` | `modules/hardware/asus-fan-control.nix` |
+| REQ-8 | Import and enable rog-poweroff-workaround on rog | `hosts/rog/default.nix` |
+| REQ-9 | Disable ASUS fan-control on rog | `hosts/rog/default.nix` |
+| REQ-10 | Retire `rog-shutdown.service` (enable=false) | `modules/hardware/rog-shutdown.nix` |
+
+Plus the iteration 1 baseline:
+- `shutdown-debug-capture` service captures journal/dmesg/ps/mounts → `modules/base/shutdown-debug.nix`
+- `boot-settings.includeDiagLogging = true` → `hosts/rog/default.nix`
+- Persistent journal storage → `shutdown-fix.nix`
+- `my.shutdownDebug.enable = true` → `hosts/rog/default.nix`
+
+**Cross-slice invariants**: These baseline modules and settings MUST remain present and unmodified across ALL four slices. No iteration 3 change MAY remove or disable:
+- The shutdown-debug capture service or its `.enable` option
+- The `includeDiagLogging = true` setting
+- The persistent journald configuration
+- The disabled watchdog setting in `shutdown-fix.nix`
