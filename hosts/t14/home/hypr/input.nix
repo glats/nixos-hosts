@@ -1,27 +1,28 @@
-# T14 Hyprland input — keyboard layout override only.
-# All other input settings (touchpad, gestures, windowrules, opacity)
-# are owned by omarchy-nix upstream and match t14's needs.
+# T14 Hyprland input -- keyboard layout override + optional full-opacity gate.
+# All other input settings (touchpad, gestures, windowrules, opacity) are
+# owned by omarchy-nix upstream.  The full-opacity override below is gated so
+# it can be disabled to restore omarchy's per-app translucent opacity rules.
 { lib, ... }:
 
+let
+  # Force full opacity (1.0/1.0) on every window, overriding omarchy's
+  # per-app opacity theme system.  Set to false to restore omarchy's
+  # translucent window rules (0.97/0.9 etc).
+  forceFullOpacity = true;
+in
 {
   wayland.windowManager.hyprland.settings.input = {
-    # Chile: es (Spain) + latam (Latin America); Alt+Shift toggles.
-    # mkForce required because omarchy's input.nix sets kb_layout = "us".
-    # compose:caps is removed: it would remap CAPS LOCK to the Compose key,
-    # breaking the dead-key sequence (backtick+letter) that produces accented
-    # characters in GTK apps. fcitx5 supplies the accented IME layer.
     kb_layout = lib.mkForce "es,latam";
     kb_options = lib.mkForce "grp:alt_shift_toggle";
   };
 
-  # Opacity override: omarchy's windows.nix + apps.conf set per-app
-  # opacity rules (0.97/0.9 for most windows, 1.0/0.97 for browsers,
-  # 0.97/0.9 for terminals, etc).  Those rules use `tag -default-opacity`
-  # to opt out of the default tag, so a `match:tag default-opacity` rule
-  # alone is insufficient.  This final match-all rule is appended via
-  # lib.mkAfter to ensure it comes after ALL of omarchy's extraConfig
-  # and forces full opacity on every window.
-  wayland.windowManager.hyprland.extraConfig = lib.mkAfter ''
-    windowrule = opacity 1.0 1.0, match:class .*
-  '';
+  # When enabled, mkAfter ensures this rule comes after ALL of omarchy's
+  # extraConfig and wins.  omarchy's per-app rules tag windows with
+  # `-default-opacity` to opt out, so a plain `match:tag default-opacity`
+  # rule alone is insufficient -- the match-all is required to force every
+  # window opaque.
+  wayland.windowManager.hyprland.extraConfig =
+    lib.optionalString forceFullOpacity (lib.mkAfter ''
+      windowrule = opacity 1.0 1.0, match:class .*
+    '');
 }
