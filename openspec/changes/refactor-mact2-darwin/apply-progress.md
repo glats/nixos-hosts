@@ -1,11 +1,12 @@
 # Apply Progress: refactor-mact2-darwin
 
-**Status**: Phase 1 complete, Phase 2 ready
+**Status**: Phase 1+2 complete, Phase 3 ready
 **Last Updated**: 2026-07-06
 **Total tasks**: 25 (across 4 phases)
 **Repo**: glats/nixos-hosts
 **Branch**: refactor/mact2-darwin
 **Phase 1 commit**: 6ef0a5f
+**Phase 2 commit**: ee708ba
 
 ---
 
@@ -24,17 +25,17 @@
 
 | # | Task | File(s) | Status | Verified |
 |---|------|---------|--------|----------|
-| 2.1 | Create `modules/darwin/{profiles,system,services}/` | directories | 🔲 | 🔲 |
-| 2.2 | Create `modules/darwin/system/nix.nix` (consolidated nix config) | NEW | 🔲 | 🔲 |
-| 2.3 | Create `modules/darwin/profiles/base.nix` (pure aggregator) | NEW | 🔲 | 🔲 |
-| 2.4 | Copy `darwin/homebrew.nix` → `modules/darwin/system/homebrew.nix` | COPY | 🔲 | 🔲 |
-| 2.5 | Copy `darwin/settings.nix` → `modules/darwin/system/settings.nix` | COPY | 🔲 | 🔲 |
-| 2.6 | Copy `darwin/mise.nix` → `modules/darwin/system/mise.nix` | COPY | 🔲 | 🔲 |
-| 2.7 | Copy `darwin/wsdd.nix` → `modules/darwin/services/wsdd.nix` | COPY | 🔲 | 🔲 |
-| 2.8 | Copy+slim `darwin/cachix.nix` → `modules/darwin/system/cachix.nix` | COPY+EDIT | 🔲 | 🔲 |
-| 2.9 | Verify additive state (checkpoint before switchover) | `nix flake check` | 🔲 | 🔲 |
-| 2.10 | Refactor `darwin/default.nix` — import profile, remove nix config | EDIT | 🔲 | 🔲 |
-| 2.11 | Delete old `darwin/cachix.nix homebrew.nix settings.nix mise.nix wsdd.nix` | DELETE (5) | 🔲 | 🔲 |
+| 2.1 | Create `modules/darwin/{profiles,system,services}/` | directories | DONE | DONE |
+| 2.2 | Create `modules/darwin/system/nix.nix` (consolidated nix config) | NEW | DONE | DONE |
+| 2.3 | Create `modules/darwin/profiles/base.nix` (pure aggregator) | NEW | DONE | DONE |
+| 2.4 | Copy `darwin/homebrew.nix` → `modules/darwin/system/homebrew.nix` | COPY | DONE | DONE |
+| 2.5 | Copy `darwin/settings.nix` → `modules/darwin/system/settings.nix` | COPY | DONE | DONE |
+| 2.6 | Copy `darwin/mise.nix` → `modules/darwin/system/mise.nix` | COPY | DONE | DONE |
+| 2.7 | Copy `darwin/wsdd.nix` → `modules/darwin/services/wsdd.nix` | COPY | DONE | DONE |
+| 2.8 | Copy+slim `darwin/cachix.nix` → `modules/darwin/system/cachix.nix` | COPY+EDIT | DONE | DONE |
+| 2.9 | Verify additive state (checkpoint before switchover) | `nix flake check` | DONE | DONE |
+| 2.10 | Refactor `darwin/default.nix` — import profile, remove nix config | EDIT | DONE | DONE |
+| 2.11 | Delete old `darwin/cachix.nix homebrew.nix settings.nix mise.nix wsdd.nix` | DELETE (5) | DONE | DONE |
 
 **Phase 2 gate**: `nix flake check --no-build darwinConfigurations.mact2` + `ls darwin/` == only default.nix + profile dirs populated
 
