@@ -25,7 +25,7 @@ darwin/                          # nix-darwin system modules (homebrew, settings
 lib/                             # mkHost.nix, mkDarwinHost.nix, packages.nix
 overlays/                        # linux.nix, darwin.nix (imported via flake.nix)
 pkgs/                            # Custom package derivations
-bin/                             # Shell scripts (nixos-build, format-nix, git-flow, etc.)
+bin/                             # Shell scripts (nixos-build, format-nix, code-work, etc.)
 secrets/                         # sops-nix (encrypted — never edit directly)
 ```
 
