@@ -124,9 +124,10 @@ let
       }
     );
 
-  # Neutral agent (loaded from local-agent-overlays.json)
+  # Neutral agent (loaded from local-agent-overlays.json, with {file:} resolved)
   neutralAgent = localOverlays.neutral // {
     model = models.neutral;
+    prompt = builtins.readFile ./IDENTITY.md + "\n\n" + builtins.readFile ./SYSTEM_RULES.md;
   };
 
   # Final agent set: upstream + model overlay + tools overlay + neutral
