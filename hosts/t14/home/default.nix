@@ -47,14 +47,22 @@
     installExamples = false;
   };
 
+  # Waybar systemd user service.
+  # omarchy-nix's waybar HM module installs only the package + static config
+  # files -- it does NOT ship a systemd unit -- so this is the sole service
+  # definition and cannot be removed.  Restart=always + a short RestartSec
+  # recover waybar quickly when it crashes on monitor hotplug (a known
+  # Hyprland multi-monitor race).  The previous StartLimitBurst=20 in 5s was
+  # overly permissive (would hammer-restart 20 times); 5 in 10s still recovers
+  # fast but gives systemd a sane back-off before the unit is stopped.
   systemd.user.services.waybar = {
     Unit = {
       Description = "Waybar status bar";
       PartOf = [ "graphical-session.target" ];
       After = [ "graphical-session.target" ];
       ConditionEnvironment = [ "WAYLAND_DISPLAY" ];
-      StartLimitBurst = 20;
-      StartLimitIntervalSec = "5s";
+      StartLimitBurst = 5;
+      StartLimitIntervalSec = "10s";
     };
     Service = {
       ExecStart = "${pkgs.waybar}/bin/waybar";
