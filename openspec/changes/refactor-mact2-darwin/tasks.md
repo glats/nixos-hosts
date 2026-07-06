@@ -214,7 +214,7 @@ grep "./cachix.nix" darwin/default.nix  # no match
 
 ---
 
-## Phase 3: Area 3 — GPG + Ghostty Consolidation
+## Phase 3: Area 3 — GPG Consolidation (Phase 3a)
 
 ### Task 3.1: Create shared/gpg.nix (NEW — shared GPG import logic)
 
@@ -294,6 +294,80 @@ nix flake check --no-build nixosConfigurations.rog     # must exit 0
 
 ---
 
+## Phase 3b: Area 3 — Ghostty Shared Module (iteration addition)
+
+### Task 3.5: Create shared/ghostty.nix
+
+- **Action**: Create `/home/glats/.nixos/shared/ghostty.nix`
+- **Content**: Pure Nix function (NOT a module) that takes `{ colorScheme, selectionForegroundPalette ? "base05", extraSettings ? {} }` and returns `{ settings, theme }`. Contains:
+  - 15 common ghostty settings
+  - 22-color base16 palette
+  - Theme colors (background, foreground, cursor, selection-background, selection-foreground)
+  - Zero `isDarwin` conditionals
+- **Design ref**: Component 14 in design.md
+- **Verification**: `nix-instantiate --eval --strict shared/ghostty.nix` (syntax check)
+
+### Task 3.6: Rewrite home-linux/ghostty.nix
+
+- **File**: `/home/glats/.nixos/home-linux/ghostty.nix`
+- **Action**: Rewrite to import `../../shared/ghostty.nix` and wrap with `lib.mkForce`
+- **Content**: 
+  ```nix
+  { config, lib, ... }:
+  let
+    ghostty = import ../../shared/ghostty.nix {
+      colorScheme = config.colorScheme;
+    };
+  in {
+    programs.ghostty = {
+      enable = true;
+      settings = lib.mkForce ghostty.settings;
+      themes = lib.mkForce ghostty.theme;
+    };
+  }
+  ```
+- **Design ref**: Component 15 in design.md
+- **Verification**: `nix flake check --no-build nixosConfigurations.rog`
+
+### Task 3.7: Rewrite home-darwin/ghostty.nix
+
+- **File**: `/home/glats/.nixos/home-darwin/ghostty.nix`
+- **Action**: Rewrite to import `../../shared/ghostty.nix` with darwin-specific parameters
+- **Content**:
+  ```nix
+  { config, ... }:
+  let
+    ghostty = import ../../shared/ghostty.nix {
+      colorScheme = config.colorScheme;
+      selectionForegroundPalette = "base00";
+      extraSettings = { macos-option-as-alt = "left"; };
+    };
+  in {
+    programs.ghostty = {
+      enable = true;
+      package = null;
+      settings = ghostty.settings;
+      themes = ghostty.theme;
+    };
+  }
+  ```
+- **Design ref**: Component 16 in design.md
+- **Verification**: `nix flake check --no-build darwinConfigurations.mact2`
+
+### Task 3.8: Verify shared module integration
+
+- **Commands**:
+  ```bash
+  ls shared/ghostty.nix                    # exists
+  grep "import.*shared/ghostty" home-linux/ghostty.nix    # linux imports shared
+  grep "import.*shared/ghostty" home-darwin/ghostty.nix   # darwin imports shared
+  grep "macos-option-as-alt" home-darwin/ghostty.nix      # darwin has it
+  grep "macos-option-as-alt" home-linux/ghostty.nix       # linux does NOT have it
+  grep "lib.mkForce" home-linux/ghostty.nix               # linux has mkForce
+  grep "lib.mkForce" home-darwin/ghostty.nix              # darwin does NOT have mkForce
+  ```
+- **Expected**: Both import shared, darwin-specific keys present only on darwin, mkForce only on linux
+
 ## Phase 4: Final Verification
 
 ### Task 4.1: Full flake check — ALL configurations
@@ -338,16 +412,22 @@ nix flake check --no-build nixosConfigurations.rog     # must exit 0
   ```
 - **Expected**: Both platform files import the shared module. Shared module defines the function. Neither platform file defines `importKey` or `home.activation.importGpgKeys`.
 
-### Task 4.6: Ghostty migration check
+### Task 4.6: Ghostty migration check (iteration)
 
 - **Commands**:
   ```bash
-  grep "programs.ghostty" home-darwin/ghostty.nix     # must have matches
-  grep "home.file" home-darwin/ghostty.nix             # must NOT match
-  grep "macos-option-as-alt" home-darwin/ghostty.nix   # darwin-specific key preserved
-  grep "selection-foreground" home-darwin/ghostty.nix  # darwin-specific key preserved
+  ls shared/ghostty.nix                                 # shared module exists
+  grep "import.*shared/ghostty" home-linux/ghostty.nix  # linux imports shared
+  grep "import.*shared/ghostty" home-darwin/ghostty.nix # darwin imports shared
+  grep "programs.ghostty" home-darwin/ghostty.nix       # programs.ghostty present
+  grep "home.file" home-darwin/ghostty.nix              # must NOT match
+  grep "macos-option-as-alt" home-darwin/ghostty.nix    # darwin has it
+  grep "macos-option-as-alt" home-linux/ghostty.nix     # linux does NOT have it
+  grep "lib.mkForce" home-linux/ghostty.nix             # linux has mkForce
+  grep "lib.mkForce" home-darwin/ghostty.nix            # darwin does NOT have mkForce
+  grep "isDarwin\|stdenv.isDarwin" shared/ghostty.nix   # zero platform conditionals
   ```
-- **Expected**: `programs.ghostty` present, `home.file` absent, darwin-specific overrides present
+- **Expected**: `shared/ghostty.nix` exists, both platforms import it, `programs.ghostty` present, `home.file` absent, darwin-specific keys only on darwin, mkForce only on linux, zero isDarwin in shared
 
 ### Task 4.7: No secrets exposed
 
@@ -376,9 +456,10 @@ nix flake check --no-build nixosConfigurations.rog     # must exit 0
 |-------|-------|---------------|--------------|--------------|---------------|
 | 1 (specialArgs) | 1.1-1.2 | 0 | 0 | 1 | 0 |
 | 2 (profile chain) | 2.1-2.11 | 2 | 4 | 1 (+1 slim) | 5 |
-| 3 (GPG+Ghostty) | 3.1-3.4 | 1 | 0 | 3 | 0 |
+| 3a (GPG) | 3.1-3.3 | 1 | 0 | 2 | 0 |
+| 3b (Ghostty iteration) | 3.5-3.8 | 1 | 0 | 2 | 0 |
 | 4 (verification) | 4.1-4.8 | 0 | 0 | 0 | 0 |
-| **Total** | **25 tasks** | **3** | **4** | **5** | **5** |
+| **Total** | **27 tasks** | **4** | **4** | **7** | **5** |
 
 **Net line change (from design)**: creates +672 lines, deletes -728 lines, net -56 lines.
 **Delivery strategy**: Single PR (~300 line diff, within standard review budget).
