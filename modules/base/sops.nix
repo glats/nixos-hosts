@@ -14,4 +14,10 @@
     group = "users";
     mode = "0400";
   };
+
+  sops.secrets."github/pat_jcuzmar" = {
+    owner = "glats";
+    group = "users";
+    mode = "0400";
+  };
 }

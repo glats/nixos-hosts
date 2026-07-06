@@ -2,9 +2,11 @@
   glats = {
     name = "Redacted Name";
     email = "personal@example.com";
+    signingKey = "CFD6C7FED46F6870BE13CE87D39580F75062BEFC";
   };
   jcuzmar = {
     name = "jcuzmar";
     email = "work@example.com";
+    signingKey = "B658D64F6FDBCFD1EBA53509A1D4ECB0118566C8";
   };
 }

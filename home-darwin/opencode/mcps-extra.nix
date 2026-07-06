@@ -1,5 +1,4 @@
-# Extra MCPs beyond the base 5 (github, nixos, context7, engram, exa)
-# These are macOS-specific MCPs that can be merged with mcps-base.nix
+# macOS-specific MCPs that can be merged with mcps-base.nix
 { config
 , lib
 , pkgs
@@ -11,16 +10,6 @@ with lib;
 let
   # Extra MCPs for macOS
   extraMcps = {
-    # Override base github MCP to use the wrapped version (reads token from sops)
-    github = {
-      type = "local";
-      command = [
-        "github-mcp-server-wrapped"
-        "stdio"
-      ];
-      enabled = true;
-    };
-
     drawio = {
       type = "remote";
       url = "https://mcp.draw.io/mcp";
