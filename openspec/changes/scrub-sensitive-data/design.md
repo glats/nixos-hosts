@@ -859,7 +859,7 @@ Files that MUST NOT be affected by the filter-repo:
 ```
 
 **Verification after Stage 1**:
-- `grep -E "(Redacted Name|jcuzmar@falabella\.cl|jcuzmar@protonmail\.com)" shared/git-identity.nix` returns zero
+- `grep -E "(Redacted Name|work@example\.com|personal@example\.com)" shared/git-identity.nix` returns zero
 - `nix flake check --no-build` passes
 - `format-nix` clean
 - `git diff --stat` shows only the files listed above
@@ -935,7 +935,7 @@ Files that MUST NOT be affected by the filter-repo:
 | sops secrets unavailable during HM activation | Activation script exits 0 silently; `user.name`/`user.email` are set to placeholder; git operations fall back to environment-level config |
 | Host rebuilt partially through Stage 2 (has some old, some new references) | Both old and new sops keys exist in `passwords.yaml` during transition; both old and new sops declarations exist; MCP wrappers produce all 4 binaries; activation succeeds regardless of which path is referenced |
 | Old MCP wrapper (`github-mcp-server-glats`) still referenced by other tooling | Old wrapper binary still exists in PATH during transition (removed in cleanup); no runtime breakage |
-| `filter-repo` modifies encrypted sops content | Encrypted ciphertext does not contain plaintext PII; the `Redacted Name`/`falabella.cl` replacements will NOT match inside encrypted blobs; sops files decrypt correctly after rewrite |
+| `filter-repo` modifies encrypted sops content | Encrypted ciphertext does not contain plaintext PII; the `Redacted Name`/`work@example.com` replacements will NOT match inside encrypted blobs; sops files decrypt correctly after rewrite |
 | User has `github-glats` MCP configured in OpenCode but not `github-personal` | Both MCP config entries exist during transition; OpenCode shows both; user can disable old, enable new at their pace |
 | `nix flake check --no-build` fails after history rewrite | Restore from `pre-history-scrub` tag; investigate which file the rewrite corrupted; adjust replacements list if needed; re-run filter-repo |
 | Commit containing ONLY `work@example.com` in file content (not a name match) | filter-repo `--replace-text` handles all file content; `--mailmap` handles author/committer metadata; zero occurrences remain |
@@ -948,7 +948,7 @@ Files that MUST NOT be affected by the filter-repo:
 
 **Stage 1**:
 ```bash
-grep -E "(Redacted Name|jcuzmar@falabella\.cl|jcuzmar@protonmail\.com)" shared/git-identity.nix
+grep -E "(Redacted Name|work@example\.com|personal@example\.com)" shared/git-identity.nix
 # Expected: zero output
 
 nix flake check --no-build

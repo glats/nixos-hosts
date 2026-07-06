@@ -96,7 +96,7 @@ work:
 - [x] `jcuzmar` key renamed to `work`
 - [x] `name` and `email` fields removed from both blocks
 - [x] `signingKey` fingerprints preserved
-- [x] `grep -E "(Redacted Name|jcuzmar@|falabella)" shared/git-identity.nix` returns zero
+- [x] `grep -E "(Redacted Name|personal@|personal@)" shared/git-identity.nix` returns zero
 
 **Dependencies**: None
 
@@ -203,7 +203,7 @@ work:
 - Add note that real values are stored in `secrets/user/identities.yaml` (sops-encrypted)
 
 **Checklist**:
-- [x] `grep -E "(Redacted Name|jcuzmar@falabella\.cl|jcuzmar@protonmail\.com)" docs/multi-github-identity.md` returns zero
+- [x] `grep -E "(Redacted Name|work@example\.com|personal@example\.com)" docs/multi-github-identity.md` returns zero
 - [x] `grep -i "sops\|secrets/user/identities" docs/multi-github-identity.md` returns matches
 - [x] Document references new identity labels (`personal`/`work`)
 
@@ -221,7 +221,7 @@ work:
 - Identity labels already use `personal`/`work` (the spec was already partially updated in the delta)
 
 **Checklist**:
-- [x] `grep -E "(Redacted Name|jcuzmar@falabella\.cl|jcuzmar@protonmail\.com)" openspec/specs/gh-auth/spec.md` returns zero
+- [x] `grep -E "(Redacted Name|work@example\.com|personal@example\.com)" openspec/specs/gh-auth/spec.md` returns zero
 - [x] Table references sops identity file, not literal PII
 
 **Dependencies**: None
@@ -234,15 +234,15 @@ Run all acceptance criteria:
 
 ```bash
 # No PII in git-identity.nix
-grep -E "(Redacted Name|jcuzmar@falabella\.cl|jcuzmar@protonmail\.com)" shared/git-identity.nix
+grep -E "(Redacted Name|work@example\.com|personal@example\.com)" shared/git-identity.nix
 # Expected: zero output → PASS
 
 # No PII in docs
-grep -E "(Redacted Name|jcuzmar@falabella\.cl|jcuzmar@protonmail\.com)" docs/multi-github-identity.md
+grep -E "(Redacted Name|work@example\.com|personal@example\.com)" docs/multi-github-identity.md
 # Expected: zero output → PASS
 
 # No PII in live spec
-grep -E "(Redacted Name|jcuzmar@falabella\.cl|jcuzmar@protonmail\.com)" openspec/specs/gh-auth/spec.md
+grep -E "(Redacted Name|work@example\.com|personal@example\.com)" openspec/specs/gh-auth/spec.md
 # Expected: zero output → PASS
 
 # Identity file decrypts (user must run: sops edit secrets/user/identities.yaml)
@@ -671,7 +671,7 @@ git log --all --oneline | xargs -I{} git show {} 2>/dev/null | grep "Redacted Na
 
 # Check author emails
 git log --all --format="%ae" | sort -u
-# Expected: personal@example.com, work@example.com (NOT falabella.cl or protonmail.com)
+# Expected: personal@example.com, work@example.com (NOT work@example.com or personal@example.com)
 
 # Flake check
 nix flake check --no-build

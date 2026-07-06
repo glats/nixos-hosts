@@ -53,7 +53,7 @@ None. Implementation matches `design.md` and `specs` exactly.
 ## Issues Found
 
 ### Pre-existing t14 conflict (not from this change)
-A pre-existing worktree conflict between `home-linux/git.nix` (which has an in-progress edit adding `user.email = "jcuzmar@protonmail.com"`) and `hosts/t14/home/omarchy.nix` (which has the existing `user.email = "glats@local"`) causes `nix flake check` to fail on t14 when those in-progress changes are present.
+A pre-existing worktree conflict between `home-linux/git.nix` (which has an in-progress edit adding `user.email = "personal@example.com"`) and `hosts/t14/home/omarchy.nix` (which has the existing `user.email = "glats@local"`) causes `nix flake check` to fail on t14 when those in-progress changes are present.
 
 This is **not caused by the opencode changes**. Verified by:
 1. Stashing all worktree changes → `nix flake check` passes
