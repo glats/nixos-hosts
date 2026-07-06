@@ -15,7 +15,7 @@ The codebase contains plaintext PII -- full name `Redacted Name`, work email `wo
 | Sops secret paths | Rename `github/pat_jcuzmar` -> `github/pat_work`, `gpg_glats_*` -> `gpg_personal_*`, `gpg_jcuzmar_*` -> `gpg_work_*` |
 | MCP wrapper binaries | `github-mcp-server-glats` -> `github-mcp-server-personal`, `github-mcp-server-jcuzmar` -> `github-mcp-server-work` |
 | MCP config names | `github-glats` -> `github-personal`, `github-jcuzmar` -> `github-work` |
-| Git history | `git filter-repo` to remove all traces of `falabella.cl` and `Redacted Name` |
+| Git history | `git filter-repo` to remove all traces of `work@example.com` and `Redacted Name` |
 | Live specs/docs | Redact PII from `openspec/specs/gh-auth/spec.md`, `docs/multi-github-identity.md` |
 
 ### OUT of scope
@@ -36,7 +36,7 @@ The codebase contains plaintext PII -- full name `Redacted Name`, work email `wo
 
 **Stage 2 -- Rename labels**: Rename `glats` -> `personal`, `jcuzmar` -> `work` across all Nix attrset keys, sops paths, MCP wrappers, and config. Add backward-compat sops aliases so old paths work during transition.
 
-**Stage 3 -- Scrub history**: `git filter-repo` with text-replacement for `falabella.cl`, `Redacted Name`. Force push to GitHub. Single-user repo minimizes coordination risk.
+**Stage 3 -- Scrub history**: `git filter-repo` with text-replacement for `work@example.com`, `Redacted Name`. Force push to GitHub. Single-user repo minimizes coordination risk.
 
 ## Capabilities
 
@@ -46,7 +46,7 @@ Capabilities that MUST be covered by delta specs:
 2. **Identity label rename**: All git/config/MCP labels use `personal`/`work` instead of `glats`/`jcuzmar`
 3. **Git config continuity**: `user.name`/`user.email` resolve correctly on all Linux and Darwin hosts after rename
 4. **Sops backward compatibility**: Old secret paths resolve during one-transition-cycle alias period
-5. **Git history clean**: Zero occurrences of `falabella.cl` or `Redacted Name` in reachable history after Stage 3
+5. **Git history clean**: Zero occurrences of `work@example.com` or `Redacted Name` in reachable history after Stage 3
 6. **System username preservation**: No `users.users.glats`, `/home/glats`, or `/Users/jcuzmar` references changed
 
 ## Affected Areas

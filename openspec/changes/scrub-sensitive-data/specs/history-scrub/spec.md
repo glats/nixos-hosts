@@ -28,7 +28,7 @@ After the rewrite, ZERO occurrences of the PII above MUST exist in ANY reachable
 - GIVEN the repository after Stage 3
 - WHEN `git log --all --oneline | xargs -I{} git log -1 --format="%an %ae" {}` is executed
 - THEN no author name MUST contain `Redacted Name`
-- AND no author email MUST contain `falabella.cl` or `protonmail.com` matching `jcuzmar`
+- AND no author email MUST contain `work@example.com` or `personal@example.com` matching `jcuzmar`
 
 #### Scenario: Encrypted blobs are unaffected
 
@@ -152,7 +152,7 @@ Commit messages that contained PII MUST be scrubbed by the `git filter-repo` tex
 
 - GIVEN the repository after Stage 3
 - WHEN `git log --all --format="%ae" | sort -u` is executed
-- THEN the output MUST NOT contain `falabella.cl` or `protonmail.com`
+- THEN the output MUST NOT contain `work@example.com` or `personal@example.com`
 
 ## MODIFIED Requirements
 

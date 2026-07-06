@@ -36,7 +36,7 @@ The file MUST retain GPG signing key fingerprints for each identity (these are p
 #### Scenario: git-identity.nix has zero plaintext PII
 
 - GIVEN the repository after Stage 1
-- WHEN `grep -E "(Redacted Name|jcuzmar@|falabella)" shared/git-identity.nix` is executed
+- WHEN `grep -E "(Redacted Name|personal@|personal@)" shared/git-identity.nix` is executed
 - THEN zero matches MUST be returned
 
 #### Scenario: GPG fingerprints are preserved
@@ -100,7 +100,7 @@ The file `docs/multi-github-identity.md` MUST be updated to reference sops secre
 #### Scenario: Documentation contains no PII
 
 - GIVEN the repository after Stage 1
-- WHEN `grep -E "(Redacted Name|jcuzmar@falabella\.cl|jcuzmar@protonmail\.com)" docs/multi-github-identity.md` is executed
+- WHEN `grep -E "(Redacted Name|work@example\.com|personal@example\.com)" docs/multi-github-identity.md` is executed
 - THEN zero matches MUST be returned
 
 #### Scenario: Documentation references sops
@@ -116,7 +116,7 @@ The file `openspec/specs/gh-auth/spec.md` MUST be updated to remove all occurren
 #### Scenario: gh-auth spec has zero PII
 
 - GIVEN the repository after Stage 1
-- WHEN `grep -E "(Redacted Name|jcuzmar@falabella\.cl|jcuzmar@protonmail\.com)" openspec/specs/gh-auth/spec.md` is executed
+- WHEN `grep -E "(Redacted Name|work@example\.com|personal@example\.com)" openspec/specs/gh-auth/spec.md` is executed
 - THEN zero matches MUST be returned
 
 ## MODIFIED Requirements
