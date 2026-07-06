@@ -58,6 +58,7 @@
       "kitty"
       "tigervnc"
       "vnc-viewer"
+      "visual-studio-code"
     ];
   };
 }
