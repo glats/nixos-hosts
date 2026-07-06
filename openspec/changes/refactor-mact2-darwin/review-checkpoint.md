@@ -1,7 +1,24 @@
 # Review Checkpoint: refactor-mact2-darwin
 
-**Status**: Not started
+**Status**: Approved for Phase 2
+**Current Phase**: 1 (completed)
 **Created**: 2026-07-06
+**Updated**: 2026-07-06
+
+## Phase 1 Verdict
+
+Verdict: **approved**
+
+Phase 1 (Area 2: mkDarwinHost specialArgs fix) completed and verified:
+- `lib/mkDarwinHost.nix`: 13 lines removed (home-manager.extraSpecialArgs block)
+- `grep -c` check: 0 matches for `home-manager.extraSpecialArgs` in mkDarwinHost.nix
+- `darwin/default.nix` verified as sole source of truth for HM extraSpecialArgs (passes superset: inputs, self, primaryUser, javaVersion)
+- `nix flake check --no-build darwinConfigurations.mact2`: passes
+- `nix flake check --no-build nixosConfigurations.rog`: passes (no impact on NixOS)
+- `format-nix`: clean
+
+Rework level: none
+Iteration decision needed: No
 
 ## Pre-review Checklist
 
