@@ -31,12 +31,18 @@ in
         HostName = "rog.local";
         User = "glats";
         IdentityFile = "${sshDir}/glats-rog";
+        SetEnv = {
+          TERM = "xterm-256color";
+        };
       };
 
       "t14.local" = {
         HostName = "t14.local";
         User = "glats";
         IdentityFile = "${sshDir}/t14";
+        SetEnv = {
+          TERM = "xterm-256color";
+        };
       };
 
       "CLFTCC02G54THMD6N.local" = {

@@ -8,42 +8,20 @@ stdenvNoCC.mkDerivation {
 
   installPhase = ''
     mkdir -p $out/bin
-    
-    # Install worktree workflow scripts
-    cp $src/work-flow $out/bin/
-    chmod +x $out/bin/work-flow
-    
-    cp $src/start-work $out/bin/
-    chmod +x $out/bin/start-work
-    
-    cp $src/finish-work $out/bin/
-    chmod +x $out/bin/finish-work
-    
-    cp $src/abort-work $out/bin/
-    chmod +x $out/bin/abort-work
-    
-    cp $src/list-work $out/bin/
-    chmod +x $out/bin/list-work
-    
-    # Install git workflow scripts
-    cp $src/git-flow $out/bin/
-    chmod +x $out/bin/git-flow
-    
-    cp $src/oc-wt $out/bin/
-    chmod +x $out/bin/oc-wt
-    
+
+    # Install worktree workflow script
+    cp $src/code-work $out/bin/
+    chmod +x $out/bin/code-work
+
     # Install utility scripts
     cp $src/format-nix $out/bin/
     chmod +x $out/bin/format-nix
-    
+
     cp $src/nixos-build $out/bin/
     chmod +x $out/bin/nixos-build
-    
+
     cp $src/export-mate-config $out/bin/
     chmod +x $out/bin/export-mate-config
-
-    # Create symlinks for convenience
-    ln -s $out/bin/git-flow $out/bin/git-worktree-flow
   '';
 
   meta = with lib; {

@@ -192,7 +192,11 @@
     # programs.wayvnc + systemPackages; HM module deploys the
     # systemd user service + config file). Port 5900 + enable_pam = true
     # match upstream defaults; set explicitly here for documentation.
-    wayvnc.enable = true;
+    wayvnc = {
+      enable = true;
+      # Capture the landscape AOC 2470W (DP-3) where regreet/desktop is visible.
+      output = "DP-3";
+    };
 
     # Greeter: regreet (greeter for Hyprland). Selects the regreet-based
     # login flow instead of the default tuigreet.
@@ -223,7 +227,10 @@
       # (on the same port 5900 as the user-session wayvnc). Remmina
       # auto-reconnects across the ~1s handoff when the user logs in.
       # Defaults for address/port/enable_pam come from omarchy-nix.
-      wayvnc.enable = true;
+      wayvnc = {
+        enable = true;
+        output = "DP-3";
+      };
     };
   };
 

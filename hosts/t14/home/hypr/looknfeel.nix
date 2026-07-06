@@ -16,11 +16,10 @@
 
 {
   wayland.windowManager.hyprland.settings = {
-    # T14: AMD Phoenix 3 APU — enable basic anti-aliasing
-    # for crisp text without performance overhead.
-    env = [
-      "WLR_RENDERER_ALLOW_SOFTWARE,0"
-    ];
+    # No env overrides: WLR_RENDERER_ALLOW_SOFTWARE,0 was removed — it is
+    # obsolete on Hyprland 0.54+ (the wlroots render-backend selection hook
+    # it addressed no longer exists), and the AMD Phoenix iGPU never selects
+    # software rendering.  No replacement needed.
 
     # T14: no inner gaps, tight outer gaps.  Overrides the omarchy
     # default gaps_in=5 / gaps_out=10 with the user's preferred
