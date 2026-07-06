@@ -129,13 +129,16 @@ cmd_create() {
     exit 1
   fi
 
-  # Check branch doesn't already exist
+  # Resolve branch: local, remote, or create fresh
   if git show-ref --verify --quiet "refs/heads/$name"; then
-    die "Branch '$name' already exists. Choose a different worktree name."
+    echo "> Using existing branch '$name'"
+  elif git show-ref --verify --quiet "refs/remotes/origin/$name"; then
+    echo "> Creating local branch '$name' from origin/$name"
+    git branch "$name" "origin/$name"
+  else
+    echo "> Creating new branch '$name' from '$current_branch'"
+    git branch "$name" "$current_branch"
   fi
-
-  # Create branch from current branch
-  git branch "$name" "$current_branch"
 
   # Create worktree
   git worktree add "$WORKTREES_DIR/$name" "$name"
@@ -150,7 +153,7 @@ cmd_create() {
   echo "====================================="
   echo "> Created worktree: $name"
   echo "> Location: $WORKTREES_DIR/$name"
-  echo "> Branch: $name (from $current_branch)"
+  echo "> Branch: $name"
   echo ""
   echo "To work in this worktree:"
   echo "  cd $WORKTREES_DIR/$name"
