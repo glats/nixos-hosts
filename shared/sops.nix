@@ -43,7 +43,17 @@
     mode = "0400";
   };
 
-  # GitHub tokens
+  # GitHub tokens (new named paths)
+  sops.secrets."github/personal_pat" = {
+    sopsFile = ../secrets/shared/passwords.yaml;
+    mode = "0400";
+  };
+  sops.secrets."github/work_pat" = {
+    sopsFile = ../secrets/shared/passwords.yaml;
+    mode = "0400";
+  };
+
+  # GitHub tokens (backward compat aliases)
   sops.secrets."github/pat" = {
     sopsFile = ../secrets/shared/passwords.yaml;
     mode = "0400";
@@ -63,7 +73,25 @@
     mode = "0400";
   };
 
-  # GPG keys per identity
+  # GPG keys per identity (new named paths)
+  sops.secrets."github/personal_gpg_fingerprint" = {
+    sopsFile = ../secrets/shared/passwords.yaml;
+    mode = "0400";
+  };
+  sops.secrets."github/personal_gpg_key" = {
+    sopsFile = ../secrets/shared/passwords.yaml;
+    mode = "0400";
+  };
+  sops.secrets."github/work_gpg_fingerprint" = {
+    sopsFile = ../secrets/shared/passwords.yaml;
+    mode = "0400";
+  };
+  sops.secrets."github/work_gpg_key" = {
+    sopsFile = ../secrets/shared/passwords.yaml;
+    mode = "0400";
+  };
+
+  # GPG keys per identity (backward compat aliases)
   sops.secrets."github/gpg_jcuzmar_fingerprint" = {
     sopsFile = ../secrets/shared/passwords.yaml;
     mode = "0400";

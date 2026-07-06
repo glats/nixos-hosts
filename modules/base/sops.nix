@@ -9,6 +9,18 @@
     neededForUsers = true;
   };
 
+  sops.secrets."github/personal_pat" = {
+    owner = "glats";
+    group = "users";
+    mode = "0400";
+  };
+
+  sops.secrets."github/work_pat" = {
+    owner = "glats";
+    group = "users";
+    mode = "0400";
+  };
+
   sops.secrets."github/pat" = {
     owner = "glats";
     group = "users";

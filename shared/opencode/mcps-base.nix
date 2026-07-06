@@ -9,6 +9,25 @@ with lib;
 let
   # Static default MCPs - no config references in defaults
   defaultMcps = {
+    "github-personal" = {
+      type = "local";
+      command = [
+        "github-mcp-server-personal"
+        "stdio"
+      ];
+      enabled = true;
+    };
+
+    "github-work" = {
+      type = "local";
+      command = [
+        "github-mcp-server-work"
+        "stdio"
+      ];
+      enabled = true;
+    };
+
+    # Backward compat: old MCP names pointing to new wrappers
     "github-glats" = {
       type = "local";
       command = [

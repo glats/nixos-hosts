@@ -34,12 +34,12 @@ let
     }
 
     echo "Checking GitHub tokens..."
-    check_token "glats"  "${config.sops.secrets."github/pat".path}"
-    check_token "jcuzmar" "${config.sops.secrets."github/pat_jcuzmar".path}"
+    check_token "personal" "${config.sops.secrets."github/personal_pat".path}"
+    check_token "work"     "${config.sops.secrets."github/work_pat".path}"
   '';
 in
 {
-  config = lib.mkIf (config.sops.secrets ? "github/pat") {
+  config = lib.mkIf (config.sops.secrets ? "github/personal_pat") {
     system.activationScripts.githubTokenCheck = lib.stringAfter [ "setupSecrets" ]
       ''${tokenCheckScript}'';
   };

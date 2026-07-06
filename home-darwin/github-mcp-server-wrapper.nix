@@ -30,20 +30,32 @@ let
       exec ${pkgs.github-mcp-server}/bin/github-mcp-server "''${@:-stdio}"
     '';
 
-  githubMcpServerGlats = mkGithubMcpWrapper {
-    name = "github-mcp-server-glats";
-    secretPath = config.sops.secrets."github/pat".path;
+  # New named wrappers
+  githubMcpServerPersonal = mkGithubMcpWrapper {
+    name = "github-mcp-server-personal";
+    secretPath = config.sops.secrets."github/personal_pat".path;
   };
 
-  # macOS jcuzmar reads github/token from atlassian.yaml (backward compat)
-  githubMcpServerJcuzmar = mkGithubMcpWrapper {
-    name = "github-mcp-server-jcuzmar";
+  # macOS work reads github/token from atlassian.yaml (legacy path on macOS)
+  githubMcpServerWork = mkGithubMcpWrapper {
+    name = "github-mcp-server-work";
     secretPath = config.sops.secrets."github/token".path;
   };
+
+  # Backward compat: old names delegate to new wrappers
+  githubMcpServerGlats = pkgs.writeShellScriptBin "github-mcp-server-glats" ''
+    exec ${githubMcpServerPersonal}/bin/github-mcp-server-personal "$@"
+  '';
+
+  githubMcpServerJcuzmar = pkgs.writeShellScriptBin "github-mcp-server-jcuzmar" ''
+    exec ${githubMcpServerWork}/bin/github-mcp-server-work "$@"
+  '';
 in
 {
   home.packages = [
-    githubMcpServerGlats
-    githubMcpServerJcuzmar
+    githubMcpServerPersonal
+    githubMcpServerWork
+    githubMcpServerGlats # backward compat alias
+    githubMcpServerJcuzmar # backward compat alias
   ];
 }
