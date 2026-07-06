@@ -53,12 +53,20 @@
     mode = "0400";
   };
 
-  # Identity values from sops (name + email for git/GPG)
-  sops.secrets."identities/personal" = {
+  # Identity values from sops (name + email for git/GPG) — flat strings per sops requirement
+  sops.secrets."identities/personal_name" = {
     sopsFile = ../secrets/user/identities.yaml;
     mode = "0400";
   };
-  sops.secrets."identities/work" = {
+  sops.secrets."identities/personal_email" = {
+    sopsFile = ../secrets/user/identities.yaml;
+    mode = "0400";
+  };
+  sops.secrets."identities/work_name" = {
+    sopsFile = ../secrets/user/identities.yaml;
+    mode = "0400";
+  };
+  sops.secrets."identities/work_email" = {
     sopsFile = ../secrets/user/identities.yaml;
     mode = "0400";
   };
