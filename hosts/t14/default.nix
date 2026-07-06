@@ -199,7 +199,7 @@
       type = "regreet";
       # Matches "Lenovo Group Limited LEN G24-10 U5B4GWF1" from monitors below.
       # When empty (default) the selection phase is a no-op — current behaviour.
-      focusMonitor = "LEN G24";
+      focusMonitor = "AOC 2470W";
       keyboard = {
         layouts = [
           "es"
@@ -222,7 +222,10 @@
       # (on the same port 5900 as the user-session wayvnc). Remmina
       # auto-reconnects across the ~1s handoff when the user logs in.
       # Defaults for address/port/enable_pam come from omarchy-nix.
-      wayvnc.enable = true;
+      wayvnc = {
+        enable = true;
+        output = "DP-3";
+      };
     };
   };
 
