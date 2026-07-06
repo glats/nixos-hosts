@@ -34,6 +34,7 @@
       ];
       maximize = true;
       scrollback-limit = 4294967295;
+      term = "xterm-256color";
       theme = "nix-colors";
       window-padding-balance = true;
       window-padding-color = "extend";
