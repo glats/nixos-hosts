@@ -37,13 +37,13 @@ in
       { path = "~/.config/git/identity-work"; }
       # Personal identity in Personal directory
       {
-        condition = "gitdir:~/Personal/**";
+        condition = "gitdir:~/Projects/**";
         path = "~/.config/git/identity-personal";
       }
     ]
     # Personal repos sign with personal key if set
     ++ lib.optional (identities.personal.signingKey != "") {
-      condition = "gitdir:~/Personal/**";
+      condition = "gitdir:~/Projects/**";
       contents = {
         user.signingKey = identities.personal.signingKey;
         commit.gpgsign = true;
