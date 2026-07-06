@@ -106,6 +106,7 @@ reiterating. After re-apply → back to review. Only `done` exits the loop.
 | `done` | Apply OK → verify/archive (exits loop) |
 | `amend` | Needs changes → choose reiterate (high uncertainty) or redo (low uncertainty) |
 | `redo` | Low-uncertainty re-apply directly (escape hatch, stays in loop) |
+| `redo` | Low-uncertainty re-apply directly (escape hatch, stays in loop) |
 
 ## Artifact Expectations
 
