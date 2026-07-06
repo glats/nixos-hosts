@@ -38,7 +38,8 @@
     shellAliases = {
       ls = "ls --color=auto";
       ll = "ls -la";
-      "wt-done" = "code-work --finish";
+      "wt-done" = "code-work --done";
+      "wt-abort" = "code-work --abort";
       "wt-list" = "code-work --list";
 
       nrs = "nixos-build switch";
@@ -63,7 +64,7 @@
     initContent = lib.mkAfter ''
       code-work() {
         case "''${1:-}" in
-          --finish|--list|--prune|--help|-h)
+          --done|--abort|--list|--prune|--help|-h)
             "''${HOME}/.nixos/bin/code-work" "$@"
             ;;
           "")
@@ -72,14 +73,12 @@
           *)
             local wt_name="$1"
             "''${HOME}/.nixos/bin/code-work" "$wt_name" || return
-            local repo_root
-            repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || repo_root="''${HOME}/.nixos"
-            if [[ -d "$repo_root/.worktrees/$wt_name" ]]; then
-              cd "$repo_root/.worktrees/$wt_name"
+            if [[ -d "''${HOME}/.nixos/.worktrees/$wt_name" ]]; then
+              cd "''${HOME}/.nixos/.worktrees/$wt_name"
               opencode || true
               echo ""
-              echo "> Run 'code-work --finish' to save and cleanup"
-              echo "> (From the worktree directory: .worktrees/$wt_name)"
+              echo "> Run 'code-work --done' to save and cleanup"
+              echo "> Run 'code-work --abort' to discard everything"
             fi
             ;;
         esac
