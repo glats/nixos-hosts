@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-set -euo pipefail
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(dirname "$SCRIPT_DIR")"
+source "$SCRIPT_DIR/lib/common.sh"
+
+REPO_ROOT=$(repo_root)
 HOST=$(hostname)
 
 cd "$REPO_ROOT"
