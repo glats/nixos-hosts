@@ -1,12 +1,13 @@
 # Apply Progress: refactor-mact2-darwin
 
-**Status**: Phase 1+2 complete, Phase 3 ready
+**Status**: All phases complete, ready for PR
 **Last Updated**: 2026-07-06
 **Total tasks**: 25 (across 4 phases)
 **Repo**: glats/nixos-hosts
 **Branch**: refactor/mact2-darwin
 **Phase 1 commit**: 6ef0a5f
 **Phase 2 commit**: ee708ba
+**Phase 3 commit**: 8227b25
 
 ---
 
@@ -45,10 +46,10 @@
 
 | # | Task | File | Status | Verified |
 |---|------|------|--------|----------|
-| 3.1 | Create `shared/gpg.nix` (shared importKey + activation) | NEW | 🔲 | 🔲 |
-| 3.2 | Refactor `home-linux/gpg.nix` — import shared, linux packages only | EDIT | 🔲 | 🔲 |
-| 3.3 | Refactor `home-darwin/gpg.nix` — import shared, darwin packages only | EDIT | 🔲 | 🔲 |
-| 3.4 | Rewrite `home-darwin/ghostty.nix` — migrate from `home.file` to `programs.ghostty` | REWRITE | 🔲 | 🔲 |
+| 3.1 | Create `shared/gpg.nix` (shared importKey + activation) | NEW | DONE | DONE |
+| 3.2 | Refactor `home-linux/gpg.nix` — import shared, linux packages only | EDIT | DONE | DONE |
+| 3.3 | Refactor `home-darwin/gpg.nix` — import shared, darwin packages only | EDIT | DONE | DONE |
+| 3.4 | Rewrite `home-darwin/ghostty.nix` — migrate from `home.file` to `programs.ghostty` | REWRITE | DONE | DONE |
 
 **Phase 3 gate**: `nix flake check --no-build` (all hosts) + `grep "home.file" home-darwin/ghostty.nix` == 0 + `grep "shared/gpg.nix" home-*/gpg.nix` == 2 matches
 
@@ -58,14 +59,14 @@
 
 | # | Task | Command / Check | Status |
 |---|------|-----------------|--------|
-| 4.1 | Full flake check — ALL configurations | `nix flake check --no-build` | 🔲 |
-| 4.2 | Format all changed files | `format-nix` | 🔲 |
-| 4.3 | Directory structure verification | `ls darwin/ modules/darwin/*/` | 🔲 |
-| 4.4 | specialArgs leak check | `grep -c "home-manager.extraSpecialArgs" lib/mkDarwinHost.nix` == 0 | 🔲 |
-| 4.5 | GPG shared import check | `grep "shared/gpg.nix" home-*/gpg.nix` == 2 matches | 🔲 |
-| 4.6 | Ghostty migration check | `grep "programs.ghostty" home-darwin/ghostty.nix` matches, `home.file` absent | 🔲 |
-| 4.7 | No secrets exposed | `git diff --stat` — no secrets/ changes | 🔲 |
-| 4.8 | darwin/default.nix import consistency | No `./*.nix` imports, only profile import | 🔲 |
+| 4.1 | Full flake check — ALL configurations | `nix flake check --no-build` | DONE | DONE |
+| 4.2 | Format all changed files | `format-nix` | DONE | DONE |
+| 4.3 | Directory structure verification | `ls darwin/ modules/darwin/*/` | DONE | DONE |
+| 4.4 | specialArgs leak check | `grep -c "home-manager.extraSpecialArgs" lib/mkDarwinHost.nix` == 0 | DONE | DONE |
+| 4.5 | GPG shared import check | `grep "shared/gpg.nix" home-*/gpg.nix` == 2 matches | DONE | DONE |
+| 4.6 | Ghostty migration check | `grep "programs.ghostty" home-darwin/ghostty.nix` matches, `home.file` absent | DONE | DONE |
+| 4.7 | No secrets exposed | `git diff --stat` — no secrets/ changes | DONE | DONE |
+| 4.8 | darwin/default.nix import consistency | No `./*.nix` imports, only profile import | DONE | DONE |
 
 **Phase 4 gate**: All checks pass. Zero uncommitted formatting changes.
 
