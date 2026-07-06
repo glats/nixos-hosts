@@ -38,8 +38,8 @@
     shellAliases = {
       ls = "ls --color=auto";
       ll = "ls -la";
-      "wt-done" = "finish-work";
-      "wt-discard" = "abort-work";
+      "wt-done" = "code-work --finish";
+      "wt-list" = "code-work --list";
 
       nrs = "nixos-build switch";
       nrt = "nixos-build test";
@@ -62,24 +62,27 @@
 
     initContent = lib.mkAfter ''
       code-work() {
-        local repo_root="${config.home.homeDirectory}/.nixos"
-        local worktree_name="''${1:-}"
-
-        if [[ -n "$worktree_name" ]]; then
-          "$repo_root/bin/work-flow" start "$worktree_name"
-        else
-          "$repo_root/bin/work-flow" start
-          worktree_name=$(git -C "$repo_root" worktree list --porcelain 2>/dev/null | \
-            grep "worktree $repo_root/.worktrees/" | tail -1 | sed "s|worktree $repo_root/.worktrees/||")
-        fi
-
-        local worktree_path="$repo_root/.worktrees/$worktree_name"
-        cd "$worktree_path"
-        opencode
-
-        echo ""
-        echo "> Staying in worktree: $worktree_name"
-        echo "> Run 'finish-work' to save or 'abort-work' to discard"
+        case "''${1:-}" in
+          --finish|--list|--prune|--help|-h)
+            "''${HOME}/.nixos/bin/code-work" "$@"
+            ;;
+          "")
+            "''${HOME}/.nixos/bin/code-work" --help
+            ;;
+          *)
+            local wt_name="$1"
+            "''${HOME}/.nixos/bin/code-work" "$wt_name" || return
+            local repo_root
+            repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || repo_root="''${HOME}/.nixos"
+            if [[ -d "$repo_root/.worktrees/$wt_name" ]]; then
+              cd "$repo_root/.worktrees/$wt_name"
+              opencode || true
+              echo ""
+              echo "> Run 'code-work --finish' to save and cleanup"
+              echo "> (From the worktree directory: .worktrees/$wt_name)"
+            fi
+            ;;
+        esac
       }
 
       if [ -f "${config.sops.secrets."github/pat".path}" ]; then
