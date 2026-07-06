@@ -1,8 +1,11 @@
 # Apply Progress: refactor-mact2-darwin
 
-**Status**: Not started
+**Status**: Phase 1 complete, Phase 2 ready
 **Last Updated**: 2026-07-06
 **Total tasks**: 25 (across 4 phases)
+**Repo**: glats/nixos-hosts
+**Branch**: refactor/mact2-darwin
+**Phase 1 commit**: 6ef0a5f
 
 ---
 
@@ -10,8 +13,8 @@
 
 | # | Task | File | Status | Verified |
 |---|------|------|--------|----------|
-| 1.1 | Remove redundant `home-manager.extraSpecialArgs` from builder | `lib/mkDarwinHost.nix` | 🔲 | 🔲 |
-| 1.2 | Verify `darwin/default.nix` passes all needed attrs | `darwin/default.nix` | 🔲 | 🔲 |
+| 1.1 | Remove redundant `home-manager.extraSpecialArgs` from builder | `lib/mkDarwinHost.nix` | DONE | DONE |
+| 1.2 | Verify `darwin/default.nix` passes all needed attrs | `darwin/default.nix` | DONE | DONE |
 
 **Phase 1 gate**: `nix flake check --no-build darwinConfigurations.mact2` + `grep "home-manager.extraSpecialArgs" lib/mkDarwinHost.nix` == 0
 
