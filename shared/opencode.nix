@@ -70,8 +70,8 @@ let
             mcp = enabledMcps;
             permission = cfg.permissions;
             instructions = [
-              "SYSTEM_RULES.md"
-              "sdd-review-policy.md"
+              "instructions/universal.md"
+              "instructions/orchestrator.md"
             ];
           }
           // lib.optionalAttrs (cfg.disabledProviders != [ ]) { disabled_providers = cfg.disabledProviders; }
