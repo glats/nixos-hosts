@@ -2,7 +2,8 @@
 set -euo pipefail
 
 # ==== Constants ====
-REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo "")
+# Find main repo root (works from main repo AND linked worktrees)
+REPO_ROOT=$(git worktree list --porcelain 2>/dev/null | grep "^worktree " | head -1 | sed 's/^worktree //' || echo "")
 WORKTREES_DIR="${REPO_ROOT:+$REPO_ROOT/.worktrees}"
 SCRIPT_NAME=$(basename "$0")
 
@@ -21,19 +22,16 @@ usage() {
   fi
   cat >&2 <<EOF
 Usage: $SCRIPT_NAME <worktree-name>    Create a named worktree
-       $SCRIPT_NAME --finish           Finish current worktree and clean up
-       $SCRIPT_NAME --list             List all worktrees
-       $SCRIPT_NAME --prune            Prune stale worktree references
-       $SCRIPT_NAME --help             Show this help message
+       $SCRIPT_NAME --done            Finish worktree (success: cleanup after push)
+       $SCRIPT_NAME --abort           Discard worktree (failure: force remove)
+       $SCRIPT_NAME --list            List all worktrees
+       $SCRIPT_NAME --prune           Prune stale worktree references
+       $SCRIPT_NAME --help            Show this help message
 
 Examples:
   $SCRIPT_NAME my-feature       Create worktree 'my-feature' from current branch
-  $SCRIPT_NAME --finish         Finish current worktree (run from inside it)
-  $SCRIPT_NAME --list           Show all active worktrees
-
-The script works with git worktrees in .worktrees/ under the repository root.
-When creating, it branches off the CURRENT branch (not hardcoded to main/master).
-When finishing, it reads .worktree-base to return to the original branch.
+  $SCRIPT_NAME --done           Finish current worktree (run from inside it)
+  $SCRIPT_NAME --abort          Discard current worktree without saving
 EOF
   exit 2
 }
@@ -163,13 +161,14 @@ cmd_create() {
   echo "  opencode"
   echo ""
   echo "When done:"
-  echo "  code-work --finish"
+  echo "  code-work --done     # success: cleanup after push"
+  echo "  code-work --abort    # discard: throw away everything"
   echo "====================================="
 
   return 0
 }
 
-cmd_finish() {
+cmd_done() {
   if [[ -z "$REPO_ROOT" ]]; then
     die "Not inside a git repository"
   fi
@@ -205,7 +204,7 @@ cmd_finish() {
     echo "To save your work before cleaning up:" >&2
     echo "  git push -u origin $current_branch" >&2
     echo "" >&2
-    echo "Then run 'code-work --finish' again." >&2
+    echo "Then run 'code-work --done' again." >&2
     echo "" >&2
     echo "To force cleanup anyway:" >&2
     echo "  cd $REPO_ROOT" >&2
@@ -240,10 +239,43 @@ cmd_finish() {
 
   echo ""
   echo "====================================="
-  echo "> Worktree '$wt_name' finished and cleaned up."
+  echo "> Worktree '$wt_name' done and cleaned up."
   echo "> Returned to branch '$base_branch'."
   echo "====================================="
 
+  return 0
+}
+
+cmd_abort() {
+  if [[ -z "$REPO_ROOT" ]]; then
+    die "Not inside a git repository"
+  fi
+
+  if ! is_in_worktree; then
+    die "Not inside a worktree directory"
+  fi
+
+  local wt_name
+  wt_name=$(get_worktree_name)
+  local wt_path="$PWD"
+
+  # Get current branch before leaving worktree
+  local current_branch
+  current_branch=$(git -C "$wt_path" rev-parse --abbrev-ref HEAD)
+
+  echo "> Discarding worktree '$wt_name'..."
+
+  # Remove worktree (force, ignore dirty state)
+  cd "$REPO_ROOT"
+  git worktree remove "$wt_path" --force 2>/dev/null || rm -rf "$wt_path"
+
+  # Delete branch (force)
+  git branch -D "$current_branch" 2>/dev/null || true
+
+  # Prune stale refs
+  git worktree prune
+
+  echo "> Worktree '$wt_name' discarded."
   return 0
 }
 
@@ -272,7 +304,8 @@ cmd_prune() {
 
 # ==== Main Dispatch ====
 case "${1:-}" in
-  --finish|finish)  shift; cmd_finish "$@" ;;
+  --done)           shift; cmd_done "$@" ;;
+  --abort)          shift; cmd_abort "$@" ;;
   --list|list)      cmd_list ;;
   --prune|prune)    cmd_prune ;;
   --help|-h)        usage ;;
