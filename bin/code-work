@@ -52,7 +52,9 @@ is_in_worktree() {
 }
 
 get_worktree_name() {
-  basename "$PWD"
+  # Strip WORKTREES_DIR prefix for nested names like feat/multi-github-identity
+  local rel="${PWD#$WORKTREES_DIR/}"
+  echo "$rel"
 }
 
 read_marker() {
@@ -68,7 +70,8 @@ read_marker() {
     echo "  1. cd $REPO_ROOT" >&2
     echo "  2. git checkout <base-branch>" >&2
     echo "  3. git worktree remove $wt_path" >&2
-    echo "  4. git branch -d $(basename "$wt_path")" >&2
+    local wt_name="${wt_path#$WORKTREES_DIR/}"
+    echo "  4. git branch -d $wt_name" >&2
     exit 1
   fi
   cat "$marker"
@@ -76,8 +79,8 @@ read_marker() {
 
 validate_name() {
   local name="$1"
-  if [[ ! "$name" =~ ^[a-zA-Z0-9][a-zA-Z0-9._-]*$ ]]; then
-    die "Invalid worktree name '$name'. Use alphanumeric, dots, hyphens, underscores. No slashes." 2
+  if [[ ! "$name" =~ ^[a-zA-Z0-9][a-zA-Z0-9._/-]*$ ]]; then
+    die "Invalid worktree name '$name'. Use alphanumeric, dots, hyphens, underscores, slashes. No leading slash." 2
   fi
 }
 
