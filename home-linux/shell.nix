@@ -67,18 +67,18 @@
           --done|--abort)
             # Save repo root before script deletes the worktree
             local _main_root="$(git worktree list --porcelain 2>/dev/null | grep "^worktree " | head -1 | sed 's/^worktree //')"
-            "''${HOME}/.nixos/bin/code-work" "$@"
+            command code-work "$@"
             [[ -n "$_main_root" ]] && cd "$_main_root"
             ;;
           --list|--prune|--help|-h)
-            "''${HOME}/.nixos/bin/code-work" "$@"
+            command code-work "$@"
             ;;
           "")
-            "''${HOME}/.nixos/bin/code-work" --help
+            command code-work --help
             ;;
           *)
             local wt_name="$1"
-            "''${HOME}/.nixos/bin/code-work" "$wt_name" || return
+            command code-work "$wt_name" || return
             local repo_root
             repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || repo_root=""
             if [[ -n "$repo_root" && -d "$repo_root/.worktrees/$wt_name" ]]; then
