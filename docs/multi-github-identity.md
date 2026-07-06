@@ -6,8 +6,11 @@ Dos identidades GitHub con sus respectivos tokens, GPG keys, y MCP servers:
 
 | Identidad | Cuenta | Hosts | GPG |
 |-----------|--------|-------|-----|
-| **glats** (personal) | github.com/glats | rog, thinkcentre, t14 (default) | key propia (generar) |
-| **jcuzmar** (trabajo) | github.com/jcuzmar | mact2 (default), ~/Work/** en Linux | key propia (B658D64...) |
+| **personal** | github.com/glats | rog, thinkcentre, t14 (default) | key propia (generar) |
+| **work** (trabajo) | github.com/jcuzmar | mact2 (default), ~/Work/** en Linux | key propia (B658D64...) |
+
+> **Note**: Real identity values (name, email) are stored in `secrets/user/identities.yaml` (sops-encrypted).
+> They are decrypted at Home Manager activation time and written as git include files.
 
 ## Prerequisitos
 
@@ -17,7 +20,7 @@ Dos identidades GitHub con sus respectivos tokens, GPG keys, y MCP servers:
 
 ---
 
-## Paso 1: Generar GPG key para glats (hacer en rog o cualquier Linux)
+## Paso 1: Generar GPG key personal
 
 ```bash
 gpg --full-generate-key
@@ -27,8 +30,8 @@ Opciones:
 - Kind: `RSA and RSA`
 - Bits: `4096`
 - Validez: `2y` (2 anios)
-- Name: `Redacted Name`
-- Email: `personal@example.com`
+- Name: `your personal name` (from secrets/user/identities.yaml)
+- Email: `your personal email` (from secrets/user/identities.yaml)
 - Comment: (vacio, Enter)
 
 Anota el **fingerprint** que aparece al final:
@@ -46,7 +49,7 @@ cat /tmp/glats-gpg-key.asc
 
 ---
 
-## Paso 2: Exportar GPG key de jcuzmar (hacer en mact2)
+## Paso 2: Exportar GPG key de work
 
 ```bash
 gpg --armor --export-secret-keys B658D64F6FDBCFD1EBA53509A1D4ECB0118566C8 > /tmp/jcuzmar-gpg-key.asc
@@ -67,8 +70,8 @@ Bajo `github:`, DEBERIA verse asi (agrega lo que falte):
 
 ```yaml
 github:
-    pat: ENC[...]                                      # glats PAT (ya existe)
-    pat_jcuzmar: ENC[...]                              # jcuzmar PAT (ya deberia estar)
+    pat: ENC[...]                                      # personal PAT (ya existe)
+    pat_jcuzmar: ENC[...]                              # work PAT (ya deberia estar)
     gpg_key_fingerprint: ENC[...]                      # OBSOLETO — se reemplaza abajo
     gpg_jcuzmar_fingerprint: B658D64F6FDBCFD1EBA53509A1D4ECB0118566C8   # AGREGAR
     gpg_jcuzmar_key: |                                 # AGREGAR (pegar del paso 2)
@@ -117,23 +120,23 @@ nh home switch --hostname mact2 .   # o como deployes normalmente
 ### git identity switchea segun directorio
 
 ```bash
-# Linux — fuera de ~/Work debe mostrar glats
+# Linux — fuera de ~/Work debe mostrar personal identity
 cd ~/dev/algun-proyecto-personal
-git config user.name    # → "Redacted Name"
-git config user.email   # → "personal@example.com"
+git config user.name    # → value from sops (identities/personal)
+git config user.email   # → value from sops (identities/personal)
 
-# Linux — dentro de ~/Work debe mostrar jcuzmar
+# Linux — dentro de ~/Work debe mostrar work identity
 cd ~/Work/algun-proyecto
-git config user.name    # → "jcuzmar"
-git config user.email   # → "work@example.com"
+git config user.name    # → value from sops (identities/work)
+git config user.email   # → value from sops (identities/work)
 
-# macOS — fuera de ~/Personal debe mostrar jcuzmar
+# macOS — fuera de ~/Personal debe mostrar work identity
 cd ~/dev/algun-proyecto
-git config user.name    # → "jcuzmar"
+git config user.name    # → value from sops (identities/work)
 
-# macOS — dentro de ~/Personal debe mostrar glats
+# macOS — dentro de ~/Personal debe mostrar personal identity
 cd ~/Personal/algun-proyecto
-git config user.name    # → "Redacted Name"
+git config user.name    # → value from sops (identities/personal)
 ```
 
 ### GPG signing funciona
@@ -143,21 +146,21 @@ git config user.name    # → "Redacted Name"
 cd ~/Work/proyecto-test
 git commit --allow-empty -m "test signing"
 git log --show-signature -1
-# Deberia mostrar: "Good signature from ... work@example.com"
+# Deberia mostrar: "Good signature from ... [work email]"
 
 # Hacer un commit de prueba fuera de ~/Work
 cd ~/dev/proyecto-test
-git commit --allow-empty -m "test signing glats"
+git commit --allow-empty -m "test signing personal"
 git log --show-signature -1
-# Si configuraste glats GPG key: "Good signature from ..."
+# Si configuraste personal GPG key: "Good signature from ..."
 # Si no: debe mostrar que no hay signature configurada (no falla)
 ```
 
 ### MCP servers
 
-Los dos MCP entries aparecen en OpenCode:
-- `github-glats` — opera como glats
-- `github-jcuzmar` — opera como jcuzmar
+Los MCP entries aparecen en OpenCode:
+- `github-personal` — opera como personal
+- `github-work` — opera como work
 
 Ambos habilitados. Eliges cual usar segun en que repo estes trabajando.
 

@@ -53,6 +53,16 @@
     mode = "0400";
   };
 
+  # Identity values from sops (name + email for git/GPG)
+  sops.secrets."identities/personal" = {
+    sopsFile = ../secrets/user/identities.yaml;
+    mode = "0400";
+  };
+  sops.secrets."identities/work" = {
+    sopsFile = ../secrets/user/identities.yaml;
+    mode = "0400";
+  };
+
   # GPG keys per identity
   sops.secrets."github/gpg_jcuzmar_fingerprint" = {
     sopsFile = ../secrets/shared/passwords.yaml;
