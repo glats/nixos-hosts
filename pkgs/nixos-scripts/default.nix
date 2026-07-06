@@ -31,6 +31,9 @@ stdenvNoCC.mkDerivation {
     cp $src/format-nix $out/bin/
     chmod +x $out/bin/format-nix
 
+    cp $src/git-id $out/bin/
+    chmod +x $out/bin/git-id
+
     cp $src/generate-thinkpad-wireguard $out/bin/
     chmod +x $out/bin/generate-thinkpad-wireguard
 

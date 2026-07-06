@@ -73,7 +73,6 @@
         /nix/var/nix/profiles/default/bin
         $HOME/.nix-profile/bin
         $HOME/.local/share/mise/shims
-        $HOME/.nixos/bin
         ''${path[@]}
       )
       export PATH
