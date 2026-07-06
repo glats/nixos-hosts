@@ -6,107 +6,119 @@ changes that do not restate it in their own specs.
 ## SDD Workflow
 
 ```
-explore → propose → spec → design → tasks → apply  [AUTOMATIC]
-                                                │
-                                      review-checkpoint
-                                                │
-                            ┌───────────────────┼───────────────────┐
-                            ▼                   ▼                   ▼
-                        approved          changes-requested    blocked/pending
-                            │                   │                   │
-                        verify          ⚡ ASK USER:           STOP
-                                        full-iteration?
-                                            │
-                            ┌───────────────┴───────────────┐
-                            ▼                               ▼
-                      full-iteration                    proceed
-                      (re-explore →                  (skip gate)
-                       → re-apply)
+sdd-new → explore → propose → spec → design → tasks → apply
+                                                         │
+                                                     ╔══╧══╗
+                                                     ║review║
+                                                     ╚══╤══╝
+                                                         │
+                                             ┌───────────┴───────────┐
+                                             │                       │
+                                           done                    amend
+                                             │                       │
+                                        verify/archive    ┌─────────┴─────────┐
+                                                           ▼                 ▼
+                                                      reiterate          redo
+                                                 (re-explore→apply)  (re-apply only)
+                                                           │                 │
+                                                           └──────┬──────────┘
+                                                                  ▼
+                                                               review
+                                                             (loop back)
 ```
 
-## Hard Gate After Every Apply Slice
+Only `done` exits the loop. `reiterate` and `redo` always return to `review`.
 
-After any successful `sdd-apply` slice, stop the implementation loop and do
-all of the following before any next apply:
+## Hard Gate After Every Apply
+
+After any successful `sdd-apply` slice, stop and run `review`. Do all of the
+following before any next apply:
 
 1. **Commit and push** every affected repository/branch for that slice.
 2. **Ensure the GitHub diff or PR is visible** for every affected repository.
 3. **Update `apply-progress`** with repo / branch / commit / PR info for the slice.
-4. **Record a `review-checkpoint`** for the current bundle verdict.
+4. **Record a `review` verdict**: `done`, `amend`, or `redo`.
 
-Do **not** start the next apply slice until the latest review-checkpoint says
-either `approved` or explicit `proceed`.
-
-If the latest checkpoint says `changes-requested`, `blocked`, `pending`, or is
-missing / unclear, implementation **must** stop.
+Do **not** start the next apply while the latest review says `amend`.
 
 ## Iteration Protocol
 
-When the review-checkpoint verdict is `changes-requested`, `blocked`, or
-`pending`, the orchestrator presents the user with a BINARY decision:
+When the review verdict is `amend`, the orchestrator presents the user with a
+BINARY decision:
 
-1. **Full iteration**: Re-explore with all previous artifacts + review feedback as
+1. **Reiterate**: Re-explore with all previous artifacts + review feedback as
    context. Rebuild proposal, specs, design, tasks, and re-apply. Overwrites
    artifacts via `topic_key` upsert (Engram) or file overwrite (OpenSpec). Old
-   approach is context, not discarded.
-2. **Proceed**: Override the gate and continue to verify.
+   approach is context, not discarded. After re-apply → back to review.
+2. **Redo**: Re-apply from the current state without re-exploring. After
+   re-apply → back to review.
 
-Inline-fixes is **not** an option. If an apply slice failed review, the approach
-needs re-examination — not partial fixes.
+Inline-fixes is **not** an option. If apply failed review, the approach needs
+re-examination — not partial fixes.
+
+Only the user saying `done` exits the review loop.
 
 **Decision caching**: once the user chooses for a change, the orchestrator reuses
-that decision for subsequent review gates in the same change without re-presenting.
+that decision for subsequent reviews in the same change without re-presenting.
 
-## Re-Explore Protocol
+## Reiterate Protocol
 
-When `full-iteration` is chosen:
+When `reiterate` is chosen:
 - The sub-agent MUST read ALL existing artifacts as context: proposal, specs,
-  design, tasks, apply-progress, review-checkpoint.
+  design, tasks, apply-progress, review.
 - Builds on known facts, not from scratch.
 - Each phase overwrites its artifact (`topic_key` upsert / file overwrite).
-- The review-checkpoint from the failed iteration is preserved separately — NOT
-  overwritten by new iterations.
+- The review from the failed iteration is preserved separately — NOT
+  overwritten by new iterations. Only the verdict changes.
 - Old approach preserved in Engram history / git history.
 - Re-explore through re-apply is **AUTOMATIC** — no user questions between phases.
 
-## Guard Lines (Review-Checkpoint)
+## Guard Lines (Review)
 
-Every `review-checkpoint` artifact MUST include these guard lines, which the
-orchestrator reads to drive its decision point:
+Every `review` artifact MUST include these guard lines, which the orchestrator
+reads to drive its decision point:
 
 ```
 Rework level: explore|design|tasks|none
-Iteration decision needed: Yes|No
+Iteration decision: Yes|No
 ```
 
-- `Rework level` tells a full-iteration which phase to restart from.
-- `Iteration decision needed: Yes` triggers the iteration prompt to the user.
-- `Iteration decision needed: No` means the checkpoint is informational only.
+- `Rework level` tells a reiterate which phase to restart from.
+- `Iteration decision: Yes` triggers the binary prompt (reiterate vs redo).
+- `Iteration decision: No` means the review is informational only.
 
 ## Verify Gate
 
-Do **not** run `sdd-verify` until the latest review-checkpoint says `approved`
-or explicit `proceed`.
+Do **not** run `sdd-verify` until the latest review says `done`.
 
-## Proceed Escape Hatch
+## Redo Escape Hatch
 
-The user MAY say `proceed` at any review gate. The orchestrator MUST record
-`proceed` as the verdict and continue to the next phase (apply or verify).
+The user MAY say `redo` at any review to re-apply without re-exploring. The
+orchestrator MUST record `redo` as the verdict and proceed directly to re-apply.
+After re-apply → back to review. Only `done` exits the loop.
+
+## Verdicts Summary
+
+| Verdict | Meaning |
+|---------|---------|
+| `done` | Apply OK → proceed to verify/archive (exits loop) |
+| `amend` | Needs changes → choose reiterate or redo |
+| `redo` | Re-apply without re-explore (stays in loop) |
 
 ## Artifact Expectations
 
 When the active artifact store is OpenSpec or Hybrid:
 - `openspec/changes/{change}/apply-progress.md`
-- `openspec/changes/{change}/review-checkpoint.md`
+- `openspec/changes/{change}/review.md`
 
 When the active artifact store is Engram or Hybrid:
 - `sdd/{change}/apply-progress`
-- `sdd/{change}/review-checkpoint`
+- `sdd/{change}/review`
 
 ## Orchestrator Expectations
 
 Before any later `sdd-apply` or `sdd-verify`, reread: proposal, specs, design,
-tasks, apply-progress, review-checkpoint.
+tasks, apply-progress, review.
 
 ## Priority
 
