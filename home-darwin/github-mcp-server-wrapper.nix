@@ -42,20 +42,10 @@ let
     secretPath = config.sops.secrets."github/token".path;
   };
 
-  # Backward compat: old names delegate to new wrappers
-  githubMcpServerGlats = pkgs.writeShellScriptBin "github-mcp-server-glats" ''
-    exec ${githubMcpServerPersonal}/bin/github-mcp-server-personal "$@"
-  '';
-
-  githubMcpServerJcuzmar = pkgs.writeShellScriptBin "github-mcp-server-jcuzmar" ''
-    exec ${githubMcpServerWork}/bin/github-mcp-server-work "$@"
-  '';
 in
 {
   home.packages = [
     githubMcpServerPersonal
     githubMcpServerWork
-    githubMcpServerGlats # backward compat alias
-    githubMcpServerJcuzmar # backward compat alias
   ];
 }

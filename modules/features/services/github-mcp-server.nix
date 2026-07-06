@@ -48,14 +48,6 @@ let
     secretPath = config.sops.secrets."github/work_pat".path;
   };
 
-  # Backward compat: old names delegate to new wrappers
-  githubMcpServerGlats = pkgs.writeShellScriptBin "github-mcp-server-glats" ''
-    exec ${githubMcpServerPersonal}/bin/github-mcp-server-personal "$@"
-  '';
-
-  githubMcpServerJcuzmar = pkgs.writeShellScriptBin "github-mcp-server-jcuzmar" ''
-    exec ${githubMcpServerWork}/bin/github-mcp-server-work "$@"
-  '';
 in
 {
   # GitHub MCP Server - Model Context Protocol server for GitHub
@@ -74,8 +66,6 @@ in
     environment.systemPackages = [
       githubMcpServerPersonal
       githubMcpServerWork
-      githubMcpServerGlats # backward compat alias
-      githubMcpServerJcuzmar # backward compat alias
       pkgs.github-mcp-server
     ];
   };
