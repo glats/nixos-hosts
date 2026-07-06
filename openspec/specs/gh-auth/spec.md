@@ -14,15 +14,15 @@ These values MUST NOT be set on Darwin hosts (mact2).
 
 | Attribute | Value |
 |-----------|-------|
-| `user.name` | `Redacted Name` |
-| `user.email` | `personal@example.com` |
+| `user.name` | Value from `secrets/user/identities.yaml` (sops-encrypted) |
+| `user.email` | Value from `secrets/user/identities.yaml` (sops-encrypted) |
 
 #### Scenario: Git identity is set on Linux host
 
-- GIVEN a Linux host (rog, thinkcentre, or t14) with the configuration applied
+- GIVEN a Linux host with the configuration applied
 - WHEN `git config user.name` is executed
-- THEN the output MUST be `Redacted Name`
-- AND `git config user.email` MUST output `personal@example.com`
+- THEN the output MUST match the value from the sops identities file for the personal identity
+- AND `git config user.email` MUST output the matching email from the sops identities file
 
 #### Scenario: Git identity is NOT set on Darwin host
 

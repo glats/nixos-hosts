@@ -11,32 +11,59 @@ in
       core.pager = "delta";
       delta.enable = true;
       gpg.program = "${pkgs.gnupg}/bin/gpg";
-      # lib.mkForce required on t14: omarchy-nix's HM module reads
-      # `omarchy.email_address` and writes to user.email, which would
-      # otherwise override this value with `glats@local`.
-      user.name = lib.mkForce identities.glats.name;
-      user.email = lib.mkForce identities.glats.email;
+      # Placeholder -- overridden by identity-personal include file written
+      # at activation from sops decrypted secrets. lib.mkForce is required
+      # on t14 where omarchy-nix writes glats@local.
+      user.name = lib.mkForce "placeholder";
+      user.email = lib.mkForce "placeholder";
     };
 
     # Explicitly set signing format to silence home-manager warning (legacy default)
-    # If glats GPG key is set, also sign personal commits with it
+    # If personal GPG key is set, also sign personal commits with it
     signing = { format = "openpgp"; }
-      // lib.optionalAttrs (identities.glats.signingKey != "") {
-        key = identities.glats.signingKey;
-        signByDefault = true;
-      };
+      // lib.optionalAttrs (identities.personal.signingKey != "") {
+      key = identities.personal.signingKey;
+      signByDefault = true;
+    };
 
     includes = [
-      # Work repos always sign with jcuzmar key
+      # Default identity from activation-written file
+      { path = "~/.config/git/identity-personal"; }
+      # Work identity from activation-written file
+      {
+        condition = "gitdir:~/Work/**";
+        path = "~/.config/git/identity-work";
+      }
+      # Work signing config (GPG keys are public, stay in Nix)
       {
         condition = "gitdir:~/Work/**";
         contents = {
-          user.name = identities.jcuzmar.name;
-          user.email = identities.jcuzmar.email;
-          user.signingKey = identities.jcuzmar.signingKey;
+          user.signingKey = identities.work.signingKey;
           commit.gpgsign = true;
         };
       }
     ];
   };
+
+  # Write git identity include files from sops-decrypted secrets at activation time.
+  # Runs after writeBoundary (same timing as gpg.nix key import).
+  # Gracefully skips if sops secrets are not yet available.
+  home.activation.writeGitIdentity = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    _write_identity() {
+      _mode="$1"
+      _secrets_file="$2"
+      _out_file="$HOME/.config/git/identity-$_mode"
+
+      if [ ! -f "$_secrets_file" ]; then
+        return 0  # skip silently if sops secrets not available
+      fi
+
+      mkdir -p "$(dirname "$_out_file")"
+      _name="$(${pkgs.gawk}/bin/awk -F': ' '/^name:/ {gsub(/"/, ""); print $2; exit}' "$_secrets_file")"
+      _email="$(${pkgs.gawk}/bin/awk -F': ' '/^email:/ {gsub(/"/, ""); print $2; exit}' "$_secrets_file")"
+      printf "[user]\n    name = %s\n    email = %s\n" "$_name" "$_email" > "$_out_file"
+    }
+    _write_identity "personal" "${config.sops.secrets."identities/personal".path}"
+    _write_identity "work" "${config.sops.secrets."identities/work".path}"
+  '';
 }

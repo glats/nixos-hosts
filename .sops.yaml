@@ -48,6 +48,16 @@ creation_rules:
           - *host_mact2
           - *host_t14
 
+  # Identities file -- needed on all hosts including macOS
+  - path_regex: secrets/user/identities.yaml
+    key_groups:
+      - age:
+          - *admin_glats
+          - *host_rog
+          - *host_thinkcentre
+          - *host_t14
+          - *host_mact2
+
   # User secrets (catch-all for other user files)
   - path_regex: secrets/user/.+
     key_groups:
