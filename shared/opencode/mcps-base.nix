@@ -9,10 +9,19 @@ with lib;
 let
   # Static default MCPs - no config references in defaults
   defaultMcps = {
-    github = {
+    "github-glats" = {
       type = "local";
       command = [
-        "github-mcp-server"
+        "github-mcp-server-glats"
+        "stdio"
+      ];
+      enabled = true;
+    };
+
+    "github-jcuzmar" = {
+      type = "local";
+      command = [
+        "github-mcp-server-jcuzmar"
         "stdio"
       ];
       enabled = true;

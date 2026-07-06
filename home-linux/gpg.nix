@@ -14,8 +14,7 @@ in
 {
   home.packages = with pkgs; [
     gnupg
-    pinentry_mac
-    nix-index
+    pinentry-curses
   ];
 
   home.activation.importGpgKeys = lib.hm.dag.entryAfter [ "writeBoundary" ]
