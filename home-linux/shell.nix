@@ -64,7 +64,13 @@
     initContent = lib.mkAfter ''
       code-work() {
         case "''${1:-}" in
-          --done|--abort|--list|--prune|--help|-h)
+          --done|--abort)
+            # Save repo root before script deletes the worktree
+            local _main_root="$(git worktree list --porcelain 2>/dev/null | grep "^worktree " | head -1 | sed 's/^worktree //')"
+            "''${HOME}/.nixos/bin/code-work" "$@"
+            [[ -n "$_main_root" ]] && cd "$_main_root"
+            ;;
+          --list|--prune|--help|-h)
             "''${HOME}/.nixos/bin/code-work" "$@"
             ;;
           "")
