@@ -14,7 +14,7 @@ baseModules
   ../../../home-linux/shell-gpt.nix
 
   # Override active OpenCode provider for this host
-  { home.opencode.activeProviderName = "opencode-free"; }
+  { home.opencode.activeProviderName = "opencode-go-light"; }
 
   { home.shell-gpt.enable = true; }
 ]
