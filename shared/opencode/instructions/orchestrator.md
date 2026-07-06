@@ -1,4 +1,3 @@
-<!-- Source: shared/opencode/sdd-review-policy.md — keep in sync -->
 # SDD Review Policy + Iteration Protocol
 
 This policy applies to **every SDD change in this workspace**, including future

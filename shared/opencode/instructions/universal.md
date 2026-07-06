@@ -1,4 +1,3 @@
-<!-- Source: shared/opencode/SYSTEM_RULES.md — keep in sync -->
 ## Global Rules (ALWAYS FOLLOW)
 
 ### Code Language Policy - ENGLISH ONLY
