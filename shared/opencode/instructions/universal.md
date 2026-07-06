@@ -68,10 +68,10 @@ This applies in EVERY phase: exploration, design, implementation, review. If you
 
 After every implementation task:
 
-1. Run `nix flake check --no-build` to validate
-2. Run `format-nix` to format
-3. Verify the change actually solves the original problem
-4. If tests exist, run them
+1. Verify the change actually solves the original problem
+2. If a formatter is available for the project, run it
+3. If tests exist, run them
+4. Confirm no warnings or errors
 
 Do NOT declare done until verification passes. If verification fails, fix and re-verify.
 
