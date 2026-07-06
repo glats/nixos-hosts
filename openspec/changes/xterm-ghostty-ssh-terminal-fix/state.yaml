@@ -1,0 +1,11 @@
+schema: spec-driven
+change: xterm-ghostty-ssh-terminal-fix
+status: tasks-complete
+phases:
+  explore: skipped
+  propose: complete
+  spec: skipped
+  design: skipped
+  tasks: complete
+  apply: pending
+  verify: pending
