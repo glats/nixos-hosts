@@ -46,12 +46,14 @@ Do **not** start the next apply while the latest review says `amend`.
 When the review verdict is `amend`, the orchestrator presents the user with a
 BINARY decision:
 
-1. **Reiterate**: Re-explore with all previous artifacts + review feedback as
-   context. Rebuild proposal, specs, design, tasks, and re-apply. Overwrites
-   artifacts via `topic_key` upsert (Engram) or file overwrite (OpenSpec). Old
-   approach is context, not discarded. After re-apply → back to review.
-2. **Redo**: Re-apply from the current state without re-exploring. After
-   re-apply → back to review.
+1. **Reiterate** (high uncertainty): Full cycle from explore to apply.
+   Re-explore with all previous artifacts + review feedback as context.
+   Rebuild proposal, specs, design, tasks, and re-apply. Overwrites artifacts
+   via `topic_key` upsert (Engram) or file overwrite (OpenSpec). Old approach is
+   context, not discarded. After re-apply → back to review.
+2. **Redo** (low uncertainty): Re-apply directly. The spec and design are solid;
+   the change is small and well-understood. The agent adjusts tasks implicitly.
+   No need to revisit propose/spec/design. After re-apply → back to review.
 
 Inline-fixes is **not** an option. If apply failed review, the approach needs
 re-examination — not partial fixes.
@@ -93,17 +95,17 @@ Do **not** run `sdd-verify` until the latest review says `done`.
 
 ## Redo Escape Hatch
 
-The user MAY say `redo` at any review to re-apply without re-exploring. The
-orchestrator MUST record `redo` as the verdict and proceed directly to re-apply.
-After re-apply → back to review. Only `done` exits the loop.
+The user MAY say `redo` at any review for a low-uncertainty re-apply. The
+orchestrator MUST record `redo` as the verdict and re-apply directly without
+reiterating. After re-apply → back to review. Only `done` exits the loop.
 
 ## Verdicts Summary
 
 | Verdict | Meaning |
 |---------|---------|
-| `done` | Apply OK → proceed to verify/archive (exits loop) |
-| `amend` | Needs changes → choose reiterate or redo |
-| `redo` | Re-apply without re-explore (stays in loop) |
+| `done` | Apply OK → verify/archive (exits loop) |
+| `amend` | Needs changes → choose reiterate (high uncertainty) or redo (low uncertainty) |
+| `redo` | Low-uncertainty re-apply directly (escape hatch, stays in loop) |
 
 ## Artifact Expectations
 
