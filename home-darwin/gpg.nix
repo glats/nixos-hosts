@@ -19,11 +19,11 @@ in
   ];
 
   home.activation.importGpgKeys = lib.hm.dag.entryAfter [ "writeBoundary" ]
-    (importKey "jcuzmar"
-      config.sops.secrets."github/gpg_jcuzmar_fingerprint".path
-      config.sops.secrets."github/gpg_jcuzmar_key".path
-    + importKey "glats"
-      config.sops.secrets."github/gpg_glats_fingerprint".path
-      config.sops.secrets."github/gpg_glats_key".path
+    (importKey "work"
+      config.sops.secrets."github/work_gpg_fingerprint".path
+      config.sops.secrets."github/work_gpg_key".path
+    + importKey "personal"
+      config.sops.secrets."github/personal_gpg_fingerprint".path
+      config.sops.secrets."github/personal_gpg_key".path
     );
 }

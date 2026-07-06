@@ -37,21 +37,32 @@ let
       exec ${pkgs.github-mcp-server}/bin/github-mcp-server "''${@:-stdio}"
     '';
 
-  githubMcpServerGlats = mkGithubMcpWrapper {
-    name = "github-mcp-server-glats";
-    secretPath = config.sops.secrets."github/pat".path;
+  # New named wrappers
+  githubMcpServerPersonal = mkGithubMcpWrapper {
+    name = "github-mcp-server-personal";
+    secretPath = config.sops.secrets."github/personal_pat".path;
   };
 
-  githubMcpServerJcuzmar = mkGithubMcpWrapper {
-    name = "github-mcp-server-jcuzmar";
-    secretPath = config.sops.secrets."github/pat_jcuzmar".path;
+  githubMcpServerWork = mkGithubMcpWrapper {
+    name = "github-mcp-server-work";
+    secretPath = config.sops.secrets."github/work_pat".path;
   };
+
+  # Backward compat: old names delegate to new wrappers
+  githubMcpServerGlats = pkgs.writeShellScriptBin "github-mcp-server-glats" ''
+    exec ${githubMcpServerPersonal}/bin/github-mcp-server-personal "$@"
+  '';
+
+  githubMcpServerJcuzmar = pkgs.writeShellScriptBin "github-mcp-server-jcuzmar" ''
+    exec ${githubMcpServerWork}/bin/github-mcp-server-work "$@"
+  '';
 in
 {
   # GitHub MCP Server - Model Context Protocol server for GitHub
   # Provides AI tools with access to GitHub's platform via MCP protocol
   # Uses GitHub Personal Access Token from sops secrets (declared in modules/base/sops.nix)
-  # Two wrappers: github-mcp-server-glats and github-mcp-server-jcuzmar
+  # Two wrappers: github-mcp-server-personal and github-mcp-server-work
+  # Backward compat: github-mcp-server-glats and github-mcp-server-jcuzmar also available
 
   options.services.github-mcp-server-custom = {
     enable = lib.mkEnableOption "GitHub MCP Server" // {
@@ -61,8 +72,10 @@ in
 
   config = lib.mkIf config.services.github-mcp-server-custom.enable {
     environment.systemPackages = [
-      githubMcpServerGlats
-      githubMcpServerJcuzmar
+      githubMcpServerPersonal
+      githubMcpServerWork
+      githubMcpServerGlats # backward compat alias
+      githubMcpServerJcuzmar # backward compat alias
       pkgs.github-mcp-server
     ];
   };
