@@ -73,8 +73,10 @@
           *)
             local wt_name="$1"
             "''${HOME}/.nixos/bin/code-work" "$wt_name" || return
-            if [[ -d "''${HOME}/.nixos/.worktrees/$wt_name" ]]; then
-              cd "''${HOME}/.nixos/.worktrees/$wt_name"
+            local repo_root
+            repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || repo_root=""
+            if [[ -n "$repo_root" && -d "$repo_root/.worktrees/$wt_name" ]]; then
+              cd "$repo_root/.worktrees/$wt_name"
               opencode || true
               echo ""
               echo "> Run 'code-work --done' to save and cleanup"
