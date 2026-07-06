@@ -127,9 +127,6 @@ case "$COMMAND" in
     if $IS_DARWIN; then
       echo "> Building Darwin configuration (switch)..."
       darwin_build switch
-      echo ""
-      echo "> Switching home-manager..."
-      home-manager switch --flake "$FLAKE_PATH#$HOSTNAME"
     else
       echo "> Building NixOS configuration (switch)..."
       if [[ "$USE_NH" == "true" ]]; then
@@ -178,9 +175,6 @@ case "$COMMAND" in
       echo ""
       echo "> Building Darwin configuration (upgrade)..."
       darwin_build switch
-      echo ""
-      echo "> Switching home-manager..."
-      home-manager switch --flake "$FLAKE_PATH#$HOSTNAME"
     else
       if [[ "$USE_NH" == "true" ]]; then
         echo "> Updating flake inputs and rebuilding (nh os switch --update)..."
@@ -297,9 +291,6 @@ case "$COMMAND" in
         echo "> ERROR: Switch failed. Stopping."
         exit 1
       fi
-      echo ""
-      echo "> Switching home-manager..."
-      home-manager switch --flake "$FLAKE_PATH#$HOSTNAME"
     else
       if [[ "$USE_NH" == "true" ]]; then
         if ! nh os switch; then
