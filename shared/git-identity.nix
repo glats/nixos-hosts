@@ -2,8 +2,7 @@
   glats = {
     name = "Juan Cuzmar";
     email = "jcuzmar@protonmail.com";
-    # Generate via: gpg --full-generate-key, then get fingerprint via: gpg --list-secret-keys
-    signingKey = "";
+    signingKey = "CFD6C7FED46F6870BE13CE87D39580F75062BEFC";
   };
   jcuzmar = {
     name = "jcuzmar";
