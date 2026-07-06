@@ -203,7 +203,7 @@
       type = "regreet";
       # Matches "Lenovo Group Limited LEN G24-10 U5B4GWF1" from monitors below.
       # When empty (default) the selection phase is a no-op — current behaviour.
-      focusMonitor = "AOC 2470W";
+      focusMonitor = "LEN G24";
       keyboard = {
         layouts = [
           "es"
