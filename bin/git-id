@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+# git-id — Set git identity for a repo directory
+#
+# Usage:
+#   git-id personal [<directory>]
+#   git-id work    [<directory>]
+#
+# Sets the local git config to include the appropriate identity file
+# for the repository at <directory> (default: current directory).
+# The identity files are written by home-manager activation from sops secrets.
+
+set -euo pipefail
+
+MODE="${1:-}"
+DIR="${2:-$(pwd)}"
+
+if [ "$MODE" != "personal" ] && [ "$MODE" != "work" ]; then
+    echo "Usage: git-id <personal|work> [<directory>]" >&2
+    echo "Sets git identity for the repository at the given directory (default: current dir)." >&2
+    exit 1
+fi
+
+IDENTITY_FILE="$HOME/.config/git/identity-$MODE"
+
+if [ ! -f "$IDENTITY_FILE" ]; then
+    echo "Error: identity file not found at $IDENTITY_FILE" >&2
+    echo "Make sure home-manager has run successfully (nixos-build switch)." >&2
+    exit 1
+fi
+
+# Ensure the directory exists and has a .git
+if [ ! -d "$DIR" ]; then
+    echo "Error: directory '$DIR' does not exist" >&2
+    exit 1
+fi
+
+cd "$DIR"
+
+if ! git rev-parse --git-dir >/dev/null 2>&1; then
+    echo "Error: '$DIR' is not a git repository" >&2
+    exit 1
+fi
+
+# Check if include.path already points to the right identity
+CURRENT_INCLUDE=$(git config --local --get include.path 2>/dev/null || true)
+if [ "$CURRENT_INCLUDE" = "$IDENTITY_FILE" ]; then
+    echo "Already set: $MODE ($IDENTITY_FILE)"
+    exit 0
+fi
+
+# Remove any existing include.path and set the new one
+git config --local --unset-all include.path 2>/dev/null || true
+git config --local include.path "$IDENTITY_FILE"
+
+echo "Set identity: $MODE ($IDENTITY_FILE)"
+echo "  name: $(git config user.name)"
+echo "  email: $(git config user.email)"
