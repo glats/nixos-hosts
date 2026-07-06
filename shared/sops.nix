@@ -53,16 +53,6 @@
     mode = "0400";
   };
 
-  # GitHub tokens (backward compat aliases)
-  sops.secrets."github/pat" = {
-    sopsFile = ../secrets/shared/passwords.yaml;
-    mode = "0400";
-  };
-  sops.secrets."github/pat_jcuzmar" = {
-    sopsFile = ../secrets/shared/passwords.yaml;
-    mode = "0400";
-  };
-
   # Identity values from sops (name + email for git/GPG)
   sops.secrets."identities/personal" = {
     sopsFile = ../secrets/user/identities.yaml;
@@ -87,24 +77,6 @@
     mode = "0400";
   };
   sops.secrets."github/work_gpg_key" = {
-    sopsFile = ../secrets/shared/passwords.yaml;
-    mode = "0400";
-  };
-
-  # GPG keys per identity (backward compat aliases)
-  sops.secrets."github/gpg_jcuzmar_fingerprint" = {
-    sopsFile = ../secrets/shared/passwords.yaml;
-    mode = "0400";
-  };
-  sops.secrets."github/gpg_jcuzmar_key" = {
-    sopsFile = ../secrets/shared/passwords.yaml;
-    mode = "0400";
-  };
-  sops.secrets."github/gpg_glats_fingerprint" = {
-    sopsFile = ../secrets/shared/passwords.yaml;
-    mode = "0400";
-  };
-  sops.secrets."github/gpg_glats_key" = {
     sopsFile = ../secrets/shared/passwords.yaml;
     mode = "0400";
   };

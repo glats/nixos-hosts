@@ -27,25 +27,6 @@ let
       enabled = true;
     };
 
-    # Backward compat: old MCP names pointing to new wrappers
-    "github-glats" = {
-      type = "local";
-      command = [
-        "github-mcp-server-glats"
-        "stdio"
-      ];
-      enabled = true;
-    };
-
-    "github-jcuzmar" = {
-      type = "local";
-      command = [
-        "github-mcp-server-jcuzmar"
-        "stdio"
-      ];
-      enabled = true;
-    };
-
     nixos = {
       type = "local";
       command = [
