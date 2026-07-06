@@ -216,6 +216,23 @@
   # GTK4 espera el string "dark" — sin esto libadwaita ignora el dark mode.
   gtk.gtk4.extraConfig."gtk-interface-color-scheme" = "dark";
 
+  # Override omarchy-nix's default GTK theme (Adwaita-dark) to Materia-dark-compact
+  # to match rog and thinkcentre. lib.mkForce defeats omarchy's priority-100
+  # definition. materia-theme is auto-installed by HM via gtk.theme.package.
+  gtk.theme = lib.mkForce {
+    name = "Materia-dark-compact";
+    package = pkgs.materia-theme;
+  };
+
+  # Qt configuration: Adwaita Dark style with GTK3 platform theme bridge.
+  # Matches home-linux/theme.nix used on rog and thinkcentre.
+  # adwaita-qt is auto-installed by HM when qt.style.name = "adwaita-dark".
+  qt = {
+    enable = true;
+    platformTheme.name = "gtk3";
+    style.name = "adwaita-dark";
+  };
+
   # thinkfan-ui — PyQt6 GUI for manual ThinkPad fan control. Pairs with
   # `boot.extraModprobeConfig = "options thinkpad_acpi fan_control=1"`
   # in hosts/t14/default.nix. The two together enable writes to
