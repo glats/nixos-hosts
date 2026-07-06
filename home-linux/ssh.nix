@@ -36,9 +36,6 @@ in
         User = "jcuzmar";
         IdentityFile = "${sshDir}/mact2";
         IdentitiesOnly = true;
-        SetEnv = {
-          TERM = "xterm-256color";
-        };
       };
 
       "rog.local" = {
