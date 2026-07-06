@@ -6,8 +6,6 @@ in
 {
   programs.git = {
     enable = true;
-    # Explicitly set signing format to silence home-manager warning (legacy default)
-    signing.format = "openpgp";
     settings = {
       core.editor = "nvim -u NONE";
       core.pager = "delta";
@@ -20,11 +18,13 @@ in
       user.email = lib.mkForce identities.glats.email;
     };
 
-    # If glats GPG key is set, sign personal commits with it
-    signing = lib.mkIf (identities.glats.signingKey != "") {
-      key = identities.glats.signingKey;
-      signByDefault = true;
-    };
+    # Explicitly set signing format to silence home-manager warning (legacy default)
+    # If glats GPG key is set, also sign personal commits with it
+    signing = { format = "openpgp"; }
+      // lib.optionalAttrs (identities.glats.signingKey != "") {
+        key = identities.glats.signingKey;
+        signByDefault = true;
+      };
 
     includes = [
       # Work repos always sign with jcuzmar key
