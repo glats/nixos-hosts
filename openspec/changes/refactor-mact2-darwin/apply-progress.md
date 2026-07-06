@@ -1,6 +1,7 @@
 # Apply Progress: refactor-mact2-darwin
 
-**Status**: All phases complete, ready for PR
+**Status**: All phases complete, PR #4 open
+**Phase 3b commit**: 03c2ca1
 **Last Updated**: 2026-07-06
 **Total tasks**: 25 (across 4 phases)
 **Repo**: glats/nixos-hosts
@@ -50,8 +51,11 @@
 | 3.2 | Refactor `home-linux/gpg.nix` — import shared, linux packages only | EDIT | DONE | DONE |
 | 3.3 | Refactor `home-darwin/gpg.nix` — import shared, darwin packages only | EDIT | DONE | DONE |
 | 3.4 | Rewrite `home-darwin/ghostty.nix` — migrate from `home.file` to `programs.ghostty` | REWRITE | DONE | DONE |
+| 3.5 | Create `shared/ghostty.nix` (pure Nix function, zero conditionals) | NEW | DONE | DONE |
+| 3.6 | Rewrite `home-linux/ghostty.nix` — import shared, apply `lib.mkForce` | REWRITE | DONE | DONE |
+| 3.7 | Rewrite `home-darwin/ghostty.nix` — import shared, darwin overrides | REWRITE | DONE | DONE |
 
-**Phase 3 gate**: `nix flake check --no-build` (all hosts) + `grep "home.file" home-darwin/ghostty.nix` == 0 + `grep "shared/gpg.nix" home-*/gpg.nix` == 2 matches
+**Phase 3 gate**: `nix flake check --no-build` (all hosts) + `grep "home.file" home-darwin/ghostty.nix` == 0 + `grep "shared/gpg.nix" home-*/gpg.nix` == 2 matches + `grep "isDarwin" shared/ghostty.nix` == 0
 
 ---
 
