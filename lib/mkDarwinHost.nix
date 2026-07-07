@@ -37,19 +37,6 @@ let
             (import ../overlays/darwin.nix { inherit inputs self; })
           ];
         }
-
-        # Pass inputs to home-manager for module access
-        {
-          home-manager.extraSpecialArgs = {
-            inherit
-              inputs
-              self
-              username
-              ;
-            primaryUser = username;
-            javaVersion = "temurin-25.0.1+8.0.LTS";
-          };
-        }
       ]
       ++ extraModules;
     };
