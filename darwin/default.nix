@@ -1,3 +1,7 @@
+# Darwin host configuration for mact2.
+# Imports the darwin base profile (system modules) and retains only
+# per-host concerns: nix-homebrew, home-manager, users, environment,
+# and service enablements.
 { pkgs
 , inputs
 , self
@@ -10,27 +14,8 @@
   imports = [
     inputs.home-manager.darwinModules.home-manager
     inputs.nix-homebrew.darwinModules.nix-homebrew
-    ./mise.nix
-    ./cachix.nix
-    ./homebrew.nix
-    ./settings.nix
-    ./wsdd.nix
+    ../modules/darwin/profiles/base.nix
   ];
-
-  # nix config
-  nix = {
-    settings = {
-      experimental-features = [
-        "nix-command"
-        "flakes"
-      ];
-      # disabled due to https://github.com/NixOS/nix/issues/7273
-      # auto-optimise-store = true;
-    };
-    enable = false; # using Determinate installer
-  };
-
-  nixpkgs.config.allowUnfree = true;
 
   # homebrew installation manager
   nix-homebrew = {
