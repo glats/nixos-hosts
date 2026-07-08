@@ -6,7 +6,7 @@ in
 baseModules
 ++ [
   ../../../home-linux/remote-desktop.nix
-  ../../../home-linux/picom.nix
+
   ../../../home-linux/mate-rog-autostart.nix
   ../../../home-linux/conky-rog.nix
   ../../../home-linux/openfang.nix
@@ -14,7 +14,7 @@ baseModules
   ../../../home-linux/shell-gpt.nix
 
   # Override active OpenCode provider for this host
-  { home.opencode.activeProviderName = "opencode-go-light"; }
+  { home.opencode.activeProviderName = "opencode-go-medium"; }
 
   { home.shell-gpt.enable = true; }
 ]
