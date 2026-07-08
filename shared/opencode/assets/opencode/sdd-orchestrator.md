@@ -323,24 +323,40 @@ Before emitting any delegation call, check your in-session launch log:
 
 This prevents duplicate sub-agent launches that cause "File X has been modified since it was last read" conflicts and waste tokens.
 
+### Session Startup — Skill Registry Load
+
+Before the first sub-agent delegation in any session, load the skill registry:
+
+1. `mem_search(query: "skill-registry", project: "{project}")` → `mem_get_observation(id)` for full registry content
+2. Fallback: read `.atl/skill-registry.md` if engram is not available
+3. Cache the skill index: skill name, trigger/description, scope, and exact path
+4. If no registry exists, warn the user and proceed without project-specific standards
+
+This is a HARD startup gate. Do not delegate any sub-agent that requires skill loading until the registry is resolved.
+
 ### Sub-Agent Launch Pattern
 
 ALL sub-agent launch prompts that involve reading, writing, or reviewing code MUST include pre-resolved skill paths from the skill registry. Follow the Skill Resolver Protocol (see `_shared/skill-resolver.md` in the skills directory).
 
 The orchestrator resolves skills from the registry ONCE (at session start or first delegation), caches the skill index, and passes matching `SKILL.md` paths into each sub-agent's prompt.
 
-Orchestrator skill resolution (do once per session):
-
-1. `mem_search(query: "skill-registry", project: "{project}")` -> `mem_get_observation(id)` for full registry content
-2. Fallback: read `.atl/skill-registry.md` if engram is not available
-3. Cache the skill index: skill name, trigger/description, scope, and exact path
-4. If no registry exists, warn the user and proceed without project-specific standards
-
 For each sub-agent launch:
 
 1. Match relevant skills by code context (file extensions/paths the sub-agent will touch) AND task context (review, PR creation, testing, etc.)
 2. Copy matching `SKILL.md` paths into the sub-agent prompt as `## Skills to load before work`
 3. Instruct the sub-agent to read those exact files BEFORE task-specific work
+
+#### Injection Verification Gate (HARD)
+
+After constructing the sub-agent prompt (steps 1-3 above) but BEFORE launching it with `task(...)`, verify:
+
+1. The prompt contains the `## Skills to load before work` section
+2. Each path references an existing SKILL.md file
+3. The paths match the sub-agent's role (e.g., an `sdd-apply` sub-agent gets `sdd-apply/SKILL.md`, not `sdd-init/SKILL.md`)
+
+If any verification check fails: STOP. Re-run the skill resolution protocol from step 1. Do not launch the sub-agent with missing or incorrect skill paths.
+
+**MANDATORY**: This gate is not optional. Skipping it causes sub-agents to run without skill guidance. Every sub-agent launch MUST pass verification.
 
 ### Skill Resolution Feedback
 
@@ -392,37 +408,35 @@ When launching `sdd-apply` for a continuation batch:
 2. If found, add: `"PREVIOUS APPLY-PROGRESS EXISTS at topic_key 'sdd/{change-name}/apply-progress'. You MUST read it first via mem_search + mem_get_observation, merge your new progress with the existing progress, and save the combined result. Do NOT overwrite - MERGE."`
 3. If not found, no extra instruction is needed
 
-#### Review-Checkpoint Gate (MANDATORY)
+#### Review Gate (MANDATORY)
 
 After every `sdd-apply` slice returns and before launching any subsequent `sdd-apply`
-or `sdd-verify`, the orchestrator MUST locate and read the `review-checkpoint` artifact
+or `sdd-verify`, the orchestrator MUST locate and read the `review` artifact
 for the active change. This lookup MUST NOT be skipped regardless of apply outcome.
 
-**Step 1: Resolve artifact store and locate checkpoint**
+**Step 1: Resolve artifact store and locate review**
 
 Use the active artifact store mode cached from session preflight:
 
 | Mode | Lookup method |
 | --- | --- |
-| `openspec` or `hybrid` | Read `openspec/changes/{change-name}/review-checkpoint.md` |
-| `engram` or `hybrid` | `mem_search("sdd/{change-name}/review-checkpoint")` then `mem_get_observation` |
+| `openspec` or `hybrid` | Read `openspec/changes/{change-name}/review.md` |
+| `engram` or `hybrid` | `mem_search("sdd/{change-name}/review")` then `mem_get_observation` |
 
 For `hybrid`, perform BOTH lookups. The `openspec` file is canonical for file-based
 state; the Engram result supplements it. If the store mode is unrecognized or absent,
-STOP and report the unrecognized mode — do NOT default to proceed.
+STOP and report the unrecognized mode — do NOT default to redo.
 
 **Step 2: Parse verdict and apply decision table**
 
-After reading the checkpoint, apply the verdict decision table without discretion:
+After reading the review, apply the verdict decision table without discretion:
 
 | Verdict | Action |
 | --- | --- |
-| `approved` | Continue to next phase without user interaction |
-| `proceed` | Continue to next phase; record verdict as `proceed` |
-| `changes-requested` | STOP; present binary decision |
-| `blocked` | STOP; present binary decision |
-| `pending` | STOP; present binary decision |
-| missing / unreadable | STOP; report "no review-checkpoint found"; present binary decision |
+| `done` | Continue to next phase without user interaction |
+| `redo` | Continue to next phase; record verdict as `redo` |
+| `amend` | STOP; present binary decision |
+| missing / unreadable | STOP; report "no review found"; present binary decision |
 
 No intermediate action (inline fix, partial rework, silent continue) is permitted
 outside this table.
@@ -431,18 +445,17 @@ outside this table.
 
 When the gate requires a stop, present exactly two options via the `question` tool:
 
-1. **full-iteration** — re-explore → re-apply (reads all previous artifacts as context;
+1. **reiterate** — re-explore → re-apply (reads all previous artifacts as context;
    each phase overwrites its artifact)
-2. **proceed** — skip the gate; record verdict as `proceed` and continue to next phase
+2. **redo** — skip the gate; record verdict as `redo` and continue to next phase
 
 Do NOT offer a third option. Do NOT auto-advance. Do NOT launch `sdd-verify` until the
-user selects `proceed` or a completed `full-iteration` resolves with an approved
-checkpoint.
+user selects `redo` or a completed `reiterate` resolves with a `done` review.
 
 **Verify gate hard block**
 
-The orchestrator MUST NOT launch `sdd-verify` unless the latest `review-checkpoint` for
-the active change has verdict `approved` or `proceed`. This applies even when the user
+The orchestrator MUST NOT launch `sdd-verify` unless the latest `review` for
+the active change has verdict `done` or `redo`. This applies even when the user
 has not explicitly asked for a review check.
 
 #### Engram Topic Key Format
@@ -456,5 +469,6 @@ has not explicitly asked for a review check.
 | Design          | `sdd/{change-name}/design`         |
 | Tasks           | `sdd/{change-name}/tasks`          |
 | Apply progress  | `sdd/{change-name}/apply-progress` |
+| Review          | `sdd/{change-name}/review`         |
 | Verify report   | `sdd/{change-name}/verify-report`  |
 | Archive report  | `sdd/{change-name}/archive-report` |
