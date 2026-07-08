@@ -1,7 +1,8 @@
-{ config
-, pkgs
-, lib
-, ...
+{
+  config,
+  pkgs,
+  lib,
+  ...
 }:
 
 let
@@ -58,7 +59,6 @@ let
       "Noto Sans"
     ];
     serif = [
-      "Source Sans 3"
       "Noto Serif"
     ];
     monospace = [
@@ -127,6 +127,36 @@ let
       </accept>
     </alias>
   '';
+
+  # Full fontconfig XML — previously in localConf, now deployed via confPackages
+  fontconfigXML = ''
+    <?xml version="1.0"?>
+    <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
+    <fontconfig>
+      <!-- Reject fonts we don't want to use -->
+      <selectfont>
+        <rejectfont>
+          ${lib.concatMapStringsSep "\n          " mkRejectPattern rejectedFonts}
+        </rejectfont>
+      </selectfont>
+
+      <!-- Redirect common font names to our preferred families -->
+      ${lib.concatMapStringsSep "\n      " (f: mkMatchRedirect f "sans-serif") sansSerifAliases}
+      ${lib.concatMapStringsSep "\n      " (f: mkMatchRedirect f "serif") serifAliases}
+      ${lib.concatMapStringsSep "\n      " (f: mkMatchRedirect f "monospace") monospaceAliases}
+
+      <!-- Force monospace family -->
+      ${lib.concatMapStringsSep "\n      " (f: mkForceMatch f monoFont) monoForceNames}
+
+      <!-- Define font family preferences -->
+      ${lib.concatMapStringsSep "\n      " (entry: mkStrongAlias entry.family entry.prefer) (
+        lib.mapAttrsToList (family: prefer: { inherit family prefer; }) familyPrefs
+      )}
+
+      <!-- Emoji fallbacks -->
+      ${lib.concatMapStringsSep "\n      " (f: mkWeakAlias f emojiFonts) emojiFamilies}
+    </fontconfig>
+  '';
 in
 {
   fonts = {
@@ -142,37 +172,8 @@ in
         rgba = "rgb";
         lcdfilter = "default";
       };
-      localConf = ''
-        <?xml version="1.0"?>
-        <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
-        <fontconfig>
-          <!-- Reject fonts we don't want to use -->
-          <selectfont>
-            <rejectfont>
-              ${lib.concatMapStringsSep "\n              " mkRejectPattern rejectedFonts}
-            </rejectfont>
-          </selectfont>
-
-          <!-- Redirect common font names to our preferred families -->
-          ${lib.concatMapStringsSep "\n          " (f: mkMatchRedirect f "sans-serif") sansSerifAliases}
-          ${lib.concatMapStringsSep "\n          " (f: mkMatchRedirect f "serif") serifAliases}
-          ${lib.concatMapStringsSep "\n          " (f: mkMatchRedirect f "monospace") monospaceAliases}
-
-          <!-- Force monospace family -->
-          ${lib.concatMapStringsSep "\n          " (f: mkForceMatch f monoFont) monoForceNames}
-
-          <!-- Define font family preferences -->
-          ${lib.concatMapStringsSep "\n          " (entry: mkStrongAlias entry.family entry.prefer) (
-            lib.mapAttrsToList (family: prefer: { inherit family prefer; }) familyPrefs
-          )}
-
-          <!-- Emoji fallbacks -->
-          ${lib.concatMapStringsSep "\n          " (f: mkWeakAlias f emojiFonts) emojiFamilies}
-        </fontconfig>
-      '';
       defaultFonts = {
         serif = [
-          "Source Sans 3"
           "Noto Serif"
         ];
         sansSerif = [
@@ -200,6 +201,20 @@ in
       noto-fonts-cjk-sans
     ];
   };
+
+  # Deploy fontconfig rules to conf.d (priority 51) instead of localConf.
+  # The NixOS XSLT-generated fonts.conf drops the local.conf include,
+  # so localConf rules are never loaded.  Using confPackages writes
+  # directly into the fontconfig-etc buildEnv that creates /etc/fonts/.
+  # Priority 51 runs after rendering (10) and before defaultFonts (52)
+  # and fontconfig's 60-latin.conf.
+  fonts.fontconfig.confPackages = [
+    (pkgs.writeTextFile {
+      name = "fontconfig-custom-conf";
+      destination = "/etc/fonts/conf.d/51-nixos-custom.conf";
+      text = fontconfigXML;
+    })
+  ];
 
   # Font audit note (T3-007): the Home Manager module brought in by
   # omarchy-nix (modules/home-manager/fonts.nix) installs its own copy
