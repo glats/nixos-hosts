@@ -239,30 +239,24 @@ The gatekeeper runs in addition to the Review Workload Guard and the Mandatory D
 
 ### Artifact Store Mode
 
-This is collected by `SDD Session Preflight`. If missing, enforce the hard gate before any phase work. Ask using this EXACT question:
+This is collected by `SDD Session Preflight`. If missing, enforce the hard gate before any phase work. Ask which artifact store they want for this change:
 
-```
-2. Artifact Store: Where should SDD artifacts (proposals, specs, designs, tasks) be persisted?
-- openspec/ -- filesystem only (openspec/<change-name>/) (Recommended)
-- engram -- Engram persistent memory only
-- hybrid -- both filesystem AND Engram
-```
+- **`engram`**: Fast, no files created. Artifacts live in engram only.
+- **`openspec`**: File-based. Creates `openspec/` with a shareable artifact trail.
+- **`both` / `hybrid`**: Both - files for team sharing + engram for cross-session recovery.
 
-**CRITICAL**: `openspec/` is the canonical filesystem path for SDD artifacts. Do NOT use `sdds/`, `sdd/`, or `.sdd/` in the option text. Engram topic keys use the `sdd/` prefix for memory organization only.
-
-Cache the artifact store choice for the session. Pass it as `artifact_store.mode` to every sub-agent launch. If the user doesn't specify, detect: if engram is available -> default to `engram`. Otherwise -> `none`.
+If the user doesn't specify, detect: if engram is available -> default to `engram`. Otherwise -> `none`.
 
 Cache the artifact store choice for the session. Pass it as `artifact_store.mode` to every sub-agent launch.
 
 ### Delivery Strategy
 
-This is collected by `SDD Session Preflight` as the chained PR strategy. If missing, enforce the hard gate before any phase work. Ask using this EXACT question:
+This is collected by `SDD Session Preflight` as the chained PR strategy. If missing, enforce the hard gate before any phase work. Ask which delivery/review strategy they want:
 
-```
-3. Chained PR Strategy: How should delivery be packaged?
-- single-pr -- one PR with all changes (Recommended)
-- chained -- multiple stacked PRs (for changes over 400 lines)
-```
+- **`ask-on-risk`** (default): Ask later if `sdd-tasks` forecasts high risk or >400 changed lines.
+- **`auto-chain`**: If forecast is high, continue with chained/stacked PR slices without asking again.
+- **`single-pr`**: Prefer one PR; if forecast exceeds 400 lines, require `size:exception` before apply.
+- **`exception-ok`**: Allow a large PR because the maintainer explicitly accepts `size:exception`.
 
 Cache the delivery strategy for the session. Pass it as `delivery_strategy` to `sdd-tasks` and `sdd-apply` prompts.
 
