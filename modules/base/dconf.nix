@@ -13,12 +13,9 @@
     {
       settings = with lib.gvariant; {
         "org/mate/marco/general" = {
-          compositing-manager = false;
+          compositing-manager = true;
         };
       };
-      locks = [
-        "/org/mate/marco/general/compositing-manager"
-      ];
     }
   ];
 }
