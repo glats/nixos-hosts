@@ -313,11 +313,11 @@
     "gentle-ai-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1783542419,
+        "lastModified": 1783543874,
         "narHash": "sha256-RQVURHeVNGhemF/mgeD9YlNKLfNfYHXBUd/WFL70d8w=",
         "owner": "glats",
         "repo": "gentle-ai",
-        "rev": "1381afbe71fac9763fd24111f774d451a74de9ac",
+        "rev": "6190365eeebb1ff95cde069667f03adc0b1f49a7",
         "type": "github"
       },
       "original": {
