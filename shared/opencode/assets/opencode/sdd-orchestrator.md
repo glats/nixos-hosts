@@ -87,7 +87,10 @@ SDD is the structured planning layer for substantial changes.
 - `hybrid` -> both backends; cross-session recovery + local files; more tokens per operation
 - `none` -> return results inline only; recommend enabling engram or openspec
 
-> **Filesystem path convention**: Engram topic keys use the `sdd/` prefix for memory organization — this is NOT a filesystem path. The canonical filesystem directory for SDD artifacts is `openspec/`. Never reference `.sdd/`, `sdds/`, or bare `sdd/` as filesystem paths. These do not exist.
+> **Filesystem path convention**: Engram topic keys use the `sdd/` prefix for
+> memory organization — this is NOT a filesystem path. The canonical filesystem
+> directory for SDD artifacts is `openspec/`. Never reference `.sdd/`, `sdds/`,
+> or bare `sdd/` as filesystem paths. These do not exist.
 
 ### Commands
 
@@ -239,24 +242,30 @@ The gatekeeper runs in addition to the Review Workload Guard and the Mandatory D
 
 ### Artifact Store Mode
 
-This is collected by `SDD Session Preflight`. If missing, enforce the hard gate before any phase work. Ask which artifact store they want for this change:
+This is collected by `SDD Session Preflight`. If missing, enforce the hard gate before any phase work. Ask using this EXACT question text:
 
-- **`engram`**: Fast, no files created. Artifacts live in engram only.
-- **`openspec`**: File-based. Creates `openspec/` with a shareable artifact trail.
-- **`both` / `hybrid`**: Both - files for team sharing + engram for cross-session recovery.
+```
+2. Artifact Store: Where should SDD artifacts (proposals, specs, designs, tasks) be persisted?
+- openspec/ -- filesystem only (openspec/<change-name>/) (Recommended)
+- engram -- Engram persistent memory only
+- hybrid -- both filesystem AND Engram
+```
 
-If the user doesn't specify, detect: if engram is available -> default to `engram`. Otherwise -> `none`.
+**CRITICAL**: `openspec/` is the canonical filesystem path for SDD artifacts. Do NOT use `sdds/`, `sdd/`, or `.sdd/` in the option text. Engram topic keys use the `sdd/` prefix for memory organization only.
+
+Cache the artifact store choice for the session. Pass it as `artifact_store.mode` to every sub-agent launch. If the user doesn't specify, detect: if engram is available -> default to `engram`. Otherwise -> `none`.
 
 Cache the artifact store choice for the session. Pass it as `artifact_store.mode` to every sub-agent launch.
 
 ### Delivery Strategy
 
-This is collected by `SDD Session Preflight` as the chained PR strategy. If missing, enforce the hard gate before any phase work. Ask which delivery/review strategy they want:
+This is collected by `SDD Session Preflight` as the chained PR strategy. If missing, enforce the hard gate before any phase work. Ask using this EXACT question text:
 
-- **`ask-on-risk`** (default): Ask later if `sdd-tasks` forecasts high risk or >400 changed lines.
-- **`auto-chain`**: If forecast is high, continue with chained/stacked PR slices without asking again.
-- **`single-pr`**: Prefer one PR; if forecast exceeds 400 lines, require `size:exception` before apply.
-- **`exception-ok`**: Allow a large PR because the maintainer explicitly accepts `size:exception`.
+```
+3. Chained PR Strategy: How should delivery be packaged?
+- single-pr -- one PR with all changes (Recommended)
+- chained -- multiple stacked PRs (for changes over 400 lines)
+```
 
 Cache the delivery strategy for the session. Pass it as `delivery_strategy` to `sdd-tasks` and `sdd-apply` prompts.
 
@@ -323,40 +332,24 @@ Before emitting any delegation call, check your in-session launch log:
 
 This prevents duplicate sub-agent launches that cause "File X has been modified since it was last read" conflicts and waste tokens.
 
-### Session Startup — Skill Registry Load
-
-Before the first sub-agent delegation in any session, load the skill registry:
-
-1. `mem_search(query: "skill-registry", project: "{project}")` → `mem_get_observation(id)` for full registry content
-2. Fallback: read `.atl/skill-registry.md` if engram is not available
-3. Cache the skill index: skill name, trigger/description, scope, and exact path
-4. If no registry exists, warn the user and proceed without project-specific standards
-
-This is a HARD startup gate. Do not delegate any sub-agent that requires skill loading until the registry is resolved.
-
 ### Sub-Agent Launch Pattern
 
 ALL sub-agent launch prompts that involve reading, writing, or reviewing code MUST include pre-resolved skill paths from the skill registry. Follow the Skill Resolver Protocol (see `_shared/skill-resolver.md` in the skills directory).
 
 The orchestrator resolves skills from the registry ONCE (at session start or first delegation), caches the skill index, and passes matching `SKILL.md` paths into each sub-agent's prompt.
 
+Orchestrator skill resolution (do once per session):
+
+1. `mem_search(query: "skill-registry", project: "{project}")` -> `mem_get_observation(id)` for full registry content
+2. Fallback: read `.atl/skill-registry.md` if engram is not available
+3. Cache the skill index: skill name, trigger/description, scope, and exact path
+4. If no registry exists, warn the user and proceed without project-specific standards
+
 For each sub-agent launch:
 
 1. Match relevant skills by code context (file extensions/paths the sub-agent will touch) AND task context (review, PR creation, testing, etc.)
 2. Copy matching `SKILL.md` paths into the sub-agent prompt as `## Skills to load before work`
 3. Instruct the sub-agent to read those exact files BEFORE task-specific work
-
-#### Injection Verification Gate (HARD)
-
-After constructing the sub-agent prompt (steps 1-3 above) but BEFORE launching it with `task(...)`, verify:
-
-1. The prompt contains the `## Skills to load before work` section
-2. Each path references an existing SKILL.md file
-3. The paths match the sub-agent's role (e.g., an `sdd-apply` sub-agent gets `sdd-apply/SKILL.md`, not `sdd-init/SKILL.md`)
-
-If any verification check fails: STOP. Re-run the skill resolution protocol from step 1. Do not launch the sub-agent with missing or incorrect skill paths.
-
-**MANDATORY**: This gate is not optional. Skipping it causes sub-agents to run without skill guidance. Every sub-agent launch MUST pass verification.
 
 ### Skill Resolution Feedback
 
@@ -408,6 +401,12 @@ When launching `sdd-apply` for a continuation batch:
 2. If found, add: `"PREVIOUS APPLY-PROGRESS EXISTS at topic_key 'sdd/{change-name}/apply-progress'. You MUST read it first via mem_search + mem_get_observation, merge your new progress with the existing progress, and save the combined result. Do NOT overwrite - MERGE."`
 3. If not found, no extra instruction is needed
 
+
+### Session Startup — Skill Registry Load
+
+#### Injection Verification Gate (HARD)
+
+
 #### Review Gate (MANDATORY)
 
 After every `sdd-apply` slice returns and before launching any subsequent `sdd-apply`
@@ -458,6 +457,7 @@ The orchestrator MUST NOT launch `sdd-verify` unless the latest `review` for
 the active change has verdict `done` or `redo`. This applies even when the user
 has not explicitly asked for a review check.
 
+
 #### Engram Topic Key Format
 
 | Artifact        | Topic Key                          |
@@ -469,6 +469,5 @@ has not explicitly asked for a review check.
 | Design          | `sdd/{change-name}/design`         |
 | Tasks           | `sdd/{change-name}/tasks`          |
 | Apply progress  | `sdd/{change-name}/apply-progress` |
-| Review          | `sdd/{change-name}/review`         |
 | Verify report   | `sdd/{change-name}/verify-report`  |
 | Archive report  | `sdd/{change-name}/archive-report` |
