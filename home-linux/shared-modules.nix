@@ -34,6 +34,7 @@
   ../shared/opencode-profile.nix
   ./chrome-apps.nix
   ./ssh.nix
+  ./fontconfig.nix
   ../shared/sops.nix
   inputs.sops-nix.homeManagerModules.sops
 ]
