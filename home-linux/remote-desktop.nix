@@ -121,6 +121,7 @@ let
     colordepth = 99;
     sound = "local";
     audio-output = "sys:pulse";
+    microphone = "sys:pulse";
     username = "glats";
     drive = "/home/glats";
     quality = 0;
