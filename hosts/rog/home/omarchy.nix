@@ -61,6 +61,11 @@
   # Disable HM-level fontconfig -- rely on system-level fonts.nix.
   fonts.fontconfig.enable = lib.mkForce false;
 
+  # Terminals get an explicit Nerd Font (CaskaydiaCove) so glyphs render
+  # correctly. omarchy-nix defaults to "monospace" which conflicts with
+  # home-linux/kitty.nix at equal mkDefault priority.
+  omarchy.fonts.kitty = lib.mkForce "CaskaydiaCove Nerd Font";
+
   # Override active OpenCode provider for this host
   home.opencode.activeProviderName = "opencode-go-medium";
 }

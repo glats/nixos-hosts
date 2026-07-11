@@ -246,11 +246,33 @@
             mkHomeConfig hostname system username extraModules;
         in
         {
-          # Standalone HM for rog derives from the same per-host modules source
-          # used by the NixOS-integrated HM path.
+          # Standalone HM for rog uses omarchy.nix directly (t14 pattern).
+          # omarchy.nix is self-contained (imports omarchy-nix HM module
+          # + selective shared modules) so we do NOT use baseHomeConfig
+          # (which would prepend linuxHomeModules and cause duplicate
+          # module errors).
+          #
+          # The omarchy-nix HM module copies osConfig.omarchy into HM
+          # config. In standalone HM, osConfig = {} so the sync short-circuits.
+          # We inject the necessary omarchy values explicitly here to
+          # match what the NixOS path provides.
           rog = home-manager.lib.homeManagerConfiguration {
             pkgs = pkgsFor "x86_64-linux";
-            modules = import ./hosts/rog/home/modules.nix { inherit inputs; };
+            modules = [
+              ./hosts/rog/home/omarchy.nix
+              {
+                omarchy = {
+                  theme = "glats";
+                  username = "glats";
+                  full_name = "Glats";
+                  email_address = "glats@local";
+                  browser = "brave";
+                  terminal = "ghostty";
+                  monitors = [ "eDP-1,preferred,auto,1" ];
+                  scale = 1;
+                };
+              }
+            ];
             extraSpecialArgs = {
               inherit inputs;
               hostName = "rog";
