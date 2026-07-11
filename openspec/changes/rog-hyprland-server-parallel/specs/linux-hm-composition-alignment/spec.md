@@ -2,40 +2,40 @@
 
 ## ADDED Requirements
 
-### Requirement: HM-SA-07 -- rog HM diverges from shared-modules.nix for omarchy compatibility
+### Requirement: HM-SA-07 -- rog backward-compat wrapper re-exports omarchy.nix import list
 
-Rog's `hosts/rog/home/modules.nix` MUST import an omarchy-compatible HM module subset instead of `shared-modules.nix`. The omarchy-nix HM module SHALL be imported first (t14 pattern). The following shared modules MUST be excluded: `mate.nix`, `rofi.nix`, `chrome-apps.nix`, `theme.nix`. The divergence SHALL be documented in `modules.nix` with an inline comment explaining the exclusion rationale (same convention as `hosts/t14/home/omarchy.nix` lines 17-25).
+`hosts/rog/home/modules.nix` MUST be a backward-compat wrapper that re-exports the exact same import list as `hosts/rog/home/omarchy.nix`. The canonical HM entry point for rog is `omarchy.nix`. The wrapper file MUST include a deprecation comment directing future consumers to use `./omarchy.nix` instead.
 
-| Action | Modules |
-|--------|---------|
-| Include | `inputs.omarchy-nix.homeManagerModules.default` |
-| Include | `home-linux/{base,shell,tmux,neovim,git,gh,ssh}.nix` |
-| Include | `home-linux/{remote-desktop,shell-gpt,fontconfig}.nix` |
-| Include | `shared/{opencode,opencode-profile,sops,shell-aliases}.nix` |
-| Include | `inputs.sops-nix.homeManagerModules.sops` |
-| Exclude | `home-linux/{mate,rofi,chrome-apps}.nix`, `home-linux/theme.nix` |
-| Exclude | `home-linux/{mate-rog-autostart,conky-rog,openfang,webcam-rog,picom,kitty,alacritty,gpg,ghostty}.nix` -- MATE/X11-specific or duplicative with omarchy |
+The re-exported list SHALL be identical to the `imports` attribute of `omarchy.nix`:
+- `inputs.omarchy-nix.homeManagerModules.default` (first, t14 pattern)
+- `./default.nix` (rog-specific Hyprland overlays)
+- Individual `home-linux/` modules: `base.nix`, `shell.nix`, `tmux.nix`, `neovim.nix`, `git.nix`, `gh.nix`, `ssh.nix`, `remote-desktop.nix`, `ghostty.nix`, `kitty.nix`, `alacritty.nix`, `shell-gpt.nix`, `openfang.nix`, `webcam-rog.nix`
+- Individual `shared/` modules: `shell-aliases.nix`, `opencode.nix`, `opencode-profile.nix`, `sops.nix`
+- `inputs.sops-nix.homeManagerModules.sops`
+- `({ home.shell-gpt.enable = true; })`
 
-#### Scenario: rog modules.nix imports omarchy-compatible subset
+#### Scenario: modules.nix re-exports identically to omarchy.nix
 
-- GIVEN `hosts/rog/home/modules.nix` is the shared source
-- WHEN the file is read
-- THEN it imports `inputs.omarchy-nix.homeManagerModules.default` first
-- AND it imports the individual shared modules listed in the Include table above
+- GIVEN `hosts/rog/home/modules.nix` is a backward-compat wrapper
+- WHEN the file is evaluated with `{ inputs }`
+- THEN it returns a list identical to the `imports` attribute of `hosts/rog/home/omarchy.nix`
+- AND the first element is `inputs.omarchy-nix.homeManagerModules.default`
+- AND the second element is `./default.nix`
+- AND every module in the list matches a corresponding entry in `omarchy.nix`'s imports
 - AND it does NOT import `../../../home-linux/shared-modules.nix`
-- AND it does NOT import `mate.nix`, `rofi.nix`, `chrome-apps.nix`, or `theme.nix`
 
-#### Scenario: both standalone and integrated paths use new modules.nix
+#### Scenario: both standalone and integrated paths use omarchy.nix directly
 
-- GIVEN `flake.nix` standalone path imports `./hosts/rog/home/modules.nix`
-- AND `modules/base/home-manager.nix` imports `../../hosts/rog/home/modules.nix`
+- GIVEN `flake.nix` standalone path imports `./hosts/rog/home/omarchy.nix`
+- AND `hosts/rog/default.nix` HM path also imports `./home/omarchy.nix`
 - WHEN both `homeConfigurations.rog` and `nixosConfigurations.rog` are evaluated
 - THEN both resolve the same omarchy-compatible module set
-- AND the HM-SA-01 single-source guarantee is preserved (both paths unchanged)
+- AND the HM-SA-01 single-source guarantee is preserved (both paths use the same canonical file)
+- AND `modules.nix` is preserved only for any stale references (backward compat)
 
 #### Scenario: omarchy HM module resolves in standalone build
 
-- GIVEN `modules.nix` imports `inputs.omarchy-nix.homeManagerModules.default`
+- GIVEN `omarchy.nix` imports `inputs.omarchy-nix.homeManagerModules.default`
 - WHEN `nix build .#homeConfigurations.rog.activationPackage` is run
 - THEN the omarchy-nix HM module resolves without missing-inputs errors
 - AND no MATE/X11 module conflicts occur (mate, rofi, conky are absent)
@@ -46,13 +46,13 @@ Rog's `hosts/rog/home/modules.nix` MUST import an omarchy-compatible HM module s
 
 After this change, for `rog` and `thinkcentre`, the set of HM modules evaluated by `home-manager switch --flake .#<host>` MUST be identical to the set evaluated by `nixos-rebuild switch`, with the only permitted exceptions being modules that explicitly require NixOS context (`osConfig`) and are listed in a documented exception registry (see HM-SA-05).
 
-The equivalence guarantee remains -- both paths derive from the same `hosts/<host>/home/modules.nix` source. Rog's module set has changed from `shared-modules.nix`-based to omarchy-compatible (documented in HM-SA-07), but the single-source mechanism (HM-SA-01) is unchanged. Thinkcentre is unaffected.
+The equivalence guarantee remains -- both paths derive from the same canonical source. For rog, the canonical source is `hosts/rog/home/omarchy.nix` (not `modules.nix`, which exists only as a backward-compat re-export). Thinkcentre is unaffected.
 
-(Previously: rog's module set was `shared-modules.nix` + MATE/X11 host-specific additions. Now it is omarchy-compatible, excluding mate/rofi/chrome-apps/theme.)
+(Previously: rog's `modules.nix` was the active shared source wrapping `shared-modules.nix` + MATE/X11 additions. Now `omarchy.nix` is the canonical source; `modules.nix` is a backward-compat re-export.)
 
 #### Scenario: rog standalone module set matches integrated module set
 
-- GIVEN `hosts/rog/home/modules.nix` is the shared source (omarchy-compatible subset)
+- GIVEN `hosts/rog/home/omarchy.nix` is the canonical shared source
 - WHEN `homeConfigurations.rog` and `nixosConfigurations.rog` are both evaluated
 - THEN the resolved module list for `homeConfigurations.rog` includes every module that `nixosConfigurations.rog` evaluates through its HM path: `omarchy-nix.homeManagerModules.default` + `base.nix` + `shell.nix` + `tmux.nix` + `neovim.nix` + `git.nix` + `gh.nix` + `ssh.nix` + `remote-desktop.nix` + `opencode.nix` + `opencode-profile.nix` + `sops.nix` + `shell-aliases.nix` + `shell-gpt.nix` + `fontconfig.nix` + `{ home.shell-gpt.enable = true; }`
 - AND `mate.nix`, `rofi.nix`, `chrome-apps.nix`, `theme.nix` are NOT present (documented per HM-SA-07)
@@ -60,7 +60,7 @@ The equivalence guarantee remains -- both paths derive from the same `hosts/<hos
 
 #### Scenario: rog omarchy modules are present, MATE modules are absent
 
-- GIVEN the new `modules.nix` imports omarchy-compatible subset
+- GIVEN `omarchy.nix` is the canonical HM entry point for rog
 - WHEN `nix build .#homeConfigurations.rog.activationPackage` is run
 - THEN the build includes Hyprland-related config from `omarchy-nix.homeManagerModules.default`
 - AND `dconf.settings` from `home-linux/mate.nix` is NOT evaluated
@@ -83,4 +83,4 @@ The equivalence guarantee remains -- both paths derive from the same `hosts/<hos
 
 ## Unchanged
 
-HM-SA-01, HM-SA-03, HM-SA-04, HM-SA-05, HM-SA-06 are unaffected. Rog still uses `hosts/rog/home/modules.nix` as the single source (HM-SA-01). `extraSpecialArgs` requirements unchanged (HM-SA-03). t14 remains a documented special case (HM-SA-04). No new exceptions required (HM-SA-05). Flake check must still pass (HM-SA-06).
+HM-SA-01, HM-SA-03, HM-SA-04, HM-SA-05, HM-SA-06 are unaffected. Rog uses `hosts/rog/home/omarchy.nix` as the single source (HM-SA-01); `modules.nix` is a backward-compat re-export. `extraSpecialArgs` requirements unchanged (HM-SA-03). t14 remains a documented special case (HM-SA-04). No new exceptions required (HM-SA-05). Flake check must still pass (HM-SA-06).
