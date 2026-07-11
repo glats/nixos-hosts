@@ -27,22 +27,86 @@ Runnable Briefing; refer to that document for the full operational queries.
 
 ## Positions
 
-```
-y=0     ╔══════════════════╗
-        ║   DP-5 (rotated) ║  AOC 24P1W1 (1080×1920, transform 1)
-        ║   ws 1,4,7...    ║  x=0, y=0
-y=420   ║   ┌──────────┐ ┌──────────┐ ┌──────────┐
-        ║   │ DP-4     │ │ DP-3     │ │ eDP-1    │
-        ║   │ ws 2,5.. │ │ ws 3,6.. │ │ (free)   │
-y=1499  ║   └──────────┘ └──────────┘ └──────────┘
-        ║                  ║
-y=1919  ╚══════════════════╝
-        x=0      x=1080     x=3000     x=4920
-```
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 850 520" font-family="monospace" font-size="11">
+  <style>
+    .label { fill: #555; font-size: 10px; }
+    .title { fill: #333; font-size: 13px; font-weight: bold; }
+    .ws { fill: #666; font-size: 9px; }
+    .coord { fill: #888; font-size: 9px; }
+  </style>
 
-- DP-5 (rotated portrait): 1080px wide effective → y=[0,1919]
-- DP-4, DP-3, eDP-1: 1920×1080, y=420 (centered vertically with rotated DP-5)
-- y=420 eliminates cursor dead zone when crossing between monitors
+  <!-- docked_lid_closed -->
+  <text x="10" y="20" class="title">docked_lid_closed (lid cerrado) — actual</text>
+
+  <rect x="10" y="30" width="108" height="192" fill="#e3f2fd" stroke="#1565c0" stroke-width="1.5" rx="3"/>
+  <text x="64" y="58" text-anchor="middle" class="label" font-weight="bold">DP-5</text>
+  <text x="64" y="70" text-anchor="middle" class="label">portrait</text>
+  <text x="64" y="82" text-anchor="middle" class="ws">ws 1,4,7…</text>
+  <text x="64" y="110" text-anchor="middle" class="coord">0,0</text>
+  <text x="64" y="122" text-anchor="middle" class="coord">1080×1920</text>
+
+  <rect x="118" y="72" width="192" height="108" fill="#fff3e0" stroke="#e65100" stroke-width="1.5" rx="3"/>
+  <text x="214" y="96" text-anchor="middle" class="label" font-weight="bold">DP-4 (G24)</text>
+  <text x="214" y="108" text-anchor="middle" class="ws">ws 2,5,8…</text>
+  <text x="214" y="130" text-anchor="middle" class="coord">1080,420</text>
+  <text x="214" y="142" text-anchor="middle" class="coord">1920×1080</text>
+
+  <rect x="310" y="72" width="192" height="108" fill="#e8f5e9" stroke="#2e7d32" stroke-width="1.5" rx="3"/>
+  <text x="406" y="96" text-anchor="middle" class="label" font-weight="bold">DP-3 (AOC)</text>
+  <text x="406" y="108" text-anchor="middle" class="ws">ws 3,6,9…</text>
+  <text x="406" y="130" text-anchor="middle" class="coord">3000,420</text>
+  <text x="406" y="142" text-anchor="middle" class="coord">1920×1080</text>
+
+  <rect x="510" y="72" width="50" height="108" fill="#fce4ec" stroke="#c62828" stroke-width="1" rx="2" stroke-dasharray="4,3"/>
+  <text x="535" y="96" text-anchor="middle" class="label" font-weight="bold" fill="#c62828">eDP-1</text>
+  <text x="535" y="110" text-anchor="middle" class="coord" fill="#c62828">parked</text>
+  <text x="535" y="122" text-anchor="middle" class="coord" fill="#c62828">-30000</text>
+
+  <!-- scale bar -->
+  <line x1="10" y1="238" x2="110" y2="238" stroke="#bbb" stroke-width="0.5"/>
+  <line x1="10" y1="234" x2="10" y2="242" stroke="#bbb" stroke-width="0.5"/>
+  <line x1="110" y1="234" x2="110" y2="242" stroke="#bbb" stroke-width="0.5"/>
+  <text x="60" y="250" text-anchor="middle" class="coord">~1000px reales (escala ≈10%)</text>
+
+  <!-- docked_lid_open -->
+  <text x="10" y="280" class="title">docked_lid_open (lid abierto)</text>
+
+  <rect x="10" y="290" width="108" height="192" fill="#e3f2fd" stroke="#1565c0" stroke-width="1.5" rx="3"/>
+  <text x="64" y="318" text-anchor="middle" class="label" font-weight="bold">DP-5</text>
+  <text x="64" y="330" text-anchor="middle" class="label">portrait</text>
+  <text x="64" y="342" text-anchor="middle" class="ws">ws 1,4,7…</text>
+  <text x="64" y="370" text-anchor="middle" class="coord">0,0</text>
+  <text x="64" y="382" text-anchor="middle" class="coord">1080×1920</text>
+
+  <rect x="118" y="332" width="192" height="108" fill="#fff3e0" stroke="#e65100" stroke-width="1.5" rx="3"/>
+  <text x="214" y="356" text-anchor="middle" class="label" font-weight="bold">DP-4 (G24)</text>
+  <text x="214" y="368" text-anchor="middle" class="ws">ws 2,5,8…</text>
+  <text x="214" y="390" text-anchor="middle" class="coord">1080,420</text>
+  <text x="214" y="402" text-anchor="middle" class="coord">1920×1080</text>
+
+  <rect x="310" y="332" width="192" height="108" fill="#e8f5e9" stroke="#2e7d32" stroke-width="1.5" rx="3"/>
+  <text x="406" y="356" text-anchor="middle" class="label" font-weight="bold">DP-3 (AOC)</text>
+  <text x="406" y="368" text-anchor="middle" class="ws">ws 3,6,9…</text>
+  <text x="406" y="390" text-anchor="middle" class="coord">3000,420</text>
+  <text x="406" y="402" text-anchor="middle" class="coord">1920×1080</text>
+
+  <rect x="502" y="332" width="192" height="108" fill="#f3e5f5" stroke="#6a1b9a" stroke-width="1.5" rx="3"/>
+  <text x="598" y="356" text-anchor="middle" class="label" font-weight="bold">eDP-1</text>
+  <text x="598" y="368" text-anchor="middle" class="ws">(libre)</text>
+  <text x="598" y="390" text-anchor="middle" class="coord">4920,420</text>
+  <text x="598" y="402" text-anchor="middle" class="coord">1920×1080</text>
+
+  <!-- alignment arrow showing y=420 offset -->
+  <line x1="10" y1="290" x2="502" y2="290" stroke="#bbb" stroke-width="0.5" stroke-dasharray="3,3"/>
+  <line x1="10" y1="482" x2="502" y2="482" stroke="#bbb" stroke-width="0.5" stroke-dasharray="3,3"/>
+  <text x="540" y="386" class="coord" fill="#999">← y=420 alinea centros</text>
+</svg>
+
+- Ambos perfiles docked usan y=420 para centrar los landscape con el portrait
+- **docked_lid_open**: eDP-1 visible en 4920x420
+- **docked_lid_closed** (actual): eDP-1 parkeado en -30000x0 (off-screen)
+- **undocked_** : solo eDP-1 en 0x0
+- Conectores DP-* varían por arranque (hoy DP-5/4/3); siempre referenciar por EDID `desc:`
 
 ## eDP-1 Behavior
 
