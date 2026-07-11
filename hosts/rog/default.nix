@@ -1,7 +1,7 @@
 { config
 , pkgs
 , lib
-, home
+, inputs
 , ...
 }:
 
@@ -9,8 +9,41 @@
   imports = [
     ./hardware-configuration.nix
 
-    # Shared profile (base + desktop + server)
-    ../../modules/profiles/server.nix
+    # === BASE (individual, NOT profile chain) ===
+    ../../modules/base/cachix.nix
+    ../../modules/base/options.nix
+    ../../modules/base/dconf.nix
+    # NOT: ../../modules/base/home-manager.nix (HM defined inline below)
+    ../../modules/base/logind.nix
+    ../../modules/base/nh.nix
+    ../../modules/base/nix.nix
+    ../../modules/base/packages.nix
+    ../../modules/base/polkit.nix
+    ../../modules/base/shutdown-fix.nix
+    ../../modules/base/sops.nix
+    ../../modules/base/users.nix
+    ../../modules/base/zsh.nix
+
+    # === DESKTOP ===
+    ../../modules/desktop/fonts.nix
+    ../../modules/desktop/i18n.nix
+    ../../modules/desktop/kmscon.nix
+    ../../modules/hardware/keyring.nix
+
+    # === NETWORKING ===
+    ../../modules/networking/avahi.nix
+    ../../modules/networking/firewall.nix
+    ../../modules/networking/openssh.nix
+
+    # === BOOT ===
+    ../../modules/features/boot.nix
+
+    # === SERVER SERVICES ===
+    ../../modules/features/services/xrdp.nix
+    ../../modules/features/services/github-mcp-server.nix
+    ../../modules/features/services/github-token-check.nix
+    ../../modules/networking/wol.nix
+    ../../modules/virtualisation/docker.nix
 
     # Rog secrets
     ./secrets.nix
@@ -57,6 +90,20 @@
     # Virtualisation (rog-specific)
     ../../modules/virtualisation/libvirt.nix
   ];
+
+  # Home Manager (inline, NOT via profile chain)
+  home-manager = {
+    useGlobalPkgs = true;
+    useUserPackages = true;
+    backupFileExtension = "backup";
+    extraSpecialArgs = {
+      inherit inputs;
+      hostName = config.networking.hostName;
+      conkyConfig = config.conky-config;
+      username = "glats";
+    };
+    users.glats.imports = import ./home/modules.nix { inherit inputs; };
+  };
 
   boot-settings = {
     enable = true;
