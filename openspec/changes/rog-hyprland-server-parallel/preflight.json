@@ -1,0 +1,11 @@
+{
+  "change_name": "rog-hyprland-server-parallel",
+  "description": "Add Omarchy/Hyprland desktop stack to rog host alongside existing server profile, enabling parallel headless+desktop operation with lid-switch support and xrdp-login coexistence.",
+  "artifact_store": "hybrid",
+  "delivery_strategy": "chained-pr",
+  "target_branch": "main",
+  "review_budget": "thorough",
+  "execution_mode": "ask",
+  "created": "2026-07-09",
+  "host": "rog"
+}
