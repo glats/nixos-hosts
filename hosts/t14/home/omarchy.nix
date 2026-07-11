@@ -168,35 +168,6 @@
   # values.  Default C-b prefix + base16 theme from shared/tmux.nix
   # + xclip bindings + vim-tmux-navigator plugin from nixpkgs.
 
-  # Override hypridle timings from upstream omarchy-nix.
-  # Upstream sets lock at 151s (1s after screensaver at 150s), which means
-  # the lock kills the screensaver before the user can see it.
-  # We increase the lock delay to 200s so the screensaver has 50s of visibility.
-  services.hypridle.settings = lib.mkForce {
-    general = {
-      lock_cmd = "omarchy-system-lock";
-      before_sleep_cmd = "loginctl lock-session";
-      after_sleep_cmd = "hyprctl dispatch dpms on";
-      ignore_dbus_inhibit = false;
-      inhibit_sleep = 3;
-    };
-    listener = [
-      {
-        timeout = 150;
-        on-timeout = "pidof hyprlock || omarchy-launch-screensaver";
-      }
-      {
-        timeout = 200; # Was 151 — increased to 200 to give screensaver 50s to show
-        on-timeout = "loginctl lock-session";
-      }
-      {
-        timeout = 330;
-        on-timeout = "hyprctl dispatch dpms off";
-        on-resume = "hyprctl dispatch dpms on && brightnessctl -r";
-      }
-    ];
-  };
-
   # Set icon theme explicitly — omarchy-nix manages gtk.theme and gtk.cursorTheme
   # but does NOT set gtk.iconTheme. Papirus-Dark is already installed system-wide
   # (via modules/base/profiles/base.nix) but never activated on t14 because
