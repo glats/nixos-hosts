@@ -11,6 +11,7 @@
   caja
   engrampa
   eom
+  librsvg # gdk-pixbuf SVG loader — needed for eom/Caja SVG preview & thumbnails
   marco
   pluma
   mate-panel
