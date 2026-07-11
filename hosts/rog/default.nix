@@ -73,6 +73,7 @@
   my.shutdownDebug.enable = true;
 
   hardware.rog.poweroffWorkaround.enable = true;
+  hardware.rog.poweroffWorkaround.mode = "direct";
   services.asus-fan-control-custom.enable = false;
 
   # Blacklist non-essential ASUS WMI modules to prevent firmware
