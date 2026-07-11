@@ -41,7 +41,7 @@
 
     # gentle-ai upstream (for skills, commands, plugins)
     gentle-ai-src = {
-      url = "github:glats/gentle-ai/main";
+      url = "github:Gentleman-Programming/gentle-ai/main";
       flake = false;
     };
 
