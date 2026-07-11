@@ -210,7 +210,12 @@
 
       # --- NixOS configurations ---
       nixosConfigurations = {
-        rog = mkNixosHost { hostname = "rog"; };
+        rog = mkNixosHost {
+          hostname = "rog";
+          extraModules = [
+            inputs.omarchy-nix.nixosModules.default
+          ];
+        };
         thinkcentre = mkNixosHost { hostname = "thinkcentre"; };
         t14 = mkNixosHost {
           hostname = "t14";

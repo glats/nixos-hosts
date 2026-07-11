@@ -105,6 +105,36 @@
     users.glats.imports = import ./home/modules.nix { inherit inputs; };
   };
 
+  # === OMARCHY DESKTOP (Hyprland on Intel iGPU) ===
+  # greetd is masked in PR2 -- enabled in PR3
+  omarchy = {
+    username = "glats";
+    full_name = "Glats";
+    email_address = "glats@local";
+    theme = "glats";
+    scale = 1;
+    browser = "brave";
+    terminal = "ghostty";
+    monitors = [ "eDP-1,preferred,auto,1" ];
+
+    # Keep rog's own firewall (omarchy's is disabled)
+    firewall.enable = false;
+
+    # Do NOT activate omarchy's NVIDIA module -- rog uses nvidia.nix
+    nvidia.enable = lib.mkForce false;
+
+    # Disable lid-switch handling (HandleLidSwitch=ignore already set)
+    hyprland.lidSwitch.enable = false;
+
+    # Greeter defined but service masked -- unmasked in PR3
+    greeter = {
+      type = "regreet";
+    };
+  };
+
+  # Mask greetd from auto-starting until PR3 (Hyprland per-host configs)
+  systemd.services.greetd.wantedBy = lib.mkForce [ ];
+
   boot-settings = {
     enable = true;
     includeAcpiOsi = false;
