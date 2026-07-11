@@ -6,8 +6,8 @@
 
 {
   imports = [
-    # ./hypr/monitors.nix   # PR3
-    # ./hypr/input.nix      # PR3
-    # ./hypr/env.nix        # PR3
+    ./hypr/monitors.nix
+    ./hypr/input.nix
+    ./hypr/env.nix
   ];
 }

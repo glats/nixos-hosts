@@ -102,7 +102,7 @@
       conkyConfig = config.conky-config;
       username = "glats";
     };
-    users.glats.imports = import ./home/modules.nix { inherit inputs; };
+    users.glats.imports = [ ./home/omarchy.nix ];
   };
 
   # === OMARCHY DESKTOP (Hyprland on Intel iGPU) ===
@@ -132,8 +132,7 @@
     };
   };
 
-  # Mask greetd from auto-starting until PR3 (Hyprland per-host configs)
-  systemd.services.greetd.wantedBy = lib.mkForce [ ];
+  # systemd.services.greetd.wantedBy = lib.mkForce [];  # PR3: greetd now active
 
   boot-settings = {
     enable = true;
