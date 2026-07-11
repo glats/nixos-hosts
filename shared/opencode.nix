@@ -100,6 +100,10 @@ let
           force = true;
           source = "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/sdd-orchestrator.md";
         };
+        ".config/${runtimeCfg.dir}/sdd-review-policy.md" = {
+          force = true;
+          source = "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/sdd-review-policy.md";
+        };
         # skills/ and commands/ are managed entirely by makeOpencodeConfigMutable activation
         # (not via home.file) because HM cannot overwrite existing real directories with symlinks
         ".config/${runtimeCfg.dir}/package.json" = {
@@ -142,7 +146,7 @@ let
             # the symlink points to the read-only nix store which OpenCode can't write to.
             # cmp guard is only used to skip unnecessary writes to already-real files
             # that haven't changed since the last build.
-            for file in opencode.json IDENTITY.md AGENTS.md sdd-orchestrator.md instructions/universal.md package.json .gitignore tui.json; do
+            for file in opencode.json IDENTITY.md AGENTS.md sdd-orchestrator.md sdd-review-policy.md instructions/universal.md package.json .gitignore tui.json; do
               target="$runtime_dir/$file"
               if [ -L "$target" ]; then
                 src="$(${pkgs.coreutils}/bin/readlink -f "$target")"
@@ -188,6 +192,8 @@ let
                         skill_file="$runtime_dir/skills/$skill/SKILL.md"
                         if [ -f "$skill_file" ] && head -1 "$skill_file" | grep -q '^<!-- section:model-capable -->$'; then
                           ${pkgs.gnused}/bin/sed -i '1{/^<!-- section:model-capable -->$/d}' "$skill_file"
+                        elif [ -f "$skill_file" ]; then
+                          echo "WARNING: $skill model-capable marker not found on line 1 — upstream may have changed format" >&2
                         fi
                       done
           '';
