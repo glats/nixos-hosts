@@ -1,8 +1,9 @@
-{ config
-, lib
-, pkgs
-, inputs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
 }:
 
 with lib;
@@ -24,7 +25,7 @@ let
       runtimeDir = "${config.home.homeDirectory}/.config/${runtimeCfg.dir}";
 
       # Merge base MCPs with extra MCPs, then filter by enabled
-      allMcps = cfg.mcps // cfg.extraMcps;
+      allMcps = config.home.gentle-ai.mcps // config.home.gentle-ai.extraMcps;
       enabledMcps = lib.filterAttrs (name: mcp: mcp.enabled or false) allMcps;
 
       # TUI plugins configuration (name -> enabled)
@@ -292,7 +293,7 @@ in
 {
   imports = [
     ./opencode/agents.nix
-    ./opencode/mcps.nix
+    ./gentle-ai-common.nix
     ./opencode/permissions.nix
     ./opencode/plugins.nix
   ];
