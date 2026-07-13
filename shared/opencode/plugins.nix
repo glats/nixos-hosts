@@ -1,7 +1,8 @@
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }:
 
 with lib;
@@ -53,6 +54,17 @@ with lib;
           SYSTEM_RULES.md. This plugin provides runtime redaction only.
         '';
       };
+    };
+
+    npmPlugins = mkOption {
+      type = types.listOf types.str;
+      default = [
+        "opencode-claude-auth@latest"
+      ];
+      description = ''
+        NPM plugins auto-installed by OpenCode at startup.
+        These appear in the opencode.json "plugin" array.
+      '';
     };
   };
 
