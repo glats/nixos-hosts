@@ -1,6 +1,6 @@
-{ lib ? throw "providers-base.nix must be imported with lib"
-, activeProviderName ? "opencode-go-medium"
-,
+{
+  lib ? throw "providers-base.nix must be imported with lib",
+  activeProviderName ? "opencode-go-medium",
 }:
 
 let
@@ -137,9 +137,91 @@ let
     };
   };
 
-  allProviders = nvidiaProvider // opencodeProvider;
+  # Anthropic provider: built-in in OpenCode, auth via /connect (Claude Pro/Max/Teams/Enterprise OAuth).
+  # Models assigned per tier below. No apiKey needed — OpenCode handles OAuth natively.
+  anthropicProvider = {
+    anthropic = {
+      models = {
+        "claude-opus-4-8" = {
+          name = "Claude Opus 4.8";
+        };
+        "claude-sonnet-4-6" = {
+          name = "Claude Sonnet 4.6";
+        };
+        "claude-haiku-4-5" = {
+          name = "Claude Haiku 4.5";
+        };
+      };
+    };
+  };
+
+  allProviders = nvidiaProvider // opencodeProvider // anthropicProvider;
 
   providers = [
+    {
+      name = "anthropic-full";
+      phases = {
+        # claude-opus-4-8: strongest reasoning, architecture, and planning
+        gentle-orchestrator = "anthropic/claude-opus-4-8";
+        # claude-haiku-4-5: fast, cheap — enough for init boilerplate
+        sdd-init = "anthropic/claude-haiku-4-5";
+        # claude-sonnet-4-6: balanced — good for codebase exploration
+        sdd-explore = "anthropic/claude-sonnet-4-6";
+        # claude-opus-4-8: architectural decisions benefit from strongest model
+        sdd-propose = "anthropic/claude-opus-4-8";
+        # claude-sonnet-4-6: structured writing, good enough
+        sdd-spec = "anthropic/claude-sonnet-4-6";
+        # claude-opus-4-8: architecture decisions
+        sdd-design = "anthropic/claude-opus-4-8";
+        # claude-sonnet-4-6: mechanical breakdown
+        sdd-tasks = "anthropic/claude-sonnet-4-6";
+        # claude-sonnet-4-6: implementation
+        sdd-apply = "anthropic/claude-sonnet-4-6";
+        # claude-sonnet-4-6: validation against spec
+        sdd-verify = "anthropic/claude-sonnet-4-6";
+        # claude-haiku-4-5: 0.33x cost, fastest — copy and close
+        sdd-archive = "anthropic/claude-haiku-4-5";
+        sdd-onboard = "anthropic/claude-sonnet-4-6";
+        neutral = "anthropic/claude-sonnet-4-6";
+      };
+    }
+    {
+      name = "anthropic-medium";
+      phases = {
+        # claude-sonnet-4-6: balanced default for coordination
+        gentle-orchestrator = "anthropic/claude-sonnet-4-6";
+        sdd-init = "anthropic/claude-haiku-4-5";
+        sdd-explore = "anthropic/claude-sonnet-4-6";
+        # claude-opus-4-8: only the two heaviest architecture phases get opus
+        sdd-propose = "anthropic/claude-opus-4-8";
+        sdd-spec = "anthropic/claude-sonnet-4-6";
+        sdd-design = "anthropic/claude-opus-4-8";
+        sdd-tasks = "anthropic/claude-sonnet-4-6";
+        sdd-apply = "anthropic/claude-sonnet-4-6";
+        sdd-verify = "anthropic/claude-sonnet-4-6";
+        sdd-archive = "anthropic/claude-haiku-4-5";
+        sdd-onboard = "anthropic/claude-sonnet-4-6";
+        neutral = "anthropic/claude-sonnet-4-6";
+      };
+    }
+    {
+      name = "anthropic-light";
+      phases = {
+        # claude-sonnet-4-6: good enough for light tier coordination
+        gentle-orchestrator = "anthropic/claude-sonnet-4-6";
+        sdd-init = "anthropic/claude-haiku-4-5";
+        sdd-explore = "anthropic/claude-sonnet-4-6";
+        sdd-propose = "anthropic/claude-sonnet-4-6";
+        sdd-spec = "anthropic/claude-sonnet-4-6";
+        sdd-design = "anthropic/claude-sonnet-4-6";
+        sdd-tasks = "anthropic/claude-haiku-4-5";
+        sdd-apply = "anthropic/claude-sonnet-4-6";
+        sdd-verify = "anthropic/claude-sonnet-4-6";
+        sdd-archive = "anthropic/claude-haiku-4-5";
+        sdd-onboard = "anthropic/claude-haiku-4-5";
+        neutral = "anthropic/claude-sonnet-4-6";
+      };
+    }
     {
       name = "nvidia";
       phases = {
@@ -260,12 +342,9 @@ let
     }
   ];
 
-  activeProvider = builtins.foldl'
-    (
-      acc: p: if p.name == activeProviderName then p else acc
-    )
-    null
-    providers;
+  activeProvider = builtins.foldl' (
+    acc: p: if p.name == activeProviderName then p else acc
+  ) null providers;
   getModelForPhase =
     phase: provider: if provider == null then null else provider.phases.${phase} or null;
 
