@@ -73,6 +73,8 @@ let
             instructions = [
               "instructions/universal.md"
             ];
+            # Managed npm plugins auto-installed by OpenCode at startup
+            plugin = cfg.plugins.npmPlugins;
           }
           // lib.optionalAttrs (cfg.disabledProviders != [ ]) { disabled_providers = cfg.disabledProviders; }
         )
