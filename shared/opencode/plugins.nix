@@ -49,9 +49,6 @@ with lib;
           This plugin:
           - Redacts secret patterns from bash output (API keys, age keys, tokens)
           - Strips SOPS_AGE_KEY and SOPS_AGE_KEY_FILE from shell environment
-
-          Note: Blocking of secret paths is handled by permissions.nix and
-          SYSTEM_RULES.md. This plugin provides runtime redaction only.
         '';
       };
     };
