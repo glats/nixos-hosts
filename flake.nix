@@ -51,6 +51,18 @@
       flake = false;
     };
 
+    # Ponytail — teaches agents to write less code (YAGNI enforcement)
+    ponytail-src = {
+      url = "github:DietrichGebert/ponytail";
+      flake = false;
+    };
+
+    # Claude Code — auto-updating flake from sadjow, always latest binary from GCS
+    claude-code-nix = {
+      url = "github:sadjow/claude-code-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # engram upstream (for OpenCode plugin)
     engram-src = {
       url = "github:Gentleman-Programming/engram/main";
@@ -112,10 +124,11 @@
   };
 
   outputs =
-    inputs@{ self
-    , nixpkgs
-    , home-manager
-    , ...
+    inputs@{
+      self,
+      nixpkgs,
+      home-manager,
+      ...
     }:
     let
       # --- Builders ---

@@ -1,8 +1,9 @@
 # macOS-specific MCPs that can be merged with mcps-base.nix
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }:
 
 with lib;
@@ -67,5 +68,5 @@ let
 in
 {
   # Export the extra MCPs for merging
-  home.opencode.extraMcps = extraMcps;
+  home.gentle-ai.extraMcps = extraMcps;
 }
