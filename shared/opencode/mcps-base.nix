@@ -1,7 +1,8 @@
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }:
 
 with lib;
@@ -63,7 +64,7 @@ let
   };
 in
 {
-  options.home.opencode.mcps = mkOption {
+  options.home.gentle-ai.mcps = mkOption {
     type = types.attrsOf (
       types.submodule {
         freeformType = types.attrs;

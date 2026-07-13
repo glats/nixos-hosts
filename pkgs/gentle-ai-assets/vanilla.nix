@@ -1,8 +1,9 @@
-{ lib
-, stdenvNoCC
-, gentle-ai-src
-, caveman-src
-,
+{
+  lib,
+  stdenvNoCC,
+  gentle-ai-src,
+  caveman-src,
+  ponytail-src,
 }:
 
 stdenvNoCC.mkDerivation {
@@ -55,6 +56,19 @@ stdenvNoCC.mkDerivation {
     if [ -d ${caveman-src}/commands ]; then
       mkdir -p $out/share/gentle-ai/opencode/commands
       cp -r ${caveman-src}/commands/* $out/share/gentle-ai/opencode/commands/ 2>/dev/null || true
+    fi
+
+    # Copy ponytail skills from ponytail-src
+    if [ -d ${ponytail-src}/skills ]; then
+      mkdir -p $out/share/gentle-ai/skills
+      cp -r ${ponytail-src}/skills/* $out/share/gentle-ai/skills/ 2>/dev/null || true
+    fi
+
+    # Copy ponytail OpenCode commands (source files are read-only in nix store)
+    if [ -d ${ponytail-src}/.opencode/command ]; then
+      mkdir -p $out/share/gentle-ai/opencode/commands
+      chmod -R u+w $out/share/gentle-ai/opencode/commands/ 2>/dev/null || true
+      cp --no-preserve=mode -r ${ponytail-src}/.opencode/command/* $out/share/gentle-ai/opencode/commands/
     fi
   '';
 

@@ -31,6 +31,8 @@
   ../shared/shell-aliases.nix
   ../shared/opencode.nix
   ../shared/opencode-profile.nix
+  ../shared/claude-code.nix
+  ../shared/claude-code-profile.nix
   ./sops.nix
   ./github-mcp-server-wrapper.nix
   inputs.sops-nix.homeManagerModules.sops

@@ -8,14 +8,14 @@
 #     packages.x86_64-linux = packages.linuxPackages;
 #     packages.x86_64-darwin = packages.darwinPackages;
 #   }
-{ inputs
-, pkgsFor
-, ...
+{
+  inputs,
+  pkgsFor,
+  ...
 }:
 let
   linuxPkgs = pkgsFor "x86_64-linux";
   darwinPkgs = pkgsFor "x86_64-darwin";
-
 
   # Cross-platform shared inputs
   sharedOpencodePaths = {
@@ -40,6 +40,7 @@ let
     gentle-ai-assets-vanilla = linuxPkgs.callPackage ../pkgs/gentle-ai-assets/vanilla.nix {
       gentle-ai-src = inputs.gentle-ai-src;
       caveman-src = inputs.caveman-src;
+      ponytail-src = inputs.ponytail-src;
     };
     gentle-ai-assets = linuxPkgs.callPackage ../pkgs/gentle-ai-assets/default.nix {
       vanilla = linuxPackages.gentle-ai-assets-vanilla;
@@ -56,6 +57,7 @@ let
     opencode-npm-packages = linuxPkgs.callPackage ../pkgs/opencode-npm-packages { };
     opencode = linuxPkgs.callPackage ../pkgs/opencode { };
     openfang = linuxPkgs.callPackage ../pkgs/openfang { };
+    claude-code = inputs.claude-code-nix.packages.x86_64-linux.default;
     thinkfan-ui = linuxPkgs.callPackage ../pkgs/thinkfan-ui {
       thinkfan-ui-src = inputs.thinkfan-ui-src;
       wrapQtAppsHook = linuxPkgs.qt6.wrapQtAppsHook;
@@ -75,6 +77,7 @@ let
     gentle-ai-assets-vanilla = darwinPkgs.callPackage ../pkgs/gentle-ai-assets/vanilla.nix {
       gentle-ai-src = inputs.gentle-ai-src;
       caveman-src = inputs.caveman-src;
+      ponytail-src = inputs.ponytail-src;
     };
     gentle-ai-assets = darwinPkgs.callPackage ../pkgs/gentle-ai-assets/default.nix {
       vanilla = darwinPackages.gentle-ai-assets-vanilla;
@@ -90,6 +93,7 @@ let
     secret-guard-assets = darwinPkgs.callPackage ../pkgs/secret-guard-assets { };
     opencode-npm-packages = darwinPkgs.callPackage ../pkgs/opencode-npm-packages { };
     opencode = darwinPkgs.callPackage ../pkgs/opencode { };
+    claude-code = inputs.claude-code-nix.packages.x86_64-darwin.default;
   };
 in
 {

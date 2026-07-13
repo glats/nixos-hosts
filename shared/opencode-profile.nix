@@ -1,6 +1,13 @@
 { lib, ... }:
 
 {
+  imports = [
+    ./gentle-ai-common.nix
+  ];
+
+  # Gentle AI shared ecosystem enabled when any tool uses it
+  home.gentle-ai.enable = true;
+
   home.opencode = {
     enable = true;
 

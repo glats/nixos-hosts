@@ -32,6 +32,8 @@
   ../shared/shell-aliases.nix
   ../shared/opencode.nix
   ../shared/opencode-profile.nix
+  ../shared/claude-code.nix
+  ../shared/claude-code-profile.nix
   ./chrome-apps.nix
   ./ssh.nix
   ./fontconfig.nix
