@@ -137,13 +137,6 @@ in
         force = true;
         source = settingsJson;
       };
-
-      # Project-scope MCP config at repo root (user-scope ~/.claude.json is managed by Claude Code).
-      # Claude Code reads .mcp.json from the project root for project-scope MCP servers.
-      ".nixos/.mcp.json" = {
-        force = true;
-        source = mcpJson;
-      };
     };
 
     # Mutable asset deployment.
@@ -163,6 +156,16 @@ in
       fi
       if [ -f "$settings_file" ] && [ ! -w "$settings_file" ]; then
         chmod 644 "$settings_file"
+      fi
+
+      # Merge MCP servers into user-scope ~/.claude.json (instead of project-scope .mcp.json).
+      # Makes MCPs available across all projects/folders. Preserves all other keys in ~/.claude.json.
+      claude_json="$HOME/.claude.json"
+      mcp_json="${mcpJson}"
+      if [ -f "$claude_json" ]; then
+        ${pkgs.jq}/bin/jq -s '.[0] * {mcpServers: ((.[0].mcpServers // {}) * .[1].mcpServers)}' "$claude_json" "$mcp_json" > "$claude_json.tmp" && ${pkgs.coreutils}/bin/mv "$claude_json.tmp" "$claude_json"
+      else
+        ${pkgs.coreutils}/bin/cp "$mcp_json" "$claude_json"
       fi
 
       # Directory management for agents/, commands/, skills/
