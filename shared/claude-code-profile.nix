@@ -23,7 +23,18 @@
         "Edit(*)"
         "WebFetch(*)"
         "WebSearch(*)"
-        "mcp__*"
+        "mcp__github-personal__*"
+        "mcp__github-work__*"
+        "mcp__nixos__*"
+        "mcp__context7__*"
+        "mcp__engram__*"
+        "mcp__exa__*"
+        "mcp__drawio__*"
+        "mcp__playwright__*"
+        "mcp__gcloud__*"
+        "mcp__atlassian__*"
+        "mcp__chrome-devtools__*"
+        "mcp__mcp-xlsx__*"
       ];
 
       # Hard safety boundaries. deny always wins over allow, regardless of scope.
