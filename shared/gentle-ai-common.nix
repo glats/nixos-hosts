@@ -1,10 +1,9 @@
 # Gentle AI common configuration shared across all tools (OpenCode, Claude Code, etc.)
 # Defines MCPs, skills source, Engram config — consumed by tool-specific modules.
-{
-  config,
-  lib,
-  pkgs,
-  ...
+{ config
+, lib
+, pkgs
+, ...
 }:
 
 with lib;
