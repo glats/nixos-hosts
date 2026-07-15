@@ -1,10 +1,9 @@
 # Claude Code Home Manager module
 # Deploys Claude Code with Gentle AI assets on all hosts.
-{
-  config,
-  lib,
-  pkgs,
-  ...
+{ config
+, lib
+, pkgs
+, ...
 }:
 
 with lib;
@@ -19,32 +18,34 @@ let
   # Translate OpenCode MCP format to Claude Code .mcp.json format
   # OpenCode: { type = "local"; command = ["cmd", "arg"]; url = "..."; enabled = true; }
   # Claude:  { "mcpServers": { "name": { "type": "stdio"|"http", "command": "...", "args": [...], "url": "..." } } }
-  claudeMcpServers = lib.mapAttrs (
-    name: mcp:
-    if mcp.type == "local" then
-      {
-        type = "stdio";
-        command = builtins.head mcp.command;
-        args = builtins.tail mcp.command;
-      }
-      // (builtins.removeAttrs mcp [
-        "type"
-        "command"
-        "enabled"
-      ])
-    else if mcp.type == "remote" then
-      {
-        type = "http";
-        url = mcp.url;
-      }
-      // (builtins.removeAttrs mcp [
-        "type"
-        "url"
-        "enabled"
-      ])
-    else
-      builtins.removeAttrs mcp [ "enabled" ]
-  ) enabledMcps;
+  claudeMcpServers = lib.mapAttrs
+    (
+      name: mcp:
+        if mcp.type == "local" then
+          {
+            type = "stdio";
+            command = builtins.head mcp.command;
+            args = builtins.tail mcp.command;
+          }
+          // (builtins.removeAttrs mcp [
+            "type"
+            "command"
+            "enabled"
+          ])
+        else if mcp.type == "remote" then
+          {
+            type = "http";
+            url = mcp.url;
+          }
+          // (builtins.removeAttrs mcp [
+            "type"
+            "url"
+            "enabled"
+          ])
+        else
+          builtins.removeAttrs mcp [ "enabled" ]
+    )
+    enabledMcps;
 
   # Generate .mcp.json for Claude Code
   mcpJson = pkgs.writeText "claude-mcp.json" (builtins.toJSON { mcpServers = claudeMcpServers; });
@@ -154,18 +155,30 @@ in
         src="$(${pkgs.coreutils}/bin/readlink -f "$settings_file")"
         ${pkgs.coreutils}/bin/cp --remove-destination "$src" "$settings_file"
       fi
+      # Also update if content differs from nix store source (catches changes after first deploy)
+      if [ -f "$settings_file" ] && ! ${pkgs.diffutils}/bin/cmp -s "${settingsJson}" "$settings_file"; then
+        ${pkgs.coreutils}/bin/cp "${settingsJson}" "$settings_file"
+        chmod 644 "$settings_file"
+        echo "deployClaudeCodeAssets: updated settings.json from nix store"
+      fi
       if [ -f "$settings_file" ] && [ ! -w "$settings_file" ]; then
         chmod 644 "$settings_file"
       fi
 
-      # Merge MCP servers into user-scope ~/.claude.json (instead of project-scope .mcp.json).
-      # Makes MCPs available across all projects/folders. Preserves all other keys in ~/.claude.json.
-      claude_json="$HOME/.claude.json"
+      # Merge MCP servers into user-scope ~/.claude.json.
+      # Makes MCPs available across all projects/folders. Preserves all other keys.
+      claude_json="${config.home.homeDirectory}/.claude.json"
       mcp_json="${mcpJson}"
-      if [ -f "$claude_json" ]; then
-        ${pkgs.jq}/bin/jq -s '.[0] * {mcpServers: ((.[0].mcpServers // {}) * .[1].mcpServers)}' "$claude_json" "$mcp_json" > "$claude_json.tmp" && ${pkgs.coreutils}/bin/mv "$claude_json.tmp" "$claude_json"
-      else
+      if [ ! -f "$claude_json" ]; then
         ${pkgs.coreutils}/bin/cp "$mcp_json" "$claude_json"
+        echo "deployClaudeCodeAssets: created $claude_json"
+      fi
+      if ${pkgs.jq}/bin/jq -s '.[0] * {mcpServers: ((.[0].mcpServers // {}) * .[1].mcpServers)}' "$claude_json" "$mcp_json" > "$claude_json.tmp"; then
+        ${pkgs.coreutils}/bin/mv "$claude_json.tmp" "$claude_json"
+        echo "deployClaudeCodeAssets: merged MCP servers into $claude_json"
+      else
+        echo "deployClaudeCodeAssets: ERROR: jq merge failed for $claude_json" >&2
+        ${pkgs.coreutils}/bin/rm -f "$claude_json.tmp"
       fi
 
       # Directory management for agents/, commands/, skills/
