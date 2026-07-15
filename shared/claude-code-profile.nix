@@ -23,6 +23,7 @@
         "Edit(*)"
         "WebFetch(*)"
         "WebSearch(*)"
+        "mcp__*"
       ];
 
       # Hard safety boundaries. deny always wins over allow, regardless of scope.
