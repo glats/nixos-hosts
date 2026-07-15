@@ -63,6 +63,17 @@ let
       ];
       enabled = true;
     };
+
+    mcp-xlsx = {
+      type = "local";
+      command = [
+        "npx"
+        "-y"
+        "mcp-xlsx"
+      ];
+      enabled = true;
+    };
+
   };
 in
 {
