@@ -1,9 +1,9 @@
-{
-  lib,
-  stdenvNoCC,
-  gentle-ai-src,
-  caveman-src,
-  ponytail-src,
+{ lib
+, stdenvNoCC
+, gentle-ai-src
+, caveman-src
+, ponytail-src
+,
 }:
 
 stdenvNoCC.mkDerivation {
