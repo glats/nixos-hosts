@@ -1,8 +1,8 @@
 # Linux-specific overlay
 # Provides packages and overrides needed by NixOS hosts
-{
-  self,
-  inputs,
+{ self
+, inputs
+,
 }:
 final: prev: {
   # Cross-platform packages from flake outputs
@@ -121,12 +121,14 @@ final: prev: {
   #      (from cffsubr; cffsubr's `tx` is rebuilt above against afdko 4.0.3)
   # Both deps must be the 4.0.3 builds.
   cantarell-fonts = prev.cantarell-fonts.overrideAttrs (oldAttrs: {
-    nativeBuildInputs = map (
-      inp:
-      if (inp.pname or "") == "afdko" || (inp.pname or "") == "cffsubr" then
-        if (inp.pname or "") == "afdko" then final.afdko-4_0_3 else final.cffsubr
-      else
-        inp
-    ) oldAttrs.nativeBuildInputs;
+    nativeBuildInputs = map
+      (
+        inp:
+        if (inp.pname or "") == "afdko" || (inp.pname or "") == "cffsubr" then
+          if (inp.pname or "") == "afdko" then final.afdko-4_0_3 else final.cffsubr
+        else
+          inp
+      )
+      oldAttrs.nativeBuildInputs;
   });
 }
