@@ -1,9 +1,10 @@
 # Claude Code Home Manager module
 # Deploys Claude Code with Gentle AI assets on all hosts.
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }:
 
 with lib;
@@ -18,37 +19,40 @@ let
   # Translate OpenCode MCP format to Claude Code .mcp.json format
   # OpenCode: { type = "local"; command = ["cmd", "arg"]; url = "..."; enabled = true; }
   # Claude:  { "mcpServers": { "name": { "type": "stdio"|"http", "command": "...", "args": [...], "url": "..." } } }
-  claudeMcpServers = lib.mapAttrs
-    (
-      name: mcp:
-        if mcp.type == "local" then
-          {
-            type = "stdio";
-            command = builtins.head mcp.command;
-            args = builtins.tail mcp.command;
-          }
-          // (builtins.removeAttrs mcp [
-            "type"
-            "command"
-            "enabled"
-          ])
-        else if mcp.type == "remote" then
-          {
-            type = "http";
-            url = mcp.url;
-          }
-          // (builtins.removeAttrs mcp [
-            "type"
-            "url"
-            "enabled"
-          ])
-        else
-          builtins.removeAttrs mcp [ "enabled" ]
-    )
-    enabledMcps;
+  claudeMcpServers = lib.mapAttrs (
+    name: mcp:
+    if mcp.type == "local" then
+      {
+        type = "stdio";
+        command = builtins.head mcp.command;
+        args = builtins.tail mcp.command;
+      }
+      // (builtins.removeAttrs mcp [
+        "type"
+        "command"
+        "enabled"
+      ])
+    else if mcp.type == "remote" then
+      {
+        type = "http";
+        url = mcp.url;
+      }
+      // (builtins.removeAttrs mcp [
+        "type"
+        "url"
+        "enabled"
+      ])
+    else
+      builtins.removeAttrs mcp [ "enabled" ]
+  ) enabledMcps;
 
   # Generate .mcp.json for Claude Code
   mcpJson = pkgs.writeText "claude-mcp.json" (builtins.toJSON { mcpServers = claudeMcpServers; });
+
+  # Auto-generate MCP allow rules from configured servers
+  # Each server gets mcp__<name>__* so new MCPs don't need manual permission updates
+  mcpAllowRules = map (name: "mcp__${name}__*") (builtins.attrNames enabledMcps);
+  userAllowRules = cfg.permissions.allow or [ ];
 
   # Generate settings.json with permissions and model
   settingsJson = pkgs.writeText "claude-settings.json" (
@@ -59,11 +63,12 @@ let
       enableAllProjectMcpServers = true;
       permissions = {
         inherit (cfg.permissions)
-          allow
           deny
           ask
           defaultMode
           ;
+        # User rules first, then auto-generated MCP rules appended
+        allow = userAllowRules ++ mcpAllowRules;
       };
     }
   );
