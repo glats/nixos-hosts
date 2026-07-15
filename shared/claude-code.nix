@@ -53,6 +53,9 @@ let
   settingsJson = pkgs.writeText "claude-settings.json" (
     builtins.toJSON {
       model = cfg.model;
+      # Auto-approve project-scope MCPs (.mcp.json)
+      # Claude Code bug #62888 — without this, servers only visible in CLI not TUI
+      enableAllProjectMcpServers = true;
       permissions = {
         inherit (cfg.permissions)
           allow
