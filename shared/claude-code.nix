@@ -151,11 +151,6 @@ in
         force = true;
         source = settingsJson;
       };
-      # Universal agent rules — applies to ALL projects, not just this repo
-      ".claude/CLAUDE.md" = {
-        force = true;
-        source = ./claude-code/CLAUDE.md;
-      };
     };
 
     # Mutable asset deployment.
