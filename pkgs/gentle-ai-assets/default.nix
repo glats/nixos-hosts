@@ -1,9 +1,9 @@
 { lib
 , stdenvNoCC
 , vanilla
-, extraSkills ? null
 , extraCommands ? null
 , extraAssets ? null
+, extraAssetsShared ? null
 ,
 }:
 
@@ -30,17 +30,9 @@ stdenvNoCC.mkDerivation {
       chmod -R u+w "$TEMP_DIR/$(basename "$item")"
     done
 
-    # Overlay local skills on top of vanilla skills
-    if [ -n "${extraSkills}" ] && [ -d "${extraSkills}" ]; then
-      for skill_dir in ${extraSkills}/*; do
-        skill_name=$(basename "$skill_dir")
-        # Remove existing if present (read-only from vanilla copy)
-        rm -rf "$TEMP_DIR/skills/$skill_name" 2>/dev/null || true
-        # Copy new version
-        cp -r "$skill_dir" "$TEMP_DIR/skills/"
-        chmod -R u+w "$TEMP_DIR/skills/$skill_name"
-      done
-    fi
+    # Local skills are now handled by extraAssetsShared (shared/assets/skills/).
+    # The extraAssetsShared cp -r at the bottom of this install phase places
+    # them into TEMP_DIR/skills/ alongside the vanilla skills.
 
     # Overlay local commands on top of vanilla commands
     # extraCommands defaults to null (no local command overrides)
@@ -66,6 +58,36 @@ stdenvNoCC.mkDerivation {
       lib.optionalString (extraAssets != null) ''
         if [ -d "${extraAssets}" ]; then
           cp -r ${extraAssets}/. $TEMP_DIR/
+        fi
+      ''
+    } true; then
+      :
+    fi
+
+    # Layer tool-agnostic shared assets on top.
+    # Same mechanism as extraAssets but from a tool-neutral directory.
+    # Uses explicit loop with chmod to handle read-only vanilla files.
+    if ${
+      lib.optionalString (extraAssetsShared != null) ''
+        if [ -d "${extraAssetsShared}" ]; then
+          for item in ${extraAssetsShared}/*; do
+            item_name=$(basename "$item")
+            if [ -d "$item" ]; then
+              # For directories (e.g. skills/), make destination writable first
+              chmod -R u+w "$TEMP_DIR/$item_name" 2>/dev/null || true
+              # Copy each sub-item individually to merge
+              for sub in "$item"/*; do
+                sub_name=$(basename "$sub")
+                rm -rf "$TEMP_DIR/$item_name/$sub_name" 2>/dev/null || true
+                cp -r "$sub" "$TEMP_DIR/$item_name/"
+                chmod -R u+w "$TEMP_DIR/$item_name/$sub_name"
+              done
+            else
+              # For files (e.g. review-gate.md), just copy
+              cp "$item" "$TEMP_DIR/"
+              chmod u+w "$TEMP_DIR/$item_name"
+            fi
+          done
         fi
       ''
     } true; then
