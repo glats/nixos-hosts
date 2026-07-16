@@ -1,7 +1,8 @@
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }:
 
 with lib;
@@ -40,17 +41,14 @@ let
       active = providersConfig.activeProvider;
     in
     if active != null then
-      builtins.mapAttrs (phase: _: providersConfig.getModelForPhase phase active)
-        (
-          builtins.listToAttrs (
-            map
-              (p: {
-                name = p;
-                value = null;
-              })
-              sddPhases
-          )
+      builtins.mapAttrs (phase: _: providersConfig.getModelForPhase phase active) (
+        builtins.listToAttrs (
+          map (p: {
+            name = p;
+            value = null;
+          }) sddPhases
         )
+      )
     else
       { };
 
@@ -109,7 +107,8 @@ let
         instructionPrompt =
           if localInstructions != [ ] then
             (lib.concatStringsSep "\n\n" (map (f: builtins.readFile ./${f}) localInstructions)) + "\n\n"
-          else "";
+          else
+            "";
       in
       (removeAttrs upstream [ ])
       // lib.optionalAttrs (localModel != null) { model = localModel; }
@@ -127,7 +126,10 @@ let
   # Neutral agent (loaded from local-agent-overlays.json, with {file:} resolved)
   neutralAgent = localOverlays.neutral // {
     model = models.neutral;
-    prompt = builtins.readFile ./IDENTITY.md + "\n\n" + builtins.readFile ./instructions/universal.md;
+    prompt =
+      builtins.readFile "${pkgs.gentle-ai-assets}/share/gentle-ai/claude/output-style-gentleman.md"
+      + "\n\n"
+      + builtins.readFile ./instructions/universal.md;
   };
 
   # Final agent set: upstream + model overlay + tools overlay + neutral
