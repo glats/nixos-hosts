@@ -23,6 +23,14 @@
         "Edit(*)"
         "WebFetch(*)"
         "WebSearch(*)"
+        "Task"
+        "TaskOutput"
+        "TodoWrite"
+        "Skill"
+        "SlashCommand"
+        "BashOutput"
+        "KillShell"
+        "ExitPlanMode"
         "AskUserQuestion"
       ];
 
