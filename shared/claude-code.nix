@@ -61,6 +61,8 @@ let
       # Auto-approve project-scope MCPs (.mcp.json)
       # Claude Code bug #62888 — without this, servers only visible in CLI not TUI
       enableAllProjectMcpServers = true;
+      # Skip "are you sure?" prompt for dangerous permission modes
+      skipDangerousModePermissionPrompt = true;
       permissions = {
         inherit (cfg.permissions)
           deny
