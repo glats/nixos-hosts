@@ -57,7 +57,7 @@ Implemented dual GitHub identity management (glats personal + jcuzmar work) acro
 - GPG signing confirmed working on Linux (glats key after last fix a1a0134).
 - Git identity switching confirmed: `~/Work/**` → jcuzmar, `~/dev/**` → glats on Linux.
 - Dual MCP entries (`github-glats`, `github-jcuzmar`) both enabled in MCP config.
-- Legacy `~/.git-falabella` removed from config (no longer created).
+- Legacy `~/.git-[redacted]` removed from config (no longer created).
 - `git-credentials.yaml` removed from repository.
 
 ## Deployed Hosts

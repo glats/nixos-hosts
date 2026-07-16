@@ -663,7 +663,7 @@ git filter-repo \
 
 ```bash
 # Check for PII in history
-git log --all --oneline | xargs -I{} git show {} 2>/dev/null | grep -i "falabella"
+git log --all --oneline | xargs -I{} git show {} 2>/dev/null | grep -i "[redacted]"
 # Expected: zero output
 
 git log --all --oneline | xargs -I{} git show {} 2>/dev/null | grep "Redacted Name"
@@ -686,7 +686,7 @@ echo "Exit code: $?"
 ```
 
 **Checklist**:
-- [ ] Zero `falabella` in `git log --all`
+- [ ] Zero `[redacted]` in `git log --all`
 - [ ] Zero `Redacted Name` in `git log --all`
 - [ ] Author emails are only `personal@example.com` and `work@example.com`
 - [ ] `nix flake check --no-build` passes
@@ -725,7 +725,7 @@ git clone https://github.com/glats/.nixos.git scrub-test
 cd scrub-test
 
 # Check for PII
-git log --all --oneline | xargs -I{} git show {} 2>/dev/null | grep -i "falabella"
+git log --all --oneline | xargs -I{} git show {} 2>/dev/null | grep -i "[redacted]"
 # Expected: zero output
 
 # Flake check on cloned repo

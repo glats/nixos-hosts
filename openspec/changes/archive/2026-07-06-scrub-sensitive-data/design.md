@@ -253,7 +253,7 @@ git push --force --tags origin
 cd /tmp && rm -rf test-scrub-clone
 git clone https://github.com/glats/.nixos.git test-scrub-clone
 cd test-scrub-clone
-git log --all --oneline | xargs -I{} git show {} 2>/dev/null | grep -i "falabella"  # Must be empty
+git log --all --oneline | xargs -I{} git show {} 2>/dev/null | grep -i "[redacted]"  # Must be empty
 nix flake check --no-build
 ```
 
@@ -267,7 +267,7 @@ git push --force origin HEAD
 ```
 
 **Validation checklist**:
-- Zero `falabella` in `git log --all` content
+- Zero `[redacted]` in `git log --all` content
 - Zero `Redacted Name` in `git log --all` content
 - Zero `personal@example.com` in `git log --all` content
 - `git log --all --format="%ae" | sort -u` shows only `personal@example.com` and `work@example.com`
@@ -922,7 +922,7 @@ Files that MUST NOT be affected by the filter-repo:
 
 **Verification after Stage 3**:
 - Fresh clone from remote is PII-free
-- `git log --all` contains zero `falabella`, `Redacted Name`, `personal@example.com`
+- `git log --all` contains zero `[redacted]`, `Redacted Name`, `personal@example.com`
 - `nix flake check --no-build` passes on cloned repo
 - `pre-history-scrub` tag exists for rollback
 
@@ -980,7 +980,7 @@ nix flake check --no-build
 
 **Stage 3**:
 ```bash
-git log --all --oneline | xargs -I{} git show {} 2>/dev/null | grep -i "falabella"
+git log --all --oneline | xargs -I{} git show {} 2>/dev/null | grep -i "[redacted]"
 # Expected: zero output
 
 git log --all --format="%ae" | sort -u

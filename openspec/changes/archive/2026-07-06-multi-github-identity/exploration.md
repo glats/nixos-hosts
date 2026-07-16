@@ -29,7 +29,7 @@
   - `user.name = primaryUser` (= "jcuzmar")
   - `user.email = "work@example.com"`
   - `github.user = primaryUser` (="jcuzmar")
-  - Already has conditional include via `settings.includeIf."gitdir:~/Work/**"` pointing to `~/.git-falabella` (generated via `home.file`)
+  - Already has conditional include via `settings.includeIf."gitdir:~/Work/**"` pointing to `~/.git-[redacted]` (generated via `home.file`)
   - Has GPG signing key + `signByDefault = true`
 - `home-darwin/ssh.nix` — GitHub SSH config
   - `github.com` → `IdentityFile = ~/.ssh/id_ed25519_github`
@@ -54,7 +54,7 @@
 ### Notable Observations
 1. All Linux hosts already use the `glats`-associated PAT (shared with admin key)
 2. macOS uses a separate `jcuzmar`-associated token
-3. The darwin setup already has a **partial includeIf pattern** (for ~/Work/ → Falabella identity)
+3. The darwin setup already has a **partial includeIf pattern** (for ~/Work/ → [redacted] identity)
 4. No Linux host has any conditional include for switching to jcuzmar for work repos
 5. `home-darwin/ssh.nix` already defines a `github-personal` SSH alias pointing to `id_ed25519_personal` (presumably glats' key)
 6. SSH keys are not managed via sops-nix — they exist as independent files on each host
@@ -85,12 +85,12 @@ Use Home Manager's first-class `programs.git.includes` option with `condition = 
 
 **For Linux hosts (rog, thinkcentre, t14)**:
 - Default identity: `glats` (Redacted Name / personal@example.com)
-- Conditional override for work repos (`~/Work/**`, `~/Falabella/**`, etc.): switch to `jcuzmar` work identity
+- Conditional override for work repos (`~/Work/**`, `~/[redacted]/**`, etc.): switch to `jcuzmar` work identity
 
 **For macOS (mact2)**:
 - Default identity: `jcuzmar` (work@example.com)
 - Conditional override for personal repos (`~/Personal/**`, `~/github/glats/**`, etc.): switch to `glats` identity
-- Already has a partial pattern for `~/Work/**` → Falabella, refactor to use HM `programs.git.includes`
+- Already has a partial pattern for `~/Work/**` → [redacted], refactor to use HM `programs.git.includes`
 
 | Pros | Cons | Complexity |
 |------|------|------------|
@@ -112,7 +112,7 @@ Keep current setup but manually run `git config user.name/email` in each repo th
 | Zero config changes | Manual, error-prone — easy to forget | None (no-op) |
 | No risk of breaking existing setup | No automation for new worktrees | |
 | | Every new clone of a work repo needs manual config | |
-| | Ignores the fact mact2 already has partial automation (Falabella include) | |
+| | Ignores the fact mact2 already has partial automation ([redacted] include) | |
 
 ### Approach 3: Direnv-Based Identity Switching
 Use `direnv` with a `.envrc` that exports `GIT_AUTHOR_NAME`, `GIT_AUTHOR_EMAIL`, `GIT_COMMITTER_NAME`, `GIT_COMMITTER_EMAIL` per-repo or per-directory.
