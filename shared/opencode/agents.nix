@@ -127,9 +127,7 @@ let
   neutralAgent = localOverlays.neutral // {
     model = models.neutral;
     prompt =
-      builtins.readFile "${pkgs.gentle-ai-assets}/share/gentle-ai/claude/output-style-gentleman.md"
-      + "\n\n"
-      + builtins.readFile ./instructions/universal.md;
+      builtins.readFile "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/persona-gentleman.md";
   };
 
   # Final agent set: upstream + model overlay + tools overlay + neutral
