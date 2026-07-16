@@ -230,23 +230,12 @@ in
         done
       done
 
-      # personas/ — copy flat persona-*.md files from claude/ root into personas/ directory
-      personas_target="$claude_dir/personas"
-      mkdir -p "$personas_target"
-      for f in ${pkgs.gentle-ai-assets}/share/gentle-ai/claude/persona-*.md; do
-        if [ -f "$f" ]; then
-          name=$(basename "$f")
-          if [ ! -f "$personas_target/$name" ] || ! ${pkgs.diffutils}/bin/cmp -s "$f" "$personas_target/$name"; then
-            ${pkgs.coreutils}/bin/cp -f "$f" "$personas_target/$name"
-            chmod 644 "$personas_target/$name"
-          fi
-        fi
-      done
-
-      # output-styles/ — copy flat output-style-*.md files from claude/ root
+      # output-styles/ — copy persona-*.md + output-style-*.md from claude/ root
+      # Claude Code uses ~/.claude/output-styles/ for reusable personas/styles
+      # https://code.claude.com/docs/en/output-styles
       styles_target="$claude_dir/output-styles"
       mkdir -p "$styles_target"
-      for f in ${pkgs.gentle-ai-assets}/share/gentle-ai/claude/output-style-*.md; do
+      for f in ${pkgs.gentle-ai-assets}/share/gentle-ai/claude/persona-*.md ${pkgs.gentle-ai-assets}/share/gentle-ai/claude/output-style-*.md; do
         if [ -f "$f" ]; then
           name=$(basename "$f")
           if [ ! -f "$styles_target/$name" ] || ! ${pkgs.diffutils}/bin/cmp -s "$f" "$styles_target/$name"; then
