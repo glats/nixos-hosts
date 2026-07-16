@@ -44,11 +44,12 @@
 # Recovery: if the greeter fails, append systemd.mask=greetd.service to the
 # kernel cmdline at the systemd-boot menu to skip greetd and drop to a VT
 # login prompt.  The system keymap (la-latin1) is active on VTs.
-{ config
-, pkgs
-, lib
-, inputs
-, ...
+{
+  config,
+  pkgs,
+  lib,
+  inputs,
+  ...
 }:
 
 {
@@ -105,6 +106,11 @@
     ../../../shared/opencode.nix
     ../../../shared/opencode-profile.nix
     ({ home.opencode.activeProviderName = "opencode-go-light"; })
+
+    # Claude Code stack
+    ../../../shared/claude-code.nix
+    ../../../shared/claude-code-profile.nix
+
     ../../../shared/sops.nix
     inputs.sops-nix.homeManagerModules.sops
   ];
