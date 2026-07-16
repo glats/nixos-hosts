@@ -424,7 +424,7 @@ Use the active artifact store mode cached from session preflight:
 
 For `hybrid`, perform BOTH lookups. The `openspec` file is canonical for file-based
 state; the Engram result supplements it. If the store mode is unrecognized or absent,
-STOP and report the unrecognized mode — do NOT default to redo.
+STOP and report the unrecognized mode — do NOT default to proceed.
 
 **Step 2: Parse verdict and apply decision table**
 
@@ -433,7 +433,7 @@ After reading the review, apply the verdict decision table without discretion:
 | Verdict | Action |
 | --- | --- |
 | `done` | Continue to next phase without user interaction |
-| `redo` | Continue to next phase; record verdict as `redo` |
+| `proceed` | Continue to next phase; record verdict as `proceed` |
 | `amend` | STOP; present binary decision |
 | missing / unreadable | STOP; report "no review found"; present binary decision |
 
@@ -444,17 +444,17 @@ outside this table.
 
 When the gate requires a stop, present exactly two options via the `question` tool:
 
-1. **reiterate** — re-explore → re-apply (reads all previous artifacts as context;
+1. **retry** — re-explore → re-apply (reads all previous artifacts as context;
    each phase overwrites its artifact)
-2. **redo** — skip the gate; record verdict as `redo` and continue to next phase
+2. **proceed** — skip the gate; record verdict as `proceed` and continue to next phase
 
 Do NOT offer a third option. Do NOT auto-advance. Do NOT launch `sdd-verify` until the
-user selects `redo` or a completed `reiterate` resolves with a `done` review.
+user selects `proceed` or a completed `retry` resolves with a `done` review.
 
 **Verify gate hard block**
 
 The orchestrator MUST NOT launch `sdd-verify` unless the latest `review` for
-the active change has verdict `done` or `redo`. This applies even when the user
+the active change has verdict `done` or `proceed`. This applies even when the user
 has not explicitly asked for a review check.
 
 
