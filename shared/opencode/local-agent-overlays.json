@@ -37,9 +37,5 @@
         "sdd-*": "allow"
       }
     }
-  },
-  "instructionOverlays": {
-    "subagent": ["instructions/universal.md"],
-    "gentle-orchestrator": ["instructions/universal.md"]
   }
 }
