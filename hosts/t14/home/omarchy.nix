@@ -190,6 +190,9 @@
       [Behavior]
       TriggerWhenFocus=False
       ShowInputMethodInformation=False
+
+      [Hotkey]
+      TriggerKeys=
     '';
   };
 
