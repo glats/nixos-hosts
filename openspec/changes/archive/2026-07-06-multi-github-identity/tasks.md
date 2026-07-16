@@ -127,7 +127,7 @@
 
 #### Task 1.5: Refactor home-darwin/git.nix — remove home.file, add includes, move GPG to sops
 
-**Description**: Major refactor of macOS git config. Remove `home.file.".git-falabella"` block (lines 3-14), replace `includeIf."gitdir:~/Work/**".path` with inline `programs.git.includes`, add glats includeIf for `~/Personal/**`, move GPG signing key from hardcoded string to sops path reference. Import shared identities.
+**Description**: Major refactor of macOS git config. Remove `home.file.".git-[redacted]"` block (lines 3-14), replace `includeIf."gitdir:~/Work/**".path` with inline `programs.git.includes`, add glats includeIf for `~/Personal/**`, move GPG signing key from hardcoded string to sops path reference. Import shared identities.
 
 **Files affected**:
 - `home-darwin/git.nix` (MODIFIED, 41 → ~35 lines, net -6)
@@ -135,9 +135,9 @@
 **Changes**:
 1. Add `config, lib` to function args: `{ pkgs, config, primaryUser, lib, ... }:`
 2. Add `identities = import ../shared/git-identity.nix;` let binding
-3. Remove entire `home.file.".git-falabella"` block (lines 3-14)
+3. Remove entire `home.file.".git-[redacted]"` block (lines 3-14)
 4. Replace hardcoded user name/email with `identities.jcuzmar.name` / `identities.jcuzmar.email`
-5. Remove `includeIf."gitdir:~/Work/**".path = "~/.git-falabella";` from settings
+5. Remove `includeIf."gitdir:~/Work/**".path = "~/.git-[redacted]";` from settings
 6. Change `signing.key` from hardcoded string to `builtins.readFile config.sops.secrets."github/gpg_key_fingerprint".path`
 7. Add `includes` list with two entries:
    - `gitdir:~/Work/**` → jcuzmar identity (same as default, preserves structure)
@@ -145,7 +145,7 @@
 
 **Verification**:
 - `nix flake check --no-build` — must pass for mact2
-- `~/.git-falabella` should no longer be created on next build
+- `~/.git-[redacted]` should no longer be created on next build
 - `git log --show-signature -1` on mact2 should still show GPG signature
 
 **Dependencies**: Task 1.2, Task 1.3
@@ -276,7 +276,7 @@
 | AC-5 | MCP github-glats connects | Manual: MCP connection test |
 | AC-6 | MCP github-jcuzmar connects | Manual: MCP connection test |
 | AC-7 | `nix flake check --no-build` all hosts | Automated |
-| AC-8 | ~/.git-falabella removed on mact2 | Manual: `ls ~/.git-falabella` → should fail |
+| AC-8 | ~/.git-[redacted] removed on mact2 | Manual: `ls ~/.git-[redacted]` → should fail |
 | AC-9 | git-credentials.yaml removed | Manual: `ls secrets/shared/git-credentials.yaml` → should fail |
 | AC-10 | GPG signing works on mact2 | Manual: `git log --show-signature -1` |
 

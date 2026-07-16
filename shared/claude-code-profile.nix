@@ -11,7 +11,7 @@
     enable = true;
 
     # opusplan: Opus during plan mode, Sonnet during execution.
-    # Matches Falabella corporate guide recommendation.
+    # Opus for plan mode, Sonnet for execution.
     model = "opusplan";
 
     permissions = {

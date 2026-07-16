@@ -71,7 +71,7 @@ OR use `settings.user.signingkey` within the includeIf contents, referencing the
 
 - **File**: `home-darwin/git.nix`
 
-The existing `home.file.".git-falabella"` block (which also contains the signing key inline) is being removed per GC-REQ-5, so the signing key MUST move to HM's `programs.git.includes.contents` or `programs.git.signing.key`.
+The existing `home.file.".git-[redacted]"` block (which also contains the signing key inline) is being removed per GC-REQ-5, so the signing key MUST move to HM's `programs.git.includes.contents` or `programs.git.signing.key`.
 
 ### SEC-REQ-4: Shared Sops Module Declarations (MODIFIED)
 

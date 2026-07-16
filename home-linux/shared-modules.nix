@@ -27,6 +27,7 @@
   ./gpg.nix
   ./gh.nix
   ./ghostty.nix
+  ./superfile.nix
   ./kitty.nix
   ./alacritty.nix
   ../shared/shell-aliases.nix

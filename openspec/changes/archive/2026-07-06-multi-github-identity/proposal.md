@@ -11,7 +11,7 @@ Manage two GitHub identities (glats personal + jcuzmar work) declaratively acros
 - Both GitHub PATs in sops (glats existing, jcuzmar new)
 - MCP: two server entries (github-glats, github-jcuzmar) with per-identity token wrappers
 - GPG signing key moved from plaintext in git.nix to sops (macOS)
-- Refactor darwin `home.file.".git-falabella"` to `programs.git.includes`
+- Refactor darwin `home.file.".git-[redacted]"` to `programs.git.includes`
 
 ### Out of Scope
 - SSH key management via sops (remains out-of-band)
@@ -20,7 +20,7 @@ Manage two GitHub identities (glats personal + jcuzmar work) declaratively acros
 - Windows/WSL hosts
 
 ### To Remove
-- `home-darwin/git.nix` `home.file.".git-falabella"` anti-pattern
+- `home-darwin/git.nix` `home.file.".git-[redacted]"` anti-pattern
 - `secrets/shared/git-credentials.yaml` (unused opaque blob, if confirmed unused)
 
 ## Technical Approach
@@ -88,7 +88,7 @@ Each phase is independently revertible. Worst case: one build cycle to undo.
 3. MCP entry `github-glats` connects and uses glats PAT
 4. MCP entry `github-jcuzmar` connects and uses jcuzmar PAT
 5. `nix flake check --no-build` passes for all four hosts
-6. `~/.git-falabella` no longer exists on mact2 (removed legacy anti-pattern)
+6. `~/.git-[redacted]` no longer exists on mact2 (removed legacy anti-pattern)
 
 ## Implementation Phases
 
@@ -105,7 +105,7 @@ Each phase is independently revertible. Worst case: one build cycle to undo.
 - Verify both MCP entries work
 
 ### Phase 3: Cleanup
-- Remove `home.file.".git-falabella"` artifact
+- Remove `home.file.".git-[redacted]"` artifact
 - Confirm `git-credentials.yaml` is unused and remove
 - Update shell init for multi-token where needed
 

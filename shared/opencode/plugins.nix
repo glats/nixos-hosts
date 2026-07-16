@@ -1,7 +1,8 @@
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }:
 
 with lib;
@@ -56,6 +57,7 @@ with lib;
       type = types.listOf types.str;
       default = [
         "opencode-claude-auth@latest"
+        "opencode-multimodal@latest"
       ];
       description = ''
         NPM plugins auto-installed by OpenCode at startup.
