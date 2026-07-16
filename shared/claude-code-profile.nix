@@ -23,6 +23,7 @@
         "Edit(*)"
         "WebFetch(*)"
         "WebSearch(*)"
+        "AskUserQuestion"
       ];
 
       # Hard safety boundaries. deny always wins over allow, regardless of scope.
