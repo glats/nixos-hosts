@@ -1,8 +1,7 @@
-{
-  config,
-  lib,
-  pkgs,
-  ...
+{ config
+, lib
+, pkgs
+, ...
 }:
 
 with lib;
@@ -41,14 +40,17 @@ let
       active = providersConfig.activeProvider;
     in
     if active != null then
-      builtins.mapAttrs (phase: _: providersConfig.getModelForPhase phase active) (
-        builtins.listToAttrs (
-          map (p: {
-            name = p;
-            value = null;
-          }) sddPhases
+      builtins.mapAttrs (phase: _: providersConfig.getModelForPhase phase active)
+        (
+          builtins.listToAttrs (
+            map
+              (p: {
+                name = p;
+                value = null;
+              })
+              sddPhases
+          )
         )
-      )
     else
       { };
 
@@ -126,8 +128,12 @@ let
   # Neutral agent (loaded from local-agent-overlays.json, with {file:} resolved)
   neutralAgent = localOverlays.neutral // {
     model = models.neutral;
+<<<<<<< HEAD
     prompt =
       builtins.readFile "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/persona-gentleman.md";
+=======
+    prompt = builtins.readFile "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/persona-gentleman.md";
+>>>>>>> 43043d2 (work in multples think like opencode claude configure genetl-ai and sdd orchestrator to review-gate)
   };
 
   # Final agent set: upstream + model overlay + tools overlay + neutral

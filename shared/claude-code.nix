@@ -76,9 +76,6 @@ let
     }
   );
 
-  # CLAUDE.md source from gentle-ai-assets
-  claudeMdSource = "${pkgs.gentle-ai-assets}/share/gentle-ai/claude/sdd-orchestrator.md";
-
   claudeDir = "${config.home.homeDirectory}/.claude";
 in
 {
@@ -150,6 +147,10 @@ in
       ".claude/settings.json" = {
         force = true;
         source = settingsJson;
+      };
+      ".claude/review-gate.md" = {
+        force = true;
+        source = "${pkgs.gentle-ai-assets}/share/gentle-ai/claude/sdd-orchestrator.md";
       };
     };
 
