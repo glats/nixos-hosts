@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 {
   programs.zsh = {
     shellAliases = {
@@ -35,6 +40,7 @@
       srv = "cd ~/Work/srv/";
 
       ncf = "cd $NIXOS_REPO";
+      spf = "superfile";
     };
 
     initContent = ''
