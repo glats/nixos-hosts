@@ -74,6 +74,10 @@ let
         # User rules first, then auto-generated MCP rules appended
         allow = userAllowRules ++ mcpAllowRules;
       };
+      # Inject review gate instruction into Claude Code system prompt.
+      # Claude Code does not auto-load ~/.claude/*.md files — this is the
+      # equivalent of OpenCode loading sdd-orchestrator.md from its config dir.
+      customInstructions = "After every sdd-apply phase completes, read ~/.claude/review-gate.md and follow the Review Gate instructions to present exactly 3 options: done, retry, reiterate. Do NOT advance to sdd-verify unless the verdict is done.";
     }
   );
 
