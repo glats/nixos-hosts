@@ -47,12 +47,11 @@
 # Recovery: if the greeter fails, append systemd.mask=greetd.service to the
 # kernel cmdline at the systemd-boot menu to skip greetd and drop to a VT
 # login prompt.  The system keymap (la-latin1) is active on VTs.
-{
-  config,
-  pkgs,
-  lib,
-  inputs,
-  ...
+{ config
+, pkgs
+, lib
+, inputs
+, ...
 }:
 
 {
@@ -163,10 +162,36 @@
 
   # Fcitx5: pass --disable notificationitem to remove the tray icon
   # from Waybar while keeping IME functional for accented characters.
-  # The --disable flag is more reliable than disabledAddons in the config
-  # file because it's parsed before addon loading.
   systemd.user.services.fcitx5.Service.ExecStart =
     lib.mkForce "${pkgs.fcitx5}/bin/fcitx5 --disable notificationitem";
+
+  # Strip fcitx5 profile to a single layout (es) and disable its trigger
+  # so it doesn't try to manage keyboard layouts — Hyprland + kb-toggle.sh
+  # handle that. fcitx5 stays running as an IME bridge for apps that need
+  # it (acentos, XCompose) but won't intercept Ctrl+Space or show popups.
+  xdg.configFile."fcitx5/profile" = lib.mkForce {
+    text = ''
+      [Groups/0]
+      Name=Default
+      Default Layout=es
+      DefaultIM=keyboard-es
+
+      [Groups/0/Items/0]
+      Name=keyboard-es
+      Layout=es
+
+      [GroupOrder]
+      0=Default
+    '';
+  };
+
+  xdg.configFile."fcitx5/config" = lib.mkForce {
+    text = ''
+      [Behavior]
+      TriggerWhenFocus=False
+      ShowInputMethodInformation=False
+    '';
+  };
 
   # Omarchy-nix's tmux module is "neutralized" by home-linux/tmux.nix
   # (imported above): it uses `lib.mkForce` on `programs.tmux.extraConfig`
