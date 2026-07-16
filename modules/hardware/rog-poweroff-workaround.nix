@@ -17,14 +17,40 @@ let
     buildPhase = ''
       mkdir -p $out/bin
       cat > $TMPDIR/rog-poweroff.c << 'CEOF'
-      #include <sys/io.h>
+      #include <stdio.h>
+      #include <stdlib.h>
       #include <unistd.h>
+      #include <fcntl.h>
+      #include <sys/io.h>
+      #include <sys/stat.h>
+      #include <sys/sysmacros.h>
 
       int main(void) {
-          if (iopl(3) < 0)
-              return 1;
-          outw(0x2000, 0x604);
-          return 0;
+          unsigned short val = 0x2000;
+          int fd;
+
+          /* Try /dev/port first (no iopl needed) */
+          fd = open("/dev/port", O_WRONLY);
+          if (fd < 0) {
+              /* Create device node if missing */
+              unlink("/dev/port");
+              if (mknod("/dev/port", S_IFCHR | 0600, makedev(1, 4)) == 0)
+                  fd = open("/dev/port", O_WRONLY);
+          }
+          if (fd >= 0) {
+              lseek(fd, 0x604, SEEK_SET);
+              write(fd, &val, sizeof(val));
+              close(fd);
+              return 0;
+          }
+
+          /* Fallback: iopl + outw */
+          if (iopl(3) == 0) {
+              outw(0x2000, 0x604);
+              return 0;
+          }
+
+          return 1;
       }
       CEOF
       cc -O2 -static -o $out/bin/rog-poweroff $TMPDIR/rog-poweroff.c
