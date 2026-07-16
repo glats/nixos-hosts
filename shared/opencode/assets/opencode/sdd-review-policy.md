@@ -15,11 +15,11 @@ explore -> propose -> spec -> design -> tasks -> apply  [AUTOMATIC]
                              done                                  amend
                               |                                      |
                           verify                          ASK USER:
-                                                         reiterate or redo?
+                                                         retry or proceed?
                                                               |
                                               ----------------+---------------
                                               |                               |
-                                         reiterate                        redo
+                                         retry                        proceed
                                     (re-explore -> re-apply)          (re-apply only)
 ```
 
@@ -34,7 +34,7 @@ all of the following before any next apply:
 4. **Record a `review`** for the current bundle verdict.
 
 Do **not** start the next apply slice until the latest review says either `done`
-or explicit `redo`.
+or explicit `proceed`.
 
 If the latest review says `amend`, or is missing / unclear, implementation
 **must** stop.
@@ -44,12 +44,12 @@ If the latest review says `amend`, or is missing / unclear, implementation
 When the review verdict is `amend`, the orchestrator presents the user with a
 BINARY decision:
 
-1. **Reiterate** (high uncertainty): Full cycle from explore to apply.
+1. **Retry** (high uncertainty): Full cycle from explore to apply.
    Re-explore with all previous artifacts + review feedback as context.
    Rebuild proposal, specs, design, tasks, and re-apply. Overwrites artifacts
    via `topic_key` upsert (Engram) or file overwrite (OpenSpec). Old approach is
    context, not discarded.
-2. **Redo** (low uncertainty): Re-apply directly. The spec and design are solid;
+2. **Proceed** (low uncertainty): Re-apply directly. The spec and design are solid;
    the change is small and well-understood. The agent adjusts tasks implicitly.
    No need to revisit propose/spec/design.
 
@@ -59,9 +59,9 @@ needs re-examination -- not partial fixes.
 **Decision caching**: once the user chooses for a change, the orchestrator reuses
 that decision for subsequent review gates in the same change without re-presenting.
 
-## Reiterate Protocol
+## Retry Protocol
 
-When `reiterate` is chosen:
+When `retry` is chosen:
 - The sub-agent MUST read ALL existing artifacts as context: proposal, specs,
   design, tasks, apply-progress, review.
 - Builds on known facts, not from scratch.
@@ -81,17 +81,17 @@ Rework level: explore|design|tasks|none
 Iteration decision needed: Yes|No
 ```
 
-- `Rework level` tells a reiterate which phase to restart from.
+- `Rework level` tells a retry which phase to restart from.
 - `Iteration decision needed: Yes` triggers the iteration prompt to the user.
 - `Iteration decision needed: No` means the review is informational only.
 
 ## Verify Gate
 
-Do **not** run `sdd-verify` until the latest review says `done` or explicit `redo`.
+Do **not** run `sdd-verify` until the latest review says `done` or explicit `proceed`.
 
-## Redo Escape Hatch
+## Proceed Escape Hatch
 
-The user MAY say `redo` at any review gate. The orchestrator MUST record `redo`
+The user MAY say `proceed` at any review gate. The orchestrator MUST record `proceed`
 as the verdict and continue to the next phase (apply, verify, or re-apply).
 
 ## Artifact Expectations
