@@ -69,9 +69,7 @@ let
             provider = allProviders;
             mcp = enabledMcps;
             permission = cfg.permissions;
-            instructions = [
-              "instructions/universal.md"
-            ];
+            instructions = [ ];
             # Managed npm plugins auto-installed by OpenCode at startup
             plugin = cfg.plugins.npmPlugins;
           }
@@ -86,21 +84,13 @@ let
           force = true;
           source = jsonFile;
         };
-        ".config/${runtimeCfg.dir}/instructions/universal.md" = {
-          force = true;
-          source = ./opencode/instructions/universal.md;
-        };
         ".config/${runtimeCfg.dir}/AGENTS.md" = {
           force = true;
           source = "${pkgs.gentle-ai-assets}/share/gentle-ai/AGENTS.md";
         };
-        ".config/${runtimeCfg.dir}/sdd-orchestrator.md" = {
+        ".config/${runtimeCfg.dir}/review-gate.md" = {
           force = true;
-          source = "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/sdd-orchestrator.md";
-        };
-        ".config/${runtimeCfg.dir}/sdd-review-policy.md" = {
-          force = true;
-          source = "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/sdd-review-policy.md";
+          source = "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/review-gate.md";
         };
         # skills/ and commands/ are managed entirely by makeOpencodeConfigMutable activation
         # (not via home.file) because HM cannot overwrite existing real directories with symlinks
@@ -144,7 +134,7 @@ let
             # the symlink points to the read-only nix store which OpenCode can't write to.
             # cmp guard is only used to skip unnecessary writes to already-real files
             # that haven't changed since the last build.
-            for file in opencode.json AGENTS.md sdd-orchestrator.md sdd-review-policy.md instructions/universal.md package.json .gitignore tui.json; do
+            for file in opencode.json AGENTS.md review-gate.md package.json .gitignore tui.json; do
               target="$runtime_dir/$file"
               if [ -L "$target" ]; then
                 src="$(${pkgs.coreutils}/bin/readlink -f "$target")"
