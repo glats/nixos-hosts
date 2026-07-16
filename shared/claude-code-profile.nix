@@ -10,6 +10,10 @@
   home.claude-code = {
     enable = true;
 
+    # opusplan: Opus during plan mode, Sonnet during execution.
+    # Matches Falabella corporate guide recommendation.
+    model = "opusplan";
+
     permissions = {
       # dontAsk: auto-deny unmatched tools. Zero prompts for allowed tools.
       # AcceptEdits would be safer for teams, but this is personal machine.
