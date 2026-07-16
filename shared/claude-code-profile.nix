@@ -23,7 +23,7 @@
         "Edit(*)"
         "WebFetch(*)"
         "WebSearch(*)"
-        "Task"
+        "Agent(*)"
         "TaskOutput"
         "TodoWrite"
         "Skill"
