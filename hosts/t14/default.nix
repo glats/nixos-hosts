@@ -8,11 +8,12 @@
 #   - XKB layout forced to "latam" (Chile) since i18n.nix defaults to "es"
 #   - btrfs swap, fonts, kmscon, and amd-laptop settings inherited from base
 #   - home-manager wired to ./home/omarchy.nix (replaces ./home/gnome.nix)
-{ config
-, lib
-, pkgs
-, inputs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
 }:
 
 {
@@ -231,6 +232,9 @@
         enable = true;
         output = "DP-3";
       };
+      # Layout indicator: displays "ES"/"LATAM" on a 24px bottom waybar
+      # bar at the login screen. Updates within 1s of Alt+Shift toggle.
+      layoutIndicator.enable = true;
     };
   };
 
