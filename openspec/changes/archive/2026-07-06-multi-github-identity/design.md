@@ -59,7 +59,7 @@
 
 +-------------------------------------------------------------+
 | Layer 6: Cleanup                                            |
-| - home-darwin/git.nix: remove home.file.".git-falabella"    |
+| - home-darwin/git.nix: remove home.file.".git-[redacted]"    |
 | - secrets/shared/git-credentials.yaml: delete file          |
 +-------------------------------------------------------------+
 ```
@@ -75,7 +75,7 @@ git operation in ~/dev/personal-repo/
       ├── [includeIf "gitdir:~/Work/**"] → condition NOT matched
       └── RESULT: glats identity
 
-git operation in ~/Work/falabella-repo/
+git operation in ~/Work/[redacted]-repo/
   └── Git reads ~/.gitconfig
       ├── [user] name="Redacted Name", email="personal@example.com"   ← OVERRIDDEN
       ├── [includeIf "gitdir:~/Work/**"] → condition MATCHED
@@ -128,7 +128,7 @@ Git evaluates `includeIf` directives in declaration order. Home Manager writes `
 | File | Change Type | Summary |
 |------|-------------|---------|
 | `home-linux/git.nix` | MODIFY | Add `programs.git.includes` for jcuzmar identity under `~/Work/**` |
-| `home-darwin/git.nix` | MODIFY | Replace `home.file.".git-falabella"` with `programs.git.includes`; add glats includeIf for ~/Personal/**; move GPG key to sops ref |
+| `home-darwin/git.nix` | MODIFY | Replace `home.file.".git-[redacted]"` with `programs.git.includes`; add glats includeIf for ~/Personal/**; move GPG key to sops ref |
 | `shared/sops.nix` | MODIFY | Add `github/pat_jcuzmar` secret declaration |
 | `home-darwin/sops.nix` | MODIFY | Add `github/gpg_key_fingerprint` secret declaration |
 | `modules/features/services/github-mcp-server.nix` | MODIFY | Parametrize to produce two wrapper scripts (glats, jcuzmar) |
@@ -141,7 +141,7 @@ Git evaluates `includeIf` directives in declaration order. Home Manager writes `
 | File | Reason |
 |------|--------|
 | `secrets/shared/git-credentials.yaml` | Unused — zero Nix references |
-| `home-darwin/git.nix` — `home.file.".git-falabella"` block | Replaced by `programs.git.includes` |
+| `home-darwin/git.nix` — `home.file.".git-[redacted]"` block | Replaced by `programs.git.includes` |
 
 ### No Changes Needed (verified)
 
@@ -190,17 +190,17 @@ Changes:
 
 ### 4.3 `home-darwin/git.nix` (MODIFIED)
 
-**Before**: Default jcuzmar identity + `home.file.".git-falabella"` for Work repos.
+**Before**: Default jcuzmar identity + `home.file.".git-[redacted]"` for Work repos.
 
 **After**: Default jcuzmar identity, two `programs.git.includes` entries:
 - `gitdir:~/Work/**` → jcuzmar identity (same as default, preserves existing structure)
 - `gitdir:~/Personal/**` → glats identity
 
 Changes:
-1. Remove entire `home.file.".git-falabella"` block (5-14)
+1. Remove entire `home.file.".git-[redacted]"` block (5-14)
 2. Add `identities = import ../shared/git-identity.nix;` let binding
 3. Reference `identities.jcuzmar.name/email` for default
-4. Remove `includeIf."gitdir:~/Work/**".path = "~/.git-falabella"` from settings
+4. Remove `includeIf."gitdir:~/Work/**".path = "~/.git-[redacted]"` from settings
 5. Add `includes` block with two entries:
    - Work repos → jcuzmar identity
    - Personal repos → glats identity (no signing key)
@@ -569,13 +569,13 @@ Same as rog, with mkForce on defaults preserved. The includeIf for ~/Work/** is 
 | Aspect | Before | After |
 |--------|--------|-------|
 | Default identity | jcuzmar | jcuzmar (unchanged) |
-| Work repos | ~/.git-falabella via home.file | programs.git.includes inline (same content) |
+| Work repos | ~/.git-[redacted] via home.file | programs.git.includes inline (same content) |
 | Personal repos | manual config | auto ~/Personal/** → glats |
 | MCP binary | `github-mcp-server-wrapped` | `github-mcp-server-glats` + `github-mcp-server-jcuzmar` |
 | MCP config name | `github` (overridden in mcps-extra.nix) | `github-glats` + `github-jcuzmar` (no override needed) |
 | GPG signing key | hardcoded in git.nix | sops-referenced |
 | Secrets | `github/token`, `github/pat` | +`github/pat_jcuzmar`, +`github/gpg_key_fingerprint` |
-| Legacy files | ~/.git-falabella (home.file) | REMOVED |
+| Legacy files | ~/.git-[redacted] (home.file) | REMOVED |
 
 ## 10. Critical Design Decisions
 
@@ -652,7 +652,7 @@ Same as rog, with mkForce on defaults preserved. The includeIf for ~/Work/** is 
 | AC-5 | MCP github-glats connects | 2 | github-mcp-server.nix, mcps-base.nix |
 | AC-6 | MCP github-jcuzmar connects | 2 | github-mcp-server.nix, mcps-base.nix |
 | AC-7 | nix flake check passes all hosts | 3 | All |
-| AC-8 | ~/.git-falabella removed on mact2 | 3 | home-darwin/git.nix |
+| AC-8 | ~/.git-[redacted] removed on mact2 | 3 | home-darwin/git.nix |
 | AC-9 | git-credentials.yaml removed | 3 | secrets/shared/git-credentials.yaml |
 | AC-10 | GPG signing works on mact2 | 1 | home-darwin/git.nix, home-darwin/sops.nix |
 

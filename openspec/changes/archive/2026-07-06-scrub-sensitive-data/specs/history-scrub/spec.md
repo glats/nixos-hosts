@@ -19,7 +19,7 @@ After the rewrite, ZERO occurrences of the PII above MUST exist in ANY reachable
 #### Scenario: Zero PII in reachable history after scrub
 
 - GIVEN the repository after Stage 3 completion
-- WHEN `git log --all --oneline | xargs -I{} git show {} | grep -i "falabella"` is executed
+- WHEN `git log --all --oneline | xargs -I{} git show {} | grep -i "[redacted]"` is executed
 - THEN the command MUST return empty (no matches)
 - AND `git log --all --oneline | xargs -I{} git show {} | grep "Redacted Name"` MUST return empty
 
@@ -107,7 +107,7 @@ All branches and tags MUST be pushed after the rewrite, not just the current bra
 
 - GIVEN Stage 3 is complete with force push to GitHub
 - WHEN a fresh clone is created with `git clone https://github.com/glats/.nixos.git /tmp/test-scrub-clone`
-- THEN `git log --all --oneline | xargs -I{} git show {} | grep -i "falabella"` in the clone MUST return empty
+- THEN `git log --all --oneline | xargs -I{} git show {} | grep -i "[redacted]"` in the clone MUST return empty
 - AND `nix flake check --no-build` in the clone MUST pass
 
 ### Requirement: Archived OpenSpec Artifacts Scrubbed by History Rewrite

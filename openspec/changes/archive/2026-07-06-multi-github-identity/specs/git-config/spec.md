@@ -90,11 +90,11 @@ After: same defaults, plus the added includeIf block from GC-REQ-1. The `mkForce
 
 Current `home-darwin/git.nix` has:
 - Default identity: jcuzmar (work@example.com)
-- External includeIf via `home.file.".git-falabella"` pointing to `~/.git-falabella`
+- External includeIf via `home.file.".git-[redacted]"` pointing to `~/.git-[redacted]`
 
 After:
 - Default identity MUST remain jcuzmar with email work@example.com
-- The existing `includeIf."gitdir:~/Work/**".path = "~/.git-falabella"` MUST be replaced with `programs.git.includes` with inline `contents`
+- The existing `includeIf."gitdir:~/Work/**".path = "~/.git-[redacted]"` MUST be replaced with `programs.git.includes` with inline `contents`
 - The new includeIf for `~/Work/**` MUST set `user.name = "jcuzmar"` (same as default, so effectively a no-op — preserves the existing behavior structure)
 - The existing GPG signing key in the includeIf block MUST remain but reference a sops secret path instead of hardcoded value
 
@@ -106,7 +106,7 @@ After:
 
 ### GC-REQ-5: Legacy External Git Config File (REMOVED)
 
-The `home.file.".git-falabella"` entry in `home-darwin/git.nix` MUST be removed.
+The `home.file.".git-[redacted]"` entry in `home-darwin/git.nix` MUST be removed.
 
 (Reason: Replaced by `programs.git.includes` with inline `contents`, which is the canonical HM approach. The external file approach predated HM's support for inline contents in `includes`.)
 

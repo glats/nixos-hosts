@@ -20,6 +20,7 @@
     ./hypr/hyprlock.nix
     ./hypr/hyprsunset.nix
     ../../../home-linux/ghostty.nix
+    ../../../home-linux/superfile.nix
     ../../../home-linux/kitty.nix
     ./mouse-wiggle.nix
     ../../../home-linux/webcam-rog.nix

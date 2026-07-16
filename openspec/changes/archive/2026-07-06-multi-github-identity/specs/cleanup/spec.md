@@ -2,7 +2,7 @@
 
 ## Overview
 
-Remove legacy artifacts left behind by the previous ad-hoc identity management approach. Two items are removed: the external git config file (`~/.git-falabella`) managed via `home.file`, and the unused `git-credentials.yaml` sops file.
+Remove legacy artifacts left behind by the previous ad-hoc identity management approach. Two items are removed: the external git config file (`~/.git-[redacted]`) managed via `home.file`, and the unused `git-credentials.yaml` sops file.
 
 ---
 
@@ -10,7 +10,7 @@ Remove legacy artifacts left behind by the previous ad-hoc identity management a
 
 ### CLN-REQ-1: Legacy home.file Entry (REMOVED)
 
-The `home.file.".git-falabella"` entry in `home-darwin/git.nix` MUST be removed.
+The `home.file.".git-[redacted]"` entry in `home-darwin/git.nix` MUST be removed.
 
 (Reason: Already specified in GC-REQ-5. Listed here for tracking completeness in the cleanup phase.)
 
@@ -19,10 +19,10 @@ The `home.file.".git-falabella"` entry in `home-darwin/git.nix` MUST be removed.
 **Scenarios**:
 
 ```
-SCENARIO: ~/.git-falabella no longer exists after rebuild
+SCENARIO: ~/.git-[redacted] no longer exists after rebuild
 GIVEN  the macOS host (mact2)
   AND  the home-manager generation has been rebuilt with the changes
-WHEN  checking for the existence of ~/.git-falabella
+WHEN  checking for the existence of ~/.git-[redacted]
 THEN  the file MUST NOT exist
 ```
 
@@ -76,6 +76,6 @@ The behavior on macOS (default jcuzmar, override glats) MUST be the logical inve
 | AC-5 | MCP entry `github-glats` connects and uses glats PAT | 2 | Manual: MCP connection test |
 | AC-6 | MCP entry `github-jcuzmar` connects and uses jcuzmar PAT | 2 | Manual: MCP connection test |
 | AC-7 | `nix flake check --no-build` passes for all four hosts | 3 | Automated: `nix flake check --no-build` |
-| AC-8 | `~/.git-falabella` no longer exists on mact2 | 3 | Manual: `ls -la ~/.git-falabella` (should fail) |
+| AC-8 | `~/.git-[redacted]` no longer exists on mact2 | 3 | Manual: `ls -la ~/.git-[redacted]` (should fail) |
 | AC-9 | `git-credentials.yaml` removed from repo | 3 | Manual: check git status |
 | AC-10 | GPG signing still works on mact2 (commits are signed) | 1 | Manual: `git log --show-signature -1` |

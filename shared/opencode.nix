@@ -1,8 +1,9 @@
-{ config
-, lib
-, pkgs
-, inputs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
 }:
 
 with lib;
@@ -125,7 +126,7 @@ let
           text = builtins.toJSON {
             "$schema" = "https://opencode.ai/tui.json";
             theme = "system";
-            plugin = lib.attrNames tuiPluginsToInstall;
+            plugin = lib.attrNames tuiPluginsToInstall ++ [ "opencode-multimodal" ];
           };
         };
         # Plugin .ts files are copied by activation script below, not as symlinks
@@ -331,6 +332,7 @@ in
       home.packages = with pkgs; [
         gentle-ai
         engram
+        poppler-utils # PDF page rendering: needed by OpenCode read tool and Claude Code for PDF support
       ];
 
       # Export API keys from sops secrets at shell startup

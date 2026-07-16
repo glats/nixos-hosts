@@ -3,5 +3,6 @@
   "@opencode-ai/plugin": "1.17.13",
   "unique-names-generator": "4.7.1",
   "opencode-subagent-statusline": "1.2.0",
-  "opencode-sdd-engram-manage": "1.7.0"
+  "opencode-sdd-engram-manage": "1.7.0",
+  "opencode-multimodal": "0.1.6"
 }

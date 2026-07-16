@@ -201,7 +201,7 @@ This is a single-user repo (`glats/.nixos`). The implications:
 
 1. After Stages 1-2 are committed and stable, run `git filter-repo` with a replacements file.
 2. Force push to GitHub.
-3. Verify: `git log --all --oneline | xargs -I{} git show {} | grep -i "falabella"` should return nothing.
+3. Verify: `git log --all --oneline | xargs -I{} git show {} | grep -i "[redacted]"` should return nothing.
 
 ### Key design decisions
 

@@ -12,6 +12,7 @@
 [
   ./theme.nix
   ./ghostty.nix
+  ./superfile.nix
   ./leaf-theme.nix
   ./git.nix
   ./gpg.nix

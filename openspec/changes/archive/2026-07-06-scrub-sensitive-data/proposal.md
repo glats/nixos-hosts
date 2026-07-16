@@ -88,5 +88,5 @@ Capabilities that MUST be covered by delta specs:
 - [ ] `identities.personal.name` and `identities.work.name` resolve correctly via sops
 - [ ] `git config user.name` returns correct values on all hosts after rebuild
 - [ ] `nix flake check --no-build` passes on all hosts
-- [ ] `git log --all --oneline | xargs -I{} git show {} | grep -i "falabella"` returns empty
+- [ ] `git log --all --oneline | xargs -I{} git show {} | grep -i "[redacted]"` returns empty
 - [ ] System usernames (`glats`/`jcuzmar`) unchanged in `/etc/passwd`, home paths, SSH configs
