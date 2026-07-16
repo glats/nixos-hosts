@@ -11,51 +11,49 @@
     enable = true;
 
     permissions = {
-      # dontAsk: auto-deny unmatched tools, no prompts. With Bash(*), everything
-      # allowed runs silently; the deny list is the real safety boundary.
-      # https://rajiv.com/blog/2026/03/31/stop-asking-me-configuring-claude-code-permissions-for-uninterrupted-flow/
+      # dontAsk: auto-deny unmatched tools. Zero prompts for allowed tools.
+      # AcceptEdits would be safer for teams, but this is personal machine.
       defaultMode = "dontAsk";
+      additionalDirectories = [
+        "~"
+        "/tmp"
+      ];
 
       allow = [
         "Bash(*)"
         "Read(*)"
         "Write(*)"
         "Edit(*)"
+        "Glob(*)"
+        "Grep(*)"
         "WebFetch(*)"
-        "WebSearch(*)"
+        "WebSearch"
         "Agent(*)"
-        "TaskOutput"
-        "TodoWrite"
         "Skill"
-        "SlashCommand"
-        "BashOutput"
-        "KillShell"
+        "TaskCreate"
+        "TaskGet"
+        "TaskList"
+        "TaskUpdate"
         "ExitPlanMode"
-        "AskUserQuestion"
+        "EnterPlanMode"
+        "KillShell"
+        "LSP"
+        "NotebookEdit"
       ];
 
-      # Hard safety boundaries. deny always wins over allow, regardless of scope.
+      # Hard safety boundaries. deny wins over allow, regardless of scope.
+      # Tool names with specifiers must use the correct format: Tool(pattern).
       deny = [
-        # Destructive filesystem
-        "Bash(rm -rf /)"
-        "Bash(rm -rf /*)"
-        "Bash(rm -rf ~)"
+        "Bash(rm -rf *)"
         "Bash(sudo *)"
         "Bash(chown *)"
-        # Curl-pipe-to-shell
-        "Bash(curl * | sh)"
-        "Bash(curl * | bash)"
-        "Bash(wget * | sh)"
-        # Secrets / sops
-        "Bash(sops *)"
-        # Sensitive files
+        "Bash(curl * | *sh*)"
+        "Bash(curl * | *bash*)"
         "Read(./.env)"
         "Read(./.env.*)"
-        "Read(./**/.env*)"
         "Read(./secrets/**)"
-        "Read(./**/secrets.*)"
-        "Read(/**/*.pem)"
-        "Read(/run/secrets/**)"
+        "Read(./**/*.pem)"
+        "Read(./**/*.key)"
       ];
     };
   };
