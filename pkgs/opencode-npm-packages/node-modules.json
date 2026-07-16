@@ -3,5 +3,6 @@
   "@opencode-ai/plugin": "sha256-H39xQzMu6rYxmBveBQGzA0XlAxaZ3ESxb3fG5mKpBKE=",
   "unique-names-generator": "sha256-lMgTsgNpjzJGOIwvQKCwhU9Ze/aq0oPGh0JLNdBUecY=",
   "opencode-subagent-statusline": "sha256-vy74WT69lkYjGBbfhaMPkgdIjVenvkFbBSI19cYGNCo=",
-  "opencode-sdd-engram-manage": "sha256-5Q6/e8Xuger/p/LkWshP+phniI7PAzF7xYaHtM1m4zM="
+  "opencode-sdd-engram-manage": "sha256-5Q6/e8Xuger/p/LkWshP+phniI7PAzF7xYaHtM1m4zM=",
+  "opencode-multimodal": "sha256-vkWlfrkMrf/gmK4XQB6PkmjRWP5qzTEGpnlktBN7VSE="
 }
