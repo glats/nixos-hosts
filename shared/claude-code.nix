@@ -230,27 +230,31 @@ in
         done
       done
 
-      # personas/ is optional — copy only if source exists
-      personas_src="${pkgs.gentle-ai-assets}/share/gentle-ai/claude/personas"
-      if [ -d "$personas_src" ]; then
-        personas_target="$claude_dir/personas"
-        if [ -L "$personas_target" ]; then
-          ${pkgs.coreutils}/bin/rm -f "$personas_target"
+      # personas/ — copy flat persona-*.md files from claude/ root into personas/ directory
+      personas_target="$claude_dir/personas"
+      mkdir -p "$personas_target"
+      for f in ${pkgs.gentle-ai-assets}/share/gentle-ai/claude/persona-*.md; do
+        if [ -f "$f" ]; then
+          name=$(basename "$f")
+          if [ ! -f "$personas_target/$name" ] || ! ${pkgs.diffutils}/bin/cmp -s "$f" "$personas_target/$name"; then
+            ${pkgs.coreutils}/bin/cp -f "$f" "$personas_target/$name"
+            chmod 644 "$personas_target/$name"
+          fi
         fi
-        mkdir -p "$personas_target"
-        (cd "$personas_src" && ${pkgs.findutils}/bin/find . -type f) | while read -r rel; do
-          if [ ! -f "$personas_target/$rel" ] || ! ${pkgs.diffutils}/bin/cmp -s "$personas_src/$rel" "$personas_target/$rel"; then
-            mkdir -p "$(dirname "$personas_target/$rel")"
-            ${pkgs.coreutils}/bin/cp -f "$personas_src/$rel" "$personas_target/$rel"
-            chmod 644 "$personas_target/$rel"
+      done
+
+      # output-styles/ — copy flat output-style-*.md files from claude/ root
+      styles_target="$claude_dir/output-styles"
+      mkdir -p "$styles_target"
+      for f in ${pkgs.gentle-ai-assets}/share/gentle-ai/claude/output-style-*.md; do
+        if [ -f "$f" ]; then
+          name=$(basename "$f")
+          if [ ! -f "$styles_target/$name" ] || ! ${pkgs.diffutils}/bin/cmp -s "$f" "$styles_target/$name"; then
+            ${pkgs.coreutils}/bin/cp -f "$f" "$styles_target/$name"
+            chmod 644 "$styles_target/$name"
           fi
-        done
-        (cd "$personas_target" && ${pkgs.findutils}/bin/find . -type f) | while read -r rel; do
-          if [ ! -f "$personas_src/$rel" ]; then
-            rm -f "$personas_target/$rel"
-          fi
-        done
-      fi
+        fi
+      done
     '';
   };
 }
