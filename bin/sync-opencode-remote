@@ -248,6 +248,29 @@ PYEOF
   ssh "$REMOTE_USER@$REMOTE_HOST" "python3 -c '${script//\'/\'\\\'\'}'" || {
     echo "WARNING: Could not disable MCPs on remote (python3 required)." >&2
   }
+
+  # Also fix provider naming: agents reference "opencode-go/..." but the
+  # generated provider is named "opencode". Rename to match agent expectations.
+  local fix_script
+  read -r -d '' fix_script <<-PYFIX || true
+import json, sys
+path = "$REMOTE_DIR/opencode.json"
+try:
+    with open(path) as f:
+        cfg = json.load(f)
+    prov = cfg.get('provider', {})
+    if 'opencode' in prov and 'opencode-go' not in prov:
+        prov['opencode-go'] = prov.pop('opencode')
+        print('  Renamed provider: opencode -> opencode-go')
+        with open(path, 'w') as f:
+            json.dump(cfg, f, indent=2)
+except Exception as e:
+    print(f'WARNING: Failed to fix provider name: {e}', file=sys.stderr)
+PYFIX
+
+  ssh "$REMOTE_USER@$REMOTE_HOST" "python3 -c '${fix_script//\'/\'\\\'\'}'" || {
+    echo "WARNING: Could not fix provider name on remote." >&2
+  }
 }
 
 # --- Install github-mcp-server on remote ---
@@ -265,7 +288,6 @@ install_github_mcp_remote() {
       needs_install=1
     else
       echo "      github-mcp-server is up to date."
-      return 0
     fi
   else
     needs_install=1
@@ -292,6 +314,18 @@ install_github_mcp_remote() {
     ssh "$REMOTE_USER@$REMOTE_HOST" "$install_cmd" || {
       echo "WARNING: Failed to install github-mcp-server. GitHub MCP will be disabled." >&2
     }
+  fi
+
+  # Create symlinks for separate personal/work binaries used by the config
+  if ssh "$REMOTE_USER@$REMOTE_HOST" "command -v github-mcp-server &>/dev/null"; then
+    local bin_dir
+    bin_dir=$(ssh "$REMOTE_USER@$REMOTE_HOST" "dirname \$(command -v github-mcp-server)")
+    for variant in github-mcp-server-personal github-mcp-server-work; do
+      if ! ssh "$REMOTE_USER@$REMOTE_HOST" "test -x '$bin_dir/$variant' 2>/dev/null"; then
+        ssh "$REMOTE_USER@$REMOTE_HOST" "ln -sf '$bin_dir/github-mcp-server' '$bin_dir/$variant'" && \
+          echo "      Symlink created: $variant -> github-mcp-server"
+      fi
+    done
   fi
 }
 
