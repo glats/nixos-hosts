@@ -68,6 +68,7 @@ let
           deny
           ask
           defaultMode
+          additionalDirectories
           ;
         # User rules first, then auto-generated MCP rules appended
         allow = userAllowRules ++ mcpAllowRules;
@@ -123,6 +124,11 @@ in
             ];
             default = "default";
             description = "Default permission mode for Claude Code sessions.";
+          };
+          additionalDirectories = mkOption {
+            type = types.listOf types.str;
+            default = [ ];
+            description = "Directories outside the working dir that Read/Edit/Write can access.";
           };
         };
       };
