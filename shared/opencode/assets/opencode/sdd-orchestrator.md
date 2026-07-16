@@ -409,53 +409,23 @@ When launching `sdd-apply` for a continuation batch:
 
 #### Review Gate (MANDATORY)
 
-After every `sdd-apply` slice returns and before launching any subsequent `sdd-apply`
-or `sdd-verify`, the orchestrator MUST locate and read the `review` artifact
-for the active change. This lookup MUST NOT be skipped regardless of apply outcome.
+After every `sdd-apply` slice returns and before launching any subsequent
+`sdd-apply` or `sdd-verify`, the orchestrator MUST present the review decision.
+This gate MUST NOT be skipped regardless of apply outcome.
 
-**Step 1: Resolve artifact store and locate review**
+Do NOT attempt to locate a pre-existing review artifact. Instead, ALWAYS
+present this question directly via the `question` tool, with EXACTLY three
+options:
 
-Use the active artifact store mode cached from session preflight:
+1. **done** — verify -> archive. The change is correct.
+2. **retry** — re-apply only, no re-explore. Same spec, same design. Small fix.
+3. **reiterate** — full SDD cycle from explore. Large rework, needs rethinking.
 
-| Mode | Lookup method |
-| --- | --- |
-| `openspec` or `hybrid` | Read `openspec/changes/{change-name}/review.md` |
-| `engram` or `hybrid` | `mem_search("sdd/{change-name}/review")` then `mem_get_observation` |
+Record the chosen verdict as the review artifact (`mem_save`, topic_key
+`sdd/{change-name}/review` and/or `openspec/changes/{change-name}/review.md`).
 
-For `hybrid`, perform BOTH lookups. The `openspec` file is canonical for file-based
-state; the Engram result supplements it. If the store mode is unrecognized or absent,
-STOP and report the unrecognized mode — do NOT default to proceed.
-
-**Step 2: Parse verdict and apply decision table**
-
-After reading the review, apply the verdict decision table without discretion:
-
-| Verdict | Action |
-| --- | --- |
-| `done` | Continue to next phase without user interaction |
-| `proceed` | Continue to next phase; record verdict as `proceed` |
-| `amend` | STOP; present binary decision |
-| missing / unreadable | STOP; report "no review found"; present binary decision |
-
-No intermediate action (inline fix, partial rework, silent continue) is permitted
-outside this table.
-
-**Step 3: Binary decision on stop**
-
-When the gate requires a stop, present exactly two options via the `question` tool:
-
-1. **retry** — re-explore → re-apply (reads all previous artifacts as context;
-   each phase overwrites its artifact)
-2. **proceed** — skip the gate; record verdict as `proceed` and continue to next phase
-
-Do NOT offer a third option. Do NOT auto-advance. Do NOT launch `sdd-verify` until the
-user selects `proceed` or a completed `retry` resolves with a `done` review.
-
-**Verify gate hard block**
-
-The orchestrator MUST NOT launch `sdd-verify` unless the latest `review` for
-the active change has verdict `done` or `proceed`. This applies even when the user
-has not explicitly asked for a review check.
+Do NOT offer a fourth option. Do NOT auto-advance. Do NOT launch `sdd-verify`
+unless the verdict is `done`.
 
 
 #### Engram Topic Key Format
