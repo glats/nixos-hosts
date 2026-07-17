@@ -201,10 +201,10 @@ in
         ${pkgs.coreutils}/bin/rm -f "$claude_json.tmp"
       fi
 
-      # Directory management for agents/, commands/, skills/
+      # Directory management for agents/, commands/
       # Handled here (not via home.file) because HM cannot overwrite real dirs with symlinks.
-      # Copies files from nix store with per-file cmp guard + orphan cleanup.
-      for dir_pair in "agents:${pkgs.gentle-ai-assets}/share/gentle-ai/claude/agents" "commands:${pkgs.gentle-ai-assets}/share/gentle-ai/claude/commands" "skills:${config.home.gentle-ai.skillsSource}"; do
+      # Copies files from nix store with per-file cmp guard + orphan removal.
+      for dir_pair in "agents:${pkgs.gentle-ai-assets}/share/gentle-ai/claude/agents" "commands:${pkgs.gentle-ai-assets}/share/gentle-ai/claude/commands"; do
         dir_name="''${dir_pair%%:*}"
         src="''${dir_pair#*:}"
         target="$claude_dir/$dir_name"
@@ -235,6 +235,44 @@ in
             rm -f "$target/$rel"
           fi
         done
+      done
+
+      # Skills: dual-source deployment (upstream + local) with union-based orphan cleanup
+      skills_target="$claude_dir/skills"
+      if [ -L "$skills_target" ]; then
+        ${pkgs.coreutils}/bin/rm -f "$skills_target"
+      fi
+      mkdir -p "$skills_target"
+
+      # First copy pass: upstream skills from skillsSource
+      skills_src="${config.home.gentle-ai.skillsSource}"
+      if [ -d "$skills_src" ]; then
+        (cd "$skills_src" && ${pkgs.findutils}/bin/find . -type f) | while read -r rel; do
+          if [ ! -f "$skills_target/$rel" ] || ! ${pkgs.diffutils}/bin/cmp -s "$skills_src/$rel" "$skills_target/$rel"; then
+            mkdir -p "$(dirname "$skills_target/$rel")"
+            ${pkgs.coreutils}/bin/cp -f "$skills_src/$rel" "$skills_target/$rel"
+            chmod 644 "$skills_target/$rel"
+          fi
+        done
+      fi
+
+      # Second copy pass: local skills from localSkillsSource
+      local_skills_src="${config.home.gentle-ai.localSkillsSource}"
+      if [ -d "$local_skills_src" ]; then
+        (cd "$local_skills_src" && ${pkgs.findutils}/bin/find . -type f) | while read -r rel; do
+          if [ ! -f "$skills_target/$rel" ] || ! ${pkgs.diffutils}/bin/cmp -s "$local_skills_src/$rel" "$skills_target/$rel"; then
+            mkdir -p "$(dirname "$skills_target/$rel")"
+            ${pkgs.coreutils}/bin/cp -f "$local_skills_src/$rel" "$skills_target/$rel"
+            chmod 644 "$skills_target/$rel"
+          fi
+        done
+      fi
+
+      # Union orphan cleanup: delete files absent from BOTH sources
+      (cd "$skills_target" && ${pkgs.findutils}/bin/find . -type f) | while read -r rel; do
+        if [ ! -f "$skills_src/$rel" ] && [ ! -f "$local_skills_src/$rel" ]; then
+          rm -f "$skills_target/$rel"
+        fi
       done
 
       # output-styles/ — copy persona-*.md + output-style-*.md from claude/ root

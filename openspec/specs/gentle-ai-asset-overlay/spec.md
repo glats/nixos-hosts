@@ -23,22 +23,32 @@ The `gentle-ai-assets` derivation MUST accept an optional `extraAssets` paramete
 - WHEN the `gentle-ai-assets` derivation builds
 - THEN output SHALL be identical to vanilla (no files added, modified, or removed)
 
-#### Scenario: extraAssets contains nested skill overrides
+### Requirement: extraFiles — Flat File Overlays
 
-- GIVEN `extraAssets` contains `skills/sdd-explore/SKILL.md`
+Alongside `extraAssets`, the derivation also accepts `extraFiles` (type path, default `null`). While `extraAssets` supports recursive directory overlays, `extraFiles` SHALL only copy flat files — no directory merging. The `review-gate.md` file from `shared/assets/` SHALL be copied via this parameter.
+
+#### Scenario: Flat file copied, directory skipped
+
+- GIVEN `extraFiles` points to `shared/assets/` containing `review-gate.md` (file) and `skills/` (dir)
 - WHEN the derivation builds
-- THEN `$out/share/gentle-ai/skills/sdd-explore/SKILL.md` SHALL be the overlay version
-- AND all other skill files SHALL remain vanilla
+- THEN `$out/share/gentle-ai/review-gate.md` matches the source file
+- AND no content from `skills/` appears in `$out/share/gentle-ai/skills/`
+
+#### Scenario: extraFiles is null
+
+- GIVEN `extraFiles` is `null` (default)
+- WHEN the derivation builds
+- THEN build succeeds with no flat-file overlay applied
 
 ### Requirement: sharedOpencodePaths Wiring
 
-`lib/packages.nix` MUST expose `extraAssets` via the `sharedOpencodePaths` attribute set and pass it to both `linuxPackages.gentle-ai-assets` and `darwinPackages.gentle-ai-assets`. The path SHALL point to `shared/opencode/assets`.
+`lib/packages.nix` MUST expose both `extraAssets` and `extraFiles` via the `sharedOpencodePaths` attribute set and pass them to both `linuxPackages.gentle-ai-assets` and `darwinPackages.gentle-ai-assets`. The `extraAssets` path SHALL point to `shared/opencode/assets` (recursive overrides). The `extraFiles` path SHALL point to `shared/assets` (flat-file only overlays).
 
-#### Scenario: Both platforms receive extraAssets
+#### Scenario: Both platforms receive both parameters
 
-- GIVEN `sharedOpencodePaths` includes `extraAssets = ./../shared/opencode/assets`
+- GIVEN `sharedOpencodePaths` includes `extraAssets = ./../shared/opencode/assets` and `extraFiles = ./../shared/assets`
 - WHEN `lib/packages.nix` is evaluated
-- THEN both `linuxPackages.gentle-ai-assets` and `darwinPackages.gentle-ai-assets` SHALL receive the same `extraAssets` path
+- THEN both `linuxPackages.gentle-ai-assets` and `darwinPackages.gentle-ai-assets` SHALL receive both `extraAssets` and `extraFiles`
 
 ### Requirement: Anti-Hallucination Override Files
 
