@@ -146,10 +146,10 @@ let
               fi
             done
 
-                      # Directory management for skills/ and commands/
+                      # Directory management for commands/
                       # Handled here (not via home.file) because HM cannot overwrite real dirs with symlinks.
                       # Copies files from nix store with per-file cmp guard + orphan removal.
-                      for dir_pair in "skills:${pkgs.gentle-ai-assets}/share/gentle-ai/skills" "commands:${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/commands"; do
+                      for dir_pair in "commands:${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/commands"; do
                         dir_name="''${dir_pair%%:*}"
                         src="''${dir_pair#*:}"
                         target="$runtime_dir/$dir_name"
@@ -172,6 +172,44 @@ let
                             rm -f "$target/$rel"
                           fi
                         done
+                      done
+
+                      # Skills: dual-source deployment (upstream + local) with union-based orphan cleanup
+                      skills_target="$runtime_dir/skills"
+                      if [ -L "$skills_target" ]; then
+                        ${pkgs.coreutils}/bin/rm -f "$skills_target"
+                      fi
+                      mkdir -p "$skills_target"
+
+                      # First copy pass: upstream skills from skillsSource
+                      skills_src="${config.home.gentle-ai.skillsSource}"
+                      if [ -d "$skills_src" ]; then
+                        (cd "$skills_src" && ${pkgs.findutils}/bin/find . -type f) | while read -r rel; do
+                          if [ ! -f "$skills_target/$rel" ] || ! ${pkgs.diffutils}/bin/cmp -s "$skills_src/$rel" "$skills_target/$rel"; then
+                            mkdir -p "$(dirname "$skills_target/$rel")"
+                            ${pkgs.coreutils}/bin/cp -f "$skills_src/$rel" "$skills_target/$rel"
+                            chmod 644 "$skills_target/$rel"
+                          fi
+                        done
+                      fi
+
+                      # Second copy pass: local skills from localSkillsSource
+                      local_skills_src="${config.home.gentle-ai.localSkillsSource}"
+                      if [ -d "$local_skills_src" ]; then
+                        (cd "$local_skills_src" && ${pkgs.findutils}/bin/find . -type f) | while read -r rel; do
+                          if [ ! -f "$skills_target/$rel" ] || ! ${pkgs.diffutils}/bin/cmp -s "$local_skills_src/$rel" "$skills_target/$rel"; then
+                            mkdir -p "$(dirname "$skills_target/$rel")"
+                            ${pkgs.coreutils}/bin/cp -f "$local_skills_src/$rel" "$skills_target/$rel"
+                            chmod 644 "$skills_target/$rel"
+                          fi
+                        done
+                      fi
+
+                      # Union orphan cleanup: delete files absent from BOTH sources
+                      (cd "$skills_target" && ${pkgs.findutils}/bin/find . -type f) | while read -r rel; do
+                        if [ ! -f "$skills_src/$rel" ] && [ ! -f "$local_skills_src/$rel" ]; then
+                          rm -f "$skills_target/$rel"
+                        fi
                       done
 
                       # Patch sdd-apply and sdd-verify: remove <!-- section:model-capable -->

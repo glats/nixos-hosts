@@ -12,6 +12,7 @@ final: prev: {
     engram
     gentle-ai-assets
     gentle-ai-assets-vanilla
+    local-ai-assets
     engram-assets
     engram-assets-vanilla
     secret-guard-assets
