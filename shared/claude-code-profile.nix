@@ -10,10 +10,6 @@
   home.claude-code = {
     enable = true;
 
-    # opusplan: Opus during plan mode, Sonnet during execution.
-    # Opus for plan mode, Sonnet for execution.
-    model = "opusplan";
-
     permissions = {
       # dontAsk: auto-deny unmatched tools. Zero prompts for allowed tools.
       # AcceptEdits would be safer for teams, but this is personal machine.
