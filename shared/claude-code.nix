@@ -55,10 +55,10 @@ let
   mcpAllowRules = map (name: "mcp__${name}__*") (builtins.attrNames enabledMcps);
   userAllowRules = cfg.permissions.allow or [ ];
 
-  # Generate settings.json with permissions and model
+  # Generate settings.json with permissions.
+  # Model is NOT managed here — the claude-code wrapper injects --model opusplan.
   settingsJson = pkgs.writeText "claude-settings.json" (
     builtins.toJSON {
-      model = cfg.model;
       # Auto-approve project-scope MCPs (.mcp.json)
       # Claude Code bug #62888 — without this, servers only visible in CLI not TUI
       enableAllProjectMcpServers = true;
@@ -90,12 +90,6 @@ in
 
   options.home.claude-code = {
     enable = mkEnableOption "Claude Code configuration with Gentle AI assets";
-
-    model = mkOption {
-      type = types.str;
-      default = "claude-sonnet-4-6-20250508";
-      description = "Default Claude Code model to use.";
-    };
 
     permissions = mkOption {
       type = types.submodule {
