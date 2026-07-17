@@ -74,6 +74,13 @@ let
         # User rules first, then auto-generated MCP rules appended
         allow = userAllowRules ++ mcpAllowRules;
       };
+      # Disable commit attribution.
+      # Gentle AI policy: no AI co-author credits in commits.
+      attribution = {
+        commit = "";
+        pr = "";
+        sessionUrl = false;
+      };
       # Inject review gate instruction into Claude Code system prompt.
       # Claude Code does not auto-load ~/.claude/*.md files — this is the
       # equivalent of OpenCode loading sdd-orchestrator.md from its config dir.
