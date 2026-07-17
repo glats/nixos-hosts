@@ -40,9 +40,11 @@
 # deliberately NOT used because it would lose the login-screen layout
 # toggle.  Do not "fix" this to cage/session-files without confirming the
 # layout-toggle requirement is still valid.
-# When omarchy.greeter.layoutIndicator.enable = true, a waybar instance
-# displays "ES"/"LATAM" on a 24px bottom bar, updating within 1s of
-# Alt+Shift toggle — providing visual feedback that was missing before.
+# When omarchy.greeter.layoutIndicator.enable = true, layout switching
+# is handled by a Hyprland keybind + script that uses hyprctl notify
+# (compositor-level, guaranteed above everything) to display "ES" or
+# "LATAM" at the login screen. The indicator appears on toggle and at
+# startup.
 #
 # Recovery: if the greeter fails, append systemd.mask=greetd.service to the
 # kernel cmdline at the systemd-boot menu to skip greetd and drop to a VT
