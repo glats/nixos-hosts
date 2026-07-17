@@ -9,6 +9,7 @@ in
     settings = {
       core.editor = "nvim -u NONE";
       core.pager = "delta";
+      core.hooksPath = "~/.config/git/hooks";
       delta.enable = true;
       gpg.program = "${pkgs.gnupg}/bin/gpg";
       # Placeholder -- overridden by identity-personal include file written
@@ -71,4 +72,18 @@ in
       "${config.sops.secrets."identities/work_name".path}" \
       "${config.sops.secrets."identities/work_email".path}"
   '';
+
+  # Strip AI co-author trailers from commits.
+  # Claude Code has a known bug where attribution.commit="" doesn't reliably
+  # prevent Co-Authored-By trailers (anthropics/claude-code#45137, #4287).
+  # This commit-msg hook is the only 100% reliable fix.
+  home.file.".config/git/hooks/commit-msg" = {
+    executable = true;
+    text = ''
+      #!${pkgs.bash}/bin/bash
+      # Strip AI-generated Co-Authored-By trailers from commit messages.
+      # Matches: "Co-Authored-By: Claude <...>" and variants.
+      ${pkgs.gnused}/bin/sed -i '/^Co-Authored-By:.*<noreply@anthropic\.com>/d' "$1"
+    '';
+  };
 }
