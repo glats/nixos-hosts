@@ -92,6 +92,7 @@ When you detect any of these contexts, IMMEDIATELY load the corresponding skill 
 | Go tests, Bubbletea TUI testing | go-testing |
 | Creating new AI skills | skill-creator |
 | Editing `.nix` files only (packages, services, options, lib functions within .nix) | nix-verify |
+| Auditing OpenCode models, updating provider config, checking model fit for SDD phases | audit-providers-models |
 
 **Do NOT load nix-verify for non-Nix files** (JSON, YAML, TOML, Markdown, etc.) even if they
 live inside this NixOS repository. The skill is exclusively for verifying Nix language constructs.
