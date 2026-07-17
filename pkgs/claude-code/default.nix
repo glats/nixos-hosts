@@ -15,7 +15,7 @@ stdenvNoCC.mkDerivation {
   installPhase = ''
     mkdir -p $out/bin
     makeBinaryWrapper ${claude-code-unwrapped}/bin/claude $out/bin/claude \
-      --add-flags "--model opusplan"
+      --add-flags "--model sonnet"
   '';
 
   meta = (claude-code-unwrapped.meta or { }) // {
