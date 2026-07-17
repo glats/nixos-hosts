@@ -59,7 +59,9 @@ let
     opencode-npm-packages = linuxPkgs.callPackage ../pkgs/opencode-npm-packages { };
     opencode = linuxPkgs.callPackage ../pkgs/opencode { };
     openfang = linuxPkgs.callPackage ../pkgs/openfang { };
-    claude-code = inputs.claude-code-nix.packages.x86_64-linux.default;
+    claude-code = linuxPkgs.callPackage ../pkgs/claude-code {
+      claude-code-unwrapped = inputs.claude-code-nix.packages.x86_64-linux.default;
+    };
     thinkfan-ui = linuxPkgs.callPackage ../pkgs/thinkfan-ui {
       thinkfan-ui-src = inputs.thinkfan-ui-src;
       wrapQtAppsHook = linuxPkgs.qt6.wrapQtAppsHook;
@@ -95,7 +97,9 @@ let
     secret-guard-assets = darwinPkgs.callPackage ../pkgs/secret-guard-assets { };
     opencode-npm-packages = darwinPkgs.callPackage ../pkgs/opencode-npm-packages { };
     opencode = darwinPkgs.callPackage ../pkgs/opencode { };
-    claude-code = inputs.claude-code-nix.packages.x86_64-darwin.default;
+    claude-code = darwinPkgs.callPackage ../pkgs/claude-code {
+      claude-code-unwrapped = inputs.claude-code-nix.packages.x86_64-darwin.default;
+    };
   };
 in
 {
