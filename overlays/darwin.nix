@@ -32,6 +32,7 @@ in
     engram
     gentle-ai-assets-vanilla
     gentle-ai-assets
+    local-ai-assets
     engram-assets-vanilla
     engram-assets
     secret-guard-assets

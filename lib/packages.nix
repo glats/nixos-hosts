@@ -18,15 +18,14 @@ let
 
   # Cross-platform shared inputs
   sharedOpencodePaths = {
-    # Local skills now live in shared/assets/skills/ (tool-agnostic, via extraAssetsShared).
     # Arbitrary file overrides layered on top of vanilla gentle-ai assets.
     # Directory structure MUST mirror $out/share/gentle-ai/ (e.g.
     # shared/opencode/assets/opencode/sdd-orchestrator.md overwrites
     # $out/share/gentle-ai/opencode/sdd-orchestrator.md).
     extraAssets = ./../shared/opencode/assets;
-    # Tool-agnostic shared assets (e.g. review-gate.md) — same mechanism,
-    # but NOT under opencode/ so it's clear these are shared across tools.
-    extraAssetsShared = ./../shared/assets;
+    # Tool-agnostic shared assets (flat files only, e.g. review-gate.md).
+    # Skills are now provided by local-ai-assets via a separate option.
+    extraFiles = ./../shared/assets;
     # extraCommands: no local command forks; commands come from upstream
     # gentle-ai-src and caveman-src via gentle-ai-assets-vanilla.
   };
@@ -46,8 +45,9 @@ let
     };
     gentle-ai-assets = linuxPkgs.callPackage ../pkgs/gentle-ai-assets/default.nix {
       vanilla = linuxPackages.gentle-ai-assets-vanilla;
-      inherit (sharedOpencodePaths) extraAssets extraAssetsShared;
+      inherit (sharedOpencodePaths) extraAssets extraFiles;
     };
+    local-ai-assets = linuxPkgs.callPackage ../pkgs/local-ai-assets { };
     engram-assets-vanilla = linuxPkgs.callPackage ../pkgs/engram-assets/vanilla.nix {
       engram-src = inputs.engram-src;
     };
@@ -85,8 +85,9 @@ let
     };
     gentle-ai-assets = darwinPkgs.callPackage ../pkgs/gentle-ai-assets/default.nix {
       vanilla = darwinPackages.gentle-ai-assets-vanilla;
-      inherit (sharedOpencodePaths) extraAssets extraAssetsShared;
+      inherit (sharedOpencodePaths) extraAssets extraFiles;
     };
+    local-ai-assets = darwinPkgs.callPackage ../pkgs/local-ai-assets { };
     engram-assets-vanilla = darwinPkgs.callPackage ../pkgs/engram-assets/vanilla.nix {
       engram-src = inputs.engram-src;
     };

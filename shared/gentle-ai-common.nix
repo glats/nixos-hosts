@@ -27,6 +27,12 @@ with lib;
       description = "Path to the skills directory from gentle-ai-assets derivation.";
     };
 
+    localSkillsSource = mkOption {
+      type = types.path;
+      default = "${pkgs.local-ai-assets}/share/local-ai/skills";
+      description = "Path to locally maintained skills from local-ai-assets derivation.";
+    };
+
     engramConfig = mkOption {
       type = types.attrsOf types.anything;
       default = { };

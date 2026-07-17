@@ -8,7 +8,6 @@ description: >
   functions for .nix expressions. Do NOT trigger for JSON, YAML, TOML, or other non-Nix files.
 license: Apache-2.0
 metadata:
-  author: gentleman-programming
   version: "1.0"
 ---
 
