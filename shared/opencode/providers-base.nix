@@ -297,9 +297,9 @@ let
         sdd-explore = "opencode-go/deepseek-v4-pro";
         sdd-propose = "opencode-go/deepseek-v4-pro";
         sdd-spec = "opencode-go/deepseek-v4-pro";
-        sdd-design = "opencode-go/glm-5.1";
+        sdd-design = "opencode-go/deepseek-v4-pro";
         sdd-tasks = "opencode-go/deepseek-v4-flash";
-        sdd-apply = "opencode-go/deepseek-v4-flash";
+        sdd-apply = "opencode-go/kimi-k2.7-code";
         sdd-verify = "opencode-go/deepseek-v4-pro";
         sdd-archive = "opencode-go/deepseek-v4-flash";
         sdd-onboard = "opencode-go/deepseek-v4-flash";
