@@ -1,13 +1,13 @@
 ---
 name: git-feature-flow
-description: "Trigger: git feature flow, gitflow, feature branch, promote to develop/uat/main, integration branch, preserve hashes. Git Feature Flow that preserves feature commit hashes across develop -> uat -> main promotions."
+description: "Trigger: PR conflict, conflicto en PR, merge conflict, conflicted GitHub pull request, git feature flow, feature branch, promote to develop/uat/main, integration branch. Preserves commit hashes across environments."
 metadata:
   version: "1.0"
 ---
 
 ## Activation Contract
 
-Load when creating branches, opening PRs, resolving merge conflicts, or promoting work across `develop` -> `uat` -> `main` in a repo using this Git Feature Flow.
+Load when creating branches, opening PRs, a GitHub PR reports merge conflicts ("This branch has conflicts that must be resolved"), resolving merge conflicts locally, or promoting work across `develop` -> `uat` -> `main` in a repo using this Git Feature Flow.
 
 ## Hard Rules
 
