@@ -11,8 +11,14 @@ with lib;
 let
   cfg = config.home.claude-code;
 
+  # Per-tool command sources (NOT shared — each tool needs its own)
+  claudeCommandSources = [
+    "${pkgs.gentle-ai-assets}/share/gentle-ai/claude/agents"
+    "${pkgs.gentle-ai-assets}/share/gentle-ai/claude/commands"
+  ];
+
   # Merge base MCPs with extra MCPs, then filter by enabled
-  allMcps = config.home.gentle-ai.mcps // config.home.gentle-ai.extraMcps;
+  allMcps = config.home.ai-assets.mcps // config.home.ai-assets.extraMcps;
   enabledMcps = lib.filterAttrs (name: mcp: mcp.enabled or false) allMcps;
 
   # Translate OpenCode MCP format to Claude Code .mcp.json format
@@ -84,7 +90,7 @@ let
       # Inject review gate instruction into Claude Code system prompt.
       # Claude Code does not auto-load ~/.claude/*.md files — this is the
       # equivalent of OpenCode loading sdd-orchestrator.md from its config dir.
-      customInstructions = "After every sdd-apply phase completes, read ~/.claude/review-gate.md and follow the Review Gate instructions to present exactly 3 options: done, retry, reiterate. Do NOT advance to sdd-verify unless the verdict is done.";
+      customInstructions = "After every sdd-apply phase completes, present exactly 3 options: done (proceed to verify), retry (re-apply via sub-agent, no inline work), reiterate (re-explore via sub-agent, full SDD cycle). Do NOT advance to sdd-verify unless the verdict is done.";
     }
   );
 
@@ -92,7 +98,7 @@ let
 in
 {
   imports = [
-    ./gentle-ai-common.nix
+    ./ai-assets.nix
   ];
 
   options.home.claude-code = {
@@ -147,16 +153,12 @@ in
       engram
     ];
 
-    home.gentle-ai.enable = true;
+    home.ai-assets.enable = true;
 
     home.file = {
       ".claude/settings.json" = {
         force = true;
         source = settingsJson;
-      };
-      ".claude/review-gate.md" = {
-        force = true;
-        source = "${pkgs.gentle-ai-assets}/share/gentle-ai/review-gate.md";
       };
     };
 
@@ -201,18 +203,15 @@ in
         ${pkgs.coreutils}/bin/rm -f "$claude_json.tmp"
       fi
 
-      # Directory management for agents/, commands/
+      # Directory management for command-like directories (agents/, commands/).
       # Handled here (not via home.file) because HM cannot overwrite real dirs with symlinks.
-      # Copies files from nix store with per-file cmp guard + orphan removal.
-      for dir_pair in "agents:${pkgs.gentle-ai-assets}/share/gentle-ai/claude/agents" "commands:${pkgs.gentle-ai-assets}/share/gentle-ai/claude/commands"; do
-        dir_name="''${dir_pair%%:*}"
-        src="''${dir_pair#*:}"
-        target="$claude_dir/$dir_name"
-
-        # Skip if source does not exist
+      # Copies files from each source directory with per-file cmp guard + orphan removal.
+      for src in ${lib.concatStringsSep " " claudeCommandSources}; do
         if [ ! -d "$src" ]; then
           continue
         fi
+        dir_name="$(basename "$src")"
+        target="$claude_dir/$dir_name"
 
         # Remove symlink if HM managed to create one
         if [ -L "$target" ]; then
@@ -227,53 +226,52 @@ in
             ${pkgs.coreutils}/bin/cp -f "$src/$rel" "$target/$rel"
             chmod 644 "$target/$rel"
           fi
-        done
+        done || :
 
         # Remove orphaned files (present in target but not in source)
         (cd "$target" && ${pkgs.findutils}/bin/find . -type f) | while read -r rel; do
           if [ ! -f "$src/$rel" ]; then
             rm -f "$target/$rel"
           fi
-        done
+        done || :
       done
 
-      # Skills: dual-source deployment (upstream + local) with union-based orphan cleanup
+      # Skills: N-way union (all skillSources) with cmp guard + union orphan cleanup
       skills_target="$claude_dir/skills"
       if [ -L "$skills_target" ]; then
         ${pkgs.coreutils}/bin/rm -f "$skills_target"
       fi
       mkdir -p "$skills_target"
 
-      # First copy pass: upstream skills from skillsSource
-      skills_src="${config.home.gentle-ai.skillsSource}"
-      if [ -d "$skills_src" ]; then
-        (cd "$skills_src" && ${pkgs.findutils}/bin/find . -type f) | while read -r rel; do
-          if [ ! -f "$skills_target/$rel" ] || ! ${pkgs.diffutils}/bin/cmp -s "$skills_src/$rel" "$skills_target/$rel"; then
-            mkdir -p "$(dirname "$skills_target/$rel")"
-            ${pkgs.coreutils}/bin/cp -f "$skills_src/$rel" "$skills_target/$rel"
-            chmod 644 "$skills_target/$rel"
-          fi
-        done
-      fi
-
-      # Second copy pass: local skills from localSkillsSource
-      local_skills_src="${config.home.gentle-ai.localSkillsSource}"
-      if [ -d "$local_skills_src" ]; then
-        (cd "$local_skills_src" && ${pkgs.findutils}/bin/find . -type f) | while read -r rel; do
-          if [ ! -f "$skills_target/$rel" ] || ! ${pkgs.diffutils}/bin/cmp -s "$local_skills_src/$rel" "$skills_target/$rel"; then
-            mkdir -p "$(dirname "$skills_target/$rel")"
-            ${pkgs.coreutils}/bin/cp -f "$local_skills_src/$rel" "$skills_target/$rel"
-            chmod 644 "$skills_target/$rel"
-          fi
-        done
-      fi
-
-      # Union orphan cleanup: delete files absent from BOTH sources
-      (cd "$skills_target" && ${pkgs.findutils}/bin/find . -type f) | while read -r rel; do
-        if [ ! -f "$skills_src/$rel" ] && [ ! -f "$local_skills_src/$rel" ]; then
-          rm -f "$skills_target/$rel"
+      skills_sources_list="${lib.concatStringsSep " " config.home.ai-assets.skillSources}"
+      for src in $skills_sources_list; do
+        if [ -d "$src" ]; then
+          (cd "$src" && ${pkgs.findutils}/bin/find . -type f) | while read -r rel; do
+            if [ ! -f "$skills_target/$rel" ] || ! ${pkgs.diffutils}/bin/cmp -s "$src/$rel" "$skills_target/$rel"; then
+              mkdir -p "$(dirname "$skills_target/$rel")"
+              ${pkgs.coreutils}/bin/cp -f "$src/$rel" "$skills_target/$rel"
+              chmod 644 "$skills_target/$rel"
+            fi
+          done
         fi
       done
+
+      # Union orphan cleanup: delete files absent from ALL sources
+      (cd "$skills_target" && ${pkgs.findutils}/bin/find . -type f) | while read -r rel; do
+        found=0
+        for src in $skills_sources_list; do
+          [ -f "$src/$rel" ] && { found=1; break; }
+        done
+        [ "$found" = "0" ] && rm -f "$skills_target/$rel"
+      done || :
+
+      # CLAUDE.md: concatenate all configured sources
+      claude_md="${config.home.homeDirectory}/.claude/CLAUDE.md"
+      > "$claude_md"
+      for src in ${lib.concatStringsSep " " config.home.ai-assets.agentsMdSources}; do
+        [ -f "$src" ] && [ -s "$src" ] && cat "$src" >> "$claude_md"
+      done
+      chmod 644 "$claude_md"
 
       # output-styles/ — copy persona-*.md + output-style-*.md from claude/ root
       # Claude Code uses ~/.claude/output-styles/ for reusable personas/styles
