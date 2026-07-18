@@ -135,16 +135,6 @@ case "$COMMAND" in
         run_with_nom sudo nixos-rebuild switch --flake "$FLAKE_PATH#$HOSTNAME"
       fi
     fi
-
-    # Post-switch: ensure Home Manager activation has run.
-    # Systemd-based HM activation (NixOS module) only restarts when
-    # the HM generation changes. Running the activation script directly
-    # guarantees HM-managed mutable configs (e.g. ~/.config/opencode)
-    # are repaired even when no Nix config changed.
-    HM_ACTIVATE="$HOME/.local/state/nix/profiles/home-manager/activate"
-    if [ -x "$HM_ACTIVATE" ]; then
-      "$HM_ACTIVATE"
-    fi
     ;;
 
   boot)
@@ -196,16 +186,6 @@ case "$COMMAND" in
         echo "> Building NixOS configuration (upgrade)..."
         run_with_nom sudo nixos-rebuild switch --flake "$FLAKE_PATH#$HOSTNAME"
       fi
-    fi
-
-    # Post-switch: ensure Home Manager activation has run.
-    # Systemd-based HM activation (NixOS module) only restarts when
-    # the HM generation changes. Running the activation script directly
-    # guarantees HM-managed mutable configs (e.g. ~/.config/opencode)
-    # are repaired even when no Nix config changed.
-    HM_ACTIVATE="$HOME/.local/state/nix/profiles/home-manager/activate"
-    if [ -x "$HM_ACTIVATE" ]; then
-      "$HM_ACTIVATE"
     fi
     ;;
 
@@ -325,16 +305,6 @@ case "$COMMAND" in
           exit 1
         fi
       fi
-    fi
-
-    # Post-switch: ensure Home Manager activation has run.
-    # Systemd-based HM activation (NixOS module) only restarts when
-    # the HM generation changes. Running the activation script directly
-    # guarantees HM-managed mutable configs (e.g. ~/.config/opencode)
-    # are repaired even when no Nix config changed.
-    HM_ACTIVATE="$HOME/.local/state/nix/profiles/home-manager/activate"
-    if [ -x "$HM_ACTIVATE" ]; then
-      "$HM_ACTIVATE"
     fi
 
     echo ""
