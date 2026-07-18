@@ -1,48 +1,54 @@
-# Skill Registry
+# Skill Registry — nixos-hosts
 
-Project: nixos-hosts
-Source: scanned user + project skill directories
-Mode: registry index only
+**Generated**: 2026-07-17
+**Project**: nixos-hosts (NixOS multi-host Flakes configuration)
+**Registry maintainer**: sdd-init (re-initialized)
 
-## Contract
+## Convention Files
 
-- This file is an index, not a summary.
-- `SKILL.md` is the source of truth.
-- Skips `sdd-*`, `_shared`, and `skill-registry`.
-- Deduplicates by skill name and prefers project-level skills.
+- AGENTS.md — primary project conventions (path: /home/glats/.nixos/AGENTS.md)
+- flake.nix — flake structure single source of truth
 
-## Indexed Skills
+## Skills (28 indexed)
 
-| Name | Scope | Trigger / Description | Path |
-|---|---|---|---|
-| branch-pr | user | Create Gentle AI pull requests with issue-first checks. Trigger: creating, opening, or preparing PRs for review. | /home/glats/.config/opencode/skills/branch-pr/SKILL.md |
-| cavecrew | user | Decision guide for delegating to caveman-style subagents. Tells the main thread WHEN to spawn investigator/builder/reviewer instead of doing work inline. Trigger: delegate to subagent, use cavecrew, spawn investigator/builder/reviewer, save context, compressed agent output. | /home/glats/.config/opencode/skills/cavecrew/SKILL.md |
-| caveman | user | Ultra-compressed communication mode. Cuts token usage ~75% by speaking like caveman while keeping full technical accuracy. Supports intensity levels: lite, full (default), ultra. Use when user says caveman mode, talk like caveman, less tokens, be brief, or invokes /caveman. | /home/glats/.config/opencode/skills/caveman/SKILL.md |
-| caveman-commit | user | Ultra-compressed commit message generator. Cuts noise from commit messages while preserving intent and reasoning. Conventional Commits format. Use when user says write a commit, commit message, generate commit, /commit. | /home/glats/.config/opencode/skills/caveman-commit/SKILL.md |
-| caveman-compress | user | Compress natural language memory files (CLAUDE.md, todos, preferences) into caveman format to save input tokens. Preserves all technical substance, code, URLs, and structure. Trigger: /caveman-compress FILEPATH or compress memory file. | /home/glats/.config/opencode/skills/caveman-compress/SKILL.md |
-| caveman-help | user | Quick-reference card for all caveman modes, skills, and commands. One-shot display, not a persistent mode. Trigger: /caveman-help, caveman help, what caveman commands, how do I use caveman. | /home/glats/.config/opencode/skills/caveman-help/SKILL.md |
-| caveman-review | user | Ultra-compressed code review comments. Cuts noise from PR feedback while preserving the actionable signal. Each comment is one line: location, problem, fix. Use when user says review this PR, code review, /review. | /home/glats/.config/opencode/skills/caveman-review/SKILL.md |
-| caveman-stats | user | Show real token usage and estimated savings for the current session. Reads directly from session log — no AI estimation. Trigger: /caveman-stats. | /home/glats/.config/opencode/skills/caveman-stats/SKILL.md |
-| chained-pr | user | Split oversized changes into chained PRs that protect review focus. Trigger: PRs over 400 lines, stacked PRs, review slices. | /home/glats/.config/opencode/skills/chained-pr/SKILL.md |
-| cognitive-doc-design | user | Design docs that reduce cognitive load. Trigger: writing guides, READMEs, RFCs, onboarding, architecture, or review-facing docs. | /home/glats/.config/opencode/skills/cognitive-doc-design/SKILL.md |
-| comment-writer | user | Write warm, direct collaboration comments. Trigger: PR feedback, issue replies, reviews, Slack messages, or GitHub comments. | /home/glats/.config/opencode/skills/comment-writer/SKILL.md |
-| go-testing | user | Apply focused Go testing patterns. Trigger: Go tests, go test coverage, Bubbletea teatest, golden files. | /home/glats/.config/opencode/skills/go-testing/SKILL.md |
-| hermes-ephemeral-delegation | user | Orchestrate complex work via delegate_task to protect context. Trigger: broad exploration, multi-file reads, tests/builds, fresh review, or multi-step debug. | /home/glats/.config/opencode/skills/hermes-ephemeral-delegation/SKILL.md |
-| issue-creation | user | Create Gentle AI issues with issue-first checks. Trigger: creating GitHub issues, bug reports, or feature requests. | /home/glats/.config/opencode/skills/issue-creation/SKILL.md |
-| judgment-day | user | Run blind dual review, fix confirmed issues, then re-judge. Trigger: judgment day, dual review, adversarial review, juzgar. | /home/glats/.config/opencode/skills/judgment-day/SKILL.md |
-| nix-verify | project | Use the nixos MCP to verify packages, options, and Nix functions before writing NixOS/Home Manager configuration. Trigger: editing .nix files — adding packages, configuring services, searching for options. | /home/glats/.nixos/shared/opencode/skills/nix-verify/SKILL.md |
-| opencode-session-recovery | project | Recover lost opencode sessions from SQLite when project_id drift makes sessions invisible to `opencode session list`. | /home/glats/.nixos/shared/opencode/skills/opencode-session-recovery/SKILL.md |
-| skill-creator | user | Create LLM-first skills with valid frontmatter. Trigger: new skills, agent instructions, documenting AI usage patterns. | /home/glats/.config/opencode/skills/skill-creator/SKILL.md |
-| skill-improver | user | Audit and upgrade existing LLM-first skills. Trigger: improve skills, audit skills, refactor skills, skill quality. | /home/glats/.config/opencode/skills/skill-improver/SKILL.md |
-| work-unit-commits | user | Plan commits as reviewable work units. Trigger: implementation, commit splitting, chained PRs, or keeping tests and docs with code. | /home/glats/.config/opencode/skills/work-unit-commits/SKILL.md |
+| # | Name | Trigger | Scope | Path |
+|---|------|---------|-------|------|
+| 1 | audit-providers-models | revisar modelos, auditar providers, modelos opencode, update models, providers base, model fit, check models, model audit | project | /home/glats/.nixos/shared/assets/skills/audit-providers-models/SKILL.md |
+| 2 | branch-pr | creating, opening, or preparing PRs for review | user | /home/glats/.config/opencode/skills/branch-pr/SKILL.md |
+| 3 | caveman | caveman mode, talk like caveman, use caveman, less tokens, be brief, /caveman | user | /home/glats/.config/opencode/skills/caveman/SKILL.md |
+| 4 | caveman-commit | write a commit, commit message, generate commit, /commit, /caveman-commit | user | /home/glats/.config/opencode/skills/caveman-commit/SKILL.md |
+| 5 | caveman-compress | /caveman-compress FILEPATH, compress memory file | user | /home/glats/.config/opencode/skills/caveman-compress/SKILL.md |
+| 6 | caveman-help | /caveman-help, caveman help, what caveman commands, how do I use caveman | user | /home/glats/.config/opencode/skills/caveman-help/SKILL.md |
+| 7 | caveman-review | review this PR, code review, review the diff, /review, /caveman-review | user | /home/glats/.config/opencode/skills/caveman-review/SKILL.md |
+| 8 | caveman-stats | /caveman-stats | user | /home/glats/.config/opencode/skills/caveman-stats/SKILL.md |
+| 9 | cavecrew | delegate to subagent, use cavecrew, spawn investigator/builder/reviewer, save context, compressed agent output | user | /home/glats/.config/opencode/skills/cavecrew/SKILL.md |
+| 10 | chained-pr | PRs over 400 lines, stacked PRs, review slices | user | /home/glats/.config/opencode/skills/chained-pr/SKILL.md |
+| 11 | cognitive-doc-design | writing guides, READMEs, RFCs, onboarding, architecture, or review-facing docs | user | /home/glats/.config/opencode/skills/cognitive-doc-design/SKILL.md |
+| 12 | comment-writer | PR feedback, issue replies, reviews, Slack messages, or GitHub comments | user | /home/glats/.config/opencode/skills/comment-writer/SKILL.md |
+| 13 | git-feature-flow | PR conflict, conflicto en PR, merge conflict, conflicted GitHub pull request, git feature flow, feature branch, promote to develop/uat/main, integration branch | project | /home/glats/.nixos/shared/assets/skills/git-feature-flow/SKILL.md |
+| 14 | go-testing | Go tests, go test coverage, Bubbletea teatest, golden files | user | /home/glats/.config/opencode/skills/go-testing/SKILL.md |
+| 15 | hermes-ephemeral-delegation | broad exploration, multi-file reads, tests/builds, fresh review, or multi-step debug | user | /home/glats/.config/opencode/skills/hermes-ephemeral-delegation/SKILL.md |
+| 16 | issue-creation | creating GitHub issues, bug reports, or feature requests | user | /home/glats/.config/opencode/skills/issue-creation/SKILL.md |
+| 17 | judgment-day | judgment day, dual review, adversarial review, juzgar | user | /home/glats/.config/opencode/skills/judgment-day/SKILL.md |
+| 18 | nix-verify | editing .nix files — adding packages, configuring services, searching options, looking up Nix lib functions | project | /home/glats/.nixos/shared/assets/skills/nix-verify/SKILL.md |
+| 19 | opencode-session-recovery | sessions missing from opencode session list, project_id mismatch | project | /home/glats/.nixos/shared/assets/skills/opencode-session-recovery/SKILL.md |
+| 20 | ponytail | be lazy, lazy mode, simplest solution, minimal solution, yagni, do less, shortest path, /ponytail | user | /home/glats/.config/opencode/skills/ponytail/SKILL.md |
+| 21 | ponytail-audit | audit this codebase, audit for over-engineering, what can I delete, find bloat, /ponytail-audit | user | /home/glats/.config/opencode/skills/ponytail-audit/SKILL.md |
+| 22 | ponytail-debt | ponytail debt, /ponytail-debt, what did ponytail defer, list the shortcuts, ponytail ledger | user | /home/glats/.config/opencode/skills/ponytail-debt/SKILL.md |
+| 23 | ponytail-gain | /ponytail-gain, ponytail gain, what does ponytail save, show ponytail impact, ponytail scoreboard | user | /home/glats/.config/opencode/skills/ponytail-gain/SKILL.md |
+| 24 | ponytail-help | /ponytail-help, ponytail help, what ponytail commands, how do I use ponytail | user | /home/glats/.config/opencode/skills/ponytail-help/SKILL.md |
+| 25 | ponytail-review | review for over-engineering, what can we delete, is this over-engineered, simplify review, /ponytail-review | user | /home/glats/.config/opencode/skills/ponytail-review/SKILL.md |
+| 26 | skill-creator | new skills, agent instructions, documenting AI usage patterns | user | /home/glats/.config/opencode/skills/skill-creator/SKILL.md |
+| 27 | skill-improver | improve skills, audit skills, refactor skills, skill quality | user | /home/glats/.config/opencode/skills/skill-improver/SKILL.md |
+| 28 | work-unit-commits | implementation, commit splitting, chained PRs, keeping tests and docs with code | user | /home/glats/.config/opencode/skills/work-unit-commits/SKILL.md |
 
-## Referenced Convention Files
+## Excluded Skills
 
-| File | Type | Referenced Paths |
-|---|---|---|
-| /home/glats/.nixos/AGENTS.md | Index | hosts/{hostname}/default.nix, modules/profiles/, modules/base/, modules/desktop/, modules/features/, modules/hardware/, modules/networking/, modules/virtualisation/, home-linux/, home-darwin/, shared/, darwin/, lib/, overlays/, pkgs/, bin/, secrets/ |
+Skills from scan that are excluded by convention: `sdd-*` (9 skills), `_shared`, `skill-registry`.
 
-## Count
+## Notes
 
-20 indexed skills
-1 referenced convention file
+- Project-level skills (scope=project) shadow user-level skills with the same name
+- `.atl/skill-registry.md` is the index — subagents read the actual SKILL.md for full instructions
+- SDD skills (sdd-init, sdd-explore, sdd-propose, sdd-spec, sdd-design, sdd-tasks, sdd-apply, sdd-verify, sdd-archive) excluded per sdd-init convention
+- `customize-opencode` skill is a built-in, not in user/project skills directory
