@@ -58,13 +58,6 @@ secrets/                         # sops-nix (encrypted — never edit directly)
 | Test t14 Omarchy | `nix build .#nixosConfigurations.t14.config.system.build.toplevel` (fastest check before full build) |
 | Enter dev shell | `nix-shell -p <pkg>` if a tool is not installed |
 
-### Git
-
-| Task | Command | Verify |
-|------|---------|--------|
-| Stage all Nix changes | `git add -A` | `git diff --cached --stat` |
-| Commit | `git commit -m "type(scope): message"` | `git log --oneline -3` |
-
 ## When Coding
 
 1. **Research first** — never guess about how things work. Use MCP tools (github, context7, exa) to verify approaches, options, and best practices before writing.
@@ -81,18 +74,7 @@ secrets/                         # sops-nix (encrypted — never edit directly)
 1. Check the diff covers what the task asked for
 2. Verify `nix flake check --no-build` passes for at least one host
 3. Confirm secrets are NOT exposed in plaintext
-4. Check `opencode.json` / `AGENTS.md` changes don't break the config format
-
-## Skills (Auto-load based on context)
-
-When you detect any of these contexts, IMMEDIATELY load the corresponding skill BEFORE writing any code.
-
-| Context | Skill to load |
-| ------- | ------------- |
-| Go tests, Bubbletea TUI testing | go-testing |
-| Creating new AI skills | skill-creator |
-| Editing `.nix` files only (packages, services, options, lib functions within .nix) | nix-verify |
-| Auditing OpenCode models, updating provider config, checking model fit for SDD phases | audit-providers-models |
+4. Check `AGENTS.md` changes don't break the config format
 
 **Do NOT load nix-verify for non-Nix files** (JSON, YAML, TOML, Markdown, etc.) even if they
 live inside this NixOS repository. The skill is exclusively for verifying Nix language constructs.
