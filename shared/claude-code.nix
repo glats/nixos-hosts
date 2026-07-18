@@ -88,9 +88,12 @@ let
         sessionUrl = false;
       };
       # Inject review gate instruction into Claude Code system prompt.
-      # Claude Code does not auto-load ~/.claude/*.md files — this is the
-      # equivalent of OpenCode loading sdd-orchestrator.md from its config dir.
-      customInstructions = "After every sdd-apply phase completes, present exactly 3 options: done (proceed to verify), retry (re-apply via sub-agent, no inline work), reiterate (re-explore via sub-agent, full SDD cycle). Do NOT advance to sdd-verify unless the verdict is done.";
+      # Review gate + explore MCP rules via customInstructions (Claude Code equivalent of OpenCode instructionOverlays).
+      customInstructions = ''
+        After every sdd-apply phase completes, present exactly 3 options: done (proceed to verify), retry (re-apply via sub-agent, no inline work), reiterate (re-explore via sub-agent, full SDD cycle). Do NOT advance to sdd-verify unless the verdict is done.
+
+        During sdd-explore, use MCP tools (context7, github, exa) to research the topic online before analyzing the codebase. Verify APIs, versions, and best practices with MCP tools first.
+      '';
     }
   );
 
