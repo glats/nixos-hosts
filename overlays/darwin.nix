@@ -30,8 +30,9 @@ in
     nixos-scripts
     gentle-ai
     engram
-    gentle-ai-assets-vanilla
     gentle-ai-assets
+    caveman-assets
+    ponytail-assets
     local-ai-assets
     engram-assets-vanilla
     engram-assets

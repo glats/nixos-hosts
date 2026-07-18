@@ -37,5 +37,8 @@
         "sdd-*": "allow"
       }
     }
+  },
+  "instructionOverlays": {
+    "gentle-orchestrator": ["review-gate-rules.md"]
   }
 }

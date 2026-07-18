@@ -1,97 +1,33 @@
 { lib
 , stdenvNoCC
-, vanilla
-, extraCommands ? null
-, extraAssets ? null
-, extraFiles ? null
+, gentle-ai-src
 ,
 }:
 
 stdenvNoCC.mkDerivation {
   pname = "gentle-ai-assets";
-  version = vanilla.version or "unstable";
+  version = gentle-ai-src.rev or "unstable";
 
-  # No src needed — we build on top of vanilla
-  dontUnpack = true;
-
-  buildPhase = ''
-    echo "Layering gentle-ai assets on top of vanilla..."
-  '';
+  src = gentle-ai-src;
 
   installPhase = ''
-    # Work in a temp directory to avoid permission issues
-    TEMP_DIR=$(mktemp -d)
-    chmod 755 "$TEMP_DIR"
-
-    # Copy vanilla's CONTENTS (share/gentle-ai/*) to temp
-    for item in ${vanilla}/share/gentle-ai/*; do
-      # Copy and make writable
-      cp -r "$item" "$TEMP_DIR/"
-      chmod -R u+w "$TEMP_DIR/$(basename "$item")"
-    done
-
-    # Tool-agnostic shared assets (flat files only, e.g. review-gate.md)
-    # are handled by extraFiles below. Skills are now provided by the
-    # separate local-ai-assets derivation.
-
-    # Overlay local commands on top of vanilla commands
-    # extraCommands defaults to null (no local command overrides)
-    if ${
-      lib.optionalString (extraCommands != null) ''
-        for cmd_file in ${extraCommands}/*; do
-          cmd_name=$(basename "$cmd_file")
-          # Remove existing if present (read-only from vanilla copy)
-          rm -f "$TEMP_DIR/opencode/commands/$cmd_name" 2>/dev/null || true
-          # Copy new version
-          cp "$cmd_file" "$TEMP_DIR/opencode/commands/"
-          chmod u+w "$TEMP_DIR/opencode/commands/$cmd_name"
-        done
-      ''
-    } true; then
-      :
-    fi
-
-    # Overlay local extra assets (arbitrary file overrides at any depth).
-    # extraAssets directory structure MUST mirror $out/share/gentle-ai/ —
-    # any file path present in extraAssets overwrites the vanilla copy.
-    if ${
-      lib.optionalString (extraAssets != null) ''
-        if [ -d "${extraAssets}" ]; then
-          cp -r ${extraAssets}/. $TEMP_DIR/
-        fi
-      ''
-    } true; then
-      :
-    fi
-
-    # Layer tool-agnostic shared assets on top (flat files only).
-    # Same mechanism as extraAssets but from a tool-neutral directory.
-    # Uses explicit loop with chmod to handle read-only vanilla files.
-    if ${
-      lib.optionalString (extraFiles != null) ''
-        if [ -d "${extraFiles}" ]; then
-          for item in ${extraFiles}/*; do
-            if [ -f "$item" ]; then
-              # For flat files (e.g. review-gate.md), just copy
-              cp "$item" "$TEMP_DIR/"
-              chmod u+w "$TEMP_DIR/$(basename "$item")"
-            fi
-          done
-        fi
-      ''
-    } true; then
-      :
-    fi
-
-    # Move to final destination
     mkdir -p $out/share/gentle-ai
-    cp -r "$TEMP_DIR/"* $out/share/gentle-ai/
-
-    rm -rf "$TEMP_DIR"
+    [ -f $src/AGENTS.md ] && cp $src/AGENTS.md $out/share/gentle-ai/
+    for dir in opencode skills claude cursor windsurf gemini codex kimi qwen kiro; do
+      if [ -d $src/internal/assets/$dir ]; then
+        mkdir -p $out/share/gentle-ai/$dir
+        cp -r $src/internal/assets/$dir/* $out/share/gentle-ai/$dir/
+      fi
+    done
+    # root-level skills (if any exist alongside internal/assets/skills)
+    if [ -d $src/skills ]; then
+      mkdir -p $out/share/gentle-ai/skills
+      cp -r $src/skills/* $out/share/gentle-ai/skills/ 2>/dev/null || true
+    fi
   '';
 
   meta = with lib; {
-    description = "Gentle AI configuration assets with local rule overrides";
+    description = "Gentle AI configuration assets";
     homepage = "https://github.com/Gentleman-Programming/gentle-ai";
     license = licenses.mit;
     platforms = platforms.all;
