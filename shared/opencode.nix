@@ -124,9 +124,7 @@ let
           ''
             runtime_dir="${runtimeDir}"
 
-            if [ ! -d "$runtime_dir" ]; then
-              exit 0
-            fi
+            mkdir -p "$runtime_dir"
 
             # Single-file symlinks -> real copies (hash guard via cmp)
             # ALWAYS replace symlinks with real copies — even if content matches,
@@ -228,9 +226,7 @@ let
           ''
             runtime_dir="${runtimeDir}"
 
-            if [ ! -d "$runtime_dir" ]; then
-              exit 0
-            fi
+            mkdir -p "$runtime_dir"
 
             # Ensure plugins directory is a real directory (not symlink)
             if [ -L "$runtime_dir/plugins" ]; then
@@ -285,9 +281,7 @@ let
             opencode_skills_dir="${config.home.homeDirectory}/.config/opencode/skills"
             openfang_skills_dir="${config.home.homeDirectory}/.openfang/skills"
 
-            if [ ! -d "$opencode_skills_dir" ]; then
-              exit 0
-            fi
+            mkdir -p "$opencode_skills_dir"
 
             # Ensure openfang skills dir exists as a real directory
             if [ -L "$openfang_skills_dir" ]; then
