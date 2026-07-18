@@ -4,10 +4,17 @@ This document describes how to update Gentle AI assets in this NixOS configurati
 
 ## Overview
 
-The configuration uses a layered approach:
-- **vanilla**: Pure upstream copy (no local modifications)
-- **gentle-ai-assets**: Vanilla base + local skill overrides + local persona rules
-- **engram.ts**: Local-only plugin (does not exist upstream)
+The AI assets are split into independent, per-source derivations:
+
+| Derivation | Source | Output path |
+|------------|--------|-------------|
+| `gentle-ai-assets` | `gentle-ai-src` | `$out/share/gentle-ai/` |
+| `caveman-assets` | `caveman-src` | `$out/share/caveman/` |
+| `ponytail-assets` | `ponytail-src` | `$out/share/ponytail/` |
+| `local-ai-assets` | local repo | `$out/share/local-ai/` |
+
+Tool-specific activation scripts (OpenCode, Claude Code) merge skills, commands,
+and AGENTS.md/CLAUDE.md fragments from all configured sources at activation time.
 
 ## Update Steps
 
@@ -22,6 +29,7 @@ Note the latest version tag (e.g., `v1.22.0`).
 ### Step 2: Verify Current Binary Version
 
 Check `pkgs/gentle-ai/default.nix`:
+
 ```nix
 version = "1.21.0";
 ```
@@ -54,11 +62,10 @@ echo "Synced from gentle-ai v1.22.0 on $(date -Iseconds)" > modules/home/opencod
 ### Step 5: Build and Verify
 
 ```bash
-# Build vanilla (pure upstream)
-nix build .#gentle-ai-assets-vanilla
-
-# Build layered assets (vanilla + local overrides)
+# Build each asset derivation
 nix build .#gentle-ai-assets
+nix build .#caveman-assets
+nix build .#ponytail-assets
 
 # Verify flake syntax
 nix flake check
@@ -69,10 +76,14 @@ format-nix
 
 ## Verification Checklist
 
-- [ ] `nix build .#gentle-ai-assets-vanilla` succeeds
 - [ ] `nix build .#gentle-ai-assets` succeeds
-- [ ] All upstream plugins present in output (`opencode/plugins/`)
-- [ ] Local skills override upstream (`skills/caveman/SKILL.md` is local)
+- [ ] `nix build .#caveman-assets` succeeds
+- [ ] `nix build .#ponytail-assets` succeeds
+- [ ] All upstream skills deploy to `~/.config/opencode/skills/`
+- [ ] All caveman skills deploy to `~/.config/opencode/skills/`
+- [ ] All ponytail skills deploy to `~/.config/opencode/skills/`
+- [ ] Local skills override upstream (`skills/audit-providers-models/SKILL.md` is local)
+- [ ] `~/.config/opencode/AGENTS.md` contains content from all `agentsMdSources`
 - [ ] `nix flake check` exits 0
 - [ ] `format-nix` passes
 
@@ -89,14 +100,12 @@ format-nix
 If something goes wrong:
 
 ```bash
-# Restore original files
+# Revert package and shared changes
 git checkout HEAD -- pkgs/gentle-ai-assets/default.nix
-git checkout HEAD -- pkgs/gentle-ai-assets/vanilla.nix
-git checkout HEAD -- flake.nix
-git checkout HEAD -- modules/base/overlays.nix
-
-# Remove vanilla.nix if it was created
-rm -f pkgs/gentle-ai-assets/vanilla.nix
+git checkout HEAD -- pkgs/caveman-assets/default.nix
+git checkout HEAD -- pkgs/ponytail-assets/default.nix
+git checkout HEAD -- lib/packages.nix
+git checkout HEAD -- overlays/linux.nix overlays/darwin.nix
 
 # Rebuild
 nix build .#gentle-ai-assets && nix flake check
@@ -105,6 +114,6 @@ nix build .#gentle-ai-assets && nix flake check
 ## Principles
 
 1. **Always use upstream plugins** — If there's a bug, PR to upstream
-2. **Vanilla = pure upstream** — No local modifications
-3. **Layered = vanilla + local skills/PERSONA only** — No plugin layering
+2. **Per-source derivations are independent** — No monolithic vanilla/layered chain
+3. **Local skills live in `local-ai-assets`** — Never modify upstream source pins directly
 4. **engram.ts is the only local plugin** — Doesn't exist upstream

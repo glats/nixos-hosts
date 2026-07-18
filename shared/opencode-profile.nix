@@ -2,11 +2,11 @@
 
 {
   imports = [
-    ./gentle-ai-common.nix
+    ./ai-assets.nix
   ];
 
   # Gentle AI shared ecosystem enabled when any tool uses it
-  home.gentle-ai.enable = true;
+  home.ai-assets.enable = true;
 
   home.opencode = {
     enable = true;

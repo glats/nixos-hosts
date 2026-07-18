@@ -16,20 +16,6 @@ let
   linuxPkgs = pkgsFor "x86_64-linux";
   darwinPkgs = pkgsFor "x86_64-darwin";
 
-  # Cross-platform shared inputs
-  sharedOpencodePaths = {
-    # Arbitrary file overrides layered on top of vanilla gentle-ai assets.
-    # Directory structure MUST mirror $out/share/gentle-ai/ (e.g.
-    # shared/opencode/assets/opencode/sdd-orchestrator.md overwrites
-    # $out/share/gentle-ai/opencode/sdd-orchestrator.md).
-    extraAssets = ./../shared/opencode/assets;
-    # Tool-agnostic shared assets (flat files only, e.g. review-gate.md).
-    # Skills are now provided by local-ai-assets via a separate option.
-    extraFiles = ./../shared/assets;
-    # extraCommands: no local command forks; commands come from upstream
-    # gentle-ai-src and caveman-src via gentle-ai-assets-vanilla.
-  };
-
   linuxPackages = rec {
     nixos-scripts = linuxPkgs.callPackage ../pkgs/nixos-scripts { };
     gentle-ai = linuxPkgs.callPackage ../pkgs/gentle-ai {
@@ -38,14 +24,14 @@ let
     engram = linuxPkgs.callPackage ../pkgs/engram {
       engram-src = inputs.engram-src;
     };
-    gentle-ai-assets-vanilla = linuxPkgs.callPackage ../pkgs/gentle-ai-assets/vanilla.nix {
-      gentle-ai-src = inputs.gentle-ai-src;
-      caveman-src = inputs.caveman-src;
-      ponytail-src = inputs.ponytail-src;
-    };
     gentle-ai-assets = linuxPkgs.callPackage ../pkgs/gentle-ai-assets/default.nix {
-      vanilla = linuxPackages.gentle-ai-assets-vanilla;
-      inherit (sharedOpencodePaths) extraAssets extraFiles;
+      gentle-ai-src = inputs.gentle-ai-src;
+    };
+    caveman-assets = linuxPkgs.callPackage ../pkgs/caveman-assets/default.nix {
+      caveman-src = inputs.caveman-src;
+    };
+    ponytail-assets = linuxPkgs.callPackage ../pkgs/ponytail-assets/default.nix {
+      ponytail-src = inputs.ponytail-src;
     };
     local-ai-assets = linuxPkgs.callPackage ../pkgs/local-ai-assets { };
     engram-assets-vanilla = linuxPkgs.callPackage ../pkgs/engram-assets/vanilla.nix {
@@ -78,14 +64,14 @@ let
     engram = darwinPkgs.callPackage ../pkgs/engram {
       engram-src = inputs.engram-src;
     };
-    gentle-ai-assets-vanilla = darwinPkgs.callPackage ../pkgs/gentle-ai-assets/vanilla.nix {
-      gentle-ai-src = inputs.gentle-ai-src;
-      caveman-src = inputs.caveman-src;
-      ponytail-src = inputs.ponytail-src;
-    };
     gentle-ai-assets = darwinPkgs.callPackage ../pkgs/gentle-ai-assets/default.nix {
-      vanilla = darwinPackages.gentle-ai-assets-vanilla;
-      inherit (sharedOpencodePaths) extraAssets extraFiles;
+      gentle-ai-src = inputs.gentle-ai-src;
+    };
+    caveman-assets = darwinPkgs.callPackage ../pkgs/caveman-assets/default.nix {
+      caveman-src = inputs.caveman-src;
+    };
+    ponytail-assets = darwinPkgs.callPackage ../pkgs/ponytail-assets/default.nix {
+      ponytail-src = inputs.ponytail-src;
     };
     local-ai-assets = darwinPkgs.callPackage ../pkgs/local-ai-assets { };
     engram-assets-vanilla = darwinPkgs.callPackage ../pkgs/engram-assets/vanilla.nix {

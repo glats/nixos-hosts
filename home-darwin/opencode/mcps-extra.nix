@@ -78,5 +78,5 @@ let
 in
 {
   # Export the extra MCPs for merging
-  home.gentle-ai.extraMcps = extraMcps;
+  home.ai-assets.extraMcps = extraMcps;
 }

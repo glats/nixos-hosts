@@ -2,10 +2,10 @@
 
 {
   imports = [
-    ./gentle-ai-common.nix
+    ./ai-assets.nix
   ];
 
-  home.gentle-ai.enable = true;
+  home.ai-assets.enable = true;
 
   home.claude-code = {
     enable = true;

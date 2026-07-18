@@ -141,13 +141,3 @@ Load skills BEFORE writing code. Apply ALL patterns. Multiple skills can apply s
 | Repo | Permission |
 |------|-----------|
 | `github.com/glats/omarchy-nix` | Full clone & push access — changes involving this repo can be committed and pushed directly |
-
-## SDD Review Gate
-
-After `sdd-apply` completes, the review gate ALWAYS presents exactly 3 options:
-
-1. **done**      — proceed to verify, then archive
-2. **retry**     — re-apply the same tasks (quick fix loop)
-3. **reiterate** — re-explore everything from scratch (direction change)
-
-No other options. No "proceed", no "redo", no custom branches. These 3 only.

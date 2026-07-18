@@ -16,7 +16,7 @@ let
 
   # Read upstream agent definitions from vanilla assets
   upstreamOverlay = builtins.fromJSON (
-    builtins.readFile "${pkgs.gentle-ai-assets-vanilla}/share/gentle-ai/opencode/sdd-overlay-single.json"
+    builtins.readFile "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/sdd-overlay-single.json"
   );
   upstreamAgents = upstreamOverlay.agent or { };
 
@@ -111,11 +111,18 @@ let
             (lib.concatStringsSep "\n\n" (map (f: builtins.readFile ./${f}) localInstructions)) + "\n\n"
           else
             "";
+        # For the orchestrator, embed AGENTS.md content at build time via builtins.readFile
+        # instead of {file:./AGENTS.md} (runtime loading).
+        basePrompt =
+          if name == "gentle-orchestrator" then
+            builtins.readFile "${pkgs.gentle-ai-assets}/share/gentle-ai/AGENTS.md"
+          else
+            upstream.prompt or "";
       in
       (removeAttrs upstream [ ])
       // lib.optionalAttrs (localModel != null) { model = localModel; }
-      // lib.optionalAttrs (instructionPrompt != "") {
-        prompt = instructionPrompt + (upstream.prompt or "");
+      // lib.optionalAttrs (instructionPrompt != "" || basePrompt != "") {
+        prompt = instructionPrompt + basePrompt;
       }
       // lib.optionalAttrs (localTools != { }) {
         tools = smartMerge localTools (upstream.tools or { });

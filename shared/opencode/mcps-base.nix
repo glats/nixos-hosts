@@ -63,7 +63,7 @@ let
   };
 in
 {
-  options.home.gentle-ai.mcps = mkOption {
+  options.home.ai-assets.mcps = mkOption {
     type = types.attrsOf (
       types.submodule {
         freeformType = types.attrs;
