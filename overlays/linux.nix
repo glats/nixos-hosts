@@ -11,7 +11,8 @@ final: prev: {
     gentle-ai
     engram
     gentle-ai-assets
-    gentle-ai-assets-vanilla
+    caveman-assets
+    ponytail-assets
     local-ai-assets
     engram-assets
     engram-assets-vanilla

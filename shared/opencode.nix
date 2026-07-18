@@ -23,8 +23,15 @@ let
     let
       runtimeDir = "${config.home.homeDirectory}/.config/${runtimeCfg.dir}";
 
+      # Per-tool command sources (NOT shared — each tool needs its own)
+      opencodeCommandSources = [
+        "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/commands"
+        "${pkgs.caveman-assets}/share/caveman/commands"
+        "${pkgs.ponytail-assets}/share/ponytail/commands"
+      ];
+
       # Merge base MCPs with extra MCPs, then filter by enabled
-      allMcps = config.home.gentle-ai.mcps // config.home.gentle-ai.extraMcps;
+      allMcps = config.home.ai-assets.mcps // config.home.ai-assets.extraMcps;
       enabledMcps = lib.filterAttrs (name: mcp: mcp.enabled or false) allMcps;
 
       # TUI plugins configuration (name -> enabled)
@@ -84,16 +91,8 @@ let
           force = true;
           source = jsonFile;
         };
-        ".config/${runtimeCfg.dir}/AGENTS.md" = {
-          force = true;
-          source = "${pkgs.gentle-ai-assets}/share/gentle-ai/AGENTS.md";
-        };
-        ".config/${runtimeCfg.dir}/review-gate.md" = {
-          force = true;
-          source = "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/review-gate.md";
-        };
-        # skills/ and commands/ are managed entirely by makeOpencodeConfigMutable activation
-        # (not via home.file) because HM cannot overwrite existing real directories with symlinks
+        # skills/, commands/, and AGENTS.md are managed entirely by makeOpencodeConfigMutable activation
+        # (not via home.file) because HM cannot overwrite existing real directories with symlinks.
         ".config/${runtimeCfg.dir}/package.json" = {
           force = true;
           source = "${pkgs.opencode-npm-packages}/package.json";
@@ -123,18 +122,18 @@ let
       home.activation."makeOpencodeConfigMutable-${runtimeCfg.label}" =
         config.lib.dag.entryAfter [ "linkGeneration" ]
           ''
-                      runtime_dir="${runtimeDir}"
+            runtime_dir="${runtimeDir}"
 
-                      if [ ! -d "$runtime_dir" ]; then
-                        exit 0
-                      fi
+            if [ ! -d "$runtime_dir" ]; then
+              exit 0
+            fi
 
             # Single-file symlinks -> real copies (hash guard via cmp)
             # ALWAYS replace symlinks with real copies — even if content matches,
             # the symlink points to the read-only nix store which OpenCode can't write to.
             # cmp guard is only used to skip unnecessary writes to already-real files
             # that haven't changed since the last build.
-            for file in opencode.json AGENTS.md review-gate.md package.json .gitignore tui.json; do
+            for file in opencode.json AGENTS.md package.json .gitignore tui.json; do
               target="$runtime_dir/$file"
               if [ -L "$target" ]; then
                 src="$(${pkgs.coreutils}/bin/readlink -f "$target")"
@@ -146,82 +145,81 @@ let
               fi
             done
 
-                      # Directory management for commands/
-                      # Handled here (not via home.file) because HM cannot overwrite real dirs with symlinks.
-                      # Copies files from nix store with per-file cmp guard + orphan removal.
-                      for dir_pair in "commands:${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/commands"; do
-                        dir_name="''${dir_pair%%:*}"
-                        src="''${dir_pair#*:}"
-                        target="$runtime_dir/$dir_name"
-                        # Remove symlink if HM managed to create one
-                        if [ -L "$target" ]; then
-                          ${pkgs.coreutils}/bin/rm -f "$target"
-                        fi
-                        mkdir -p "$target"
-                        # Copy changed files
-                        (cd "$src" && ${pkgs.findutils}/bin/find . -type f) | while read -r rel; do
-                          if [ ! -f "$target/$rel" ] || ! ${pkgs.diffutils}/bin/cmp -s "$src/$rel" "$target/$rel"; then
-                            mkdir -p "$(dirname "$target/$rel")"
-                            ${pkgs.coreutils}/bin/cp -f "$src/$rel" "$target/$rel"
-                            chmod 644 "$target/$rel"
-                          fi
-                        done
-                        # Remove orphaned files
-                        (cd "$target" && ${pkgs.findutils}/bin/find . -type f) | while read -r rel; do
-                          if [ ! -f "$src/$rel" ]; then
-                            rm -f "$target/$rel"
-                          fi
-                        done
-                      done
+            # Directory management for commands/
+            # Handled here (not via home.file) because HM cannot overwrite real dirs with symlinks.
+            # N-way union: copy from all sources, then union-based orphan cleanup.
+            cmds_target="$runtime_dir/commands"
+            if [ -L "$cmds_target" ]; then
+              ${pkgs.coreutils}/bin/rm -f "$cmds_target"
+            fi
+            mkdir -p "$cmds_target"
+            for src in ${lib.concatStringsSep " " opencodeCommandSources}; do
+              if [ -d "$src" ]; then
+                (cd "$src" && ${pkgs.findutils}/bin/find . -type f) | while read -r rel; do
+                  if [ ! -f "$cmds_target/$rel" ] || ! ${pkgs.diffutils}/bin/cmp -s "$src/$rel" "$cmds_target/$rel"; then
+                    mkdir -p "$(dirname "$cmds_target/$rel")"
+                    ${pkgs.coreutils}/bin/cp -f "$src/$rel" "$cmds_target/$rel"
+                    chmod 644 "$cmds_target/$rel"
+                  fi
+                done
+              fi
+            done
+            # Union orphan cleanup: delete files absent from ALL command sources
+            (cd "$cmds_target" && ${pkgs.findutils}/bin/find . -type f) | while read -r rel; do
+              found=0
+              for src in ${lib.concatStringsSep " " opencodeCommandSources}; do
+                [ -f "$src/$rel" ] && { found=1; break; }
+              done
+              [ "$found" = "0" ] && rm -f "$cmds_target/$rel"
+            done || :
 
-                      # Skills: dual-source deployment (upstream + local) with union-based orphan cleanup
-                      skills_target="$runtime_dir/skills"
-                      if [ -L "$skills_target" ]; then
-                        ${pkgs.coreutils}/bin/rm -f "$skills_target"
-                      fi
-                      mkdir -p "$skills_target"
+            # Skills: N-way union (all skillSources) with cmp guard + union orphan cleanup
+            skills_target="$runtime_dir/skills"
+            if [ -L "$skills_target" ]; then
+              ${pkgs.coreutils}/bin/rm -f "$skills_target"
+            fi
+            mkdir -p "$skills_target"
 
-                      # First copy pass: upstream skills from skillsSource
-                      skills_src="${config.home.gentle-ai.skillsSource}"
-                      if [ -d "$skills_src" ]; then
-                        (cd "$skills_src" && ${pkgs.findutils}/bin/find . -type f) | while read -r rel; do
-                          if [ ! -f "$skills_target/$rel" ] || ! ${pkgs.diffutils}/bin/cmp -s "$skills_src/$rel" "$skills_target/$rel"; then
-                            mkdir -p "$(dirname "$skills_target/$rel")"
-                            ${pkgs.coreutils}/bin/cp -f "$skills_src/$rel" "$skills_target/$rel"
-                            chmod 644 "$skills_target/$rel"
-                          fi
-                        done
-                      fi
+            skills_sources_list="${lib.concatStringsSep " " config.home.ai-assets.skillSources}"
+            for src in $skills_sources_list; do
+              if [ -d "$src" ]; then
+                (cd "$src" && ${pkgs.findutils}/bin/find . -type f) | while read -r rel; do
+                  if [ ! -f "$skills_target/$rel" ] || ! ${pkgs.diffutils}/bin/cmp -s "$src/$rel" "$skills_target/$rel"; then
+                    mkdir -p "$(dirname "$skills_target/$rel")"
+                    ${pkgs.coreutils}/bin/cp -f "$src/$rel" "$skills_target/$rel"
+                    chmod 644 "$skills_target/$rel"
+                  fi
+                done
+              fi
+            done
 
-                      # Second copy pass: local skills from localSkillsSource
-                      local_skills_src="${config.home.gentle-ai.localSkillsSource}"
-                      if [ -d "$local_skills_src" ]; then
-                        (cd "$local_skills_src" && ${pkgs.findutils}/bin/find . -type f) | while read -r rel; do
-                          if [ ! -f "$skills_target/$rel" ] || ! ${pkgs.diffutils}/bin/cmp -s "$local_skills_src/$rel" "$skills_target/$rel"; then
-                            mkdir -p "$(dirname "$skills_target/$rel")"
-                            ${pkgs.coreutils}/bin/cp -f "$local_skills_src/$rel" "$skills_target/$rel"
-                            chmod 644 "$skills_target/$rel"
-                          fi
-                        done
-                      fi
+            # Orphan cleanup: delete files absent from ALL sources
+            (cd "$skills_target" && ${pkgs.findutils}/bin/find . -type f) | while read -r rel; do
+              found=0
+              for src in $skills_sources_list; do
+                [ -f "$src/$rel" ] && { found=1; break; }
+              done
+              [ "$found" = "0" ] && rm -f "$skills_target/$rel"
+            done || :
 
-                      # Union orphan cleanup: delete files absent from BOTH sources
-                      (cd "$skills_target" && ${pkgs.findutils}/bin/find . -type f) | while read -r rel; do
-                        if [ ! -f "$skills_src/$rel" ] && [ ! -f "$local_skills_src/$rel" ]; then
-                          rm -f "$skills_target/$rel"
-                        fi
-                      done
+            # AGENTS.md: concatenate all configured sources
+            ag_md="${config.home.homeDirectory}/.config/opencode/AGENTS.md"
+            > "$ag_md"
+            for src in ${lib.concatStringsSep " " config.home.ai-assets.agentsMdSources}; do
+              [ -f "$src" ] && [ -s "$src" ] && cat "$src" >> "$ag_md"
+            done
+            chmod 644 "$ag_md"
 
-                      # Patch sdd-apply and sdd-verify: remove <!-- section:model-capable -->
-                      # marker from line 1 so OpenCode v1.17+ can detect YAML frontmatter.
-                      for skill in sdd-apply sdd-verify; do
-                        skill_file="$runtime_dir/skills/$skill/SKILL.md"
-                        if [ -f "$skill_file" ] && head -1 "$skill_file" | grep -q '^<!-- section:model-capable -->$'; then
-                          ${pkgs.gnused}/bin/sed -i '1{/^<!-- section:model-capable -->$/d}' "$skill_file"
-                        elif [ -f "$skill_file" ]; then
-                          echo "WARNING: $skill model-capable marker not found on line 1 — upstream may have changed format" >&2
-                        fi
-                      done
+            # Patch sdd-apply and sdd-verify: remove <!-- section:model-capable -->
+            # marker from line 1 so OpenCode v1.17+ can detect YAML frontmatter.
+            for skill in sdd-apply sdd-verify; do
+              skill_file="$runtime_dir/skills/$skill/SKILL.md"
+              if [ -f "$skill_file" ] && head -1 "$skill_file" | grep -q '^<!-- section:model-capable -->$'; then
+                ${pkgs.gnused}/bin/sed -i '1{/^<!-- section:model-capable -->$/d}' "$skill_file"
+              elif [ -f "$skill_file" ]; then
+                echo "WARNING: $skill model-capable marker not found on line 1 — upstream may have changed format" >&2
+              fi
+            done
           '';
 
       # Install plugins and npm deps; runs after symlink conversion.
@@ -318,7 +316,7 @@ in
 {
   imports = [
     ./opencode/agents.nix
-    ./gentle-ai-common.nix
+    ./ai-assets.nix
     ./opencode/permissions.nix
     ./opencode/plugins.nix
   ];
