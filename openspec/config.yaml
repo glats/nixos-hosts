@@ -1,0 +1,60 @@
+# SDD Configuration — nixos-hosts
+# Hybrid mode: Engram + openspec artifacts
+# Re-initialized: 2026-07-17
+
+schema: 1
+project: nixos-hosts
+mode: hybrid
+
+strict_tdd: false
+
+context: |
+  Stack: NixOS Flakes + Home Manager + sops-nix + nix-darwin
+  Hosts: rog (desktop+nvidia+server), thinkcentre (headless+xrdp), t14 (laptop/Omarchy/Hyprland), mact2 (macOS/darwin)
+  User: glats (linux), jcuzmar (mact2/darwin)
+  Structure: hosts/<host>/default.nix (entry), modules/{profiles,base,desktop,features,hardware,networking,virtualisation}/, home-linux/, home-darwin/, shared/, darwin/, lib/, overlays/, pkgs/, bin/
+  Convention: AGENTS.md (primary), flake.nix (single source of truth)
+  Profile chain: base.nix -> desktop.nix -> server.nix
+
+testing:
+  flake_check: "nix flake check --no-build"
+  formatter: "format-nix"
+  build:
+    linux: "nixos-build build"
+    darwin: "nix build .#darwinConfigurations.mact2.config.system.build.toplevel"
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+    - Reference host scope explicitly (which hosts are affected)
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+    - Tag scenarios with affected host(s)
+  design:
+    - Document Nix module options interface explicitly
+    - Include migration path for breaking option changes
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Keep tasks completable in one session
+  apply:
+    guidelines:
+      - Follow existing Nix patterns (AGENTS.md)
+      - Edit Nix files -> format-nix -> nix flake check --no-build
+      - Do NOT edit hardware-configuration.nix (auto-generated)
+    tdd: false
+    test_command: "nix flake check --no-build"
+  verify:
+    test_command: "nix flake check --no-build"
+    build_command: "nixos-build build"
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas
+    - Update main specs if delta spec exists
+
+engram:
+  project_key: "nixos-hosts"
+  observations:
+    project_context: 231
+    testing_capabilities: 232
+    skill_registry: 457
