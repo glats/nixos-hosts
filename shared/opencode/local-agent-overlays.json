@@ -39,6 +39,9 @@
     }
   },
   "instructionOverlays": {
-    "gentle-orchestrator": ["review-gate-rules.md"]
+    "gentle-orchestrator": [
+      "../rules/review-gate.md",
+      "../rules/explore-mcp.md"
+    ]
   }
 }
