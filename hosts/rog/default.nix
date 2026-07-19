@@ -61,7 +61,7 @@
   boot-settings = {
     enable = true;
     includeAcpiOsi = false;
-    includePoweroffFix = true;
+    includePoweroffFix = false;
     # Verbose kernel/systemd logging to the console for shutdown-hang
     # post-mortem. Pairs with modules/base/shutdown-debug.nix which
     # snapshots the journal to /var/log/ at end of shutdown.
