@@ -10,7 +10,11 @@
 # the forced value.  `enable` stays at default priority (all three
 # sources agree on `true`) and HM's tmux module runs with the
 # home-linux values.
-{ pkgs, lib, config, ... }:
+{ pkgs
+, lib
+, config
+, ...
+}:
 
 let
   # Re-evaluate shared/tmux.nix to grab its extraConfig string with the
@@ -34,25 +38,35 @@ in
     # otherwise include omarchy's `vim-tmux-navigator` on top of our
     # nixpkgs set).  Same set declared in home-darwin/tmux.nix for the
     # darwin host, but via TPM plugin declarations.
-    plugins = lib.mkForce (with pkgs.tmuxPlugins; [
-      resurrect
-      continuum
-      sessionist
-      yank
-      vim-tmux-navigator
-    ]);
+    plugins = lib.mkForce (
+      with pkgs.tmuxPlugins;
+      [
+        resurrect
+        continuum
+        sessionist
+        yank
+        vim-tmux-navigator
+      ]
+    );
 
     # lib.mkForce replaces the merged extraConfig.  On t14 this drops
     # omarchy's prefix C-Space, status-position top, base16-overriding
     # status colours, and the rest of its config/tmux/tmux.conf.
     # Result on all Linux hosts: shared base16 theme (clipboard via OSC 52).
     #
-    # Continuum's run-shell below is repeated here deliberately: Home
-    # Manager places plugin run-shells BEFORE extraConfig, but continuum
-    # needs to modify status-right AFTER extraConfig sets it.  Running it
-    # again at the end fixes the save interpolation that gets overwritten.
-    extraConfig = lib.mkForce (sharedExtraConfig + ''
-      run-shell ${pkgs.tmuxPlugins.continuum}/share/tmux-plugins/continuum/continuum.tmux
-    '');
+    # Continuum's plugin run-shell runs BEFORE extraConfig.  By the time
+    # shared/tmux.nix overwrites status-right with the base16 theme,
+    # continuum's save interpolation (#(continuum_save.sh)) has been lost.
+    #
+    # Use a targeted inline set -g status-right to re-add ONLY the
+    # interpolation, instead of running continuum.tmux a second time (which
+    # would trigger a second auto-restore that races with the first one
+    # and deletes pane_contents before they're read).
+    extraConfig = lib.mkForce (
+      sharedExtraConfig
+      + ''
+        set -g status-right "#(${pkgs.tmuxPlugins.continuum}/share/tmux-plugins/continuum/scripts/continuum_save.sh) #{status-right}"
+      ''
+    );
   };
 }
