@@ -3,7 +3,7 @@
 # omarchy-nix contributions on t14 (settings and themes).
 { config, lib, ... }:
 let
-  ghostty = import ../shared/ghostty.nix {
+  ghostty = import ../../shared/ghostty.nix {
     colorScheme = config.colorScheme;
   };
 in

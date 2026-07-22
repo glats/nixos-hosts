@@ -30,14 +30,14 @@
   ./superfile.nix
   ./kitty.nix
   ./alacritty.nix
-  ../shared/shell-aliases.nix
-  ../shared/opencode.nix
-  ../shared/opencode-profile.nix
-  ../shared/claude-code.nix
-  ../shared/claude-code-profile.nix
+  ../../shared/shell-aliases.nix
+  ../../shared/opencode.nix
+  ../../shared/opencode-profile.nix
+  ../../shared/claude-code.nix
+  ../../shared/claude-code-profile.nix
   ./chrome-apps.nix
   ./ssh.nix
   ./fontconfig.nix
-  ../shared/sops.nix
+  ../../shared/sops.nix
   inputs.sops-nix.homeManagerModules.sops
 ]

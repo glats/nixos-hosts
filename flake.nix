@@ -163,19 +163,19 @@
 
       # --- Home module lists ---
       # Canonical base list of shared Home Manager modules for Linux. See
-      # `home-linux/shared-modules.nix` for the full list.
+      # `linux/home/shared-modules.nix` for the full list.
       # NOTE: After the Linux HM composition alignment refactor,
       # `linuxHomeModules` is no longer the sync mechanism for Linux
       # standalone entries. `rog` and `thinkcentre` now import their
-      # per-host `hosts/<host>/home/modules.nix` files directly, and the
-      # NixOS-integrated path (`modules/base/home-manager.nix`) does the same.
+      # per-host `hosts/<host>/home/default.nix` files directly, and the
+      # NixOS-integrated path (`linux/system/base/home-manager.nix`) does the same.
       # This binding is retained because `mkHomeConfig` still references it in
       # the platform-conditional branch.
-      linuxHomeModules = import ./home-linux/shared-modules.nix {
+      linuxHomeModules = import ./linux/home/shared-modules.nix {
         inherit inputs;
       };
 
-      darwinHomeModules = import ./home-darwin/shared-modules.nix {
+      darwinHomeModules = import ./darwin/home/shared-modules.nix {
         inherit inputs;
       };
 
@@ -253,11 +253,11 @@
             mkHomeConfig hostname system username extraModules;
         in
         {
-          # Standalone HM for rog derives from the same per-host modules source
+          # Standalone HM for rog derives from the same per-host default source
           # used by the NixOS-integrated HM path.
           rog = home-manager.lib.homeManagerConfiguration {
             pkgs = pkgsFor "x86_64-linux";
-            modules = import ./hosts/rog/home/modules.nix { inherit inputs; };
+            modules = import ./hosts/rog/home/default.nix { inherit inputs; };
             extraSpecialArgs = {
               inherit inputs;
               hostName = "rog";
@@ -267,7 +267,7 @@
           # Standalone HM for thinkcentre follows the same ownership model.
           thinkcentre = home-manager.lib.homeManagerConfiguration {
             pkgs = pkgsFor "x86_64-linux";
-            modules = import ./hosts/thinkcentre/home/modules.nix { inherit inputs; };
+            modules = import ./hosts/thinkcentre/home/default.nix { inherit inputs; };
             extraSpecialArgs = {
               inherit inputs;
               hostName = "thinkcentre";
@@ -318,7 +318,7 @@
             # home-manager build for mact2 picks up the per-host base
             # config (home.username, home.homeDirectory, etc.) on top of
             # the canonical module list from `darwinHomeModules`.
-            ./home-darwin
+            ./darwin/home
             # Mirror the provider override from darwin/default.nix so
             # `home-manager switch --flake .#mact2` matches darwin-rebuild.
             { home.opencode.activeProviderName = "github-copilot"; }

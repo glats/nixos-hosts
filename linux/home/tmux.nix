@@ -10,11 +10,10 @@
 # the forced value.  `enable` stays at default priority (all three
 # sources agree on `true`) and HM's tmux module runs with the
 # home-linux values.
-{
-  pkgs,
-  lib,
-  config,
-  ...
+{ pkgs
+, lib
+, config
+, ...
 }:
 
 let
@@ -24,11 +23,11 @@ let
   # value (omarchy + shared) with the one we compute here, so the
   # double-evaluation is intentional: it lets us reference shared's
   # content without relying on the merged attrset.
-  sharedExtraConfig = (import ../shared/tmux.nix { inherit config; }).programs.tmux.extraConfig;
+  sharedExtraConfig = (import ../../shared/tmux.nix { inherit config; }).programs.tmux.extraConfig;
 in
 {
   imports = [
-    ../shared/tmux.nix
+    ../../shared/tmux.nix
   ];
 
   # Pure Nix: no TPM, no git clones, everything from nixpkgs.

@@ -3,7 +3,7 @@
 # Package is already in packages.nix -- this module only deploys config files.
 { config, ... }:
 let
-  themeToml = import ../shared/superfile.nix {
+  themeToml = import ../../shared/superfile.nix {
     colorScheme = config.colorScheme;
   };
 in

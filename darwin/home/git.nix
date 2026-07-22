@@ -6,7 +6,7 @@
 }:
 
 let
-  identities = import ../shared/git-identity.nix;
+  identities = import ../../shared/git-identity.nix;
 in
 {
   programs.git = {

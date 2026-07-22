@@ -1,8 +1,8 @@
 { pkgs, lib, ... }:
 
 let
-  palette = import ../../shared/palette.nix;
-  colors = import ../../lib/colors.nix { inherit lib; };
+  palette = import ../../../shared/palette.nix;
+  colors = import ../../../lib/colors.nix { inherit lib; };
   p = palette.palette;
 in
 

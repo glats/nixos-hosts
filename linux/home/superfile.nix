@@ -2,7 +2,7 @@
 # Imports shared superfile theme and deploys to ~/.config/superfile/.
 { config, pkgs, ... }:
 let
-  themeToml = import ../shared/superfile.nix {
+  themeToml = import ../../shared/superfile.nix {
     colorScheme = config.colorScheme;
   };
 in
