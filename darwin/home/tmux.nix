@@ -7,7 +7,7 @@
 
 {
   imports = [
-    ../shared/tmux.nix
+    ../../shared/tmux.nix
   ];
 
   # Home Manager configuration for tmux kept in a separate file to keep

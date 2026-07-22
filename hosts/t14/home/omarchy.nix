@@ -19,7 +19,7 @@
 #                mate (GNOME/MATE only — incompatible with Hyprland),
 #                chrome-apps (webapps are managed by omarchy webapp
 #                tooling; the home-linux list is for rog/thinkcentre),
-#                home-linux/theme.nix (it configures GTK/Qt/dconf and
+#                linux/home/theme.nix (it configures GTK/Qt/dconf and
 #                `colorScheme = shared/palette.nix`; the former is
 #                owned by omarchy and the latter is now driven by
 #                omarchy.theme = "glats" too).
@@ -66,9 +66,9 @@
 
     # t14-specific overlays on top of omarchy.
     # kitty.nix is imported via ./default.nix (which transitively
-    # re-imports the shared home-linux/kitty.nix because omarchy-nix
+    # re-imports the shared linux/home/kitty.nix because omarchy-nix
     # does not include it).
-    # Ghostty is owned by `home-linux/ghostty.nix` (the single source
+    # Ghostty is owned by `linux/home/ghostty.nix` (the single source
     # of truth across all Linux hosts).  The shared file uses
     # `lib.mkForce` on `programs.ghostty.themes` to drop omarchy's
     # `themes.omarchy`, and the import order makes per-key settings
@@ -77,17 +77,17 @@
     # mouse-scroll-multiplier) on top.
     ./default.nix
 
-    # Compatible shared modules from home-linux/.  These are the same
+    # Compatible shared modules from linux/home/.  These are the same
     # modules the previous gnome.nix imported; we keep them so that
     # shell, git, ssh, neovim, tmux, opencode, and sops survive the
     # migration.
-    ../../../home-linux/base.nix
-    ../../../home-linux/shell.nix
-    ../../../home-linux/tmux.nix
-    ../../../home-linux/neovim.nix
-    ../../../home-linux/git.nix
-    ../../../home-linux/gh.nix
-    ../../../home-linux/ssh.nix
+    ../../../linux/home/base.nix
+    ../../../linux/home/shell.nix
+    ../../../linux/home/tmux.nix
+    ../../../linux/home/neovim.nix
+    ../../../linux/home/git.nix
+    ../../../linux/home/gh.nix
+    ../../../linux/home/ssh.nix
     # btop theme + settings are now owned by omarchy-nix's updated
     # btop module (imported via homeManagerModules.default above).
     # The module uses the glats theme with the nixos-hosts preferred
@@ -97,13 +97,13 @@
     # thinkcentre get this transitively via modules/base/home-manager.nix,
     # but t14 has its own curated import list and must include it
     # explicitly to deploy ~/.config/remmina and the .desktop launchers.
-    ../../../home-linux/remote-desktop.nix
+    ../../../linux/home/remote-desktop.nix
 
     # ShellGPT AI command assistant (nvidia NIM nemotron-3-ultra)
-    ../../../home-linux/shell-gpt.nix
+    ../../../linux/home/shell-gpt.nix
     ({ home.shell-gpt.enable = true; })
 
-    # Shared shell aliases (now extracted from home-linux/shell.nix)
+    # Shared shell aliases (now extracted from linux/home/shell.nix)
     ../../../shared/shell-aliases.nix
 
     # OpenCode stack
@@ -140,7 +140,7 @@
   omarchy.fonts.rofi = lib.mkForce "sans";
   # Terminals get an explicit Nerd Font (CaskaydiaCove) so glyphs render
   # correctly. alacritty + ghostty are owned by the shared home-linux
-  # modules; kitty is also resolved by `home-linux/kitty.nix` (which
+  # modules; kitty is also resolved by `linux/home/kitty.nix` (which
   # uses `lib.mkForce` on `programs.kitty.settings` but does not set
   # `programs.kitty.font.name` — omarchy.fonts.kitty supplies it).
   omarchy.fonts.kitty = lib.mkForce "CaskaydiaCove Nerd Font";
@@ -213,7 +213,7 @@
     '';
   };
 
-  # Omarchy-nix's tmux module is "neutralized" by home-linux/tmux.nix
+  # Omarchy-nix's tmux module is "neutralized" by linux/home/tmux.nix
   # (imported above): it uses `lib.mkForce` on `programs.tmux.extraConfig`
   # and `programs.tmux.plugins` to drop the omarchy prefix/status/theme
   # at eval time.  We don't need to set `enable = false` here — the
@@ -225,7 +225,7 @@
   # Set icon theme explicitly — omarchy-nix manages gtk.theme and gtk.cursorTheme
   # but does NOT set gtk.iconTheme. Papirus-Dark is already installed system-wide
   # (via modules/base/profiles/base.nix) but never activated on t14 because
-  # home-linux/theme.nix is excluded (omarchy owns the visual layer).
+  # linux/home/theme.nix is excluded (omarchy owns the visual layer).
   gtk.iconTheme = {
     name = "Papirus-Dark";
     package = pkgs.papirus-icon-theme;
@@ -250,7 +250,7 @@
   };
 
   # Qt configuration: Adwaita Dark style with GTK3 platform theme bridge.
-  # Matches home-linux/theme.nix used on rog and thinkcentre.
+  # Matches linux/home/theme.nix used on rog and thinkcentre.
   # adwaita-qt is auto-installed by HM when qt.style.name = "adwaita-dark".
   qt = {
     enable = true;
