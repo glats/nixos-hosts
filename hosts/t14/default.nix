@@ -8,56 +8,55 @@
 #   - XKB layout forced to "latam" (Chile) since i18n.nix defaults to "es"
 #   - btrfs swap, fonts, kmscon, and amd-laptop settings inherited from base
 #   - home-manager wired to ./home/omarchy.nix (replaces ./home/gnome.nix)
-{ config
-, lib
-, pkgs
-, inputs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
 }:
 
 {
   imports = [
     ./hardware-configuration.nix
+    ./secrets.nix
 
     # === BASE (minimal viable) ===
-    ../../modules/base/cachix.nix
-    ../../modules/base/nix.nix
-    ../../modules/base/polkit.nix
-    ../../modules/base/sops.nix
-    ../../modules/base/users.nix
-    ../../modules/base/zsh.nix
-    ../../modules/base/packages.nix
-    # NOTE: modules/base/home-manager.nix is NOT imported — we use our
+    ../../linux/system/base/cachix.nix
+    ../../linux/system/base/nix.nix
+    ../../linux/system/base/polkit.nix
+    ../../linux/system/base/sops.nix
+    ../../linux/system/base/users.nix
+    ../../linux/system/base/zsh.nix
+    ../../linux/system/base/packages.nix
+    # NOTE: linux/system/base/home-manager.nix is NOT imported — we use our
     # own home-manager config below with a targeted set.
 
     # === DESKTOP ===
     # Omarchy provides Hyprland + PipeWire + NetworkManager + Bluetooth
     # + printing + gvfs. The previous GNOME module
-    # (modules/desktop/gnome.nix) and avahi module
-    # (modules/networking/avahi.nix) are no longer imported because
+    # (linux/system/desktop/gnome.nix) and avahi module
+    # (linux/system/networking/avahi.nix) are no longer imported because
     # omarchy's system.nix supersedes them.
-    ../../modules/desktop/i18n.nix
-    ../../modules/desktop/fonts.nix
-    ../../modules/desktop/kmscon.nix
+    ../../linux/system/desktop/i18n.nix
+    ../../linux/system/desktop/fonts.nix
+    ../../linux/system/desktop/kmscon.nix
 
     # === HARDWARE ===
-    ../../modules/hardware/amd-laptop.nix
-    ../../modules/hardware/keyring.nix
+    ../../linux/system/hardware/amd-laptop.nix
+    ../../linux/system/hardware/keyring.nix
 
     # === NETWORKING ===
-    ../../modules/networking/openssh.nix
-
-    # === HOST SECRETS ===
-    ./secrets.nix
+    ../../linux/system/networking/openssh.nix
 
     # === BOOT ===
     # Required: the system will not boot without bootloader configured.
-    ../../modules/features/boot.nix
+    ../../linux/system/features/boot.nix
 
     # === MCP REQUIREMENTS ===
-    ../../modules/features/services/github-mcp-server.nix
-    ../../modules/features/services/github-token-check.nix
-    ../../modules/virtualisation/docker.nix
+    ../../linux/system/services/github-mcp-server.nix
+    ../../linux/system/services/github-token-check.nix
+    ../../linux/system/virtualisation/docker.nix
   ];
 
   networking = {
