@@ -280,11 +280,27 @@
     }
   ];
 
-  # Microsoft Teams (teams-for-linux) with Wayland support.
-  # NIXOS_OZONE_WL triggers the nixpkgs wrapper to pass
-  # --ozone-platform-hint=auto and --enable-features=WaylandWindowDecorations,WebRTCPipeWireCapturer.
-  # Without this variable the Wayland flags are never activated.
-  environment.systemPackages = [ pkgs.teams-for-linux ];
+  # Microsoft Teams (teams-for-linux) wrapped to XWayland.
+  # NIXOS_OZONE_WL=1 (set below) is global for Brave, VS Code, etc.
+  # but teams-for-linux has known Electron tray bugs under native Wayland
+  # (electron#40936, electron#43709, teams-for-linux#1609).
+  # The symlinkJoin wrapper unsets NIXOS_OZONE_WL and explicitly passes
+  # --ozone-platform=x11 (belt-and-suspenders: Electron 38+ auto-detects
+  # Wayland from XDG_SESSION_TYPE even without the env var).
+  # Screen sharing still works via WebRTCPipeWireCapturer in config.json.
+  # Remove this wrapper when upstream fixes native Wayland tray support.
+  environment.systemPackages = [
+    (pkgs.symlinkJoin {
+      name = "teams-for-linux";
+      paths = [ pkgs.teams-for-linux ];
+      buildInputs = [ pkgs.makeWrapper ];
+      postBuild = ''
+        wrapProgram $out/bin/teams-for-linux \
+          --unset NIXOS_OZONE_WL \
+          --add-flags "--ozone-platform=x11"
+      '';
+    })
+  ];
 
   environment.variables.NIXOS_OZONE_WL = "1";
 
