@@ -1,27 +1,57 @@
-{ config
-, pkgs
-, lib
-, ...
+{
+  config,
+  pkgs,
+  lib,
+  ...
 }:
 
 {
   imports = [
     ./hardware-configuration.nix
-
-    # Shared profile (base + desktop + server)
-    ../../modules/profiles/server.nix
-
-    # Thinkcentre secrets
     ./secrets.nix
-
-    # Thinkcentre conky config
     ./conky-config.nix
 
-    # Conky module (options from features/conky)
-    ../../modules/features/conky
+    # Base system (all 14)
+    ../../linux/system/base/cachix.nix
+    ../../linux/system/base/nix.nix
+    ../../linux/system/base/users.nix
+    ../../linux/system/base/zsh.nix
+    ../../linux/system/base/sops.nix
+    ../../linux/system/base/polkit.nix
+    ../../linux/system/base/logind.nix
+    ../../linux/system/base/nh.nix
+    ../../linux/system/base/dconf.nix
+    ../../linux/system/base/options.nix
+    ../../linux/system/base/packages.nix
+    ../../linux/system/base/home-manager.nix
+    ../../linux/system/base/shutdown-fix.nix
 
-    # Host-specific service
-    ./services/maquilinux-mounts.nix
+    # Desktop (all 3)
+    ../../linux/system/desktop/fonts.nix
+    ../../linux/system/desktop/i18n.nix
+    ../../linux/system/desktop/kmscon.nix
+
+    # Hardware (keyring only)
+    ../../linux/system/hardware/keyring.nix
+
+    # Networking (all 4)
+    ../../linux/system/networking/openssh.nix
+    ../../linux/system/networking/firewall.nix
+    ../../linux/system/networking/avahi.nix
+    ../../linux/system/networking/wol.nix
+
+    # Features
+    ../../linux/system/features/boot.nix
+    ../../linux/system/features/conky
+
+    # Services
+    ../../linux/system/services/xrdp.nix
+    ../../linux/system/services/github-mcp-server.nix
+    ../../linux/system/services/github-token-check.nix
+    ../../linux/system/services/maquilinux-mounts.nix
+
+    # Virtualisation
+    ../../linux/system/virtualisation/docker.nix
   ];
 
   boot-settings = {
