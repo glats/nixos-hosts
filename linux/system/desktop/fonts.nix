@@ -1,8 +1,7 @@
-{
-  config,
-  pkgs,
-  lib,
-  ...
+{ config
+, pkgs
+, lib
+, ...
 }:
 let
   fontconfigXML = builtins.readFile ../../../shared/fontconfig/family-map.xml;

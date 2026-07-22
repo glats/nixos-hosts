@@ -20,7 +20,7 @@
       username = "glats";
       # Force rebuild: 2026-05-03
     };
-    users.glats.imports = import ../../hosts/${config.networking.hostName}/home/modules.nix {
+    users.glats.imports = import ../../../hosts/${config.networking.hostName}/home/default.nix {
       inherit inputs;
     };
   };

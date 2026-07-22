@@ -17,7 +17,7 @@
   ./git.nix
   ./gpg.nix
   ./ssh.nix
-  ./mise-tools.nix
+
   ./packages.nix
   ./neovim.nix
   ./shell.nix
@@ -27,13 +27,13 @@
   # theme.nix must be listed before this entry so colorScheme.palette is set.
   inputs.omarchy-nix.homeManagerModules.btop
   ./vscode.nix
-  #./windsurf.nix
+
   ./remote-desktop.nix
-  ../shared/shell-aliases.nix
-  ../shared/opencode.nix
-  ../shared/opencode-profile.nix
-  ../shared/claude-code.nix
-  ../shared/claude-code-profile.nix
+  ../../shared/shell-aliases.nix
+  ../../shared/opencode.nix
+  ../../shared/opencode-profile.nix
+  ../../shared/claude-code.nix
+  ../../shared/claude-code-profile.nix
   ./sops.nix
   ./github-mcp-server-wrapper.nix
   inputs.sops-nix.homeManagerModules.sops
