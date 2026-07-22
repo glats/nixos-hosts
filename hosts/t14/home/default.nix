@@ -3,8 +3,8 @@
 # ghostty theme).  This module adds only the non-visual delta:
 #   - Hyprland t14-specific config fragments (monitor, input, bindings, looknfeel)
 #   - Helper scripts (kb-toggle, kb-layout)
-#   - Ghostty + kitty settings (imported directly from home-linux/ because
-#     t14's curated import list omits home-linux/shared-modules.nix)
+#   - Ghostty + kitty settings (imported directly from linux/home/ because
+#     t14's curated import list omits linux/home/shared-modules.nix)
 #   - mouse-wiggle launcher
 { config
 , lib
@@ -19,11 +19,11 @@
     ./hypr/looknfeel.nix
     ./hypr/hyprlock.nix
     ./hypr/hyprsunset.nix
-    ../../../home-linux/ghostty.nix
-    ../../../home-linux/superfile.nix
-    ../../../home-linux/kitty.nix
+    ../../../linux/home/ghostty.nix
+    ../../../linux/home/superfile.nix
+    ../../../linux/home/kitty.nix
     ./mouse-wiggle.nix
-    ../../../home-linux/webcam-rog.nix
+    ../../../linux/home/webcam-rog.nix
   ];
 
   # ------------------------------------------------------------------

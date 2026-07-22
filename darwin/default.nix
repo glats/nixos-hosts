@@ -12,9 +12,16 @@
 }:
 {
   imports = [
+    # Flattened from modules/darwin/profiles/base.nix
+    ./system/nix.nix
+    ./system/cachix.nix
+    ./system/homebrew.nix
+    ./system/settings.nix
+    ./system/mise.nix
+    ./services/wsdd.nix
+
     inputs.home-manager.darwinModules.home-manager
     inputs.nix-homebrew.darwinModules.nix-homebrew
-    ../modules/darwin/profiles/base.nix
   ];
 
   # homebrew installation manager
@@ -32,7 +39,7 @@
     backupFileExtension = "backup";
     users.${primaryUser} = {
       imports = [
-        ../home-darwin
+        ./home
       ];
       # Define stateVersion here to satisfy early Home Manager assertions
       home.stateVersion = "25.05";
