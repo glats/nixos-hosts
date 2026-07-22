@@ -10,11 +10,10 @@
 # the forced value.  `enable` stays at default priority (all three
 # sources agree on `true`) and HM's tmux module runs with the
 # home-linux values.
-{
-  pkgs,
-  lib,
-  config,
-  ...
+{ pkgs
+, lib
+, config
+, ...
 }:
 
 let
