@@ -1,61 +1,89 @@
-{ config
-, pkgs
-, lib
-, home
-, ...
+{
+  config,
+  pkgs,
+  lib,
+  home,
+  ...
 }:
 
 {
   imports = [
     ./hardware-configuration.nix
-
-    # Shared profile (base + desktop + server)
-    ../../modules/profiles/server.nix
-
-    # Rog secrets
     ./secrets.nix
-
-    # Rog conky config
     ./conky-config.nix
 
-    # Conky module (options from features/conky)
-    ../../modules/features/conky
+    # Base system
+    ../../linux/system/base/cachix.nix
+    ../../linux/system/base/nix.nix
+    ../../linux/system/base/users.nix
+    ../../linux/system/base/zsh.nix
+    ../../linux/system/base/sops.nix
+    ../../linux/system/base/polkit.nix
+    ../../linux/system/base/logind.nix
+    ../../linux/system/base/nh.nix
+    ../../linux/system/base/dconf.nix
+    ../../linux/system/base/options.nix
+    ../../linux/system/base/packages.nix
+    ../../linux/system/base/home-manager.nix
+    ../../linux/system/base/shutdown-fix.nix
+    ../../linux/system/base/shutdown-debug.nix
 
-    # Hardware (rog-specific)
-    ../../modules/hardware/nvidia.nix
-    ../../modules/hardware/rog-shutdown.nix
-    ../../modules/hardware/rog-poweroff-workaround.nix
-    ../../modules/hardware/asus-fan-control.nix
+    # Desktop
+    ../../linux/system/desktop/fonts.nix
+    ../../linux/system/desktop/i18n.nix
+    ../../linux/system/desktop/kmscon.nix
 
-    # Shutdown diagnostics — captures journal/dmesg/ps/mounts to
-    # /var/log/shutdown-debug/{boot-id}/ at end of shutdown. Rog-only
-    # because the hang is observed on this host; thinkcentre is clean.
-    ../../modules/base/shutdown-debug.nix
+    # Hardware
+    ../../linux/system/hardware/nvidia.nix
+    ../../linux/system/hardware/keyring.nix
+    ../../linux/system/hardware/asus-fan-control.nix
+    ../../linux/system/hardware/rog-shutdown.nix # KEPT — en pruebas, posible uso futuro
+    ../../linux/system/hardware/rog-poweroff-workaround.nix
 
-    # Services (rog-specific)
-    ./services/arr-stack.nix
-    ./services/authelia.nix
-    ./services/cobalt.nix
-    ./services/code-server.nix
-    ./services/ddclient.nix
-    ./services/dozzle.nix
-    ./services/droppy.nix
-    ./services/fileshelter.nix
-    ./services/flaresolverr.nix
-    ./services/ftp.nix
-    ./services/gonic.nix
-    ./services/guacamole.nix
-    ./services/jellyfin.nix
-    ./services/nginx.nix
-    ./services/ollama.nix
-    ./services/qbittorrent.nix
-    ./services/samba.nix
-    ./services/seerr.nix
-    ./services/wetty.nix
-    ./services/wireguard.nix
+    # Networking
+    ../../linux/system/networking/openssh.nix
+    ../../linux/system/networking/firewall.nix
+    ../../linux/system/networking/avahi.nix
+    ../../linux/system/networking/wol.nix
 
-    # Virtualisation (rog-specific)
-    ../../modules/virtualisation/libvirt.nix
+    # Features
+    ../../linux/system/features/boot.nix
+    ../../linux/system/features/conky
+
+    # Services — shared
+    ../../linux/system/services/xrdp.nix
+    ../../linux/system/services/github-mcp-server.nix
+    ../../linux/system/services/github-token-check.nix
+
+    # Services — media
+    ../../linux/system/services/media/arr-stack.nix
+    ../../linux/system/services/media/jellyfin.nix
+    ../../linux/system/services/media/qbittorrent.nix
+    ../../linux/system/services/media/flaresolverr.nix
+
+    # Services — web
+    ../../linux/system/services/web/nginx.nix
+    ../../linux/system/services/web/authelia.nix
+    ../../linux/system/services/web/seerr.nix
+    ../../linux/system/services/web/dozzle.nix
+    ../../linux/system/services/web/fileshelter.nix
+    ../../linux/system/services/web/code-server.nix
+    ../../linux/system/services/web/wetty.nix
+    ../../linux/system/services/web/cobalt.nix
+    ../../linux/system/services/web/droppy.nix
+
+    # Services — network
+    ../../linux/system/services/network/wireguard.nix
+    ../../linux/system/services/network/ddclient.nix
+    ../../linux/system/services/network/samba.nix
+    ../../linux/system/services/network/ftp.nix
+    ../../linux/system/services/network/guacamole.nix
+    ../../linux/system/services/network/gonic.nix
+    ../../linux/system/services/network/ollama.nix
+
+    # Virtualisation
+    ../../linux/system/virtualisation/libvirt.nix
+    ../../linux/system/virtualisation/docker.nix
   ];
 
   boot-settings = {
@@ -79,7 +107,10 @@
   # Blacklist non-essential ASUS WMI modules to prevent firmware
   # ACPI interactions that cause shutdown hangs. asus_wmi + hid_asus
   # (keyboard) remain loaded.
-  boot.blacklistedKernelModules = [ "asus_nb_wmi" "asus_armoury" ];
+  boot.blacklistedKernelModules = [
+    "asus_nb_wmi"
+    "asus_armoury"
+  ];
 
   # Desktop suite — rog uses MATE via XRDP
   my.desktop.suite = "mate";
