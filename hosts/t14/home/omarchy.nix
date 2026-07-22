@@ -49,11 +49,12 @@
 # Recovery: if the greeter fails, append systemd.mask=greetd.service to the
 # kernel cmdline at the systemd-boot menu to skip greetd and drop to a VT
 # login prompt.  The system keymap (la-latin1) is active on VTs.
-{ config
-, pkgs
-, lib
-, inputs
-, ...
+{
+  config,
+  pkgs,
+  lib,
+  inputs,
+  ...
 }:
 
 {
@@ -109,7 +110,7 @@
     # OpenCode stack
     ../../../shared/opencode.nix
     ../../../shared/opencode-profile.nix
-    ({ home.opencode.activeProviderName = "opencode-go-light"; })
+    ({ home.opencode.activeProviderName = "opencode-go-full"; })
 
     # Claude Code stack
     ../../../shared/claude-code.nix
@@ -306,4 +307,28 @@
       fi
     ''
   );
+
+  # Microsoft Teams (teams-for-linux) configuration.
+  # GPU stays enabled for camera video processing. PipeWire capturer + camera
+  # are enabled via electron CLI flags. Hardware media keys are disabled because
+  # Hyprland doesn't implement them. Electron-native notifications are more
+  # reliable than system D-Bus notifications on Hyprland. Screen sharing
+  # thumbnail preview is disabled (the mirror window is a distraction on a
+  # single-screen laptop).
+  xdg.configFile."teams-for-linux/config.json".text = builtins.toJSON {
+    disableGpu = false;
+    electronCLIFlags = [
+      [
+        "enable-features"
+        "WebRTCPipeWireCapturer,WebRtcPipeWireCamera"
+      ]
+      [
+        "disable-features"
+        "HardwareMediaKeyHandling"
+      ]
+    ];
+    notificationMethod = "electron";
+    followSystemTheme = true;
+    screenSharing.thumbnail.enabled = false;
+  };
 }
