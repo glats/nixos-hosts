@@ -8,11 +8,12 @@
 #   - XKB layout forced to "latam" (Chile) since i18n.nix defaults to "es"
 #   - btrfs swap, fonts, kmscon, and amd-laptop settings inherited from base
 #   - home-manager wired to ./home/omarchy.nix (replaces ./home/gnome.nix)
-{ config
-, lib
-, pkgs
-, inputs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
 }:
 
 {
@@ -278,6 +279,14 @@
       message = "UPower must be enabled for HDM lid events — see modules/hardware/amd-laptop.nix";
     }
   ];
+
+  # Microsoft Teams (teams-for-linux) with Wayland support.
+  # NIXOS_OZONE_WL triggers the nixpkgs wrapper to pass
+  # --ozone-platform-hint=auto and --enable-features=WaylandWindowDecorations,WebRTCPipeWireCapturer.
+  # Without this variable the Wayland flags are never activated.
+  environment.systemPackages = [ pkgs.teams-for-linux ];
+
+  environment.variables.NIXOS_OZONE_WL = "1";
 
   system.stateVersion = "26.05";
 }
