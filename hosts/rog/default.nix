@@ -189,4 +189,11 @@
   systemd.services."docker-guacamoledb".startLimitIntervalSec = lib.mkForce 0;
   systemd.services."docker-jellyseerr".startLimitIntervalSec = lib.mkForce 0;
 
+  environment.systemPackages = with pkgs; [
+    asus-fan-control
+    pipewire-module-xrdp
+    intel-vaapi-driver
+    libva-vdpau-driver
+  ];
+
 }
