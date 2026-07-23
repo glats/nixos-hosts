@@ -109,7 +109,7 @@
     # OpenCode stack
     ../../../shared/opencode.nix
     ../../../shared/opencode-profile.nix
-    ({ home.opencode.activeProviderName = "opencode-go-full"; })
+    ({ home.opencode.activeProviderName = "opencode-free"; })
 
     # Claude Code stack
     ../../../shared/claude-code.nix
