@@ -60,7 +60,6 @@
       '';
 
       environment.systemPackages = with pkgs; [
-        nvtopPackages.nvidia
         nvidia-container-toolkit
       ];
 

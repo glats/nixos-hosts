@@ -115,6 +115,7 @@
 
   # Enable the imported boot module (systemd-boot, plymouth, zen kernel)
   boot-settings.enable = true;
+  boot.kernelPackages = pkgs.linuxPackages_zen;
 
   # Ensure XFS kernel module is available in the initrd (stage 1).
   # Without this, boot fails with "an error occurred at stage 1"
