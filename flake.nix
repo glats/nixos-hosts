@@ -116,10 +116,11 @@
       flake = false;
     };
 
-    # VS Code extensions as Nix
+    # VS Code extensions as Nix — darwin-only (mact2), must follow
+    # nixpkgs-darwin because nixpkgs-unstable dropped x86_64-darwin.
     nix-vscode-extensions = {
       url = "github:nix-community/nix-vscode-extensions";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs.follows = "nixpkgs-darwin";
     };
 
     ghostty = {
