@@ -11,6 +11,7 @@
     gnupg.agent = {
       enable = true;
       enableSSHSupport = true;
+      pinentryPackage = pkgs.pinentry-curses;
     };
 
     nix-ld.enable = true;

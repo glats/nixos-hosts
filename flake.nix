@@ -298,6 +298,7 @@
             pkgs = pkgsFor "x86_64-linux";
             modules = [
               ./hosts/t14/home/omarchy.nix
+              inputs.hyprdynamicmonitors.homeManagerModules.default
               {
                 omarchy = {
                   theme = "glats";
