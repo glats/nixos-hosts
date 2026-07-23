@@ -83,7 +83,5 @@ with pkgs;
   hypridle
   remmina
 
-  # System utilities (hardware + xrdp audio)
-  asus-fan-control
-  pipewire-module-xrdp
+  # System utilities
 ]
