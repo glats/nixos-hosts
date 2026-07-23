@@ -86,4 +86,11 @@
   #   home.opencode.activeProviderName = "github-copilot";
   # in the host's default.nix (e.g. darwin/default.nix for mact2).
   # Both providers use OAuth via /connect command - no API keys needed.
+
+  environment.systemPackages = with pkgs; [
+    pipewire-module-xrdp
+    intel-vaapi-driver
+    libva-vdpau-driver
+  ];
+
 }
