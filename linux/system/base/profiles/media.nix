@@ -36,8 +36,6 @@ with pkgs;
   ffmpeg
 
   # GPU acceleration (VA-API stack — see comment block above)
-  intel-vaapi-driver
-  libva-vdpau-driver
   libva-utils
   intel-gpu-tools
 
