@@ -41,7 +41,6 @@
       plymouth.enable = true;
       consoleLogLevel = 0;
       initrd.verbose = false;
-      kernelPackages = pkgs.linuxPackages_zen;
       kernelParams = [
         "quiet"
         "splash"
