@@ -9,19 +9,26 @@
 ## Project Structure
 
 ```
-hosts/{hostname}/default.nix     # Host entry — imports modules directly
-hosts/{hostname}/services/       # Host-specific services (rog has many)
-modules/profiles/                # base.nix → desktop.nix → server.nix (chain)
-modules/base/                    # Core system (users, nix, sops, zsh, etc.)
-modules/desktop/                 # fonts, i18n, kmscon
-modules/features/                # boot.nix, conky/, services/
-modules/hardware/                # nvidia, amd-laptop, asus-fan-control
-modules/networking/              # openssh, firewall, wol, avahi
-modules/virtualisation/          # docker, libvirt
-home-linux/                      # Home Manager modules (linux)
-home-darwin/                     # Home Manager modules (macOS)
+hosts/{hostname}/default.nix     # Host entry — flat explicit imports, one per line
+linux/
+  system/                        # NixOS system modules
+    base/                        # Core (users, nix, sops, zsh, packages, etc.)
+    desktop/                     # fonts, i18n, kmscon
+    hardware/                    # nvidia, amd-laptop, asus-fan-control
+    networking/                  # openssh, firewall, wol, avahi
+    features/                    # boot.nix, conky/
+    services/                    # xrdp, github-mcp, docker + portable services
+      media/                     # arr-stack, jellyfin, qbittorrent
+      web/                       # nginx, authelia, seerr, dozzle, etc.
+      network/                   # wireguard, ddclient, samba, ftp
+    virtualisation/              # docker, libvirt
+  home/                          # Home Manager modules (linux)
+darwin/
+  system/                        # nix-darwin system modules (nix, homebrew, settings, mise)
+  services/                      # wsdd
+  home/                          # Home Manager modules (macOS)
+  default.nix                    # Darwin entry point
 shared/                          # Cross-platform HM modules (opencode, sops, tmux)
-darwin/                          # nix-darwin system modules (homebrew, settings)
 lib/                             # mkHost.nix, mkDarwinHost.nix, packages.nix
 overlays/                        # linux.nix, darwin.nix (imported via flake.nix)
 pkgs/                            # Custom package derivations
@@ -62,12 +69,15 @@ secrets/                         # sops-nix (encrypted — never edit directly)
 
 1. **Research first** — never guess about how things work. Use MCP tools (github, context7, exa) to verify approaches, options, and best practices before writing.
 2. **Edit Nix files** — after editing, run `format-nix` then `nix flake check --no-build` before declaring done.
-3. **New module** — add to `modules/<category>/`, import in host `default.nix` or profile. If it's a feature/service, put it under `modules/features/services/`.
-4. **Host-specific service** — place in `hosts/<hostname>/services/`, import in that host's `default.nix`.
-5. **Secrets** — edit via `sops secrets/secrets.yaml`, never directly.
-6. **hardware-configuration.nix** — never edit (auto-generated).
-7. **Unfree package** — add to `allowUnfreePackages` list in the relevant host config.
-8. **Verify** — after every change: `format-nix && nix flake check --no-build`. Fix any errors before moving on.
+3. **New NixOS module** — add to `linux/system/<category>/`, import in host `default.nix`. Flat imports only — no profile chains.
+4. **New portable service** — place in `linux/system/services/<category>/`, importable by any Linux host.
+5. **New HM module (Linux)** — add to `linux/home/`, import in host's `home/default.nix`.
+6. **New HM module (Darwin)** — add to `darwin/home/`, import in `darwin/home/shared-modules.nix`.
+7. **New HM module (cross-platform)** — add to `shared/`, import from both platform shared-modules lists.
+8. **Secrets** — edit via `sops secrets/secrets.yaml`, never directly.
+9. **hardware-configuration.nix** — never edit (auto-generated).
+10. **Unfree package** — add to `allowUnfreePackages` list in the relevant host config.
+11. **Verify** — after every change: `format-nix && nix flake check --no-build`. Fix any errors before moving on.
 
 ## When Reviewing
 
@@ -84,13 +94,13 @@ Load skills BEFORE writing code. Apply ALL patterns. Multiple skills can apply s
 ## Critical Rules
 
 1. **hardware-configuration.nix**: Never edit
-2. **Profile chain**: `base.nix` → `desktop.nix` → `server.nix`. Hosts import the profile they need
+2. **Flat imports**: No profile chains. Each host imports exactly what it needs, one per line.
 3. **features/* subcategories**: No `default.nix` — import services directly
 4. **overlays.nix**: NOT a module — imported via `import` in `flake.nix`
-5. **Home Manager**: Integrated via `modules/base/home-manager.nix`. Shared module list in `home-linux/shared-modules.nix` — single source of truth, do not duplicate
+5. **Home Manager**: Integrated via `linux/system/base/home-manager.nix`. Shared module list in `linux/home/shared-modules.nix` — single source of truth, do not duplicate
 6. **Formatter**: `format-nix` for full-repo, `nix fmt -- <path>` for single file. Never use `nixfmt-rfc-style` directly
 7. **t14 (Omarchy)**: Uses `omarchy-nix` + `nixos-hardware` via `extraModules` in `flake.nix`. HM config at `hosts/t14/home/omarchy.nix`, NOT in shared module list
-8. **mact2 (macOS)**: Built via `mkDarwinHost`. Darwin modules in `darwin/`, HM modules in `home-darwin/`
+8. **mact2 (macOS)**: Built via `mkDarwinHost`. Darwin modules in `darwin/`, HM modules in `darwin/home/`
 9. **Home-conditional HM modules** (conky-rog, openfang): NOT in `shared-modules.nix` — appended per-host in `flake.nix` `homeConfigurations`
 
 ## When Blocked
@@ -108,7 +118,7 @@ Load skills BEFORE writing code. Apply ALL patterns. Multiple skills can apply s
 
 | Input | Purpose |
 |-------|---------|
-| `nixpkgs` (nixos-unstable) | Packages |
+| `nixpkgs` (nixos-26.05) | Packages — Linux + Darwin unified on 26.05 |
 | `home-manager` (master) | User config |
 | `sops-nix` | Secrets |
 | `nix-darwin` | macOS system config |
