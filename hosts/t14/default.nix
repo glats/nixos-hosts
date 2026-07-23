@@ -8,11 +8,12 @@
 #   - XKB layout forced to "latam" (Chile) since i18n.nix defaults to "es"
 #   - btrfs swap, fonts, kmscon, and amd-laptop settings inherited from base
 #   - home-manager wired to ./home/omarchy.nix (replaces ./home/gnome.nix)
-{ config
-, lib
-, pkgs
-, inputs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
 }:
 
 {
@@ -276,6 +277,30 @@
       message = "UPower must be enabled for HDM lid events — see modules/hardware/amd-laptop.nix";
     }
   ];
+
+  # Microsoft Teams (teams-for-linux) wrapped to XWayland.
+  # NIXOS_OZONE_WL=1 (set below) is global for Brave, VS Code, etc.
+  # but teams-for-linux has known Electron tray bugs under native Wayland
+  # (electron#40936, electron#43709, teams-for-linux#1609).
+  # The symlinkJoin wrapper unsets NIXOS_OZONE_WL and explicitly passes
+  # --ozone-platform=x11 (belt-and-suspenders: Electron 38+ auto-detects
+  # Wayland from XDG_SESSION_TYPE even without the env var).
+  # Screen sharing still works via WebRTCPipeWireCapturer in config.json.
+  # Remove this wrapper when upstream fixes native Wayland tray support.
+  environment.systemPackages = [
+    (pkgs.symlinkJoin {
+      name = "teams-for-linux";
+      paths = [ pkgs.teams-for-linux ];
+      buildInputs = [ pkgs.makeWrapper ];
+      postBuild = ''
+        wrapProgram $out/bin/teams-for-linux \
+          --unset NIXOS_OZONE_WL \
+          --add-flags "--ozone-platform=x11"
+      '';
+    })
+  ];
+
+  environment.variables.NIXOS_OZONE_WL = "1";
 
   system.stateVersion = "26.05";
 }
