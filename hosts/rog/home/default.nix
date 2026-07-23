@@ -7,7 +7,8 @@ baseModules
 ++ [
   ../../../linux/home/remote-desktop.nix
 
-  ../../../linux/home/mate-rog-autostart.nix
+  ../../../linux/home/suites/mate/default.nix
+  ../../../linux/home/suites/mate-rog/default.nix
   ../../../linux/home/conky-rog.nix
   ../../../linux/home/openfang.nix
   ../../../linux/home/webcam-rog.nix

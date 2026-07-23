@@ -21,8 +21,6 @@
   inputs.omarchy-nix.homeManagerModules.btop
   ./tmux.nix
   ./neovim.nix
-  ./mate.nix
-  ./rofi.nix
   ./git.nix
   ./gpg.nix
   ./gh.nix
@@ -35,7 +33,6 @@
   ../../shared/opencode-profile.nix
   ../../shared/claude-code.nix
   ../../shared/claude-code-profile.nix
-  ./chrome-apps.nix
   ./ssh.nix
   ./fontconfig.nix
   ../../shared/sops.nix
