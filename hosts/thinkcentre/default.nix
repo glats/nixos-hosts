@@ -58,6 +58,8 @@
     includeAcpiOsi = false;
   };
 
+  boot.kernelPackages = pkgs.linuxPackages;
+
   # Desktop suite — thinkcentre uses MATE via XRDP
   my.desktop.suite = "mate";
 
