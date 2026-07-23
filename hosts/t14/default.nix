@@ -236,6 +236,21 @@
     };
   };
 
+  # === EDGE ENTERPRISE POLICIES ===
+  # Disable Copilot, sidebar hub, shopping, rewards, and built-in
+  # password manager. Policies are read from /etc/opt/edge/policies/managed/
+  # at Edge startup. Verify with edge://policy.
+  environment.etc."opt/edge/policies/managed/disable-bloat.json" = {
+    text = builtins.toJSON {
+      HubsSidebarEnabled = false;
+      Microsoft365CopilotChatIconEnabled = false;
+      ShowMicrosoftRewards = false;
+      EdgeShoppingAssistantEnabled = false;
+      PasswordManagerEnabled = false;
+    };
+    mode = "0444";
+  };
+
   # Desktop suite — t14 uses GNOME apps alongside omarchy/Hyprland.
   # omarchy-nix provides nautilus, calculator, evince, etc.;
   # this adds gnome-system-monitor via modules/base/profiles/gnome.nix.
