@@ -2,7 +2,7 @@
 
 let
   iconName = "chrome-lodlkdfmihgonocnmddehnfgiljnadcf-Default.png";
-  iconDir = ./chrome-app-icons;
+  iconDir = ../../chrome-app-icons;
   chromePath = "/run/current-system/sw/bin/google-chrome-stable";
 in
 
