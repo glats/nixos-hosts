@@ -290,9 +290,14 @@
   # Cycle VNC outputs during a wayvnc remote session so the viewer can
   # switch between built-in and external monitors without touching t14.
   # wayvncctl is provided by pkgs.wayvnc (installed via omarchy.wayvnc
-  # upstream module).  SUPER CTRL, R is unassigned in omarchy bindings.nix.
+  # upstream module).
   wayland.windowManager.hyprland.settings.bind = [
-    "SUPER CTRL, R, exec, wayvncctl output-cycle"
+    "SUPER CTRL, D, exec, wayvncctl output-cycle"
+    # Compositor recovery: when Hyprland enters a frozen state (cursor
+    # visible but no frame/content rendered — usually after a dock
+    # hotplug storm or GPU driver hiccup), this forces a compositor
+    # reset via SIGUSR2 without losing any windows or session state.
+    "SUPER CTRL, R, exec, pkill -USR2 Hyprland"
   ];
 
   # === EDGE AS DEFAULT BROWSER ===
