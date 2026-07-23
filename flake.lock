@@ -934,7 +934,7 @@
     "nix-darwin": {
       "inputs": {
         "nixpkgs": [
-          "nixpkgs-darwin"
+          "nixpkgs"
         ]
       },
       "locked": {
@@ -975,20 +975,21 @@
     "nix-vscode-extensions": {
       "inputs": {
         "nixpkgs": [
-          "nixpkgs-darwin"
+          "nixpkgs"
         ]
       },
       "locked": {
-        "lastModified": 1784715123,
-        "narHash": "sha256-84rMK/x9fY83wjeI6GpGAYvmcsyDqffJqJSxCe3Ta9E=",
+        "lastModified": 1784708718,
+        "narHash": "sha256-+tUJuSur9ZL1tKWhXSgjR1kILUAcTV3dPZawCBsR4js=",
         "owner": "nix-community",
         "repo": "nix-vscode-extensions",
-        "rev": "c4c2a4e9060b8ca156a40b19729fa3f6ee4889fc",
+        "rev": "1c7bb95446387973178363916a51b14515fa5ee4",
         "type": "github"
       },
       "original": {
         "owner": "nix-community",
         "repo": "nix-vscode-extensions",
+        "rev": "1c7bb95446387973178363916a51b14515fa5ee4",
         "type": "github"
       }
     },
@@ -1043,22 +1044,6 @@
         "type": "github"
       }
     },
-    "nixpkgs-darwin": {
-      "locked": {
-        "lastModified": 1784517550,
-        "narHash": "sha256-uH9LkreZXkpZXD0QOXBkQWnAHhlVuT0wUABFw7AN9BU=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "fca2dbd4c00c3063235e56bb91758e24fc67b7b8",
-        "type": "github"
-      },
-      "original": {
-        "owner": "NixOS",
-        "ref": "nixpkgs-26.05-darwin",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
     "nixpkgs-lib": {
       "locked": {
         "lastModified": 1697935651,
@@ -1107,16 +1092,16 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1784497964,
-        "narHash": "sha256-vlHUuqAcbcH2RKmHbPiuQzbv1pnzzavXnI62RD0bqCU=",
+        "lastModified": 1784432872,
+        "narHash": "sha256-n3gKTBIV4ZA5VQpUakffBe3KGu4+mhPoA34rrqS0GkA=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "241313f4e8e508cb9b13278c2b0fa25b9ca27163",
+        "rev": "fd1462031fdee08f65fd0b4c6b64e22239a77870",
         "type": "github"
       },
       "original": {
         "owner": "NixOS",
-        "ref": "nixos-unstable",
+        "ref": "nixos-26.05",
         "repo": "nixpkgs",
         "type": "github"
       }
@@ -1271,7 +1256,6 @@
         "nix-vscode-extensions": "nix-vscode-extensions",
         "nixos-hardware": "nixos-hardware",
         "nixpkgs": "nixpkgs_2",
-        "nixpkgs-darwin": "nixpkgs-darwin",
         "omarchy-nix": "omarchy-nix",
         "pipewire-module-xrdp-src": "pipewire-module-xrdp-src",
         "ponytail-src": "ponytail-src",
