@@ -295,6 +295,35 @@
     "SUPER CTRL, R, exec, wayvncctl output-cycle"
   ];
 
+  # === EDGE AS DEFAULT BROWSER ===
+  # Override omarchy-nix's $browser and $webapp Hyprland variables.
+  # omarchy-nix sets these with lib.mkDefault (brave/chromium only);
+  # lib.mkForce redirects to microsoft-edge. Brave stays installed
+  # via omarchy.browser = "brave" for fallback.
+  wayland.windowManager.hyprland.settings."$browser" = lib.mkForce
+    "~/.local/share/omarchy/bin/omarchy-launch-or-focus microsoft-edge 'microsoft-edge-stable --new-window'";
+  wayland.windowManager.hyprland.settings."$webapp" = lib.mkForce
+    "~/.local/share/omarchy/bin/omarchy-launch-or-focus microsoft-edge 'microsoft-edge-stable --app'";
+
+  # Edge flags: force X11/XWayland for stability on Hyprland.
+  # Native Wayland causes SIGSEGV on hover over images (omarchy#5097).
+  # Also disable Microsoft diagnostic data collection telemetry.
+  xdg.configFile."microsoft-edge-stable-flags.conf".text = ''
+    --ozone-platform=x11
+    --enable-features=msDiagnosticDataForceOff
+  '';
+
+  # Default browser: Edge for all web MIME types.
+  # Overrides omarchy-nix's lib.mkDefault (brave/chromium desktop entries).
+  xdg.mimeApps.defaultApplications = lib.mkForce {
+    "text/html" = "microsoft-edge.desktop";
+    "text/xml" = "microsoft-edge.desktop";
+    "x-scheme-handler/http" = "microsoft-edge.desktop";
+    "x-scheme-handler/https" = "microsoft-edge.desktop";
+    "x-scheme-handler/ftp" = "microsoft-edge.desktop";
+    "application/xhtml+xml" = "microsoft-edge.desktop";
+  };
+
   # Override copyScreensaverTxt: upstream runs it after writeBoundary but
   # before linkGeneration, so the home.file symlinks (logo.txt) don't exist
   # yet on first activation. Run after linkGeneration instead.
