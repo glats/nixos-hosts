@@ -8,11 +8,12 @@
 #   - XKB layout forced to "latam" (Chile) since i18n.nix defaults to "es"
 #   - btrfs swap, fonts, kmscon, and amd-laptop settings inherited from base
 #   - home-manager wired to ./home/omarchy.nix (replaces ./home/gnome.nix)
-{ config
-, lib
-, pkgs
-, inputs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
 }:
 
 {
@@ -247,6 +248,7 @@
       ShowMicrosoftRewards = false;
       EdgeShoppingAssistantEnabled = false;
       PasswordManagerEnabled = false;
+      QuickSearchShowMiniMenu = false;
     };
     mode = "0444";
   };
