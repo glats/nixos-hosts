@@ -2,12 +2,10 @@
   description = "Unified Nix configuration for NixOS and macOS hosts";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-
-    # nixpkgs 26.11 dropped x86_64-darwin support.  mact2 (Intel Mac)
-    # must stay on 26.05, which will receive security fixes until the
-    # end of 2026.  All darwin builds use this input.
-    nixpkgs-darwin.url = "github:NixOS/nixpkgs/nixpkgs-26.05-darwin";
+    # Unified nixpkgs 26.05 for all hosts (NixOS + Darwin).
+    # 26.11 dropped x86_64-darwin — mact2 (Intel Mac) stays on 26.05
+    # until hardware upgrade to Apple Silicon. Security fixes until end of 2026.
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
 
     home-manager = {
       url = "github:nix-community/home-manager/master";
@@ -96,7 +94,7 @@
     # nix-darwin must match the nixpkgs release: 26.05 for mact2.
     nix-darwin = {
       url = "github:nix-darwin/nix-darwin/nix-darwin-26.05";
-      inputs.nixpkgs.follows = "nixpkgs-darwin";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     # Determinate 3.* module
@@ -116,11 +114,12 @@
       flake = false;
     };
 
-    # VS Code extensions as Nix — darwin-only (mact2), must follow
-    # nixpkgs-darwin because nixpkgs-unstable dropped x86_64-darwin.
+    # VS Code extensions as Nix — darwin-only (mact2).
+    # Pinned to 1c7bb95: the last commit before x86_64-darwin was dropped
+    # (nix-vscode-extensions PR #187, merged 2026-07-22).
     nix-vscode-extensions = {
-      url = "github:nix-community/nix-vscode-extensions";
-      inputs.nixpkgs.follows = "nixpkgs-darwin";
+      url = "github:nix-community/nix-vscode-extensions/1c7bb95446387973178363916a51b14515fa5ee4";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     ghostty = {
@@ -133,7 +132,6 @@
   outputs =
     inputs@{ self
     , nixpkgs
-    , nixpkgs-darwin
     , home-manager
     , ...
     }:
@@ -152,7 +150,7 @@
 
       pkgsFor =
         s:
-        import (if nixpkgs.lib.hasSuffix "darwin" s then nixpkgs-darwin else nixpkgs) {
+        import nixpkgs {
           system = s;
           config.allowUnfree = true;
           overlays = if nixpkgs.lib.hasSuffix "linux" s then [ linuxOverlay ] else [ darwinOverlay ];
@@ -337,6 +335,6 @@
       # Use through `nix fmt -- <path>` in this repo.
       # Do not invoke `nixfmt-rfc-style` directly; the executable is `nixfmt`.
       formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixfmt;
-      formatter.x86_64-darwin = nixpkgs-darwin.legacyPackages.x86_64-darwin.nixfmt;
+      formatter.x86_64-darwin = nixpkgs.legacyPackages.x86_64-darwin.nixfmt;
     };
 }
