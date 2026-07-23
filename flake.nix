@@ -4,6 +4,11 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
+    # nixpkgs 26.11 dropped x86_64-darwin support.  mact2 (Intel Mac)
+    # must stay on 26.05, which will receive security fixes until the
+    # end of 2026.  All darwin builds use this input.
+    nixpkgs-darwin.url = "github:NixOS/nixpkgs/nixpkgs-26.05-darwin";
+
     home-manager = {
       url = "github:nix-community/home-manager/master";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -88,9 +93,10 @@
     };
 
     # --- macOS-only inputs ---
+    # nix-darwin must match the nixpkgs release: 26.05 for mact2.
     nix-darwin = {
-      url = "github:nix-darwin/nix-darwin/master";
-      inputs.nixpkgs.follows = "nixpkgs";
+      url = "github:nix-darwin/nix-darwin/nix-darwin-26.05";
+      inputs.nixpkgs.follows = "nixpkgs-darwin";
     };
 
     # Determinate 3.* module
@@ -126,6 +132,7 @@
   outputs =
     inputs@{ self
     , nixpkgs
+    , nixpkgs-darwin
     , home-manager
     , ...
     }:
@@ -144,7 +151,7 @@
 
       pkgsFor =
         s:
-        import nixpkgs {
+        import (if nixpkgs.lib.hasSuffix "darwin" s then nixpkgs-darwin else nixpkgs) {
           system = s;
           config.allowUnfree = true;
           overlays = if nixpkgs.lib.hasSuffix "linux" s then [ linuxOverlay ] else [ darwinOverlay ];
@@ -329,6 +336,6 @@
       # Use through `nix fmt -- <path>` in this repo.
       # Do not invoke `nixfmt-rfc-style` directly; the executable is `nixfmt`.
       formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixfmt;
-      formatter.x86_64-darwin = nixpkgs.legacyPackages.x86_64-darwin.nixfmt;
+      formatter.x86_64-darwin = nixpkgs-darwin.legacyPackages.x86_64-darwin.nixfmt;
     };
 }
