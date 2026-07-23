@@ -1,8 +1,8 @@
 {
-  "@opencode-ai/sdk": "1.17.13",
-  "@opencode-ai/plugin": "1.17.13",
+  "@opencode-ai/sdk": "1.18.4",
+  "@opencode-ai/plugin": "1.18.4",
   "unique-names-generator": "4.7.1",
-  "opencode-subagent-statusline": "1.2.0",
+  "opencode-subagent-statusline": "1.2.1",
   "opencode-sdd-engram-manage": "1.7.0",
   "opencode-multimodal": "0.1.6"
 }
