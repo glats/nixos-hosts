@@ -5,7 +5,7 @@
 }:
 
 let
-  colors = import ../../lib/colors.nix { inherit lib; };
+  colors = import ../../../../lib/colors.nix { inherit lib; };
   hexToRgb = colors.hexToRgb;
   doubleHex = colors.doubleHex;
   byteDoubleHex = colors.byteDoubleHex;
