@@ -44,4 +44,14 @@
     # and prevents focus jumping when reopening apps.
     misc.initial_workspace_tracking = false;
   };
+
+  # xdg-desktop-portal-gtk file picker dialogs render with a transparent
+  # gap under XWayland: GTK reports window geometry including CSD shadow
+  # area, but the actual visible content is smaller.  Hyprland draws its
+  # border around the full reported size (unfixable on Hyprland's side
+  # for XWayland — see hyprwm/Hyprland#5192).  Remove the compositor
+  # border on these dialogs; GTK provides its own CSD decorations.
+  wayland.windowManager.hyprland.extraConfig = lib.mkAfter ''
+    windowrule = bordersize 0, class:^(xdg-desktop-portal-gtk)$
+  '';
 }
