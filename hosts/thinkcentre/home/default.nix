@@ -7,6 +7,7 @@ baseModules
 ++ [
   ../../../linux/home/remote-desktop.nix
 
+  ../../../linux/home/suites/mate/default.nix
   ../../../linux/home/conky-thinkcentre.nix
   ../../../linux/home/shell-gpt.nix
 
