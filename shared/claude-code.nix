@@ -90,7 +90,6 @@ let
       # Inject review gate instruction into Claude Code system prompt.
       # Review gate + explore MCP rules, same source as OpenCode instructionOverlays.
       customInstructions = builtins.concatStringsSep "\n\n" [
-        (builtins.readFile ./rules/review-gate.md)
         (builtins.readFile ./rules/explore-mcp.md)
       ];
     }
