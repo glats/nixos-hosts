@@ -46,6 +46,7 @@ in
         sessionist
         yank
         vim-tmux-navigator
+        open
       ]
     );
 
