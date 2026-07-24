@@ -78,7 +78,8 @@
 
       # Universal bindings
       unbind [
-      bind s copy-mode
+      bind Space copy-mode
+      bind s choose-tree
       bind -T copy-mode-vi v send -X begin-selection
       bind p paste-buffer
 
