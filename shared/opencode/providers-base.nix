@@ -1,6 +1,6 @@
-{ lib ? throw "providers-base.nix must be imported with lib"
-, activeProviderName ? "opencode-go-medium"
-,
+{
+  lib ? throw "providers-base.nix must be imported with lib",
+  activeProviderName ? "opencode-go-medium",
 }:
 
 let
@@ -155,7 +155,105 @@ let
     };
   };
 
-  allProviders = nvidiaProvider // opencodeProvider // anthropicProvider;
+  # GitHub Copilot provider: models sync dynamically from Copilot API.
+  # Static definition here prevents false "model not valid" validation
+  # errors when the TUI validates before dynamic sync completes (race condition).
+  # OpenCode handles auth via /connect (OAuth) — no apiKey needed.
+  # Model availability depends on Copilot plan:
+  #   Free — gpt-4.1, gpt-4o, gpt-4o-mini only
+  #   Pro — gpt-5.x (except 5.5), claude-sonnet-4.6, claude-haiku-4.5
+  #   Pro+/Max/Business/Enterprise — all models including claude-opus-4.8, gpt-5.5
+  githubCopilotProvider = {
+    github-copilot = {
+      models = {
+        # OpenAI models
+        "gpt-5-mini" = {
+          name = "GPT-5 Mini";
+        };
+        "gpt-5.3-codex" = {
+          name = "GPT-5.3 Codex";
+        };
+        "gpt-5.4" = {
+          name = "GPT-5.4";
+        };
+        "gpt-5.4-mini" = {
+          name = "GPT-5.4 Mini";
+        };
+        "gpt-5.4-nano" = {
+          name = "GPT-5.4 Nano";
+        };
+        "gpt-5.5" = {
+          name = "GPT-5.5";
+        };
+        "gpt-5.6-luna" = {
+          name = "GPT-5.6 Luna";
+        };
+        "gpt-5.6-sol" = {
+          name = "GPT-5.6 Sol";
+        };
+        "gpt-5.6-terra" = {
+          name = "GPT-5.6 Terra";
+        };
+        "raptor-mini" = {
+          name = "Raptor Mini";
+        };
+        # Anthropic models
+        "claude-haiku-4.5" = {
+          name = "Claude Haiku 4.5";
+        };
+        "claude-sonnet-4.5" = {
+          name = "Claude Sonnet 4.5";
+        };
+        "claude-sonnet-4.6" = {
+          name = "Claude Sonnet 4.6";
+        };
+        "claude-sonnet-5" = {
+          name = "Claude Sonnet 5";
+        };
+        "claude-opus-4.5" = {
+          name = "Claude Opus 4.5";
+        };
+        "claude-opus-4.6" = {
+          name = "Claude Opus 4.6";
+        };
+        "claude-opus-4.7" = {
+          name = "Claude Opus 4.7";
+        };
+        "claude-opus-4.8" = {
+          name = "Claude Opus 4.8";
+        };
+        "claude-fable-5" = {
+          name = "Claude Fable 5";
+        };
+        # Google Gemini models
+        "gemini-2.5-pro" = {
+          name = "Gemini 2.5 Pro";
+        };
+        "gemini-3-flash-preview" = {
+          name = "Gemini 3 Flash";
+        };
+        "gemini-3.1-pro-preview" = {
+          name = "Gemini 3.1 Pro";
+        };
+        "gemini-3.5-flash" = {
+          name = "Gemini 3.5 Flash";
+        };
+        "gemini-3.6-flash" = {
+          name = "Gemini 3.6 Flash";
+        };
+        # Microsoft models
+        "mai-code-1-flash-picker" = {
+          name = "MAI Code 1 Flash";
+        };
+        # Moonshot AI models
+        "kimi-k2.7-code" = {
+          name = "Kimi K2.7 Code";
+        };
+      };
+    };
+  };
+
+  allProviders = nvidiaProvider // opencodeProvider // anthropicProvider // githubCopilotProvider;
 
   providers = [
     {
@@ -342,12 +440,9 @@ let
     }
   ];
 
-  activeProvider = builtins.foldl'
-    (
-      acc: p: if p.name == activeProviderName then p else acc
-    )
-    null
-    providers;
+  activeProvider = builtins.foldl' (
+    acc: p: if p.name == activeProviderName then p else acc
+  ) null providers;
   getModelForPhase =
     phase: provider: if provider == null then null else provider.phases.${phase} or null;
 
