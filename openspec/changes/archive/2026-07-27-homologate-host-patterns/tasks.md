@@ -26,14 +26,14 @@ Chain strategy: size-exception
 
 ## Phase 1: Absorb
 
-- [ ] 1.1 Copy `darwin/default.nix` body into `hosts/mact2/default.nix`
-- [ ] 1.2 Rewrite 7 import paths: `./` → `../../darwin/`
+- [x] 1.1 Copy `darwin/default.nix` body into `hosts/mact2/default.nix`
+- [x] 1.2 Rewrite 7 import paths: `./` → `../../darwin/`
 
 ## Phase 2: Remove
 
-- [ ] 2.1 Delete `../darwin` import from `lib/mkDarwinHost.nix` line 32
+- [x] 2.1 Delete `../darwin` import from `lib/mkDarwinHost.nix` line 32
 
 ## Phase 3: Delete + Verify
 
-- [ ] 3.1 Delete `darwin/default.nix`
-- [ ] 3.2 Run `nix flake check --no-build` — must exit 0
+- [x] 3.1 Delete `darwin/default.nix`
+- [x] 3.2 Run `nix flake check --no-build` — must exit 0
