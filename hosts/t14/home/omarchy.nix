@@ -290,39 +290,34 @@
     package = pkgs.materia-theme;
   };
 
-  # Remove GTK CSD decoration margin on t14 (Hyprland).
+  # Remove GTK3 CSD decoration margin on t14 (Hyprland).
   #
-  # Materia theme applies `margin: 8px` to the `decoration` CSS node for
-  # the resize cursor area. On GNOME/Mutter this creates a clickable
-  # resize zone around floating windows. On Hyprland/Wayland, however,
-  # the compositor handles resize on its own — the margin becomes a
-  # transparent gap between the Hyprland border (2px, omarchy default)
-  # and the visible window content.
+  # Materia theme (gtk-3.0) applies `margin: 8px` to the `decoration`
+  # CSS node for the resize cursor area. On GNOME/Mutter this creates a
+  # clickable resize zone; on Hyprland/Wayland the compositor handles
+  # resize on its own, so the margin becomes a transparent gap between
+  # the compositor border (2px, omarchy default) and the visible window
+  # content.
   #
-  # The gap is most visible on floating file-picker dialogs (Nautilus,
-  # xdg-desktop-portal-gtk) where the forced `size 875 600` and true
-  # black glats background make the 8px margin stand out against the
-  # border. Overriding `margin: 0` reclaims those pixels and eliminates
-  # the gap without affecting window resizing (Hyprland provides its own
-  # resize handles and Mod+RMB).
+  # The gap is most visible on floating file-picker dialogs opened by
+  # xdg-desktop-portal-gtk, where the forced `size 875 600` and true
+  # black glats background make the 8px margin stand out.
   #
-  # Both GTK3 (~/.config/gtk-3.0/gtk.css) and GTK4
-  # (~/.config/gtk-4.0/gtk.css) are patched because:
-  #   - xdg-desktop-portal-gtk file picker uses GTK3
-  #   - Nautilus itself uses GTK4/libadwaita
-  #   - Materia reuses the same SCSS for both toolkit versions
+  # GTK4 is deliberately NOT patched — Materia GTK4 has no
+  # `decoration { margin }` rule (confirmed by reading the compiled
+  # theme CSS).  The GTK4 gap is a separate Hyprland opaque-region
+  # artifact (wp_fractional_scale rounding, Hyprland#11005).  Writing a
+  # bare gtk-4.0/gtk.css would also overwrite Home Manager's theme
+  # @import, breaking theming for non-libadwaita GTK4 apps.
+  #
+  # After deploy, restart the portal to flush its in-memory CSS cache:
+  #   systemctl --user restart xdg-desktop-portal-gtk
   xdg.configFile."gtk-3.0/gtk.css".text = ''
     /* Remove CSD decoration margin to eliminate transparent gap between
        Hyprland border and window content on floating GTK dialogs. */
-    decoration {
+    window decoration {
       margin: 0;
-    }
-  '';
-  xdg.configFile."gtk-4.0/gtk.css".text = ''
-    /* Remove CSD decoration margin to eliminate transparent gap between
-       Hyprland border and window content on floating GTK dialogs. */
-    decoration {
-      margin: 0;
+      border: 0;
     }
   '';
 
