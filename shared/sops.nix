@@ -1,7 +1,7 @@
 { config, ... }:
 
 {
-  # Shared sops configuration — imported by home-linux and home-darwin
+  # Shared sops configuration — imported by linux/home and darwin/home
   sops.defaultSopsFile = ../secrets/user/opencode.yaml;
   sops.age.keyFile = "${config.home.homeDirectory}/.config/sops/age/keys.txt";
 
