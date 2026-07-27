@@ -49,11 +49,12 @@
 # Recovery: if the greeter fails, append systemd.mask=greetd.service to the
 # kernel cmdline at the systemd-boot menu to skip greetd and drop to a VT
 # login prompt.  The system keymap (la-latin1) is active on VTs.
-{ config
-, pkgs
-, lib
-, inputs
-, ...
+{
+  config,
+  pkgs,
+  lib,
+  inputs,
+  ...
 }:
 
 {
@@ -249,6 +250,42 @@
     package = pkgs.materia-theme;
   };
 
+  # Remove GTK CSD decoration margin on t14 (Hyprland).
+  #
+  # Materia theme applies `margin: 8px` to the `decoration` CSS node for
+  # the resize cursor area. On GNOME/Mutter this creates a clickable
+  # resize zone around floating windows. On Hyprland/Wayland, however,
+  # the compositor handles resize on its own — the margin becomes a
+  # transparent gap between the Hyprland border (2px, omarchy default)
+  # and the visible window content.
+  #
+  # The gap is most visible on floating file-picker dialogs (Nautilus,
+  # xdg-desktop-portal-gtk) where the forced `size 875 600` and true
+  # black glats background make the 8px margin stand out against the
+  # border. Overriding `margin: 0` reclaims those pixels and eliminates
+  # the gap without affecting window resizing (Hyprland provides its own
+  # resize handles and Mod+RMB).
+  #
+  # Both GTK3 (~/.config/gtk-3.0/gtk.css) and GTK4
+  # (~/.config/gtk-4.0/gtk.css) are patched because:
+  #   - xdg-desktop-portal-gtk file picker uses GTK3
+  #   - Nautilus itself uses GTK4/libadwaita
+  #   - Materia reuses the same SCSS for both toolkit versions
+  xdg.configFile."gtk-3.0/gtk.css".text = ''
+    /* Remove CSD decoration margin to eliminate transparent gap between
+       Hyprland border and window content on floating GTK dialogs. */
+    decoration {
+      margin: 0;
+    }
+  '';
+  xdg.configFile."gtk-4.0/gtk.css".text = ''
+    /* Remove CSD decoration margin to eliminate transparent gap between
+       Hyprland border and window content on floating GTK dialogs. */
+    decoration {
+      margin: 0;
+    }
+  '';
+
   # Qt configuration: Adwaita Dark style with GTK3 platform theme bridge.
   # Matches linux/home/theme.nix used on rog and thinkcentre.
   # adwaita-qt is auto-installed by HM when qt.style.name = "adwaita-dark".
@@ -305,10 +342,10 @@
   # omarchy-nix sets these with lib.mkDefault (brave/chromium only);
   # lib.mkForce redirects to microsoft-edge. Brave stays installed
   # via omarchy.browser = "brave" for fallback.
-  wayland.windowManager.hyprland.settings."$browser" = lib.mkForce
-    "~/.local/share/omarchy/bin/omarchy-launch-or-focus microsoft-edge 'microsoft-edge-stable --new-window'";
-  wayland.windowManager.hyprland.settings."$webapp" = lib.mkForce
-    "~/.local/share/omarchy/bin/omarchy-launch-or-focus microsoft-edge 'microsoft-edge-stable --app'";
+  wayland.windowManager.hyprland.settings."$browser" =
+    lib.mkForce "~/.local/share/omarchy/bin/omarchy-launch-or-focus microsoft-edge 'microsoft-edge-stable --new-window'";
+  wayland.windowManager.hyprland.settings."$webapp" =
+    lib.mkForce "~/.local/share/omarchy/bin/omarchy-launch-or-focus microsoft-edge 'microsoft-edge-stable --app'";
 
   # Edge flags: force X11/XWayland for stability on Hyprland.
   # Native Wayland causes SIGSEGV on hover over images (omarchy#5097).
