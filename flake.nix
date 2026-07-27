@@ -130,10 +130,11 @@
   };
 
   outputs =
-    inputs@{ self
-    , nixpkgs
-    , home-manager
-    , ...
+    inputs@{
+      self,
+      nixpkgs,
+      home-manager,
+      ...
     }:
     let
       # --- Builders ---
@@ -280,25 +281,14 @@
               username = "glats";
             };
           };
-          # t14 is an intentional exception to the per-host modules.nix
-          # ownership rule used for rog and thinkcentre.
-          # t14 uses NixOS-integrated HM.  The standalone entry is
-          # required by the `hms` alias (home-manager switch --flake .#t14).
-          # omarchy.nix is self-contained (imports omarchy-nix HM module
-          # + selective shared modules) so we do NOT use baseHomeConfig
-          # (which would prepend linuxHomeModules and cause duplicate
-          # module errors).
-          #
-          # The omarchy-nix HM module copies osConfig.omarchy into HM
-          # config (lib.mkIf (osConfig ? omarchy) { ... omarchy = osConfig.omarchy or {}; ... }).
-          # In standalone HM, osConfig = {} so the sync short-circuits.
-          # We inject the necessary omarchy values explicitly here to
-          # match what the NixOS path provides.
+          # t14 standalone HM — same list-function shape as rog/thinkcentre.
+          # Uses ./home/default.nix { inherit inputs; } which returns the
+          # filtered shared-modules + t14-specific modules (omarchy.nix etc.).
+          # The omarchy config block below injects values that the NixOS path
+          # provides via osConfig (standalone HM has no osConfig).
           t14 = home-manager.lib.homeManagerConfiguration {
             pkgs = pkgsFor "x86_64-linux";
-            modules = [
-              ./hosts/t14/home/omarchy.nix
-              inputs.hyprdynamicmonitors.homeManagerModules.default
+            modules = import ./hosts/t14/home/default.nix { inherit inputs; } ++ [
               {
                 omarchy = {
                   theme = "glats";
