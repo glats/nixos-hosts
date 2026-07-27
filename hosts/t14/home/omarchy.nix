@@ -61,67 +61,107 @@
   imports = [
     # Omarchy HM module — supplies Hyprland overlays, waybar, walker,
     # elephant, ghostty, alacritty, kitty, btop, neovim, fcitx5,
-    # and all the user-level defaults.  Imported first so subsequent
+    # and all the user-level defaults. Imported first so subsequent
     # t14-specific fragments can override.
     inputs.omarchy-nix.homeManagerModules.default
 
-    # t14-specific overlays on top of omarchy.
-    # kitty.nix is imported via ./default.nix (which transitively
-    # re-imports the shared linux/home/kitty.nix because omarchy-nix
-    # does not include it).
-    # Ghostty is owned by `linux/home/ghostty.nix` (the single source
-    # of truth across all Linux hosts).  The shared file uses
-    # `lib.mkForce` on `programs.ghostty.themes` to drop omarchy's
-    # `themes.omarchy`, and the import order makes per-key settings
-    # resolve in favor of the shared file.  `./ghostty.nix` only adds
-    # t14-specific hardware tweaks (background-opacity, async-backend,
-    # mouse-scroll-multiplier) on top.
-    ./default.nix
+    # t14-specific Hyprland config fragments (monitor, input, looknfeel)
+    ./hypr/monitors.nix
+    ./hypr/input.nix
+    ./hypr/looknfeel.nix
+    ./hypr/hyprlock.nix
+    ./hypr/hyprsunset.nix
 
-    # Compatible shared modules from linux/home/.  These are the same
-    # modules the previous gnome.nix imported; we keep them so that
-    # shell, git, ssh, neovim, tmux, opencode, and sops survive the
-    # migration.
-    ../../../linux/home/base.nix
-    ../../../linux/home/shell.nix
-    ../../../linux/home/tmux.nix
-    ../../../linux/home/neovim.nix
-    ../../../linux/home/git.nix
-    ../../../linux/home/gh.nix
-    ../../../linux/home/ssh.nix
-    # btop theme + settings are now owned by omarchy-nix's updated
-    # btop module (imported via homeManagerModules.default above).
-    # The module uses the glats theme with the nixos-hosts preferred
-    # settings (semantic rainbow mapping, save_config_on_exit=false,
-    # update_ms=200, vim_keys=false, etc.).  No local overrides needed.
-    # Remmina remote-desktop clients + connection files.  rog and
-    # thinkcentre get this transitively via modules/base/home-manager.nix,
-    # but t14 has its own curated import list and must include it
-    # explicitly to deploy ~/.config/remmina and the .desktop launchers.
-    ../../../linux/home/remote-desktop.nix
-
-    # ShellGPT AI command assistant (nvidia NIM nemotron-3-ultra)
-    ../../../linux/home/shell-gpt.nix
-    ({ home.shell-gpt.enable = true; })
-
-    # Shared shell aliases (now extracted from linux/home/shell.nix)
-    ../../../shared/shell-aliases.nix
-
-    # OpenCode stack
-    ../../../shared/opencode.nix
-    ../../../shared/opencode-profile.nix
-    ({ home.opencode.activeProviderName = "opencode-free"; })
-
-    # Claude Code stack
-    ../../../shared/claude-code.nix
-    ../../../shared/claude-code-profile.nix
-
-    ../../../shared/sops.nix
-    inputs.sops-nix.homeManagerModules.sops
+    # t14-specific peripherals
+    ./mouse-wiggle.nix
+    ../../../linux/home/webcam-rog.nix
   ];
 
   # Use SSH host key for sops decryption (matches host_t14 in .sops.yaml).
   sops.age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
+
+  # ------------------------------------------------------------------
+  # HyprDynamicMonitors — event-driven monitor profile daemon.
+  # Detects lid state via UPower D-Bus and monitor hotplug via
+  # native Hyprland IPC. Profiles + hyprconfigs deployed from ./hdm/.
+  # ------------------------------------------------------------------
+  home.hyprdynamicmonitors = {
+    enable = lib.mkDefault true;
+    configFile = ../hdm/config.toml;
+    extraFiles = {
+      "hyprdynamicmonitors/hyprconfigs/docked-lid-open.conf" = ../hdm/hyprconfigs/docked-lid-open.conf;
+      "hyprdynamicmonitors/hyprconfigs/docked-lid-closed.conf" =
+        ../hdm/hyprconfigs/docked-lid-closed.conf;
+      "hyprdynamicmonitors/hyprconfigs/undocked-lid-open.conf" =
+        ../hdm/hyprconfigs/undocked-lid-open.conf;
+      "hyprdynamicmonitors/hyprconfigs/undocked-lid-closed.conf" =
+        ../hdm/hyprconfigs/undocked-lid-closed.conf;
+      "hyprdynamicmonitors/hyprconfigs/fallback.conf" = ../hdm/hyprconfigs/fallback.conf;
+    };
+    extraFlags = [ "--enable-lid-events" ];
+    installExamples = false;
+  };
+
+  # Waybar systemd user service.
+  # omarchy-nix's waybar HM module installs only the package + static config
+  # files -- it does NOT ship a systemd unit -- so this is the sole service
+  # definition and cannot be removed.
+  systemd.user.services.waybar = {
+    Unit = {
+      Description = "Waybar status bar";
+      PartOf = [ "graphical-session.target" ];
+      After = [ "graphical-session.target" ];
+      ConditionEnvironment = [ "WAYLAND_DISPLAY" ];
+      StartLimitBurst = 5;
+      StartLimitIntervalSec = "10s";
+    };
+    Service = {
+      ExecStart = "${pkgs.waybar}/bin/waybar";
+      Restart = "always";
+      RestartSec = "100ms";
+      StandardOutput = "null";
+      StandardError = "journal";
+      SyslogIdentifier = "waybar";
+    };
+    Install = {
+      WantedBy = [ "graphical-session.target" ];
+    };
+  };
+
+  # ------------------------------------------------------------------
+  # Helper scripts (deployed to ~/.local/bin via home.file, accessible
+  # from PATH via home.sessionPath in base.nix)
+  # ------------------------------------------------------------------
+  home.file = {
+    # Keyboard layout toggle (es <-> latam)
+    ".local/share/omarchy/bin/kb-toggle.sh" = {
+      source = ./scripts/kb-toggle.sh;
+      executable = true;
+    };
+
+    # Keyboard layout set (es or latam)
+    ".local/share/omarchy/bin/kb-layout.sh" = {
+      source = ./scripts/kb-layout.sh;
+      executable = true;
+    };
+
+    # ------------------------------------------------------------------
+    # kb-layout.sh / kb-toggle.sh — the symlink copies into
+    # ~/.config/hypr/ are kept for any waybar module / hyprland plugin
+    # that resolves helper scripts at that path.  The canonical
+    # source lives in scripts/; the bin copies above expose them on
+    # PATH.  Both paths point to the same source file (no duplicate
+    # content).
+    # ------------------------------------------------------------------
+    ".config/hypr/kb-layout.sh" = {
+      source = ./scripts/kb-layout.sh;
+      executable = true;
+    };
+    ".config/hypr/kb-toggle.sh" = {
+      source = ./scripts/kb-toggle.sh;
+      executable = true;
+    };
+  };
 
   # Disable omarchy's zsh extras that conflict with shell.nix prezto setup.
   # rog/thinkcentre use pure prezto (no starship, no zplug). Match them.
