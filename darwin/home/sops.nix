@@ -11,7 +11,7 @@
     ../../shared/sops.nix
   ];
 
-  # macOS-specific secrets (Atlassian, Confluence, GitHub)
+  # macOS-specific secrets (Atlassian, Confluence)
   sops.secrets."opencode/atlassian_jira_url" = {
     sopsFile = ../../secrets/user/atlassian.yaml;
     mode = "0400";
@@ -32,8 +32,13 @@
     sopsFile = ../../secrets/user/atlassian.yaml;
     mode = "0400";
   };
-  sops.secrets."github/token" = {
-    sopsFile = ../../secrets/user/atlassian.yaml;
+  # GitHub tokens — aligned with linux (same key, same file)
+  sops.secrets."github/work_pat" = {
+    sopsFile = ../../secrets/shared/passwords.yaml;
+    mode = "0400";
+  };
+  sops.secrets."github/personal_pat" = {
+    sopsFile = ../../secrets/shared/passwords.yaml;
     mode = "0400";
   };
 }

@@ -36,10 +36,10 @@ let
     secretPath = config.sops.secrets."github/personal_pat".path;
   };
 
-  # macOS work reads github/token from atlassian.yaml (legacy path on macOS)
+  # macOS work token — aligned with linux (github/work_pat from passwords.yaml)
   githubMcpServerWork = mkGithubMcpWrapper {
     name = "github-mcp-server-work";
-    secretPath = config.sops.secrets."github/token".path;
+    secretPath = config.sops.secrets."github/work_pat".path;
   };
 
 in
