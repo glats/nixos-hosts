@@ -8,11 +8,12 @@
 #   - XKB layout forced to "latam" (Chile) since i18n.nix defaults to "es"
 #   - btrfs swap, fonts, kmscon, and amd-laptop settings inherited from base
 #   - home-manager wired to ./home/omarchy.nix (replaces ./home/gnome.nix)
-{ config
-, lib
-, pkgs
-, inputs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
 }:
 
 {
@@ -28,8 +29,7 @@
     ../../linux/system/base/users.nix
     ../../linux/system/base/zsh.nix
     ../../linux/system/base/packages.nix
-    # NOTE: linux/system/base/home-manager.nix is NOT imported — we use our
-    # own home-manager config below with a targeted set.
+    ../../linux/system/base/home-manager.nix
 
     # === DESKTOP ===
     # Omarchy provides Hyprland + PipeWire + NetworkManager + Bluetooth
@@ -256,32 +256,6 @@
   # omarchy-nix provides nautilus, calculator, evince, etc.;
   # this adds gnome-system-monitor via modules/base/profiles/gnome.nix.
   my.desktop.suite = "gnome";
-
-  # === HOME-MANAGER ===
-  # Omarchy + t14 Hyprland overlays imported via ./home/omarchy.nix.
-  # The NixOS home-manager module is loaded by lib/mkHost.nix.
-  home-manager = {
-    useGlobalPkgs = true;
-    useUserPackages = true;
-    # REQ (t14-omarchy-nix-best-way): pre-existing unmanaged files
-    # (e.g. /home/glats/.config/user-dirs.dirs left over from the previous
-    # GNOME session) block home-manager's symlink activation with
-    # "would be clobbered" errors. Enabling backupFileExtension makes HM
-    # rename the colliding file to <path>.backup instead of aborting.
-    # We do not set overwriteBackup = true: the first run creates the
-    # backup cleanly, and a future stale backup will surface a real
-    # signal that something else is managing the same path.
-    backupFileExtension = "backup";
-    extraSpecialArgs = {
-      hostName = config.networking.hostName;
-    };
-    users.glats = {
-      imports = [
-        ./home/omarchy.nix
-        inputs.hyprdynamicmonitors.homeManagerModules.default
-      ];
-    };
-  };
 
   # HDM lid events depend on UPower D-Bus.  The amd-laptop module
   # (modules/hardware/amd-laptop.nix) enables services.upower by default,
