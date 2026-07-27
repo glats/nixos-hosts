@@ -25,11 +25,8 @@ let
         # Determinate Nix module
         inputs.determinate.darwinModules.default
 
-        # Host-specific configuration
+        # Host-specific configuration (includes darwin modules)
         ../hosts/${hostname}
-
-        # Darwin system modules (homebrew, settings, etc.)
-        ../darwin
 
         # Overlays for custom packages
         {
