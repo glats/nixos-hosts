@@ -62,6 +62,9 @@ in
       home-manager
       superfile
       ffmpeg
+
+      # Android platform tools (adb, fastboot)
+      android-tools
     ];
   };
 }

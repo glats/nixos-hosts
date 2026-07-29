@@ -1,9 +1,8 @@
 # macOS-specific MCPs that can be merged with mcps-base.nix
-{
-  config,
-  lib,
-  pkgs,
-  ...
+{ config
+, lib
+, pkgs
+, ...
 }:
 
 with lib;
