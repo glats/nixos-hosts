@@ -316,9 +316,6 @@
             # config (home.username, home.homeDirectory, etc.) on top of
             # the canonical module list from `darwinHomeModules`.
             ./darwin/home
-            # Mirror the provider override from darwin/default.nix so
-            # `home-manager switch --flake .#mact2` matches darwin-rebuild.
-            { home.opencode.activeProviderName = "github-copilot"; }
           ];
         };
 
