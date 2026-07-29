@@ -1,21 +1,21 @@
 # Extra providers beyond the base 3 (nvidia, github-copilot, opencode-go)
 # These are macOS-specific providers that can be merged with providers-base.nix
-{ lib ? throw "providers-extra.nix must be imported with lib"
-,
+{
+  lib ? throw "providers-extra.nix must be imported with lib",
 }:
 
 let
   # Generate a provider attrset from a compact specification.
   # Returns `{ name = { npm, name, options, models }; }` ready to merge.
   mkProvider =
-    { name
-    , displayName
-    , baseURL
-    , apiKeyEnv
-    , apiKeyValue ? "{env:${apiKeyEnv}}"
-    , models
-    , extraOptions ? { }
-    ,
+    {
+      name,
+      displayName,
+      baseURL,
+      apiKeyEnv,
+      apiKeyValue ? "{env:${apiKeyEnv}}",
+      models,
+      extraOptions ? { },
     }:
     {
       ${name} = {
