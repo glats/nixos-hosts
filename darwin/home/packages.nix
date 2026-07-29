@@ -37,7 +37,7 @@ in
       gdk
       btop
       nix-index
-      gnupg1
+      gnupg
       pinentry_mac
       netcat
       sshfs-fuse
