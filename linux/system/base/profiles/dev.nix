@@ -25,6 +25,10 @@ with pkgs;
   nodejs_22
   bun
 
+  # Android platform tools (adb, fastboot)
+  # systemd 258+ handles uaccess udev rules automatically — no groups needed
+  android-tools
+
   # Editors and IDEs
   neovim
 
