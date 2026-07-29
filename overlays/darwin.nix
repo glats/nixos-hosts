@@ -22,9 +22,6 @@ in
     ];
   });
 
-  # Ghostty from flake input (macOS terminal emulator)
-  ghostty = inputs.ghostty.packages.${system}.default;
-
   # Cross-platform packages from flake outputs
   inherit (self.packages.${system})
     nixos-scripts
