@@ -2,8 +2,8 @@
 {
   programs.vscode = {
     enable = true;
-    # Use the Nix package for VS Code app. If you prefer the Homebrew cask, tell me and I can switch this off.
-    package = pkgs.vscode;
+    # Homebrew cask only — saves ~500MB nix store
+    package = null;
 
     # Allow VS Code to manage marketplace extensions like Copilot
     mutableExtensionsDir = true;
