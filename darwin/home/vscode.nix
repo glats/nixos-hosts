@@ -11,22 +11,28 @@
     profiles.default =
       let
         platform = pkgs.stdenv.hostPlatform.system;
+        isDarwin = pkgs.stdenv.hostPlatform.isDarwin;
       in
       {
-        # Extensions via nix-vscode-extensions (marketplace mirror)
-        extensions = with inputs.nix-vscode-extensions.extensions.${platform}.vscode-marketplace; [
-          golang.go
-          jnoortheen.nix-ide
-          arrterian.nix-env-selector
-          bbenoist.nix
-          vue.volar
+        # Extensions via nix-vscode-extensions (marketplace mirror).
+        # Gated behind isDarwin — the flake input is darwin-only and
+        # Linux evals would fail trying to resolve the extension set.
+        extensions = pkgs.lib.optionals isDarwin (
+          with inputs.nix-vscode-extensions.extensions.${platform}.vscode-marketplace;
+          [
+            golang.go
+            jnoortheen.nix-ide
+            arrterian.nix-env-selector
+            bbenoist.nix
+            vue.volar
 
-          # UX
-          zhuangtongfa.material-theme
-          pkief.material-icon-theme
-          jebbs.plantuml
-          hediet.vscode-drawio
-        ];
+            # UX
+            zhuangtongfa.material-theme
+            pkief.material-icon-theme
+            jebbs.plantuml
+            hediet.vscode-drawio
+          ]
+        );
 
         userSettings = {
           "files.associations" = {
