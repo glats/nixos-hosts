@@ -115,6 +115,7 @@
     };
 
     # VS Code extensions as Nix — darwin-only (mact2).
+    # Gated behind isDarwin in darwin/home/vscode.nix so Linux evals skip it.
     # Pinned to 1c7bb95: the last commit before x86_64-darwin was dropped
     # (nix-vscode-extensions PR #187, merged 2026-07-22).
     nix-vscode-extensions = {
