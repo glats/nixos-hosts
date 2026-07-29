@@ -1,8 +1,9 @@
 # macOS-specific MCPs that can be merged with mcps-base.nix
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }:
 
 with lib;
@@ -39,8 +40,8 @@ let
     atlassian = {
       type = "local";
       command = [
-        "/Users/jcuzmar/.local/share/uv/tools/mcp-atlassian/bin/python3"
-        "/Users/jcuzmar/.local/bin/mcp-atlassian-wrapper.py"
+        "${config.home.homeDirectory}/.local/share/uv/tools/mcp-atlassian/bin/python3"
+        "${config.home.homeDirectory}/.local/bin/mcp-atlassian-wrapper.py"
       ];
       timeout = 60000;
       environment = {
