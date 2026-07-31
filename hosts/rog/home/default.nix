@@ -13,9 +13,8 @@ baseModules
   ../../../linux/home/openfang.nix
   ../../../linux/home/webcam.nix
   ../../../linux/home/shell-gpt.nix
+  { home.shell-gpt.enable = true; }
 
   # Override active OpenCode provider for this host
   { home.opencode.activeProviderName = "opencode-go-medium"; }
-
-  { home.shell-gpt.enable = true; }
 ]
