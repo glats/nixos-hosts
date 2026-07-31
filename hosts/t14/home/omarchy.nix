@@ -49,11 +49,12 @@
 # Recovery: if the greeter fails, append systemd.mask=greetd.service to the
 # kernel cmdline at the systemd-boot menu to skip greetd and drop to a VT
 # login prompt.  The system keymap (la-latin1) is active on VTs.
-{ config
-, pkgs
-, lib
-, inputs
-, ...
+{
+  config,
+  pkgs,
+  lib,
+  inputs,
+  ...
 }:
 
 {
@@ -73,7 +74,7 @@
 
     # t14-specific peripherals
     ./mouse-wiggle.nix
-    ../../../linux/home/webcam-rog.nix
+    ../../../linux/home/webcam.nix
   ];
 
   # Use SSH host key for sops decryption (matches host_t14 in .sops.yaml).
