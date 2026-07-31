@@ -58,6 +58,9 @@
     ./fcitx5.nix
     ./mpv.nix
     ./thinkfan-ui.nix
+
+    # Gaming — RetroArch config + ROM directories + SDL2 mappings
+    ../../../linux/home/gaming.nix
   ];
 
   # Use SSH host key for sops decryption (matches host_t14 in .sops.yaml).
