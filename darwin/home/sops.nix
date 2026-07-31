@@ -32,13 +32,6 @@
     sopsFile = ../../secrets/user/atlassian.yaml;
     mode = "0400";
   };
-  # GitHub tokens — aligned with linux (same key, same file)
-  sops.secrets."github/work_pat" = {
-    sopsFile = ../../secrets/shared/passwords.yaml;
-    mode = "0400";
-  };
-  sops.secrets."github/personal_pat" = {
-    sopsFile = ../../secrets/shared/passwords.yaml;
-    mode = "0400";
-  };
+  # GitHub tokens are now managed by `gh auth token` on darwin.
+  # Shared sops.nix still imports them via github-tokens.nix for linux compat.
 }
