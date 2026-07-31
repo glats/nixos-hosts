@@ -81,15 +81,6 @@
 
   system.stateVersion = "25.05";
 
-  # OpenCode LLM provider configuration is managed centrally in
-  # shared/opencode/providers.nix (base providers)
-  # home-darwin/opencode/providers-extra.nix (macOS extras)
-  #
-  # To change the active provider tier per host, set the HM option:
-  #   home.opencode.activeProviderName = "github-copilot";
-  # in the host's default.nix (e.g. darwin/default.nix for mact2).
-  # Both providers use OAuth via /connect command - no API keys needed.
-
   environment.systemPackages = with pkgs; [
     pipewire-module-xrdp
     intel-vaapi-driver

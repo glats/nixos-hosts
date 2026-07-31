@@ -37,7 +37,7 @@
     ../../linux/system/hardware/nvidia-custom.nix
     ../../linux/system/hardware/keyring.nix
     ../../linux/system/hardware/asus-fan-control.nix
-    ../../linux/system/hardware/rog-shutdown.nix # KEPT — en pruebas, posible uso futuro
+    ../../linux/system/hardware/rog-shutdown.nix # KEPT — under test, possible future use
     ../../linux/system/hardware/rog-poweroff-workaround.nix
 
     # Networking
