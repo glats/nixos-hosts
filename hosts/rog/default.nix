@@ -48,7 +48,7 @@
 
     # Features
     ../../linux/system/features/boot.nix
-    ../../linux/system/features/conky
+    ../../linux/system/features/conky/options.nix
 
     # Services — shared
     ../../linux/system/services/xrdp.nix
