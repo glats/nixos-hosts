@@ -5,9 +5,9 @@
 - [x] 1.2 Rename `linux/system/hardware/nvidia.nix` → `nvidia-custom.nix`; update import in `hosts/rog/default.nix`
 
 ## Commit 2: Conky cleanup
-- [ ] 2.1 Delete `linux/system/features/conky/default.nix`
-- [ ] 2.2 Remove redundant `config.conky-config` defaults block in `linux/system/features/conky/options.nix`
-- [ ] 2.3 Update host imports from `../../linux/system/features/conky` → `../../linux/system/features/conky/options.nix` (rog, thinkcentre)
+- [x] 2.1 Delete `linux/system/features/conky/default.nix`
+- [x] 2.2 Remove redundant `config.conky-config` defaults block in `linux/system/features/conky/options.nix`
+- [x] 2.3 Update host imports from `../../linux/system/features/conky` → `../../linux/system/features/conky/options.nix` (rog, thinkcentre)
 
 ## Commit 3: Comment and dead-code cleanup
 - [ ] 3.1 Add comment `# Disables NixOS firewall` above `networking.firewall.enable = false` in `linux/system/networking/firewall.nix`
