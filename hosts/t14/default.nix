@@ -284,7 +284,8 @@
       postBuild = ''
         wrapProgram $out/bin/teams-for-linux \
           --unset NIXOS_OZONE_WL \
-          --add-flags "--ozone-platform=x11"
+          --add-flags "--ozone-platform=x11" \
+          --add-flags "--password-store=gnome-libsecret"
       '';
     })
   ];
