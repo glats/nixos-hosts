@@ -39,6 +39,7 @@
     ../../linux/system/hardware/asus-fan-control.nix
     ../../linux/system/hardware/rog-shutdown.nix # KEPT — under test, possible future use
     ../../linux/system/hardware/rog-poweroff-workaround.nix
+    ../../linux/system/hardware/adb.nix
 
     # Networking
     ../../linux/system/networking/openssh.nix

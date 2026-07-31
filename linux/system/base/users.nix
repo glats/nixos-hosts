@@ -33,6 +33,7 @@
       "docker"
       "keys"
       "libvirtd"
+      "adbusers"
     ];
     shell = pkgs.zsh;
     hashedPasswordFile = lib.mkIf
@@ -47,6 +48,10 @@
   };
 
   users.groups.netdev = { };
+
+  # ADB (used by XRDP hosts only — group exists unconditionally so extraGroups
+  # doesn't fail on t14 where the udev rules aren't loaded)
+  users.groups.adbusers = { };
 
   security.sudo.wheelNeedsPassword = false;
 
