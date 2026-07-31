@@ -84,6 +84,9 @@
     # Virtualisation
     ../../linux/system/virtualisation/libvirt.nix
     ../../linux/system/virtualisation/docker.nix
+
+    # Host-specific systemd timeout overrides
+    ./systemd-timeouts.nix
   ];
 
   boot-settings = {
