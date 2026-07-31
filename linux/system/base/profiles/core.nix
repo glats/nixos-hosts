@@ -80,7 +80,6 @@ with pkgs;
   adwaita-icon-theme
   gparted
   popsicle
-  hypridle
   remmina
 
   # System utilities
