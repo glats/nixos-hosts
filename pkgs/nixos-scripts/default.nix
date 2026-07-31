@@ -49,7 +49,7 @@ stdenvNoCC.mkDerivation {
     cp $src/sync-opencode-remote $out/bin/
     chmod +x $out/bin/sync-opencode-remote
 
-    # webcam excluded: already provided by home-linux/webcam-rog.nix
+    # webcam excluded: already provided by linux/home/webcam.nix
   '';
 
   meta = with lib; {
