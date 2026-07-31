@@ -1,29 +1,17 @@
-{ self
-, system
-, primaryUser
-, host
-, lib
-, ...
-}:
-let
-  primaryHome = "/Users/${primaryUser}";
-  trustedApps = [
-    # Directories or .app bundles to auto-trust so Gatekeeper/quarantine
-    # prompts stay out of the way. Add entries here when new GUI apps are
-    # managed via this flake.
-    "/Applications"
-    "/Applications/Nix Apps"
-    "${primaryHome}/Applications"
-    "${primaryHome}/Applications/Home Manager Apps"
-  ];
-  trustedAppsShell = lib.concatStringsSep " " (map lib.escapeShellArg trustedApps);
-  gatekeeperLabel = "NixTrustedApps";
-  logPrefix = "> [Gatekeeper]";
-in
 {
-
-  # touch ID for sudo
-  security.pam.services.sudo_local.touchIdAuth = true;
+  self,
+  system,
+  primaryUser,
+  host,
+  lib,
+  ...
+}:
+{
+  imports = [
+    ./finder.nix
+    ./dock.nix
+    ./security.nix
+  ];
 
   # Core remote access services (SSH + built-in Screen Sharing / VNC)
   services = {
@@ -51,18 +39,6 @@ in
     startup.chime = false;
 
     defaults = {
-      loginwindow = {
-        GuestEnabled = false;
-        DisableConsoleAccess = true;
-      };
-
-      finder = {
-        AppleShowAllFiles = true;
-        AppleShowAllExtensions = true;
-        _FXShowPosixPathInTitle = true;
-        ShowPathbar = true;
-        ShowStatusBar = true;
-      };
       CustomUserPreferences = {
         "com.apple.SoftwareUpdate" = {
           AutomaticCheckEnabled = true;
@@ -77,16 +53,9 @@ in
           AutomaticDisplayBrightness = 0;
           CBTrueToneEnabled = 0;
         };
-        "com.apple.dock" = {
-          mru-spaces = false;
-        };
       };
       CustomSystemPreferences."com.apple.network.local-network" = {
         AllowedEthernetLocalNetworkAddresses = [ "172.16.0.0/12" ];
-      };
-      dock = {
-        autohide = true;
-        show-recents = false;
       };
 
       NSGlobalDomain = {
@@ -106,65 +75,6 @@ in
       # The name is already "mact2" (matches the hostname) so no effect.
     };
   };
-
-  system.activationScripts.unquarantineTrustedApps.text = ''
-    echo "${logPrefix} ensuring trusted GUI apps remain approved"
-
-    trust_app() {
-      local target="$1"
-      [ -e "$target" ] || return 0
-      echo "${logPrefix} trusting $target"
-      if xattr -p com.apple.quarantine "$target" >/dev/null 2>&1; then
-        xattr -dr com.apple.quarantine "$target" >/dev/null 2>&1 || true
-      fi
-      if command -v spctl >/dev/null 2>&1; then
-        spctl --add --label ${gatekeeperLabel} "$target" >/dev/null 2>&1 || true
-      fi
-    }
-
-    process_entry() {
-      local entry="$1"
-      [ -e "$entry" ] || return 0
-      case "$entry" in
-        *.app)
-          trust_app "$entry"
-          ;;
-        *)
-          if [ -d "$entry" ]; then
-            shopt -s nullglob 2>/dev/null || true
-            for candidate in "$entry"/*.app; do
-              [ -e "$candidate" ] || continue
-              trust_app "$candidate"
-            done
-            shopt -u nullglob 2>/dev/null || true
-          fi
-          ;;
-      esac
-    }
-
-    for entry in ${trustedAppsShell}; do
-      process_entry "$entry"
-    done
-  '';
-
-  # Configure macOS Application Firewall to allow SSH incoming connections
-  system.activationScripts.firewallSSH.text = ''
-    echo "> Configuring firewall for SSH access"
-    # Allow sshd-keygen-wrapper through the Application Firewall
-    # This is the binary that handles SSH connections on macOS
-    SSHD_WRAPPER="/usr/libexec/sshd-keygen-wrapper"
-    if [ -f "$SSHD_WRAPPER" ]; then
-      /usr/libexec/ApplicationFirewall/socketfilterfw --add "$SSHD_WRAPPER" >/dev/null 2>&1 || true
-      /usr/libexec/ApplicationFirewall/socketfilterfw --unblockapp "$SSHD_WRAPPER" >/dev/null 2>&1 || true
-      echo "  - SSH ($SSHD_WRAPPER) allowed through firewall"
-    fi
-    # Also ensure /usr/sbin/sshd is allowed if it exists
-    if [ -f "/usr/sbin/sshd" ]; then
-      /usr/libexec/ApplicationFirewall/socketfilterfw --add "/usr/sbin/sshd" >/dev/null 2>&1 || true
-      /usr/libexec/ApplicationFirewall/socketfilterfw --unblockapp "/usr/sbin/sshd" >/dev/null 2>&1 || true
-      echo "  - /usr/sbin/sshd allowed through firewall"
-    fi
-  '';
 
   # Set default browser to Microsoft Edge during activation (idempotent)
   system.activationScripts.setDefaultBrowser.text = ''
