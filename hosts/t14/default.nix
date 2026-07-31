@@ -52,6 +52,10 @@
     ./overlays.nix
     ./omarchy-config.nix
 
+    # === GAMING ===
+    ../../linux/system/hardware/gamepad.nix
+    ../../linux/system/features/gaming.nix
+
     # === BOOT ===
     # Required: the system will not boot without bootloader configured.
     ../../linux/system/features/boot.nix
@@ -74,7 +78,11 @@
   nixpkgs.config = {
     allowUnfree = true;
     # fonts.nix includes joypixels; requires explicit license acceptance.
-    allowUnfreePackages = [ "joypixels" ];
+    allowUnfreePackages = [
+      "joypixels"
+      "fbneo" # libretro core — non-commercial clause
+      "genesis-plus-gx" # libretro core — non-commercial clause
+    ];
     joypixels.acceptLicense = true;
   };
 
@@ -130,6 +138,18 @@
   # omarchy-nix provides nautilus, calculator, evince, etc.;
   # this adds gnome-system-monitor via modules/base/profiles/gnome.nix.
   my.desktop.suite = "gnome";
+
+  # Gaming — RetroArch + standalone emulators + Xbox controller.
+  # Omarchy's retroarch.enable is disabled (uses deprecated API incompatible
+  # with nixos-26.05); our features/gaming.nix provides the full stack.
+  my.gaming = {
+    enable = true;
+    pegasus.enable = true; # Optional catalog frontend
+  };
+  my.gamepad.enable = true;
+
+  # 32-bit OpenGL — required by some standalone emulators (PCSX2, RPCS3).
+  hardware.graphics.enable32Bit = true;
 
   # HDM lid events depend on UPower D-Bus.  The amd-laptop module
   # (modules/hardware/amd-laptop.nix) enables services.upower by default,
