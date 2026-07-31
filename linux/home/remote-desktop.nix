@@ -1,5 +1,8 @@
 # Remote desktop client launchers — unified module for all remote connections.
 #
+# Not shared with darwin/home/remote-desktop.nix: Remmina profiles and Linux
+# launchers are not portable to macOS .app bundles.
+#
 # Deploys .desktop launchers and Remmina profiles with shared defaults.
 # Settings common to all connections are defined once in Nix and merged
 # into each .remmina profile.  This avoids the URI limitation where
@@ -156,10 +159,10 @@ let
 
   # Desktop entry text (common shape)
   mkDesktop =
-    { name
-    , comment
-    , exec
-    ,
+    {
+      name,
+      comment,
+      exec,
     }:
     ''
       [Desktop Entry]
