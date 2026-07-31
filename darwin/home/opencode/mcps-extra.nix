@@ -39,17 +39,9 @@ let
     atlassian = {
       type = "local";
       command = [
-        "${config.home.homeDirectory}/.local/share/uv/tools/mcp-atlassian/bin/python3"
-        "${config.home.homeDirectory}/.local/bin/mcp-atlassian-wrapper.py"
+        "atlassian-mcp-server"
       ];
       timeout = 60000;
-      environment = {
-        JIRA_URL = "{env:JIRA_URL}";
-        JIRA_USERNAME = "{env:JIRA_USERNAME}";
-        JIRA_API_TOKEN = "{env:JIRA_API_TOKEN}";
-        CONFLUENCE_URL = "{env:CONFLUENCE_URL}";
-        CONFLUENCE_PERSONAL_TOKEN = "{env:CONFLUENCE_PERSONAL_TOKEN}";
-      };
       enabled = true;
     };
 
