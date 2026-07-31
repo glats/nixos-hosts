@@ -10,7 +10,5 @@ baseModules
   ../../../linux/home/suites/mate/default.nix
   ../../../linux/home/conky-thinkcentre.nix
   ../../../linux/home/shell-gpt.nix
-
-  # Uncomment to enable shell-gpt (nvidia NIM nemotron-3-ultra)
-  #{ home.shell-gpt.enable = true; }
+  { home.shell-gpt.enable = false; }
 ]

@@ -17,6 +17,6 @@
 - [x] 3.5 Remove `hypridle` from `linux/system/base/profiles/core.nix`
 
 ## Commit 4: Config pattern fixes
-- [ ] 4.1 Unify shell-gpt enable pattern across hosts (import + inline `{ home.shell-gpt.enable = ...; }`)
-- [ ] 4.2 Flatten nested `lib.mkIf` in `linux/system/networking/wol.nix`
-- [ ] 4.3 Add `null` as explicit "no desktop" value in `linux/system/base/options.nix`
+- [x] 4.1 Unify shell-gpt enable pattern across hosts (import + inline `{ home.shell-gpt.enable = ...; }`)
+- [x] 4.2 Flatten nested `lib.mkIf` in `linux/system/networking/wol.nix`
+- [x] 4.3 Add `null` as explicit "no desktop" value in `linux/system/base/options.nix`
