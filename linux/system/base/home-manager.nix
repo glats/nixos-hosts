@@ -1,6 +1,7 @@
-{ config
-, inputs
-, ...
+{
+  config,
+  inputs,
+  ...
 }:
 
 {
@@ -18,7 +19,6 @@
       # (e.g. home-linux/base.nix) can derive home.username and
       # home.homeDirectory without hardcoding the name.
       username = "glats";
-      # Force rebuild: 2026-05-03
     };
     users.glats.imports = import ../../../hosts/${config.networking.hostName}/home/default.nix {
       inherit inputs;
