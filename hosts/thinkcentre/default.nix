@@ -33,6 +33,7 @@
 
     # Hardware (keyring only)
     ../../linux/system/hardware/keyring.nix
+    ../../linux/system/hardware/adb.nix
 
     # Networking (all 4)
     ../../linux/system/networking/openssh.nix
