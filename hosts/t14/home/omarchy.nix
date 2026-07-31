@@ -251,12 +251,6 @@
     style.name = "adwaita-dark";
   };
 
-  # thinkfan-ui — PyQt6 GUI for manual ThinkPad fan control. Pairs with
-  # `boot.extraModprobeConfig = "options thinkpad_acpi fan_control=1"`
-  # in hosts/t14/default.nix. The two together enable writes to
-  # /proc/acpi/ibm/fan. Mutually exclusive with `services.thinkfan`.
-  home.packages = with pkgs; [ thinkfan-ui ];
-
   # Cycle VNC outputs during a wayvnc remote session so the viewer can
   # switch between built-in and external monitors without touching t14.
   # wayvncctl is provided by pkgs.wayvnc (installed via omarchy.wayvnc
