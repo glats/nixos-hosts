@@ -1,51 +1,45 @@
-{ pkgs, config, ... }:
+{ pkgs, ... }:
 
 let
-  # Helper: create a named GitHub MCP wrapper that reads PAT from a sops secret path
+  # Helper: create a GitHub MCP wrapper that uses `gh auth token`
+  # instead of a static sops-nix file. Tokens are managed by gh CLI
+  # (auto-renewal via OAuth) — no more expired PATs or lost SSO.
   mkGithubMcpWrapper =
-    { name, secretPath }:
+    { name, hostname }:
     pkgs.writeShellScriptBin name ''
       #!${pkgs.runtimeShell}
       set -euo pipefail
 
-      GITHUB_PAT_FILE="${secretPath}"
+      GH="${pkgs.gh}/bin/gh"
+      HOSTNAME="${hostname}"
 
-      if [ ! -f "$GITHUB_PAT_FILE" ]; then
-        echo "Error: GitHub PAT secret not found at $GITHUB_PAT_FILE" >&2
+      # Pre-check: validate gh is authenticated for this hostname
+      if ! $GH auth status --hostname "$HOSTNAME" >/dev/null 2>&1; then
+        echo "Error (${name}): gh not authenticated for $HOSTNAME" >&2
+        echo "  Run: gh auth login --hostname $HOSTNAME" >&2
         exit 1
       fi
 
-      GITHUB_PERSONAL_ACCESS_TOKEN=$(cat "$GITHUB_PAT_FILE")
+      GITHUB_PERSONAL_ACCESS_TOKEN=$($GH auth token --hostname "$HOSTNAME")
       export GITHUB_PERSONAL_ACCESS_TOKEN
-
-      # Pre-check: validate token before starting MCP server
-      if ! GH_TOKEN="$GITHUB_PERSONAL_ACCESS_TOKEN" \
-        ${pkgs.gh}/bin/gh auth status --active --hostname github.com >/dev/null 2>&1; then
-        echo "Error (${name}): GitHub PAT at $GITHUB_PAT_FILE is expired or invalid!" >&2
-        echo "" >&2
-        echo "  Create a new PAT at: https://github.com/settings/tokens" >&2
-        exit 1
-      fi
 
       exec ${pkgs.github-mcp-server}/bin/github-mcp-server "''${@:-stdio}"
     '';
 
-  # New named wrappers
-  githubMcpServerPersonal = mkGithubMcpWrapper {
-    name = "github-mcp-server-personal";
-    secretPath = config.sops.secrets."github/personal_pat".path;
-  };
-
-  # macOS work token — aligned with linux (github/work_pat from passwords.yaml)
   githubMcpServerWork = mkGithubMcpWrapper {
     name = "github-mcp-server-work";
-    secretPath = config.sops.secrets."github/work_pat".path;
+    hostname = "github.com";
+  };
+
+  githubMcpServerPersonal = mkGithubMcpWrapper {
+    name = "github-mcp-server-personal";
+    hostname = "personal.github.com";
   };
 
 in
 {
   home.packages = [
-    githubMcpServerPersonal
     githubMcpServerWork
+    githubMcpServerPersonal
   ];
 }
