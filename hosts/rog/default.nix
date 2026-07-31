@@ -1,8 +1,9 @@
-{ config
-, pkgs
-, lib
-, home
-, ...
+{
+  config,
+  pkgs,
+  lib,
+  home,
+  ...
 }:
 
 {
@@ -33,7 +34,7 @@
     ../../linux/system/desktop/kmscon.nix
 
     # Hardware
-    ../../linux/system/hardware/nvidia.nix
+    ../../linux/system/hardware/nvidia-custom.nix
     ../../linux/system/hardware/keyring.nix
     ../../linux/system/hardware/asus-fan-control.nix
     ../../linux/system/hardware/rog-shutdown.nix # KEPT — en pruebas, posible uso futuro

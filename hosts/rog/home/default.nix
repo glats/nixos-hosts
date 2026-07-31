@@ -11,7 +11,7 @@ baseModules
   ../../../linux/home/suites/mate-rog/default.nix
   ../../../linux/home/conky-rog.nix
   ../../../linux/home/openfang.nix
-  ../../../linux/home/webcam-rog.nix
+  ../../../linux/home/webcam.nix
   ../../../linux/home/shell-gpt.nix
 
   # Override active OpenCode provider for this host
