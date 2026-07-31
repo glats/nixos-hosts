@@ -1,23 +1,27 @@
 # Remote desktop client launchers for Darwin (macOS).
 #
+# Not shared with linux/home/remote-desktop.nix: macOS requires native Mach-O
+# app bundles and uses different host metadata (IPs, viewer types).
+#
 # Creates .app bundles that appear in Spotlight. Uses native C launchers
 # instead of shell scripts to satisfy macOS Sequoia Launch Constraints.
-{ config
-, pkgs
-, lib
-, ...
+{
+  config,
+  pkgs,
+  lib,
+  ...
 }:
 
 let
   # Generate C source for native Mach-O launcher
   mkLauncherC =
-    { name
-    , protocol
-    , host
-    , port ? ""
-    , viewer ? "tigervnc"
-    , username ? config.home.username
-    ,
+    {
+      name,
+      protocol,
+      host,
+      port ? "",
+      viewer ? "tigervnc",
+      username ? config.home.username,
     }:
     let
       vncHost = "${host}${if port != "" then ":${port}" else ""}";
@@ -107,13 +111,13 @@ let
     '';
 
   mkRemoteApp =
-    { name
-    , protocol
-    , host
-    , port ? ""
-    , viewer ? "tigervnc"
-    , username ? config.home.username
-    ,
+    {
+      name,
+      protocol,
+      host,
+      port ? "",
+      viewer ? "tigervnc",
+      username ? config.home.username,
     }:
     let
       launcherC = mkLauncherC {
@@ -217,12 +221,10 @@ let
   ];
 
   appSources = lib.listToAttrs (
-    map
-      (app: {
-        name = app.name;
-        value = mkRemoteApp app;
-      })
-      apps
+    map (app: {
+      name = app.name;
+      value = mkRemoteApp app;
+    }) apps
   );
 
 in
