@@ -36,5 +36,6 @@
   ../../shared/claude-code-profile.nix
   ./sops.nix
   ./github-mcp-server-wrapper.nix
+  ./atlassian-mcp-wrapper.nix
   inputs.sops-nix.homeManagerModules.sops
 ]
