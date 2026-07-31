@@ -5,6 +5,10 @@
   sops.defaultSopsFile = ../secrets/user/opencode.yaml;
   sops.age.keyFile = "${config.home.homeDirectory}/.config/sops/age/keys.txt";
 
+  imports = [
+    ./github-tokens.nix
+  ];
+
   # OpenCode API keys (cross-platform)
   sops.secrets."opencode/nvidia_api_key" = {
     mode = "0400";
@@ -40,16 +44,6 @@
     mode = "0400";
   };
   sops.secrets."opencode/kilo_api_key" = {
-    mode = "0400";
-  };
-
-  # GitHub tokens (new named paths)
-  sops.secrets."github/personal_pat" = {
-    sopsFile = ../secrets/shared/passwords.yaml;
-    mode = "0400";
-  };
-  sops.secrets."github/work_pat" = {
-    sopsFile = ../secrets/shared/passwords.yaml;
     mode = "0400";
   };
 
