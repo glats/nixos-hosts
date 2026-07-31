@@ -131,10 +131,11 @@
   };
 
   outputs =
-    inputs@{ self
-    , nixpkgs
-    , home-manager
-    , ...
+    inputs@{
+      self,
+      nixpkgs,
+      home-manager,
+      ...
     }:
     let
       # --- Builders ---
@@ -260,35 +261,19 @@
             mkHomeConfig hostname system username extraModules;
         in
         {
-          # Standalone HM for rog derives from the same per-host default source
-          # used by the NixOS-integrated HM path.
-          rog = home-manager.lib.homeManagerConfiguration {
-            pkgs = pkgsFor "x86_64-linux";
-            modules = import ./hosts/rog/home/default.nix { inherit inputs; };
-            extraSpecialArgs = {
-              inherit inputs;
-              hostName = "rog";
-              username = "glats";
-            };
-          };
-          # Standalone HM for thinkcentre follows the same ownership model.
-          thinkcentre = home-manager.lib.homeManagerConfiguration {
-            pkgs = pkgsFor "x86_64-linux";
-            modules = import ./hosts/thinkcentre/home/default.nix { inherit inputs; };
-            extraSpecialArgs = {
-              inherit inputs;
-              hostName = "thinkcentre";
-              username = "glats";
-            };
-          };
-          # t14 standalone HM — same list-function shape as rog/thinkcentre.
-          # Uses ./home/default.nix { inherit inputs; } which returns the
-          # filtered shared-modules + t14-specific modules (omarchy.nix etc.).
-          # The omarchy config block below injects values that the NixOS path
-          # provides via osConfig (standalone HM has no osConfig).
-          t14 = home-manager.lib.homeManagerConfiguration {
-            pkgs = pkgsFor "x86_64-linux";
-            modules = import ./hosts/t14/home/default.nix { inherit inputs; } ++ [
+          # Standalone HM entries use the same wrapper so hostname, system,
+          # username, and extra modules are passed consistently.
+          rog = baseHomeConfig "rog" "x86_64-linux" "glats" (
+            import ./hosts/rog/home/default.nix { inherit inputs; }
+          );
+          thinkcentre = baseHomeConfig "thinkcentre" "x86_64-linux" "glats" (
+            import ./hosts/thinkcentre/home/default.nix { inherit inputs; }
+          );
+          # t14 appends the omarchy config block that the NixOS path provides
+          # via osConfig (standalone HM has no osConfig).
+          t14 = baseHomeConfig "t14" "x86_64-linux" "glats" (
+            import ./hosts/t14/home/default.nix { inherit inputs; }
+            ++ [
               {
                 omarchy = {
                   theme = "glats";
@@ -303,13 +288,8 @@
                   wayvnc.enable = true;
                 };
               }
-            ];
-            extraSpecialArgs = {
-              inherit inputs;
-              hostName = "t14";
-              username = "glats";
-            };
-          };
+            ]
+          );
           mact2 = baseHomeConfig "mact2" "x86_64-darwin" "jcuzmar" [
             # Include home-darwin/default.nix so the standalone
             # home-manager build for mact2 picks up the per-host base
