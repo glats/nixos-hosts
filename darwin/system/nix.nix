@@ -3,7 +3,12 @@
 # allowUnfree) and darwin/cachix.nix (build optimization, registry).
 # All nix.* settings for Darwin hosts live in this single file.
 { lib, inputs, ... }:
+
 {
+  imports = [
+    ../../shared/nix-resilience.nix
+  ];
+
   nix = {
     settings = {
       experimental-features = [
