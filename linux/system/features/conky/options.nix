@@ -26,11 +26,4 @@ in
       description = "Additional mount points to display in storage section";
     };
   };
-
-  config.conky-config = {
-    enable = lib.mkDefault false;
-    networkInterface = lib.mkDefault "eth0";
-    additionalInterfaces = lib.mkDefault [ ];
-    mountPoints = lib.mkDefault [ ];
-  };
 }
