@@ -1,7 +1,8 @@
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }:
 
 {
@@ -16,20 +17,22 @@
     };
   };
 
-  config = lib.mkIf config.services.wol-custom.enable {
-    systemd.services.wol-enable = lib.mkIf (config.services.wol-custom.interface != null) {
-      description = "Enable Wake-on-LAN";
-      after = [ "NetworkManager.service" ];
-      wants = [ "NetworkManager.service" ];
-      wantedBy = [
-        "multi-user.target"
-        "sleep.target"
-      ];
-      serviceConfig = {
-        Type = "oneshot";
-        ExecStart = "${pkgs.ethtool}/bin/ethtool -s ${config.services.wol-custom.interface} wol g";
-        RemainAfterExit = true;
+  config =
+    lib.mkIf (config.services.wol-custom.enable && config.services.wol-custom.interface != null)
+      {
+        systemd.services.wol-enable = {
+          description = "Enable Wake-on-LAN";
+          after = [ "NetworkManager.service" ];
+          wants = [ "NetworkManager.service" ];
+          wantedBy = [
+            "multi-user.target"
+            "sleep.target"
+          ];
+          serviceConfig = {
+            Type = "oneshot";
+            ExecStart = "${pkgs.ethtool}/bin/ethtool -s ${config.services.wol-custom.interface} wol g";
+            RemainAfterExit = true;
+          };
+        };
       };
-    };
-  };
 }

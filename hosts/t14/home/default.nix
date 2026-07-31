@@ -25,6 +25,6 @@ builtins.filter (m: !builtins.elem m excluded) base
   ../../../linux/home/remote-desktop.nix
   ../../../linux/home/shell-gpt.nix
   ({ home.shell-gpt.enable = true; })
-  ({ home.opencode.activeProviderName = "opencode-go-medium"; })
+  ({ home.opencode.activeProviderName = "opencode-free"; })
   inputs.hyprdynamicmonitors.homeManagerModules.default
 ]
