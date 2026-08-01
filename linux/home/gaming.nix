@@ -19,36 +19,8 @@ let
   ];
 in
 {
-  # ── RetroArch config + ROM scaffolding ──────────────────────────────
-  # Merged into a single home.file attrset so both the retroarch.cfg and
-  # the ROM directories coexist (NixOS module system merges attrs, but a
-  # second `home.file = { ... }` would shadow the first — hence the `//`).
-  home.file = {
-    ".config/retroarch/retroarch.cfg" = {
-      text = ''
-        # Video — Vulkan on AMD iGPU
-        video_driver = "vulkan"
-        video_fullscreen = "true"
-        video_monitor_index = "0"
-
-        # Audio — PipeWire (Omarchy default)
-        audio_driver = "pipewire"
-
-        # Input — udev joypad + autoconfig
-        input_joypad_driver = "udev"
-        input_autodetect_enable = "true"
-        input_max_users = "4"
-
-        # Menu — ozone (controller-navigable)
-        menu_driver = "ozone"
-        menu_show_start_screen = "false"
-
-        # Offline — cores are declarative, no online updater
-        core_updater_buildbot_url = ""
-      '';
-    };
-  }
-  // builtins.listToAttrs (
+  # ROM scaffolding — immutable dirs (fine, user adds files inside them)
+  home.file = builtins.listToAttrs (
     map (name: {
       name = "roms/${name}";
       value = {
@@ -58,6 +30,36 @@ in
     }) platforms
   );
 
-  # ── SDL2 controller mapping placeholder ─────────────────────────────
+  # RetroArch config — mutable (home.activation copies on first run so RA
+  # can save to it. home.file creates an immutable symlink that breaks
+  # RA's save-on-exit. Pattern from home-manager VSCode module.)
+  home.activation.writeRetroarchCfg = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+        CFG="$HOME/.config/retroarch/retroarch.cfg"
+        # Remove stale immutable symlink from old home.file-based deploy
+        if [ -L "$CFG" ]; then
+          rm "$CFG"
+        fi
+        if [ ! -f "$CFG" ]; then
+          mkdir -p "$(dirname "$CFG")"
+          cat > "$CFG" <<'RAEOF'
+    video_driver = "vulkan"
+    video_fullscreen = "true"
+    video_monitor_index = "0"
+
+    audio_driver = "pipewire"
+
+    input_joypad_driver = "udev"
+    input_autodetect_enable = "true"
+    input_max_users = "4"
+
+    menu_driver = "ozone"
+    menu_show_start_screen = "false"
+
+    core_updater_buildbot_url = ""
+    RAEOF
+        fi
+  '';
+
+  # SDL2 controller mapping placeholder
   home.sessionVariables.SDL_GAMECONTROLLERCONFIG = "";
 }
