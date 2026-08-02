@@ -52,9 +52,12 @@ in
         USER_PW=$(cat ${config.sops.secrets."romm/db_user_password".path})
         AUTH_KEY=$(cat ${config.sops.secrets."romm/auth_secret_key".path})
 
-        # MariaDB root
+        # MariaDB — includes user + database auto-creation on first run
         cat > /srv/glats/romm/db_root.env <<ENV
         MARIADB_ROOT_PASSWORD=$ROOT_PW
+        MARIADB_USER=romm
+        MARIADB_PASSWORD=$USER_PW
+        MARIADB_DATABASE=romm
         ENV
 
         # RomM app
