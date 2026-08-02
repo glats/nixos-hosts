@@ -63,4 +63,20 @@
     sopsFile = ../../secrets/host/rog/authelia.yaml;
   };
 
+  # Romarr — ROM acquisition manager
+  sops.secrets."romarr/env_secret" = {
+    sopsFile = ../../secrets/host/rog/romarr.yaml;
+  };
+
+  # RomM — ROM catalog manager
+  sops.secrets."romm/auth_secret_key" = {
+    sopsFile = ../../secrets/host/rog/romm.yaml;
+  };
+  sops.secrets."romm/db_root_password" = {
+    sopsFile = ../../secrets/host/rog/romm.yaml;
+  };
+  sops.secrets."romm/db_user_password" = {
+    sopsFile = ../../secrets/host/rog/romm.yaml;
+  };
+
 }
