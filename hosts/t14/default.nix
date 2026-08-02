@@ -90,6 +90,12 @@
   boot-settings.enable = true;
   boot.kernelPackages = pkgs.linuxPackages_zen;
 
+  # Disable PCIe Active State Power Management to prevent the Realtek
+  # r8169 NIC from entering low-power states that cause intermittent
+  # throughput drops (link stays up but speed degrades to <10MB/s).
+  # See: Arch bbs#293977, Debian bug#1110193, netdev@ regression thread.
+  boot.kernelParams = [ "pcie_aspm=off" ];
+
   # Ensure XFS kernel module is available in the initrd (stage 1).
   # Without this, boot fails with "an error occurred at stage 1"
   # because the kernel can't mount the XFS root filesystem.
@@ -186,6 +192,29 @@
   ];
 
   environment.variables.NIXOS_OZONE_WL = "1";
+
+  # === NETWORK TUNING ===
+  # Disable NAPI software interrupt coalescing on Realtek r8169 NICs
+  # (enp2s0f0 & enp5s0 — both 10ec:8168).  Kernel 6.2+ defaults
+  # napi_defer_hard_irqs=1 which causes throughput regression from
+  # ~100MB/s → ~10MB/s on certain RTL8111/8168 revisions.
+  # See: netdev@ commit 42f66a44d8 ("r8169: enable GRO software
+  # interrupt coalescing per default") regression thread.
+  systemd.services.r8169-napi-fix = {
+    description = "Disable NAPI interrupt coalescing on Realtek r8169 NICs";
+    wantedBy = [ "multi-user.target" ];
+    after = [ "network-pre.target" ];
+    before = [ "network.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      for iface in /sys/class/net/enp*/napi_defer_hard_irqs; do
+        [ -f "$iface" ] && echo 0 > "$iface"
+      done
+    '';
+  };
 
   system.stateVersion = "26.05";
 }
