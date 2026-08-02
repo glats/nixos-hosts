@@ -15,7 +15,7 @@
       RemainAfterExit = true;
       ExecStart = pkgs.writeShellScript "generate-romarr-secrets" ''
         mkdir -p /srv/glats/romarr
-        cat ${config.sops.secrets."romarr/env_secret".path} > /srv/glats/romarr/romarr.env
+        cat ${config.sops.secrets."romarr-env-secret".path} > /srv/glats/romarr/romarr.env
       '';
     };
   };

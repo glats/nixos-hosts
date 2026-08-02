@@ -64,7 +64,7 @@
   };
 
   # Romarr — ROM acquisition manager
-  sops.secrets."romarr/env_secret" = {
+  sops.secrets."romarr-env-secret" = {
     sopsFile = ../../secrets/host/rog/romarr.yaml;
   };
 
