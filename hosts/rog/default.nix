@@ -61,6 +61,8 @@
     ../../linux/system/services/media/jellyfin.nix
     ../../linux/system/services/media/qbittorrent.nix
     ../../linux/system/services/media/flaresolverr.nix
+    ../../linux/system/services/media/romarr.nix
+    ../../linux/system/services/media/romm.nix
 
     # Services — web
     ../../linux/system/services/web/nginx.nix
@@ -186,6 +188,7 @@
   systemd.services."docker-guacamoledb".serviceConfig.TimeoutStartSec = lib.mkForce "300";
   systemd.services."docker-jellyfin".serviceConfig.TimeoutStartSec = lib.mkForce "300";
   systemd.services."docker-jellyseerr".serviceConfig.TimeoutStartSec = lib.mkForce "300";
+  systemd.services."docker-romm-db".serviceConfig.TimeoutStartSec = lib.mkForce "300";
 
   # Prevent restart loops that consume time during switch
   # Use mkForce because nginx already defines this value
