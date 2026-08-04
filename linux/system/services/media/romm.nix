@@ -104,7 +104,7 @@ in
       "/srv/glats/romm/redis-data:/redis-data"
       "/srv/glats/romm/assets:/romm/assets"
       "/srv/glats/romm/config:/romm/config"
-      "/run/media/stuff/roms:/romm/library:ro"
+      "/run/media/library:/romm/library:ro"
     ];
 
     environment = {

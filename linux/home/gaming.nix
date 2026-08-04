@@ -21,13 +21,15 @@ in
 {
   # ROM scaffolding — immutable dirs (fine, user adds files inside them)
   home.file = builtins.listToAttrs (
-    map (name: {
-      name = "roms/${name}";
-      value = {
-        source = pkgs.runCommand "roms-${name}" { } "mkdir -p $out";
-        recursive = true;
-      };
-    }) platforms
+    map
+      (name: {
+        name = "roms/${name}";
+        value = {
+          source = pkgs.runCommand "roms-${name}" { } "mkdir -p $out";
+          recursive = true;
+        };
+      })
+      platforms
   );
 
   # RetroArch config — mutable (home.activation copies on first run so RA
