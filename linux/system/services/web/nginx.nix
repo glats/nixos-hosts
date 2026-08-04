@@ -1,8 +1,7 @@
-{
-  config,
-  pkgs,
-  lib,
-  ...
+{ config
+, pkgs
+, lib
+, ...
 }:
 
 let
@@ -17,12 +16,12 @@ let
 
   # Generate a simple proxy vhost (port + optional locExtra/vhostExtra)
   mkProxyVhost =
-    {
-      port,
-      locExtra ? "",
-      vhostExtra ? "",
-      frame ? "SAMEORIGIN",
-      basicAuth ? null,
+    { port
+    , locExtra ? ""
+    , vhostExtra ? ""
+    , frame ? "SAMEORIGIN"
+    , basicAuth ? null
+    ,
     }:
     {
       useACMEHost = domain;
@@ -45,6 +44,60 @@ let
     proxy_read_timeout 90s;
   '';
 
+  # Authelia-protected location extra config
+  autheliaLocExtra = ''
+    auth_request /internal/authelia/authz;
+    auth_request_set $auth_status $upstream_status;
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_connect_timeout 90s;
+    proxy_send_timeout 90s;
+    proxy_read_timeout 90s;
+    error_page 401 = @auth_redirect;
+  '';
+
+  # Authelia-protected vhost helper (like mkProxyVhost but with auth)
+  mkAutheliaVhost = { port, domain }:
+    let
+      locExtra = ''
+        auth_request /internal/authelia/authz;
+        auth_request_set $auth_status $upstream_status;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_connect_timeout 90s;
+        proxy_send_timeout 90s;
+        proxy_read_timeout 90s;
+        error_page 401 = @auth_redirect;
+      '';
+    in
+    {
+      useACMEHost = "glats.org";
+      forceSSL = true;
+
+      locations."/internal/authelia/authz" = {
+        proxyPass = "http://127.0.0.1:9091/api/verify";
+        extraConfig = ''
+          internal;
+          proxy_pass_request_body off;
+          proxy_set_header Content-Length "";
+          proxy_set_header X-Original-URL $scheme://$http_host$request_uri;
+          proxy_set_header X-Real-IP $remote_addr;
+        '';
+      };
+
+      locations."/" = {
+        proxyPass = "http://127.0.0.1:${toString port}";
+        proxyWebsockets = true;
+        extraConfig = locExtra;
+      };
+
+      locations."@auth_redirect" = {
+        return = "302 https://auth.glats.org/?rd=https://${domain}$request_uri";
+      };
+
+      extraConfig = secHeaders "SAMEORIGIN";
+    };
+
   # ARR stack - data-driven via port mapping
   arrServices = {
     radarr = 7878;
@@ -52,13 +105,15 @@ let
     prowlarr = 9696;
     bazarr = 6767;
   };
-  arrVhosts = lib.mapAttrs' (name: port: {
-    name = "${name}.${domain}";
-    value = mkProxyVhost {
-      inherit port;
-      locExtra = arrLocExtra;
-    };
-  }) arrServices;
+  arrVhosts = lib.mapAttrs'
+    (name: port: {
+      name = "${name}.${domain}";
+      value = mkProxyVhost {
+        inherit port;
+        locExtra = arrLocExtra;
+      };
+    })
+    arrServices;
 
   # Qbit has extra X-Real-IP and X-Forwarded-For headers
   qbitLocExtra = ''
@@ -441,6 +496,11 @@ in
       "roms.${domain}" = mkProxyVhost {
         port = 8081;
         locExtra = arrLocExtra;
+      };
+
+      "grabarr.${domain}" = mkAutheliaVhost {
+        port = 45454;
+        domain = "grabarr.${domain}";
       };
 
       "auth.${domain}" = {

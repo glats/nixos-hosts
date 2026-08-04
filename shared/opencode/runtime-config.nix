@@ -1,12 +1,12 @@
 # Generate Home Manager file and activation definitions for a single
 # OpenCode runtime (config dir, plugins, commands, skills, AGENTS.md).
-{
-  config,
-  lib,
-  pkgs,
-  providers,
-  cfg,
-  runtimeConfig,
+{ config
+, lib
+, pkgs
+, providers
+, cfg
+, runtimeConfig
+,
 }:
 
 let
