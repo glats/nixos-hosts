@@ -1,9 +1,8 @@
-{
-  config,
-  pkgs,
-  lib,
-  home,
-  ...
+{ config
+, pkgs
+, lib
+, home
+, ...
 }:
 
 {
@@ -63,6 +62,7 @@
     ../../linux/system/services/media/flaresolverr.nix
     ../../linux/system/services/media/romarr.nix
     ../../linux/system/services/media/romm.nix
+    ../../linux/system/services/media/grabarr.nix
 
     # Services — web
     ../../linux/system/services/web/nginx.nix

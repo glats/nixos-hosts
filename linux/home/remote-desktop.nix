@@ -159,10 +159,10 @@ let
 
   # Desktop entry text (common shape)
   mkDesktop =
-    {
-      name,
-      comment,
-      exec,
+    { name
+    , comment
+    , exec
+    ,
     }:
     ''
       [Desktop Entry]
