@@ -88,7 +88,8 @@
     "d /srv/glats 0755 root root -"
 
     # Service config directories (owned by service user, media group)
-    # Prowlarr handled by upstream module (DynamicUser, bind-mount)
+    # Prowlarr — DynamicUser bind-mount needs writable parent dir
+    "d /srv/glats/prowlarr 0755 root root -"
     # Radarr/bazarr overridden via systemd.tmpfiles.settings above
     "d /srv/glats/sonarr 0775 sonarr media -"
 

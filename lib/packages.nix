@@ -8,10 +8,9 @@
 #     packages.x86_64-linux = packages.linuxPackages;
 #     packages.x86_64-darwin = packages.darwinPackages;
 #   }
-{
-  inputs,
-  pkgsFor,
-  ...
+{ inputs
+, pkgsFor
+, ...
 }:
 let
   linuxPkgs = pkgsFor "x86_64-linux";

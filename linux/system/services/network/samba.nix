@@ -27,6 +27,15 @@
         "read only" = "no";
         "guest ok" = "yes";
       };
+
+      # ROMs share — read-only, KNULLI compatible
+      roms = {
+        path = "/run/media/library/roms";
+        comment = "ROMs";
+        browseable = "yes";
+        "read only" = "yes";
+        "guest ok" = "yes";
+      };
     };
   };
 

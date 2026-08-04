@@ -2,15 +2,14 @@
 # Imports the darwin base profile (system modules) and retains only
 # per-host concerns: nix-homebrew, home-manager, users, environment,
 # and service enablements.
-{
-  pkgs,
-  inputs,
-  self,
-  primaryUser,
-  javaVersion,
-  lib,
-  host,
-  ...
+{ pkgs
+, inputs
+, self
+, primaryUser
+, javaVersion
+, lib
+, host
+, ...
 }:
 {
   imports = [

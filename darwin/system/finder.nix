@@ -1,10 +1,9 @@
-{
-  self,
-  system,
-  primaryUser,
-  host,
-  lib,
-  ...
+{ self
+, system
+, primaryUser
+, host
+, lib
+, ...
 }:
 let
   primaryHome = "/Users/${primaryUser}";

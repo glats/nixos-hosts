@@ -27,6 +27,7 @@
     volumes = [
       "/srv/glats/romarr/data:/data"
       "/srv/glats/downloads:/downloads:ro"
+      "/run/media/library/roms:/library/roms"
     ];
 
     environment = {
