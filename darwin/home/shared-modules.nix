@@ -13,7 +13,6 @@
   ./theme.nix
   ./ghostty.nix
   ./superfile.nix
-  ./leaf-theme.nix
   ./git.nix
   ./gpg.nix
   ./ssh.nix
@@ -30,6 +29,8 @@
 
   ./remote-desktop.nix
   ../../shared/shell-aliases.nix
+  ../../shared/leaf.nix
+  ../../shared/leaf-theme.nix
   ../../shared/opencode.nix
   ../../shared/opencode-profile.nix
   ../../shared/claude-code.nix
