@@ -19,6 +19,7 @@ final: prev: {
     secret-guard-assets
     opencode-npm-packages
     opencode
+    leaf
     openfang
     claude-code
     ;
