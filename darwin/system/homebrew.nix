@@ -20,7 +20,6 @@
     # nixpkgs is best for CLI tools
     # gentle-ai, engram: managed by nix flake (pkgs/gentle-ai, pkgs/engram)
     brews = [
-      "leaf-md"
       "tw93/tap/mole"
       "llmfit"
       "glow"

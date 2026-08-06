@@ -48,6 +48,7 @@ let
         secret-guard-assets = pkgs.callPackage ../pkgs/secret-guard-assets { };
         opencode-npm-packages = pkgs.callPackage ../pkgs/opencode-npm-packages { };
         opencode = pkgs.callPackage ../pkgs/opencode { };
+        leaf = pkgs.callPackage ../pkgs/leaf { };
         claude-code = pkgs.callPackage ../pkgs/claude-code {
           claude-code-unwrapped = inputs.claude-code-nix.packages.${pkgs.stdenv.hostPlatform.system}.default;
         };
