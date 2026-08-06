@@ -36,6 +36,7 @@ in
     secret-guard-assets
     opencode-npm-packages
     opencode
+    leaf
     claude-code
     ;
 }
