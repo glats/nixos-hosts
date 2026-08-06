@@ -29,6 +29,8 @@
   ./kitty.nix
   ./alacritty.nix
   ../../shared/shell-aliases.nix
+  ../../shared/leaf.nix
+  ../../shared/leaf-theme.nix
   ../../shared/opencode.nix
   ../../shared/opencode-profile.nix
   ../../shared/claude-code.nix
