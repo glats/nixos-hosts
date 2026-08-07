@@ -60,9 +60,9 @@
     ../../linux/system/services/media/jellyfin.nix
     ../../linux/system/services/media/qbittorrent.nix
     ../../linux/system/services/media/flaresolverr.nix
-    ../../linux/system/services/media/romarr.nix
+    # ../../linux/system/services/media/romarr.nix   # TODO: file missing after refactor
     ../../linux/system/services/media/romm.nix
-    ../../linux/system/services/media/grabarr.nix
+    # ../../linux/system/services/media/grabarr.nix  # TODO: file missing after refactor
 
     # Services — web
     ../../linux/system/services/web/nginx.nix
@@ -125,6 +125,9 @@
     kernelPackages = pkgs.linuxPackages;
     extraModulePackages = with config.boot.kernelPackages; [ acpi_call ];
     kernelModules = [ "acpi_call" ];
+    # Disable ACPI IRQ routing — known to fix shutdown hangs on
+    # some ASUS laptops with buggy firmware.
+    kernelParams = [ "acpi=noirq" ];
   };
 
   zramSwap.enable = true;
