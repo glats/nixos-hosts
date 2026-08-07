@@ -8,11 +8,12 @@
 #   - XKB layout forced to "latam" (Chile) since i18n.nix defaults to "es"
 #   - btrfs swap, fonts, kmscon, and amd-laptop settings inherited from base
 #   - home-manager wired to ./home/omarchy.nix (replaces ./home/gnome.nix)
-{ config
-, lib
-, pkgs
-, inputs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
 }:
 
 {
@@ -46,6 +47,7 @@
 
     # === NETWORKING ===
     ../../linux/system/networking/openssh.nix
+    ../../linux/system/networking/netwatch.nix
 
     # === HOST-SPECIFIC OVERRIDES ===
     ./overlays.nix
@@ -73,6 +75,11 @@
     # this line ensures the NixOS-level firewall also stays off.
     firewall.enable = false;
   };
+
+  # Background network health monitor — checks r8169 interfaces every
+  # 60s and logs degradation events to journald (identifier "netwatch").
+  # Query: journalctl -t netwatch -p warning --since "24 hours ago"
+  services.netwatch.enable = true;
 
   nixpkgs.config = {
     allowUnfree = true;
