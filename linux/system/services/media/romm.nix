@@ -79,10 +79,20 @@ in
     image = "mariadb:11";
     autoStart = true;
 
-    extraOptions = [ "--network=romm" ];
+    # Docker default 10s stop timeout isn't enough for MariaDB
+    # to dump buffer pool + flush logs → SIGKILL → corrupt tc.log.
+    # 120s gives InnoDB time to "Shutdown completed" cleanly.
+    # --log-bin eliminates tc.log entirely: MariaDB uses binlog for
+    # crash recovery instead of the memory-mapped tc.log file which
+    # corrupts on every unclean shutdown.
+    extraOptions = [
+      "--network=romm"
+      "--stop-timeout=120"
+    ];
 
     volumes = [
       "/srv/glats/romm/mariadb:/var/lib/mysql"
+      "/srv/glats/romm/mariadb.cnf:/etc/mysql/conf.d/binlog.cnf:ro"
     ];
 
     environmentFiles = [

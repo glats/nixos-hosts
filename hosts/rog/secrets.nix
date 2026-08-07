@@ -63,11 +63,6 @@
     sopsFile = ../../secrets/host/rog/authelia.yaml;
   };
 
-  # Romarr — ROM acquisition manager
-  sops.secrets."romarr-env-secret" = {
-    sopsFile = ../../secrets/host/rog/romarr.yaml;
-  };
-
   # RomM — ROM catalog manager
   sops.secrets."romm/auth_secret_key" = {
     sopsFile = ../../secrets/host/rog/romm.yaml;
