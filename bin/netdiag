@@ -120,7 +120,7 @@ capture_snapshot() {
       echo "  $iface: DOWN — skipping"
       continue
     fi
-    local speed time_spent
+    local speed
     speed="$(curl -s -o /dev/null -w '%{speed_download}' \
       --interface "$iface" --max-time 10 \
       'https://speed.cloudflare.com/__down?bytes=25000000' 2>/dev/null || echo 0)"
@@ -208,26 +208,24 @@ if [ "$WATCH_INTERVAL" -gt 0 ] 2>/dev/null; then
   done
 
   prev_time="$(date +%s)"
+  degradation=0
 
   while true; do
     sleep "$WATCH_INTERVAL"
 
-    local now degradation=0
     now="$(date +%s)"
-    local elapsed=$(( now - prev_time ))
+    elapsed=$(( now - prev_time ))
     [ "$elapsed" -lt 1 ] && elapsed=1
 
     for iface in /sys/class/net/enp*/statistics/rx_bytes; do
       [ -f "$iface" ] || continue
       name="$(basename "$(dirname "$(dirname "$iface")")")"
-      local curr_bytes
       curr_bytes="$(cat "$iface")"
-      local prev="${prev_rx_bytes[$name]:-0}"
-      local diff=$(( curr_bytes - prev ))
-      local rate=$(( diff / elapsed ))
+      prev="${prev_rx_bytes[$name]:-0}"
+      diff=$(( curr_bytes - prev ))
+      rate=$(( diff / elapsed ))
 
       # Flag if rate drops below 1 MB/s while interface is up
-      local operstate
       operstate="$(cat "/sys/class/net/$name/operstate" 2>/dev/null)"
       if [ "$operstate" = "up" ] && [ "$rate" -lt 1048576 ]; then
         degradation=1
