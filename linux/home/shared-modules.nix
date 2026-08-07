@@ -35,6 +35,7 @@
   ../../shared/opencode-profile.nix
   ../../shared/claude-code.nix
   ../../shared/claude-code-profile.nix
+  ../../shared/skills.nix
   ./ssh.nix
   ./fontconfig.nix
   ../../shared/sops.nix
