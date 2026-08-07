@@ -74,10 +74,20 @@ let
     echo "rog-poweroff hook ran" > /run/shutdown-hook-ran || true
   '';
 
-  # Direct hook: bypass ACPI entirely using port I/O.
+  # Direct hook: unload kernel modules that block ACPI S5, then
+  # bypass ACPI entirely using port I/O.
   rogPoweroffHookDirect = pkgs.writeShellScript "rog-poweroff-direct" ''
     # Leave breadcrumb: which mode ran
     echo direct > /run/rog-poweroff-mode 2>/dev/null || true
+
+    # Unload modules known to block ACPI S5 on ASUS hardware.
+    # Based on upstream bug reports: r8169 (Realtek Ethernet, same
+    # pattern as igc on Alder Lake), rtsx_pci (card reader), and
+    # mei (Intel Management Engine) can all interfere with the
+    # final poweroff transition.
+    for mod in r8169 rtsx_pci rtsx_pci_sdmmc mei_hdcp mei_pxp mei_me mei iwlwifi iwlmvm btusb btintel btmtk btbcm; do
+      ${pkgs.kmod}/bin/rmmod "$mod" 2>/dev/null || true
+    done
 
     # Direct port I/O poweroff — bypasses ACPI entirely.
     ${rogPoweroffDirect}/bin/rog-poweroff || true
@@ -92,7 +102,7 @@ let
 
   selectedStorePaths =
     if cfg.mode == "direct"
-    then [ "${rogPoweroffDirect}/bin" ]
+    then [ "${rogPoweroffDirect}/bin" "${pkgs.kmod}/bin" ]
     else [ "${pkgs.kmod}/bin" ];
 in
 {
