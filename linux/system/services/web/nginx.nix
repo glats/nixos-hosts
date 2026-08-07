@@ -488,19 +488,9 @@ in
         locExtra = seerrLocExtra;
       };
 
-      "romarr.${domain}" = mkProxyVhost {
-        port = 8585;
-        locExtra = arrLocExtra;
-      };
-
       "roms.${domain}" = mkProxyVhost {
         port = 8081;
         locExtra = arrLocExtra;
-      };
-
-      "grabarr.${domain}" = mkAutheliaVhost {
-        port = 45454;
-        domain = "grabarr.${domain}";
       };
 
       "auth.${domain}" = {
