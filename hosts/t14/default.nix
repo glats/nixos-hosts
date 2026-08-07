@@ -95,6 +95,16 @@
   # See: Arch bbs#293977, Debian bug#1110193, netdev@ regression thread.
   boot.kernelParams = [ "pcie_aspm=off" ];
 
+  # Loose reverse-path filtering — required when multiple NICs share
+  # the same subnet (both enp2s0f0 and enp5s0 on 172.16.0.0/24).
+  # rp_filter=2 (strict) drops legitimate packets arriving on one
+  # interface whose source IP belongs to the other, causing TCP
+  # timeouts and slow page loads.
+  boot.kernel.sysctl = {
+    "net.ipv4.conf.all.rp_filter" = 1;
+    "net.ipv4.conf.default.rp_filter" = 1;
+  };
+
   # Ensure XFS kernel module is available in the initrd (stage 1).
   # Without this, boot fails with "an error occurred at stage 1"
   # because the kernel can't mount the XFS root filesystem.
@@ -187,6 +197,21 @@
           --add-flags "--ozone-platform=x11" \
           --add-flags "--password-store=gnome-libsecret"
       '';
+    })
+
+    # Network diagnostic tool for r8169 multi-NIC debugging.
+    # Run `netdiag` when slowness is felt; use `netdiag --watch 5`
+    # to monitor and capture snapshots automatically.
+    (pkgs.writeShellApplication {
+      name = "netdiag";
+      runtimeInputs = with pkgs; [
+        bc
+        curl
+        ethtool
+        iproute2
+        nettools
+      ];
+      text = builtins.readFile ../../bin/netdiag;
     })
   ];
 
