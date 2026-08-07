@@ -41,6 +41,7 @@ with pkgs;
   xxd
 
   # CLI utilities - networking
+  bc
   iproute2
   iputils
   dnsutils
