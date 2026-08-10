@@ -1,7 +1,8 @@
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }:
 
 {
@@ -70,12 +71,16 @@
     ini="$HOME/.config/flameshot/flameshot.ini"
     mkdir -p "$(dirname "$ini")"
     if [ ! -f "$ini" ]; then
-      printf '[General]\ncontrastOpacity=188\nuseX11LegacyScreenshot=true\n' > "$ini"
-    elif ! grep -q '^useX11LegacyScreenshot=true' "$ini"; then
-      if grep -q '^\[General\]' "$ini"; then
-        sed -i '/^\[General\]/a useX11LegacyScreenshot=true' "$ini"
-      else
-        printf '\n[General]\nuseX11LegacyScreenshot=true\n' >> "$ini"
+      printf '[General]\nuseX11LegacyScreenshot=true\n' > "$ini"
+    else
+      # Remove unrecognized keys that trigger flameshot config errors
+      sed -i '/^contrastOpacity=/d' "$ini"
+      if ! grep -q '^useX11LegacyScreenshot=true' "$ini"; then
+        if grep -q '^\[General\]' "$ini"; then
+          sed -i '/^\[General\]/a useX11LegacyScreenshot=true' "$ini"
+        else
+          printf '\n[General]\nuseX11LegacyScreenshot=true\n' >> "$ini"
+        fi
       fi
     fi
   '';
