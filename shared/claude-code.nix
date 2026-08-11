@@ -87,11 +87,9 @@ let
         pr = "";
         sessionUrl = false;
       };
-      # Inject review gate instruction into Claude Code system prompt.
-      # Review gate + explore MCP rules, same source as OpenCode instructionOverlays.
-      customInstructions = builtins.concatStringsSep "\n\n" [
-        (builtins.readFile ./rules/explore-mcp.md)
-      ];
+      # Custom rules are injected via CLAUDE.md (agentsMdSources in ai-assets.nix).
+      # No customInstructions here — this field does not exist in Claude Code's
+      # settings.json schema and is silently ignored (github issue #12573).
     }
   );
 
@@ -288,6 +286,11 @@ in
           fi
         fi
       done
+
+      # Clean Nix build artifacts (left by previous builds or manual operations).
+      # Never touches runtime data: sessions/, cache/, projects/, .credentials.json, etc.
+      find "$claude_dir" -maxdepth 1 -name '*.backup' -type f -delete 2>/dev/null || true
+      find "$claude_dir" -maxdepth 1 -name '*.bak' -type f -delete 2>/dev/null || true
     '';
   };
 }
