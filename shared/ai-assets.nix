@@ -31,7 +31,10 @@ with lib;
 
     agentsMdSources = mkOption {
       type = types.listOf types.path;
-      default = [ "${pkgs.gentle-ai-assets}/share/gentle-ai/AGENTS.md" ];
+      default = [
+        "${pkgs.gentle-ai-assets}/share/gentle-ai/AGENTS.md"
+        ./rules/explore-mcp.md
+      ];
       description = "Ordered AGENTS.md/CLAUDE.md fragments to concatenate.";
     };
 
