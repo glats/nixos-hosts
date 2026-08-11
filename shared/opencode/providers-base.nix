@@ -386,7 +386,7 @@ let
         # claude-sonnet-5: GitHub positions it for general-purpose coding and agent tasks.
         # Safer update than 5.6 because there are current 5.6 access reports and an open
         # OpenCode subagent model-selection bug (#36250) not tied to Sonnet 5 specifically.
-        gentle-orchestrator = "github-copilot/claude-sonnet-5";
+        gentle-orchestrator = "github-copilot/gpt-5.6";
         # gpt-5.4-mini: proven cheap helper model already working in current tier.
         sdd-init = "github-copilot/gpt-5.4-mini";
         # claude-sonnet-5: 1M context + agent-task positioning makes it a good explore/default upgrade.
