@@ -13,7 +13,7 @@
     permissions = {
       # dontAsk: auto-deny unmatched tools. Zero prompts for allowed tools.
       # AcceptEdits would be safer for teams, but this is personal machine.
-      defaultMode = "dontAsk";
+      defaultMode = "auto";
       additionalDirectories = [
         "~"
         "/tmp"
