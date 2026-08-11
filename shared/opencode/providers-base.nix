@@ -1,6 +1,6 @@
-{ lib ? throw "providers-base.nix must be imported with lib"
-, activeProviderName ? "opencode-go-medium"
-,
+{
+  lib ? throw "providers-base.nix must be imported with lib",
+  activeProviderName ? "opencode-go-medium",
 }:
 
 let
@@ -222,6 +222,12 @@ let
         "claude-opus-4.8" = {
           name = "Claude Opus 4.8";
         };
+        "claude-opus-4.8-fast" = {
+          name = "Claude Opus 4.8 Fast";
+        };
+        "claude-opus-5" = {
+          name = "Claude Opus 5";
+        };
         "claude-fable-5" = {
           name = "Claude Fable 5";
         };
@@ -248,6 +254,10 @@ let
         # Moonshot AI models
         "kimi-k2.7-code" = {
           name = "Kimi K2.7 Code";
+        };
+        # xAI models
+        "grok-4.5" = {
+          name = "Grok 4.5";
         };
       };
     };
@@ -371,6 +381,57 @@ let
       };
     }
     {
+      name = "github-copilot-safe";
+      phases = {
+        # claude-sonnet-5: GitHub positions it for general-purpose coding and agent tasks.
+        # Safer update than 5.6 because there are current 5.6 access reports and an open
+        # OpenCode subagent model-selection bug (#36250) not tied to Sonnet 5 specifically.
+        gentle-orchestrator = "github-copilot/claude-sonnet-5";
+        # gpt-5.4-mini: proven cheap helper model already working in current tier.
+        sdd-init = "github-copilot/gpt-5.4-mini";
+        # claude-sonnet-5: 1M context + agent-task positioning makes it a good explore/default upgrade.
+        sdd-explore = "github-copilot/claude-sonnet-5";
+        # claude-sonnet-5: balanced upgrade for architecture and structured writing.
+        sdd-propose = "github-copilot/claude-sonnet-5";
+        sdd-spec = "github-copilot/claude-sonnet-5";
+        sdd-design = "github-copilot/claude-sonnet-5";
+        # gpt-5.4-mini: still the cheapest reliable decomposition worker in this provider.
+        sdd-tasks = "github-copilot/gpt-5.4-mini";
+        # gpt-5.3-codex: coding-specialized and already stable in the current tier.
+        sdd-apply = "github-copilot/gpt-5.3-codex";
+        # claude-sonnet-5: strong review/reasoning default without jumping to risky 5.6.
+        sdd-verify = "github-copilot/claude-sonnet-5";
+        # claude-haiku-4.5: fastest low-cost housekeeping model.
+        sdd-archive = "github-copilot/claude-haiku-4.5";
+        # gpt-5.4-mini: good enough for guided walkthroughs while staying cheap.
+        sdd-onboard = "github-copilot/gpt-5.4-mini";
+        neutral = "github-copilot/claude-sonnet-5";
+      };
+    }
+    {
+      name = "github-copilot-experimental";
+      phases = {
+        # EXPERIMENTAL / ACCOUNT-DEPENDENT:
+        # GitHub documents GPT-5.6 Luna/Sol/Terra as supported, but OpenCode has reports of
+        # 403/model access issues for some Copilot integrations/accounts (#36575, #38722).
+        # Keep this tier opt-in only until upstream access is consistently reliable.
+        # gpt-5.6-sol: GitHub recommends it for deep reasoning and long-running agentic work.
+        gentle-orchestrator = "github-copilot/gpt-5.6-sol";
+        # gpt-5.6-luna: GitHub positions it as the cheaper/faster 5.6 option.
+        sdd-init = "github-copilot/gpt-5.6-luna";
+        sdd-explore = "github-copilot/gpt-5.6-sol";
+        sdd-propose = "github-copilot/gpt-5.6-sol";
+        sdd-spec = "github-copilot/gpt-5.6-sol";
+        sdd-design = "github-copilot/gpt-5.6-sol";
+        sdd-tasks = "github-copilot/gpt-5.6-luna";
+        sdd-apply = "github-copilot/gpt-5.6-sol";
+        sdd-verify = "github-copilot/gpt-5.6-sol";
+        sdd-archive = "github-copilot/gpt-5.6-luna";
+        sdd-onboard = "github-copilot/gpt-5.6-luna";
+        neutral = "github-copilot/gpt-5.6-sol";
+      };
+    }
+    {
       name = "opencode-go-full";
       phases = {
         gentle-orchestrator = "opencode-go/deepseek-v4-pro";
@@ -440,12 +501,9 @@ let
     }
   ];
 
-  activeProvider = builtins.foldl'
-    (
-      acc: p: if p.name == activeProviderName then p else acc
-    )
-    null
-    providers;
+  activeProvider = builtins.foldl' (
+    acc: p: if p.name == activeProviderName then p else acc
+  ) null providers;
   getModelForPhase =
     phase: provider: if provider == null then null else provider.phases.${phase} or null;
 
