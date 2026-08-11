@@ -49,7 +49,7 @@
       home.stateVersion = "25.05";
       # Per-host provider override: mact2 uses GitHub Copilot tier.
       # See `home.opencode.activeProviderName` in shared/opencode.nix.
-      home.opencode.activeProviderName = "opencode-go-medium";
+      home.opencode.activeProviderName = "github-copilot-safe";
     };
     extraSpecialArgs = {
       inherit
