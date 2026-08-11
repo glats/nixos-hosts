@@ -115,22 +115,30 @@ in
 
         mkdir -p "$runtime_dir"
 
-        # Single-file symlinks -> real copies (hash guard via cmp)
-        # ALWAYS replace symlinks with real copies — even if content matches,
-        # the symlink points to the read-only nix store which OpenCode can't write to.
-        # cmp guard is only used to skip unnecessary writes to already-real files
-        # that haven't changed since the last build.
-        for file in opencode.json AGENTS.md package.json .gitignore tui.json; do
-          target="$runtime_dir/$file"
-          if [ -L "$target" ]; then
-            src="$(${pkgs.coreutils}/bin/readlink -f "$target")"
-            ${pkgs.coreutils}/bin/cp --remove-destination "$src" "$target"
-          fi
-          # Ensure files are writable (nix store sources are read-only)
-          if [ -f "$target" ] && [ ! -w "$target" ]; then
-            chmod 644 "$target"
-          fi
-        done
+         # Single-file symlinks -> real copies (hash guard via cmp)
+         # ALWAYS replace symlinks with real copies — even if content matches,
+         # the symlink points to the read-only nix store which OpenCode can't write to.
+         # After conversion, also re-copy from nix store if content diverged
+         # (e.g. OpenCode modified the file at runtime).
+         for file in opencode.json AGENTS.md package.json .gitignore tui.json; do
+           target="$runtime_dir/$file"
+           if [ -L "$target" ]; then
+             src="$(${pkgs.coreutils}/bin/readlink -f "$target")"
+             ${pkgs.coreutils}/bin/cp --remove-destination "$src" "$target"
+           fi
+           # Ensure files are writable (nix store sources are read-only)
+           if [ -f "$target" ] && [ ! -w "$target" ]; then
+             chmod 644 "$target"
+           fi
+         done
+         # Re-copy opencode.json from nix store if content diverged
+         # (OpenCode mutates it at runtime — model selection, provider state, etc.)
+         opencode_json="$runtime_dir/opencode.json"
+         if [ -f "$opencode_json" ] && ! ${pkgs.diffutils}/bin/cmp -s "${jsonFile}" "$opencode_json"; then
+           ${pkgs.coreutils}/bin/cp "${jsonFile}" "$opencode_json"
+           chmod 644 "$opencode_json"
+           echo "makeOpencodeConfigMutable: refreshed opencode.json from nix store"
+         fi
 
         # Directory management for commands/
         # Handled here (not via home.file) because HM cannot overwrite real dirs with symlinks.
@@ -207,6 +215,10 @@ in
             echo "WARNING: $skill model-capable marker not found on line 1 — upstream may have changed format" >&2
           fi
         done
+
+        # Clean Nix build artifacts (left by previous builds or manual operations)
+        find "$runtime_dir" -maxdepth 1 -name '*.backup' -type f -delete 2>/dev/null || true
+        find "$runtime_dir" -maxdepth 1 -name '*.bak' -type f -delete 2>/dev/null || true
       '';
 
   # Install plugins and npm deps; runs after symlink conversion.
