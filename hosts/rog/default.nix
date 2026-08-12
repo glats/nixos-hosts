@@ -125,9 +125,8 @@
     kernelPackages = pkgs.linuxPackages;
     extraModulePackages = with config.boot.kernelPackages; [ acpi_call ];
     kernelModules = [ "acpi_call" ];
-    # Disable ACPI IRQ routing — known to fix shutdown hangs on
-    # some ASUS laptops with buggy firmware.
-    kernelParams = [ "acpi=noirq" ];
+    # NOTE: acpi=noirq removed — breaks NVIDIA IRQ assignment.
+    # Shutdown hang fix now handled by rog-shutdown.nix + poweroff-workaround.
   };
 
   zramSwap.enable = true;

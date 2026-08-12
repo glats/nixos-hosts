@@ -9,6 +9,4 @@ baseModules
 
   ../../../linux/home/suites/mate/default.nix
   ../../../linux/home/conky-thinkcentre.nix
-  ../../../linux/home/shell-gpt.nix
-  { home.shell-gpt.enable = false; }
 ]

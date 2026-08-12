@@ -22,6 +22,14 @@ in
     ];
   });
 
+  # shell-gpt 1.5.x hard-depends on litellm → tokenizers → datasets → pyarrow →
+  # arrow-cpp, and arrow-cpp 23.0.0 is marked broken on x86_64-darwin.
+  # litellm is only imported lazily when USE_LITELLM=true (default false),
+  # so dropping it keeps sgpt working with OpenAI-compatible endpoints (nvidia NIM).
+  shell-gpt = prev.shell-gpt.overridePythonAttrs (old: {
+    dependencies = builtins.filter (d: d.pname != "litellm") old.dependencies;
+  });
+
   # Cross-platform packages from flake outputs
   inherit (self.packages.${system})
     nixos-scripts

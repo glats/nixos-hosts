@@ -23,8 +23,6 @@ builtins.filter (m: !builtins.elem m excluded) base
 ++ [
   ./omarchy.nix
   ../../../linux/home/remote-desktop.nix
-  ../../../linux/home/shell-gpt.nix
-  ({ home.shell-gpt.enable = true; })
   ({ home.opencode.activeProviderName = "opencode-go-medium"; })
   inputs.hyprdynamicmonitors.homeManagerModules.default
 ]

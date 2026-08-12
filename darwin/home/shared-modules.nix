@@ -35,6 +35,8 @@
   ../../shared/opencode-profile.nix
   ../../shared/claude-code.nix
   ../../shared/claude-code-profile.nix
+  ../../shared/shell-gpt.nix
+  { home.shell-gpt.enable = true; }
   ./sops.nix
   ./github-mcp-server-wrapper.nix
   ./atlassian-mcp-wrapper.nix
