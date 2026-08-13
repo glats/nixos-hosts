@@ -1,7 +1,8 @@
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }:
 
 {
@@ -61,26 +62,4 @@
       Hidden=true
     '';
   };
-
-  # Flameshot v14 uses xdg-desktop-portal Screenshot by default.
-  # X11/xrdp sessions have no portal backend for Screenshot.
-  # Use activation script instead of xdg.configFile so flameshot can
-  # write its own settings through the GUI without being overwritten.
-  home.activation.ensureFlameshotX11Legacy = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    ini="$HOME/.config/flameshot/flameshot.ini"
-    mkdir -p "$(dirname "$ini")"
-    if [ ! -f "$ini" ]; then
-      printf '[General]\nuseX11LegacyScreenshot=true\n' > "$ini"
-    else
-      # Remove unrecognized keys that trigger flameshot config errors
-      sed -i '/^contrastOpacity=/d' "$ini"
-      if ! grep -q '^useX11LegacyScreenshot=true' "$ini"; then
-        if grep -q '^\[General\]' "$ini"; then
-          sed -i '/^\[General\]/a useX11LegacyScreenshot=true' "$ini"
-        else
-          printf '\n[General]\nuseX11LegacyScreenshot=true\n' >> "$ini"
-        fi
-      fi
-    fi
-  '';
 }
