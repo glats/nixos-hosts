@@ -329,5 +329,9 @@
     notificationMethod = "electron";
     followSystemTheme = true;
     screenSharing.thumbnail.enabled = false;
+    # Keep the msal.cache.encryption cookie across restarts (upstream #2681,
+    # fix #2780 in v2.15.0 — opt-in, off by default). Without it, Electron
+    # drops the session cookie on quit and the login session is lost.
+    auth.keepMsalCacheEncryptionCookie.enabled = true;
   };
 }
