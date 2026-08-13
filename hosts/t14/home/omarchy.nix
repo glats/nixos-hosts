@@ -46,6 +46,7 @@
     ./hypr/monitors.nix
     ./hypr/input.nix
     ./hypr/looknfeel.nix
+    ./hypr/groups.nix
     ./hypr/hyprlock.nix
     ./hypr/hyprsunset.nix
 
