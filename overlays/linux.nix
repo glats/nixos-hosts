@@ -44,6 +44,33 @@ final: prev: {
   # bzImage again — no override needed. Keep an eye on future zen releases
   # in case the vmlinuz regression re-appears.
 
+  # teams-for-linux 2.11.1 (latest in nixos-26.05) drops the login session on
+  # every quit: Teams encrypts its auth tokens with the `msal.cache.encryption`
+  # session cookie, which Electron discards on process exit, so tokens can no
+  # longer be decrypted on the next start (upstream #2681/#2780, fixed in
+  # v2.15.0 as an opt-in flag — enabled in hosts/t14/home/omarchy.nix; affects
+  # >= 2.10.0). 2.10.0-2.14.0 additionally hard-exit on SIGINT/SIGTERM and
+  # skip the storage flush (upstream #2743, fixed in v2.14.1). Pin 2.15.0
+  # (src hash via nix-prefetch-git, npmDeps hash via fetchNpmDeps from the
+  # first build). Remove when nixos-26.05 catches up.
+  teams-for-linux =
+    let
+      tfl-src = prev.fetchFromGitHub {
+        owner = "IsmaelMartinez";
+        repo = "teams-for-linux";
+        tag = "v2.15.0";
+        hash = "sha256-PYRl0Q7vsx7nKz7pkoCg3f3rRIcgCAvGiALQxHEOIjE=";
+      };
+    in
+    prev.teams-for-linux.overrideAttrs (oldAttrs: {
+      version = "2.15.0";
+      src = tfl-src;
+      npmDeps = prev.fetchNpmDeps {
+        src = tfl-src;
+        hash = "sha256-FPnkCO1zf5Ts2arOa0InC7l4esRs4AuXYlVF/OYR6AI=";
+      };
+    });
+
   # Symbola font: archive.org is unreliable and frequently drops snapshots or
   # times out. Use a stable mirror (Slackware UK Salix) instead.
   symbola = prev.symbola.overrideAttrs (oldAttrs: {
