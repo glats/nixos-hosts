@@ -62,6 +62,18 @@ final: prev: {
     '';
   });
 
+  # mate-volume-control-status-icon crashes (SIGABRT) on volume scroll:
+  # gvc_channel_bar_scroll does g_settings_new("org.mate.SettingsDaemon.plugins.media-keys")
+  # to read the volume-step, but that schema lives in mate-settings-daemon and
+  # mate-media's wrapGAppsHook3 wrapper doesn't include it → GLib fatal abort.
+  # Works on distros with global schemas; breaks with Nix per-package schemas.
+  # No dependency cycle: msd does not depend on mate-media.
+  mate = prev.mate // {
+    mate-media = prev.mate.mate-media.overrideAttrs (oldAttrs: {
+      buildInputs = (oldAttrs.buildInputs or [ ]) ++ [ final.mate.mate-settings-daemon ];
+    });
+  };
+
   # Shared afdko 4.0.3 override. Pin afdko back to 4.0.3 (which cantarell-fonts
   # upstream tests against and pins in its uv.lock) because nixpkgs' afdko
   # 5.0.1 regresses VF hinting and crashes otfautohint with
