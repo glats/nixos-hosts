@@ -44,4 +44,28 @@
     # and prevents focus jumping when reopening apps.
     misc.initial_workspace_tracking = false;
   };
+
+  # GTK4 file-picker dialogs (xdg-desktop-portal-gtk — e.g. "Open Files"
+  # when uploading in Teams) spawned by XWayland parents: the X11 window
+  # geometry includes the GTK4 CSD shadow (_GTK_FRAME_EXTENTS 56,56,50,62
+  # measured live — window 987x712 holds only 875x600 of content), and
+  # Hyprland draws its border around the full geometry, leaving the border
+  # visually detached from the dialog (hyprwm/Hyprland#5192).
+  #
+  # omarchy's own float/center/size rules for this dialog no longer
+  # match: the 0.53+ rule syntax uses case-sensitive RE2 FullMatch and
+  # omarchy matches lowercase "xdg-desktop-portal-gtk" while the real
+  # class is "Xdg-desktop-portal-gtk" (verified via xprop WM_CLASS).
+  #
+  # Fix (verified live via hyprctl keyword on a fresh test window):
+  #   - float + center: dialog floats centered on the focused monitor
+  #   - size 875 600: omarchy's intended dialog size
+  #   - border_size 0: GTK4 draws its own CSD decorations/shadow; the
+  #     detached compositor border is the artifact to remove
+  wayland.windowManager.hyprland.extraConfig = lib.mkAfter ''
+    windowrule = float on, match:class ^([Xx]dg-desktop-portal-gtk)$
+    windowrule = center on, match:class ^([Xx]dg-desktop-portal-gtk)$
+    windowrule = size 875 600, match:class ^([Xx]dg-desktop-portal-gtk)$
+    windowrule = border_size 0, match:class ^([Xx]dg-desktop-portal-gtk)$
+  '';
 }
