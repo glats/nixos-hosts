@@ -102,22 +102,26 @@
   # See: Arch bbs#293977, Debian bug#1110193, netdev@ regression thread.
   boot.kernelParams = [ "pcie_aspm=off" ];
 
-  # Loose reverse-path filtering — required when multiple NICs share
-  # the same subnet (both enp2s0f0 and enp5s0 on 172.16.0.0/24).
-  # rp_filter=2 (strict) drops legitimate packets arriving on one
-  # interface whose source IP belongs to the other, causing TCP
-  # timeouts and slow page loads.
+  # ARP flux fix — required when multiple NICs share the same subnet
+  # (enp2s0f0 and enp5s0 both on 172.16.0.0/24). By default Linux
+  # answers ARP requests for any local IP from any interface, so the
+  # router can cache an IP→MAC binding for the wrong NIC (or flap
+  # between the two), causing intermittent packet loss and slow page
+  # loads that disappear when one cable is unplugged.
+  # See: netbeez.net "Avoiding ARP Flux in Multi-Interface Linux Hosts".
   #
-  # The wildcard key is the important one: systemd's
-  # /etc/sysctl.d/50-default.conf sets net.ipv4.conf.*.rp_filter = 2
-  # and udev applies that glob to every concrete interface as it
-  # appears. all/default alone (above the wildcard) don't match that
-  # glob, so real interfaces end up strict. Our 60-nixos.conf sorts
-  # after 50-default.conf and wins.
+  # arp_ignore=1: answer ARP only if the target IP is local to the
+  #               INCOMING interface.
+  # arp_announce=2: always use the best local address for the target.
+  #
+  # rp_filter is intentionally NOT touched: systemd's default is loose
+  # (rp_filter=2, since systemd 240) which is correct for multihomed
+  # hosts — strict (1) would drop packets arriving on the "wrong" NIC.
   boot.kernel.sysctl = {
-    "net.ipv4.conf.all.rp_filter" = 1;
-    "net.ipv4.conf.default.rp_filter" = 1;
-    "net.ipv4.conf.*.rp_filter" = 1;
+    "net.ipv4.conf.all.arp_ignore" = 1;
+    "net.ipv4.conf.all.arp_announce" = 2;
+    "net.ipv4.conf.default.arp_ignore" = 1;
+    "net.ipv4.conf.default.arp_announce" = 2;
   };
 
   # Ensure XFS kernel module is available in the initrd (stage 1).
