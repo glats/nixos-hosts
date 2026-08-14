@@ -82,6 +82,7 @@
   system.stateVersion = "25.05";
 
   environment.systemPackages = with pkgs; [
+    microsoft-edge
     pipewire-module-xrdp
     intel-vaapi-driver
     libva-vdpau-driver

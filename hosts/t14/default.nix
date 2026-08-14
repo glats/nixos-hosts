@@ -205,6 +205,36 @@
       '';
     })
 
+    # Microsoft Edge wrapped to XWayland (same pattern as teams above).
+    # The shared browsers profile no longer ships edge — t14 provides it
+    # here, wrapped. Native Wayland Edge on Hyprland/AMD flickers and
+    # glitches (EGL issues, nixpkgs#334175) and SIGSEGVs on hover over
+    # images (omarchy#5097). A previous
+    # ~/.config/microsoft-edge-stable-flags.conf attempt was dead code:
+    # neither the nixpkgs wrapper nor the Edge binary reads that file.
+    # Desktop entries must be rewritten too — their Exec lines point to
+    # the unwrapped derivation's absolute store path, which would bypass
+    # this wrapper for launcher/mime (default browser) launches.
+    (pkgs.symlinkJoin {
+      name = "microsoft-edge";
+      paths = [ pkgs.microsoft-edge ];
+      buildInputs = [ pkgs.makeWrapper ];
+      postBuild = ''
+        wrapProgram $out/bin/microsoft-edge \
+          --unset NIXOS_OZONE_WL \
+          --add-flags "--ozone-platform=x11"
+        # Desktop files are symlinks into the immutable store; replace
+        # them with writable copies before substituting the Exec path.
+        for f in $out/share/applications/*.desktop; do
+          rm -f "$f"
+          cp "${pkgs.microsoft-edge}/share/applications/$(basename "$f")" "$f"
+          substituteInPlace "$f" \
+            --replace-fail "${pkgs.microsoft-edge}/bin/microsoft-edge" \
+            "$out/bin/microsoft-edge"
+        done
+      '';
+    })
+
     # Network diagnostic tool for r8169 multi-NIC debugging.
     # Run `netdiag` when slowness is felt; use `netdiag --watch 5`
     # to monitor and capture snapshots automatically.

@@ -272,18 +272,15 @@
   # omarchy-nix sets these with lib.mkDefault (brave/chromium only);
   # lib.mkForce redirects to microsoft-edge. Brave stays installed
   # via omarchy.browser = "brave" for fallback.
+  # Edge itself is wrapped to XWayland in hosts/t14/default.nix
+  # (NIXOS_OZONE_WL unset + --ozone-platform=x11) to avoid
+  # Wayland-native flicker on Hyprland. A previous
+  # microsoft-edge-stable-flags.conf attempt was dead code — neither
+  # the nixpkgs wrapper nor the Edge binary reads that file.
   wayland.windowManager.hyprland.settings."$browser" =
     lib.mkForce "~/.local/share/omarchy/bin/omarchy-launch-or-focus microsoft-edge 'microsoft-edge-stable --new-window'";
   wayland.windowManager.hyprland.settings."$webapp" =
     lib.mkForce "~/.local/share/omarchy/bin/omarchy-launch-or-focus microsoft-edge 'microsoft-edge-stable --app'";
-
-  # Edge flags: force X11/XWayland for stability on Hyprland.
-  # Native Wayland causes SIGSEGV on hover over images (omarchy#5097).
-  # Also disable Microsoft diagnostic data collection telemetry.
-  xdg.configFile."microsoft-edge-stable-flags.conf".text = ''
-    --ozone-platform=x11
-    --enable-features=msDiagnosticDataForceOff
-  '';
 
   # Default browser: Edge for all web MIME types.
   # Overrides omarchy-nix's lib.mkDefault (brave/chromium desktop entries).
