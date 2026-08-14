@@ -8,11 +8,12 @@
 #   - XKB layout forced to "latam" (Chile) since i18n.nix defaults to "es"
 #   - btrfs swap, fonts, kmscon, and amd-laptop settings inherited from base
 #   - home-manager wired to ./home/omarchy.nix (replaces ./home/gnome.nix)
-{ config
-, lib
-, pkgs
-, inputs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
 }:
 
 {
@@ -106,9 +107,17 @@
   # rp_filter=2 (strict) drops legitimate packets arriving on one
   # interface whose source IP belongs to the other, causing TCP
   # timeouts and slow page loads.
+  #
+  # The wildcard key is the important one: systemd's
+  # /etc/sysctl.d/50-default.conf sets net.ipv4.conf.*.rp_filter = 2
+  # and udev applies that glob to every concrete interface as it
+  # appears. all/default alone (above the wildcard) don't match that
+  # glob, so real interfaces end up strict. Our 60-nixos.conf sorts
+  # after 50-default.conf and wins.
   boot.kernel.sysctl = {
     "net.ipv4.conf.all.rp_filter" = 1;
     "net.ipv4.conf.default.rp_filter" = 1;
+    "net.ipv4.conf.*.rp_filter" = 1;
   };
 
   # Ensure XFS kernel module is available in the initrd (stage 1).
