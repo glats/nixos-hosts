@@ -201,6 +201,7 @@
   systemd.services."docker-jellyseerr".startLimitIntervalSec = lib.mkForce 0;
 
   environment.systemPackages = with pkgs; [
+    microsoft-edge
     asus-fan-control
     pipewire-module-xrdp
     intel-vaapi-driver
