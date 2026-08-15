@@ -28,6 +28,9 @@ stdenvNoCC.mkDerivation {
     cp $src/export-mate-config $out/bin/
     chmod +x $out/bin/export-mate-config
 
+    cp $src/export-wireguard-configs $out/bin/
+    chmod +x $out/bin/export-wireguard-configs
+
     cp $src/format-nix $out/bin/
     chmod +x $out/bin/format-nix
 
