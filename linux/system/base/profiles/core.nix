@@ -21,6 +21,7 @@ with pkgs;
   ncdu
   duf
   imagemagick
+  ocrmypdf
 
   # CLI utilities - system/process info
   htop
@@ -82,6 +83,7 @@ with pkgs;
   gparted
   popsicle
   remmina
+  kdePackages.okular
 
   # System utilities
 ]
