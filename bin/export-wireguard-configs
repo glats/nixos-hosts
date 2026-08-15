@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# Export WireGuard client configs from the root-only /etc/wireguard/clients/
+# into ~/Documents/wireguard/ (glats:users, mode 600). Idempotent: overwrites
+# existing exports and prunes configs whose peer was removed from the server.
+set -euo pipefail
+
+SRC=/etc/wireguard/clients
+DST=/home/glats/Documents/wireguard
+OWNER=glats
+GROUP=users
+MODE=600
+
+# 1. Validate sudo up-front (single prompt; clear failure if auth impossible)
+if ! sudo -v; then
+  echo "ERROR: sudo authentication failed — cannot read $SRC" >&2
+  exit 1
+fi
+
+# 2. Source must exist (root-only, so probe via sudo)
+if ! sudo test -d "$SRC"; then
+  echo "ERROR: source directory not found: $SRC" >&2
+  exit 1
+fi
+
+# 3. List source configs (root-only read)
+src_files=$(sudo find "$SRC" -maxdepth 1 -type f -name '*.conf' -printf '%f\n')
+
+# 4. Empty source is NOT an error: exit 0 and never prune existing exports
+if [ -z "$src_files" ]; then
+  echo "No client configs in $SRC; destination left untouched."
+  exit 0
+fi
+
+mkdir -p "$DST"
+
+# 5. Copy (overwrite) each config, fixing ownership and permissions
+exported=0
+while IFS= read -r name; do
+  [ -n "$name" ] || continue
+  sudo install -o "$OWNER" -g "$GROUP" -m "$MODE" "$SRC/$name" "$DST/$name"
+  exported=$((exported + 1))
+done <<< "$src_files"
+
+# 6. Prune destination configs with no source counterpart
+pruned=0
+while IFS= read -r name; do
+  [ -n "$name" ] || continue
+  if ! grep -qxF "$name" <<< "$src_files"; then
+    rm -f "$DST/$name"
+    pruned=$((pruned + 1))
+  fi
+done < <(find "$DST" -maxdepth 1 -type f -name '*.conf' -printf '%f\n' 2>/dev/null)
+
+echo "Exported $exported config(s) to $DST (pruned $pruned stale)."
