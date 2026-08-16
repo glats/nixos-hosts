@@ -11,7 +11,7 @@ buildGoModule {
 
   subPackages = [ "cmd/gentle-ai" ];
 
-  vendorHash = "sha256-ZZl0nPB4HDjmlYyhXLlCM4le0k5dvIUZtX9RB4FEn/M=";
+  vendorHash = "sha256-todsAjNOtV/fX4agsaqFwC0MHerMCVB0ufJk1sGSm/Y=";
 
   meta = with lib; {
     description = "AI ecosystem configurator with persistent memory and SDD workflow";
