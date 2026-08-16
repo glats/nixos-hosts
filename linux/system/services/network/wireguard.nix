@@ -93,20 +93,27 @@ in
 
   # --- Generate client configs at activation time ---
   # Produces /etc/wireguard/clients/<name>.conf for each peer.
-  # Client private key must be generated on the client itself.
+  # If a client private key exists in /etc/wireguard/keys/<name>.key, the conf
+  # is emitted ready-to-import (Model B: server-generated key included).
+  # Otherwise the PrivateKey line stays commented (client-side key generation).
   system.activationScripts.wireguard-client-configs = ''
-    mkdir -p /etc/wireguard/clients
+    mkdir -p /etc/wireguard/clients /etc/wireguard/keys
 
     SERVER_PUB=$(${wgTools}/bin/wg pubkey < ${config.sops.secrets."wireguard/server_private_key".path})
 
     ${builtins.concatStringsSep "\n" (
       mapAttrsToList (name: p: ''
             ${if p.psk != null then "PSK=$(cat ${p.psk.path})" else "PSK="}
+            if [ -f /etc/wireguard/keys/${name}.key ]; then
+              PRIVLINE="PrivateKey = $(cat /etc/wireguard/keys/${name}.key)"
+            else
+              PRIVLINE="# PrivateKey = /etc/wireguard/${name}.key
+        # Generate: wg genkey | sudo tee /etc/wireguard/${name}.key | wg pubkey"
+            fi
             cat > /etc/wireguard/clients/${name}.conf << CONF
         [Interface]
         Address = ${p.ip}/32
-        # PrivateKey = /etc/wireguard/${name}.key
-        # Generate: wg genkey | sudo tee /etc/wireguard/${name}.key | wg pubkey
+        $PRIVLINE
         DNS = ${serverIP}
 
         [Peer]
@@ -119,6 +126,16 @@ in
       '') peers
     )}
 
-    chmod 600 /etc/wireguard/clients/*
+    chmod 600 /etc/wireguard/clients/* 2>/dev/null || true
+    chmod 700 /etc/wireguard/keys
+    chmod 600 /etc/wireguard/keys/* 2>/dev/null || true
+
+    # Prune stale configs/QRs of removed peers
+    for f in /etc/wireguard/clients/*.conf; do
+      case " ${builtins.concatStringsSep " " (builtins.attrNames peers)} " in
+        *" $(basename "$f" .conf) "*) ;;
+        *) rm -f "$f" "''${f%.conf}.png" ;;
+      esac
+    done
   '';
 }
