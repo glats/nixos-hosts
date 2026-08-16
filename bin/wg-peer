@@ -1,0 +1,141 @@
+#!/usr/bin/env bash
+# wg-peer — manage WireGuard peers on rog from one command
+#
+# Commands:
+#   wg-peer list            list peers (name, ip, key, last handshake)
+#   wg-peer add <name>      new peer: keypair + next free IP, rebuild, conf + QR
+#   wg-peer remove <name>   delete peer, rebuild, drop its conf/QR
+#   wg-peer qr <name>       reprint the QR of an existing peer
+#
+# Peers are declarative in linux/system/services/network/wireguard.nix,
+# between the wg-peer managed markers. New peers get no PSK (optional in wg).
+
+set -euo pipefail
+
+REPO="$HOME/.nixos"
+MODULE="$REPO/linux/system/services/network/wireguard.nix"
+ANDROID_DIR="$HOME/Documents/wireguard/android"
+START_MARK="# --- wg-peer:managed-start ---"
+END_MARK="# --- wg-peer:managed-end ---"
+NETWORK="10.13.13"
+
+WG_BIN="$(command -v wg || echo /run/current-system/sw/bin/wg)"
+
+die() {
+  echo "error: $*" >&2
+  exit 1
+}
+
+usage() {
+  sed -n '2,9p' "$0" | sed 's/^# \{0,1\}//'
+  exit "${1:-0}"
+}
+
+list() {
+  printf '%-16s %-13s %-48s %s\n' NAME IP PUBLIC-KEY LAST-HANDSHAKE
+  awk '
+    /^[[:space:]]*# --- wg-peer:managed-start ---[[:space:]]*$/ { inside = 1; next }
+    /^[[:space:]]*# --- wg-peer:managed-end ---[[:space:]]*$/ { inside = 0 }
+    inside && /^    [a-zA-Z0-9][a-zA-Z0-9-]* = \{$/ { name = $1 }
+    inside && /^      ip = / { sub(/^.*ip = "/, ""); sub(/";$/, ""); ip = $0 }
+    inside && /^      publicKey = / { sub(/^.*publicKey = "/, ""); sub(/";$/, ""); pub = $0 }
+    inside && /^    \};$/ { if (name) print name, ip, pub; name = ""; ip = ""; pub = "" }
+  ' "$MODULE" | while read -r name ip pub; do
+    hs=""
+    if sudo -n "$WG_BIN" show wg0 >/dev/null 2>&1; then
+      hs=$(sudo -n "$WG_BIN" show wg0 | awk -v pk="$pub" '
+        /^peer:/ { f = ($2 == pk) }
+        f && /latest handshake/ { print $3, $4, $5; exit }
+      ')
+    fi
+    printf '%-16s %-13s %-48s %s\n' "$name" "$ip" "$pub" "${hs:-never}"
+  done
+}
+
+add() {
+  local name="$1"
+  [[ "$name" =~ ^[a-z0-9][a-z0-9-]+$ ]] ||
+    die "invalid name '$name' (lowercase letters, digits and dashes only)"
+  grep -q "^    ${name} = {$" "$MODULE" && die "peer '$name' already exists"
+  grep -qF "$START_MARK" "$MODULE" && grep -qF "$END_MARK" "$MODULE" ||
+    die "wg-peer markers missing in wireguard.nix"
+
+  local last num next ip priv pub tmp
+  last=$(awk '/^      ip = / { sub(/^.*ip = "/, ""); sub(/";$/, ""); print }' "$MODULE" |
+    grep "^${NETWORK}\." | sort -t. -k4 -n | tail -1)
+  num=${last##*.}
+  next=$((num + 1))
+  ((next <= 254)) || die "no free IPs left in ${NETWORK}.0/24"
+  ip="$NETWORK.$next"
+
+  priv=$("$WG_BIN" genkey)
+  pub=$(printf '%s' "$priv" | "$WG_BIN" pubkey)
+
+  tmp=$(mktemp)
+  awk -v name="$name" -v ip="$ip" -v pub="$pub" '
+    /^[[:space:]]*# --- wg-peer:managed-end ---[[:space:]]*$/ {
+      print "    " name " = {"
+      print "      ip = \"" ip "\";"
+      print "      publicKey = \"" pub "\";"
+      print "      psk = null;"
+      print "    };"
+    }
+    { print }
+  ' "$MODULE" > "$tmp"
+  mv "$tmp" "$MODULE"
+
+  nix fmt -- "$MODULE"
+  (cd "$REPO" && nix flake check --no-build)
+  nixos-build
+
+  mkdir -p "$ANDROID_DIR"
+  sudo sed "s|^# PrivateKey = .*|PrivateKey = $priv|" \
+    "/etc/wireguard/clients/$name.conf" > "$ANDROID_DIR/$name.conf"
+  chmod 600 "$ANDROID_DIR/$name.conf"
+  qrencode -t PNG -s 8 -m 2 -o "$ANDROID_DIR/$name.png" < "$ANDROID_DIR/$name.conf"
+  chmod 600 "$ANDROID_DIR/$name.png"
+
+  echo "peer '$name' added (${ip})"
+  echo "config: $ANDROID_DIR/$name.conf"
+  echo
+  qrencode -t ANSIUTF8 -s 2 -m 1 < "$ANDROID_DIR/$name.conf"
+}
+
+remove() {
+  local name="$1"
+  grep -q "^    ${name} = {$" "$MODULE" || die "peer '$name' not found"
+
+  local tmp
+  tmp=$(mktemp)
+  awk -v name="$name" '
+    $0 == "    " name " = {" { skip = 1; next }
+    skip && $0 == "    };" { skip = 0; next }
+    !skip
+  ' "$MODULE" > "$tmp"
+  mv "$tmp" "$MODULE"
+
+  nix fmt -- "$MODULE"
+  (cd "$REPO" && nix flake check --no-build)
+  nixos-build
+
+  rm -f "$ANDROID_DIR/$name.conf" "$ANDROID_DIR/$name.png"
+  echo "peer '$name' removed"
+}
+
+qr() {
+  local name="$1" conf="$ANDROID_DIR/$1.conf"
+  [ -f "$conf" ] ||
+    die "no config for '$name' in $ANDROID_DIR (use 'wg-peer add' to create peers)"
+  qrencode -t ANSIUTF8 -s 2 -m 1 < "$conf"
+}
+
+cmd="${1:-}"
+shift || true
+case "$cmd" in
+  list) list ;;
+  add) add "${1:?usage: wg-peer add <name>}" ;;
+  remove) remove "${1:?usage: wg-peer remove <name>}" ;;
+  qr) qr "${1:?usage: wg-peer qr <name>}" ;;
+  help | -h | --help | "") usage 0 ;;
+  *) usage 1 ;;
+esac
