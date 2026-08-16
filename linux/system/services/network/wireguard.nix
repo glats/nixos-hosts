@@ -10,7 +10,9 @@ let
   wgTools = pkgs.wireguard-tools;
 
   # --- Peer definitions (single source of truth) ---
+  # Blocks between the wg-peer markers are managed by `wg-peer` (bin/wg-peer).
   peers = {
+    # --- wg-peer:managed-start ---
     oneplus9 = {
       ip = "10.13.13.2";
       publicKey = "EsGamd57GFCaTxEk50FqU0Xya4bLmj2ij3l1AC8F/ig=";
@@ -18,7 +20,7 @@ let
     };
     mac = {
       ip = "10.13.13.3";
-      publicKey = "/8U4mjny+N01cXgqqFsQ+cZKZWBzJLrVu1YsjVfnDXA=";
+      publicKey = "9MFatUrExdDzaIJpvcFPVUTPFyN5wT9uV2nnc3YCA28=";
       psk = config.sops.secrets."wireguard/peer_mac_psk";
     };
     thinkpad = {
@@ -36,6 +38,7 @@ let
       publicKey = "PUJEcWsMCTOfENyZYqoRRiPx9VZVAr3gXjP0BCT6+38=";
       psk = config.sops.secrets."wireguard/peer_thinkphone_psk";
     };
+    # --- wg-peer:managed-end ---
   };
 
   # WireGuard interface IP
@@ -46,7 +49,7 @@ let
   mkWireGuardPeers = mapAttrsToList (
     _: p: {
       publicKey = p.publicKey;
-      presharedKeyFile = p.psk.path;
+      presharedKeyFile = lib.mkIf (p.psk != null) p.psk.path;
       allowedIPs = [ "${p.ip}/32" ];
     }
   );
@@ -98,7 +101,7 @@ in
 
     ${builtins.concatStringsSep "\n" (
       mapAttrsToList (name: p: ''
-            PSK=$(cat ${p.psk.path})
+            ${if p.psk != null then "PSK=$(cat ${p.psk.path})" else "PSK="}
             cat > /etc/wireguard/clients/${name}.conf << CONF
         [Interface]
         Address = ${p.ip}/32
@@ -108,8 +111,8 @@ in
 
         [Peer]
         PublicKey = $SERVER_PUB
-        PresharedKey = $PSK
-        AllowedIPs = 10.13.13.0/24
+        ${if p.psk != null then "PresharedKey = $PSK" else "# no PresharedKey configured"}
+        AllowedIPs = 10.13.13.0/24, 172.16.0.0/24
         Endpoint = ${serverEndpoint}:51820
         PersistentKeepalive = 25
         CONF
