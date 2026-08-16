@@ -5,13 +5,19 @@
 # missing `gradient_color`, which caused superfile to panic on file operations
 # (index out of range on empty GradientColor).
 #
+# Slot semantics mirror the rest of the glats stack for visual harmony:
+# selection bg = base02 (kitty/ghostty/btop), cursor = base05 (kitty/ghostty),
+# titles = base07 (btop title), active/accent = base0D (tmux/rofi), and
+# code preview uses the nord chroma style (cool blues instead of dracula's
+# pinks/oranges).
+#
 # Platform-specific HM modules consume this and deploy via xdg.configFile (Linux)
 # or home.file (Darwin).
 #
 # Usage:
 #   let themeToml = import ../../shared/superfile.nix { colorScheme = config.colorScheme; };
 #   in { xdg.configFile."superfile/theme/glats.toml".text = themeToml; ... }
-{ colorScheme, codeSyntaxHighlight ? "dracula" }:
+{ colorScheme, codeSyntaxHighlight ? "nord" }:
 let
   p = colorScheme.palette;
 in
@@ -42,7 +48,7 @@ in
   modal_fg                       = "#${p.base05}"
 
   # ========== Main Color ==========
-  cursor                         = "#${p.base06}"
+  cursor                         = "#${p.base05}"
   correct                        = "#${p.base0B}"
   error                          = "#${p.base08}"
   hint                           = "#${p.base0C}"
@@ -54,12 +60,12 @@ in
   file_panel_top_directory_icon  = "#${p.base0E}"
   file_panel_top_path            = "#${p.base05}"
   file_panel_item_selected_fg    = "#${p.base0D}"
-  file_panel_item_selected_bg    = "#${p.base01}"
+  file_panel_item_selected_bg    = "#${p.base02}"
 
   # ========== Sidebar ==========
-  sidebar_title                  = "#${p.base0C}"
+  sidebar_title                  = "#${p.base07}"
   sidebar_item_selected_fg       = "#${p.base0D}"
-  sidebar_item_selected_bg       = "#${p.base01}"
+  sidebar_item_selected_bg       = "#${p.base02}"
   sidebar_divider                = "#${p.base02}"
 
   # ========== Modal ==========
@@ -70,5 +76,5 @@ in
 
   # ========== Help Menu ==========
   help_menu_hotkey               = "#${p.base08}"
-  help_menu_title                = "#${p.base0C}"
+  help_menu_title                = "#${p.base07}"
 ''
