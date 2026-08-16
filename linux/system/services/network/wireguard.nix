@@ -25,12 +25,12 @@ let
     };
     thinkpad = {
       ip = "10.13.13.4";
-      publicKey = "QFMVaBmcZq4B9Ku4fhXzM+Zd8vPq4MMoLCcTxDOQRF8=";
+      publicKey = "gzEjB/l6ofatawHeMFOsufbPqDZNKDiW+c+RMwRdkHA=";
       psk = config.sops.secrets."wireguard/peer_thinkpad_psk";
     };
     samsung = {
       ip = "10.13.13.5";
-      publicKey = "L2Ven52rFTK4JCtnHZ7JC3fttcWaljFspj0PRZiX+Xw=";
+      publicKey = "pPDc0fkR9VT3cjAgrYpfExAtrJiVYbpfrEbPcVyrumc=";
       psk = config.sops.secrets."wireguard/peer_samsung_psk";
     };
     thinkphone = {
