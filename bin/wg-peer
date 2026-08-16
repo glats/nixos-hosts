@@ -4,22 +4,26 @@
 # Commands:
 #   wg-peer list            list peers (name, ip, key, last handshake)
 #   wg-peer add <name>      new peer: keypair + next free IP, rebuild, conf + QR
-#   wg-peer remove <name>   delete peer, rebuild, drop its conf/QR
+#   wg-peer remove <name>   delete peer, rebuild, drop its conf/QR/key
 #   wg-peer qr <name>       reprint the QR of an existing peer
 #
 # Peers are declarative in linux/system/services/network/wireguard.nix,
 # between the wg-peer managed markers. New peers get no PSK (optional in wg).
+# Client keys live in /etc/wireguard/keys/<name>.key; ready-to-import confs
+# and QR PNGs land in /etc/wireguard/clients/.
 
 set -euo pipefail
 
 REPO="$HOME/.nixos"
 MODULE="$REPO/linux/system/services/network/wireguard.nix"
-ANDROID_DIR="$HOME/Documents/wireguard/android"
+CLIENTS_DIR="/etc/wireguard/clients"
+KEYS_DIR="/etc/wireguard/keys"
 START_MARK="# --- wg-peer:managed-start ---"
 END_MARK="# --- wg-peer:managed-end ---"
 NETWORK="10.13.13"
 
 WG_BIN="$(command -v wg || echo /run/current-system/sw/bin/wg)"
+QRENCODE_BIN="$(command -v qrencode || echo /etc/profiles/per-user/glats/bin/qrencode)"
 
 die() {
   echo "error: $*" >&2
@@ -27,7 +31,7 @@ die() {
 }
 
 usage() {
-  sed -n '2,9p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'
   exit "${1:-0}"
 }
 
@@ -71,6 +75,7 @@ add() {
   priv=$("$WG_BIN" genkey)
   pub=$(printf '%s' "$priv" | "$WG_BIN" pubkey)
 
+  # 1. Insert the peer block before the end marker
   tmp=$(mktemp)
   awk -v name="$name" -v ip="$ip" -v pub="$pub" '
     /^[[:space:]]*# --- wg-peer:managed-end ---[[:space:]]*$/ {
@@ -84,21 +89,25 @@ add() {
   ' "$MODULE" > "$tmp"
   mv "$tmp" "$MODULE"
 
+  # 2. Store the client private key BEFORE the rebuild so the activation
+  #    script emits a ready-to-import conf
+  sudo mkdir -p "$KEYS_DIR"
+  printf '%s\n' "$priv" | sudo tee "$KEYS_DIR/$name.key" > /dev/null
+  sudo chmod 600 "$KEYS_DIR/$name.key"
+
+  # 3. Rebuild: conf lands in /etc/wireguard/clients with the real key
   nix fmt -- "$MODULE"
   (cd "$REPO" && nix flake check --no-build)
   nixos-build
 
-  mkdir -p "$ANDROID_DIR"
-  sudo sed "s|^# PrivateKey = .*|PrivateKey = $priv|" \
-    "/etc/wireguard/clients/$name.conf" > "$ANDROID_DIR/$name.conf"
-  chmod 600 "$ANDROID_DIR/$name.conf"
-  qrencode -t PNG -s 8 -m 2 -o "$ANDROID_DIR/$name.png" < "$ANDROID_DIR/$name.conf"
-  chmod 600 "$ANDROID_DIR/$name.png"
+  # 4. QR PNG next to the conf + print QR to the terminal
+  sudo bash -c "$QRENCODE_BIN -t PNG -s 8 -m 2 -o $CLIENTS_DIR/$name.png < $CLIENTS_DIR/$name.conf"
+  sudo chmod 600 "$CLIENTS_DIR/$name.png"
 
   echo "peer '$name' added (${ip})"
-  echo "config: $ANDROID_DIR/$name.conf"
+  echo "config: $CLIENTS_DIR/$name.conf"
   echo
-  qrencode -t ANSIUTF8 -s 2 -m 1 < "$ANDROID_DIR/$name.conf"
+  sudo cat "$CLIENTS_DIR/$name.conf" | "$QRENCODE_BIN" -t ANSIUTF8 -s 2 -m 1
 }
 
 remove() {
@@ -118,15 +127,14 @@ remove() {
   (cd "$REPO" && nix flake check --no-build)
   nixos-build
 
-  rm -f "$ANDROID_DIR/$name.conf" "$ANDROID_DIR/$name.png"
+  sudo rm -f "$CLIENTS_DIR/$name.conf" "$CLIENTS_DIR/$name.png" "$KEYS_DIR/$name.key"
   echo "peer '$name' removed"
 }
 
 qr() {
-  local name="$1" conf="$ANDROID_DIR/$1.conf"
-  [ -f "$conf" ] ||
-    die "no config for '$name' in $ANDROID_DIR (use 'wg-peer add' to create peers)"
-  qrencode -t ANSIUTF8 -s 2 -m 1 < "$conf"
+  local name="$1" conf="$CLIENTS_DIR/$1.conf"
+  sudo test -f "$conf" || die "no config for '$name' in $CLIENTS_DIR"
+  sudo cat "$conf" | "$QRENCODE_BIN" -t ANSIUTF8 -s 2 -m 1
 }
 
 cmd="${1:-}"
