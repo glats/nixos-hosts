@@ -5,7 +5,10 @@
 }:
 
 {
-  home.packages = [ pkgs.nixos-scripts ];
+  home.packages = [
+    pkgs.nixos-scripts
+    pkgs.qrencode
+  ];
 
   programs.zsh = {
     enable = true;
