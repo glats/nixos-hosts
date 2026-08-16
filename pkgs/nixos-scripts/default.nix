@@ -55,6 +55,9 @@ stdenvNoCC.mkDerivation {
     cp $src/sync-opencode-remote $out/bin/
     chmod +x $out/bin/sync-opencode-remote
 
+    cp $src/wg-peer $out/bin/
+    chmod +x $out/bin/wg-peer
+
     # webcam excluded: already provided by linux/home/webcam.nix
   '';
 
