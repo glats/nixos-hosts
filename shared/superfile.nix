@@ -7,9 +7,7 @@
 #
 # Slot semantics mirror the rest of the glats stack for visual harmony:
 # selection bg = base02 (kitty/ghostty/btop), cursor = base05 (kitty/ghostty),
-# titles = base07 (btop title), active/accent = base0D (tmux/rofi), and
-# code preview uses the nord chroma style (cool blues instead of dracula's
-# pinks/oranges).
+# titles = base07 (btop title), active/accent = base0D (tmux/rofi).
 #
 # Platform-specific HM modules consume this and deploy via xdg.configFile (Linux)
 # or home.file (Darwin).
@@ -17,7 +15,7 @@
 # Usage:
 #   let themeToml = import ../../shared/superfile.nix { colorScheme = config.colorScheme; };
 #   in { xdg.configFile."superfile/theme/glats.toml".text = themeToml; ... }
-{ colorScheme, codeSyntaxHighlight ? "nord" }:
+{ colorScheme, codeSyntaxHighlight ? "onedark" }:
 let
   p = colorScheme.palette;
 in
