@@ -1,7 +1,8 @@
-{ config
-, pkgs
-, lib
-, ...
+{
+  config,
+  pkgs,
+  lib,
+  ...
 }:
 
 let
@@ -12,7 +13,7 @@ let
   peers = {
     oneplus9 = {
       ip = "10.13.13.2";
-      publicKey = "de+Fwke7uLseeAd4LxWpUIFMXqOZfxAGqY1IOWmS6zc=";
+      publicKey = "EsGamd57GFCaTxEk50FqU0Xya4bLmj2ij3l1AC8F/ig=";
       psk = config.sops.secrets."wireguard/peer_oneplus9_psk";
     };
     mac = {
@@ -32,7 +33,7 @@ let
     };
     thinkphone = {
       ip = "10.13.13.6";
-      publicKey = "zvRP554xr2NbuKisHEawwhsBmSqDZRy/mr9aGNEkR3w=";
+      publicKey = "PUJEcWsMCTOfENyZYqoRRiPx9VZVAr3gXjP0BCT6+38=";
       psk = config.sops.secrets."wireguard/peer_thinkphone_psk";
     };
   };
