@@ -62,10 +62,23 @@
   #   - size 875 600: omarchy's intended dialog size
   #   - border_size 0: GTK4 draws its own CSD decorations/shadow; the
   #     detached compositor border is the artifact to remove
+  #
+  # Transversal rules: any modal dialog (X11 _NET_WM_STATE_MODAL or
+  # Wayland xdg-dialog modal — match:modal prop added upstream in
+  # PR hyprwm/Hyprland#12024) gets floated, centered and borderless.
+  # This covers the same CSD-shadow artifact on every other GTK
+  # dialog (Edge save-as, Teams confirmations, etc.) regardless of
+  # class or title, instead of whack-a-mole per app. Verified live:
+  # a synthetic X11 window with _NET_WM_STATE_MODAL matches, one
+  # without it does not.
   wayland.windowManager.hyprland.extraConfig = lib.mkAfter ''
     windowrule = float on, match:class ^([Xx]dg-desktop-portal-gtk)$
     windowrule = center on, match:class ^([Xx]dg-desktop-portal-gtk)$
     windowrule = size 875 600, match:class ^([Xx]dg-desktop-portal-gtk)$
     windowrule = border_size 0, match:class ^([Xx]dg-desktop-portal-gtk)$
+
+    windowrule = float on, match:modal 1
+    windowrule = center on, match:modal 1
+    windowrule = border_size 0, match:modal 1
   '';
 }
