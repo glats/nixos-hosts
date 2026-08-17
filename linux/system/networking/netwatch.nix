@@ -13,10 +13,11 @@
 # Usage:
 #   services.netwatch.enable = true;
 #   journalctl -t netwatch -p warning --since "24 hours ago"
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }:
 
 let
@@ -83,10 +84,14 @@ in
         LogRateLimitBurst = 0;
       };
 
+      # Minimal deps for the script below: cat/basename/date (coreutils),
+      # grep (gnugrep), ping (iputils), systemd-cat (systemd — `logger` is
+      # NOT available on nixos-26.05 since util-linux 2.40 dropped it).
       path = with pkgs; [
-        iproute2
-        gawk
-        nettools
+        coreutils
+        gnugrep
+        iputils
+        systemd
       ];
 
       script =
@@ -109,27 +114,41 @@ in
               SPEED="$(cat "$IFACE/speed" 2>/dev/null || echo N/A)"
 
               # --- STATE: compare with previous run ---
+              # State file stores "<epoch> <rx_bytes>". Using real elapsed
+              # time (not the configured interval) makes the rate correct
+              # even when the timer is delayed or the interface bounced
+              # (bounce resets rx_bytes to 0 → negative delta → baseline).
+              NOW="$(date +%s)"
               STATE="$STATEDIR/$IFNAME"
+              PREV_EPOCH="$NOW"
               PREV_RX=0
-              [ -f "$STATE" ] && read -r PREV_RX < "$STATE" || true
+              [ -f "$STATE" ] && read -r PREV_EPOCH PREV_RX < "$STATE" || true
+              ELAPSED=$(( NOW - PREV_EPOCH ))
+              [ "$ELAPSED" -lt 1 ] && ELAPSED=1
               DELTA=$(( RX_BYT - PREV_RX ))
 
               # --- THROUGHPUT DEGRADATION ---
-              # Only flag if there WAS traffic but rate is below threshold.
-              # Idle (delta=0) is not degradation.
-              if [ "$DELTA" -gt 0 ] && [ "$DELTA" -lt "$THRESHOLD" ]; then
-                logger --journald --priority=${logPrio} <<EOM
-          MESSAGE=$IFNAME: throughput drop — $DELTA bytes in ${cfg.interval} (below ''${THRESHOLD}B threshold)
+              # Only flag if there WAS traffic but the rate is below the
+              # threshold. Idle (delta=0) is not degradation. Negative
+              # delta means a counter reset (link bounce) — skip check.
+              if [ "$DELTA" -gt 0 ]; then
+                RATE=$(( DELTA / ELAPSED ))
+                if [ "$RATE" -lt "$THRESHOLD" ]; then
+                  systemd-cat -t netwatch -p ${logPrio} <<EOM
+          MESSAGE=$IFNAME: throughput drop — $RATE B/s (threshold ''${THRESHOLD}B/s)
           INTERFACE=$IFNAME
           NETWATCH_TYPE=throughput_drop
           BYTES_DELTA=$DELTA
+          ELAPSED_SECS=$ELAPSED
+          RATE_BPS=$RATE
           LINK_SPEED=$SPEED
           EOM
+                fi
               fi
 
               # --- LINK SPEED CHECK ---
               if [ "$SPEED" != "N/A" ] && [ "$SPEED" != "1000" ]; then
-                logger --journald --priority=${logPrio} <<EOM
+                systemd-cat -t netwatch -p ${logPrio} <<EOM
           MESSAGE=$IFNAME: link speed ''${SPEED}Mb/s (expected 1000Mb/s)
           INTERFACE=$IFNAME
           NETWATCH_TYPE=speed_degraded
@@ -138,7 +157,7 @@ in
               fi
 
               # Save for next run
-              echo "$RX_BYT" > "$STATE"
+              echo "$NOW $RX_BYT" > "$STATE"
 
               # --- RX DROPS (not rate-limited: compare with state) ---
               RX_DRP="$(cat "$S/rx_dropped" 2>/dev/null || echo 0)"
@@ -154,7 +173,7 @@ in
               D_TX_DRP=$(( TX_DRP - PREV_TX_DRP ))
 
               if [ "$D_RX_DRP" -gt 0 ] || [ "$D_TX_DRP" -gt 0 ]; then
-                logger --journald --priority=${logPrio} <<EOM
+                systemd-cat -t netwatch -p ${logPrio} <<EOM
           MESSAGE=$IFNAME: packet drops rx_drop=+$D_RX_DRP tx_drop=+$D_TX_DRP
           INTERFACE=$IFNAME
           NETWATCH_TYPE=packet_drops
@@ -166,7 +185,7 @@ in
               echo "$RX_DRP $TX_DRP" > "$STATE_DROP"
             done
 
-            # --- ACTIVE PING PROBE (only at info level — avoid spam) ---
+            # --- ACTIVE PING PROBE ---
             PING_TARGET="${cfg.pingTarget}"
             PING_COUNT="${toString cfg.pingCount}"
 
@@ -177,7 +196,7 @@ in
 
               PING_OUT="$(ping -c "$PING_COUNT" -W 2 -I "$IFNAME" "$PING_TARGET" 2>&1 || true)"
               if echo "$PING_OUT" | grep -q "100% packet loss"; then
-                logger --journald --priority=${logPrio} <<EOM
+                systemd-cat -t netwatch -p ${logPrio} <<EOM
           MESSAGE=$IFNAME: 100% packet loss to $PING_TARGET
           INTERFACE=$IFNAME
           NETWATCH_TYPE=packet_loss
