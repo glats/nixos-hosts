@@ -409,6 +409,34 @@ let
       };
     }
     {
+      name = "github-copilot-pro";
+      phases = {
+        # claude-sonnet-5: GitHub positions it for general-purpose coding and agent tasks.
+        # Safer update than 5.6 because there are current 5.6 access reports and an open
+        # OpenCode subagent model-selection bug (#36250) not tied to Sonnet 5 specifically.
+        gentle-orchestrator = "github-copilot/gpt-5.4";
+        # gpt-5.4-mini: proven cheap helper model already working in current tier.
+        sdd-init = "github-copilot/gpt-5.4-mini";
+        # claude-sonnet-5: 1M context + agent-task positioning makes it a good explore/default upgrade.
+        sdd-explore = "github-copilot/claude-sonnet-5";
+        # claude-sonnet-5: balanced upgrade for architecture and structured writing.
+        sdd-propose = "github-copilot/claude-sonnet-5";
+        sdd-spec = "github-copilot/claude-sonnet-5";
+        sdd-design = "github-copilot/claude-sonnet-5";
+        # gpt-5.4-mini: still the cheapest reliable decomposition worker in this provider.
+        sdd-tasks = "github-copilot/gpt-5.4-mini";
+        # gpt-5.3-codex: coding-specialized and already stable in the current tier.
+        sdd-apply = "github-copilot/gpt-5.3-codex";
+        # claude-sonnet-5: strong review/reasoning default without jumping to risky 5.6.
+        sdd-verify = "github-copilot/claude-sonnet-5";
+        # claude-haiku-4.5: fastest low-cost housekeeping model.
+        sdd-archive = "github-copilot/claude-haiku-4.5";
+        # gpt-5.4-mini: good enough for guided walkthroughs while staying cheap.
+        sdd-onboard = "github-copilot/gpt-5.4-mini";
+        neutral = "github-copilot/claude-sonnet-5";
+      };
+    }
+    {
       name = "github-copilot-experimental";
       phases = {
         # EXPERIMENTAL / ACCOUNT-DEPENDENT:
