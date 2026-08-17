@@ -1,17 +1,14 @@
 { lib, inputs, ... }:
 
 {
-  imports = [
-    ../../../shared/nix-resilience.nix
-  ];
-
   nix.gc = {
     automatic = false;
     dates = "weekly";
     randomizedDelaySec = "1h";
   };
 
-  nix.settings = {
+  # shared/nix-resilience.nix is a plain attrset (see comments there)
+  nix.settings = (import ../../../shared/nix-resilience.nix) // {
     experimental-features = [
       "nix-command"
       "flakes"
