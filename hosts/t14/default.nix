@@ -81,6 +81,19 @@
   # Query: journalctl -t netwatch -p warning --since "24 hours ago"
   services.netwatch.enable = true;
 
+  # === MDNS ===
+  # omarchy enables avahi with nssmdns4 + nssmdns6, which puts the
+  # dual-stack mdns_minimal in nsswitch. Dual-stack nss-mdns queries
+  # AAAA first; macOS hosts with no IPv6 answer empty, and the resolver
+  # retries for ~5s before completing the A query — every lookup of
+  # mact2.local takes 5s (measured: getent 5.007s, avahi-resolve 17ms).
+  # nssmdns6 = false switches nsswitch to mdns4_minimal (IPv4-only):
+  # the A query goes out first and macOS answers instantly. Correct for
+  # this LAN — no IPv6 on 172.16.0.0/24 at all.
+  # Diagnosis 2026-08-17: tcpdump showed AAAA (QM) retries every 1-3s,
+  # mact2 replying "0/0/1" (empty), nscd=nsncd 1.5.2 doing the lookup.
+  services.avahi.nssmdns6 = lib.mkForce false;
+
   nixpkgs.config = {
     allowUnfree = true;
     # fonts.nix includes joypixels; requires explicit license acceptance.
