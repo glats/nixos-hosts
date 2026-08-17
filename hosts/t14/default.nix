@@ -96,9 +96,12 @@
   boot-settings.enable = true;
   boot.kernelPackages = pkgs.linuxPackages_zen;
 
-  # Disable PCIe Active State Power Management to prevent the Realtek
-  # r8169 NIC from entering low-power states that cause intermittent
-  # throughput drops (link stays up but speed degrades to <10MB/s).
+  # Disable PCIe Active State Power Management.  One of the two
+  # documented power-saving culprits behind r8169 collapse (link stays
+  # UP at 1Gbps, throughput drops to ~23KB/s, latency to ~1s, zero
+  # errors — link bounce recovers it).  Kept even though the 2026-08-17
+  # collapse reproduced with it already enabled: ASPM off alone is not
+  # sufficient, EEE is the other suspect (disabled below).
   # See: Arch bbs#293977, Debian bug#1110193, netdev@ regression thread.
   boot.kernelParams = [ "pcie_aspm=off" ];
 
@@ -267,24 +270,36 @@
   environment.variables.NIXOS_OZONE_WL = "1";
 
   # === NETWORK TUNING ===
-  # Disable NAPI software interrupt coalescing on Realtek r8169 NICs
-  # (enp2s0f0 & enp5s0 — both 10ec:8168).  Kernel 6.2+ defaults
-  # napi_defer_hard_irqs=1 which causes throughput regression from
-  # ~100MB/s → ~10MB/s on certain RTL8111/8168 revisions.
-  # See: netdev@ commit 42f66a44d8 ("r8169: enable GRO software
-  # interrupt coalescing per default") regression thread.
-  systemd.services.r8169-napi-fix = {
-    description = "Disable NAPI interrupt coalescing on Realtek r8169 NICs";
+  # r8169 tune-ups applied at boot on every enp* NIC (enp2s0f0 &
+  # enp5s0 — both 10ec:8168):
+  #   1. NAPI software interrupt coalescing OFF. Kernel 6.2+ defaults
+  #      napi_defer_hard_irqs=1 which causes throughput regression from
+  #      ~100MB/s → ~10MB/s on certain RTL8111/8168 revisions.
+  #      See: netdev@ commit 42f66a44d8 regression thread.
+  #   2. EEE (Energy Efficient Ethernet) OFF. Both NICs negotiate EEE
+  #      but the link partner reports "Not reported" — a known stall
+  #      trigger. Collapse reproduced on 2026-08-17 with pcie_aspm=off
+  #      and napi=0 already active; EEE was the last enabled
+  #      power-saving feature. Hot-tested: bounce recovers instantly.
+  #
+  # Limitation: runs once at boot. Re-plugging the dock NIC (enp5s0)
+  # resets these to kernel defaults until next reboot.
+  systemd.services.r8169-tune = {
+    description = "Tune Realtek r8169 NICs (NAPI coalescing off, EEE off)";
     wantedBy = [ "multi-user.target" ];
     after = [ "network-pre.target" ];
     before = [ "network.target" ];
+    path = [ pkgs.ethtool ];
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
     };
     script = ''
-      for iface in /sys/class/net/enp*/napi_defer_hard_irqs; do
-        [ -f "$iface" ] && echo 0 > "$iface"
+      for iface in /sys/class/net/enp*; do
+        [ -d "$iface" ] || continue
+        name="$(basename "$iface")"
+        [ -f "$iface/napi_defer_hard_irqs" ] && echo 0 > "$iface/napi_defer_hard_irqs"
+        ethtool --set-eee "$name" eee off 2>/dev/null || true
       done
     '';
   };
