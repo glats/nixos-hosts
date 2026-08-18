@@ -13,7 +13,7 @@
 
     # Default provider tier; override per-host in the host's default.nix.
     # mkDefault so per-host plain assignments win without mkForce.
-    activeProviderName = lib.mkDefault "opencode-go-medium";
+    activeProviderName = lib.mkDefault "opencode-go-full";
 
     # Built-in providers we don't use
     disabledProviders = [
