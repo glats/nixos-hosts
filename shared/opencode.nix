@@ -1,8 +1,9 @@
-{ config
-, lib
-, pkgs
-, inputs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
 }:
 
 with lib;
@@ -44,7 +45,7 @@ in
 
     activeProviderName = mkOption {
       type = types.str;
-      default = lib.mkDefault "opencode-go-medium";
+      default = lib.mkDefault "opencode-go-full";
       description = ''
         Name of the active OpenCode provider tier (e.g. "opencode-go-full",
         "github-copilot"). Per-host plain assignments override this default
