@@ -43,6 +43,9 @@ stdenvNoCC.mkDerivation {
     cp $src/nixos-build-all $out/bin/
     chmod +x $out/bin/nixos-build-all
 
+    cp $src/opencode2 $out/bin/
+    chmod +x $out/bin/opencode2
+
     cp $src/remove-wireguard-peer $out/bin/
     chmod +x $out/bin/remove-wireguard-peer
 
