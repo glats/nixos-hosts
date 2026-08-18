@@ -1,6 +1,6 @@
-{ lib ? throw "providers-base.nix must be imported with lib"
-, activeProviderName ? "opencode-go-medium"
-,
+{
+  lib ? throw "providers-base.nix must be imported with lib",
+  activeProviderName ? "opencode-go-medium",
 }:
 
 let
@@ -74,32 +74,46 @@ let
   opencodeProvider = {
     opencode = {
       models = {
-        # RISKY: glm-5.2 — cache bug opencode#33998 causes context drops. Do not assign to orchestrator, design, or explore.
+        # RISKY: grok-4.5 — 500/503 on Go gateway (opencode#40343, #42962), $15 quota tier burns fast.
+        "grok-4.5" = {
+          name = "Grok 4.5";
+          thinking = false;
+        };
+        # Released 2026-08-14. Clean. 1M ctx, $1.40/$4.40.
+        "glm-5.3" = {
+          name = "GLM 5.3";
+          thinking = false;
+        };
+        # RISKY: glm-5.2 — multi-sourced upstream without sticky routing: cold-cache
+        # re-bills on identical requests (opencode#35402 OPEN).
         "glm-5.2" = {
           name = "GLM 5.2";
           thinking = false;
         };
+        # RISKY: glm-5.1 "gives up too quickly" on failures. OK for spec, not apply/verify.
         "glm-5.1" = {
           name = "GLM 5.1";
           thinking = false;
         };
-        # BLOCKED: kimi-k2.6 onboard — hermes-agent#35180 (HTTP 400 on thinking toggle). Re-evaluate when merged.
-        "kimi-k2.6" = {
-          name = "Kimi K2.6";
+        # RISKY: gpt-5.6-luna — 403 for some accounts (opencode#40343 OPEN). 2x usage multiplier on Go.
+        "gpt-5.6-luna" = {
+          name = "GPT 5.6 Luna";
+          thinking = false;
+        };
+        # Released 2026-07-16. RISKY: 503 "Endpoint is unavailable" reports (opencode#43071, #42962).
+        "kimi-k3" = {
+          name = "Kimi K3";
           thinking = false;
         };
         "kimi-k2.7-code" = {
           name = "Kimi K2.7 Code";
           thinking = false;
         };
-        "deepseek-v4-pro" = {
-          name = "DeepSeek V4 Pro";
+        "kimi-k2.6" = {
+          name = "Kimi K2.6";
           thinking = false;
         };
-        "deepseek-v4-flash" = {
-          name = "DeepSeek V4 Flash";
-          thinking = false;
-        };
+        # RISKY: mimo-v2.5/pro — 403 for some accounts (opencode#40343 OPEN).
         "mimo-v2.5" = {
           name = "MiMo V2.5";
           thinking = false;
@@ -108,25 +122,45 @@ let
           name = "MiMo V2.5 Pro";
           thinking = false;
         };
-        # BROKEN (upstream): Qwen 3.6+/3.7+ models on the opencode-go endpoint use
-        # Anthropic Messages transport which emits content-block shapes the AI SDK
-        # rejects (invalid_union, discriminator "type"). When upstream fixes land,
-        # re-enable by swapping phase assignments below. See:
-        #   opencode/opencode#23960 — anthropic-sdk content-block union mismatch
-        #   opencode/opencode#32418 — reasoning_content in content_block_start
-        #   opencode/opencode#29754 — Qwen reasoning block shape
-        #   opencode/opencode#33055 — Cloudflare 524 HTML in text blocks
-        #   opencode/opencode#33303 — content_block_delta missing fields
-        "qwen3.7-plus" = {
-          name = "Qwen 3.7 Plus";
+        "minimax-m3" = {
+          name = "MiniMax M3";
+          thinking = false;
+        };
+        "minimax-m2.7" = {
+          name = "MiniMax M2.7";
+          thinking = false;
+        };
+        # Qwen: old Anthropic-transport BROKEN annotation resolved — models now served
+        # via /messages route. RISKY: intermittent 503s as of 2026-08-17 (opencode#43071, #42962).
+        "qwen3.8-max" = {
+          name = "Qwen 3.8 Max";
           thinking = false;
         };
         "qwen3.7-max" = {
           name = "Qwen 3.7 Max";
           thinking = false;
         };
-        "qwen3.8-ultra" = {
-          name = "Qwen 3.8 Ultra";
+        "qwen3.7-plus" = {
+          name = "Qwen 3.7 Plus";
+          thinking = false;
+        };
+        "qwen3.6-plus" = {
+          name = "Qwen 3.6 Plus";
+          thinking = false;
+        };
+        "deepseek-v4-pro" = {
+          name = "DeepSeek V4 Pro";
+          thinking = false;
+        };
+        # RISKY: deepseek-v4-flash — cache reads dropped to 0 mid-session, ~27x cost
+        # spike burned Go quota (opencode#42935 OPEN, 2026-08-16).
+        "deepseek-v4-flash" = {
+          name = "DeepSeek V4 Flash";
+          thinking = false;
+        };
+        # RISKY: hy3 — 403 for some accounts (opencode#40343 OPEN). High request count when working.
+        "hy3" = {
+          name = "Hy3";
           thinking = false;
         };
       };
@@ -467,10 +501,11 @@ let
         sdd-explore = "opencode-go/deepseek-v4-pro";
         sdd-propose = "opencode-go/deepseek-v4-pro";
         sdd-spec = "opencode-go/deepseek-v4-pro";
-        sdd-design = "opencode-go/glm-5.1";
+        # glm-5.3: released 2026-08-14, replaces glm-5.1 (which "gives up too quickly").
+        sdd-design = "opencode-go/glm-5.3";
         sdd-tasks = "opencode-go/deepseek-v4-pro";
         sdd-apply = "opencode-go/deepseek-v4-pro";
-        sdd-verify = "opencode-go/glm-5.1";
+        sdd-verify = "opencode-go/glm-5.3";
         sdd-archive = "opencode-go/deepseek-v4-flash";
         sdd-onboard = "opencode-go/deepseek-v4-flash";
         neutral = "opencode-go/deepseek-v4-pro";
@@ -486,7 +521,8 @@ let
         sdd-spec = "opencode-go/deepseek-v4-pro";
         sdd-design = "opencode-go/deepseek-v4-pro";
         sdd-tasks = "opencode-go/deepseek-v4-flash";
-        sdd-apply = "opencode-go/kimi-k2.7-code";
+        # minimax-m3: 1M ctx (kimi-k2.7-code solo 262K) — apply grandes no explotan. Messages transport, sin issues frescos.
+        sdd-apply = "opencode-go/minimax-m3";
         sdd-verify = "opencode-go/deepseek-v4-pro";
         sdd-archive = "opencode-go/deepseek-v4-flash";
         sdd-onboard = "opencode-go/deepseek-v4-flash";
@@ -529,12 +565,9 @@ let
     }
   ];
 
-  activeProvider = builtins.foldl'
-    (
-      acc: p: if p.name == activeProviderName then p else acc
-    )
-    null
-    providers;
+  activeProvider = builtins.foldl' (
+    acc: p: if p.name == activeProviderName then p else acc
+  ) null providers;
   getModelForPhase =
     phase: provider: if provider == null then null else provider.phases.${phase} or null;
 
