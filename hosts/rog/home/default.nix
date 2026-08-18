@@ -14,5 +14,5 @@ baseModules
   ../../../linux/home/webcam.nix
 
   # Override active OpenCode provider for this host
-  { home.opencode.activeProviderName = "opencode-go-medium"; }
+  { home.opencode.activeProviderName = "opencode-go-full"; }
 ]
