@@ -68,4 +68,24 @@
   # tree fetches and produces reproducible package builds even when
   # the user does not pass `--flake` explicitly.
   nix.registry.nixpkgs.flake = inputs.nixpkgs;
+
+  # Keep every flake input source tree alive across garbage collection.
+  #
+  # nh clean / nix-collect-garbage deletes `*-source` paths that are only
+  # needed during evaluation — e.g. omarchy-nix and its hyprland inputs
+  # on hosts that don't deploy t14. `nix flake check` then fails with
+  # "error: path '…-source' is not valid", because evaluation still
+  # references the collected sources. Referencing all inputs (transitively)
+  # from the system closure makes them GC-reachable via the current
+  # generation, so the weekly `nh clean` can never collect them again.
+  # Nix has no built-in flake-source GC root; this is the canonical
+  # workaround. Ref: https://github.com/NixOS/nix/issues/3995
+  system.extraDependencies =
+    let
+      collectFlakeInputs =
+        input:
+        [ input.outPath ]
+        ++ builtins.concatMap collectFlakeInputs (builtins.attrValues (input.inputs or { }));
+    in
+    builtins.concatMap collectFlakeInputs (builtins.attrValues inputs);
 }
