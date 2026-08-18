@@ -278,6 +278,10 @@ in
     image = "guacamole/guacd";
     autoStart = true;
 
+    # Host-backed drive directory for RDP file transfer (drive redirection).
+    # guacd performs the read/write, so the container-internal path is /drive.
+    volumes = [ "/srv/glats/guacamole/drive:/drive" ];
+
     environment = {
       GUACD_LOG_LEVEL = "info";
     };
@@ -348,5 +352,10 @@ in
       ];
     };
   };
+
+  # Ensure drive directory exists, owned by guacd (numeric UID 1000), 0750.
+  systemd.tmpfiles.rules = [
+    "d /srv/glats/guacamole/drive 0750 1000 1000 -"
+  ];
 }
 
