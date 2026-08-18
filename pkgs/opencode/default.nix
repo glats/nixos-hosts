@@ -1,21 +1,21 @@
-{ lib
-, stdenvNoCC
-, fetchurl
-, autoPatchelfHook
-, makeBinaryWrapper
-, unzip
-, zlib
-, openssl
-, icu
-, stdenv
-, ripgrep
-, darwin ? { }
-, pkgs
-,
+{
+  lib,
+  stdenvNoCC,
+  fetchurl,
+  autoPatchelfHook,
+  makeBinaryWrapper,
+  unzip,
+  zlib,
+  openssl,
+  icu,
+  stdenv,
+  ripgrep,
+  darwin ? { },
+  pkgs,
 }:
 
 let
-  version = "1.17.11";
+  version = "1.18.18";
 
   system = stdenvNoCC.hostPlatform.system;
   isLinux = lib.hasSuffix "linux" system;
@@ -25,21 +25,22 @@ let
     {
       x86_64-linux = {
         url = "https://github.com/anomalyco/opencode/releases/download/v${version}/opencode-linux-x64.tar.gz";
-        sha256 = "sha256-au/Lu38EzbRkK+Ugjdv6uzw9J0+Ba/Qr/3LupcJE3KI=";
+        sha256 = "sha256-DN3CIkGLhVNmmQWomAwM2nCI8A2iTYPWrHawHJ/bKq8=";
       };
       aarch64-linux = {
         url = "https://github.com/anomalyco/opencode/releases/download/v${version}/opencode-linux-arm64.tar.gz";
-        sha256 = "sha256-bAroISQBx4+dzd6tNdOFlTx6ROsWFjCTZbWFA9vRtM0=";
+        sha256 = "sha256-3LG17FaHtD+HdJVgAh+SA/OAngzlrkT/m+iuFwg/5Lo=";
       };
       x86_64-darwin = {
         url = "https://github.com/anomalyco/opencode/releases/download/v${version}/opencode-darwin-x64.zip";
-        sha256 = "sha256-fz5Re7nH5nHo0xH+7PiQzLM2ogoGU/uJU7ahF8l1BwE=";
+        sha256 = "sha256-lYG9doOnUoRWF5+xHjN32e9WjhCpNWEaLGci40lFTYM=";
       };
       aarch64-darwin = {
         url = "https://github.com/anomalyco/opencode/releases/download/v${version}/opencode-darwin-arm64.zip";
-        sha256 = "sha256-QHI0RgE96oJS7qTxgNcH916AWvVO6FoU/XwSZRO6g0I=";
+        sha256 = "sha256-fWaL8mSW/shobU5R67GsK9Ljk/DBYgqmlsTCQqnlgGo=";
       };
-    }.${system} or (throw "Unsupported system: ${system}");
+    }
+    .${system} or (throw "Unsupported system: ${system}");
 
   binPath = lib.makeBinPath (
     [ ripgrep ] ++ lib.optionals (isDarwin && darwin ? sysctl) [ darwin.sysctl ]
@@ -108,32 +109,39 @@ stdenvNoCC.mkDerivation {
     if [ "$latest" != "$current" ]; then
       echo "Updating opencode: $current -> $latest"
 
-      linux_x64_url="https://github.com/anomalyco/opencode/releases/download/v$latest/opencode-linux-x64.tar.gz"
-      linux_arm64_url="https://github.com/anomalyco/opencode/releases/download/v$latest/opencode-linux-arm64.tar.gz"
-      darwin_x64_url="https://github.com/anomalyco/opencode/releases/download/v$latest/opencode-darwin-x64.zip"
-      darwin_arm64_url="https://github.com/anomalyco/opencode/releases/download/v$latest/opencode-darwin-arm64.zip"
+      declare -a urls=(
+        "https://github.com/anomalyco/opencode/releases/download/v$latest/opencode-linux-x64.tar.gz"
+        "https://github.com/anomalyco/opencode/releases/download/v$latest/opencode-linux-arm64.tar.gz"
+        "https://github.com/anomalyco/opencode/releases/download/v$latest/opencode-darwin-x64.zip"
+        "https://github.com/anomalyco/opencode/releases/download/v$latest/opencode-darwin-arm64.zip"
+      )
 
-      linux_x64_hash=$(${pkgs.nix}/bin/nix-prefetch-url "$linux_x64_url")
-      linux_arm64_hash=$(${pkgs.nix}/bin/nix-prefetch-url "$linux_arm64_url")
-      darwin_x64_hash=$(${pkgs.nix}/bin/nix-prefetch-url "$darwin_x64_url")
-      darwin_arm64_hash=$(${pkgs.nix}/bin/nix-prefetch-url "$darwin_arm64_url")
-
-      linux_x64_sri=$(${pkgs.nix}/bin/nix hash to-sri --type sha256 "$linux_x64_hash")
-      linux_arm64_sri=$(${pkgs.nix}/bin/nix hash to-sri --type sha256 "$linux_arm64_hash")
-      darwin_x64_sri=$(${pkgs.nix}/bin/nix hash to-sri --type sha256 "$darwin_x64_hash")
-      darwin_arm64_sri=$(${pkgs.nix}/bin/nix hash to-sri --type sha256 "$darwin_arm64_hash")
+      declare -a sris=()
+      for url in "''${urls[@]}"; do
+        hash=$(${pkgs.nix}/bin/nix-prefetch-url "$url")
+        sri=$(${pkgs.nix}/bin/nix hash convert --hash-algo sha256 --to sri "$hash")
+        sris+=("$sri")
+      done
 
       ${pkgs.gnused}/bin/sed -i "s/version = \"$current\";/version = \"$latest\";/" "$PKG_DIR/default.nix"
-      ${pkgs.gnused}/bin/sed -i "s|sha256-au/Lu38EzbRkK+Ugjdv6uzw9J0+Ba/Qr/3LupcJE3KI=|sha256-$linux_x64_sri|" "$PKG_DIR/default.nix"
-      ${pkgs.gnused}/bin/sed -i "s|sha256-bAroISQBx4+dzd6tNdOFlTx6ROsWFjCTZbWFA9vRtM0=|sha256-$linux_arm64_sri|" "$PKG_DIR/default.nix"
-      ${pkgs.gnused}/bin/sed -i "s|sha256-fz5Re7nH5nHo0xH+7PiQzLM2ogoGU/uJU7ahF8l1BwE=|sha256-$darwin_x64_sri|" "$PKG_DIR/default.nix"
-      ${pkgs.gnused}/bin/sed -i "s|sha256-QHI0RgE96oJS7qTxgNcH916AWvVO6FoU/XwSZRO6g0I=|sha256-$darwin_arm64_sri|" "$PKG_DIR/default.nix"
+
+      # Replace the four sha256 lines in file order (linux x64, linux arm64,
+      # darwin x64, darwin arm64). Positional, so the script stays re-runnable.
+      ${pkgs.gawk}/bin/awk \
+        -v h1="''${sris[0]}" -v h2="''${sris[1]}" -v h3="''${sris[2]}" -v h4="''${sris[3]}" '
+        /sha256 = "/ {
+          n++
+          sub(/sha256 = "sha256-fWaL8mSW/shobU5R67GsK9Ljk/DBYgqmlsTCQqnlgGo="]*"/, "sha256 = \"" (n == 1 ? h1 : n == 2 ? h2 : n == 3 ? h3 : h4) "\"")
+        }
+        { print }
+      ' "$PKG_DIR/default.nix" > "$PKG_DIR/default.nix.tmp"
+      mv "$PKG_DIR/default.nix.tmp" "$PKG_DIR/default.nix"
 
       echo "Updated opencode to $latest"
-      echo "Linux x64 hash:   $linux_x64_sri"
-      echo "Linux arm64 hash: $linux_arm64_sri"
-      echo "Darwin x64 hash:  $darwin_x64_sri"
-      echo "Darwin arm64 hash:$darwin_arm64_sri"
+      echo "Linux x64 hash:    ''${sris[0]}"
+      echo "Linux arm64 hash:  ''${sris[1]}"
+      echo "Darwin x64 hash:   ''${sris[2]}"
+      echo "Darwin arm64 hash: ''${sris[3]}"
       echo "File updated: $PKG_DIR/default.nix"
     else
       echo "opencode is already at the latest version: $current"
