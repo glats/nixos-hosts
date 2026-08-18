@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# OpenCode 2.0 beta — sandbox aislado via docker.
+# v1 queda intocable: config montada read-only, DB es una copia
+# en ~/.opencode2-sandbox (hecha con sqlite3 .backup).
+# Uso: opencode2-beta            -> TUI
+#      opencode2-beta run -m opencode-go/... "msg"
+set -euo pipefail
+
+IMG="opencode2-beta"
+DATA="$HOME/.opencode2-sandbox/data"
+V1_CFG="$HOME/.config/opencode/opencode.json"
+
+if ! docker image inspect "$IMG" >/dev/null 2>&1; then
+  echo "[opencode2-beta] construyendo imagen $IMG..." >&2
+  docker build -t "$IMG" - >/dev/null <<'EOF'
+FROM node:24-slim
+RUN npm install -g @opencode-ai/cli@next
+EOF
+fi
+
+mkdir -p "$DATA"
+
+# -t solo si hay terminal real (TUI); `run` desde scripts va sin tty
+TTY_FLAG=""
+[ -t 0 ] && TTY_FLAG="-t"
+
+exec docker run -i ${TTY_FLAG} --rm \
+  -e OPENCODE_API_KEY="${OPENCODE_API_KEY:-}" \
+  -v "${V1_CFG}:/root/.config/opencode/opencode.json:ro" \
+  -v "${DATA}:/root/.local/share/opencode:rw" \
+  "$IMG" opencode2 "$@"
