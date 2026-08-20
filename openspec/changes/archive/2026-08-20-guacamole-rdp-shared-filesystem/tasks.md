@@ -41,6 +41,6 @@ Chain strategy: stacked-to-main
 
 ## Phase 4: Manual UI Step (postgres DB, NOT Nix) + E2E
 
-- [ ] 4.1 In admin UI (guac.glats.org, `guacadmin`): per RDP connection → Parameters → `enable-drive=true`, `drive-path=/drive` (container path, NOT host), optional `drive-name`; both directions enabled; shared single `/drive`
-- [ ] 4.2 Document the manual step above (survives rebuilds in `dbdata`; not automatable via Nix)
-- [ ] 4.3 E2E: in one RDP session, upload + download a file via the drive; confirm file lands on host at `/srv/glats/guacamole/drive`
+- [x] 4.1 In admin UI (guac.glats.org, `guacadmin`): per RDP connection → Parameters → `enable-drive=true`, `drive-path=/drive` (container path, NOT host), optional `drive-name`; both directions enabled; shared single `/drive` — DONE (archive reconciliation, 2026-08-20): live postgres verified — connections 4/7/8 carry `enable-drive=true`, `drive-path=/drive`, `drive-name=Guacamole Filesystem`; `create-drive-path` correctly absent
+- [x] 4.2 Document the manual step above (survives rebuilds in `dbdata`; not automatable via Nix) — DONE (archive reconciliation, 2026-08-20): documentation substance in design.md "Interfaces / Contracts → Manual DB contract (outside Nix)" (all 4 params + container-vs-host path warning) + tasks.md Phase 4
+- [x] 4.3 E2E: in one RDP session, upload + download a file via the drive; confirm file lands on host at `/srv/glats/guacamole/drive` — DONE (archive reconciliation, 2026-08-20): mac.conf uploaded from Mac via Guacamole RDP landed at `/srv/glats/guacamole/drive/mac.conf` (384 B, owner 1000:1000, mtime 2026-08-20 14:47)
