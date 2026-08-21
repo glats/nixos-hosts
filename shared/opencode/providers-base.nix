@@ -1,6 +1,6 @@
-{
-  lib ? throw "providers-base.nix must be imported with lib",
-  activeProviderName ? "opencode-go-medium",
+{ lib ? throw "providers-base.nix must be imported with lib"
+, activeProviderName ? "opencode-go-medium"
+,
 }:
 
 let
@@ -494,6 +494,67 @@ let
       };
     }
     {
+      name = "openai-full";
+      phases = {
+        # OpenAI OAuth in OpenCode uses ChatGPT Plus/Pro login and the Codex backend.
+        # Current explicit stable allowlist for subscription auth includes gpt-5.5,
+        # gpt-5.4, gpt-5.4-mini, and gpt-5.3-codex-spark.
+        # Newer 5.6 aliases may appear for some accounts, but we keep the stable tiers
+        # pinned to the documented/explicitly allowed set until account behavior is clearer.
+        gentle-orchestrator = "openai/gpt-5.5";
+        sdd-init = "openai/gpt-5.4-mini";
+        sdd-explore = "openai/gpt-5.5";
+        sdd-propose = "openai/gpt-5.5";
+        # spec is structured writing more than frontier reasoning.
+        sdd-spec = "openai/gpt-5.4";
+        sdd-design = "openai/gpt-5.5";
+        sdd-tasks = "openai/gpt-5.4-mini";
+        sdd-apply = "openai/gpt-5.3-codex-spark";
+        sdd-verify = "openai/gpt-5.5";
+        sdd-archive = "openai/gpt-5.4-mini";
+        sdd-onboard = "openai/gpt-5.4-mini";
+        neutral = "openai/gpt-5.5";
+      };
+    }
+    {
+      name = "openai-medium";
+      phases = {
+        # Balanced default: gpt-5.4 for the heavy SDD thinking phases, 5.4-mini for
+        # cheap helper phases, and codex-spark only where code editing matters most.
+        gentle-orchestrator = "openai/gpt-5.4";
+        sdd-init = "openai/gpt-5.4-mini";
+        sdd-explore = "openai/gpt-5.4";
+        sdd-propose = "openai/gpt-5.4";
+        sdd-spec = "openai/gpt-5.4";
+        sdd-design = "openai/gpt-5.4";
+        sdd-tasks = "openai/gpt-5.4-mini";
+        sdd-apply = "openai/gpt-5.3-codex-spark";
+        sdd-verify = "openai/gpt-5.4";
+        sdd-archive = "openai/gpt-5.4-mini";
+        sdd-onboard = "openai/gpt-5.4-mini";
+        neutral = "openai/gpt-5.4";
+      };
+    }
+    {
+      name = "openai-light";
+      phases = {
+        # Cheapest conservative tier available on ChatGPT Plus/Pro OAuth.
+        # Keep 5.4 for the phases most likely to degrade if everything is mini.
+        gentle-orchestrator = "openai/gpt-5.4-mini";
+        sdd-init = "openai/gpt-5.4-mini";
+        sdd-explore = "openai/gpt-5.4";
+        sdd-propose = "openai/gpt-5.4";
+        sdd-spec = "openai/gpt-5.4";
+        sdd-design = "openai/gpt-5.4";
+        sdd-tasks = "openai/gpt-5.4-mini";
+        sdd-apply = "openai/gpt-5.4-mini";
+        sdd-verify = "openai/gpt-5.4";
+        sdd-archive = "openai/gpt-5.4-mini";
+        sdd-onboard = "openai/gpt-5.4-mini";
+        neutral = "openai/gpt-5.4-mini";
+      };
+    }
+    {
       name = "opencode-go-full";
       phases = {
         gentle-orchestrator = "opencode-go/deepseek-v4-pro";
@@ -565,9 +626,12 @@ let
     }
   ];
 
-  activeProvider = builtins.foldl' (
-    acc: p: if p.name == activeProviderName then p else acc
-  ) null providers;
+  activeProvider = builtins.foldl'
+    (
+      acc: p: if p.name == activeProviderName then p else acc
+    )
+    null
+    providers;
   getModelForPhase =
     phase: provider: if provider == null then null else provider.phases.${phase} or null;
 
