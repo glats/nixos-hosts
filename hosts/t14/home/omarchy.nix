@@ -27,11 +27,12 @@
 # The omarchy HM module is imported FIRST so that any conflicting
 # definitions from t14/home/default.nix can be overridden via
 # lib.mkForce when needed.
-{ config
-, pkgs
-, lib
-, inputs
-, ...
+{
+  config,
+  pkgs,
+  lib,
+  inputs,
+  ...
 }:
 
 {
@@ -65,6 +66,10 @@
 
   # Use SSH host key for sops decryption (matches host_t14 in .sops.yaml).
   sops.age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
+
+  # t14 login separator: UWSM owns the Hyprland user session.
+  # Keep Home Manager from emitting hyprland-session.target stop/start hooks.
+  wayland.windowManager.hyprland.systemd.enable = false;
 
   # ------------------------------------------------------------------
   # HyprDynamicMonitors — event-driven monitor profile daemon.
