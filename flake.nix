@@ -300,8 +300,8 @@
 
       # --- Formatter ---
       # Use through `nix fmt -- <path>` in this repo.
-      # Do not invoke `nixfmt-rfc-style` directly; the executable is `nixfmt`.
-      formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixfmt;
-      formatter.x86_64-darwin = nixpkgs.legacyPackages.x86_64-darwin.nixfmt;
+      # Keep this aligned with `format-nix`; do not invoke formatter binaries directly.
+      formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixpkgs-fmt;
+      formatter.x86_64-darwin = nixpkgs.legacyPackages.x86_64-darwin.nixpkgs-fmt;
     };
 }
