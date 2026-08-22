@@ -301,6 +301,40 @@ let
 
   providers = [
     {
+      name = "models-mix2";
+      phases = {
+        gentle-orchestrator = "openai/gpt-5.5";
+        sdd-init = "github-copilot/gpt-5.4-mini";
+        sdd-explore = "github-copilot/claude-sonnet-5";
+        sdd-propose = "github-copilot/gpt-5.4";
+        sdd-spec = "github-copilot/claude-sonnet-4.6";
+        sdd-design = "github-copilot/claude-sonnet-4.6";
+        sdd-tasks = "github-copilot/gpt-5.4-mini";
+        sdd-apply = "openai/gpt-5.3-codex-spark";
+        sdd-verify = "openai/gpt-5.5";
+        sdd-archive = "openai/gpt-5.4-mini";
+        sdd-onboard = "github-copilot/gpt-5.4-mini";
+        neutral = "github-copilot/gpt-5.5";
+      };
+    }
+    {
+      name = "models-mix";
+      phases = {
+        gentle-orchestrator = "openai/gpt-5.5";
+        sdd-init = "github-copilot/gpt-5.4-mini";
+        sdd-explore = "opencode-go/deepseek-v4-pro";
+        sdd-propose = "github-copilot/gpt-5.4";
+        sdd-spec = "github-copilot/claude-sonnet-4.6";
+        sdd-design = "github-copilot/claude-sonnet-4.6";
+        sdd-tasks = "opencode-go/deepseek-v4-pro";
+        sdd-apply = "openai/gpt-5.3-codex-spark";
+        sdd-verify = "openai/gpt-5.5";
+        sdd-archive = "openai/gpt-5.4-mini";
+        sdd-onboard = "github-copilot/gpt-5.4-mini";
+        neutral = "github-copilot/gpt-5.5";
+      };
+    }
+    {
       name = "anthropic-full";
       phases = {
         # claude-opus-4-8: strongest reasoning, architecture, and planning
