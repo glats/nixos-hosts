@@ -13,11 +13,10 @@
 # Usage:
 #   services.netwatch.enable = true;
 #   journalctl -t netwatch -p warning --since "24 hours ago"
-{
-  config,
-  lib,
-  pkgs,
-  ...
+{ config
+, lib
+, pkgs
+, ...
 }:
 
 let
