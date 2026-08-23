@@ -357,28 +357,18 @@ let
   providers = [
     {
       name = "alpha-free";
-      # AUDIT 2026-08-23: la ruta Go (opencode-go/ox-alpha-free) estaba colgada incluso
-      # en chat plano (#44300) — orchestrator usa el MISMO modelo stealth vía zen/v1
-      # (x-preview-f-free, tool calls verificados en vivo). init/explore en frees
-      # estables del audit. Re-auditar la familia cuando upstream cierre #44300.
       phases = {
-        # x-preview-f-free vía zen/v1: mismo modelo stealth que ox-alpha-free pero por el
-        # gateway Zen — verificado EN VIVO 2026-08-23 con tool calls OK. La ruta Go
-        # (opencode-go/ox-alpha-free) estaba colgada ese mismo día (#44300). Turnos de
-        # orquestación son cortos = menor riesgo del bug de reasoning-burn (#44385).
         gentle-orchestrator = "opencode/x-preview-f-free";
-        # nemotron-3.5-lightning-free: ejecución ligera de alto volumen para boilerplate.
         sdd-init = "opencode/nemotron-3.5-lightning-free";
-        # nemotron-3-ultra-free: 1M ctx para exploración de repos grandes.
         sdd-explore = "opencode/nemotron-3-ultra-free";
-        sdd-propose = "github-copilot/gpt-5.4";
-        sdd-spec = "github-copilot/claude-sonnet-4.6";
-        sdd-design = "github-copilot/claude-sonnet-4.6";
-        sdd-tasks = "github-copilot/gpt-5.4-mini";
-        sdd-apply = "openai/gpt-5.3-codex-spark";
-        sdd-verify = "openai/gpt-5.5";
-        sdd-archive = "openai/gpt-5.4-mini";
-        sdd-onboard = "github-copilot/gpt-5.4-mini";
+        sdd-propose = "opencode/x-preview-f-free";
+        sdd-spec = "opencode/hy3-free";
+        sdd-design = "opencode/nemotron-3-ultra-free";
+        sdd-tasks = "opencode/nemotron-3.5-lightning-free";
+        sdd-apply = "opencode/mimo-v2.5-free";
+        sdd-verify = "opencode/x-preview-f-free";
+        sdd-archive = "opencode/nemotron-3.5-lightning-free";
+        sdd-onboard = "opencode/x-preview-f-free";
         neutral = "github-copilot/gpt-5.5";
       };
     }
