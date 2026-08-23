@@ -7,15 +7,30 @@ let
 
     RES="''${2:-1280x720}"
 
-    if [ -n "$1" ]; then
+    DEVICE=""
+    if [ -n "''${1:-}" ]; then
       DEVICE="$1"
+    elif [ -n "''${WEBCAM_DEVICE:-}" ]; then
+      DEVICE="$WEBCAM_DEVICE"
     else
-      DEVICE=""
+      # Prefer external cams: skip nodes named like an integrated/built-in camera.
+      # Capture node comes before its metadata sibling, so first match is usable.
       for d in /dev/video[0-9]*; do
         [ -e "$d" ] || continue
+        NAME=$(cat "/sys/class/video4linux/$(basename "$d")/name" 2>/dev/null || true)
+        case "$NAME" in
+          *[Ii]ntegrated*|*[Bb]uilt-in*) continue ;;
+        esac
         DEVICE="$d"
         break
       done
+      if [ -z "$DEVICE" ]; then
+        for d in /dev/video[0-9]*; do
+          [ -e "$d" ] || continue
+          DEVICE="$d"
+          break
+        done
+      fi
     fi
 
     if [ -z "$DEVICE" ] || [ ! -e "$DEVICE" ]; then

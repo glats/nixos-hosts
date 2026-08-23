@@ -23,6 +23,6 @@ builtins.filter (m: !builtins.elem m excluded) base
 ++ [
   ./omarchy.nix
   ../../../linux/home/remote-desktop.nix
-  ({ home.opencode.activeProviderName = "openai-full"; })
+  ({ home.opencode.activeProviderName = "alpha-free"; })
   inputs.hyprdynamicmonitors.homeManagerModules.default
 ]
