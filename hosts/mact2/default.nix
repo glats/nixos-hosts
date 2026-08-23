@@ -2,14 +2,15 @@
 # Imports the darwin base profile (system modules) and retains only
 # per-host concerns: nix-homebrew, home-manager, users, environment,
 # and service enablements.
-{ pkgs
-, inputs
-, self
-, primaryUser
-, javaVersion
-, lib
-, host
-, ...
+{
+  pkgs,
+  inputs,
+  self,
+  primaryUser,
+  javaVersion,
+  lib,
+  host,
+  ...
 }:
 {
   imports = [
@@ -49,7 +50,7 @@
       home.stateVersion = "25.05";
       # Per-host provider override: mact2 uses GitHub Copilot tier.
       # See `home.opencode.activeProviderName` in shared/opencode.nix.
-      home.opencode.activeProviderName = "github-copilot-safe";
+      home.opencode.activeProviderName = "github-copilot-pro";
     };
     extraSpecialArgs = {
       inherit
