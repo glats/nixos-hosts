@@ -163,6 +163,61 @@ let
           name = "Hy3";
           thinking = false;
         };
+
+        # ---- Free tier (audit 2026-08-23, fuente: `opencode models | grep free`) ----
+        # Gateway-wide caveat (#41236 OPEN): TODOS los modelos free de Zen muestran
+        # fallos upstream intermitentes (503/TLS timeouts) que NO son por modelo —
+        # el retry suele funcionar.
+        # ✅ nemotron-3-ultra-free: mejor modelo agentic free. SWE-Bench Verified ~70-72%,
+        # GPQA 87, 1M ctx (RULER@1M 94.7), tool calling verificado, TTFT más rápido del
+        # set free (1.67s, LMSpeed). Crash de reasoning-variants corregido (PRs #26690/#26810).
+        "nemotron-3-ultra-free" = {
+          name = "Nemotron 3 Ultra Free";
+          thinking = false;
+        };
+        # ✅ mimo-v2.5-free: 70 tok/s, TTFT 2.95s (LMSpeed), sesión más barata ($0.0101).
+        # Uso +286% (opencode.ai/data). Probado como worker de apply/tasks en audits previos.
+        "mimo-v2.5-free" = {
+          name = "MiMo V2.5 Free";
+          thinking = false;
+        };
+        # ✅ nemotron-3.5-lightning-free: released 2026-08-11. MoE 30B-A3B construido para
+        # ejecución ligera de alto volumen (tool calls, validación, delegación a subagents).
+        # OpenCode listado como harness partner. Débil en coding duro (Terminal-Bench 2.1:
+        # 24.6%, SWE-Bench ~52%) — solo fases mecánicas/ligeras.
+        "nemotron-3.5-lightning-free" = {
+          name = "Nemotron 3.5 Lightning Free";
+          thinking = false;
+        };
+        # ⚠️ hy3-free: Tencent Hunyuan 3 — fuerte escritor productivo/coding (blind eval
+        # 2.67/4 > GLM-5.1; varianza tool-calls ±4% entre scaffolds). Hereda la flakiness
+        # gateway del free tier (#41236) — reintentos suelen recuperar.
+        "hy3-free" = {
+          name = "Hy3 Free";
+          thinking = false;
+        };
+        # ⚠️ RISKY (según routing): familia stealth Ox Alpha tiene DOS rutas al mismo
+        # modelo upstream (opencode#44300, renames #43690/#43837):
+        #   - ESTA ruta (zen/v1): verificado EN VIVO 2026-08-23 — tool calls OK ✅
+        #   - zen/go/v1 (ox-alpha-free en provider opencode-go): colgado incluso en chat
+        #     plano ese mismo día 🔴
+        # Historial: tools→503 en ambas rutas (#44300/#44382), truncado silencioso
+        # persistido como completo (#44044), generaciones largas cortadas sin finish_reason
+        # quemando todo el presupuesto en reasoning (#44385). Reservar para fases de
+        # turnos cortos (orquestación). Re-auditar cuando upstream cierre #44300.
+        "x-preview-f-free" = {
+          name = "X Preview F Free";
+          thinking = false;
+        };
+        # 🔴 BROKEN (clientes estrictos): muse-spark-1.2-contributor-free — el stream SIEMPRE
+        # termina sin finish_reason, determinístico en cada request (opencode#43882);
+        # error de serialización por campo `id` faltante (opencode#44086, closed);
+        # "Tool execution aborted" mid-tarea que requiere "Proceed" manual (opencode#43913).
+        # No asignar a ninguna fase.
+        "muse-spark-1.2-contributor-free" = {
+          name = "Muse Spark 1.2 Contributor Free";
+          thinking = false;
+        };
       };
       options = {
         timeout = 3600000;
@@ -300,6 +355,33 @@ let
   allProviders = nvidiaProvider // opencodeProvider // anthropicProvider // githubCopilotProvider;
 
   providers = [
+    {
+      name = "alpha-free";
+      # AUDIT 2026-08-23: la ruta Go (opencode-go/ox-alpha-free) estaba colgada incluso
+      # en chat plano (#44300) — orchestrator usa el MISMO modelo stealth vía zen/v1
+      # (x-preview-f-free, tool calls verificados en vivo). init/explore en frees
+      # estables del audit. Re-auditar la familia cuando upstream cierre #44300.
+      phases = {
+        # x-preview-f-free vía zen/v1: mismo modelo stealth que ox-alpha-free pero por el
+        # gateway Zen — verificado EN VIVO 2026-08-23 con tool calls OK. La ruta Go
+        # (opencode-go/ox-alpha-free) estaba colgada ese mismo día (#44300). Turnos de
+        # orquestación son cortos = menor riesgo del bug de reasoning-burn (#44385).
+        gentle-orchestrator = "opencode/x-preview-f-free";
+        # nemotron-3.5-lightning-free: ejecución ligera de alto volumen para boilerplate.
+        sdd-init = "opencode/nemotron-3.5-lightning-free";
+        # nemotron-3-ultra-free: 1M ctx para exploración de repos grandes.
+        sdd-explore = "opencode/nemotron-3-ultra-free";
+        sdd-propose = "github-copilot/gpt-5.4";
+        sdd-spec = "github-copilot/claude-sonnet-4.6";
+        sdd-design = "github-copilot/claude-sonnet-4.6";
+        sdd-tasks = "github-copilot/gpt-5.4-mini";
+        sdd-apply = "openai/gpt-5.3-codex-spark";
+        sdd-verify = "openai/gpt-5.5";
+        sdd-archive = "openai/gpt-5.4-mini";
+        sdd-onboard = "github-copilot/gpt-5.4-mini";
+        neutral = "github-copilot/gpt-5.5";
+      };
+    }
     {
       name = "models-mix2";
       phases = {
@@ -643,19 +725,37 @@ let
     }
     {
       name = "opencode-free";
+      # Audit 2026-08-23 (`opencode models | grep free`): 6 modelos free en opencode/,
+      # 1 en opencode-go/. Excluidos por hang/broken: x-preview-f-free y ox-alpha-free
+      # (payload con tools → network_error, #44382/#44385), muse-spark-1.2-contributor-free
+      # (sin finish_reason en cada request, #43882). deepseek-v4-flash-free ya no existe
+      # en el catálogo free actual.
       phases = {
-        gentle-orchestrator = "opencode/deepseek-v4-flash-free";
-        sdd-init = "opencode/deepseek-v4-flash-free";
-        sdd-explore = "opencode/deepseek-v4-flash-free";
-        sdd-propose = "opencode/deepseek-v4-flash-free";
-        sdd-spec = "opencode/deepseek-v4-flash-free";
-        sdd-design = "opencode/deepseek-v4-flash-free";
-        sdd-tasks = "opencode/mimo-v2.5-free";
+        # nemotron-3-ultra-free: mejor modelo agentic free (SWE-Bench ~70%, 1M ctx,
+        # tool calling verificado, TTFT 1.67s) — exactamente lo que necesita orquestación.
+        gentle-orchestrator = "opencode/nemotron-3-ultra-free";
+        # nemotron-3.5-lightning-free: construido para ejecución ligera de alto volumen.
+        sdd-init = "opencode/nemotron-3.5-lightning-free";
+        # nemotron-3-ultra-free: 1M ctx + RULER@1M 94.7 — mejor para explorar repos grandes.
+        sdd-explore = "opencode/nemotron-3-ultra-free";
+        # nemotron-3-ultra-free: GPQA 87 — mejor razonamiento/planning free.
+        sdd-propose = "opencode/nemotron-3-ultra-free";
+        # hy3-free: mejor escritor productivo free (blind eval > GLM-5.1).
+        sdd-spec = "opencode/hy3-free";
+        # nemotron-3-ultra-free: decisiones de arquitectura.
+        sdd-design = "opencode/nemotron-3-ultra-free";
+        # nemotron-3.5-lightning-free: descomposición mecánica a alto volumen.
+        sdd-tasks = "opencode/nemotron-3.5-lightning-free";
+        # mimo-v2.5-free: 70 tok/s para edits de código, worker de apply probado en audits previos.
         sdd-apply = "opencode/mimo-v2.5-free";
+        # nemotron-3-ultra-free: SWE-Bench Verified ~70% — mejor reviewer free contra spec.
         sdd-verify = "opencode/nemotron-3-ultra-free";
-        sdd-archive = "opencode/deepseek-v4-flash-free";
-        sdd-onboard = "opencode/deepseek-v4-flash-free";
-        neutral = "opencode/deepseek-v4-flash-free";
+        # nemotron-3.5-lightning-free: la clase más rápida/barata para copy-and-close.
+        sdd-archive = "opencode/nemotron-3.5-lightning-free";
+        # mimo-v2.5-free: walkthrough guiado barato.
+        sdd-onboard = "opencode/mimo-v2.5-free";
+        # nemotron-3-ultra-free: default balanceado.
+        neutral = "opencode/nemotron-3-ultra-free";
       };
     }
   ];
