@@ -24,6 +24,7 @@
   ./git.nix
   ./gpg.nix
   ./gh.nix
+  ../../shared/gh-default-account.nix
   ./ghostty.nix
   ./superfile.nix
   ./kitty.nix

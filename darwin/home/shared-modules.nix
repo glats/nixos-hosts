@@ -39,6 +39,7 @@
   { home.shell-gpt.enable = true; }
   ./sops.nix
   ../../shared/github-mcp-wrapper.nix
+  ../../shared/gh-default-account.nix
   ./atlassian-mcp-wrapper.nix
   inputs.sops-nix.homeManagerModules.sops
 ]
