@@ -47,12 +47,26 @@
       ];
       # Define stateVersion here to satisfy early Home Manager assertions
       home.stateVersion = "25.05";
-      # Per-host provider override: mact2 routes through the rog-hosted
-      # `openai-proxy` gateway (https://oai.glats.org/v1) instead of
-      # the built-in ChatGPT OAuth provider. See `home.opencode.activeProviderName`
-      # in shared/opencode.nix and the openai-{full,medium,light}-proxy
-      # tiers in shared/opencode/providers-base.nix.
-      home.opencode.activeProviderName = "openai-medium-proxy";
+      # Per-host provider override: mact2 uses the native built-in
+      # `openai` provider (ChatGPT OAuth) with the `openai-medium`
+      # tier. Runtime HTTPS egress is routed through the rog tinyproxy
+      # at 10.13.13.1:3128 over the existing WireGuard tunnel — see
+      # extraInitContent below. Change: mact2-openai-transport-proxy-via-rog.
+      home.opencode.activeProviderName = "openai-medium";
+      # OpenCode-shell-only proxy environment. The native macOS network
+      # stack is untouched: HTTPS_PROXY is read by OpenCode (and the
+      # zsh shell it runs in) and ignored by every other macOS app.
+      home.opencode.extraInitContent = ''
+        # WireGuard-bound forward proxy on rog (services.tinyproxy,
+        # Listen=10.13.13.1, Allow=10.13.13.3, ConnectPort=443).
+        # HTTP_PROXY + HTTPS_PROXY use the same URL — many HTTPS libs
+        # honour HTTPS_PROXY but a few fall back to HTTP_PROXY.
+        export HTTP_PROXY="http://10.13.13.1:3128"
+        export HTTPS_PROXY="http://10.13.13.1:3128"
+        # Loopback must stay direct so local OpenCode/Codex helpers
+        # that listen on 127.0.0.1 still work.
+        export NO_PROXY="localhost,127.0.0.1"
+      '';
     };
     extraSpecialArgs = {
       inherit
