@@ -108,14 +108,23 @@
   boot-settings.enable = true;
   boot.kernelPackages = pkgs.linuxPackages_zen;
 
-  # Disable PCIe Active State Power Management.  One of the two
-  # documented power-saving culprits behind r8169 collapse (link stays
-  # UP at 1Gbps, throughput drops to ~23KB/s, latency to ~1s, zero
-  # errors — link bounce recovers it).  Kept even though the 2026-08-17
-  # collapse reproduced with it already enabled: ASPM off alone is not
-  # sufficient, EEE is the other suspect (disabled below).
-  # See: Arch bbs#293977, Debian bug#1110193, netdev@ regression thread.
-  boot.kernelParams = [ "pcie_aspm=off" ];
+  # Force PCIe ASPM policy to performance.  One of the two documented
+  # power-saving culprits behind r8169 collapse (link stays UP at
+  # 1Gbps, throughput drops to ~23KB/s, latency to ~1s, zero errors —
+  # link bounce recovers it).
+  #
+  # IMPORTANT: use pcie_aspm.policy=performance, NOT pcie_aspm=off.
+  # Live evidence 2026-08-23: with pcie_aspm=off the kernel leaves the
+  # NIC's PCIe registers untouched, so firmware-configured ASPM L1 +
+  # L1.1/L1.2 substates stayed ENABLED (lspci LnkCtl/L1SubCtl1) and
+  # enp5s0 went silently dead (100% loss to gateway, zero counters).
+  # .policy=performance makes the kernel actively manage links and
+  # block driver-side ASPM re-enablement.
+  # Regression origin: commit 4b5f82f6aaef ("r8169: enable ASPM
+  # L1/L1.1 from RTL8168h") on MAC_VER >= 45 — our rev 15 chip.
+  # See: netdev@ regression threads, Ubuntu SRU bug 217814,
+  # Arch bbs#293977, Debian bug#1110193.
+  boot.kernelParams = [ "pcie_aspm.policy=performance" ];
 
   # ARP flux fix — required when multiple NICs share the same subnet
   # (enp2s0f0 and enp5s0 both on 172.16.0.0/24). By default Linux
