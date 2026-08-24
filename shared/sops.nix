@@ -5,10 +5,6 @@
   sops.defaultSopsFile = ../secrets/user/opencode.yaml;
   sops.age.keyFile = "${config.home.homeDirectory}/.config/sops/age/keys.txt";
 
-  imports = [
-    ./github-tokens.nix
-  ];
-
   # OpenCode API keys (cross-platform)
   sops.secrets."opencode/nvidia_api_key" = {
     mode = "0400";
