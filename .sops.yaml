@@ -14,6 +14,15 @@ creation_rules:
           - *admin_glats
           - *host_rog
 
+  # openai-proxy: rog hosts the gateway, but mact2 needs the scoped
+  # client key. Allow both hosts (and admin) to decrypt.
+  - path_regex: secrets/host/rog/openai-proxy\.yaml
+    key_groups:
+      - age:
+          - *admin_glats
+          - *host_rog
+          - *host_mact2
+
   - path_regex: secrets/host/thinkcentre/.+
     key_groups:
       - age:
