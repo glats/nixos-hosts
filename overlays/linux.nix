@@ -95,9 +95,19 @@ final: prev: {
   # mate-media's wrapGAppsHook3 wrapper doesn't include it → GLib fatal abort.
   # Works on distros with global schemas; breaks with Nix per-package schemas.
   # No dependency cycle: msd does not depend on mate-media.
+  #
+  # The schema MUST be exposed via `propagatedBuildInputs`, not `buildInputs`:
+  # `wrap-gapps-hook.sh` only adds packages to the wrapper's XDG_DATA_DIRS
+  # via $GSETTINGS_SCHEMAS_PATH, which is built from propagated-build-inputs
+  # (each entry's `share/gsettings-schemas/<name>` is appended). Putting
+  # mate-settings-daemon in `buildInputs` compiles fine but does NOT change
+  # the wrapper, so the status icon still aborts on scroll. Verified on the
+  # current realized /run/current-system wrapper (rog, gen-892) which lists
+  # gsettings-desktop-schemas, gtk+3, mate-desktop, mate-panel, dconf-editor
+  # but NOT mate-settings-daemon.
   mate = prev.mate // {
     mate-media = prev.mate.mate-media.overrideAttrs (oldAttrs: {
-      buildInputs = (oldAttrs.buildInputs or [ ]) ++ [ final.mate.mate-settings-daemon ];
+      propagatedBuildInputs = (oldAttrs.propagatedBuildInputs or [ ]) ++ [ final.mate.mate-settings-daemon ];
     });
   };
 
