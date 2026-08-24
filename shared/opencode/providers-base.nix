@@ -353,7 +353,7 @@ let
   };
 
   # openai-proxy: SEPARATE proxy-backed provider family that points at the
-  # rog-hosted gateway at https://oai.glats.org/v1. Built-in `openai`
+  # gateway at https://oai.glats.org/v1. Built-in `openai`
   # (ChatGPT OAuth) and the `openai-{full,medium,light}` tier family stay
   # intact for other hosts. The client key lives in sops as
   # `opencode/openai_proxy_api_key` and is exported as OPENAI_PROXY_API_KEY
@@ -362,7 +362,7 @@ let
   openaiProxyProvider = {
     openai-proxy = {
       npm = "@ai-sdk/openai-compatible";
-      name = "OpenAI Proxy (rog-hosted)";
+      name = "OpenAIP";
       options = {
         baseURL = "https://oai.glats.org/v1";
         apiKey = "{env:OPENAI_PROXY_API_KEY}";

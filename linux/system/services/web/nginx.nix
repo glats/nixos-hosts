@@ -618,10 +618,7 @@ in
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto $scheme;
-            # Strip the inbound Authorization header; the loopback proxy
-            # supplies its own scoped key when validating the request and
-            # the upstream key when forwarding upstream.
-            proxy_set_header Authorization "";
+            proxy_set_header Authorization $http_authorization;
           '';
         };
 
@@ -635,7 +632,7 @@ in
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto $scheme;
-            proxy_set_header Authorization "";
+            proxy_set_header Authorization $http_authorization;
           '';
         };
       };
