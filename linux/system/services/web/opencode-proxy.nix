@@ -31,10 +31,9 @@ let
 
   # Inline Python script that acts as a thin OpenAI-compatible proxy:
   # - Forwards all /v1/* paths to the configured upstream baseURL.
-  # - Strips any inbound Authorization header and substitutes the
-  #   upstream key from disk on every request.
-  # - Validates the inbound `X-OpenAI-Proxy-Key` header against the
+  # - Validates the inbound Authorization bearer token against the
   #   scoped client key from disk. Rejects 401 on mismatch.
+  # - Rewrites Authorization to the upstream key on every request.
   # - Exposes /healthz (loopback only) for nginx readiness checks.
   proxyScript = pkgs.writeText "opencode_proxy.py" ''
     import hmac
@@ -76,7 +75,9 @@ let
             return self.rfile.read(length)
 
         def _check_client_key(self):
-            presented = self.headers.get("X-OpenAI-Proxy-Key", "")
+            auth = self.headers.get("Authorization", "")
+            prefix = "Bearer "
+            presented = auth[len(prefix):] if auth.startswith(prefix) else ""
             if not presented or not hmac.compare_digest(presented, CLIENT_KEY):
                 self.send_response(401)
                 self.send_header("Content-Type", "application/json")
@@ -88,16 +89,7 @@ let
         def _forward(self, method, path, body):
             target = UPSTREAM_BASE + path
             req = urlrequest.Request(target, data=body, method=method)
-            # Strip inbound Authorization (clients may send one) and
-            # rewrite to the upstream key on every request.
-            for h in (
-                "Authorization",
-                "Host",
-                "Content-Length",
-                "X-OpenAI-Proxy-Key",
-            ):
-                if h in self.headers:
-                    del req.headers[h]
+            # Rewrite Authorization to the upstream key on every request.
             req.add_header("Authorization", "Bearer " + UPSTREAM_KEY)
             # Preserve content-type for JSON bodies.
             ct = self.headers.get("Content-Type")
@@ -197,7 +189,7 @@ in
       type = lib.types.path;
       description = ''
         Path to the scoped client key file. The proxy rejects requests
-        whose X-OpenAI-Proxy-Key header does not match this value.
+        whose Authorization bearer token does not match this value.
         Wire from `sops.secrets."opencode/openai_proxy_client_key".path`.
       '';
     };
