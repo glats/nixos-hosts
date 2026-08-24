@@ -295,6 +295,9 @@
             # config (home.username, home.homeDirectory, etc.) on top of
             # the canonical module list from `darwinHomeModules`.
             ./darwin/home
+            {
+              home.opencode.activeProviderName = "openai-medium-proxy";
+            }
           ];
         };
 
