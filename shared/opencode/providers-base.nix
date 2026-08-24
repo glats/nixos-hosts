@@ -373,37 +373,30 @@ let
       };
     }
     {
-      name = "models-mix2";
+      name = "openai-go-balanced";
       phases = {
-        gentle-orchestrator = "openai/gpt-5.5";
-        sdd-init = "github-copilot/gpt-5.4-mini";
-        sdd-explore = "github-copilot/claude-sonnet-5";
-        sdd-propose = "github-copilot/gpt-5.4";
-        sdd-spec = "github-copilot/claude-sonnet-4.6";
-        sdd-design = "github-copilot/claude-sonnet-4.6";
-        sdd-tasks = "github-copilot/gpt-5.4-mini";
-        sdd-apply = "openai/gpt-5.3-codex-spark";
-        sdd-verify = "openai/gpt-5.5";
-        sdd-archive = "openai/gpt-5.4-mini";
-        sdd-onboard = "github-copilot/gpt-5.4-mini";
-        neutral = "github-copilot/gpt-5.5";
-      };
-    }
-    {
-      name = "models-mix";
-      phases = {
-        gentle-orchestrator = "openai/gpt-5.5";
-        sdd-init = "github-copilot/gpt-5.4-mini";
+        # Hybrid recommended for ChatGPT Plus/Pro + OpenCode Go:
+        # - OpenAI GPT-5.6 Terra/Luna: best fixed-plan value for judgment-heavy phases.
+        # - OpenCode Go: absorbs the high-volume/tool-loop phases so ChatGPT limits are less likely.
+        # - Avoids GPT-5.3-Codex-Spark because OpenAI documents it as Pro-only.
+        # - Avoids GPT-5.4/5.4-mini because OpenAI says ChatGPT-account Codex removes them on 2026-08-31.
+        gentle-orchestrator = "openai/gpt-5.6-terra";
+        sdd-init = "opencode-go/deepseek-v4-flash";
+        # Explore is the biggest limit-burner in large repos: many reads, MCP research, long context.
         sdd-explore = "opencode-go/deepseek-v4-pro";
-        sdd-propose = "github-copilot/gpt-5.4";
-        sdd-spec = "github-copilot/claude-sonnet-4.6";
-        sdd-design = "github-copilot/claude-sonnet-4.6";
-        sdd-tasks = "opencode-go/deepseek-v4-pro";
-        sdd-apply = "openai/gpt-5.3-codex-spark";
-        sdd-verify = "openai/gpt-5.5";
-        sdd-archive = "openai/gpt-5.4-mini";
-        sdd-onboard = "github-copilot/gpt-5.4-mini";
-        neutral = "github-copilot/gpt-5.5";
+        # Propose/spec/design benefit more from judgment than raw volume, so keep them on Terra.
+        sdd-propose = "openai/gpt-5.6-terra";
+        sdd-spec = "openai/gpt-5.6-terra";
+        sdd-design = "openai/gpt-5.6-terra";
+        # Mechanical decomposition is cheap volume work; offload it to Go.
+        sdd-tasks = "opencode-go/deepseek-v4-flash";
+        # Apply is the highest edit volume phase; MiniMax M3 gives large context and better Go headroom.
+        sdd-apply = "opencode-go/minimax-m3";
+        # Final acceptance/judgment pass stays on OpenAI.
+        sdd-verify = "openai/gpt-5.6-terra";
+        sdd-archive = "opencode-go/deepseek-v4-flash";
+        sdd-onboard = "openai/gpt-5.6-luna";
+        neutral = "openai/gpt-5.6-terra";
       };
     }
     {
