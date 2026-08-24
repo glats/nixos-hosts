@@ -38,7 +38,7 @@
   ../../shared/shell-gpt.nix
   { home.shell-gpt.enable = true; }
   ./sops.nix
-  ./github-mcp-server-wrapper.nix
+  ../../shared/github-mcp-wrapper.nix
   ./atlassian-mcp-wrapper.nix
   inputs.sops-nix.homeManagerModules.sops
 ]

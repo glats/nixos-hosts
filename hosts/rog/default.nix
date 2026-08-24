@@ -52,8 +52,6 @@
 
     # Services — shared
     ../../linux/system/services/xrdp.nix
-    ../../linux/system/services/github-mcp-server.nix
-    ../../linux/system/services/github-token-check.nix
 
     # Services — media
     ../../linux/system/services/media/arr-stack.nix
