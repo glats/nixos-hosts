@@ -2,13 +2,20 @@
 # install-opencode-auth-seed - Fetch + decrypt + merge an OpenCode auth seed
 #                             for mact2 from rog's public uploads path.
 #
-# This script is the bootstrap step of the mact2-openai-proxy-via-rog
-# change. It fetches an age-encrypted seed artifact from the uploads/
-# nginx path on rog (https://glats.org/uploads/opencode/...), decrypts
-# it locally with the mact2 user's sops age key, and merges only the
-# seed payload into ~/.local/share/opencode/auth.json. Plaintext auth
-# material MUST NEVER be published in the uploads/ tree — the script
-# rejects anything that does not look like age ciphertext.
+# This script is the FALLBACK bootstrap step of the
+# mact2-openai-transport-proxy-via-rog change. The preferred path is an
+# independent `opencode auth login` (headless) on mact2 through the
+# WireGuard-bound tinyproxy on rog. The seed is only for when headless
+# login cannot complete.
+#
+# It fetches an age-encrypted seed artifact from the uploads/ nginx path
+# on rog (https://glats.org/uploads/opencode/...), decrypts it locally
+# with the mact2 user's sops age key, validates that the payload contains
+# an `openai` OAuth object, and overwrites only that entry in
+# ~/.local/share/opencode/auth.json while preserving every other
+# provider. Plaintext auth material MUST NEVER be published in the
+# uploads/ tree — the script rejects anything that does not look like
+# age ciphertext.
 #
 # Usage:
 #   ./bin/install-opencode-auth-seed [--seed-url URL] [--auth-file PATH] \
@@ -184,7 +191,17 @@ decrypt_seed() {
     exit 4
   fi
 
-  echo "      OK ($(jq 'keys | length' "$plaintext") top-level keys)."
+  # Require a valid `openai` object. The seed carries only the openai
+  # OAuth credential (see bin/publish-opencode-auth-seed); refusing a
+  # seed that lacks one prevents merging a partial / wrong-target
+  # payload into auth.json.
+  if ! jq -e 'has("openai") and (.openai | type == "object")' "$plaintext" >/dev/null 2>&1; then
+    echo "ERROR: seed payload does not contain a valid 'openai' object." >&2
+    jq 'keys' "$plaintext" >&2 || true
+    exit 4
+  fi
+
+  echo "      OK ($(jq 'keys | length' "$plaintext") top-level keys; openai object present)."
 }
 
 # --- Backup existing auth.json ---
@@ -236,14 +253,15 @@ merge_seed() {
     # No existing auth — write the seed verbatim with locked-down perms.
     cp "$seed" "$auth"
   else
-    # Merge: existing keys win on conflict EXCEPT keys whose value is
-    # null/empty, in which case the seed value is promoted. This keeps
-    # other providers' tokens intact while letting the seed fill the
-    # openai-proxy entry.
+    # Merge with strict overwrite semantics for the `openai` key only.
+    # The seed MUST overwrite the local `openai` entry (it is the
+    # whole point of the bootstrap); every other provider key is
+    # preserved untouched from the existing auth.json. This avoids
+    # losing non-openai credentials (e.g. github-copilot, nvidia)
+    # while ensuring the seed's openai OAuth object is installed.
     jq -s '
       .[0] as $existing | .[1] as $seed
-      | reduce ($seed | keys[]) as $k ({}; .[$k] = (if ($existing[$k] // null) != null and ($existing[$k] | type) != "null" then $existing[$k] else $seed[$k] end))
-      | $existing + .
+      | $existing + { openai: $seed.openai }
     ' "$auth" "$seed" > "$auth.tmp"
 
     if ! jq -e . "$auth.tmp" >/dev/null 2>&1; then

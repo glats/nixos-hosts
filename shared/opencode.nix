@@ -103,9 +103,6 @@ in
           if [ -f "${config.sops.secrets."opencode/aihubmix_api_key".path}" ]; then
             export AIHUBMIX_API_KEY="$(cat ${config.sops.secrets."opencode/aihubmix_api_key".path})"
           fi
-          if [ -f "${config.sops.secrets."openai_proxy/client_key".path}" ]; then
-            export OPENAI_PROXY_API_KEY="$(cat ${config.sops.secrets."openai_proxy/client_key".path})"
-          fi
         ${config.home.opencode.extraInitContent}
       '';
     })
