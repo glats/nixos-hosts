@@ -76,7 +76,10 @@ in
         ProtectHome = true;
         PrivateTmp = true;
         NoNewPrivileges = true;
-        RestrictAddressFamilies = "AF_INET AF_INET6 AF_NETLINK";
+        # AF_UNIX is REQUIRED: systemd-cat talks to journald via a unix
+        # socket. Without it every log call fails and set -e kills the
+        # service (reproduced live 2026-08-23: status=1 in ~200ms).
+        RestrictAddressFamilies = "AF_UNIX AF_INET AF_INET6 AF_NETLINK";
         CapabilityBoundingSet = "CAP_NET_RAW";
         AmbientCapabilities = "CAP_NET_RAW";
         # Disable journald rate limiting for this unit so no event is lost
