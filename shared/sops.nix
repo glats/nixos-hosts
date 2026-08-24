@@ -46,6 +46,17 @@
     mode = "0400";
   };
 
+  # Scoped client key for the rog-hosted `openai-proxy` gateway
+  # (https://oai.glats.org/v1). Used by mact2 (and any other host
+  # pointing at the proxy) via OPENAI_PROXY_API_KEY. The upstream
+  # credential stays server-side on rog. Lives in the rog host
+  # secret file but the .sops.yaml creation rule for that file
+  # explicitly includes the mact2 host key, so mact2 can decrypt.
+  sops.secrets."openai_proxy/client_key" = {
+    sopsFile = ../secrets/host/rog/openai-proxy.yaml;
+    mode = "0400";
+  };
+
   # Identity values from sops (name + email for git/GPG) — flat strings per sops requirement
   sops.secrets."identities/personal_name" = {
     sopsFile = ../secrets/user/identities.yaml;

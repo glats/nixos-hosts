@@ -7,6 +7,16 @@ keys:
   - &host_t14 age1kc4mnetans8hwzwy24gsnw2hzxzcz3c5wcthcsr5wdfwk5e7vvtqvku74u
 
 creation_rules:
+  # openai-proxy: rog hosts the gateway, but mact2 needs the scoped
+  # client key. Keep this rule BEFORE the generic rog host rule so the
+  # file is encrypted for both hosts (and admin).
+  - path_regex: secrets/host/rog/openai-proxy\.yaml
+    key_groups:
+      - age:
+          - *admin_glats
+          - *host_rog
+          - *host_mact2
+
   # Host-specific secrets
   - path_regex: secrets/host/rog/.+
     key_groups:
