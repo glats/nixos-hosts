@@ -217,7 +217,7 @@
     port = 4010;
     clientKeyFile = config.sops.secrets."openai_proxy/client_key".path;
     upstream = {
-      baseURL = "https://api.openai.com/v1";
+      baseURL = "https://api.openai.com";
       apiKeyFile = config.sops.secrets."openai_proxy/upstream_key".path;
     };
   };
