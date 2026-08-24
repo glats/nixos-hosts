@@ -42,6 +42,9 @@
   sops.secrets."opencode/kilo_api_key" = {
     mode = "0400";
   };
+  sops.secrets."opencode/aihubmix_api_key" = {
+    mode = "0400";
+  };
 
   # Identity values from sops (name + email for git/GPG) — flat strings per sops requirement
   sops.secrets."identities/personal_name" = {
