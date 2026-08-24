@@ -37,7 +37,7 @@ let
 
   githubMcpServerWork = mkGithubMcpWrapper {
     name = "github-mcp-server-work";
-    user = "jcuzmar_FTC";
+    user = "jcuzmar-Falabella_FTC";
   };
 
 in
