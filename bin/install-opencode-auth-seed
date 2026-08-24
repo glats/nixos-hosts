@@ -1,0 +1,281 @@
+#!/usr/bin/env bash
+# install-opencode-auth-seed - Fetch + decrypt + merge an OpenCode auth seed
+#                             for mact2 from rog's public uploads path.
+#
+# This script is the bootstrap step of the mact2-openai-proxy-via-rog
+# change. It fetches an age-encrypted seed artifact from the uploads/
+# nginx path on rog (https://glats.org/uploads/opencode/...), decrypts
+# it locally with the mact2 user's sops age key, and merges only the
+# seed payload into ~/.local/share/opencode/auth.json. Plaintext auth
+# material MUST NEVER be published in the uploads/ tree — the script
+# rejects anything that does not look like age ciphertext.
+#
+# Usage:
+#   ./bin/install-opencode-auth-seed [--seed-url URL] [--auth-file PATH] \
+#                                    [--key-file PATH] [--dry-run] [--help]
+#
+# Examples:
+#   # Default: fetch the published seed for mact2 and merge it.
+#   ./bin/install-opencode-auth-seed
+#
+#   # Custom URL (e.g. for staging)
+#   ./bin/install-opencode-auth-seed --seed-url https://staging.example.com/seed.age
+#
+#   # Dry run — fetch + decrypt but do not touch auth.json
+#   ./bin/install-opencode-auth-seed --dry-run
+#
+# Exit codes:
+#   0 - success (merged or dry-run completed)
+#   1 - configuration error (missing tool, bad args)
+#   2 - fetch error (HTTP failure, ciphertext validation failure)
+#   3 - decrypt error (missing key, bad passphrase, invalid ciphertext)
+#   4 - JSON parse error (seed is not valid JSON after decrypt)
+#   5 - backup error (cannot create backup before merge)
+#   6 - merge error (existing auth.json is invalid JSON or unwritable)
+#
+# Required tools:
+#   - curl        (fetch over HTTPS)
+#   - age         (decrypt; install from nix-shell -p age or homebrew)
+#   - jq          (parse and merge JSON safely)
+#
+# The age identity file defaults to ~/.config/sops/age/keys.txt (the
+# standard sops-nix user key on mact2). Override with --key-file.
+#
+# Pre-conditions:
+#   - Network access to the seed URL (HTTPS).
+#   - age identity file readable by the current user.
+#   - ~/.local/share/opencode/ writable.
+
+set -euo pipefail
+
+# --- Configuration (override via flags or env) ---
+SEED_URL="${SEED_URL:-https://glats.org/uploads/opencode/mact2-auth-seed.age}"
+AUTH_FILE="${AUTH_FILE:-$HOME/.local/share/opencode/auth.json}"
+KEY_FILE="${KEY_FILE:-$HOME/.config/sops/age/keys.txt}"
+DRY_RUN=""
+
+# --- Usage ---
+usage() {
+  cat <<EOF
+Usage: $(basename "$0") [OPTIONS]
+
+Fetch an age-encrypted OpenCode auth seed from rog's uploads/ tree,
+decrypt it with the local age identity, back up the existing auth.json,
+and merge the seed payload into ~/.local/share/opencode/auth.json.
+
+Options:
+  --seed-url URL     Override the seed URL (default: $SEED_URL)
+  --auth-file PATH   Override the auth.json path (default: $AUTH_FILE)
+  --key-file PATH    Override the age identity path (default: $KEY_FILE)
+  --dry-run          Fetch + decrypt only; do not touch auth.json
+  -h, --help         Show this help message
+
+Environment variables (override defaults):
+  SEED_URL    Seed URL
+  AUTH_FILE   Local auth.json path
+  KEY_FILE    Local age identity path
+
+Exit codes:
+  0 success  1 args  2 fetch  3 decrypt  4 json  5 backup  6 merge
+EOF
+}
+
+# --- Argument parsing ---
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --seed-url)
+      SEED_URL="$2"
+      shift 2
+      ;;
+    --auth-file)
+      AUTH_FILE="$2"
+      shift 2
+      ;;
+    --key-file)
+      KEY_FILE="$2"
+      shift 2
+    ;;
+    --dry-run)
+      DRY_RUN="1"
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "ERROR: Unknown argument: $1" >&2
+      usage >&2
+      exit 1
+      ;;
+  esac
+done
+
+# --- Pre-flight checks ---
+preflight() {
+  local failed=0
+
+  for tool in curl age jq; do
+    if ! command -v "$tool" >/dev/null 2>&1; then
+      echo "ERROR: required tool '$tool' not found in PATH." >&2
+      failed=1
+    fi
+  done
+
+  if [[ ! -f "$KEY_FILE" ]]; then
+    echo "ERROR: age identity not found at $KEY_FILE." >&2
+    echo "       Generate one with: age-keygen -o $KEY_FILE (mode 0600)." >&2
+    failed=1
+  fi
+
+  if [[ $failed -eq 1 ]]; then
+    exit 1
+  fi
+}
+
+# --- Fetch the ciphertext ---
+fetch_seed() {
+  local tmp="$1"
+  echo "[1/5] Fetching seed from $SEED_URL ..."
+
+  if ! curl --silent --show-error --fail-with-body \
+        --max-time 60 \
+        --output "$tmp" \
+        "$SEED_URL"; then
+    echo "ERROR: fetch failed for $SEED_URL." >&2
+    exit 2
+  fi
+
+  # Reject anything that does not look like age ciphertext. age output
+  # is always armored with these headers; an openssl/PEM/base64 blob
+  # without them is treated as plaintext and refused.
+  if ! head -1 "$tmp" | grep -q '^-----BEGIN AGE ENCRYPTED FILE-----'; then
+    echo "ERROR: fetched payload is NOT age ciphertext." >&2
+    echo "       This script refuses to handle plaintext auth material." >&2
+    echo "       First line: $(head -1 "$tmp")" >&2
+    exit 2
+  fi
+
+  local size
+  size=$(wc -c < "$tmp" | tr -d ' ')
+  echo "      OK ($size bytes, age ciphertext)."
+}
+
+# --- Decrypt ---
+decrypt_seed() {
+  local ciphertext="$1"
+  local plaintext="$2"
+  echo "[2/5] Decrypting with $KEY_FILE ..."
+
+  if ! age --decrypt --identity "$KEY_FILE" \
+        --output "$plaintext" \
+        "$ciphertext" 2>"${plaintext}.err"; then
+    echo "ERROR: age decryption failed." >&2
+    echo "       $(cat "${plaintext}.err")" >&2
+    rm -f "${plaintext}.err"
+    exit 3
+  fi
+  rm -f "${plaintext}.err"
+
+  # Validate JSON
+  if ! jq -e . "$plaintext" >/dev/null 2>&1; then
+    echo "ERROR: decrypted payload is not valid JSON." >&2
+    jq . "$plaintext" >&2 || cat "$plaintext" >&2
+    exit 4
+  fi
+
+  echo "      OK ($(jq 'keys | length' "$plaintext") top-level keys)."
+}
+
+# --- Backup existing auth.json ---
+backup_existing() {
+  local auth="$1"
+  if [[ ! -e "$auth" ]]; then
+    echo "[3/5] No existing $auth — nothing to back up."
+    return 0
+  fi
+
+  # Verify the existing file is valid JSON before we touch it.
+  if ! jq -e . "$auth" >/dev/null 2>&1; then
+    echo "ERROR: existing $auth is not valid JSON." >&2
+    echo "       Refusing to merge until it is repaired manually." >&2
+    exit 6
+  fi
+
+  local timestamp
+  timestamp=$(date +%Y%m%d-%H%M%S)
+  local bak="${auth}.bak.${timestamp}"
+
+  echo "[3/5] Backing up existing $auth to $(basename "$bak") ..."
+  if ! cp -p "$auth" "$bak"; then
+    echo "ERROR: backup failed." >&2
+    exit 5
+  fi
+  chmod 600 "$bak"
+  echo "      OK."
+}
+
+# --- Merge seed into auth.json ---
+merge_seed() {
+  local auth="$1"
+  local seed="$2"
+
+  if [[ -n "$DRY_RUN" ]]; then
+    echo "[4/5] DRY RUN: would merge seed into $auth."
+    echo "[5/5] DRY RUN: completed. No changes written."
+    return 0
+  fi
+
+  echo "[4/5] Merging seed into $auth ..."
+
+  local auth_dir
+  auth_dir="$(dirname "$auth")"
+  mkdir -p "$auth_dir"
+
+  if [[ ! -e "$auth" ]]; then
+    # No existing auth — write the seed verbatim with locked-down perms.
+    cp "$seed" "$auth"
+  else
+    # Merge: existing keys win on conflict EXCEPT keys whose value is
+    # null/empty, in which case the seed value is promoted. This keeps
+    # other providers' tokens intact while letting the seed fill the
+    # openai-proxy entry.
+    jq -s '
+      .[0] as $existing | .[1] as $seed
+      | reduce ($seed | keys[]) as $k ({}; .[$k] = (if ($existing[$k] // null) != null and ($existing[$k] | type) != "null" then $existing[$k] else $seed[$k] end))
+      | $existing + .
+    ' "$auth" "$seed" > "$auth.tmp"
+
+    if ! jq -e . "$auth.tmp" >/dev/null 2>&1; then
+      echo "ERROR: merge produced invalid JSON; aborting." >&2
+      rm -f "$auth.tmp"
+      exit 6
+    fi
+
+    mv "$auth.tmp" "$auth"
+  fi
+
+  chmod 600 "$auth"
+  echo "      OK."
+
+  echo "[5/5] Done. auth.json now has $(jq 'keys | length' "$auth") top-level keys."
+  echo "      Backups (if any): $(dirname "$auth")/$(basename "$auth" .json).bak.*"
+}
+
+# --- Main ---
+echo "install-opencode-auth-seed"
+echo "  seed-url : $SEED_URL"
+echo "  auth-file: $AUTH_FILE"
+echo "  key-file : $KEY_FILE"
+[[ -n "$DRY_RUN" ]] && echo "  mode     : DRY RUN"
+echo
+
+preflight
+
+WORK="$(mktemp -d)"
+trap 'rm -rf "$WORK"' EXIT
+
+fetch_seed "$WORK/seed.age"
+decrypt_seed "$WORK/seed.age" "$WORK/seed.json"
+backup_existing "$AUTH_FILE"
+merge_seed "$AUTH_FILE" "$WORK/seed.json"

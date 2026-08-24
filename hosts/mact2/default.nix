@@ -2,15 +2,14 @@
 # Imports the darwin base profile (system modules) and retains only
 # per-host concerns: nix-homebrew, home-manager, users, environment,
 # and service enablements.
-{
-  pkgs,
-  inputs,
-  self,
-  primaryUser,
-  javaVersion,
-  lib,
-  host,
-  ...
+{ pkgs
+, inputs
+, self
+, primaryUser
+, javaVersion
+, lib
+, host
+, ...
 }:
 {
   imports = [
@@ -48,9 +47,12 @@
       ];
       # Define stateVersion here to satisfy early Home Manager assertions
       home.stateVersion = "25.05";
-      # Per-host provider override: mact2 uses GitHub Copilot tier.
-      # See `home.opencode.activeProviderName` in shared/opencode.nix.
-      home.opencode.activeProviderName = "github-copilot-pro";
+      # Per-host provider override: mact2 routes through the rog-hosted
+      # `openai-proxy` gateway (https://oai.glats.org/v1) instead of
+      # the built-in ChatGPT OAuth provider. See `home.opencode.activeProviderName`
+      # in shared/opencode.nix and the openai-{full,medium,light}-proxy
+      # tiers in shared/opencode/providers-base.nix.
+      home.opencode.activeProviderName = "openai-medium-proxy";
     };
     extraSpecialArgs = {
       inherit
