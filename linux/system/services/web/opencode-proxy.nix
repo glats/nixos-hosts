@@ -31,7 +31,7 @@ let
 
   # Inline Python script that acts as a thin OpenAI-compatible proxy:
   # - Forwards all /v1/* paths to the configured upstream baseURL.
-  # - Validates the inbound Authorization bearer token against the
+  # - Validates the inbound X-OpenAI-Proxy-Key header against the
   #   scoped client key from disk. Rejects 401 on mismatch.
   # - Rewrites Authorization to the upstream key on every request.
   # - Exposes /healthz (loopback only) for nginx readiness checks.
@@ -77,9 +77,7 @@ let
             return self.rfile.read(length)
 
         def _check_client_key(self):
-            auth = self.headers.get("Authorization", "")
-            prefix = "Bearer "
-            presented = auth[len(prefix):] if auth.startswith(prefix) else ""
+            presented = self.headers.get("X-OpenAI-Proxy-Key", "")
             if not presented or not hmac.compare_digest(presented, CLIENT_KEY):
                 self.send_response(401)
                 self.send_header("Content-Type", "application/json")
@@ -191,7 +189,7 @@ in
       type = lib.types.path;
       description = ''
         Path to the scoped client key file. The proxy rejects requests
-        whose Authorization bearer token does not match this value.
+        whose X-OpenAI-Proxy-Key header does not match this value.
         Wire from `sops.secrets."opencode/openai_proxy_client_key".path`.
       '';
     };
