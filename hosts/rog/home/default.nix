@@ -14,5 +14,5 @@ baseModules
   ../../../linux/home/webcam.nix
 
   # Override active OpenCode provider for this host
-  { home.opencode.activeProviderName = "alpha-free"; }
+  { home.opencode.activeProviderName = "openai-medium"; }
 ]
