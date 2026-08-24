@@ -585,6 +585,57 @@ in
 
         extraConfig = secHeaders "SAMEORIGIN";
       };
+
+      # oai.glats.org: public reverse proxy in front of the loopback-only
+      # OpenAI-compatible gateway (services.opencodeProxy on rog).
+      # Only /v1/* is exposed; admin/UI/health routes are NOT proxied
+      # to anything public, per the opencode-runtime-proxy spec.
+      "oai.${domain}" = {
+        useACMEHost = "glats.org";
+        forceSSL = true;
+
+        # Explicit deny for anything that is NOT /v1 — keeps admin and
+        # health endpoints loopback-only even if a typo path matches.
+        extraConfig = ''
+          # Lock to OpenAI-compatible runtime surface only.
+          location / {
+            return 404;
+          }
+
+          # Long-lived streaming/responses from upstream LLM APIs.
+          proxy_read_timeout 3600s;
+          proxy_send_timeout 3600s;
+          proxy_connect_timeout 60s;
+
+          ${secHeaders "DENY"}
+        '';
+
+        locations."/v1/" = {
+          proxyPass = "http://127.0.0.1:4010";
+          proxyWebsockets = false;
+          extraConfig = ''
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header Authorization $http_authorization;
+          '';
+        };
+
+        # Convenience: /v1/models so a curl smoke test works without
+        # trailing-slash confusion.
+        locations."/v1/models" = {
+          proxyPass = "http://127.0.0.1:4010/v1/models";
+          proxyWebsockets = false;
+          extraConfig = ''
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header Authorization $http_authorization;
+          '';
+        };
+      };
     }
     // arrVhosts;
   };

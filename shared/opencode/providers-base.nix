@@ -352,7 +352,57 @@ let
     };
   };
 
-  allProviders = nvidiaProvider // opencodeProvider // anthropicProvider // githubCopilotProvider;
+  # openai-proxy: SEPARATE proxy-backed provider family that points at the
+  # gateway at https://oai.glats.org/v1. Built-in `openai`
+  # (ChatGPT OAuth) and the `openai-{full,medium,light}` tier family stay
+  # intact for other hosts. The client key lives in sops as
+  # `opencode/openai_proxy_api_key` and is exported as OPENAI_PROXY_API_KEY
+  # at shell startup (see shared/opencode.nix). Upstream credential stays
+  # server-side on rog; only the scoped gateway client key reaches mact2.
+  openaiProxyProvider = {
+    openai-proxy = {
+      npm = "@ai-sdk/openai-compatible";
+      name = "OpenAIP";
+      options = {
+        baseURL = "https://oai.glats.org/v1";
+        apiKey = "{env:OPENAI_PROXY_API_KEY}";
+        headers = {
+          "User-Agent" = "Mozilla/5.0 (OpenAIP)";
+        };
+      };
+      models = {
+        "gpt-5-mini" = {
+          name = "GPT-5 Mini";
+        };
+        "gpt-5.3-codex" = {
+          name = "GPT-5.3 Codex";
+        };
+        "gpt-5.4" = {
+          name = "GPT-5.4";
+        };
+        "gpt-5.4-mini" = {
+          name = "GPT-5.4 Mini";
+        };
+        "gpt-5.4-nano" = {
+          name = "GPT-5.4 Nano";
+        };
+        "gpt-5.5" = {
+          name = "GPT-5.5";
+        };
+        "gpt-5.6-luna" = {
+          name = "GPT-5.6 Luna";
+        };
+        "gpt-5.6-sol" = {
+          name = "GPT-5.6 Sol";
+        };
+        "gpt-5.6-terra" = {
+          name = "GPT-5.6 Terra";
+        };
+      };
+    };
+  };
+
+  allProviders = nvidiaProvider // opencodeProvider // anthropicProvider // githubCopilotProvider // openaiProxyProvider;
 
   providers = [
     {
@@ -653,13 +703,71 @@ let
         neutral = "openai/gpt-5.4-mini";
       };
     }
-    # ---- openai-{full,medium,light}-proxy: REMOVED in change
-    # mact2-openai-transport-proxy-via-rog. mact2 now uses the native
-    # `openai` provider with `openai-medium` and routes HTTPS through
-    # the rog tinyproxy via HTTPS_PROXY. Keep the built-in
-    # `openai-{full,medium,light}` tier family above as the single
-    # OpenAI source of truth.
-
+    # ---- openai-{full,medium,light}-proxy: SEPARATE tier family ----
+    # Routes through the rog-hosted `openai-proxy` provider at
+    # https://oai.glats.org/v1. Built-in `openai` provider (ChatGPT OAuth)
+    # is untouched; these tiers exist solely so mact2 can drive the
+    # rog-hosted gateway without depending on native macOS OpenAI OAuth.
+    {
+      name = "openai-full-proxy";
+      phases = {
+        # gpt-5.5: strongest reasoning on the rog proxy; aligns with
+        # the stable OpenAI ChatGPT Plus/Pro allowlist used by
+        # openai-full above.
+        gentle-orchestrator = "openai-proxy/gpt-5.5";
+        sdd-init = "openai-proxy/gpt-5.4-mini";
+        sdd-explore = "openai-proxy/gpt-5.5";
+        sdd-propose = "openai-proxy/gpt-5.5";
+        # spec is structured writing more than frontier reasoning.
+        sdd-spec = "openai-proxy/gpt-5.4";
+        sdd-design = "openai-proxy/gpt-5.5";
+        sdd-tasks = "openai-proxy/gpt-5.4-mini";
+        sdd-apply = "openai-proxy/gpt-5.3-codex";
+        sdd-verify = "openai-proxy/gpt-5.5";
+        sdd-archive = "openai-proxy/gpt-5.4-mini";
+        sdd-onboard = "openai-proxy/gpt-5.4-mini";
+        neutral = "openai-proxy/gpt-5.5";
+      };
+    }
+    {
+      name = "openai-medium-proxy";
+      phases = {
+        # Balanced default for mact2: gpt-5.4 for heavy SDD phases,
+        # 5.4-mini for cheap helpers, codex only where code editing
+        # matters most. Mirrors the openai-medium split.
+        gentle-orchestrator = "openai-proxy/gpt-5.4";
+        sdd-init = "openai-proxy/gpt-5.4-mini";
+        sdd-explore = "openai-proxy/gpt-5.4";
+        sdd-propose = "openai-proxy/gpt-5.4";
+        sdd-spec = "openai-proxy/gpt-5.4";
+        sdd-design = "openai-proxy/gpt-5.4";
+        sdd-tasks = "openai-proxy/gpt-5.4-mini";
+        sdd-apply = "openai-proxy/gpt-5.3-codex";
+        sdd-verify = "openai-proxy/gpt-5.4";
+        sdd-archive = "openai-proxy/gpt-5.4-mini";
+        sdd-onboard = "openai-proxy/gpt-5.4-mini";
+        neutral = "openai-proxy/gpt-5.4";
+      };
+    }
+    {
+      name = "openai-light-proxy";
+      phases = {
+        # Cheapest conservative tier on the rog proxy. Keep 5.4 for
+        # the phases most likely to degrade if everything is mini.
+        gentle-orchestrator = "openai-proxy/gpt-5.4-mini";
+        sdd-init = "openai-proxy/gpt-5.4-mini";
+        sdd-explore = "openai-proxy/gpt-5.4";
+        sdd-propose = "openai-proxy/gpt-5.4";
+        sdd-spec = "openai-proxy/gpt-5.4";
+        sdd-design = "openai-proxy/gpt-5.4";
+        sdd-tasks = "openai-proxy/gpt-5.4-mini";
+        sdd-apply = "openai-proxy/gpt-5.4-mini";
+        sdd-verify = "openai-proxy/gpt-5.4";
+        sdd-archive = "openai-proxy/gpt-5.4-mini";
+        sdd-onboard = "openai-proxy/gpt-5.4-mini";
+        neutral = "openai-proxy/gpt-5.4-mini";
+      };
+    }
     {
       name = "opencode-go-full";
       phases = {
@@ -763,6 +871,7 @@ in
 {
   inherit
     nvidiaProvider
+    openaiProxyProvider
     allProviders
     providers
     activeProviderName
