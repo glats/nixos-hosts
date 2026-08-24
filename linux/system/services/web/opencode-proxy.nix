@@ -42,6 +42,8 @@ let
     from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
     UPSTREAM_BASE = os.environ["OPENAI_PROXY_UPSTREAM_BASE"].rstrip("/")
+    if UPSTREAM_BASE.endswith("/v1"):
+        UPSTREAM_BASE = UPSTREAM_BASE[:-3]
     UPSTREAM_KEY_PATH = os.environ["OPENAI_PROXY_UPSTREAM_KEY_FILE"]
     CLIENT_KEY_PATH = os.environ["OPENAI_PROXY_CLIENT_KEY_FILE"]
 
