@@ -33,5 +33,5 @@
     mode = "0400";
   };
   # GitHub tokens are now managed by `gh auth token` on darwin.
-  # Shared sops.nix still imports them via github-tokens.nix for linux compat.
+  # Linux hosts migrated to the same pattern (change: unify-github-auth).
 }

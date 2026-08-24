@@ -61,8 +61,6 @@
     ../../linux/system/features/boot.nix
 
     # === MCP REQUIREMENTS ===
-    ../../linux/system/services/github-mcp-server.nix
-    ../../linux/system/services/github-token-check.nix
     ../../linux/system/virtualisation/docker.nix
   ];
 

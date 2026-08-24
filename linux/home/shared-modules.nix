@@ -41,5 +41,6 @@
   ./ssh.nix
   ./fontconfig.nix
   ../../shared/sops.nix
+  ../../shared/github-mcp-wrapper.nix
   inputs.sops-nix.homeManagerModules.sops
 ]
