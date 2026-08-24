@@ -130,22 +130,20 @@ in
               DELTA=$(( RX_BYT - PREV_RX ))
 
               # --- THROUGHPUT DEGRADATION ---
-              # Only flag if there WAS traffic but the rate is below the
-              # threshold. Idle (delta=0) is not degradation. Negative
-              # delta means a counter reset (link bounce) — skip check.
-              if [ "$DELTA" -gt 0 ]; then
-                RATE=$(( DELTA / ELAPSED ))
-                if [ "$RATE" -lt "$THRESHOLD" ]; then
-                  systemd-cat -t netwatch -p ${logPrio} <<EOM
-          MESSAGE=$IFNAME: throughput drop — $RATE B/s (threshold ''${THRESHOLD}B/s)
+              # Only flag if there was SUBSTANTIAL traffic (MIN_DELTA)
+              # but the rate is below THRESHOLD. Idle (delta=0) and
+              # background chatter (a few KB of ARP/mDNS/DHCP) are not
+              # degradation — flagging them buries real events in noise.
+              # Negative delta means a counter reset (link bounce).
+              if [ "$DELTA" -gt 102400 ] && [ "$DELTA" -lt "$THRESHOLD" ]; then
+                systemd-cat -t netwatch -p ${logPrio} <<EOM
+          MESSAGE=$IFNAME: throughput drop — $DELTA B in ''${ELAPSED}s (threshold ''${THRESHOLD}B/s)
           INTERFACE=$IFNAME
           NETWATCH_TYPE=throughput_drop
           BYTES_DELTA=$DELTA
           ELAPSED_SECS=$ELAPSED
-          RATE_BPS=$RATE
           LINK_SPEED=$SPEED
           EOM
-                fi
               fi
 
               # --- LINK SPEED CHECK ---
