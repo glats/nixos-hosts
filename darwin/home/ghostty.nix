@@ -6,7 +6,12 @@ let
   ghostty = import ../../shared/ghostty.nix {
     colorScheme = config.colorScheme;
     selectionForegroundPalette = "base00";
-    extraSettings = { macos-option-as-alt = "left"; };
+    extraSettings = {
+      macos-option-as-alt = "left";
+      font-size = 13;
+      font-thicken = true;
+      font-thicken-strength = 63;
+    };
   };
 in
 {

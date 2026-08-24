@@ -59,6 +59,7 @@
       "vnc-viewer"
       "visual-studio-code"
       "claude"
+      "betterdisplay"
     ];
   };
 }
