@@ -354,6 +354,30 @@ let
     };
   };
 
+  aihubmixProvider = mkProvider {
+    name = "aihubmix";
+    displayName = "AIHubMix";
+    baseURL = "https://aihubmix.com/v1";
+    apiKeyEnv = "AIHUBMIX_API_KEY";
+    models = {
+      "ox-alpha" = {
+        name = "Ox Alpha";
+      };
+      "gemini-3.7-flash-free" = {
+        name = "Gemini 3.7 Flash Free";
+      };
+      "coding-glm-5.2-free" = {
+        name = "Coding GLM 5.2 Free";
+      };
+      "coding-kimi-k3-free" = {
+        name = "Coding Kimi K3 Free";
+      };
+      "coding-minimax-m3-free" = {
+        name = "Coding MiniMax M3 Free";
+      };
+    };
+  };
+
   llm7Provider = mkProvider {
     name = "llm7";
     displayName = "LLM7";
@@ -392,6 +416,7 @@ let
     // cloudflareProvider
     // openrouterProvider
     // huggingfaceProvider
+    // aihubmixProvider
     // kiloProvider
     // llm7Provider;
 in
@@ -405,6 +430,7 @@ in
     cloudflareProvider
     openrouterProvider
     huggingfaceProvider
+    aihubmixProvider
     kiloProvider
     llm7Provider
     extraProviders
