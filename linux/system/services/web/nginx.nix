@@ -618,8 +618,7 @@ in
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto $scheme;
-            proxy_set_header Authorization "";
-            proxy_set_header X-OpenAI-Proxy-Key $http_x_openai_proxy_key;
+            proxy_set_header Authorization $http_authorization;
           '';
         };
 
@@ -633,8 +632,7 @@ in
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto $scheme;
-            proxy_set_header Authorization "";
-            proxy_set_header X-OpenAI-Proxy-Key $http_x_openai_proxy_key;
+            proxy_set_header Authorization $http_authorization;
           '';
         };
       };
