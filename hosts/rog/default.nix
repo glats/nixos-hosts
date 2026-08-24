@@ -64,6 +64,7 @@
 
     # Services — web
     ../../linux/system/services/web/nginx.nix
+    ../../linux/system/services/web/opencode-proxy.nix
     ../../linux/system/services/web/authelia.nix
     ../../linux/system/services/web/seerr.nix
     ../../linux/system/services/web/dozzle.nix
@@ -189,6 +190,7 @@
   systemd.services."docker-jellyfin".serviceConfig.TimeoutStartSec = lib.mkForce "300";
   systemd.services."docker-jellyseerr".serviceConfig.TimeoutStartSec = lib.mkForce "300";
   systemd.services."docker-romm-db".serviceConfig.TimeoutStartSec = lib.mkForce "300";
+  systemd.services."opencode-proxy".serviceConfig.TimeoutStartSec = lib.mkForce "60";
 
   # Prevent restart loops that consume time during switch
   # Use mkForce because nginx already defines this value
@@ -205,5 +207,19 @@
     intel-vaapi-driver
     libva-vdpau-driver
   ];
+
+  # OpenAI-compatible loopback gateway for mact2 (change:
+  # mact2-openai-proxy-via-rog). Bound to 127.0.0.1 only; nginx terminates
+  # TLS at oai.glats.org and reverse-proxies /v1/* to this listener.
+  services.opencodeProxy = {
+    enable = true;
+    domain = "oai.glats.org";
+    port = 4010;
+    clientKeyFile = config.sops.secrets."openai_proxy/client_key".path;
+    upstream = {
+      baseURL = "https://api.openai.com/v1";
+      apiKeyFile = config.sops.secrets."openai_proxy/upstream_key".path;
+    };
+  };
 
 }
