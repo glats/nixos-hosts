@@ -296,7 +296,20 @@
             # the canonical module list from `darwinHomeModules`.
             ./darwin/home
             {
-              home.opencode.activeProviderName = "openai-medium-proxy";
+              # Native built-in `openai` provider; transport proxied via
+              # rog tinyproxy (declared in hosts/mact2/default.nix).
+              home.opencode.activeProviderName = "openai-medium";
+              # Same OpenCode-shell proxy environment as the darwin
+              # host path: native `openai` provider + tinyproxy on
+              # rog (10.13.13.1:3128) over the existing WireGuard
+              # tunnel. NO_PROXY keeps loopback direct so local
+              # helpers still work. Mirror this block in
+              # hosts/mact2/default.nix for the darwin build.
+              home.opencode.extraInitContent = ''
+                export HTTP_PROXY="http://10.13.13.1:3128"
+                export HTTPS_PROXY="http://10.13.13.1:3128"
+                export NO_PROXY="localhost,127.0.0.1"
+              '';
             }
           ];
         };

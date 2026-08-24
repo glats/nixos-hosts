@@ -1,0 +1,273 @@
+#!/usr/bin/env bash
+# publish-opencode-auth-seed - Read rog's local OpenCode auth.json, extract
+#                              the `openai` entry, age-encrypt it for the
+#                              mact2 host key, and atomically write the
+#                              ciphertext under rog's uploads tree so
+#                              bin/install-opencode-auth-seed on mact2 can
+#                              pick it up via the existing nginx path.
+#
+# This is the FALLBACK bootstrap for change mact2-openai-transport-proxy-via-rog.
+# The preferred path is `opencode auth login` (headless) on mact2 through
+# the WireGuard-bound tinyproxy — that yields an INDEPENDENT session with
+# no shared-refresh-token rotation risk. The seed is only for when
+# headless login cannot complete.
+#
+# The publisher MUST NEVER write plaintext OAuth data anywhere on disk.
+# The artifact is age ciphertext addressed only to the mact2 recipient;
+# if anyone steals it from the LAN-readable uploads tree, they still
+# need mact2's private key to decrypt.
+#
+# Usage:
+#   ./bin/publish-opencode-auth-seed [--auth-file PATH] \
+#                                    [--recipient FILE] \
+#                                    [--out-dir DIR] [--out-name NAME] \
+#                                    [--dry-run] [--help]
+#
+# Examples:
+#   # Default — publish to the canonical uploads path
+#   ./bin/publish-opencode-auth-seed
+#
+#   # Dry run — validate auth.json + age encrypt, but write to a tmp file
+#   ./bin/publish-opencode-auth-seed --dry-run
+#
+# Exit codes:
+#   0  success (ciphertext written or dry-run completed)
+#   1  configuration error (missing tool, bad args)
+#   2  auth.json missing or unreadable
+#   3  auth.json is not valid JSON, or lacks a valid `openai` object
+#   4  age recipient file missing or empty
+#   5  age encryption failed
+#   6  write failed (out dir unwritable, atomic rename failed)
+#
+# Required tools:
+#   - jq       (parse auth.json safely)
+#   - age      (encrypt; install from nix-shell -p age or homebrew)
+#
+# Pre-conditions:
+#   - rog has a valid ~/.local/share/opencode/auth.json with an `openai`
+#     OAuth object (either from a recent ChatGPT login or a prior seed).
+#   - The mact2 age public key is available (default: a file referenced
+#     by --recipient, typically copied from the mact2 host key).
+#   - The output directory is writable by the current user.
+
+set -euo pipefail
+
+# --- Configuration (override via flags or env) ---
+AUTH_FILE="${AUTH_FILE:-$HOME/.local/share/opencode/auth.json}"
+RECIPIENT_FILE="${RECIPIENT_FILE:-$HOME/.config/sops/age/mact2.pub}"
+OUT_DIR="${OUT_DIR:-/run/media/stuff/droppy/nginx/opencode}"
+OUT_NAME="${OUT_NAME:-mact2-auth-seed.age}"
+DRY_RUN=""
+
+usage() {
+  cat <<EOF
+Usage: $(basename "$0") [OPTIONS]
+
+Read the local OpenCode auth.json \`openai\` entry, age-encrypt it for
+the mact2 recipient, and atomically write the ciphertext into rog's
+uploads tree so bin/install-opencode-auth-seed can fetch it.
+
+Options:
+  --auth-file PATH       Override the auth.json path (default: $AUTH_FILE)
+  --recipient FILE       Override the age recipient (public key) path
+                         (default: $RECIPIENT_FILE)
+  --out-dir DIR          Override the uploads output directory
+                         (default: $OUT_DIR)
+  --out-name NAME        Override the output filename
+                         (default: $OUT_NAME)
+  --dry-run              Encrypt to a tmp file in \$TMPDIR; do NOT touch
+                         the uploads tree
+  -h, --help             Show this help message
+
+Environment variables (override defaults):
+  AUTH_FILE         Local auth.json path
+  RECIPIENT_FILE    Age recipient (public key) path
+  OUT_DIR           Output directory
+  OUT_NAME          Output filename
+
+Exit codes:
+  0 success  1 args  2 auth  3 json  4 recipient  5 encrypt  6 write
+EOF
+}
+
+# --- Argument parsing ---
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --auth-file)
+      AUTH_FILE="$2"
+      shift 2
+      ;;
+    --recipient)
+      RECIPIENT_FILE="$2"
+      shift 2
+      ;;
+    --out-dir)
+      OUT_DIR="$2"
+      shift 2
+      ;;
+    --out-name)
+      OUT_NAME="$2"
+      shift 2
+      ;;
+    --dry-run)
+      DRY_RUN="1"
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "ERROR: Unknown argument: $1" >&2
+      usage >&2
+      exit 1
+      ;;
+  esac
+done
+
+# --- Pre-flight checks ---
+preflight() {
+  local failed=0
+
+  for tool in jq age; do
+    if ! command -v "$tool" >/dev/null 2>&1; then
+      echo "ERROR: required tool '$tool' not found in PATH." >&2
+      failed=1
+    fi
+  done
+
+  if [[ ! -f "$AUTH_FILE" ]]; then
+    echo "ERROR: auth.json not found at $AUTH_FILE." >&2
+    failed=1
+  fi
+
+  if [[ ! -s "$RECIPIENT_FILE" ]]; then
+    echo "ERROR: age recipient file missing or empty at $RECIPIENT_FILE." >&2
+    echo "       Copy the mact2 host age public key there first." >&2
+    failed=1
+  fi
+
+  if [[ $failed -eq 1 ]]; then
+    exit 1
+  fi
+}
+
+# --- Extract + validate the `openai` entry ---
+extract_seed() {
+  local auth="$1"
+  local seed="$2"
+
+  echo "[1/4] Validating $auth ..."
+
+  if ! jq -e . "$auth" >/dev/null 2>&1; then
+    echo "ERROR: $auth is not valid JSON." >&2
+    exit 3
+  fi
+
+  if ! jq -e 'has("openai") and (.openai | type == "object")' "$auth" >/dev/null 2>&1; then
+    echo "ERROR: $auth does not contain a valid 'openai' object." >&2
+    echo "       Log in on rog first: opencode auth login" >&2
+    exit 3
+  fi
+
+  # Write the seed payload: a JSON object containing only the openai
+  # entry. This is what bin/install-opencode-auth-seed expects and
+  # validates (it requires a top-level `openai` object after decrypt).
+  jq '{ openai: .openai }' "$auth" > "$seed"
+
+  local bytes
+  bytes=$(wc -c < "$seed" | tr -d ' ')
+  echo "      OK (openai object extracted; $bytes bytes plaintext JSON)."
+}
+
+# --- Age-encrypt for the mact2 recipient ---
+encrypt_seed() {
+  local seed="$1"
+  local ciphertext="$2"
+
+  echo "[2/4] Encrypting with recipient $RECIPIENT_FILE ..."
+
+  if ! age --encrypt --recipients-file "$RECIPIENT_FILE" \
+        --armor \
+        --output "$ciphertext" \
+        "$seed" 2>"${ciphertext}.err"; then
+    echo "ERROR: age encryption failed." >&2
+    echo "       $(cat "${ciphertext}.err")" >&2
+    rm -f "${ciphertext}.err"
+    exit 5
+  fi
+  rm -f "${ciphertext}.err"
+
+  # Belt + braces: refuse to publish anything that does not look like
+  # age ciphertext. Avoids accidental plaintext leakage from a flag
+  # typo or a future age version change.
+  if ! head -1 "$ciphertext" | grep -q '^-----BEGIN AGE ENCRYPTED FILE-----'; then
+    echo "ERROR: encrypted artifact does not start with the age armor header." >&2
+    echo "       First line: $(head -1 "$ciphertext")" >&2
+    exit 5
+  fi
+
+  local size
+  size=$(wc -c < "$ciphertext" | tr -d ' ')
+  echo "      OK ($size bytes armored ciphertext)."
+}
+
+# --- Atomic write to the uploads tree (or tmp in dry-run) ---
+publish_ciphertext() {
+  local ciphertext="$1"
+
+  if [[ -n "$DRY_RUN" ]]; then
+    local tmp_dest
+    tmp_dest="$(mktemp -d)/$OUT_NAME"
+    cp "$ciphertext" "$tmp_dest"
+    echo "[3/4] DRY RUN: would atomically write to $OUT_DIR/$OUT_NAME."
+    echo "[4/4] DRY RUN: ciphertext retained at $tmp_dest for inspection."
+    echo "         (upload tree untouched)"
+    return 0
+  fi
+
+  echo "[3/4] Atomically publishing to $OUT_DIR/$OUT_NAME ..."
+
+  if [[ ! -d "$OUT_DIR" ]]; then
+    if ! mkdir -p "$OUT_DIR"; then
+      echo "ERROR: cannot create output dir $OUT_DIR." >&2
+      exit 6
+    fi
+  fi
+
+  # Write-then-rename so the file is never half-published. nginx fancyindex
+  # may briefly see the new content but never a partial file.
+  local dest_tmp="$OUT_DIR/.${OUT_NAME}.tmp.$$"
+  if ! cp "$ciphertext" "$dest_tmp"; then
+    echo "ERROR: failed to write $dest_tmp." >&2
+    rm -f "$dest_tmp"
+    exit 6
+  fi
+  chmod 644 "$dest_tmp"
+
+  if ! mv -f "$dest_tmp" "$OUT_DIR/$OUT_NAME"; then
+    echo "ERROR: atomic rename failed into $OUT_DIR/$OUT_NAME." >&2
+    rm -f "$dest_tmp"
+    exit 6
+  fi
+
+  echo "[4/4] Done. Ciphertext published at $OUT_DIR/$OUT_NAME."
+}
+
+# --- Main ---
+echo "publish-opencode-auth-seed"
+echo "  auth-file   : $AUTH_FILE"
+echo "  recipient   : $RECIPIENT_FILE"
+echo "  out-dir     : $OUT_DIR"
+echo "  out-name    : $OUT_NAME"
+[[ -n "$DRY_RUN" ]] && echo "  mode        : DRY RUN"
+echo
+
+preflight
+
+WORK="$(mktemp -d)"
+trap 'rm -rf "$WORK"' EXIT
+
+extract_seed "$AUTH_FILE" "$WORK/seed.json"
+encrypt_seed "$WORK/seed.json" "$WORK/seed.age"
+publish_ciphertext "$WORK/seed.age"
