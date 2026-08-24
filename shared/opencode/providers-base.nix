@@ -360,7 +360,7 @@ let
       phases = {
         gentle-orchestrator = "opencode/x-preview-f-free";
         sdd-init = "opencode/nemotron-3.5-lightning-free";
-        sdd-explore = "opencode/nemotron-3-ultra-free";
+        sdd-explore = "opencode/x-preview-f-free";
         sdd-propose = "opencode/x-preview-f-free";
         sdd-spec = "opencode/hy3-free";
         sdd-design = "opencode/nemotron-3-ultra-free";
