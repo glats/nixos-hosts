@@ -365,9 +365,9 @@ let
       name = "OpenAIP";
       options = {
         baseURL = "https://oai.glats.org/v1";
-        apiKey = "{env:OPENAI_PROXY_API_KEY}";
+        apiKey = "not-needed";
         headers = {
-          "Authorization" = "Bearer {env:OPENAI_PROXY_API_KEY}";
+          "X-OpenAI-Proxy-Key" = "{env:OPENAI_PROXY_API_KEY}";
         };
       };
       models = {
