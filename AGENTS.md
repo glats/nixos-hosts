@@ -2,131 +2,116 @@
 
 ## Overview
 
-- **Hosts**: `rog` (desktop + nvidia + server), `thinkcentre` (headless + xrdp), `t14` (laptop, Omarchy/Hyprland), `mact2` (macOS via nix-darwin)
-- **User**: glats (linux hosts), jcuzmar (mact2)
-- **Stack**: NixOS Flakes + Home Manager + sops-nix + nix-darwin
+- **Hosts**: `rog` (MATE desktop via XRDP + NVIDIA + home server), `thinkcentre` (headless box accessed via XRDP), `t14` (ThinkPad laptop, Omarchy/Hyprland), `mact2` (Intel Mac via nix-darwin)
+- **Users**: glats (Linux hosts), jcuzmar (mact2)
+- **Stack**: NixOS Flakes + Home Manager (NixOS-integrated and standalone) + sops-nix + nix-darwin
+- `/etc/nixos` is a symlink to this repo (`~/.nixos`) — scripts may reference either path.
 
 ## Project Structure
 
 ```
 hosts/{hostname}/default.nix     # Host entry — flat explicit imports, one per line
 linux/
-  system/                        # NixOS system modules
-    base/                        # Core (users, nix, sops, zsh, packages, etc.)
-    desktop/                     # fonts, i18n, kmscon
-    hardware/                    # nvidia, amd-laptop, asus-fan-control
-    networking/                  # openssh, firewall, wol, avahi
-    features/                    # boot.nix, conky/
-    services/                    # xrdp, github-mcp, docker + portable services
-      media/                     # arr-stack, jellyfin, qbittorrent
-      web/                       # nginx, authelia, seerr, dozzle, etc.
-      network/                   # wireguard, ddclient, samba, ftp
-    virtualisation/              # docker, libvirt
-  home/                          # Home Manager modules (linux)
-darwin/
-  system/                        # nix-darwin system modules (nix, homebrew, settings, mise)
-  services/                      # wsdd
-  home/                          # Home Manager modules (macOS)
-  default.nix                    # Darwin entry point
-shared/                          # Cross-platform HM modules (opencode, sops, tmux)
+  system/base|desktop|hardware|networking/  # NixOS modules by category
+  system/features/               # boot.nix, gaming.nix, conky/options.nix (no default.nix)
+  system/services/               # xrdp + portable services: media/, web/, network/
+  system/virtualisation/         # docker, libvirt
+  home/                          # Linux HM modules; shared-modules.nix = canonical list
+darwin/system|services|home/     # nix-darwin modules; darwin/default.nix = entry point
+shared/                          # Cross-platform HM modules (opencode, sops, tmux, ...)
 lib/                             # mkHost.nix, mkDarwinHost.nix, packages.nix
-overlays/                        # linux.nix, darwin.nix (imported via flake.nix)
+overlays/                        # linux.nix, darwin.nix — imported via `import`, NOT modules
 pkgs/                            # Custom package derivations
-bin/                             # Shell scripts (nixos-build, format-nix, code-work, etc.)
-secrets/                         # sops-nix (encrypted — never edit directly)
+bin/                             # Shell scripts (nixos-build, format-nix, wg-peer, ...)
+secrets/                         # sops-encrypted: host/<hostname>/, shared/, user/
+docs/                            # Operational runbooks (sops-new-host.md, multi-github-identity.md, wg-peer.md, ...)
 ```
 
 ## Commands
 
 ### Build & Deploy
 
-| Task | Command | Verify |
-|------|---------|--------|
-| Build + switch | `nixos-build` | Check output for "switching to generation" |
-| Safe rollout | `nixos-build safe` | Check→build→dry→switch sequence |
-| Dry run | `nixos-build dry` | Shows what would change |
-| Validate flake | `nix flake check --no-build` | Must exit 0 |
+`nixos-build` auto-detects platform (Linux vs Darwin), hostname, tools (`nh` preferred over nixos-rebuild/darwin-rebuild, `nom` for output), and worktrees (run inside `.worktrees/*` builds the local flake copy).
 
-`nixos-build` auto-detects hostname, worktree, and `nh` vs `nixos-rebuild`. Use `--raw` to force `nixos-rebuild`.
+| Task | Command |
+|------|---------|
+| Build + switch | `nixos-build` (switch is default) |
+| Safe rollout | `nixos-build safe` — check→build→dry→switch, stops on first failure |
+| Dry activate | `nixos-build dry` |
+| Next-boot / test activation | `nixos-build boot` / `nixos-build test` (NixOS only) |
+| Update inputs + rebuild | `nixos-build upgrade` |
+| Validate flake | `nixos-build check` (= `nix flake check`) |
+| Force nixos-rebuild / disable nom | `--raw` / `--no-nom` |
+
+**Required verification after every Nix change**: `format-nix && nix flake check --no-build`.
+
+⚠️ `flake.nix` exposes `checks.x86_64-linux` containing all three NixOS hosts' toplevels, so plain `nix flake check` evaluates AND builds every host — always pass `--no-build` while iterating.
 
 ### Formatting
 
-| Task | Command | Verify |
-|------|---------|--------|
-| Full repo | `format-nix` | `git diff --stat` to review changes |
-| Single file | `nix fmt -- <path>` | Check file was reformatted |
+| Task | Command |
+|------|---------|
+| Full repo | `format-nix` (targets `/etc/nixos` = this repo via symlink; full-repo only, supports `--check`) |
+| Single file | `nix fmt -- <path>` |
+
+Formatter is `nixpkgs-fmt` set as flake `formatter`. Never invoke `nixpkgs-fmt <path>` directly — always go through `nix fmt`.
 
 ### Development
 
 | Task | Command |
 |------|---------|
-| Build a single host without switching | `nix build .#nixosConfigurations.<host>.config.system.build.toplevel` |
-| Build HM alone | `nix build .#homeConfigurations.<user>@<host>.activationPackage` |
-| Test t14 Omarchy | `nix build .#nixosConfigurations.t14.config.system.build.toplevel` (fastest check before full build) |
-| Enter dev shell | `nix-shell -p <pkg>` if a tool is not installed |
+| Build one host without switching | `nix build .#nixosConfigurations.<host>.config.system.build.toplevel` |
+| Build HM alone | `nix build .#homeConfigurations.<host>.activationPackage` — keys are bare hostnames, **not** `<user>@<host>` |
+| Fastest eval sanity check | t14 build (command above) |
+
+## Home Manager Composition
+
+- NixOS-integrated path: `linux/system/base/home-manager.nix` imports `hosts/<host>/home/default.nix`. Standalone `homeConfigurations` in flake.nix import the same per-host file.
+- `linux/home/shared-modules.nix` is the single source of truth for shared Linux HM modules — do not duplicate the list elsewhere. Darwin equivalent: `darwin/home/shared-modules.nix`. Cross-platform modules live in `shared/` and are listed in both.
+- **Host-conditional modules** (conky-rog, conky-thinkcentre, openfang) are NOT in shared-modules.nix — each `hosts/<host>/home/default.nix` extends the base list with its own extras.
+- Per-host OpenCode provider override lives there too: `{ home.opencode.activeProviderName = "..."; }` (e.g. rog: `openai-go-balanced`, thinkcentre: `openai-medium`, mact2: `openai-medium-proxy`).
 
 ## When Coding
 
-1. **Research first** — never guess about how things work. Use MCP tools (github, context7, exa) to verify approaches, options, and best practices before writing.
-2. **Edit Nix files** — after editing, run `format-nix` then `nix flake check --no-build` before declaring done.
-3. **New NixOS module** — add to `linux/system/<category>/`, import in host `default.nix`. Flat imports only — no profile chains.
-4. **New portable service** — place in `linux/system/services/<category>/`, importable by any Linux host.
-5. **New HM module (Linux)** — add to `linux/home/`, import in host's `home/default.nix`.
-6. **New HM module (Darwin)** — add to `darwin/home/`, import in `darwin/home/shared-modules.nix`.
-7. **New HM module (cross-platform)** — add to `shared/`, import from both platform shared-modules lists.
-8. **Secrets** — edit via `sops secrets/secrets.yaml`, never directly.
-9. **hardware-configuration.nix** — never edit (auto-generated).
-10. **Unfree package** — add to `allowUnfreePackages` list in the relevant host config.
-11. **Verify** — after every change: `format-nix && nix flake check --no-build`. Fix any errors before moving on.
+1. **Research first** — verify options/packages/APIs with MCP tools before writing; never guess option paths.
+2. After editing any `.nix`: `format-nix && nix flake check --no-build` before declaring done.
+3. New NixOS module → `linux/system/<category>/`, import in host `default.nix`. Flat imports only — no profile chains.
+4. New portable service → `linux/system/services/<category>/`, importable by any Linux host.
+5. New HM module → platform `home/` dir, or `shared/` if cross-platform; register in that platform's shared-modules list.
+6. Secrets → `sops <specific-file>.yaml`. Agents must NEVER decrypt secrets — read ciphertext only. New host setup: follow `docs/sops-new-host.md`.
+7. `hardware-configuration.nix` — never edit (auto-generated).
+8. Unfree packages: `allowUnfree = true` is already global in flake.nix; license-gated packages additionally need host-level `allowUnfreePackages` + accept-license options (e.g. joypixels).
 
-## When Reviewing
+## Reviewing
 
-1. Check the diff covers what the task asked for
-2. Verify `nix flake check --no-build` passes for at least one host
-3. Confirm secrets are NOT exposed in plaintext
-4. Check `AGENTS.md` changes don't break the config format
-
-**Do NOT load nix-verify for non-Nix files** (JSON, YAML, TOML, Markdown, etc.) even if they
-live inside this NixOS repository. The skill is exclusively for verifying Nix language constructs.
-
-Load skills BEFORE writing code. Apply ALL patterns. Multiple skills can apply simultaneously.
+- Diff covers what was asked; `nix flake check --no-build` passes for at least the touched hosts.
+- No secrets exposed in plaintext anywhere in the diff.
+- Skill note: do NOT load `nix-verify` for non-Nix files (JSON/YAML/TOML/MD) even inside this repo — it is exclusively for Nix constructs.
 
 ## Critical Rules
 
-1. **hardware-configuration.nix**: Never edit
-2. **Flat imports**: No profile chains. Each host imports exactly what it needs, one per line.
-3. **features/* subcategories**: No `default.nix` — import services directly
-4. **overlays.nix**: NOT a module — imported via `import` in `flake.nix`
-5. **Home Manager**: Integrated via `linux/system/base/home-manager.nix`. Shared module list in `linux/home/shared-modules.nix` — single source of truth, do not duplicate
-6. **Formatter**: `format-nix` for full-repo, `nix fmt -- <path>` for single file. Never use `nixfmt-rfc-style` directly
-7. **t14 (Omarchy)**: Uses `omarchy-nix` + `nixos-hardware` via `extraModules` in `flake.nix`. HM config at `hosts/t14/home/omarchy.nix`, NOT in shared module list
-8. **mact2 (macOS)**: Built via `mkDarwinHost`. Darwin modules in `darwin/`, HM modules in `darwin/home/`
-9. **Home-conditional HM modules** (conky-rog, openfang): NOT in `shared-modules.nix` — appended per-host in `flake.nix` `homeConfigurations`
+1. **Flat imports**: each host imports exactly what it needs, one per line. No profile chains.
+2. **features/* subcategories** have no `default.nix` — import files directly.
+3. **Overlays** are `import`ed in flake.nix/lib builders, never added as modules.
+4. **Formatter**: `format-nix` (full repo) / `nix fmt -- <path>` (single file); never formatter binaries directly.
+5. **t14**: omarchy-nix + nixos-hardware T14 AMD gen4 profile arrive via `extraModules` in flake.nix. Its HM config block is `hosts/t14/home/omarchy.nix`, imported by t14's `home/default.nix`.
+6. **mact2**: built via `mkDarwinHost` (includes Determinate module); username jcuzmar.
+7. **nixpkgs is pinned to nixos-26.05** because 26.11 dropped x86_64-darwin and mact2 is an Intel Mac. Do not bump nixpkgs or nix-darwin (matched `nix-darwin-26.05` branch) until mact2 migrates to Apple Silicon. For the same reason `nix-vscode-extensions` is pinned to a pre-drop commit and gated behind `isDarwin`.
+
+## Secrets (sops-nix)
+
+- Config at `.sops.yaml` (repo root). Layout: `secrets/host/<hostname>/*.yaml`, `secrets/shared/`, `secrets/user/`.
+- Creation-rule ordering matters: specific path_regex rules must come BEFORE generic host catch-alls (e.g. `openai-proxy.yaml` is encrypted for rog+mact2+admin, placed above the rog-only rule).
+- Adding a host: derive age key from SSH host key, add to `.sops.yaml` keys + relevant creation rules, re-encrypt with `sops updatekeys` — full runbook in `docs/sops-new-host.md`.
 
 ## When Blocked
 
 | Problem | What to do |
 |---------|-----------|
-| `nix flake check` fails on unrelated host | The error may be pre-existing. Check if your changes touch that host. If not, note it and proceed. |
-| Build takes too long | Use `--no-build` flags. Build only the host you're changing. |
-| Option not found | Search via `nixos_nix` MCP tool with `action: "search", type: "options"` |
-| Package not found | Search via `nixos_nix` MCP tool — channel is `unstable` |
-| Permission denied | You may need `sudo` for system-level operations. Ask before using it. |
-| `sops` file won't decrypt | You are NOT allowed to decrypt secrets. Read the encrypted file only. |
-
-## Flake Inputs
-
-| Input | Purpose |
-|-------|---------|
-| `nixpkgs` (nixos-26.05) | Packages — Linux + Darwin unified on 26.05 |
-| `home-manager` (master) | User config |
-| `sops-nix` | Secrets |
-| `nix-darwin` | macOS system config |
-| `omarchy-nix` | Hyprland desktop for t14 |
-| `nixos-hardware` | T14 AMD gen4 profile |
-| `nix-colors` | Color schemes |
-| `gentle-ai-src` / `engram-src` / `caveman-src` | OpenCode skills/plugins |
-| `opencode` | Pre-built CLI (`fetchurl` in `pkgs/opencode/default.nix`) |
+| `nix flake check` fails on unrelated host | May be pre-existing. If your changes don't touch that host, note it and proceed. |
+| Option/package not found | Search with the `nixos_nix` MCP tool. Repo pins nixos-26.05 — results from other channels may differ. |
+| Permission denied | System-level operations need sudo — ask before using it. |
+| Encrypted file unreadable | You are NOT allowed to decrypt secrets. Read ciphertext only. |
 
 ## Owned Repos
 
