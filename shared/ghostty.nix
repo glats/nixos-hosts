@@ -15,7 +15,7 @@ let
   p = colorScheme.palette;
 in
 {
-  settings = extraSettings // {
+  settings = {
     bold-color = "bright";
     background-opacity = 0.8;
     clipboard-paste-protection = false;
@@ -32,7 +32,7 @@ in
     theme = "nix-colors";
     window-padding-balance = true;
     window-padding-color = "extend";
-  };
+  } // extraSettings;
   theme = {
     nix-colors = {
       palette = [
