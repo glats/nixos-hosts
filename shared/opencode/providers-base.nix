@@ -430,7 +430,7 @@ let
         # - OpenCode Go: absorbs the high-volume/tool-loop phases so ChatGPT limits are less likely.
         # - Avoids GPT-5.3-Codex-Spark because OpenAI documents it as Pro-only.
         # - Avoids GPT-5.4/5.4-mini because OpenAI says ChatGPT-account Codex removes them on 2026-08-31.
-        gentle-orchestrator = "openai/gpt-5.6-terra";
+        gentle-orchestrator = "opencode-go/ox-alpha-free";
         sdd-init = "opencode-go/deepseek-v4-flash";
         # Explore is the biggest limit-burner in large repos: many reads, MCP research, long context.
         sdd-explore = "opencode-go/deepseek-v4-pro";
