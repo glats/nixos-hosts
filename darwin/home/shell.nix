@@ -62,10 +62,9 @@
       zstyle ':prezto:module:editor' key-bindings 'emacs'
       zstyle ':prezto:module:terminal' auto-title 'yes'
 
-      if [ -x "$MISE_BIN" ]; then
-        "$MISE_BIN" install >/dev/null 2>&1 || true
-        "$MISE_BIN" reshim >/dev/null 2>&1 || true
-      fi
+      # NOTE: no `mise install` / `mise reshim` here — mise reshim runs
+      # automatically on tool install/update/remove, and per-shell invocations
+      # cost ~150ms of startup each (see openspec optimize-zsh-startup-time).
 
       path=(
         /etc/profiles/per-user/jcuzmar/bin

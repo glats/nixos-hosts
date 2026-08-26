@@ -19,6 +19,7 @@
     ../../darwin/system/homebrew.nix
     ../../darwin/system/settings.nix
     ../../darwin/system/mise.nix
+    ../../darwin/system/zsh.nix
     ../../darwin/services/wsdd.nix
 
     inputs.home-manager.darwinModules.home-manager
