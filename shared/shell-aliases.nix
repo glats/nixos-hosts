@@ -81,24 +81,31 @@
       nix-format() {
         nix fmt -- "$NIXOS_REPO"
       }
-
-      ZSH_HIGHLIGHT_STYLES[comment]="fg=#${config.colorScheme.palette.base03}"
-      ZSH_HIGHLIGHT_STYLES[alias]="fg=#${config.colorScheme.palette.base0B}"
-      ZSH_HIGHLIGHT_STYLES[builtin]="fg=#${config.colorScheme.palette.base0B}"
-      ZSH_HIGHLIGHT_STYLES[function]="fg=#${config.colorScheme.palette.base0B}"
-      ZSH_HIGHLIGHT_STYLES[command]="fg=#${config.colorScheme.palette.base0B}"
-      ZSH_HIGHLIGHT_STYLES[path]="fg=#${config.colorScheme.palette.base0C}"
-      ZSH_HIGHLIGHT_STYLES[single-quoted-argument]="fg=#${config.colorScheme.palette.base0A}"
-      ZSH_HIGHLIGHT_STYLES[double-quoted-argument]="fg=#${config.colorScheme.palette.base0A}"
-      ZSH_HIGHLIGHT_STYLES[unknown-token]="fg=#${config.colorScheme.palette.base08}"
-      ZSH_HIGHLIGHT_STYLES[reserved-word]="fg=#${config.colorScheme.palette.base0E}"
-      ZSH_HIGHLIGHT_STYLES[precommand]="fg=#${config.colorScheme.palette.base04}"
-      ZSH_HIGHLIGHT_STYLES[commandseparator]="fg=#${config.colorScheme.palette.base03}"
-      ZSH_HIGHLIGHT_STYLES[globbing]="fg=#${config.colorScheme.palette.base0D}"
-      ZSH_HIGHLIGHT_STYLES[history-expansion]="fg=#${config.colorScheme.palette.base0D}"
-      ZSH_HIGHLIGHT_STYLES[single-hyphen-option]="fg=#${config.colorScheme.palette.base09}"
-      ZSH_HIGHLIGHT_STYLES[double-hyphen-option]="fg=#${config.colorScheme.palette.base09}"
-      ZSH_HIGHLIGHT_STYLES[redirection]="fg=#${config.colorScheme.palette.base09}"
     '';
+
+    # Syntax highlighting styles via prezto's declarative option instead of
+    # raw ZSH_HIGHLIGHT_STYLES assignments — the raw form ran before
+    # zsh-syntax-highlighting loaded and failed with "invalid subscript
+    # range". HM renders this as `zstyle ':prezto:module:syntax-highlighting'
+    # styles ...`, applied by prezto AFTER the plugin loads.
+    prezto.syntaxHighlighting.styles = {
+      comment = "fg=#${config.colorScheme.palette.base03}";
+      alias = "fg=#${config.colorScheme.palette.base0B}";
+      builtin = "fg=#${config.colorScheme.palette.base0B}";
+      function = "fg=#${config.colorScheme.palette.base0B}";
+      command = "fg=#${config.colorScheme.palette.base0B}";
+      path = "fg=#${config.colorScheme.palette.base0C}";
+      single-quoted-argument = "fg=#${config.colorScheme.palette.base0A}";
+      double-quoted-argument = "fg=#${config.colorScheme.palette.base0A}";
+      unknown-token = "fg=#${config.colorScheme.palette.base08}";
+      reserved-word = "fg=#${config.colorScheme.palette.base0E}";
+      precommand = "fg=#${config.colorScheme.palette.base04}";
+      commandseparator = "fg=#${config.colorScheme.palette.base03}";
+      globbing = "fg=#${config.colorScheme.palette.base0D}";
+      history-expansion = "fg=#${config.colorScheme.palette.base0D}";
+      single-hyphen-option = "fg=#${config.colorScheme.palette.base09}";
+      double-hyphen-option = "fg=#${config.colorScheme.palette.base09}";
+      redirection = "fg=#${config.colorScheme.palette.base09}";
+    };
   };
 }
