@@ -4,6 +4,11 @@ keys:
   - &host_rog age1q46qlf4kt0pc255nrl4r24m5hnvqwqf9wd8n6206f0zg95v6993qvd9cr8
   - &host_thinkcentre age1uhv0z8e04q2385wlrn0vgd237ts2exea375yr4yeqwx5v9zgw9esdg3rsn
   - &host_mact2 age1ngeetv5mnt8ax30tmm6799qs2779905v0jafpywuydrvw2sz7yds7rlp5z
+  # mact2 HOST key (derived from /etc/ssh/ssh_host_ed25519_key at activation,
+  # per docs/sops-new-host.md). Needed by system-level sops (sops-install-secrets
+  # imports the host key); the anchor above is the USER key that Home Manager
+  # sops uses via ~/.config/sops/age/keys.txt. System daemons -> use host key.
+  - &host_mact2_system age1dzufdqqf6sysvsmz7tuenkur4l49gtzwe3wj4fjlwqkt0wpps5nstvv06e
   - &host_t14 age1kc4mnetans8hwzwy24gsnw2hzxzcz3c5wcthcsr5wdfwk5e7vvtqvku74u
 
 creation_rules:
@@ -31,6 +36,7 @@ creation_rules:
           - *admin_glats
           - *host_rog
           - *host_mact2
+          - *host_mact2_system
 
   # Shared system secrets
   - path_regex: secrets/system/.+
