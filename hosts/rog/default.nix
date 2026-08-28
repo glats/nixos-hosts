@@ -75,6 +75,7 @@
 
     # Services — network
     ../../linux/system/services/network/wireguard.nix
+    ../../linux/system/services/network/sing-box-tunnel.nix
     ../../linux/system/services/network/ddclient.nix
     ../../linux/system/services/network/samba.nix
     ../../linux/system/services/network/ftp.nix
