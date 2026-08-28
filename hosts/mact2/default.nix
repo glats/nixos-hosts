@@ -31,6 +31,11 @@
   # Host-specific settings
   networking.hostName = host;
 
+  # Tunnel design gate: EDR/corporate-agent management traffic must stay
+  # direct — if the tunnel dies, corporate telemetry must not go dark with
+  # it. 163.116.0.0/16 = Netskope cloud (observed 163.116.131.x/.148.x).
+  tunnel.directCidrs = [ "163.116.0.0/16" ];
+
   # homebrew installation manager
   nix-homebrew = {
     user = primaryUser;
