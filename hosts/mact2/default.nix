@@ -21,9 +21,11 @@
     ../../darwin/system/mise.nix
     ../../darwin/system/zsh.nix
     ../../darwin/services/wsdd.nix
+    ../../darwin/system/sing-box-tunnel.nix
 
     inputs.home-manager.darwinModules.home-manager
     inputs.nix-homebrew.darwinModules.nix-homebrew
+    inputs.sops-nix.darwinModules.sops
   ];
 
   # Host-specific settings
