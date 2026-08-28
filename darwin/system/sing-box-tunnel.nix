@@ -57,6 +57,9 @@ let
   fullRules = [
     { action = "sniff"; }
     { protocol = "dns"; action = "hijack-dns"; }
+    # ICMP (ping) is unsupported by the VLESS outbound — route it direct.
+    # Valid since sing-box 1.13.0 for echo requests from TUN inbounds.
+    { network = [ "icmp" ]; outbound = "direct"; }
     { ip_is_private = true; outbound = "direct"; }
   ]
   ++ map (cidr: { ip_cidr = cidr; outbound = "direct"; }) cfg.directCidrs
