@@ -74,4 +74,25 @@
     sopsFile = ../../secrets/host/rog/romm.yaml;
   };
 
+  # OpenCode tunnel — per-device VLESS UUIDs (shared with mact2).
+  # One scalar key per device; each is its own 0400 file owned by the
+  # sing-box system user so the service can read them at activation.
+  # Removing a key + this decl + the matching users entry in
+  # linux/system/services/network/sing-box-tunnel.nix revokes that
+  # device only — mact2 and other devices stay connected.
+  sops.secrets."opencode-tunnel/uuid_mact2" = {
+    sopsFile = ../../secrets/shared/opencode-tunnel.yaml;
+    key = "uuid_mact2";
+    owner = "sing-box";
+    group = "sing-box";
+    mode = "0400";
+  };
+  sops.secrets."opencode-tunnel/uuid_phone" = {
+    sopsFile = ../../secrets/shared/opencode-tunnel.yaml;
+    key = "uuid_phone";
+    owner = "sing-box";
+    group = "sing-box";
+    mode = "0400";
+  };
+
 }

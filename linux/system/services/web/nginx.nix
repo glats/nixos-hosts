@@ -453,6 +453,42 @@ in
         '';
       };
 
+      # tun.glats.org — VLESS+WS tunnel endpoint with cover page.
+      # The unguessable WS path is the ONLY path nginx proxies to the
+      # loopback sing-box listener; every other request resolves to the
+      # cover page under /srv/glats/nginx/html (matches the glats.org
+      # vhost static-root pattern). generated-once random hex (NOT
+      # sops) — obscurity, not authentication. The same value is the
+      # `transport.path` in linux/system/services/network/sing-box-tunnel.nix
+      # and the `path` in the mact2 client + phone share link.
+      "tun.${domain}" = {
+        useACMEHost = "glats.org";
+        forceSSL = true;
+
+        # Cover page at /
+        locations."/" = {
+          root = "/srv/glats/nginx/html";
+          index = "index.html";
+          extraConfig = ''
+            try_files $uri $uri/ =404;
+          '';
+        };
+
+        # Single proxy for the VLESS+WS path. proxyWebsockets=true
+        # expands to the standard proxy_set_header Upgrade / Connection
+        # upgrade / proxy_http_version 1.1 trio.
+        locations."/ed59280aa562f4b7eba4519e3c316e24" = {
+          proxyPass = "http://127.0.0.1:4011";
+          proxyWebsockets = true;
+          extraConfig = ''
+            proxy_read_timeout 3600s;
+            proxy_send_timeout 3600s;
+          '';
+        };
+
+        extraConfig = secHeaders "DENY";
+      };
+
       "maquiroot.${domain}" = {
         useACMEHost = "glats.org";
         forceSSL = true;

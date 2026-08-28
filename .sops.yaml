@@ -20,6 +20,18 @@ creation_rules:
           - *admin_glats
           - *host_thinkcentre
 
+  # opencode-tunnel: per-device VLESS UUIDs for the tunnel daemon.
+  # Admin needs to rotate; rog hosts the sing-box server; mact2 runs the
+  # client. Encrypted only for these three recipients — thinkcentre/t14
+  # neither host nor consume the tunnel. Place BEFORE the shared catch-all
+  # so the specific rule wins.
+  - path_regex: secrets/shared/opencode-tunnel\.yaml
+    key_groups:
+      - age:
+          - *admin_glats
+          - *host_rog
+          - *host_mact2
+
   # Shared system secrets
   - path_regex: secrets/system/.+
     key_groups:
