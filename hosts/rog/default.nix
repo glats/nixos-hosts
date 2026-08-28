@@ -180,6 +180,10 @@
 
   system.stateVersion = "25.05";
 
+  # Tunnel loopback VLESS+WS server (module provides the option; import alone
+  # does not enable it). See linux/system/services/network/sing-box-tunnel.nix.
+  services.sing-box-tunnel.enable = true;
+
   # Fix 1: Extend timeouts to prevent exit status 4 in nixos-rebuild switch
   # See: investigation of intermittent systemd-run switch-to-configuration failures
   # Use mkForce to override the oci-containers module defaults
