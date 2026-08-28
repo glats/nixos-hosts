@@ -1,0 +1,89 @@
+# Tasks: mact2 OpenAI TLS tunnel via rog
+
+## Review Workload Forecast
+
+| Field | Value |
+|-------|-------|
+| Estimated changed lines | 720-870 total (PR1 Phases 0-2+2.5 ≈ 340-410; PR2 Phases 3-4 ≈ 100-120; PR3 Phases 5-6 ≈ 280-340) |
+| 400-line budget risk | High (full change); PR1 Medium (borderline — Phase 2.5 extractable to PR1b if >400); PR2 Low; PR3 Medium |
+| Chained PRs recommended | Yes |
+| Suggested split | PR 1 (Phases 0-2 + 2.5) → PR 2 (Phases 3-4) → PR 3 (Phases 5-6) |
+| Delivery strategy | ask-on-risk |
+| Chain strategy | stacked-to-main |
+
+Decision needed before apply: Yes
+Chained PRs recommended: Yes
+Chain strategy: stacked-to-main
+400-line budget risk: High
+
+Chaining still holds: Yes — PR1 delivers the whole transport (rog server + cover page + full-tunnel/scoped mact2 daemon + device onboarding + phone link tooling) with its own verification; PR2 (native auth + home evidence) rides PR1's transport; PR3 (office gates + retirement) is blocked on physical office access. If PR1's diff crosses 400 changed lines, extract Phase 2.5 (link tooling only) into PR1b before review.
+
+### Suggested Work Units
+
+| Unit | Goal | Likely PR | Focused test command | Runtime harness | Rollback boundary |
+|------|------|-----------|----------------------|-----------------|-------------------|
+| 1 | rog tunnel server + 2-UUID secrets + cover page (Phases 0-1) | PR 1 | `format-nix && nix flake check --no-build && nix build .#nixosConfigurations.rog.config.system.build.toplevel` | after deploy: `curl -sS https://tun.glats.org/` → 200 cover page; `systemctl status sing-box`; WS-upgrade probe on `/<random-hex>` → routed | remove import + `linux/system/services/network/sing-box-tunnel.nix` + nginx vhost + `hosts/rog/secrets.nix` decls; gateway untouched |
+| 2 | mact2 root TUN daemon, full default + scoped flip (Phase 2) | PR 1 | `nix eval .#darwinConfigurations.mact2.config.system.build.toplevel.drvPath` | on mact2: `launchctl print system/sing-box-tunnel`; self-loop smoke (`tun.glats.org` direct OK); IP-echo → rog IP; scoped flip + flip back | `sudo launchctl bootout system/sing-box-tunnel` + revert import/module |
+| 3 | device onboarding + link tooling (Phase 2.5) | PR 1 | `bash -n bin/tunnel-device-link` + run → importable `vless://` on stdout | phone import via SFA (USER-RUN); phone handshake visible in rog sing-box logs; revoke/restore `uuid_phone` | delete `bin/tunnel-device-link` (no server impact); revert phone decl |
+| 4 | native auth switch + home evidence (Phases 3-4) | PR 2 | `format-nix && nix flake check --no-build`; `opencode run -m openai/gpt-5.4 "PONG"` | headless device login + post-1h refresh; `ps eww` on MCP children | revert `activeProviderName` to `openai-medium-proxy` in `hosts/mact2/default.nix` + `flake.nix` |
+| 5 | office gates + retirement (Phases 5-6, blocked) | PR 3 | `format-nix && nix flake check --no-build`; `grep -rn "oai.glats.org\|openai-proxy\|OPENAI_PROXY" --include="*.nix" .` → empty | office network w/ FortiClient+Netskope+CrowdStrike (USER-RUN; N/A until mact2 at office) | revert Phase-6 commit; restore re-encrypted `secrets/host/rog/openai-proxy.yaml` |
+
+## Phase 0: Prerequisites
+
+- [ ] 0.1 DNS decision — DONE/NA, no action: wildcard confirmed resolving (P1: `dig +short tun.glats.org` → `172.67.218.149`/`104.21.86.114`, orange-cloud via existing `*.glats.org`); no new record, no repo change. Conditional fallback only (IF orange-cloud WS fails at office gates): USER-RUN DNS-only `tun` A record → rog public IP (`201.188.187.112`) in Cloudflare; client `server`/`server_name` stay `tun.glats.org` unchanged (spec: DNS Continuity Prerequisite).
+- [ ] 0.2 Add specific creation rule to `.sops.yaml` BEFORE the generic `secrets/shared/.+` catch-all (line 42), mirroring the `openai-proxy.yaml` precedent (lines 13-18): `path_regex: secrets/shared/opencode-tunnel\.yaml` with key_groups admin_glats + host_rog + host_mact2 only. Verify by reading the file: specific rule precedes the shared catch-all.
+- [ ] 0.3 **USER-RUN** (agents cannot run sops): create `secrets/shared/opencode-tunnel.yaml` containing ONLY two scalar keys — `uuid_mact2` and `uuid_phone` (never an OpenAI key). Exact sequence: `uuidgen -r` twice; `sops secrets/shared/opencode-tunnel.yaml` (write `uuid_mact2: <uuid1>` + `uuid_phone: <uuid2>`); verify `sops -d secrets/shared/opencode-tunnel.yaml` decrypts to exactly those two keys and the file header lists admin+rog+mact2. Do not commit plaintext.
+
+## Phase 1: rog server transport
+
+- [ ] 1.1 Create `linux/system/services/network/sing-box-tunnel.nix`: `services.sing-box.enable = true`; freeform `settings` = `vless` inbound on `127.0.0.1:4011` with `users` ARRAY of two entries — `{ name = "mact2"; uuid = { _secret = config.sops.secrets."opencode-tunnel/uuid_mact2".path; } }` and `{ name = "phone"; uuid = { _secret = config.sops.secrets."opencode-tunnel/uuid_phone".path; } }` (per-UUID scalar substitution, R7), `transport = { type = "ws"; path = "/<random-hex>"; }`, outbound `direct`. Generate ONE random hex WS path now and commit it as a plain constant (obscurity, not auth — NOT sops); it must be byte-identical in 1.3, 2.2, 2.5.1 (sing-box#1728: nginx passes the location path through).
+- [ ] 1.2 Wire sops declarations: in `hosts/rog/secrets.nix` add `sops.secrets."opencode-tunnel/uuid_mact2"` + `sops.secrets."opencode-tunnel/uuid_phone"` with `sopsFile = ../../secrets/shared/opencode-tunnel.yaml`, `key = "uuid_mact2"`/`"uuid_phone"`, `owner = "sing-box"`, `group = "sing-box"`, `mode = "0400"` — following the declaration conventions in `shared/sops.nix` (explicit sopsFile + key + mode).
+- [ ] 1.3 Add `tun.glats.org` vhost to `linux/system/services/web/nginx.nix`: `useACMEHost = "glats.org"`, `forceSSL = true`; cover-page static root at `/` reusing the repo's static-root pattern (`root = "/srv/glats/nginx/html"` + `index = "index.html"` + `try_files $uri $uri/ =404;` — mirrors the glats.org vhost, lines 185-188); `locations."/<random-hex>"` = `proxyPass "http://127.0.0.1:4011"` + `proxyWebsockets = true` (path identical to 1.1).
+- [ ] 1.4 Import `../../linux/system/services/network/sing-box-tunnel.nix` in `hosts/rog/default.nix` network services block (after wireguard.nix, line 78).
+- [ ] 1.5 Verify: `format-nix && nix flake check --no-build`; `nix build .#nixosConfigurations.rog.config.system.build.toplevel`; deploy `nixos-build`; runtime: `systemctl status sing-box`; `curl -sS https://tun.glats.org/` → 200 cover page (non-WS paths serve the page, no bare 404); non-upgrade `GET /<random-hex>` → record response (spec targets cover-page behavior — if nginx proxies it to a non-200, add an `if ($http_upgrade)` guard or document the deviation); WS-upgrade probe on `/<random-hex>` → routed to sing-box. Rollback: remove import + module + vhost + secret decls; gateway untouched.
+
+## Phase 2: mact2 client daemon (full-tunnel default)
+
+- [ ] 2.1 Verify `pkgs.sing-box` resolves for x86_64-darwin in the 26.05 pin (R1: pure-Go, no platform restriction): `nix eval .#darwinConfigurations.mact2.config.system.build.toplevel.drvPath` fails fast if the attribute is missing.
+- [ ] 2.2 Create `darwin/system/sing-box-tunnel.nix` (module args must include `inputs`): options `tunnel.mode` = enum `full|scoped`, DEFAULT `full`, plus mutable `tunnel.directDomains` and `tunnel.directCidrs` lists. Rendered config: TUN inbound `sb-openai` `172.19.0.1/30`, `auto_route`/`strict_route`/`stack "system"`/`sniff`; MANDATORY `route.auto_detect_interface = true` + `route.default_domain_resolver = "direct-dns"` (direct resolver — required-for-boot self-loop prevention, not optional). Ordered rules: full → `sniff` → `hijack-dns` → `ip_is_private → direct` → `ip_cidr [directCidrs] → direct` → `domain_suffix [directDomains] → direct` → best-effort `process_name` (falcon/netskope/forticlient) → direct → `final = "tunnel-out"`; scoped → `domain_suffix ["chatgpt.com" "auth.openai.com"] → tunnel-out` + `final = "direct"`. Outbounds: `tunnel-out` = vless `tun.glats.org:443` with `tls.server_name = "tun.glats.org"`, `utls { enabled = true; fingerprint = "chrome" }`, ws path `/<random-hex>`; `direct`; `block`. sops: `sops.age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ]`; `sops.secrets."opencode-tunnel/uuid_mact2"` (+ `"opencode-tunnel/uuid_phone"` for the link script) with `sopsFile = ../../secrets/shared/opencode-tunnel.yaml`, `key`, root owner, `mode = "0400"`; `sops.templates."sing-box-tunnel.json"` (owner root, mode 0400, path `/run/secrets/rendered/sing-box-tunnel.json`); `launchd.daemons.sing-box-tunnel` = `ProgramArguments [ "${pkgs.sing-box}/bin/sing-box" "run" "-c" template.path ]`, `KeepAlive` + `RunAtLoad` (retries if launchd beats sops), `WorkingDirectory = "/var/empty"`, decimal `Umask = 63` (0077) — root needed for utun.
+- [ ] 2.3 Import `../../darwin/system/sing-box-tunnel.nix` in `hosts/mact2/default.nix` flat imports (after `../../darwin/system/zsh.nix`).
+- [ ] 2.4 SELF-LOOP SMOKE TEST FIRST (spec: Smoke-test endpoint resolution first): `format-nix && nix flake check --no-build`; `nix eval .#darwinConfigurations.mact2.config.system.build.toplevel.drvPath`; deploy on mact2. Immediately after client start: `sudo sing-box check -c /run/secrets/rendered/sing-box-tunnel.json`; `launchctl print system/sing-box-tunnel` (healthy); `ifconfig sb-openai` up; THEN resolve `tun.glats.org` and request it directly (`curl -Iv https://tun.glats.org/`) — must succeed with NO TUN recursion (auto_detect_interface + direct-dns working).
+- [ ] 2.5 Full-tunnel active + exclusions: IP-echo HTTPS request → reports rog's egress IP; configured LAN `tunnel.directDomains` endpoint + `route -n get 172.16.0.5` → direct (not sb-openai), sing-box logs show `direct` selection not `tunnel-out`; `curl -Iv https://auth.openai.com/` + `https://chatgpt.com/` → valid TLS through tunnel (Cloudflare cert, NOT `ca.grupofalabella.goskope.com`) — spec Home Transport Proof gate.
+- [ ] 2.6 Scoped flip test + env cleanliness: flip `tunnel.mode = "scoped"` in `hosts/mact2/default.nix`, rebuild/redeploy → only OpenAI domains tunneled (`route -n get <chatgpt.com-ip>` via sb-openai), non-OpenAI dest direct; flip BACK to `full`, redeploy; launch an opencode session with MCP servers and `ps eww -p <child-pid>` on every MCP child → no `HTTP_PROXY`/`HTTPS_PROXY` (spec: Proxy-Environment and MCP Isolation). Rollback: `sudo launchctl bootout system/sing-box-tunnel` + revert 2.2/2.3.
+
+## Phase 2.5: Device onboarding tooling
+
+- [ ] 2.5.1 Create `bin/tunnel-device-link` (executable): runtime-only — reads the rendered phone UUID file (path via argument, e.g. rog `/run/secrets/opencode-tunnel/uuid_phone` or mact2 rendered path), prints `vless://<UUID>@tun.glats.org:443?encryption=none&security=tls&sni=tun.glats.org&fp=chrome&type=ws&host=tun.glats.org&path=/<random-hex>#mact2-tunnel-phone` to stdout; never writes UUID/link to repo, Nix store, or logs (spec: Runtime-Only Android Link Delivery). Verify: `bash -n bin/tunnel-device-link`; run → importable link on stdout; grep run history for UUID → absent.
+- [ ] 2.5.2 **USER-RUN** phone import test: scan/import the printed link into sing-box for Android (SFA) on the phone → verify phone handshake appears in rog sing-box server logs and OpenAI is reachable from the phone; then revoke test: remove `uuid_phone` key + declaration + users entry, rebuild → mact2 stays connected while the phone is denied; restore (spec: Add and revoke one device).
+
+## Phase 3: auth bootstrap (GATED on Phase 2 home proof)
+
+- [ ] 3.1 **USER-RUN** (browser interaction) GATED on 2.4/2.5: headless device flow with the FULL tunnel active — `opencode auth login` → ChatGPT (headless); visit `https://auth.openai.com/codex/device` in browser (device-auth + token exchange traverse the tunnel default route); NO API key, base URL, or gateway credential (spec: Headless Native OAuth Bootstrap). One bootstrap owner at a time.
+- [ ] 3.2 Refresh continuity: after >1h, rerun `opencode run -m openai/gpt-5.4 "PONG"` — refresh via `auth.openai.com/oauth/token` must succeed through the tunnel (spec: Refresh-Path Continuity); no second login during the window (spec: Preserve a concurrent credential).
+- [ ] 3.3 Provider switch (GATED on 3.1/3.2 + evidence in Phase 4): `home.opencode.activeProviderName = "openai-medium"` in `hosts/mact2/default.nix` (line 56) AND the standalone override in `flake.nix` homeConfigurations.mact2 (line 299); leave proxy tiers intact for other hosts (spec: Block premature switch). Verify: generated opencode.json selects `openai` (no openai-proxy); PONG on home LAN; MCP `ps eww` clean. Rollback: revert both files to `openai-medium-proxy`.
+- [ ] 3.4 Auth-seed fallback alignment: audit `bin/install-opencode-auth-seed` against spec Auth-Seed Fallback Safety (backs up existing auth, merges only native OAuth data, rejects API-key-like content, untouched on failure); `bash -n bin/install-opencode-auth-seed`; adjust merge scope only if it diverges from native-OAuth-only.
+
+## Phase 4: home evidence-gate run
+
+- [ ] 4.1 Create `openspec/changes/mact2-openai-tls-tunnel-via-rog/home-evidence.md`; execute + record TRANSPORT gates: self-loop smoke (`tun.glats.org` resolves + direct request OK), full-tunnel active (IP-echo → rog IP), exclusions direct (LAN/corporate `direct` in sing-box logs), scoped flip + flip back, cover page (`GET /` → 200 page; non-WS paths), TLS-through-tunnel (`curl -Iv` auth.openai.com + chatgpt.com → Cloudflare cert), phone handshake (if phone available at home).
+- [ ] 4.2 Record AUTH + hygiene gates in home-evidence.md: native PONG, post-1h refresh, MCP `ps eww` clean, secret boundaries — UUID-bearing runtime files root-only 0400 (`stat -c '%a %U'` on rog `/run/secrets/...` + mact2 `/run/secrets/rendered/sing-box-tunnel.json`) and no UUID value in `/nix/store`. This file is the Phase 3 gate evidence.
+
+## Phase 5: in-building gates (USER-RUN — NOT executable today)
+
+- [ ] 5.1 **USER-RUN** (OFFICE GATE) FortiClient + agents coexistence: mact2 at office with FortiClient connected + Netskope AppProxy + CrowdStrike active (`systemextensionsctl list`); no route loop / no default-route fight (`route -n get default` stable), corporate apps healthy (design risk #1; spec: In-building Coexistence).
+- [ ] 5.2 **USER-RUN** (OFFICE GATE) EDR-mgmt stays direct: Netskope/CrowdStrike/FortiClient management heartbeats reachable DIRECT during tunnel operation (`route -n get <mgmt-ip>` NOT via sb-openai; sing-box logs show `direct`); a tunnel outage must not silence EDR heartbeats (design risk #2 — inverted-safety property).
+- [ ] 5.3 **USER-RUN** (OFFICE GATE) Native path in office: `opencode run -m openai/gpt-5.4 "PONG"` (Codex) AND an `auth.openai.com/oauth/token` refresh succeed; outer SNI observed = `tun.glats.org` only (`sudo tcpdump -ni any 'tcp port 443' -c 20` or cert-issuer check).
+- [ ] 5.4 **USER-RUN** (OFFICE GATE) Long-lived Cloudflare TCP/443 WebSocket: hold a WS session (websocat or opencode session) >15 min — no corporate-gateway drop.
+- [ ] 5.5 **USER-RUN** (OFFICE GATE) CrowdStrike permits the root daemon: `launchctl print system/sing-box-tunnel` healthy after hours; no CS block/flag. All five office gates must pass before Phase 6.
+
+## Phase 6: retirement — SUPERSEDED by change `remove-opencode-proxy-legacy` (merged before this change's PR1)
+
+> Reconciliation 2026-08-28: tasks 6.1–6.5 were executed by `remove-opencode-proxy-legacy` on branch `cleanup/remove-opencode-proxy-legacy` (gateway module, oai.glats.org vhost, proxy tiers, OPENAI_PROXY_API_KEY, sops wiring + secret removal; mact2 interim provider `opencode-go-medium`). They remain listed for traceability but MUST be verified as already-done (grep-clean proof) instead of re-executed. Only 6.6 and 6.7 remain active.
+
+- [x] 6.1 Remove `services.opencodeProxy` block + import from `hosts/rog/default.nix`; delete `linux/system/services/web/opencode-proxy.nix`. *(done by remove-opencode-proxy-legacy)*
+- [x] 6.2 Remove the `oai.glats.org` vhost from `linux/system/services/web/nginx.nix`. *(done by remove-opencode-proxy-legacy)*
+- [x] 6.3 Remove `openaiProxyProvider` + `openai-{full,medium,light}-proxy` tiers from `shared/opencode/providers-base.nix` (built-in native `openai` tiers stay intact for other hosts). *(done by remove-opencode-proxy-legacy)*
+- [x] 6.4 Remove the `OPENAI_PROXY_API_KEY` optionalString block from `shared/opencode.nix`; remove `sops.secrets."openai_proxy/client_key"` from `darwin/home/sops.nix`. *(done by remove-opencode-proxy-legacy)*
+- [x] 6.5 Remove `openai_proxy/upstream_key` + `openai_proxy/client_key` from `hosts/rog/secrets.nix`; delete `secrets/host/rog/openai-proxy.yaml` and its `.sops.yaml` rule (lines 13-18). Never copy credentials into the store (spec: Retire only after all gates). *(done by remove-opencode-proxy-legacy)*
+- [ ] 6.6 Archive-time baseline note: at sdd-archive, merge this delta into `openspec/specs/opencode-runtime-proxy/spec.md` (mact2 on native tier; gateway family retired, no replacement public gateway). Verify retirement: `format-nix && nix flake check --no-build`; `grep -rn "oai.glats.org\|openai-proxy\|OPENAI_PROXY" --include="*.nix" .` → no matches. Rollback: revert Phase-6 commit; restore re-encrypted `openai-proxy.yaml` (USER-RUN sops re-encrypt if keys rotated).
+- [ ] 6.7 Superseded secret-file naming: `git log --oneline --all -- secrets/shared/openai-tunnel.yaml` (old planning name) → verified EMPTY today (never committed; nothing to delete — the live secret is `secrets/shared/opencode-tunnel.yaml`, USER-RUN created in 0.3). Re-run `git log`/`git status` at Phase 6: if a superseded file exists by then, delete it and any rule referencing it; otherwise no-op, record the check in home-evidence.md.
