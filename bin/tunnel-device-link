@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+# tunnel-device-link — runtime-only phone link printer for the OpenCode tunnel
+#
+# Reads the rendered phone UUID from the host's runtime secret path and
+# prints a vless:// share link to stdout. NEVER writes the UUID or the
+# link to the repo, Nix store, logs, or any file. Designed to be piped
+# straight into a QR encoder or copied to a clipboard — do not redirect
+# to disk, do not echo in CI, do not include in transcripts.
+#
+# Usage:
+#   bin/tunnel-device-link phone            # prints link for phone device
+#   bin/tunnel-device-link phone /custom/uuid/path   # explicit UUID path
+#
+# The WS path is the same obscuity-not-secret constant used by the rog
+# server (linux/system/services/network/sing-box-tunnel.nix), nginx
+# vhost (linux/system/services/web/nginx.nix), and mact2 client
+# (darwin/system/sing-box-tunnel.nix). All four sites must stay
+# byte-identical.
+#
+# Spec: Runtime-Only Android Link Delivery — never persisted anywhere.
+
+set -euo pipefail
+
+usage() {
+  cat >&2 <<EOF
+Usage: $(basename "$0") <device> [<uuid-file>]
+
+Print a vless:// share link to stdout for importing into sing-box for
+Android (SFA). The phone UUID is read at runtime from the host's
+rendered sops file and never written to disk, the Nix store, or logs.
+
+Arguments:
+  <device>      Device name (cosmetic, used in the link fragment only).
+  <uuid-file>   Optional explicit path to the rendered UUID file.
+                Defaults:
+                  - rog:     /run/secrets/opencode-tunnel/uuid_phone
+                  - mact2:   /run/secrets/opencode-tunnel/uuid_phone
+
+Environment:
+  TUNNEL_PHONE_UUID_FILE  Override the UUID file path (CI / scripting).
+EOF
+  exit "${1:-0}"
+}
+
+if [ $# -lt 1 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+  usage 0
+fi
+
+device="$1"
+shift
+
+# Validate device name — used in the URL fragment so keep it tame.
+if ! [[ "$device" =~ ^[A-Za-z0-9_-]+$ ]]; then
+  echo "error: device name '$device' must be [A-Za-z0-9_-]+" >&2
+  exit 2
+fi
+
+# WS path constant — must match rog server, nginx vhost, mact2 client.
+ws_path="/ed59280aa562f4b7eba4519e3c316e24"
+
+# Resolve the UUID file path. Priority:
+#   1. explicit positional argument
+#   2. TUNNEL_PHONE_UUID_FILE env var
+#   3. default path (rog + mact2 layout is identical)
+uuid_file="${1:-${TUNNEL_PHONE_UUID_FILE:-/run/secrets/opencode-tunnel/uuid_phone}}"
+
+if [ ! -r "$uuid_file" ]; then
+  echo "error: UUID file not readable: $uuid_file" >&2
+  echo "       (sops-install-secrets must have run; check activation log)" >&2
+  exit 1
+fi
+
+# Read the UUID, strip trailing whitespace/newlines. Use cat | read so
+# we don't accidentally leak the UUID into this process's argv (visible
+# via /proc/<pid>/cmdline on Linux).
+uuid="$(cat "$uuid_file")"
+uuid="${uuid//[[:space:]]/}"
+
+# Validate it looks like a UUID. Fail closed — a corrupt file MUST NOT
+# produce a usable link.
+if ! [[ "$uuid" =~ ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$ ]]; then
+  echo "error: UUID at $uuid_file does not match UUID format" >&2
+  exit 1
+fi
+
+# Print the share link. Fragment becomes the profile name in SFA.
+# params (verified against the sing-box vless parser per addendum R5):
+#   encryption=none  — VLESS without inner encryption
+#   security=tls     — outer TLS, terminated by nginx
+#   sni=tun.glats.org, fp=chrome — outer ClientHello matches mact2's
+#                                  uTLS chrome fingerprint
+#   type=ws, host=tun.glats.org, path=<ws> — WS transport over :443
+printf 'vless://%s@tun.glats.org:443?encryption=none&security=tls&sni=tun.glats.org&fp=chrome&type=ws&host=tun.glats.org&path=%s#mact2-tunnel-%s\n' \
+  "$uuid" "$ws_path" "$device"
