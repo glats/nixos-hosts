@@ -296,7 +296,7 @@
             # the canonical module list from `darwinHomeModules`.
             ./darwin/home
             {
-              home.opencode.activeProviderName = "openai-medium-proxy";
+              home.opencode.activeProviderName = "opencode-go-medium";
             }
           ];
         };

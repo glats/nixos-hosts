@@ -48,12 +48,12 @@
       ];
       # Define stateVersion here to satisfy early Home Manager assertions
       home.stateVersion = "25.05";
-      # Per-host provider override: mact2 routes through the rog-hosted
-      # `openai-proxy` gateway (https://oai.glats.org/v1) instead of
-      # the built-in ChatGPT OAuth provider. See `home.opencode.activeProviderName`
-      # in shared/opencode.nix and the openai-{full,medium,light}-proxy
-      # tiers in shared/opencode/providers-base.nix.
-      home.opencode.activeProviderName = "openai-medium-proxy";
+      # Per-host provider override: mact2 routes through the `opencode-go`
+      # gateway instead of native OpenAI (native is Netskope-blocked).
+      # See `home.opencode.activeProviderName` in shared/opencode.nix and
+      # the opencode-go-{full,medium,light} tiers in
+      # shared/opencode/providers-base.nix.
+      home.opencode.activeProviderName = "opencode-go-medium";
     };
     extraSpecialArgs = {
       inherit
