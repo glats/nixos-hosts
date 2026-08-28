@@ -430,7 +430,10 @@ let
         # - OpenCode Go: absorbs the high-volume/tool-loop phases so ChatGPT limits are less likely.
         # - Avoids GPT-5.3-Codex-Spark because OpenAI documents it as Pro-only.
         # - Avoids GPT-5.4/5.4-mini because OpenAI says ChatGPT-account Codex removes them on 2026-08-31.
-        gentle-orchestrator = "openai/gpt-5.6-terra";
+        # GLM-5.3-Flash is available on OpenCode Go with 1M context, tool calls,
+        # and mandatory reasoning. Its high Go request headroom makes it the
+        # better repeated-routing default than the non-Flash GLM-5.3.
+        gentle-orchestrator = "opencode-go/glm-5.3-flash";
         sdd-init = "opencode-go/deepseek-v4-flash";
         # Explore is the biggest limit-burner in large repos: many reads, MCP research, long context.
         sdd-explore = "opencode-go/deepseek-v4-pro";
@@ -438,7 +441,9 @@ let
         sdd-propose = "openai/gpt-5.6-terra";
         sdd-spec = "openai/gpt-5.6-terra";
         sdd-design = "openai/gpt-5.6-terra";
-        # Mechanical decomposition is cheap volume work; offload it to Go.
+        # `deepseek-v4-flash` is the current stable alias for Flash-0731.
+        # It remains the fit for high-volume task decomposition: 1M context,
+        # tool calls, and substantially more concurrency than V4 Pro.
         sdd-tasks = "opencode-go/deepseek-v4-flash";
         # Apply is the highest edit volume phase; MiniMax M3 gives large context and better Go headroom.
         sdd-apply = "opencode-go/minimax-m3";
