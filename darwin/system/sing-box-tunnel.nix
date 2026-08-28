@@ -142,20 +142,18 @@ let
     # recursive failure. Uses sing-box 1.12+ server format (the legacy
     # `address: "1.1.1.1"` shorthand is deprecated and rejected in
     # 1.14).
+    #
+    # NOTE: no `detour` here — sing-box 1.13 DNS dialers already default
+    # to an empty direct outbound, and an explicit detour to a direct
+    # outbound is a fatal error ("detour to an empty direct outbound
+    # makes no sense"). With route.auto_detect_interface the dialer
+    # binds to the physical NIC, which is the off-tunnel path we want.
     dns = {
       servers = [
         {
           tag = "direct-dns";
           type = "udp";
           server = "1.1.1.1";
-          domain_resolver = "direct-dns-resolver";
-          detour = "direct";
-        }
-        {
-          tag = "direct-dns-resolver";
-          type = "udp";
-          server = "1.1.1.1";
-          detour = "direct";
         }
       ];
     };
