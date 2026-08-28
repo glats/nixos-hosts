@@ -395,8 +395,9 @@ let
         # It remains the fit for high-volume task decomposition: 1M context,
         # tool calls, and substantially more concurrency than V4 Pro.
         sdd-tasks = "opencode-go/deepseek-v4-flash";
-        # Apply is the highest edit volume phase; MiniMax M3 gives large context and better Go headroom.
-        sdd-apply = "opencode-go/minimax-m3";
+        # GLM-5.3-Flash: 1M context, structured tool calls, and lower Go cost.
+        # Prefer it over MiniMax M3 for Nix changes and iterative verification.
+        sdd-apply = "opencode-go/glm-5.3-flash";
         # Final acceptance/judgment pass stays on OpenAI.
         sdd-verify = "openai/gpt-5.6-terra";
         sdd-archive = "opencode-go/deepseek-v4-flash";
