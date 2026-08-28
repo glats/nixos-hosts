@@ -105,11 +105,20 @@ final: prev: {
   # current realized /run/current-system wrapper (rog, gen-892) which lists
   # gsettings-desktop-schemas, gtk+3, mate-desktop, mate-panel, dconf-editor
   # but NOT mate-settings-daemon.
-  mate = prev.mate // {
-    mate-media = prev.mate.mate-media.overrideAttrs (oldAttrs: {
-      propagatedBuildInputs = (oldAttrs.propagatedBuildInputs or [ ]) ++ [ final.mate.mate-settings-daemon ];
-    });
-  };
+  #
+  # The override MUST target top-level `pkgs.mate-media`, NOT `mate.mate-media`:
+  # in current nixpkgs MATE packages were "moved to top-level" (accessing
+  # `mate.mate-media` warns and forwards to `pkgs.mate-media`, not the other
+  # way around), and the NixOS MATE desktop-manager module adds the volume
+  # status icon to `environment.systemPackages` via the bare `with pkgs;`
+  # name — i.e. `pkgs.mate-media`. Overriding `mate = prev.mate // { ... }`
+  # evaluates fine, produces a correct wrapper, but NOTHING in the system
+  # references it, so the crash persists. Verified on rog: after switching to
+  # the committed fix the system closure still contained the old derivation
+  # (fjyg8h9...) and the icon aborted on scroll at 2026-08-28 11:12.
+  mate-media = prev.mate-media.overrideAttrs (oldAttrs: {
+    propagatedBuildInputs = (oldAttrs.propagatedBuildInputs or [ ]) ++ [ final.mate-settings-daemon ];
+  });
 
   # Shared afdko 4.0.3 override. Pin afdko back to 4.0.3 (which cantarell-fonts
   # upstream tests against and pins in its uv.lock) because nixpkgs' afdko
