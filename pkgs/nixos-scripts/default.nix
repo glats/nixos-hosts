@@ -1,10 +1,15 @@
-{ lib, stdenvNoCC }:
+{ lib, stdenvNoCC, makeWrapper, qrencode }:
 
 stdenvNoCC.mkDerivation {
   pname = "nixos-scripts";
   version = "0.1.0";
 
   src = ../../bin;
+
+  # qrencode is a runtime dep of tunnel-device-link (terminal QR output).
+  # wrapProgram puts it on that script's PATH without exposing the dep
+  # to the whole environment.
+  nativeBuildInputs = [ makeWrapper ];
 
   installPhase = ''
     mkdir -p $out/bin
@@ -57,6 +62,11 @@ stdenvNoCC.mkDerivation {
 
     cp $src/wg-peer $out/bin/
     chmod +x $out/bin/wg-peer
+
+    cp $src/tunnel-device-link $out/bin/
+    chmod +x $out/bin/tunnel-device-link
+    wrapProgram $out/bin/tunnel-device-link \
+      --prefix PATH : ${lib.makeBinPath [ qrencode ]}
 
     # webcam excluded: already provided by linux/home/webcam.nix
   '';
