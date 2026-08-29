@@ -296,7 +296,9 @@
             # the canonical module list from `darwinHomeModules`.
             ./darwin/home
             {
-              home.opencode.activeProviderName = "opencode-go-medium";
+              # Native OpenAI tier via the sing-box tunnel (scoped
+              # bin/opencode-tunnel launcher; see hosts/mact2/default.nix).
+              home.opencode.activeProviderName = "openai-medium";
             }
           ];
         };

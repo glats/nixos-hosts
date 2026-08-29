@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# opencode-tunnel — scoped proxy launcher for OpenCode on mact2.
+#
+# Exports HTTPS_PROXY/HTTP_PROXY pointing at the sing-box loopback
+# mixed inbound (127.0.0.1:2080, darwin/system/sing-box-tunnel.nix)
+# ONLY while that inbound is listening, then execs opencode with all
+# arguments. Scoped proxy env — MCP children are scrubbed via
+# mcp.environment in the generated opencode.json
+# (shared/opencode/runtime-config.nix). Never export these variables in
+# shell profiles — this launcher is the ONLY path that sets them.
+#
+# Graceful both ways: with the tunnel down, opencode runs WITHOUT proxy
+# vars (corporate Netskope path) after a stderr notice; with the tunnel
+# up, OpenAI traffic rides the tunnel (outer SNI tun.glats.org only).
+#
+# Runtime proof (2026-08-28): `curl -x http://127.0.0.1:2080
+# https://auth.openai.com` presents the real origin cert (Google Trust
+# Services WE1), and the rog sing-box log shows [mact2] →
+# auth.openai.com:443 — the loopback CONNECT carries no SNI for
+# Netskope steering to match.
+
+set -euo pipefail
+
+# Loopback mixed inbound (sing-box "mixed-in" tag).
+TUNNEL_HOST="127.0.0.1"
+TUNNEL_PORT="2080"
+
+# Probe before exporting: -z = connect-only scan, -w 1 = 1s cap so a
+# wedged listener cannot stall the launch. BSD nc (macOS) supports both.
+if nc -z -w 1 "$TUNNEL_HOST" "$TUNNEL_PORT" >/dev/null 2>&1; then
+  export HTTPS_PROXY="http://${TUNNEL_HOST}:${TUNNEL_PORT}"
+  export HTTP_PROXY="http://${TUNNEL_HOST}:${TUNNEL_PORT}"
+else
+  echo "opencode-tunnel: ${TUNNEL_HOST}:${TUNNEL_PORT} not listening — launching opencode WITHOUT proxy env" >&2
+fi
+
+exec opencode "$@"
