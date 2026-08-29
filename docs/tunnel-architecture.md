@@ -28,6 +28,55 @@ mismo fallback          │    final → urltest auto)                          
 
 **Por qué el proxy del sistema (Settings → Proxies) está descartado**: Netskope es dueño del diccionario de proxy global del sistema (`scutil --proxy` muestra sus keys) — lo que pongas ahí queda shadoweado. Solo funcionan los overrides per-app. El generador de PAC se implementó y se removió por esto (evidencia en `home-evidence.md`, FAIL G12 y design.md addendum 2026-08-29).
 
+## Dominios en macOS: cómo enrutar cada uno
+
+### Cómo resuelve dominios el cliente (mecánica)
+
+1. El TUN captura la conexión y la regla `sniff` extrae el dominio real del TLS ClientHello (SNI) — no depende del DNS del sistema
+2. Las route rules comparan ese dominio/IP contra las listas de exclusión, en orden
+3. Lo que no matchea ninguna regla va a `final` (urltest auto: túnel ↔ directo)
+4. El hostname viaja cifrado hasta rog — es rog quien resuelve y conecta (por eso el log del server muestra `[mact2] inbound connection to chatgpt.com:443` con el dominio, no la IP)
+
+### Los dos knobs declarativos (hosts/mact2/default.nix)
+
+```nix
+# Dominios que NO deben ir por el túnel (van directo, camino corporativo):
+tunnel.directDomains = [ "dominio-interno.falabella.cl" ];
+
+# Rangos IP que NO deben ir por el túnel (ya configurado):
+tunnel.directCidrs = [ "163.116.0.0/16" ];   # Netskope cloud
+```
+
+Después del cambio: `nixos-build` + `sudo launchctl kickstart -k system/org.nixos.sing-box-tunnel`.
+
+**¿Cuándo usar cada uno?**
+
+| Situación | Knob |
+|----------|------|
+| Un servicio corporativo se rompe porque el túnel cambia su ruta de salida | `tunnel.directDomains` |
+| Un rango/subred corporativa (NAC, intranet, VPN) inalcanzable vía túnel | `tunnel.directCidrs` |
+| Un dominio bloqueado por Netskope que querés alcanzar | **Ninguno** — usá la puerta proxy per-app (es dominio-agnóstica, lo cubre todo) |
+
+### Lo que NO funciona en macOS (probado — no pierdas tiempo)
+
+| Truco | Por qué muere |
+|-------|---------------|
+| `/etc/hosts` apuntando dominios a rog | Netskope filtra por **valor SNI**, no por IP — el ClientHello con SNI prohibido es interceptado igual (probe A1) |
+| Proxy PAC del sistema | Netskope shadowea el diccionario de proxy global (`BypassAllowed: 0`) |
+| Proxy manual en Settings → Network | Ídem — seteás, y Netskope re-assertea |
+| WireGuard / UDP / SSH directo a rog | Bloqueados por el firewall corporativo in-building |
+
+### Cómo verificar por dónde salió un dominio
+
+Después de tocar el dominio en cuestión, en rog:
+
+```bash
+journalctl -u sing-box --since "5 min ago" | grep "\[mact2\]" | grep -i dominio
+```
+
+- **Aparece** → fue por el túnel (rog lo resolvió y conectó)
+- **No aparece** → fue directo (exclusión activa) o lo interceptó Netskope (para dominios steereados sin proxy per-app)
+
 ## Comandos día a día (en mact2)
 
 ### Prender / apagar / estado del túnel
@@ -85,6 +134,23 @@ El proxy del sistema está descartado (Netskope lo shadowea). Para cualquier app
 | **Apps nativas CFNetwork** (Mail, App Store…) | Sin escape per-app confiable — el dict de proxy lo pisa Netskope | — |
 
 **Regla general**: si la app tiene config propia de proxy, apuntala a `127.0.0.1:2080` y todo su tráfico (incluidos dominios bloqueados) viaja por el túnel. Si solo lee el proxy del sistema, no hay nada que hacer sin wrapper. Nunca exportes `HTTP(S)_PROXY` en shell profiles — solo wrappers (los MCPs hijos heredan el env y deben seguir limpios).
+
+### Bootstrap OAuth de un dispositivo (el flujo completo)
+
+Cada dispositivo hace su **propio** login OAuth — no se copian auth.json entre hosts (el seed script quedó obsoleto como mecanismo; es fallback dormido).
+
+```bash
+# en el dispositivo, CON el túnel corriendo:
+opencode-tunnel auth login        # wrapper: el exchange del token viaja por el túnel
+```
+
+1. Copiás la URL que imprime opencode
+2. La abrís en un browser **con el proxy configurado** (Edge flag/policy o Firefox profile)
+3. Login en auth.openai.com (Netskope ciego — viaja por el túnel)
+4. Redirect a `localhost:1455` → Chromium hace bypass del proxy para localhost → opencode captura el código
+5. El exchange del token lo hace el propio opencode **por el túnel** (por eso el wrapper)
+
+⚠️ No corras `opencode auth login` a secas: el exchange del token es un flujo OpenAI-bound que Netskope secuestraría sin el proxy env del wrapper.
 
 ### Prueba de salud (30 segundos)
 
