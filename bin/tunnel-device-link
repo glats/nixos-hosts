@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# tunnel-device-link — runtime-only phone link printer for the OpenCode tunnel
+# tunnel-device-link — runtime-only phone link printer for the tunnel
 #
 # Reads the rendered phone UUID from the host's runtime secret path and
 # prints a vless:// share link to stdout. NEVER writes the UUID or the
@@ -22,7 +22,7 @@
 #               treat it like the password it is: paste it straight into
 #               SFA, never store or share it.
 #
-# The WS path is the same obscuity-not-secret constant used by the rog
+# The WS path is the same obscurity-not-secret constant used by the rog
 # server (linux/system/services/network/sing-box-tunnel.nix), nginx
 # vhost (linux/system/services/web/nginx.nix), and mact2 client
 # (darwin/system/sing-box-tunnel.nix). All four sites must stay

@@ -1,4 +1,4 @@
-# Root sing-box TUN client daemon for the OpenCode tunnel.
+# Root sing-box TUN client daemon of the mact2↔rog private tunnel.
 #
 # Runs as a root LaunchDaemon (sops-nix manages /run/secrets and the
 # rendered config template; launchd invokes sing-box with -c pointing at
@@ -6,12 +6,14 @@
 # route rules keep private + corporate + EDR-management traffic direct
 # (full mode) or tunnel only chatgpt.com + auth.openai.com (scoped mode).
 # A loopback mixed inbound (127.0.0.1:2080) is the Netskope steering
-# escape hatch — see the inbound block below for why it exists. Clients
-# reach it via per-app/per-browser proxy settings (e.g. the scoped
-# bin/opencode-tunnel launcher for OpenCode): a system-wide PAC was
-# tried and REMOVED — on managed macOS Netskope owns the SYSTEM-global
-# proxy dictionary and shadows per-service networksetup PAC settings
-# (see design.md, PR2 addendum).
+# escape hatch — see the inbound block below for why it exists. It serves
+# ANY app that needs to reach Netskope-steered categories (browser OAuth,
+# the OpenCode runtime, arbitrary GUI/CLI tools) via per-app/per-browser
+# proxy settings; OpenCode's scoped bin/opencode-tunnel launcher is just
+# the flagship consumer. A system-wide PAC was tried and REMOVED — on
+# managed macOS Netskope owns the SYSTEM-global proxy dictionary and
+# shadows per-service networksetup PAC settings (see design.md, PR2
+# addendum).
 #
 # The VLESS+WS outbound connects to tun.glats.org:443 with a uTLS
 # chrome ClientHello to blend into the wider Cloudflare-fronted fleet.
@@ -19,7 +21,7 @@
 # NIC so tun.glats.org doesn't loop into the TUN; default_domain_resolver
 # forces resolution off-tunnel via a `direct-dns` resolver tag.
 #
-# The WS path is the same obscuity-not-secret constant used by the
+# The WS path is the same obscurity-not-secret constant used by the
 # rog server (linux/system/services/network/sing-box-tunnel.nix),
 # nginx vhost (linux/system/services/web/nginx.nix), and the phone
 # link script (bin/tunnel-device-link). Generating it once keeps the
@@ -135,6 +137,10 @@ let
       # CONNECT/SOCKS request carries no SNI for steering to match, so the
       # flow is not intercepted; sing-box unwraps it here and the payload
       # rides the tunnel with outer SNI tun.glats.org only.
+      #
+      # Any app that can take a per-app proxy can ride this door —
+      # browser OAuth flows, the OpenCode runtime, arbitrary GUI/CLI
+      # tools — with OpenCode as the flagship consumer, not the purpose.
       #
       # No inbound-specific route rules: mixed-in traffic flows through
       # the same route rules + final as TUN traffic (full → "auto"
