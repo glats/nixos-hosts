@@ -19,9 +19,30 @@ let
     "${pkgs.ponytail-assets}/share/ponytail/commands"
   ];
 
-  # Merge base MCPs with extra MCPs, then filter by enabled
+  # Merge base MCPs with extra MCPs, then filter by enabled.
   allMcps = config.home.ai-assets.mcps // config.home.ai-assets.extraMcps;
-  enabledMcps = lib.filterAttrs (name: mcp: mcp.enabled or false) allMcps;
+
+  # MCP children must never inherit proxy env: OpenCode (Bun) honors
+  # HTTPS_PROXY/HTTP_PROXY for its own fetches, and MCP children inherit
+  # the full parent env. Empty string is falsy in OpenCode's proxy-env
+  # handling (no proxy), and `mcp.environment` is spread AFTER the
+  # parent env when spawning a local server, so the scrub below always
+  # wins. Remote MCPs have no child process — left untouched. Harmless
+  # on hosts that never set proxy vars.
+  proxyScrubEnv = {
+    HTTPS_PROXY = "";
+    HTTP_PROXY = "";
+    ALL_PROXY = "";
+    NO_PROXY = "*";
+  };
+  enabledMcps = lib.mapAttrs
+    (_: mcp:
+      if (mcp.type or "local") == "local" then
+        mcp // { environment = (mcp.environment or { }) // proxyScrubEnv; }
+      else
+        mcp
+    )
+    (lib.filterAttrs (_: mcp: mcp.enabled or false) allMcps);
 
   # TUI plugins configuration (name -> enabled)
   # Versions come from pkgs.opencode-npm-packages/versions.json
