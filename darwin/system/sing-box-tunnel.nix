@@ -7,7 +7,7 @@
 # (full mode) or tunnel only chatgpt.com + auth.openai.com (scoped mode).
 # A loopback mixed inbound (127.0.0.1:2080) is the Netskope steering
 # escape hatch — see the inbound block below for why it exists. A
-# generated PAC file (/etc/opencode-tunnel.pac) points the macOS SYSTEM
+# generated PAC file (/etc/tunnel.pac) points the macOS SYSTEM
 # proxy of selected network services at that loopback inbound for a
 # declarative domain list, so steered domains bypass Netskope's local
 # AppProxy pre-TUN.
@@ -229,7 +229,7 @@ let
   # non-steered traffic. The "PROXY 127.0.0.1:2080; DIRECT" fallback is
   # intentional: if the sing-box daemon is down, steered domains degrade
   # to the corporate path (Netskope block page) instead of hanging.
-  pacFile = pkgs.writeText "opencode-tunnel.pac" ''
+  pacFile = pkgs.writeText "tunnel.pac" ''
     // GENERATED FILE — do not edit. Source of truth: tunnel.pacDomains
     // in darwin/system/sing-box-tunnel.nix (this repo). Regenerated on
     // every rebuild.
@@ -296,7 +296,7 @@ in
       ];
       description = ''
         Domains that the system proxy routes to the loopback mixed
-        inbound via the generated PAC file (/etc/opencode-tunnel.pac).
+        inbound via the generated PAC file (/etc/tunnel.pac).
         Append steered domains here as they are discovered; takes effect
         on rebuild.
       '';
@@ -341,7 +341,7 @@ in
     };
 
     # Stable PAC path, regenerated on every rebuild.
-    environment.etc."opencode-tunnel.pac".source = pacFile;
+    environment.etc."tunnel.pac".source = pacFile;
 
     # Point the system proxy of each configured network service at the
     # PAC (networksetup service names in tunnel.pacNetworkServices).
@@ -352,11 +352,11 @@ in
     # extraActivation script runs BEFORE the `etc` script, but that is
     # harmless — networksetup only registers the PAC URL; the file is
     # read lazily by the system proxy, and every rebuild after the first
-    # already has /etc/opencode-tunnel.pac in place.
+    # already has /etc/tunnel.pac in place.
     system.activationScripts.extraActivation.text = lib.optionalString (cfg.pacDomains != [ ])
       (lib.concatMapStrings
         (svc: ''
-          /usr/bin/networksetup -setautoproxyurl ${lib.escapeShellArg svc} "file:///etc/opencode-tunnel.pac" || true
+          /usr/bin/networksetup -setautoproxyurl ${lib.escapeShellArg svc} "file:///etc/tunnel.pac" || true
         '')
         cfg.pacNetworkServices);
 
