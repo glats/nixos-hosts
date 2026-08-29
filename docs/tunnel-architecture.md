@@ -1,6 +1,6 @@
 # Túnel mact2→rog: arquitectura y uso diario
 
-**Qué es**: tu Mac corporativo (mact2) navega por tu home server (rog) a través de un túnel TLS que Netskope no puede inspeccionar. OpenAI, y todo lo que Netskope steeree, viaja invisible. El cambio SDD completo vive en `openspec/changes/mact2-openai-tls-tunnel-via-rog/`.
+**Qué es**: tu Mac corporativo (mact2) navega por tu home server (rog) a través de un túnel TLS que Netskope no puede inspeccionar. Esto **no es una herramienta solo para OpenAI**: es un egreso privado de **propósito general** para cualquier aplicación — el TUN cubre automáticamente el tráfico IP que Netskope libera, y el proxy loopback `127.0.0.1:2080` es una puerta per-app para lo que Netskope secuestra (cualquier app que acepte proxy propio; ver la tabla "Mecanismo genérico" más abajo). OpenCode con OpenAI nativo es el consumidor insignia y el ejemplo trabajado de este doc. El cambio SDD completo vive en `openspec/changes/mact2-openai-tls-tunnel-via-rog/`.
 
 ## Arquitectura en 30 segundos
 
@@ -192,6 +192,8 @@ Cada conexión autenticada aparece con el nombre del dispositivo (`[mact2]`, `[p
 
 La revocación es **autoritativa del server**: cambia qué UUIDs acepta rog; lo que el cliente tenga guardado deja de servir.
 
+> El namespace `opencode-tunnel/` del sops file es **histórico** — no renombrar: forzaría re-encripción de sops sin beneficio funcional.
+
 ```bash
 # ROTAR un dispositivo (nuevo UUID, mismo slot):
 sops secrets/shared/opencode-tunnel.yaml    # editar uuid_phone: <nuevo>
@@ -226,7 +228,7 @@ sudo bin/tunnel-device-link phone            # nuevo link → re-importar en el 
 | Vhost tun.glats.org (cover page + WS path) | `linux/system/services/web/nginx.nix` |
 | Launchers | `bin/opencode-tunnel`, `bin/tunnel-device-link` (empaquetados en `pkgs/nixos-scripts`) |
 | Scrub MCP (hosts agnóstico) | `shared/opencode/runtime-config.nix` |
-| Credenciales (2 UUIDs) | `secrets/shared/opencode-tunnel.yaml` (sops; regla específica en `.sops.yaml`) |
+| Credenciales (2 UUIDs) | `secrets/shared/opencode-tunnel.yaml` (sops; regla específica en `.sops.yaml`; namespace `opencode-tunnel` histórico, no renombrar) |
 | Reglas de exclusión del cliente | `hosts/mact2/default.nix` (`tunnel.directCidrs`, `tunnel.mode`) |
 | Change SDD completo + evidencia | `openspec/changes/mact2-openai-tls-tunnel-via-rog/` |
 | Análisis del control Netskope (publicable) | `docs/netskope-bypass-analysis.md` |
