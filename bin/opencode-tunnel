@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # opencode-tunnel — scoped proxy launcher for OpenCode on mact2.
 #
+# Part of the mact2↔rog tunnel stack (darwin/system/sing-box-tunnel.nix);
+# to point OTHER apps at the same loopback proxy, see
+# docs/tunnel-architecture.md (per-app proxy table).
+#
 # Exports HTTPS_PROXY/HTTP_PROXY pointing at the sing-box loopback
 # mixed inbound (127.0.0.1:2080, darwin/system/sing-box-tunnel.nix)
 # ONLY while that inbound is listening, then execs opencode with all

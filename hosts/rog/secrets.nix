@@ -74,7 +74,9 @@
     sopsFile = ../../secrets/host/rog/romm.yaml;
   };
 
-  # OpenCode tunnel — per-device VLESS UUIDs (shared with mact2).
+  # mact2↔rog private tunnel — per-device VLESS UUIDs (shared with
+  # mact2). The "opencode-tunnel" key namespace is historical; do not
+  # rename (sops re-encryption churn for zero functional gain).
   # One scalar key per device; each is its own 0400 file owned by the
   # sing-box system user so the service can read them at activation.
   # Removing a key + this decl + the matching users entry in

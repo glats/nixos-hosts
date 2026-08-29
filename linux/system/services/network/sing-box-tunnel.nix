@@ -1,4 +1,6 @@
-# Loopback VLESS+WS inbound for the opencode tunnel.
+# Server-side loopback inbound of the mact2↔rog private tunnel
+# (general-purpose private egress; OpenCode's native OpenAI access is
+# the flagship use case, not the purpose).
 #
 # One sing-box process binds 127.0.0.1:4011 and accepts WS connections
 # proxied by nginx from tun.glats.org. Each approved device gets its
@@ -30,7 +32,8 @@ let
 in
 {
   options.services.sing-box-tunnel = {
-    enable = lib.mkEnableOption "OpenCode tunnel loopback VLESS+WS server";
+    enable = lib.mkEnableOption
+      "loopback VLESS+WS server of the mact2↔rog private tunnel";
 
     port = lib.mkOption {
       type = lib.types.port;
