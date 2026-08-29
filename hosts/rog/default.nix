@@ -209,5 +209,6 @@
     pipewire-module-xrdp
     intel-vaapi-driver
     libva-vdpau-driver
+    qrencode # bin/tunnel-device-link QR output when run via sudo from the tree
   ];
 }
