@@ -71,3 +71,13 @@ The VLESS outbound tag is `tunnel-out`; server users are `{ name = "mact2"; uuid
 ## Open Questions
 
 - [ ] Office-only agent/VPN coexistence and Cloudflare WS policy remain acceptance gates, not assumptions.
+
+## Addendum — 2026-08-29: loopback mixed inbound (steering escape hatch)
+
+**Rationale.** The home evidence run (FAIL #2 in `home-evidence.md`, TLS-through-tunnel cert stealth) proved Netskope's local AppProxy intercepts OpenAI-bound flows at socket level BEFORE they reach the TUN: with the tunnel up, `auth.openai.com` still presented the `ca.grupofalabella.goskope.com` issuer instead of the origin cert, because Netskope steering matches the SNI of outbound connections. A loopback mixed (HTTP CONNECT + SOCKS) inbound sidesteps steering: a CONNECT/SOCKS request to `127.0.0.1` carries no SNI for Netskope to match, so the flow is not intercepted; sing-box unwraps it and the payload rides the tunnel with outer SNI `tun.glats.org` only.
+
+**Chosen port/tag.** `type = "mixed"`, `tag = "mixed-in"`, `listen = "127.0.0.1"`, `listen_port = 2080` — loopback-only, added to `darwin/system/sing-box-tunnel.nix` alongside the TUN inbound. No inbound-specific route rules.
+
+**Semantics in both modes.** Traffic from `mixed-in` flows through the same route rules + final as TUN traffic: in `full` mode it hits the `auto` urltest group (tunnel-out while rog is alive, direct fallback otherwise); in `scoped` mode the CONNECT/SOCKS request target is a hostname, so the `chatgpt.com`/`auth.openai.com` `domain_suffix` rules match without sniffing and everything else goes direct.
+
+**What it enables.** Browser OAuth on `auth.openai.com` via manual proxy settings (`http://127.0.0.1:2080`) and a scoped `HTTPS_PROXY` for the opencode runtime on mact2 — both bypassing Netskope pre-TUN interception. Spec amendment (formal `HTTPS_PROXY` wiring for opencode) is deferred to PR2; this addendum records only the transport escape hatch.
