@@ -81,3 +81,15 @@ The VLESS outbound tag is `tunnel-out`; server users are `{ name = "mact2"; uuid
 **Semantics in both modes.** Traffic from `mixed-in` flows through the same route rules + final as TUN traffic: in `full` mode it hits the `auto` urltest group (tunnel-out while rog is alive, direct fallback otherwise); in `scoped` mode the CONNECT/SOCKS request target is a hostname, so the `chatgpt.com`/`auth.openai.com` `domain_suffix` rules match without sniffing and everything else goes direct.
 
 **What it enables.** Browser OAuth on `auth.openai.com` via manual proxy settings (`http://127.0.0.1:2080`) and a scoped `HTTPS_PROXY` for the opencode runtime on mact2 — both bypassing Netskope pre-TUN interception. Spec amendment (formal `HTTPS_PROXY` wiring for opencode) is deferred to PR2; this addendum records only the transport escape hatch.
+
+### PAC generator (system-level steering bypass)
+
+**Rationale.** The mixed inbound is only an escape hatch if clients actually use it. Netskope steering intercepts at socket level pre-TUN, so the macOS SYSTEM proxy must be told to send steered domains through the loopback proxy explicitly; a Proxy Auto-Config (PAC) scoped to a declarative domain list keeps everything else DIRECT and grows the same way the tunnel bypass lists do.
+
+**Options.** `tunnel.pacDomains` (default `["openai.com" "chatgpt.com" "oaistatic.com" "oaiusercontent.com"]`) — domains the system proxy routes to the loopback mixed inbound; users append steered domains here as they discover them, takes effect on rebuild. `tunnel.pacNetworkServices` (default `["Wi-Fi"]`) — networksetup service names whose system proxy gets pointed at the PAC.
+
+**Generation and deployment.** The module renders the PAC with `pkgs.writeText` (domain list embedded as a JSON array via `builtins.toJSON`) and exposes it at `/etc/opencode-tunnel.pac` through `environment.etc`, regenerated on every rebuild. Activation (`system.activationScripts.extraActivation.text`, option name verified against the pinned nix-darwin-26.05 rev) runs `/usr/bin/networksetup -setautoproxyurl <svc> "file:///etc/opencode-tunnel.pac" || true` for each service in `pacNetworkServices`, only when `pacDomains` is non-empty; `|| true` keeps activation green when a service is absent. WPAD/autodiscovery is deliberately untouched.
+
+**Fallback semantics.** The PAC returns `"PROXY 127.0.0.1:2080; DIRECT"` for matched domains: if the sing-box daemon is down, steered domains degrade to the corporate path (Netskope block page) instead of hanging.
+
+**Per-host overrides.** Follow the `hosts/mact2/default.nix` `tunnel.directCidrs` pattern (e.g. `tunnel.pacDomains = [ ... ];`).
