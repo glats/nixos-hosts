@@ -90,5 +90,18 @@ fi
 #   sni=tun.glats.org, fp=chrome — outer ClientHello matches mact2's
 #                                  uTLS chrome fingerprint
 #   type=ws, host=tun.glats.org, path=<ws> — WS transport over :443
-printf 'vless://%s@tun.glats.org:443?encryption=none&security=tls&sni=tun.glats.org&fp=chrome&type=ws&host=tun.glats.org&path=%s#mact2-tunnel-%s\n' \
-  "$uuid" "$ws_path" "$device"
+link="$(printf 'vless://%s@tun.glats.org:443?encryption=none&security=tls&sni=tun.glats.org&fp=chrome&type=ws&host=tun.glats.org&path=%s#mact2-tunnel-%s' \
+  "$uuid" "$ws_path" "$device")"
+printf '%s\n' "$link"
+
+# Interactive terminals also get a scannable QR (rendered to stdout,
+# never a file — same runtime-only rule as the link). Piped stdout
+# stays machine-consumable: URL only, no QR.
+if command -v qrencode >/dev/null 2>&1; then
+  if [ -t 1 ]; then
+    printf '\nScan in SFA (sing-box for Android → + → scan/import):\n\n' >&2
+    qrencode -t ANSIUTF8 -m 2 "$link"
+  fi
+else
+  printf '(qrencode not on PATH — copy the link and use SFA → + → Import from clipboard)\n' >&2
+fi
