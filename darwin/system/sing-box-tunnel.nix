@@ -6,11 +6,12 @@
 # route rules keep private + corporate + EDR-management traffic direct
 # (full mode) or tunnel only chatgpt.com + auth.openai.com (scoped mode).
 # A loopback mixed inbound (127.0.0.1:2080) is the Netskope steering
-# escape hatch — see the inbound block below for why it exists. A
-# generated PAC file (/etc/tunnel.pac) points the macOS SYSTEM
-# proxy of selected network services at that loopback inbound for a
-# declarative domain list, so steered domains bypass Netskope's local
-# AppProxy pre-TUN.
+# escape hatch — see the inbound block below for why it exists. Clients
+# reach it via per-app/per-browser proxy settings (e.g. the scoped
+# bin/opencode-tunnel launcher for OpenCode): a system-wide PAC was
+# tried and REMOVED — on managed macOS Netskope owns the SYSTEM-global
+# proxy dictionary and shadows per-service networksetup PAC settings
+# (see design.md, PR2 addendum).
 #
 # The VLESS+WS outbound connects to tun.glats.org:443 with a uTLS
 # chrome ClientHello to blend into the wider Cloudflare-fronted fleet.
@@ -223,25 +224,6 @@ let
     };
   });
 
-  # Proxy Auto-Config (PAC) served to the macOS SYSTEM proxy. Only the
-  # domains in tunnel.pacDomains go through the loopback mixed inbound;
-  # everything else is DIRECT, so the corporate path is untouched for
-  # non-steered traffic. The "PROXY 127.0.0.1:2080; DIRECT" fallback is
-  # intentional: if the sing-box daemon is down, steered domains degrade
-  # to the corporate path (Netskope block page) instead of hanging.
-  pacFile = pkgs.writeText "tunnel.pac" ''
-    // GENERATED FILE — do not edit. Source of truth: tunnel.pacDomains
-    // in darwin/system/sing-box-tunnel.nix (this repo). Regenerated on
-    // every rebuild.
-    function FindProxyForURL(url, host) {
-      var domains = ${builtins.toJSON cfg.pacDomains};
-      for (var i = 0; i < domains.length; i++) {
-        if (dnsDomainIs(host, domains[i])) return "PROXY 127.0.0.1:2080; DIRECT";
-      }
-      return "DIRECT";
-    }
-  '';
-
 in
 {
   options.tunnel = {
@@ -280,36 +262,6 @@ in
         confirmed.
       '';
     };
-
-    # Domains the macOS SYSTEM proxy sends through the loopback mixed
-    # inbound (127.0.0.1:2080) via the generated PAC. This exists because
-    # Netskope's local AppProxy intercepts steered SNI categories at
-    # socket level BEFORE they reach the TUN (home evidence FAIL #2), so
-    # TUN-only routing is not enough for browser OAuth flows.
-    pacDomains = lib.mkOption {
-      type = lib.types.listOf lib.types.str;
-      default = [
-        "openai.com"
-        "chatgpt.com"
-        "oaistatic.com"
-        "oaiusercontent.com"
-      ];
-      description = ''
-        Domains that the system proxy routes to the loopback mixed
-        inbound via the generated PAC file (/etc/tunnel.pac).
-        Append steered domains here as they are discovered; takes effect
-        on rebuild.
-      '';
-    };
-
-    pacNetworkServices = lib.mkOption {
-      type = lib.types.listOf lib.types.str;
-      default = [ "Wi-Fi" ];
-      description = ''
-        macOS network services (networksetup service names) whose system
-        proxy is pointed at the generated PAC file during activation.
-      '';
-    };
   };
 
   config = {
@@ -339,26 +291,6 @@ in
       mode = "0400";
       file = configFile;
     };
-
-    # Stable PAC path, regenerated on every rebuild.
-    environment.etc."tunnel.pac".source = pacFile;
-
-    # Point the system proxy of each configured network service at the
-    # PAC (networksetup service names in tunnel.pacNetworkServices).
-    # `|| true` keeps activation green when a service is absent (e.g.
-    # "Wi-Fi" on a Mac without a Wi-Fi interface). Only runs when
-    # pacDomains is non-empty. WPAD/autodiscovery is deliberately left
-    # untouched. Ordering note: in the pinned nix-darwin the
-    # extraActivation script runs BEFORE the `etc` script, but that is
-    # harmless — networksetup only registers the PAC URL; the file is
-    # read lazily by the system proxy, and every rebuild after the first
-    # already has /etc/tunnel.pac in place.
-    system.activationScripts.extraActivation.text = lib.optionalString (cfg.pacDomains != [ ])
-      (lib.concatMapStrings
-        (svc: ''
-          /usr/bin/networksetup -setautoproxyurl ${lib.escapeShellArg svc} "file:///etc/tunnel.pac" || true
-        '')
-        cfg.pacNetworkServices);
 
     # Root LaunchDaemon. Requires root for utun creation on macOS.
     # KeepAlive retries if launchd races sops-install-secrets.

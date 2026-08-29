@@ -59,13 +59,23 @@ The client MUST use `tun.glats.org` for transport connection and TLS server name
 
 ### Requirement: Proxy-Environment and MCP Isolation
 
-The tunnel MUST NOT set `HTTP_PROXY` or `HTTPS_PROXY` anywhere in the configured environment or process tree. MCP child processes MUST retain clean proxy environments; in full mode their network traffic MAY traverse the tunnel solely by routing.
+> MODIFIED 2026-08-28 (PR2 runtime wiring): the original blanket rule — "The tunnel MUST NOT set `HTTP_PROXY` or `HTTPS_PROXY` anywhere in the configured environment or process tree" — is narrowed to the scoped-launcher contract below. The narrowing follows the loopback mixed inbound becoming the only working Netskope steering bypass (system-PAC route REMOVED; see design.md PR2 addendum). The MCP-child isolation invariant is unchanged and remains authoritative.
+
+Proxy environment variables MUST be exported ONLY by the scoped `bin/opencode-tunnel` launcher, and ONLY while the loopback mixed inbound (127.0.0.1:2080) is listening. Shell profiles and the tunnel daemon MUST NOT export `HTTP_PROXY` or `HTTPS_PROXY`. MCP child processes MUST retain clean proxy environments, enforced declaratively via `mcp.environment` in the generated opencode.json; in full mode their network traffic MAY traverse the tunnel solely by routing.
 
 #### Scenario: Inspect MCP environments [hosts: mact2]
 
 - GIVEN OpenCode has launched representative MCP children through the active tunnel
 - WHEN `ps eww` is inspected for each child
 - THEN no child contains `HTTP_PROXY` or `HTTPS_PROXY`
+
+#### Scenario: Scoped launcher exports proxy conditionally [hosts: mact2]
+
+- GIVEN `opencode-tunnel` is launched once with the tunnel up and once with the tunnel down
+- WHEN the opencode process environment is inspected in each case
+- THEN `HTTPS_PROXY`/`HTTP_PROXY` are set to `http://127.0.0.1:2080` only while the mixed inbound listens
+- AND with the tunnel down the launcher prints a stderr notice and opencode runs with a clean proxy env
+- AND no shell profile exports either variable
 
 ### Requirement: Stealth Client TLS
 

@@ -55,12 +55,15 @@
       ];
       # Define stateVersion here to satisfy early Home Manager assertions
       home.stateVersion = "25.05";
-      # Per-host provider override: mact2 routes through the `opencode-go`
-      # gateway instead of native OpenAI (native is Netskope-blocked).
-      # See `home.opencode.activeProviderName` in shared/opencode.nix and
-      # the opencode-go-{full,medium,light} tiers in
+      # Per-host provider override: mact2 uses native OpenAI (ChatGPT
+      # OAuth) through the sing-box tunnel — reachability comes from the
+      # scoped bin/opencode-tunnel launcher (proxy env exported only
+      # while 127.0.0.1:2080 listens; MCP children stay scrubbed via
+      # mcp.environment in shared/opencode/runtime-config.nix). See
+      # `home.opencode.activeProviderName` in shared/opencode.nix and
+      # the openai-{full,medium,light} tiers in
       # shared/opencode/providers-base.nix.
-      home.opencode.activeProviderName = "opencode-go-medium";
+      home.opencode.activeProviderName = "openai-medium";
     };
     extraSpecialArgs = {
       inherit

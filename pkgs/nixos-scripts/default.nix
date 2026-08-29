@@ -51,6 +51,9 @@ stdenvNoCC.mkDerivation {
     cp $src/opencode2 $out/bin/
     chmod +x $out/bin/opencode2
 
+    cp $src/opencode-tunnel $out/bin/
+    chmod +x $out/bin/opencode-tunnel
+
     cp $src/remove-wireguard-peer $out/bin/
     chmod +x $out/bin/remove-wireguard-peer
 
