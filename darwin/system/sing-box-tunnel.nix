@@ -49,7 +49,10 @@ let
   #   5. domain_suffix in tunnel.directDomains -> direct
   #   6. process_name exclusions (best-effort on macOS standalone; back
   #      them with IP/domain rules as the authoritative gate)
-  #   7. final -> tunnel-out
+  #   7. final -> "auto" (urltest group: tunnel-out while rog is alive,
+  #      automatic fallback to direct when it is not — the Mac degrades to
+  #      a normal corporate endpoint behind Netskope, nothing leaks to a
+  #      dead tunnel because nothing is sent to rog at all)
   #
   # Scoped mode:
   #   1. domain_suffix chatgpt.com, auth.openai.com -> tunnel-out
@@ -85,7 +88,11 @@ let
 
   routeRules = if cfg.mode == "full" then fullRules else scopedRules;
 
-  routeFinal = if cfg.mode == "full" then "tunnel-out" else "direct";
+  # Full mode routes through the urltest group: probe both paths every
+  # minute, use tunnel-out while rog is reachable, fall back to direct
+  # (normal corporate filtering via Netskope) when it is not, and switch
+  # back automatically on recovery. Scoped mode is unaffected.
+  routeFinal = if cfg.mode == "full" then "auto" else "direct";
 
   # Rendered config JSON. The placeholder substitution happens at
   # activation; we hand sops-install-secrets a JSON file with the
@@ -137,6 +144,17 @@ let
       }
       { type = "direct"; tag = "direct"; }
       { type = "block"; tag = "block"; }
+      # Resilience group: full-mode final. urltest probes gstatic 204
+      # through each child; tunnel-out wins while rog answers, direct
+      # takes over when it does not, and the switch back is automatic.
+      {
+        type = "urltest";
+        tag = "auto";
+        outbounds = [ "tunnel-out" "direct" ];
+        url = "https://www.gstatic.com/generate_204";
+        interval = "1m";
+        tolerance = 50;
+      }
     ];
 
     # DNS: a dedicated direct resolver is required so the host lookup
