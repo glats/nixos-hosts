@@ -118,7 +118,7 @@ if [ "$mode" = "config" ]; then
   # `sing-box check` on 1.13.x.
   printf '%s\n' "{
   \"log\": { \"level\": \"info\" },
-  \"dns\": { \"servers\": [{ \"tag\": \"direct-dns\", \"type\": \"udp\", \"server\": \"1.1.1.1\" }] },
+  \"dns\": { \"servers\": [{ \"tag\": \"direct-dns\", \"type\": \"local\" }] },
   \"inbounds\": [{
     \"type\": \"tun\", \"tag\": \"sb-tun\",
     \"address\": [\"172.19.0.1/30\"],
