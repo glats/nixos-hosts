@@ -2,7 +2,7 @@
 
 ## Technical Approach
 
-`rog` terminates TLS for `tun.glats.org` and proxies one random, fixed WebSocket path to a loopback multi-user VLESS inbound. A root `mact2` LaunchDaemon owns a sing-box TUN. Its default is full tunnel; private, corporate, and EDR-management traffic is explicitly direct. No proxy environment variables are used.
+`rog` terminates TLS for `tun.glats.org` and proxies one random, fixed WebSocket path to a loopback multi-user VLESS inbound. A root `mact2` LaunchDaemon owns a sing-box TUN. Its default is full tunnel; private, corporate, and EDR-management traffic is explicitly direct. Proxy environment variables are used ONLY inside the scoped `bin/opencode-tunnel` launcher (2026-08-28 PR2 amendment below); MCP children stay proxy-clean via `mcp.environment`.
 
 ```
 mact2 TUN ──VLESS+WS+TLS/uTLS──> tun.glats.org nginx ──> rog sing-box ──> Internet
@@ -82,14 +82,22 @@ The VLESS outbound tag is `tunnel-out`; server users are `{ name = "mact2"; uuid
 
 **What it enables.** Browser OAuth on `auth.openai.com` via manual proxy settings (`http://127.0.0.1:2080`) and a scoped `HTTPS_PROXY` for the opencode runtime on mact2 — both bypassing Netskope pre-TUN interception. Spec amendment (formal `HTTPS_PROXY` wiring for opencode) is deferred to PR2; this addendum records only the transport escape hatch.
 
-### PAC generator (system-level steering bypass)
+### PAC generator (system-level steering bypass) — REMOVED 2026-08-28 (PR2)
 
-**Rationale.** The mixed inbound is only an escape hatch if clients actually use it. Netskope steering intercepts at socket level pre-TUN, so the macOS SYSTEM proxy must be told to send steered domains through the loopback proxy explicitly; a Proxy Auto-Config (PAC) scoped to a declarative domain list keeps everything else DIRECT and grows the same way the tunnel bypass lists do.
+**REMOVED.** The entire system-level PAC generator was deleted from `darwin/system/sing-box-tunnel.nix`: the `tunnel.pacDomains` and `tunnel.pacNetworkServices` options, the `pkgs.writeText "tunnel.pac"` rendering exposed at `/etc/tunnel.pac` via `environment.etc`, and the activation wiring that ran `networksetup -setautoproxyurl` per network service. The loopback mixed inbound (127.0.0.1:2080) and everything else in the module are kept unchanged.
 
-**Options.** `tunnel.pacDomains` (default `["openai.com" "chatgpt.com" "oaistatic.com" "oaiusercontent.com"]`) — domains the system proxy routes to the loopback mixed inbound; users append steered domains here as they discover them, takes effect on rebuild. `tunnel.pacNetworkServices` (default `["Wi-Fi"]`) — networksetup service names whose system proxy gets pointed at the PAC.
+**Why (evidence).** On managed macOS the Netskope client owns the SYSTEM-global proxy dictionary: per-service autoproxy was set + enabled (`networksetup -setautoproxyurl` / `-setautoproxyenabled`) yet CFNetwork apps (Edge) were still steered by Netskope — `scutil --proxy` shows only Netskope's own keys (`BypassAllowed`/`FallBackAllowed`), i.e. Netskope SHADOWS the per-service PAC and the generated `/etc/tunnel.pac` was never consulted. Per-browser / per-app proxy is the working mechanism: OAuth login completed through a browser launched with an explicit proxy flag, and `curl -x http://127.0.0.1:2080 https://auth.openai.com` returns the real origin cert (issuer Google Trust Services WE1) with the rog log showing `[mact2] → auth.openai.com:443`.
 
-**Generation and deployment.** The module renders the PAC with `pkgs.writeText` (domain list embedded as a JSON array via `builtins.toJSON`) and exposes it at `/etc/tunnel.pac` through `environment.etc`, regenerated on every rebuild. Activation (`system.activationScripts.extraActivation.text`, option name verified against the pinned nix-darwin-26.05 rev) runs `/usr/bin/networksetup -setautoproxyurl <svc> "file:///etc/tunnel.pac" || true` for each service in `pacNetworkServices`, only when `pacDomains` is non-empty; `|| true` keeps activation green when a service is absent. WPAD/autodiscovery is deliberately untouched.
+**One-time manual cleanup (user-run once, deliberately NOT in activation).** The previously registered autoproxy URL (`file:///etc/tunnel.pac`) lingers in the network service after removal; clear it with:
 
-**Fallback semantics.** The PAC returns `"PROXY 127.0.0.1:2080; DIRECT"` for matched domains: if the sing-box daemon is down, steered domains degrade to the corporate path (Netskope block page) instead of hanging.
+```
+sudo networksetup -setautoproxyurl "Wi-Fi" " "
+```
 
-**Per-host overrides.** Follow the `hosts/mact2/default.nix` `tunnel.directCidrs` pattern (e.g. `tunnel.pacDomains = [ ... ];`).
+## Addendum — 2026-08-28 (PR2): scoped runtime proxy wiring for OpenCode
+
+**Mechanism (three declarative pieces):**
+
+1. **MCP scrub** — every local MCP server in the generated `opencode.json` gets `environment = { HTTPS_PROXY = ""; HTTP_PROXY = ""; ALL_PROXY = ""; NO_PROXY = "*"; }` (applied at generation time in `shared/opencode/runtime-config.nix`, covering base + extra MCPs on all hosts). Empty string is falsy in OpenCode's proxy-env handling → no proxy for MCP children; `mcp.environment` is spread AFTER the parent env, so the scrub always wins. Remote MCPs (no child process) are untouched.
+2. **Scoped launcher** — `bin/opencode-tunnel` (packaged via `pkgs/nixos-scripts`): probes `nc -z 127.0.0.1 2080`; exports `HTTPS_PROXY`/`HTTP_PROXY` only while the mixed inbound listens (stderr notice + clean env otherwise), then `exec opencode "$@"`. Shell profiles export nothing.
+3. **Provider switch** — `home.opencode.activeProviderName = "openai-medium"` (native OpenAI ChatGPT OAuth) in `hosts/mact2/default.nix` and the standalone `flake.nix` `homeConfigurations.mact2` override, replacing the interim `opencode-go-medium`. OAuth bootstrap was completed via a proxied browser; the system-PAC route is dead (see the REMOVED note above).
