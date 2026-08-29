@@ -72,6 +72,20 @@ Settings → Network Settings → Manual proxy → HTTP 127.0.0.1 puerto 2080
 
 **Dominios nuevos bloqueados por Netskope**: no hay lista que mantener — cualquier dominio que accedas **a través del proxy** ya viaja por el túnel. La puerta per-app es dominio-agnóstica. (Las listas `tunnel.directDomains`/`directCidrs` son para lo contrario: excluir dominios DEL túnel.)
 
+### Mecanismo genérico: apuntar CUALQUIER app al túnel
+
+El proxy del sistema está descartado (Netskope lo shadowea). Para cualquier app bloqueada, la pregunta es: *"¿esta app acepta que le indique un proxy por su propio mecanismo?"*
+
+| Clase de app | Mecanismo | Persistencia |
+|--------------|-----------|--------------|
+| **Chromium** (Edge, Chrome, Brave, Arc) | Launch flag `--proxy-server=http://127.0.0.1:2080`, o config file: `defaults write com.microsoft.Edge ProxyMode -string fixed_servers` + `defaults write com.microsoft.Edge ProxyServer -string 127.0.0.1:2080` | Flag: cada lanzamiento · defaults: permanente (⚠️ si IT empuja policies Edge por MDM, las managed ganan) · localhost bypass automático (OAuth callback OK) |
+| **Firefox / Gecko** | Profile → Manual proxy `127.0.0.1:2080` | Permanente en el profile |
+| **CLI** (curl, git, npm, pip…) | Env en la invocación o wrapper: `HTTPS_PROXY=http://127.0.0.1:2080 curl …`, `git -c http.proxy=http://127.0.0.1:2080 clone …` | Per-invocación |
+| **OpenCode** | `opencode-tunnel` (wrapper del repo — scopea env + MCPs limpios) | Cero (auto-detecta) |
+| **Apps nativas CFNetwork** (Mail, App Store…) | Sin escape per-app confiable — el dict de proxy lo pisa Netskope | — |
+
+**Regla general**: si la app tiene config propia de proxy, apuntala a `127.0.0.1:2080` y todo su tráfico (incluidos dominios bloqueados) viaja por el túnel. Si solo lee el proxy del sistema, no hay nada que hacer sin wrapper. Nunca exportes `HTTP(S)_PROXY` en shell profiles — solo wrappers (los MCPs hijos heredan el env y deben seguir limpios).
+
 ### Prueba de salud (30 segundos)
 
 ```bash
