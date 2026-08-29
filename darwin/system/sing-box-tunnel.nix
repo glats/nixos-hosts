@@ -5,6 +5,8 @@
 # the rendered JSON). TUN inbound owns the default route on macOS;
 # route rules keep private + corporate + EDR-management traffic direct
 # (full mode) or tunnel only chatgpt.com + auth.openai.com (scoped mode).
+# A loopback mixed inbound (127.0.0.1:2080) is the Netskope steering
+# escape hatch — see the inbound block below for why it exists.
 #
 # The VLESS+WS outbound connects to tun.glats.org:443 with a uTLS
 # chrome ClientHello to blend into the wider Cloudflare-fronted fleet.
@@ -115,6 +117,32 @@ let
         auto_route = true;
         strict_route = true;
         stack = "system";
+      }
+
+      # Loopback mixed inbound (HTTP CONNECT + SOCKS on 127.0.0.1:2080) —
+      # the Netskope steering escape hatch. Home evidence FAIL #2
+      # (openspec/changes/mact2-openai-tls-tunnel-via-rog/home-evidence.md)
+      # showed Netskope's local AppProxy intercepts OpenAI-bound flows at
+      # socket level BEFORE they reach the TUN: with the tunnel up,
+      # auth.openai.com still presented Netskope's own CA
+      # (ca.grupofalabella.goskope.com) instead of the origin cert, because
+      # its steering matches the SNI of outbound connections. A loopback
+      # CONNECT/SOCKS request carries no SNI for steering to match, so the
+      # flow is not intercepted; sing-box unwraps it here and the payload
+      # rides the tunnel with outer SNI tun.glats.org only.
+      #
+      # No inbound-specific route rules: mixed-in traffic flows through
+      # the same route rules + final as TUN traffic (full → "auto"
+      # urltest, scoped → domain_suffix → "direct") — that is the desired
+      # semantic. CONNECT/SOCKS request targets are hostnames, so the
+      # scoped domain_suffix rules match them without sniffing.
+      # `listen_port` is the sing-box 1.11+ unified inbound field
+      # (verified against sing-box 1.13.19 schema).
+      {
+        type = "mixed";
+        tag = "mixed-in";
+        listen = "127.0.0.1";
+        listen_port = 2080;
       }
     ];
 
