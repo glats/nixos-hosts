@@ -9,7 +9,18 @@
 #
 # Usage:
 #   bin/tunnel-device-link phone            # prints link for phone device
+#   bin/tunnel-device-link phone --config   # full sing-box config JSON for SFA
 #   bin/tunnel-device-link phone /custom/uuid/path   # explicit UUID path
+#
+# Output modes:
+#   default     vless:// share link (+ terminal QR when interactive).
+#               Works for v2rayNG / NekoBox / Hiddify class clients.
+#               NOTE: sing-box for Android (SFA) does NOT parse vless://
+#               links (verified against SFA source — no share-link parser).
+#   --config    Full sing-box client config JSON for SFA. Import as a
+#               LOCAL profile via clipboard. The JSON embeds the UUID —
+#               treat it like the password it is: paste it straight into
+#               SFA, never store or share it.
 #
 # The WS path is the same obscuity-not-secret constant used by the rog
 # server (linux/system/services/network/sing-box-tunnel.nix), nginx
@@ -48,6 +59,12 @@ fi
 
 device="$1"
 shift
+
+mode="link"
+if [ "${1:-}" = "--config" ]; then
+  mode="config"
+  shift
+fi
 
 # Validate device name — used in the URL fragment so keep it tame.
 if ! [[ "$device" =~ ^[A-Za-z0-9_-]+$ ]]; then
@@ -90,6 +107,58 @@ fi
 #   sni=tun.glats.org, fp=chrome — outer ClientHello matches mact2's
 #                                  uTLS chrome fingerprint
 #   type=ws, host=tun.glats.org, path=<ws> — WS transport over :443
+# Interactive terminals also get a scannable QR (rendered to stdout,
+# never a file — same runtime-only rule as the link). Piped stdout
+# stays machine-consumable: URL only, no QR.
+if [ "$mode" = "config" ]; then
+  # Full sing-box client config for SFA (Local profile via clipboard).
+  # Mirrors the mact2 darwin client minus macOS-specific bits (no
+  # process rules on Android; Netskope CIDR exclusion is a Mac concern).
+  # Validated shape: identical rule/dns/urltest structure passes
+  # `sing-box check` on 1.13.x.
+  printf '%s\n' "{
+  \"log\": { \"level\": \"info\" },
+  \"dns\": { \"servers\": [{ \"tag\": \"direct-dns\", \"type\": \"udp\", \"server\": \"1.1.1.1\" }] },
+  \"inbounds\": [{
+    \"type\": \"tun\", \"tag\": \"sb-tun\",
+    \"address\": [\"172.19.0.1/30\"],
+    \"auto_route\": true, \"strict_route\": true, \"stack\": \"system\"
+  }],
+  \"outbounds\": [
+    {
+      \"type\": \"vless\", \"tag\": \"tunnel-out\",
+      \"server\": \"tun.glats.org\", \"server_port\": 443,
+      \"uuid\": \"$uuid\",
+      \"tls\": {
+        \"enabled\": true, \"server_name\": \"tun.glats.org\",
+        \"utls\": { \"enabled\": true, \"fingerprint\": \"chrome\" }
+      },
+      \"transport\": { \"type\": \"ws\", \"path\": \"$ws_path\", \"headers\": { \"Host\": \"tun.glats.org\" } }
+    },
+    { \"type\": \"direct\", \"tag\": \"direct\" },
+    { \"type\": \"block\", \"tag\": \"block\" },
+    {
+      \"type\": \"urltest\", \"tag\": \"auto\",
+      \"outbounds\": [\"tunnel-out\", \"direct\"],
+      \"url\": \"https://www.gstatic.com/generate_204\",
+      \"interval\": \"1m\", \"tolerance\": 50
+    }
+  ],
+  \"route\": {
+    \"rules\": [
+      { \"action\": \"sniff\" },
+      { \"protocol\": \"dns\", \"action\": \"hijack-dns\" },
+      { \"network\": [\"icmp\"], \"outbound\": \"direct\" },
+      { \"ip_is_private\": true, \"outbound\": \"direct\" }
+    ],
+    \"final\": \"auto\",
+    \"auto_detect_interface\": true,
+    \"default_domain_resolver\": \"direct-dns\"
+  }
+}"
+  exit 0
+fi
+
 link="$(printf 'vless://%s@tun.glats.org:443?encryption=none&security=tls&sni=tun.glats.org&fp=chrome&type=ws&host=tun.glats.org&path=%s#mact2-tunnel-%s' \
   "$uuid" "$ws_path" "$device")"
 printf '%s\n' "$link"
