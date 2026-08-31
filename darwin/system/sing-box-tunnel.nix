@@ -53,15 +53,23 @@ let
   # Build the route rules. Ordered (full mode):
   #   1. sniff every connection for protocol metadata
   #   2. hijack-dns so DNS queries can be matched on domain
-  #   3. ip_is_private (RFC1918/ULA) -> direct (must come first)
-  #   4. ip_cidr in tunnel.directCidrs -> direct
-  #   5. domain_suffix in tunnel.directDomains -> direct
-  #   6. process_name exclusions (best-effort on macOS standalone; back
+  #   3. block QUIC (UDP/443) — urltest probes TCP only and keeps a
+  #      separate UDP selection that does NOT fail over (seen live in the
+  #      2026-08 rog outage: TCP degraded to direct while UDP stayed pinned
+  #      to the dead tunnel-out). Blocking QUIC forces browsers/HTTP-3
+  #      clients onto TCP, the path with working failover. Not needed in
+  #      scoped mode: final is direct there, so UDP/443 has no tunnel
+  #      dependency.
+  #   4. ip_is_private (RFC1918/ULA) -> direct (must come first)
+  #   5. ip_cidr in tunnel.directCidrs -> direct
+  #   6. domain_suffix in tunnel.directDomains -> direct
+  #   7. process_name exclusions (best-effort on macOS standalone; back
   #      them with IP/domain rules as the authoritative gate)
-  #   7. final -> "auto" (urltest group: tunnel-out while rog is alive,
-  #      automatic fallback to direct when it is not — the Mac degrades to
-  #      a normal corporate endpoint behind Netskope, nothing leaks to a
-  #      dead tunnel because nothing is sent to rog at all)
+  #   8. final -> "auto" (urltest group: tunnel-out while rog is alive,
+  #      automatic fallback to direct within the ≤30s probe window when it
+  #      is not — the Mac degrades to a normal corporate endpoint behind
+  #      Netskope, nothing leaks to a dead tunnel because nothing is sent
+  #      to rog at all)
   #
   # Scoped mode:
   #   1. domain_suffix chatgpt.com, auth.openai.com -> tunnel-out
@@ -69,6 +77,15 @@ let
   fullRules = [
     { action = "sniff"; }
     { protocol = "dns"; action = "hijack-dns"; }
+    # Reject QUIC (UDP/443): sing-box urltest probes TCP only and keeps a
+    # SEPARATE UDP selection that never fails over — during the 2-day rog
+    # outage TCP degraded to direct while UDP stayed pinned to the dead
+    # tunnel-out (76× "no route to internet" on vless). Blocking QUIC
+    # forces browsers (QUIC/HTTP-3) onto TCP, the path with working
+    # failover; standard practice behind an unstable tunnel. Scoped mode
+    # needs no equivalent (final is direct, so UDP/443 carries no tunnel
+    # dependency).
+    { network = [ "udp" ]; port = [ 443 ]; outbound = "block"; }
     # ICMP (ping) is unsupported by the VLESS outbound — route it direct.
     # Valid since sing-box 1.13.0 for echo requests from TUN inbounds.
     { network = [ "icmp" ]; outbound = "direct"; }
@@ -98,9 +115,11 @@ let
   routeRules = if cfg.mode == "full" then fullRules else scopedRules;
 
   # Full mode routes through the urltest group: probe both paths every
-  # minute, use tunnel-out while rog is reachable, fall back to direct
-  # (normal corporate filtering via Netskope) when it is not, and switch
-  # back automatically on recovery. Scoped mode is unaffected.
+  # 30 seconds, use tunnel-out while rog is reachable, fall back to direct
+  # (normal corporate filtering via Netskope) within that ≤30s window when
+  # it is not, and switch back automatically on recovery. QUIC is blocked
+  # (see fullRules), so everything through the tunnel rides TCP. Scoped
+  # mode is unaffected.
   routeFinal = if cfg.mode == "full" then "auto" else "direct";
 
   # Rendered config JSON. The placeholder substitution happens at
@@ -184,15 +203,22 @@ let
       { type = "direct"; tag = "direct"; }
       { type = "block"; tag = "block"; }
       # Resilience group: full-mode final. urltest probes gstatic 204
-      # through each child; tunnel-out wins while rog answers, direct
-      # takes over when it does not, and the switch back is automatic.
+      # through each child every 30s; tunnel-out wins while rog answers,
+      # direct takes over within that window when it does not, and the
+      # switch back is automatic. interrupt_exist_connections kills
+      # connections riding the previously selected outbound the moment the
+      # selection flips — without it, established flows (e.g. long-lived
+      # WS) would keep heading into a dead tunnel until they fail on their
+      # own. urltest still probes TCP only (its UDP selection never fails
+      # over), which is why the route rules block QUIC in full mode.
       {
         type = "urltest";
         tag = "auto";
         outbounds = [ "tunnel-out" "direct" ];
         url = "https://www.gstatic.com/generate_204";
-        interval = "1m";
+        interval = "30s";
         tolerance = 50;
+        interrupt_exist_connections = true;
       }
     ];
 
