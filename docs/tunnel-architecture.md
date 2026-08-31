@@ -34,7 +34,7 @@ mismo fallback          │    final → urltest auto)                          
 
 1. El TUN captura la conexión y la regla `sniff` extrae el dominio real del TLS ClientHello (SNI) — no depende del DNS del sistema
 2. Las route rules comparan ese dominio/IP contra las listas de exclusión, en orden
-3. Lo que no matchea ninguna regla va a `final` (urltest auto: túnel ↔ directo)
+3. Lo que no matchea ninguna regla va a `final` (urltest auto: túnel ↔ directo). Antes de eso, QUIC (UDP/443) está **bloqueado**: el urltest de sing-box solo sondea TCP y su selección UDP no hace failover — bloquear QUIC obliga a los browsers (HTTP-3) a caer a TCP, el único camino que cruza el túnel y el que tiene failover real
 4. El hostname viaja cifrado hasta rog — es rog quien resuelve y conecta (por eso el log del server muestra `[mact2] inbound connection to chatgpt.com:443` con el dominio, no la IP)
 
 ### Los dos knobs declarativos (hosts/mact2/default.nix)
@@ -164,7 +164,7 @@ curl -x http://127.0.0.1:2080 -sSIv https://auth.openai.com/ 2>&1 | grep "issuer
 curl -sS https://ipinfo.io/ip        # → 201.188.187.112 (egres por rog)
 
 # 3. Fallback: si rog está caído, el mismo curl sigue devolviendo TU ip
-#    corporativa y todo sigue navegando — degradación automática.
+#    corporativa en ≤30 s y todo sigue navegando — degradación automática.
 ```
 
 ### Teléfono (sing-box Android / SFA)
@@ -213,11 +213,13 @@ sudo bin/tunnel-device-link phone            # nuevo link → re-importar en el 
 
 | Síntoma | Causa | Acción |
 |---------|-------|--------|
-| Todo el browsing muere | Daemon ON + rog caído aún no degradó (≤1 min) | Esperar el probe del urltest |
+| Todo el browsing muere | Daemon ON + rog caído aún no degradó (≤30 s) | Esperar el probe del urltest (intervalo 30 s + corte de conexiones existentes) |
 | Página "Aplicación No Permitida" de Falabella en el browser | Estás en el camino corporativo para ese dominio (túnel apagado, o navegador sin proxy) | Prender túnel / usar browser con proxy |
 | `issuer: ca.grupofalabella...` en un test | El flujo NO pasó por el proxy loopback | Verificar `--proxy-server` / profile |
 | Cambiaste la config del túnel y no aplica | launchd no reinicia si el plist no cambió | `sudo launchctl kickstart -k system/org.nixos.sing-box-tunnel` |
 | `WARN icmp is not supported by outbound` en logs viejos | Config anterior a la regla ICMP→direct | Ya resuelto; si reaparece post-rebuild, kickstart |
+
+> Lección del incidente 2026-08 (rog caído 2 días): el urltest de sing-box sondea **solo TCP** — la selección UDP quedó clavada al túnel muerto (QUIC/HTTP-3 colgando) mientras TCP degradaba bien a directo. Por eso ahora se bloquea UDP/443 (el QUIC cae a TCP: solo TCP cruza el túnel) y el fallback es ≤30 s con corte de conexiones existentes.
 
 ## Dónde vive todo
 
