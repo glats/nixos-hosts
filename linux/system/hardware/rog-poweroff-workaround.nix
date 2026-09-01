@@ -9,7 +9,7 @@ let
 
   # Direct port I/O poweroff binary.
   # Uses outw(0x2000, 0x604) — the x86 "soft power-off" port.
-  # Bypasses ACPI entirely; works on most chipsets.
+  # Skips ACPI entirely; works on most chipsets.
   rogPoweroffDirect = pkgs.stdenv.mkDerivation {
     name = "rog-poweroff-direct";
     nativeBuildInputs = [ pkgs.glibc.static ];
@@ -75,7 +75,7 @@ let
   '';
 
   # Direct hook: unload kernel modules that block ACPI S5, then
-  # bypass ACPI entirely using port I/O.
+  # skip ACPI entirely using port I/O.
   rogPoweroffHookDirect = pkgs.writeShellScript "rog-poweroff-direct" ''
     # Leave breadcrumb: which mode ran
     echo direct > /run/rog-poweroff-mode 2>/dev/null || true
@@ -89,7 +89,7 @@ let
       ${pkgs.kmod}/bin/rmmod "$mod" 2>/dev/null || true
     done
 
-    # Direct port I/O poweroff — bypasses ACPI entirely.
+    # Direct port I/O poweroff — skips ACPI entirely.
     ${rogPoweroffDirect}/bin/rog-poweroff || true
 
     echo "rog-poweroff hook ran" > /run/shutdown-hook-ran || true
@@ -119,7 +119,7 @@ in
 
         - legacy: unload ASUS WMI modules and call \_SI._SST via acpi_call.
           This was the iteration 2 approach.
-        - direct: bypass ACPI entirely using port I/O (outw 0x2000, 0x604).
+        - direct: skips ACPI entirely using port I/O (outw 0x2000, 0x604).
           More likely to work on buggy firmware.
       '';
     };

@@ -74,23 +74,24 @@
     sopsFile = ../../secrets/host/rog/romm.yaml;
   };
 
-  # mact2↔rog private tunnel — per-device VLESS UUIDs (shared with
-  # mact2). The "opencode-tunnel" key namespace is historical; do not
-  # rename (sops re-encryption churn for zero functional gain).
+  # mact2↔rog private link — per-device VLESS UUIDs (shared with
+  # mact2). Renamed from the historical launcher-based namespace by
+  # the naming-hygiene change (sops file: secrets/shared/link-uuids.yaml;
+  # content keys stay uuid_mact2/uuid_phone).
   # One scalar key per device; each is its own 0400 file owned by the
   # sing-box system user so the service can read them at activation.
   # Removing a key + this decl + the matching users entry in
-  # linux/system/services/network/sing-box-tunnel.nix revokes that
+  # linux/system/services/network/sing-box-link.nix revokes that
   # device only — mact2 and other devices stay connected.
-  sops.secrets."opencode-tunnel/uuid_mact2" = {
-    sopsFile = ../../secrets/shared/opencode-tunnel.yaml;
+  sops.secrets."link/uuid_mact2" = {
+    sopsFile = ../../secrets/shared/link-uuids.yaml;
     key = "uuid_mact2";
     owner = "sing-box";
     group = "sing-box";
     mode = "0400";
   };
-  sops.secrets."opencode-tunnel/uuid_phone" = {
-    sopsFile = ../../secrets/shared/opencode-tunnel.yaml;
+  sops.secrets."link/uuid_phone" = {
+    sopsFile = ../../secrets/shared/link-uuids.yaml;
     key = "uuid_phone";
     owner = "sing-box";
     group = "sing-box";

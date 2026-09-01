@@ -248,7 +248,7 @@
     # ~/.config/microsoft-edge-stable-flags.conf attempt was dead code:
     # neither the nixpkgs wrapper nor the Edge binary reads that file.
     # Desktop entries must be rewritten too — their Exec lines point to
-    # the unwrapped derivation's absolute store path, which would bypass
+    # the unwrapped derivation's absolute store path, which would skip
     # this wrapper for launcher/mime (default browser) launches.
     (pkgs.symlinkJoin {
       name = "microsoft-edge";
