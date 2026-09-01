@@ -1,4 +1,4 @@
-# Authelia SSO - Service Bypass Analysis
+# Authelia SSO - Service Access Exemption Analysis
 
 ## Architecture Context
 
@@ -15,20 +15,20 @@ Only **external clients** (browser, mobile apps, third-party API consumers) are 
 | Subdomain | Auth |
 |-----------|------|
 | auth.glats.org | Authelia portal |
-| openfang.glats.org | **Authelia SSO** (with API bypass) |
+| openfang.glats.org | **Authelia SSO** (with API exemptions) |
 | All others | **No auth** (not protected) |
 
 ---
 
-## Understanding bypass.json / nginx auth_request pattern
+## Understanding exempt-location / nginx auth_request pattern
 
-Authelia protects via `auth_request /internal/authelia/authz` on a `location /` block. To bypass,
+Authelia protects via `auth_request /internal/authelia/authz` on a `location /` block. To exempt a path,
 you define **more specific location blocks BEFORE** the protected `/` block. Nginx processes
 longest-prefix-match first, so specific paths match before `/`.
 
 Pattern (from openfang):
 ```
-# Bypass: no auth_request
+# Exempt: no auth_request
 location /api/ { proxy_pass ...; }
 location /v1/  { proxy_pass ...; }
 location /ws   { proxy_pass ...; }
@@ -53,8 +53,8 @@ location / {
 | WebSocket? | YES -- base path `/` upgraded to WebSocket |
 | Mobile apps? | None |
 | Integrations | None |
-| **Bypass needed?** | **NO** -- full protection desired. Terminal should always require SSO. |
-| Notes | Simple service. No API to bypass. All traffic is the terminal session. Fully protect. |
+| **Exemption needed?** | **NO** -- full protection desired. Terminal should always require SSO. |
+| Notes | Simple service. No API to exempt. All traffic is the terminal session. Fully protect. |
 
 ---
 
@@ -63,13 +63,13 @@ location / {
 | Property | Value |
 |----------|-------|
 | Description | Browser-based remote desktop (RDP/VNC/SSH) via HTML5 |
-| Has API? | YES -- REST API at `/api/` (tunnel management, session info, sharing) |
-| WebSocket? | YES -- Guacamole protocol uses WebSocket tunnel for remote desktop stream |
-| Mobile apps? | Yes -- Guacamole mobile client uses REST API + WebSocket tunnel |
+| Has API? | YES -- REST API at `/api/` (connection management, session info, sharing) |
+| WebSocket? | YES -- Guacamole protocol uses a WebSocket stream for remote desktop |
+| Mobile apps? | Yes -- Guacamole mobile client uses REST API + WebSocket stream |
 | Integrations | None (standalone) |
-| **Bypass needed?** | **MAYBE** -- bypass `/api/` and `/websocket-tunnel` if mobile clients need direct API access |
+| **Exemption needed?** | **MAYBE** -- exempt `/api/` and the Guacamole WebSocket streaming endpoint if mobile clients need direct API access |
 | Notes | Guacamole has its own auth layer. If mobile clients connect externally, they will fail with Authelia redirect. |
-| | Recommendation: Protect fully (Guacamole has its own login on top). If mobile client issues, bypass `/api/` and the tunnel endpoint. |
+| | Recommendation: Protect fully (Guacamole has its own login on top). If mobile client issues, exempt `/api/` and the streaming endpoint. |
 
 ---
 
@@ -82,8 +82,8 @@ location / {
 | WebSocket? | No |
 | Mobile apps? | None (uses browser) |
 | Integrations | None |
-| **Bypass needed?** | **NO** -- full protection desired |
-| Notes | No API to bypass. Simple web app. Currently has basic auth (htpasswd). Replace with Authelia. |
+| **Exemption needed?** | **NO** -- full protection desired |
+| Notes | No API to exempt. Simple web app. Currently has basic auth (htpasswd). Replace with Authelia. |
 
 ---
 
@@ -96,11 +96,11 @@ location / {
 | WebSocket? | NO -- uses polling for UI updates |
 | Mobile apps? | Yes -- many third-party apps connect via `/api/v2/` (e.g., qBittorrent Remote, transmissions) |
 | Integrations | **Sonarr/Radarr** download completed torrents via localhost:8080 (**NOT affected**) |
-| **Bypass needed?** | **YES** -- bypass `/api/v2/` for mobile apps |
+| **Exemption needed?** | **YES** -- exempt `/api/v2/` for mobile apps |
 | Notes | ARR stack connects via localhost:8080 internally (never goes through nginx). No impact. |
-| | But mobile apps connecting from external WAN WILL hit Authelia. Must bypass `/api/v2/`. |
+| | But mobile apps connecting from external WAN WILL hit Authelia. Must exempt `/api/v2/`. |
 | | API uses cookie-based auth after POST to `/api/v2/auth/login`. |
-| | **Bypass path**: `/api/v2/` |
+| | **Exempt path**: `/api/v2/` |
 
 ---
 
@@ -113,11 +113,11 @@ location / {
 | WebSocket? | No |
 | Mobile apps? | YES -- DSub, Ultrasonic, Substreamer, Symfonium, Sonixd connect via `/rest/` with `u`/`p` params |
 | Integrations | Lidarr can connect internally. Not affected. |
-| **Bypass needed?** | **YES** -- bypass `/rest/` for mobile music apps |
+| **Exemption needed?** | **YES** -- exempt `/rest/` for mobile music apps |
 | Notes | Subsonic API uses URL params for auth (`?u=user&p=pass` or token auth). |
 | | Mobile apps CANNOT handle Authelia redirect -- they expect XML/JSON responses. |
 | | App MUST see `{"subsonic-response":...}` not HTML login page. |
-| | **Bypass path**: `/rest/` |
+| | **Exempt path**: `/rest/` |
 
 ---
 
@@ -133,11 +133,11 @@ location / {
 | Integrations | **Prowlarr** -- connects via localhost:7878 API key (internal, **NOT affected**) |
 | | **Bazarr** -- connects via localhost:7878 API key (internal, **NOT affected**) |
 | | **Overseerr/Jellyseerr** -- connects via localhost:7878 API key (internal, **NOT affected**) |
-| **Bypass needed?** | **YES** -- bypass `/api/v3/` and `/api` for mobile apps/external monitoring |
+| **Exemption needed?** | **YES** -- exempt `/api/v3/` and `/api` for mobile apps/external monitoring |
 | Notes | All inter-service ARR communication uses localhost:PORT directly. **No Authelia impact.** |
 | | API authentication uses `X-Api-Key` header (not cookies). |
-| | If using external tools (NZB360, etc.) that connect via the public domain, they need bypass. |
-| | **Bypass paths**: `/api/`, `/api/v3/` |
+| | If using external tools (NZB360, etc.) that connect via the public domain, they need an exemption. |
+| | **Exempt paths**: `/api/`, `/api/v3/` |
 
 ---
 
@@ -153,9 +153,9 @@ location / {
 | Integrations | **Prowlarr** -- connects via localhost:8989 (internal, **NOT affected**) |
 | | **Bazarr** -- connects via localhost:8989 (internal, **NOT affected**) |
 | | **Overseerr/Jellyseerr** -- connects via localhost:8989 (internal, **NOT affected**) |
-| **Bypass needed?** | **YES** -- bypass `/api/v3/` and `/api` for mobile apps/external monitoring |
+| **Exemption needed?** | **YES** -- exempt `/api/v3/` and `/api` for mobile apps/external monitoring |
 | Notes | Same as Radarr. All internal communication on localhost. |
-| | **Bypass paths**: `/api/`, `/api/v3/` |
+| | **Exempt paths**: `/api/`, `/api/v3/` |
 
 ---
 
@@ -171,11 +171,11 @@ location / {
 | Integrations | **Radarr** -- Prowlarr pushes indexers to Radarr via localhost:7878 (**NOT affected**) |
 | | **Sonarr** -- Prowlarr pushes indexers to Sonarr via localhost:8989 (**NOT affected**) |
 | | Connects to **external indexers** (torrent trackers, Usenet) directly -- **NOT affected** |
-| **Bypass needed?** | **YES** -- bypass `/api/v1/` and `/api` |
+| **Exemption needed?** | **YES** -- exempt `/api/v1/` and `/api` |
 | Notes | Prowlarr's external indexer connections are outbound (not going through nginx). No effect. |
 | | Internal app sync is localhost. No effect. |
-| | If third-party tools connect externally, they need bypass. |
-| | **Bypass paths**: `/api/`, `/api/v1/` |
+| | If third-party tools connect externally, they need an exemption. |
+| | **Exempt paths**: `/api/`, `/api/v1/` |
 
 ---
 
@@ -190,9 +190,9 @@ location / {
 | Mobile apps? | No |
 | Integrations | **Radarr** -- connects via localhost:7878 (**NOT affected**) |
 | | **Sonarr** -- connects via localhost:8989 (**NOT affected**) |
-| **Bypass needed?** | **YES** -- bypass `/api/` |
+| **Exemption needed?** | **YES** -- exempt `/api/` |
 | Notes | All internal communication on localhost. No effect. |
-| | **Bypass paths**: `/api/` |
+| | **Exempt paths**: `/api/` |
 
 ---
 
@@ -209,11 +209,11 @@ location / {
 | Integrations | **Jellyfin** -- connects for library sync via localhost:8096 (**NOT affected**) |
 | | **Radarr** -- processes requests via localhost:7878 (**NOT affected**) |
 | | **Sonarr** -- processes requests via localhost:8989 (**NOT affected**) |
-| **Bypass needed?** | **YES** -- bypass `/api/` for mobile apps |
+| **Exemption needed?** | **YES** -- exempt `/api/` for mobile apps |
 | Notes | Has own auth (local accounts or Jellyfin SSO). |
 | | Public endpoints `/status` and `/status/appdata` don't need auth. |
 | | Mobile apps can't handle Authelia redirect. |
-| | **Bypass paths**: `/api/` |
+| | **Exempt paths**: `/api/` |
 
 ---
 
@@ -228,16 +228,16 @@ location / {
 | | Mobile apps use the same API paths as web UI (no separate mobile API) |
 | | WebSocket at `/socket?api_key=TOKEN` for real-time features |
 | Integrations | **Jellyseerr** -- connects for library sync via localhost:8096 (**NOT affected**) |
-| **Bypass needed?** | **YES -- FULL BYPASS recommended** |
+| **Exemption needed?** | **YES -- FULL EXEMPTION recommended** |
 | Notes | **CRITICAL**: Jellyfin has extensive known issues behind Authelia: |
 | | 1. Mobile apps (Android, iOS, TV) CANNOT handle Authelia redirects. They expect JSON. |
 | | 2. WebSocket at `/socket` uses `api_key` param -- not compatible with cookie auth. |
 | | 3. Jellyfin already has its own user auth system (separate from Authelia). |
 | | 4. Double auth (Authelia + Jellyfin login) is poor UX for web users too. |
-| | **Recommendation**: Either fully bypass Jellyfin OR use a separate subdomain for mobile apps. |
-| | The best approach is full bypass -- Jellyfin's own auth is sufficient for a media server. |
+| | **Recommendation**: Either fully exempt Jellyfin OR use a separate subdomain for mobile apps. |
+| | The best approach is full exemption -- Jellyfin's own auth is sufficient for a media server. |
 | | Users can use Jellyfin's built-in "quick connect" or sharing features without auth friction. |
-| | **Bypass**: entire `/` for Jellyfin (or at minimum `/socket`, `/audio/`, `/videos/`, `/Users/`, `/Items/`, `/System/`) |
+| | **Exemption**: entire `/` for Jellyfin (or at minimum `/socket`, `/audio/`, `/videos/`, `/Users/`, `/Items/`, `/System/`) |
 
 ---
 
@@ -251,21 +251,21 @@ location / {
 | WebSocket? | YES -- root `/` is WebSocket-upgraded for terminal, editor protocol |
 | Mobile apps? | No (uses browser) |
 | Integrations | None directly (VS Code extensions fetch from external marketplaces) |
-| **Bypass needed?** | **NO** -- full protection desired |
+| **Exemption needed?** | **NO** -- full protection desired |
 | Notes | code-server has its own password auth. Adding Authelia gives SSO layer. |
 | | VS Code extensions fetch from external (open-vsx.org or Microsoft marketplace) -- not affected. |
 | | The `/api/` paths are for VS Code internals (not external API consumers). |
-| | If custom extension marketplace is configured, `/api/` might need bypass. Default is fine. |
+| | If custom extension marketplace is configured, `/api/` might need an exemption. Default is fine. |
 | | Full protection is recommended. |
 
 ---
 
 ## Summary Table
 
-| Service | Subdomain | Port | Has API | WS | API Paths | Mobile Apps | Bypass? | Bypass Paths |
+| Service | Subdomain | Port | Has API | WS | API Paths | Mobile Apps | Exempt? | Exempt Paths |
 |---------|-----------|------|---------|----|-----------|-------------|---------|--------------|
 | Wetty | tty | 9004 | NO | YES | (none) | No | **NO** | -- |
-| Guacamole | guac | 9003 | YES | YES | `/api/`, `/websocket-tunnel` | Yes | MAYBE | `/api/`, `/websocket-tunnel/` |
+| Guacamole | guac | 9003 | YES | YES | `/api/`, streaming endpoint | Yes | MAYBE | `/api/`, streaming endpoint |
 | FileShelter | file | 5091 | NO | NO | (none) | No | **NO** | -- |
 | qBittorrent | qbit | 8080 | YES | NO | `/api/v2/` | Yes | **YES** | `/api/v2/` |
 | Gonic | gonic | 4747 | YES | NO | `/rest/` | **Yes (DSub, etc.)** | **YES** | `/rest/` |
@@ -274,7 +274,7 @@ location / {
 | Prowlarr | prowlarr | 9696 | YES | NO | `/api/`, `/api/v1/` | Some | **YES** | `/api/`, `/api/v1/` |
 | Bazarr | bazarr | 6767 | YES | NO | `/api/` | No | **YES** | `/api/` |
 | Jellyseerr | seerr | 5055 | YES | NO | `/api/`, `/status`, `/status/appdata` | Yes | **YES** | `/api/`, `/status`, `/status/appdata` |
-| Jellyfin | jelly | 8096 | YES | **YES** | `ALL paths`, `/socket` | **Yes (many)** | **YES (full bypass recommended)** | `/` (entire domain) |
+| Jellyfin | jelly | 8096 | YES | **YES** | `ALL paths`, `/socket` | **Yes (many)** | **YES (full exemption recommended)** | `/` (entire domain) |
 | code-server | code | 9008 | YES | **YES** | `/`, `/api/`, `/resource/`, `/lib/vscode/` | No | **NO** | -- |
 
 ---
@@ -284,21 +284,21 @@ location / {
 ### ARR Stack (Radarr/Sonarr/Prowlarr/Bazarr)
 - **INTERNAL communication uses localhost:PORT directly** -- never goes through nginx
 - Adding Authelia SSO does NOT break service-to-service communication
-- API paths need bypass ONLY if external tools (NZB360, Lumixarr) connect via the public domain
-- If you only use browser for ARR stack management, you DON'T need API bypass at all
+- API paths need an exemption ONLY if external tools (NZB360, Lumixarr) connect via the public domain
+- If you only use browser for ARR stack management, you DON'T need API exemptions at all
 
 ### qBittorrent
 - ARR stack downloads via localhost:8080 internally -- no impact
-- Third-party mobile apps need `/api/v2/` bypass if they connect externally
+- Third-party mobile apps need an `/api/v2/` exemption if they connect externally
 - API uses cookie-based auth (POST to `/api/v2/auth/login`) -- compatible with Authelia? Potentially conflicting
 
 ### Gonic
-- **MUST bypass `/rest/`** if you want Subsonic mobile apps (DSub, Ultrasonic, etc.) to work
+- **MUST exempt `/rest/`** if you want Subsonic mobile apps (DSub, Ultrasonic, etc.) to work
 - These apps cannot handle Authelia redirects -- period
-- If you only use browser/WiFi streaming, bypass is optional
+- If you only use browser/WiFi streaming, exemption is optional
 
 ### Jellyfin -- Special Case
-**Strong recommendation: fully bypass Authelia for Jellyfin.**
+**Strong recommendation: fully exempt Jellyfin from Authelia.**
 
 Reasons:
 1. Jellyfin has mature built-in auth (users, passwords, API keys, quick connect)
@@ -312,19 +312,19 @@ for mobile apps (no Authelia). But this is messy.
 
 ### Guacamole
 Works fine fully protected. Has its own login page as secondary auth layer.
-If mobile Guacamole client is used externally, bypass `/api/` tunnel endpoints.
+If mobile Guacamole client is used externally, exempt `/api/` and the streaming endpoints.
 
 ### Wetty, FileShelter, code-server
-No bypass needed. These are browser-only services that benefit from SSO.
+No exemption needed. These are browser-only services that benefit from SSO.
 
 ---
 
 ## Recommended nginx Config Pattern
 
-For each service that needs API bypass, add specific location blocks BEFORE the protected `/` block:
+For each service that needs an API exemption, add specific location blocks BEFORE the protected `/` block:
 
 ```nginx
-# Bypass: no auth_request (API/WebSocket paths)
+# Exempt: no auth_request (API/WebSocket paths)
 location /api/v2/ { proxy_pass http://127.0.0.1:8080; proxy_websockets true; ... }
 location /rest/   { proxy_pass http://127.0.0.1:4747; ... }
 
@@ -335,7 +335,7 @@ location / {
 }
 ```
 
-Or for Jellyfin (full bypass):
+Or for Jellyfin (full exemption):
 ```nginx
 # No auth_request at all
 location / {
@@ -348,9 +348,9 @@ location / {
 
 ## Implementation Priority
 
-1. **Jellyfin** -- FULL BYPASS (or protect with its own auth only)
-2. **Gonic** -- bypass `/rest/` for music apps
-3. **qBittorrent** -- bypass `/api/v2/` for mobile apps
-4. **ARR stack** -- bypass `/api/` if external tools connect via domain
-5. **Jellyseerr** -- bypass `/api/` for mobile apps
-6. **All others** -- full Authelia protection (no bypass needed)
+1. **Jellyfin** -- FULL EXEMPTION (or protect with its own auth only)
+2. **Gonic** -- exempt `/rest/` for music apps
+3. **qBittorrent** -- exempt `/api/v2/` for mobile apps
+4. **ARR stack** -- exempt `/api/` if external tools connect via domain
+5. **Jellyseerr** -- exempt `/api/` for mobile apps
+6. **All others** -- full Authelia protection (no exemption needed)

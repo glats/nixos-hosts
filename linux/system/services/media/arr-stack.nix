@@ -29,7 +29,7 @@
     openFirewall = false;
   };
 
-  # Prowlarr depends on FlareSolverr for Cloudflare-bypassed trackers
+  # Prowlarr depends on FlareSolverr for trackers behind Cloudflare checks
   systemd.services.prowlarr = {
     after = [ "flaresolverr.service" ];
     requires = [ "flaresolverr.service" ];

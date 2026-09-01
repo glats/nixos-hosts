@@ -453,13 +453,13 @@ in
         '';
       };
 
-      # tun.glats.org — VLESS+WS tunnel endpoint with cover page.
+      # tun.glats.org — VLESS+WS private-link endpoint with cover page.
       # The unguessable WS path is the ONLY path nginx proxies to the
       # loopback sing-box listener; every other request resolves to the
       # cover page under /srv/glats/nginx/html (matches the glats.org
       # vhost static-root pattern). generated-once random hex (NOT
       # sops) — obscurity, not authentication. The same value is the
-      # `transport.path` in linux/system/services/network/sing-box-tunnel.nix
+      # `transport.path` in linux/system/services/network/sing-box-link.nix
       # and the `path` in the mact2 client + phone share link.
       "tun.${domain}" = {
         useACMEHost = "glats.org";
@@ -563,7 +563,7 @@ in
           '';
         };
 
-        # Bypass locations - API and WebSocket don't use auth_request
+        # Direct-access locations - API and WebSocket skip auth_request
         locations."/api/" = {
           proxyPass = "http://127.0.0.1:50051";
           proxyWebsockets = true;

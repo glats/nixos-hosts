@@ -24,7 +24,7 @@ pgrep -u "$USER" > "$SYSTEM_PID_FILE"
 
 # Direct MATE session launcher for xrdp.
 # Loop-based: after MATE logout, return to fresh MATE session instead of disconnect.
-# Per-user override: create ~/startwm.sh to bypass entirely.
+# Per-user override: create ~/startwm.sh to replace this script entirely.
 
 while true; do
   LOG_FILE="$HOME/.local/state/xrdp-mate.log"

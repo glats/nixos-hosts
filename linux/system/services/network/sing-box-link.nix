@@ -1,4 +1,4 @@
-# Server-side loopback inbound of the mact2↔rog private tunnel
+# Server-side loopback inbound of the mact2↔rog private link
 # (general-purpose private egress; OpenCode's native OpenAI access is
 # the flagship use case, not the purpose).
 #
@@ -11,8 +11,8 @@
 # The WS path is a one-time random hex constant, NOT sops: it's
 # obscurity, not auth. nginx passes the location path through (the same
 # value lives in linux/system/services/web/nginx.nix), and the same
-# value is referenced by the mact2 client (darwin/system/sing-box-tunnel.nix)
-# and by bin/tunnel-device-link for phone link generation. Generating it
+# value is referenced by the mact2 client (darwin/system/sing-box-link.nix)
+# and by bin/device-link for phone link generation. Generating it
 # once keeps the three sites byte-identical without a shared secret.
 #
 # Runs as the unprivileged `sing-box` system user created by the NixOS
@@ -28,12 +28,12 @@ let
   # obscurity — not a credential, not a sops key.
   wsPath = "/ed59280aa562f4b7eba4519e3c316e24";
 
-  cfg = config.services.sing-box-tunnel;
+  cfg = config.services.sing-box-link;
 in
 {
-  options.services.sing-box-tunnel = {
+  options.services.sing-box-link = {
     enable = lib.mkEnableOption
-      "loopback VLESS+WS server of the mact2↔rog private tunnel";
+      "loopback VLESS+WS server of the mact2↔rog private link";
 
     port = lib.mkOption {
       type = lib.types.port;
@@ -61,15 +61,15 @@ in
           {
             type = "vless";
             listen = "127.0.0.1";
-            listen_port = config.services.sing-box-tunnel.port;
+            listen_port = config.services.sing-box-link.port;
             users = [
               {
                 name = "mact2";
-                uuid = { _secret = config.sops.secrets."opencode-tunnel/uuid_mact2".path; };
+                uuid = { _secret = config.sops.secrets."link/uuid_mact2".path; };
               }
               {
                 name = "phone";
-                uuid = { _secret = config.sops.secrets."opencode-tunnel/uuid_phone".path; };
+                uuid = { _secret = config.sops.secrets."link/uuid_phone".path; };
               }
             ];
             transport = {
