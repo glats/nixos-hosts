@@ -477,16 +477,36 @@ in
         # Single proxy for the VLESS+WS path. proxyWebsockets=true
         # expands to the standard proxy_set_header Upgrade / Connection
         # upgrade / proxy_http_version 1.1 trio.
+        #
+        # Upgrade guard (verify finding G12): a request to this path
+        # WITHOUT a WebSocket upgrade must never reach sing-box — its
+        # `handshake error: bad "Upgrade" header` body is a tell-tale
+        # tunnel artifact. Spec scenario: every path on this vhost that
+        # is not a valid WS upgrade behaves like the cover site.
+        # `if` + `return` is the classic safe rewrite-module guard: it
+        # 404s (rendered as the cover page by the error_page below)
+        # during the rewrite phase, before any proxying; real WS
+        # upgrades ($http_upgrade == "websocket") fall through to
+        # proxyPass untouched.
         locations."/ed59280aa562f4b7eba4519e3c316e24" = {
           proxyPass = "http://127.0.0.1:4011";
           proxyWebsockets = true;
           extraConfig = ''
+            if ($http_upgrade != "websocket") { return 404; }
             proxy_read_timeout 3600s;
             proxy_send_timeout 3600s;
           '';
         };
 
-        extraConfig = secHeaders "DENY";
+        extraConfig = ''
+          # G12: nginx-generated 404s (guarded WS path above + stray
+          # paths) must present the cover page, never a bare nginx error
+          # page. Upstream (sing-box) responses pass through unchanged —
+          # proxy_intercept_errors stays off — so the tunnel is unaffected.
+          error_page 404 /index.html;
+
+          ${secHeaders "DENY"}
+        '';
       };
 
       "maquiroot.${domain}" = {
