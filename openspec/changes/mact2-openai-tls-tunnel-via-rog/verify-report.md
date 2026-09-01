@@ -1,94 +1,84 @@
 ```yaml
 schema: gentle-ai.verify-result/v1
-evidence_revision: sha256:5f63d8622d6d7902388df372a43c8dec7e86d33b8ad8b40c7ccacc2771207705
+evidence_revision: sha256:df47010cf3a04a8d961572041d98188641abca1ab2bd44ec8152b1b84331bd7d
 verdict: fail
 blockers: 1
 critical_findings: 1
-requirements: 8/19
-scenarios: 8/24
-test_command: "format-nix --check && nix flake check --no-build"
+requirements: 15/19
+scenarios: 10/24
+test_command: "format-nix --check; nix eval mact2 link/launchd attrs; bash -n renamed scripts"
 test_exit_code: 0
-test_output_hash: sha256:e4faaf4be736a894ad51c03f2f6edfd465952b7b6fbd427dfad34ccec747d201
+test_output_hash: sha256:df47010cf3a04a8d961572041d98188641abca1ab2bd44ec8152b1b84331bd7d
 build_command: "nix build .#nixosConfigurations.rog.pkgs.nixos-scripts --no-link --print-out-paths"
 build_exit_code: 0
-build_output_hash: sha256:3e537811a127207a907e61c92146a2b9330724bc993dfd7a44f2e541bd762523
+build_output_hash: sha256:82123ea1db0e9b0f22021c810ddaa23b6c8dd688f09786a371c4a34d28f3f124
 ```
 
 # Verification Report: mact2-openai-tls-tunnel-via-rog
 
-**Revision:** cb7159ece79812804c6d1cbc06605018897fd9ea on both deployed hosts  
-**Mode:** Standard verification; read-only runtime probes  
-**Time:** 2026-08-28
+**Revision:** `5985389a0e220a7a672c0ec913b05b41fecd6282` (`master == origin/master`)
+**Mode:** Round 2 final-state, read-only verification
+**Time:** 2026-09-01
 
-## Build and test evidence
+## Round 2 (final state)
 
-| Check | Result | Evidence |
+### Execution evidence
+
+| Check | Verdict | Evidence |
 |---|---|---|
-| Formatting and Linux flake evaluation | PASS | format-nix --check and nix flake check --no-build exited 0; Darwin was omitted as incompatible on this Linux evaluator. |
-| Existing scripts derivation | PASS | nix build .#nixosConfigurations.rog.pkgs.nixos-scripts --no-link --print-out-paths exited 0. |
-| Android config shape | PASS | bash -n bin/tunnel-device-link; fake-UUID --config piped to sing-box 1.13 check exited 0. |
+| Targeted formatting, Darwin shape, and renamed scripts | PASS | `format-nix --check`, evaluated `link.mode = "full"`, `link.directCidrs = ["163.116.0.0/16"]`, evaluated the `sing-box` LaunchDaemon, and `bash -n bin/opencode-home bin/device-link` all exited 0. |
+| Packaged scripts | PASS | `nix build .#nixosConfigurations.rog.pkgs.nixos-scripts --no-link --print-out-paths` exited 0. |
+| Full flake evaluation | WARNING (pre-existing) | `nix flake check --no-build` evaluated packages, rog, and thinkcentre, then failed only evaluating t14 because the GC'd `ks1ls6ms4zcbivkb54rly16jf30bqsif-source` path is invalid. This is unrelated to either change. |
+| Git/archive readiness | PASS | Working tree clean; `HEAD` and `origin/master` are both `5985389`; both change directories and their requested artifacts exist. |
 
-## Requirement verdicts
+### Re-check and post-rename matrix
 
-| Spec requirement | Verdict | Evidence |
+| ID | Verdict | Evidence |
 |---|---|---|
-| TLS tunnel endpoint and cover page | FAIL-KNOWN | sing-box active, 127.0.0.1:4011 listening, and cover returned 200; WS path without Upgrade returned a sing-box error body, not the cover page. |
-| Per-device VLESS authentication and secret safety | PASS | Current rog log has [mact2]; four [phone] www.gstatic.com:443 handshakes occurred today. Existing runtime secret permissions remain documented as 0400. |
-| Root-managed full-tunnel routing | DEFERRED | mact2 daemon running, utun4 is 172.19.0.1/30, IP echo is 201.188.187.112; scoped flip was not performed because it needs a rebuild. |
-| Self-loop prevention | PASS | mact2 tunnel is active and https://tun.glats.org/ remains reachable; declared direct resolver and auto-detect-interface attrs evaluate. |
-| Proxy environment and MCP isolation | NOT-RUNNABLE | Generated local MCP entries contain empty proxy variables and NO_PROXY=*; no live MCP children existed for ps eww, and launcher-down behavior was not disrupted. |
-| Stealth client TLS | DEFERRED | Source and generated-system attrs declare uTLS chrome; rendered root-only config and outer ClientHello capture require sudo or office procedure. |
-| Home transport proof | PASS | Direct and loopback-proxy mact2 requests to auth.openai.com both showed issuer O=Google Trust Services; CN=WE1. |
-| In-building coexistence | OFFICE-PENDING | Requires mact2 in the office with FortiClient, Netskope, CrowdStrike, and long-lived WS evidence. |
-| Declarative teardown | DEFERRED | No bootout or revert was performed because VERIFY is read-only; documented launchctl procedure exists. |
-| Headless native OAuth bootstrap | PASS | auth.json has an openai entry with keys access, accountId, expires, refresh, type; expiry check is true without printing values. |
-| Native provider activation | PASS | Provider evaluates to openai-medium; rog has current [mact2] connections to chatgpt.com and auth.openai.com. |
-| Refresh-path continuity and bootstrap ownership | DEFERRED | Valid unexpired credential is present, but no forced refresh or concurrent-write test was run. |
-| Auth-seed fallback safety | NOT-RUNNABLE | Unsafe-seed exercise would require controlled auth-state mutation and was not run under read-only constraints. |
-| In-building native OAuth proof | OFFICE-PENDING | Requires the office network and security agents. |
-| Declarative device credential lifecycle | DEFERRED | Phone connectivity is evidenced, but revoke/rebuild/restore was deliberately not performed. |
-| Runtime-only Android link delivery | PASS | Script syntax and generated fake-secret SFA config pass sing-box validation; repo and packaged store scripts are executable. |
-| mact2 runtime provider transition | PASS | Native provider is selected, no proxy-tier Nix references remain, and current OpenAI destinations appear in rog logs. |
-| Gated gateway availability and retirement baseline | PASS | openai-proxy, OPENAI_PROXY_API_KEY, and oai.glats.org have zero Nix matches, matching the superseding retired-gateway baseline. |
-| Scoped rollback | DEFERRED | No rollback was executed in this verification-only run. |
+| R1 / G12 cover-page stealth | FAIL-KNOWN | `GET /` returned `200`, 1602-byte HTML with `<!DOCTYPE HTML>`. Non-upgrade `GET /ed59280aa562f4b7eba4519e3c316e24` still returned `400`, 37-byte `text/plain` body: `handshake error: bad "Upgrade" header`. No fix was made. |
+| R2 scoped flip, teardown, and phone revoke | DEFERRED | `docs/home-link.md` now correctly uses `link.mode`, `org.nixos.sing-box`, `bin/device-link`, and `link/uuid_*`. The user-run scoped flip/flip-back, declarative teardown, and phone revoke/restore procedures remain intentionally unexecuted. |
+| R3 office gates | PRODUCTION-PASS | Fresh last-60-minute rog journal contained 386 `[mact2]` entries, including 32 corporate SaaS entries (Falabella Jira/Atlassian, Microsoft/Office/Graph/login). The matching `[mact2]` error/fatal/panic/failed count was 0. The production session was observed from office egress `152.230.246.187` (distinct from home egress `201.188.187.112`); this is corroborated by the retained rog journal source-IP record and the fresh flowing traffic. |
+| V-A naming sweep | PASS WITH PRE-EXISTING EXCEPTIONS | No renamed-stack leak outside `openspec/`. The sweep found only runtime keywords: FreeRDP `ssh_tunnel_*`, Authelia `policy: bypass`, Claude `bypassPermissions`, and `"Netskope Client"`; it also found two unrelated, pre-existing WireGuard script prose strings (`git blame` predates this change). |
+| V-B failover config | PASS | Evaluated `link.mode`/CIDRs and inspected the rendered-config source shape: ordered `sniff`, `hijack-dns`, UDP/443 block, ICMP/private/direct-list rules; urltest `interval = "30s"`, `interrupt_exist_connections = true`, and `outbounds = [ "direct" "home-out" ]`. |
+| V-C manual daemon operation | PASS | Evaluated LaunchDaemon label `org.nixos.sing-box`, `RunAtLoad = false`, `KeepAlive = false`, and stdout/stderr `/var/log/sing-box.log`. |
+| V-D runtime health now | PASS WITH REMOTE-INSPECTION LIMIT | rog `sing-box` is active and fresh `[mact2]` traffic is sustained. The current mact2 SSH probe could not resolve `mact2.local` from rog (the Mac is at the office); therefore non-sudo `launchctl print`, loopback issuer, and TUN egress were not re-run in this round. Prior deployed evidence established the loopback issuer as Google Trust Services; no secrets were inspected. |
+| V-E sops state | PASS | Ciphertext `secrets/shared/link-uuids.yaml` is tracked; old `opencode-tunnel.yaml` is absent. All live declarations consistently use `link/uuid_*` and `link-uuids.yaml`; no value was decrypted or printed. |
+| V-F artifacts | PASS | Tunnel change has proposal, design, four delta specs, tasks, home evidence, and this report. `naming-hygiene` has proposal and tasks as specified. |
+| V-G spec consistency | WARNING | The MODIFIED proxy-environment requirement remains compatible with the scoped `bin/opencode-home` launcher and MCP scrub. Historical prose uses old names acceptably. However, the MODIFIED gateway-retention requirement still states that retirement must wait for every office proof, while repository history records retirement before the later production proof; this is a stale process-ordering inconsistency, not a deployed-config contradiction. `naming-hygiene` has no delta specs. |
 
-## Verification matrix summary
+### Requirement disposition
 
-| Verdict | Requirements |
-|---|---:|
-| PASS | 8 |
-| FAIL-KNOWN | 1 |
-| DEFERRED | 6 |
-| OFFICE-PENDING | 2 |
-| NOT-RUNNABLE | 2 |
-| Total | 19 |
+| Requirement | Verdict |
+|---|---|
+| TLS WebSocket endpoint and cover page | FAIL-KNOWN (G12 body leak) |
+| Per-device authentication and secret safety | PASS |
+| Root-managed full routing | PASS; scoped runtime exercise deferred |
+| Self-loop prevention | PASS |
+| Proxy environment and MCP isolation | PASS (round-1 live MCP inspection remains valid) |
+| Stealth client TLS | PASS policy; SUDO-DEFERRED outer capture |
+| Home transport proof | PASS |
+| In-building coexistence | PRODUCTION-PASS |
+| Declarative teardown | DEFERRED |
+| Headless native OAuth bootstrap | PASS (deployed native state and production auth traffic) |
+| Native provider activation | PASS |
+| Refresh continuity / single owner | DEFERRED |
+| Auth-seed fallback safety | NOT-RUNNABLE (read-only) |
+| In-building native OAuth | PRODUCTION-PASS |
+| Device credential lifecycle | DEFERRED (phone revoke/restore) |
+| Runtime-only Android link delivery | PASS |
+| mact2 runtime provider transition | PASS |
+| Gated gateway availability and retirement | PASS WITH STALE-SPEC WARNING |
+| Scoped rollback | DEFERRED |
 
-**Scenario coverage:** 8/24 runtime-compliant scenarios. Deferred, office-only, and read-only-prohibited exercises are not counted as compliant.
+### Remaining deferred and known items
 
-## SUDO-DEFERRED checks
-
-- Rendered mact2 config: sudo sing-box check -c /run/secrets/rendered/sing-box-tunnel.json
-- Inspect rendered client TLS/route shape: sudo jq {outbounds,route} /run/secrets/rendered/sing-box-tunnel.json
-- Confirm runtime secret placement: sudo stat -f %Sp /run/secrets/rendered/sing-box-tunnel.json
-
-## Failures
-
-1. **Cover-page stealth (known from home evidence and reproduced):**
-   ```text
-   GET /ed59280aa562f4b7eba4519e3c316e24 without Upgrade -> 400
-   body: handshake error: bad Upgrade header
-   GET /not-a-tunnel-path -> 404
-   ```
-   This violates the requirement that non-tunnel paths, including a non-upgrade request to the WS path, provide cover-page behavior. No fix was made.
-
-## Documentation spot-check
-
-- bootout/bootstrap use the deployed /Library/LaunchDaemons/org.nixos.sing-box-tunnel.plist.
-- The deployed plist label is org.nixos.sing-box-tunnel, matching the documented kickstart label.
-- bin/tunnel-device-link and bin/opencode-tunnel exist in the repo and built nixos-scripts package.
+1. **FAIL-KNOWN:** non-upgrade WS-path request exposes the sing-box handshake body; unknown-path cover-page behavior was not re-tested in this round.
+2. **DEFERRED:** scoped mode runtime flip and flip-back; declarative teardown/restore; phone revoke/restore.
+3. **DEFERRED:** refresh/concurrent-bootstrap and unsafe auth-seed destructive exercises.
+4. **SUDO-DEFERRED:** rendered mact2 config inspection and outer ClientHello capture. Remote non-sudo checks were also unavailable this round because `mact2.local` was unreachable from rog while the Mac was at the office.
 
 ## Final verdict
 
-**HOME-VERIFIED WITH ONE KNOWN STEALTH FAILURE — OFFICE GATES PENDING.**
+**IMPLEMENTED & PRODUCTION-VALIDATED — remaining deferred items: scoped-mode runtime flip/flip-back, declarative teardown/restore, phone revoke/restore, refresh/concurrent-bootstrap, unsafe auth-seed, and sudo-only rendered-config/outer-TLS inspection.**
 
-`tasks.md` was not changed: this run did not newly prove any currently unchecked task end-to-end.
+The only known functional failure is G12 cover-page stealth: the non-upgrade WebSocket path still returns the sing-box handshake error body. No configuration was changed by this verification.

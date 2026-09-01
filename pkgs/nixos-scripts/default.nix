@@ -42,6 +42,9 @@ stdenvNoCC.mkDerivation {
     cp $src/generate-thinkpad-wireguard $out/bin/
     chmod +x $out/bin/generate-thinkpad-wireguard
 
+    cp $src/linkctl $out/bin/
+    chmod +x $out/bin/linkctl
+
     cp $src/nixos-build $out/bin/
     chmod +x $out/bin/nixos-build
 
