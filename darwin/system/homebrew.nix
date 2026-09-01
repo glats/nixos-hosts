@@ -19,8 +19,11 @@
     # homebrew is best for GUI apps
     # nixpkgs is best for CLI tools
     # gentle-ai, engram: managed by nix flake (pkgs/gentle-ai, pkgs/engram)
+    # mole: migrated to homebrew/core with arm64-only bottles; Intel+Tahoe is
+    # Homebrew Tier 3 (no bottles, go :build dep) -> installed via official
+    # install.sh (prebuilt binary) instead, not managed by the Brewfile.
+    # tw93/tap dropped: nothing else in this Brewfile uses it.
     brews = [
-      "tw93/tap/mole"
       "llmfit"
       "glow"
       "jiratui"
@@ -30,7 +33,6 @@
       "trufflehog"
     ];
     taps = [
-      "tw93/tap"
       "Gentleman-Programming/tap"
     ];
     casks = [
