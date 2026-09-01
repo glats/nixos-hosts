@@ -373,6 +373,23 @@ let
       };
     }
     {
+      name = "anthropic-copilot";
+      phases = {
+        gentle-orchestrator = "github-copilot/gpt-5.6-luna";
+        sdd-init = "anthropic/claude-haiku-4-5";
+        sdd-explore = "anthropic/claude-sonnet-5";
+        sdd-propose = "github-copilot/claude-sonnet-5";
+        sdd-spec = "github-copilot/claude-sonnet-5";
+        sdd-design = "anthropic/claude-sonnet-5";
+        sdd-tasks = "github-copilot/gpt-5.4-mini";
+        sdd-apply = "anthropic/claude-sonnet-5";
+        sdd-verify = "anthropic/claude-sonnet-5";
+        sdd-archive = "anthropic/claude-haiku-4-5";
+        sdd-onboard = "github-copilot/gpt-5.4-mini";
+        neutral = "github-copilot/gpt-5.6-luna";
+      };
+    }
+    {
       name = "openai-go-balanced";
       phases = {
         # Hybrid recommended for ChatGPT Plus/Pro + OpenCode Go:
