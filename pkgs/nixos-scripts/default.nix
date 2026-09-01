@@ -6,7 +6,7 @@ stdenvNoCC.mkDerivation {
 
   src = ../../bin;
 
-  # qrencode is a runtime dep of tunnel-device-link (terminal QR output).
+  # qrencode is a runtime dep of device-link (terminal QR output).
   # wrapProgram puts it on that script's PATH without exposing the dep
   # to the whole environment.
   nativeBuildInputs = [ makeWrapper ];
@@ -51,8 +51,8 @@ stdenvNoCC.mkDerivation {
     cp $src/opencode2 $out/bin/
     chmod +x $out/bin/opencode2
 
-    cp $src/opencode-tunnel $out/bin/
-    chmod +x $out/bin/opencode-tunnel
+    cp $src/opencode-home $out/bin/
+    chmod +x $out/bin/opencode-home
 
     cp $src/remove-wireguard-peer $out/bin/
     chmod +x $out/bin/remove-wireguard-peer
@@ -66,9 +66,9 @@ stdenvNoCC.mkDerivation {
     cp $src/wg-peer $out/bin/
     chmod +x $out/bin/wg-peer
 
-    cp $src/tunnel-device-link $out/bin/
-    chmod +x $out/bin/tunnel-device-link
-    wrapProgram $out/bin/tunnel-device-link \
+    cp $src/device-link $out/bin/
+    chmod +x $out/bin/device-link
+    wrapProgram $out/bin/device-link \
       --prefix PATH : ${lib.makeBinPath [ qrencode ]}
 
     # webcam excluded: already provided by linux/home/webcam.nix

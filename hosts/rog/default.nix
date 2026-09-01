@@ -75,7 +75,7 @@
 
     # Services — network
     ../../linux/system/services/network/wireguard.nix
-    ../../linux/system/services/network/sing-box-tunnel.nix
+    ../../linux/system/services/network/sing-box-link.nix
     ../../linux/system/services/network/ddclient.nix
     ../../linux/system/services/network/samba.nix
     ../../linux/system/services/network/ftp.nix
@@ -180,9 +180,10 @@
 
   system.stateVersion = "25.05";
 
-  # Tunnel loopback VLESS+WS server (module provides the option; import alone
-  # does not enable it). See linux/system/services/network/sing-box-tunnel.nix.
-  services.sing-box-tunnel.enable = true;
+  # Private-link loopback VLESS+WS server (module provides the option;
+  # import alone does not enable it). See
+  # linux/system/services/network/sing-box-link.nix.
+  services.sing-box-link.enable = true;
 
   # Fix 1: Extend timeouts to prevent exit status 4 in nixos-rebuild switch
   # See: investigation of intermittent systemd-run switch-to-configuration failures
@@ -209,6 +210,6 @@
     pipewire-module-xrdp
     intel-vaapi-driver
     libva-vdpau-driver
-    qrencode # bin/tunnel-device-link QR output when run via sudo from the tree
+    qrencode # bin/device-link QR output when run via sudo from the tree
   ];
 }

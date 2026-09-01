@@ -54,7 +54,7 @@ stdenv.mkDerivation {
     # QIcon.fromTheme("thinkfan-ui") relies on the hicolor icon theme
     # discovery mechanism, which is fragile on NixOS (multiple store paths,
     # missing caches, missing index.theme in the right directory).
-    # A direct QIcon(path) bypasses the entire theme system.
+    # A direct QIcon(path) skips the entire theme system.
     substituteInPlace $out/share/thinkfan-ui/ui/systray.py \
       --replace-fail \
         'QIcon.fromTheme("thinkfan-ui")' \
