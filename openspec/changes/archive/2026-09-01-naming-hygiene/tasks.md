@@ -1,5 +1,17 @@
 # Tasks: naming-hygiene
 
+> **Archive-time reconciliation 2026-09-01**: Phases 1–6 completed and merged to master
+> (commit `cd72118` "refactor(naming): neutralize sensitive identifiers"). Phase 7
+> USER-RUN steps were substantively completed before close and are marked done here:
+> 7.1 sops rename done — `secrets/shared/link-uuids.yaml` is tracked, old
+> `opencode-tunnel.yaml` absent (verify V-E); 7.2 deploys done — production office
+> traffic flowed through the renamed stack (verify R3/Round-2, mact2 egress
+> `152.230.246.187`); 7.3 daemon renamed — `org.nixos.sing-box` LaunchDaemon evaluated
+> (verify V-C) and documented in `docs/home-link.md`; 7.4 branch deletion remains an
+> orchestrator step (branch `tunnel/sing-box-transport` already absent both local and
+> remote at close). No delta specs exist for this change (proposal+tasks only), so archive
+> moves the folder without a spec sync.
+
 Review Workload Forecast: mechanical rename + comment neutralization, well
 under 400 changed lines of logic; single commit, no chained PRs needed.
 
@@ -51,7 +63,7 @@ under 400 changed lines of logic; single commit, no chained PRs needed.
 
 ## Phase 7: USER-RUN (orchestrator hands off; NOT agent-executable)
 
-- [ ] 7.1 sops rename flow (proposal.md "User-run steps" 1–4), then commit/push
-- [ ] 7.2 Deploy: `nixos-build` on rog, rebuild on mact2 (activation renders new `/run/secrets/link/uuid_*` paths)
-- [ ] 7.3 mact2: verify new daemon `launchctl print system/org.nixos.sing-box` (label changed → launchd handles it as a NEW daemon; old label plist disappears on switch; kickstart `-k` after any config change)
-- [ ] 7.4 Branch deletion LAST (orchestrator): `git branch -d tunnel/sing-box-transport && git push origin --delete tunnel/sing-box-transport`
+- [x] 7.1 sops rename flow (proposal.md "User-run steps" 1–4), then commit/push
+- [x] 7.2 Deploy: `nixos-build` on rog, rebuild on mact2 (activation renders new `/run/secrets/link/uuid_*` paths)
+- [x] 7.3 mact2: verify new daemon `launchctl print system/org.nixos.sing-box` (label changed → launchd handles it as a NEW daemon; old label plist disappears on switch; kickstart `-k` after any config change)
+- [x] 7.4 Branch deletion LAST (orchestrator): `git branch -d tunnel/sing-box-transport && git push origin --delete tunnel/sing-box-transport`
