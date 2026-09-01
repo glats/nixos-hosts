@@ -47,7 +47,7 @@ link.directDomains = [ "dominio-interno.falabella.cl" ];
 link.directCidrs = [ "163.116.0.0/16" ];   # cloud del agente de seguridad
 ```
 
-Después del cambio: `nixos-build` + `sudo launchctl kickstart -k system/org.nixos.sing-box`.
+Después del cambio: `nixos-build` + `sudo launchctl kickstart -k system/org.nixos.sing-box` (kickstart exige daemon cargado; si estaba apagado, bootstrap).
 
 **¿Cuándo usar cada uno?**
 
@@ -82,21 +82,28 @@ journalctl -u sing-box --since "5 min ago" | grep "\[mact2\]" | grep -i dominio
 ### Prender / apagar / estado del enlace
 
 ```bash
-# APAGAR (TUN desaparece → Mac 100% corporativo; sobrevive hasta el próximo reboot/switch):
+# APAGAR (TUN desaparece → Mac 100% corporativo):
 sudo launchctl bootout system/org.nixos.sing-box
 
-# PRENDER:
+# PRENDER (solo cuando rog está arriba — el daemon NO autostarta;
+# tras un reboot queda registrado pero PARADO → kickstart basta):
+sudo launchctl kickstart system/org.nixos.sing-box
+
+# si dice "Could not find service" (fue bootout'eado antes):
 sudo launchctl bootstrap system /Library/LaunchDaemons/org.nixos.sing-box.plist
+sudo launchctl kickstart system/org.nixos.sing-box
 
 # ESTADO (state = running + pid):
 launchctl print system/org.nixos.sing-box | grep -E "state|pid"
 
 # REINICIAR — OBLIGATORIO tras cualquier cambio de config del enlace (rebuild que
-# toque sing-box-link.nix), porque launchd no reinicia si el plist no cambió:
+# toque sing-box-link.nix), porque launchd no reinicia si el plist no cambió.
+# kickstart funciona con el daemon cargado (corriendo o parado); -k mata la
+# instancia previa si está corriendo:
 sudo launchctl kickstart -k system/org.nixos.sing-box
 ```
 
-⚠️ Con `KeepAlive` activo, `kill` del proceso no sirve — launchd lo revive al instante. Usar `bootout`/`bootstrap`.
+⚠️ Daemon de operación manual (`RunAtLoad=false`, `KeepAlive=false`, verificado contra Apple TN2083: "run purely on demand"): nunca autostarta al boot y si el proceso muere, queda caído — esperado, el camino corporativo funciona sin él. Con `bootstrap` a secas el job queda **registrado pero parado** (sin MachServices no hay "demand" que lo despierte) — por eso PRENDER = `kickstart`. APAGAR sobrevive reboots, switches y crashes; PRENDER hay que re-emitirlo tras cada reboot.
 
 ### OpenCode con OpenAI nativo
 
@@ -216,7 +223,7 @@ sudo bin/device-link phone                   # nuevo link → re-importar en el 
 | Todo el browsing muere | Daemon ON + rog caído aún no degradó (≤30 s) | Esperar el probe del urltest (intervalo 30 s + corte de conexiones existentes) |
 | Página "Aplicación No Permitida" de Falabella en el browser | Estás en el camino corporativo para ese dominio (enlace apagado, o navegador sin proxy) | Prender enlace / usar browser con proxy |
 | `issuer:` del CA corporativo en un test | El flujo NO pasó por el proxy loopback | Verificar `--proxy-server` / profile |
-| Cambiaste la config del enlace y no aplica | launchd no reinicia si el plist no cambió | `sudo launchctl kickstart -k system/org.nixos.sing-box` |
+| Cambiaste la config del enlace y no aplica | launchd no reinicia si el plist no cambió | `sudo launchctl kickstart -k …` (daemon cargado) o `bootstrap` (descargado) |
 | `WARN icmp is not supported by outbound` en logs viejos | Config anterior a la regla ICMP→direct | Ya resuelto; si reaparece post-rebuild, kickstart |
 
 > Lección del incidente 2026-08 (rog caído 2 días): el urltest de sing-box sondea **solo TCP** — la selección UDP quedó clavada al enlace muerto (QUIC/HTTP-3 colgando) mientras TCP degradaba bien a directo. Por eso ahora se bloquea UDP/443 (el QUIC cae a TCP: solo TCP cruza el enlace) y el fallback es ≤30 s con corte de conexiones existentes. Además el urltest lista `direct` primero: sin historial de probes (boot/recién configurado) elige la primera de la lista — el default seguro es el camino corporativo, no un enlace posiblemente caído.

@@ -332,14 +332,18 @@ in
     };
 
     # Root LaunchDaemon. Requires root for utun creation on macOS.
-    # KeepAlive retries if launchd races sops-install-secrets.
+    # Manual-operation daemon: the user raises it with launchctl kickstart
+    # (after a bootout, bootstrap re-registers first — bootstrap alone does
+    # NOT start a job without RunAtLoad/demand triggers, per launchd.plist(5))
+    # when the home server is reachable. Never autostarts at boot; if it
+    # exits, it stays down (expected — the corporate path works without it).
     # WorkingDirectory /var/empty is the macOS root-sandbox dir.
     # Umask 0077 ensures the rendered config file stays root-only.
     launchd.daemons.sing-box = {
       command = "${pkgs.sing-box}/bin/sing-box run -c /run/secrets/rendered/sing-box.json";
       serviceConfig = {
-        RunAtLoad = true;
-        KeepAlive = true;
+        RunAtLoad = false;
+        KeepAlive = false;
         WorkingDirectory = "/var/empty";
         Umask = 63; # 0077 — root-only files
         StandardOutPath = "/var/log/sing-box.log";
