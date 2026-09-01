@@ -13,7 +13,7 @@ wg-peer remove samsung2   # delete peer and clean up its files
 ```
 
 After `add`, scan the printed QR with the WireGuard app (Android/iOS) or import
-the `.conf` file (macOS/Windows/Linux) and activate the tunnel.
+the `.conf` file (macOS/Windows/Linux) and activate the VPN link.
 
 ## Where things live
 
@@ -31,7 +31,7 @@ the `.conf` file (macOS/Windows/Linux) and activate the tunnel.
 | Model | Model B — server generates keys, confs are ready to import (like commercial VPNs / wg-easy) |
 | IPs | Auto-assigned from `10.13.13.0/24`, next free (`.7`, `.8`, …) |
 | PSK | New peers get no PSK (optional in WireGuard); the 5 original peers keep theirs |
-| AllowedIPs | `10.13.13.0/24, 172.16.0.0/24` — VPN + home LAN routes through the tunnel |
+| AllowedIPs | `10.13.13.0/24, 172.16.0.0/24` — VPN + home LAN routes through the VPN link |
 | Endpoint | `guard.glats.org:51820` |
 | Rebuild | `wg-peer add/remove` runs `nixos-build` automatically |
 

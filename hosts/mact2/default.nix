@@ -21,7 +21,7 @@
     ../../darwin/system/mise.nix
     ../../darwin/system/zsh.nix
     ../../darwin/services/wsdd.nix
-    ../../darwin/system/sing-box-tunnel.nix
+    ../../darwin/system/sing-box-link.nix
 
     inputs.home-manager.darwinModules.home-manager
     inputs.nix-homebrew.darwinModules.nix-homebrew
@@ -31,10 +31,11 @@
   # Host-specific settings
   networking.hostName = host;
 
-  # Tunnel design gate: EDR/corporate-agent management traffic must stay
-  # direct — if the tunnel dies, corporate telemetry must not go dark with
-  # it. 163.116.0.0/16 = Netskope cloud (observed 163.116.131.x/.148.x).
-  tunnel.directCidrs = [ "163.116.0.0/16" ];
+  # Link design gate: EDR/corporate-agent management traffic must stay
+  # direct — if the link dies, corporate telemetry must not go dark with
+  # it. 163.116.0.0/16 = endpoint security agent cloud (observed
+  # 163.116.131.x/.148.x).
+  link.directCidrs = [ "163.116.0.0/16" ];
 
   # homebrew installation manager
   nix-homebrew = {
@@ -56,10 +57,10 @@
       # Define stateVersion here to satisfy early Home Manager assertions
       home.stateVersion = "25.05";
       # Per-host provider override: mact2 uses native OpenAI (ChatGPT
-      # OAuth) through the sing-box tunnel — reachability comes from the
-      # scoped bin/opencode-tunnel launcher (proxy env exported only
-      # while 127.0.0.1:2080 listens; MCP children stay scrubbed via
-      # mcp.environment in shared/opencode/runtime-config.nix). See
+      # OAuth) through the sing-box private link — reachability comes
+      # from the scoped bin/opencode-home launcher (proxy env exported
+      # only while 127.0.0.1:2080 listens; MCP children stay scrubbed
+      # via mcp.environment in shared/opencode/runtime-config.nix). See
       # `home.opencode.activeProviderName` in shared/opencode.nix and
       # the openai-{full,medium,light} tiers in
       # shared/opencode/providers-base.nix.
