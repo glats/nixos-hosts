@@ -373,6 +373,23 @@ let
       };
     }
     {
+      name = "copilot-custom";
+      phases = {
+        gentle-orchestrator = "github-copilot/gpt-5.6-luna";
+        sdd-init = "github-copilot/gpt-5.4-mini";
+        sdd-explore = "github-copilot/gpt-5.6-terra";
+        sdd-propose = "github-copilot/gpt-5.6-terra";
+        sdd-spec = "github-copilot/claude-sonnet-5";
+        sdd-design = "github-copilot/claude-sonnet-5";
+        sdd-tasks = "github-copilot/gpt-5.4-mini";
+        sdd-apply = "github-copilot/claude-sonnet-5";
+        sdd-verify = "github-copilot/claude-sonnet-5";
+        sdd-archive = "github-copilot/claude-haiku-4.5";
+        sdd-onboard = "github-copilot/gpt-5.4-mini";
+        neutral = "github-copilot/gpt-5.6-luna";
+      };
+    }
+    {
       name = "anthropic-copilot";
       phases = {
         gentle-orchestrator = "github-copilot/gpt-5.6-luna";
