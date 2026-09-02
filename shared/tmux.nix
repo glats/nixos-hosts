@@ -7,6 +7,11 @@
 #   - Darwin: escapeTime=10, TPM-based plugins, pbcopy clipboard bindings
 { config, ... }:
 {
+  home.file.".local/bin/tmux-open-url-at-cursor" = {
+    source = ./tmux-open-url-at-cursor.sh;
+    executable = true;
+  };
+
   programs.tmux = {
     enable = true;
 
@@ -82,6 +87,14 @@
       bind s choose-tree
       bind -T copy-mode-vi v send -X begin-selection
       bind p paste-buffer
+
+      # Keep gx as the Vim-like copy-mode binding.
+      bind -T copy-mode-vi g switch-client -T tmux-url-open
+      bind -T tmux-url-open x send-keys -X copy-pipe "$HOME/.local/bin/tmux-open-url-at-cursor"
+      bind -T tmux-url-open Escape switch-client -T root
+
+      # Prefix+Space enters copy mode; o opens the URL under the cursor.
+      bind -T copy-mode-vi o send-keys -X copy-pipe "$HOME/.local/bin/tmux-open-url-at-cursor"
 
       # vim-tmux-navigator key bindings (C-h/C-j/C-k/C-l) are
       # auto-installed by the plugin itself when sourced by Home
