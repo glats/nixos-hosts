@@ -1,0 +1,189 @@
+#!/usr/bin/env bash
+# Regression harness for the shared `tmux-resume` zsh function defined in
+# shared/shell-aliases.nix (openspec/changes/tmux-restore-attach).
+#
+# It extracts the live function body straight out of the Nix source (so the
+# test can never silently drift from what ships) and exercises it against a
+# fake `tmux` shim covering:
+#   - cold-start retry then successful attach once a session appears
+#   - immediate attach when a session already exists
+#   - retry timeout with a Resurrect "last" snapshot present
+#   - retry timeout with no snapshot present
+#   - fail-fast on a genuine tmux error (not a "no server"/"no session" race)
+#
+# Run: bin/test-tmux-resume
+set -uo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SRC="$REPO_ROOT/shared/shell-aliases.nix"
+WORKDIR="$(mktemp -d)"
+trap 'rm -rf "$WORKDIR"' EXIT
+
+fail=0
+pass() { echo "ok   - $1"; }
+bad() {
+  echo "FAIL - $1"
+  fail=1
+}
+
+# --- extract tmux-resume() verbatim from the Nix source -------------------
+FUNC_FILE="$WORKDIR/tmux-resume.sh"
+awk '
+  /^      tmux-resume\(\) \{/ { capture=1 }
+  capture { print }
+  capture && /^      }$/ { exit }
+' "$SRC" >"$FUNC_FILE"
+
+if [[ ! -s "$FUNC_FILE" ]]; then
+  bad "extract tmux-resume() from $SRC (function not found)"
+  exit 1
+fi
+pass "extracted tmux-resume() from shared/shell-aliases.nix"
+
+# shellcheck disable=SC1090
+source "$FUNC_FILE"
+
+# `exec tmux attach` inside the function would replace this shell; shim it
+# so a successful attach is observable without killing the test process.
+run_case() {
+  ( tmux-resume; echo "EXIT:$?" ) 2>&1
+}
+
+setup_fake_tmux() {
+  local dir="$1"
+  mkdir -p "$dir"
+  export PATH="$dir:$PATH"
+}
+
+# --- Case 1: immediate attach, session already exists ---------------------
+(
+  d="$WORKDIR/case1"
+  setup_fake_tmux "$d"
+  cat >"$d/tmux" <<'EOF'
+#!/usr/bin/env bash
+case "$1" in
+  has-session) exit 0 ;;
+  attach) echo "ATTACHED"; exit 0 ;;
+esac
+EOF
+  chmod +x "$d/tmux"
+  # `exec tmux attach` replaces the shell on success, so no trailing EXIT
+  # line is printed here — that IS the native-attach contract being tested.
+  out="$(run_case)"
+  if [[ "$out" == *"ATTACHED"* ]]; then
+    pass "case 1: attaches immediately when a session already exists"
+  else
+    bad "case 1: expected immediate attach, got: $out"
+  fi
+)
+[[ $? -eq 0 ]] || fail=1
+
+# --- Case 2: cold-start retry, session appears after N attempts -----------
+(
+  d="$WORKDIR/case2"
+  setup_fake_tmux "$d"
+  counter_file="$WORKDIR/case2-count"
+  echo 0 >"$counter_file"
+  cat >"$d/tmux" <<EOF
+#!/usr/bin/env bash
+COUNTER_FILE="$counter_file"
+case "\$1" in
+  has-session)
+    n=\$(cat "\$COUNTER_FILE")
+    n=\$((n + 1))
+    echo "\$n" >"\$COUNTER_FILE"
+    if [[ "\$n" -ge 3 ]]; then
+      exit 0
+    fi
+    echo "no server running on socket" >&2
+    exit 1
+    ;;
+  attach) echo "ATTACHED"; exit 0 ;;
+esac
+EOF
+  chmod +x "$d/tmux"
+  out="$(run_case)"
+  if [[ "$out" == *"ATTACHED"* ]]; then
+    pass "case 2: retries through cold-start race, then attaches"
+  else
+    bad "case 2: expected retry-then-attach, got: $out"
+  fi
+)
+[[ $? -eq 0 ]] || fail=1
+
+# --- Case 3: timeout exhausted, Resurrect snapshot present -----------------
+(
+  d="$WORKDIR/case3"
+  setup_fake_tmux "$d"
+  cat >"$d/tmux" <<'EOF'
+#!/usr/bin/env bash
+case "$1" in
+  has-session) echo "no server running on socket" >&2; exit 1 ;;
+esac
+EOF
+  chmod +x "$d/tmux"
+  export XDG_DATA_HOME="$WORKDIR/xdg3"
+  mkdir -p "$XDG_DATA_HOME/tmux/resurrect"
+  touch "$XDG_DATA_HOME/tmux/resurrect/last"
+  out="$(run_case)"
+  if [[ "$out" == *"restore did not finish within timeout"* && "$out" == *"EXIT:1"* ]]; then
+    pass "case 3: timeout with snapshot present reports restore-in-progress"
+  else
+    bad "case 3: expected timeout+snapshot message, got: $out"
+  fi
+  unset XDG_DATA_HOME
+)
+[[ $? -eq 0 ]] || fail=1
+
+# --- Case 4: timeout exhausted, no snapshot present ------------------------
+(
+  d="$WORKDIR/case4"
+  setup_fake_tmux "$d"
+  cat >"$d/tmux" <<'EOF'
+#!/usr/bin/env bash
+case "$1" in
+  has-session) echo "no server running on socket" >&2; exit 1 ;;
+esac
+EOF
+  chmod +x "$d/tmux"
+  export XDG_DATA_HOME="$WORKDIR/xdg4-empty"
+  export HOME="$WORKDIR/home4-empty"
+  mkdir -p "$HOME"
+  out="$(run_case)"
+  if [[ "$out" == *"no snapshot to restore"* && "$out" == *"EXIT:1"* ]]; then
+    pass "case 4: timeout with no snapshot reports no-snapshot message"
+  else
+    bad "case 4: expected no-snapshot message, got: $out"
+  fi
+)
+[[ $? -eq 0 ]] || fail=1
+
+# --- Case 5: genuine tmux error short-circuits the retry loop --------------
+(
+  d="$WORKDIR/case5"
+  setup_fake_tmux "$d"
+  cat >"$d/tmux" <<'EOF'
+#!/usr/bin/env bash
+case "$1" in
+  has-session) echo "error connecting to /tmp/tmux-1000/default (Permission denied)" >&2; exit 1 ;;
+esac
+EOF
+  chmod +x "$d/tmux"
+  start="$(date +%s%N)"
+  out="$(run_case)"
+  end="$(date +%s%N)"
+  elapsed_ms=$(( (end - start) / 1000000 ))
+  if [[ "$out" == *"Permission denied"* && "$out" == *"EXIT:1"* && "$elapsed_ms" -lt 500 ]]; then
+    pass "case 5: fails fast on a genuine tmux error (no full retry wait, ${elapsed_ms}ms)"
+  else
+    bad "case 5: expected fail-fast on real error, got: $out (elapsed ${elapsed_ms}ms)"
+  fi
+)
+[[ $? -eq 0 ]] || fail=1
+
+if [[ "$fail" -eq 0 ]]; then
+  echo "All tmux-resume regression cases passed."
+else
+  echo "One or more tmux-resume regression cases failed." >&2
+fi
+exit "$fail"
