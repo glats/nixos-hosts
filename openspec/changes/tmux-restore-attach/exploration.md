@@ -1,55 +1,55 @@
 ## Exploration: tmux restore attach
 
 ### Current State
-- **Confirmed:** OpenSpec is in hybrid mode, so this exploration is stored here and must also be persisted to Engram. No existing main spec covers tmux.
-- **Confirmed:** `shared/tmux.nix` enables Continuum auto-restore and pane-content capture, but does not set `@resurrect-processes`. Resurrect therefore restores its conservative default program set (including `vim` and `nvim`), contrary to the requested policy.
-- **Confirmed:** Resurrect documents `set -g @resurrect-processes 'false'` as disabling all program restoration while retaining sessions, windows, pane layouts, working directories, focus state, and optional captured content.
-- **Confirmed:** Continuum restores only on server start, sleeps one second, then invokes Resurrect synchronously from its background restore script. Native `tmux attach-session` starts a server when absent but does not wait for that background work; a no-session result during this interval is therefore expected race behavior, not evidence that restore failed.
-- **Confirmed:** Linux uses pinned nixpkgs plugin packages and explicitly runs Continuum a second time after `extraConfig`; mact2 clones TPM and its plugins at Home Manager activation, then TPM loads them asynchronously with `run -b`. The plugin source/version and exact load timing therefore differ by platform.
-- **Hypothesis:** mact2's observed delay/error is caused by the TPM/Continuum restore race or a second tmux installation/socket, not by macOS tmux semantics. This must be measured before selecting a platform-specific repair.
+- El repo está en modo híbrido. `shared/tmux.nix` activa captura de contenido, guardado cada 15 minutos y `@continuum-restore on`; Linux usa plugins empaquetados y Darwin TPM. No hay alias ni wrapper actual para tmux.
+- **(a) Patrón humano común:** `tmux a`/`tmux attach` es la forma normal de volver a una sesión ya existente (elige la usada más recientemente). Para un único espacio de trabajo nombrado, también es muy común un alias como `tmux new-session -As main`, que adjunta o crea `main`.
+- **(b) tmux nativo:** `attach` puede arrancar el servidor si falta el socket, pero no crea una sesión y falla si todavía no existe ninguna. `new-session -A` adjunta una sesión objetivo existente o crea una nueva; `start-server` sólo arranca el servidor, sin sesión ni espera.
+- **(c) Continuum/Resurrect:** Resurrect guarda/restaura sesiones, ventanas, paneles y layouts; su restauración manual es explícita (`prefix + Ctrl-r` o `restore.sh`). Continuum guarda periódicamente y, con `@continuum-restore on`, lanza Resurrect una vez y en segundo plano al iniciar el servidor (tras ~1 s). No cambia la semántica de `attach` ni hace que éste espere. Por tanto, ver ventanas aparecer tras adjuntar es posible, pero es un efecto incidental de esa carrera asíncrona, no una UX ni garantía documentada.
+- En consecuencia, `tmux a` justo después de un reinicio puede exponer transitoriamente `no sessions`; no es una diferencia inherente entre Linux y macOS. `exit-empty off` y `exit-unattached off` ya ayudan a que el servidor sobreviva mientras se restaura.
 
 ### Affected Areas
-- `shared/tmux.nix` — shared restore policy and Continuum settings; natural home for the no-process policy.
-- `linux/home/tmux.nix` — nixpkgs plugin order and the intentional second Continuum load.
-- `darwin/home/tmux.nix` — TPM bootstrap, mutable plugin clones, plugin load order, and mact2-specific restore timing.
-- `shared/shell-aliases.nix` — likely declarative location for a cross-platform zsh `tmux` attach wrapper/function.
-- `linux/home/shell.nix` and `darwin/home/shell.nix` — platform shell composition; confirm the shared function reaches both.
-- `flake.nix` and `flake.lock` — confirm the pinned nixpkgs/Home Manager versions and avoid introducing a new dependency solely for tmux startup.
+- `shared/tmux.nix` — política compartida de Resurrect/Continuum.
+- `linux/home/tmux.nix` — carga de Continuum empaquetado y segundo `run-shell` intencional.
+- `darwin/home/tmux.nix` — carga TPM equivalente, pero mutable.
+- `shared/shell-aliases.nix` — único sitio común adecuado si se adopta un comando humano `tmux-resume`.
+- `linux/home/shell.nix`, `darwin/home/shell.nix` — ambos componen la configuración de zsh compartida.
 
 ### Approaches
-1. **Set only `@resurrect-processes 'false'`** — add the documented shared Resurrect option.
-   - Pros: smallest declarative change; directly stops restoring saved binaries; preserves windows, layouts, directories, and captured history.
-   - Cons: does not make `tmux a` wait or show restore progress; does not resolve the mact2 no-session race.
+1. **`tmux a` nativo** — reanudar sólo cuando ya hay una sesión.
+   - Pros: idiomático y sin capa local.
+   - Cons: en un arranque en frío revela la carrera de Continuum.
    - Effort: Low
 
-2. **Keep Continuum auto-restore and wrap attach-or-bootstrap** — intercept interactive `tmux a` to create/attach a bootstrap session and retry until Continuum has restored.
-   - Pros: can prevent a false no-session exit and display progress; GitHub prior art commonly uses `tmux new-session -A -s <name>` as an atomic create-or-attach primitive.
-   - Cons: `new-session -A` creates a real extra session; Continuum can restore only after its fixed delay, so polling is heuristic and may attach to bootstrap rather than restored state. It also changes only shell-mediated invocations.
+2. **`tmux new-session -As main`** — adjuntar o crear un workspace nombrado.
+   - Pros: patrón muy usado para una sesión persistente normal.
+   - Cons: el bootstrap puede dejar una ventana/sesión extra o interferir visualmente con una restauración de múltiples sesiones.
+   - Effort: Low
+
+3. **`tmux start-server` + `tmux a`** — separar servidor y adjunto.
+   - Pros: no crea sesión artificial.
+   - Cons: sigue sin esperar la restauración asíncrona; no aporta frente a un attach con reintento.
+   - Effort: Low
+
+4. **Restauración explícita de Resurrect** — desactivar auto-restore, iniciar servidor y ejecutar restore antes de adjuntar.
+   - Pros: orden y progreso controlables.
+   - Cons: reemplaza una integración mantenida por upstream por orquestación propia y debe evitar doble restore.
    - Effort: Medium
 
-3. **Adjust Continuum/TPM loading only** — remove Linux's duplicate Continuum load, ensure Continuum is last after `status-right`, or alter TPM initialization.
-   - Pros: improves determinism and protects autosave; Continuum upstream confirms it relies on an interpolation in `status-right` and should load last.
-   - Cons: does not provide synchronous attach UX or disable process relaunch; changing timing can mask rather than fix mact2's actual cause. TPM remains mutable/network-dependent at activation.
+5. **Wrapper común `tmux-resume`** — conservar Continuum como único restaurador; intentar attach y, sólo durante el arranque frío, reintentar con plazo corto y error claro.
+   - Pros: un solo flujo para Linux y mact2, sin bootstrap ni doble restore; `tmux a` queda nativo para uso avanzado.
+   - Cons: pequeña política propia que debe distinguir snapshot ausente de fallo real.
    - Effort: Low–Medium
 
-4. **Controlled synchronous restore wrapper (recommended)** — disable automatic Continuum restore, retain its periodic save, and make `tmux a` explicitly bootstrap a server, present a restoring message, invoke Resurrect's configured restore path in the foreground, then attach only after completion. Preserve native tmux behavior for all other commands.
-   - Pros: eliminates the documented one-second background race; gives deterministic visible activity and no false no-session response; allows a single shared UX; combines cleanly with `@resurrect-processes 'false'` to restore topology/directories without binary relaunch.
-   - Cons: requires careful argument handling, absent/corrupt-save fallback, cleanup, and a deliberate escape hatch for manual native restore; restoring manually must not race with Continuum's auto restore (use its documented `tmux_no_auto_restore` guard or turn auto-restore off).
-   - Effort: Medium
-
 ### Recommendation
-Adopt approach 4 plus the shared `@resurrect-processes 'false'` policy. It is the only option supported by the plugin documentation that meets all requested outcomes simultaneously: restore structural state, never relaunch saved workloads, show restoration, and attach after restoration rather than racing it. Keep Continuum for its 15-minute saves, but do not let it independently auto-restore when the controlled `tmux a` path owns restoration. First diagnose mact2, then make Linux and Darwin use the same wrapper contract; separately normalize plugin loading only if diagnostics prove it is needed.
+Homogeneizar con el enfoque 5: mantener `@continuum-restore on` y publicar un único comando humano, por ejemplo `tmux-resume`, que hace attach con reintento acotado durante el cold start. **Lo que el usuario debería escribir normalmente es `tmux-resume`;** `tmux a` sigue siendo la forma nativa y común para readjuntar a un servidor que ya está listo, pero no es el contrato de recuperación tras reinicio.
 
-Required mact2 diagnosis before proposal/apply:
-1. Capture `type -a tmux`, `tmux -V`, `echo "$TMUX_TMPDIR"`, `tmux display-message -p '#{socket_path}'`, and `ps -axo pid,ppid,command | grep '[t]mux'` immediately before/during failure to detect another binary/server/socket.
-2. Capture `tmux show-options -g | grep -E 'resurrect|continuum'`, `tmux show-environment -g | grep TMUX_PLUGIN`, and the generated `~/.config/tmux/tmux.conf` order to prove the loaded options and plugins.
-3. Inspect metadata only (not secrets) for `~/.config/tmux/plugins/{tpm,tmux-resurrect,tmux-continuum}` revisions, `~/.tmux/resurrect/last`, `~/tmux_no_auto_restore`, and user LaunchAgents. Reproduce once with `tmux -vv` and preserve the tmux logs.
+No hacer de la aparición progresiva de ventanas un objetivo: es incidental, depende del tamaño/velocidad del snapshot y no tiene semántica de progreso. El objetivo UX debe ser «un comando, sin falso `no sessions`, termina adjunto a la restauración». No usar `new-session -A` como recuperador general, ni `start-server` solo, ni un restore manual mientras Continuum siga activo. Mantener la política actual de procesos hasta que se decida explícitamente si se quiere `:all:`.
 
 ### Risks
-- A wrapper that blindly uses `new-session -A` can leave or attach an unwanted bootstrap session; define behavior for no snapshot and named targets.
-- Manual restore plus enabled Continuum auto-restore can execute two restores; one mechanism must own restore and the other must be disabled/guarded.
-- `@resurrect-processes 'false'` intentionally stops recovery of editors and monitoring tools as well as arbitrary binaries; acceptance must explicitly approve that trade-off.
-- TPM's unpinned mutable clones make mact2 less reproducible than Linux; do not attribute the problem to this until the required diagnostics identify a version/load discrepancy.
+- El wrapper debe tener timeout y comunicar snapshot ausente/corrupto, no ocultar un fallo real como espera infinita.
+- Ejecutar Resurrect manualmente junto a auto-restore puede duplicar restauraciones.
+- `@resurrect-processes ':all:'` relanzaría comandos con efectos laterales; no debe incorporarse implícitamente.
+- TPM en Darwin es mutable, frente a los plugins empaquetados de Linux; la UX propuesta no depende de ello, pero las pruebas deben cubrir ambas rutas.
 
 ### Ready for Proposal
-Yes, conditionally. The proposal can specify the shared no-process policy and a controlled synchronous `tmux a` restore contract now; it MUST record the mact2 diagnostic evidence before deciding whether to change TPM/Continuum loading or remove Linux's duplicate load.
+Sí. Proponer un contrato `tmux-resume` común que preserve a Continuum como único restaurador, con pruebas de snapshot de varias sesiones en Linux y mact2: sin falso `no sessions`, sin sesión extra y con el comportamiento de procesos decidido explícitamente.
