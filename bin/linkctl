@@ -2,7 +2,7 @@
 # linkctl — sysvinit-style control for the macOS link daemon.
 #
 # Part of the mact2↔rog private-link stack; see docs/home-link.md
-# ("Prender / apagar / estado del enlace"). The daemon is a
+# ("Start / stop / status of the link"). The daemon is a
 # manual-operation wrapper: its plist sets RunAtLoad=false /
 # KeepAlive=false (Apple TN2083 "run purely on demand"), so it never
 # autostarts at boot and stays down if the process dies — the
@@ -32,7 +32,7 @@ print_state() {
   local out lines
   out="$(launchctl print "system/${LABEL}" 2>/dev/null || true)"
   if [[ -z "$out" ]]; then
-    echo "linkctl: ${LABEL} stopped (bootout'eado o nunca cargado tras reboot)"
+    echo "linkctl: ${LABEL} stopped (booted out or never loaded since boot)"
     return 0
   fi
   lines="$(grep -E "state|pid" <<<"$out" || true)"
@@ -40,7 +40,7 @@ print_state() {
     echo "$lines"
   fi
   if ! grep -q "pid" <<<"$out"; then
-    echo "linkctl: ${LABEL} registered, idle — linkctl start to raise"
+    echo "linkctl: ${LABEL} registered, idle — run: linkctl start"
   fi
 }
 
@@ -64,7 +64,7 @@ cmd_stop() {
   if [[ $rc -eq 0 ]]; then
     echo "linkctl: ${LABEL} booted out — TUN down, 100% corporate path"
   elif [[ $rc -eq 3 ]] || grep -qiE "no such process|Could not find service" <<<"$out"; then
-    echo "linkctl: ${LABEL} already stopped (nada corriendo — camino corporativo activo)"
+    echo "linkctl: ${LABEL} already stopped (nothing running — corporate path active)"
   else
     echo "linkctl: bootout failed (rc=${rc}): ${out}" >&2
   fi

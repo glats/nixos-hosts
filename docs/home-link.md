@@ -1,259 +1,259 @@
-# Enlace privado mact2→rog: arquitectura y uso diario
+# mact2↔rog link: architecture and day-to-day operation
 
-**Qué es**: tu Mac corporativo (mact2) navega por tu home server (rog) a través de un enlace privado TLS que el agente de seguridad de endpoint no puede inspeccionar. Esto **no es una herramienta solo para OpenAI**: es un egreso privado de **propósito general** para cualquier aplicación — el TUN cubre automáticamente el tráfico IP que el agente de seguridad libera, y el proxy loopback `127.0.0.1:2080` es una puerta per-app para las categorías que el agente de seguridad intercepta a nivel socket (cualquier app que acepte proxy propio; ver la tabla "Mecanismo genérico" más abajo). OpenCode con OpenAI nativo es el consumidor insignia y el ejemplo trabajado de este doc.
+**What it is**: your corporate Mac (mact2) browses through your home server (rog) over a private TLS link that the endpoint security agent cannot inspect. This is **not an OpenAI-only tool**: it is a **general-purpose** private egress for any application — the TUN automatically covers the IP traffic the security agent lets through, and the loopback proxy `127.0.0.1:2080` is a per-app door for the categories the security agent intercepts at socket level (any app that accepts its own proxy; see the "Generic mechanism" table below). OpenCode with native OpenAI is the flagship consumer and the worked example of this doc.
 
-## Arquitectura en 30 segundos
+## Architecture in 30 seconds
 
 ```
-                        ┌── TUN (automática: tráfico IP que el agente libera) ──┐
+                        ┌── TUN (automatic: IP traffic the agent lets through) ─┐
                         │                                                       │
-mismas reglas ───────►  │    route rules (RFC1918→direct, agente→direct,        │  ──►  VLESS+WS+TLS
-mismo fallback          │    final → urltest auto)                              │       tun.glats.org:443
+same rules ──────────►  │    route rules (RFC1918→direct, agent→direct,         │  ──►  VLESS+WS+TLS
+same fallback           │    final → urltest auto)                              │       tun.glats.org:443
                         │                                                       │
-                        └── mixed 127.0.0.1:2080 (manual: CONNECT sin SNI) ─────┘
+                        └── mixed 127.0.0.1:2080 (manual: CONNECT without SNI) ─┘
                                                      │
                                          Cloudflare → nginx rog → sing-box :4011 → internet
 ```
 
-**Dos puertas de entrada, un mismo enlace.** El TUN captura solo lo que el agente de seguridad libera; el proxy loopback es la puerta manual para las categorías que el agente de seguridad intercepta (lee el SNI a nivel socket, antes de la capa de rutas — el TUN nunca ve esos flujos).
+**Two entry doors, one link.** The TUN captures only what the security agent lets through; the loopback proxy is the manual door for the categories the security agent intercepts (it reads the SNI at socket level, before the routing layer — the TUN never sees those flows).
 
-**Para qué sirve cada puerta:**
+**What each door is for:**
 
-| Tráfico | Puerta | ¿Configurás algo? |
-|---------|--------|-------------------|
-| Genérico (Azure, Apple, la web) | TUN automática | No |
-| OpenAI / dominios con ruteo por categoría del agente de seguridad | Proxy loopback `127.0.0.1:2080` (per-app) | Sí, una vez por app |
-| LAN / rangos privados (172.16.0.0/24, 10.x) | Ninguna — directo por diseño | No |
-| Gestión del agente de seguridad (163.116.0.0/16) | Excluida — directo (si el enlace muere, la telemetría corporativa no se apaga) | No |
+| Traffic | Door | Setup needed? |
+|---------|------|---------------|
+| Generic (Azure, Apple, the web) | Automatic TUN | No |
+| OpenAI / domains with security-agent category routing | Loopback proxy `127.0.0.1:2080` (per-app) | Yes, once per app |
+| LAN / private ranges (172.16.0.0/24, 10.x) | None — direct by design | No |
+| Security-agent management (163.116.0.0/16) | Excluded — direct (if the link dies, corporate telemetry stays up) | No |
 
-**Por qué el proxy del sistema (Settings → Proxies) está descartado**: el agente de seguridad es dueño del diccionario de proxy global del sistema (`scutil --proxy` muestra sus keys) — lo que pongas ahí queda shadoweado. Solo funcionan los overrides per-app. El generador de PAC se implementó y se removió por esto.
+**Why the system proxy (Settings → Proxies) is ruled out**: the security agent owns the system's global proxy dictionary (`scutil --proxy` shows its keys) — whatever you put there gets shadowed. Only per-app overrides work. The PAC generator was implemented and removed for this reason.
 
-## Dominios en macOS: cómo enrutar cada uno
+## Domains on macOS: how to route each one
 
-### Cómo resuelve dominios el cliente (mecánica)
+### How the client resolves domains (mechanics)
 
-1. El TUN captura la conexión y la regla `sniff` extrae el dominio real del TLS ClientHello (SNI) — no depende del DNS del sistema
-2. Las route rules comparan ese dominio/IP contra las listas de exclusión, en orden
-3. Lo que no matchea ninguna regla va a `final` (urltest auto: enlace ↔ directo). Antes de eso, QUIC (UDP/443) está **bloqueado**: el urltest de sing-box solo sondea TCP y su selección UDP no hace failover — bloquear QUIC obliga a los browsers (HTTP-3) a caer a TCP, el único camino que cruza el enlace y el que tiene failover real
-4. El hostname viaja cifrado hasta rog — es rog quien resuelve y conecta (por eso el log del server muestra `[mact2] inbound connection to chatgpt.com:443` con el dominio, no la IP)
+1. The TUN captures the connection and the `sniff` rule extracts the real domain from the TLS ClientHello (SNI) — it does not depend on system DNS
+2. The route rules compare that domain/IP against the exclusion lists, in order
+3. Whatever matches no rule goes to `final` (auto urltest: link ↔ direct). Before that, QUIC (UDP/443) is **blocked**: the sing-box urltest only probes TCP and its UDP selection does not fail over — blocking QUIC forces browsers (HTTP-3) down to TCP, the only path that crosses the link and the one with real failover
+4. The hostname travels encrypted up to rog — it is rog who resolves and connects (that is why the server log shows `[mact2] inbound connection to chatgpt.com:443` with the domain, not the IP)
 
-### Los dos knobs declarativos (hosts/mact2/default.nix)
+### The two declarative knobs (hosts/mact2/default.nix)
 
 ```nix
-# Dominios que NO deben ir por el enlace (van directo, camino corporativo):
+# Domains that must NOT ride the link (they go direct, corporate path):
 link.directDomains = [ "dominio-interno.falabella.cl" ];
 
-# Rangos IP que NO deben ir por el enlace (ya configurado):
-link.directCidrs = [ "163.116.0.0/16" ];   # cloud del agente de seguridad
+# IP ranges that must NOT ride the link (already configured):
+link.directCidrs = [ "163.116.0.0/16" ];   # security-agent cloud
 ```
 
-Después del cambio: `nixos-build` + `linkctl restart` (equivalente crudo: `sudo launchctl kickstart -k system/org.nixos.sing-box` — kickstart exige daemon cargado; si estaba apagado, bootstrap).
+After a change: `nixos-build` + `linkctl restart` (raw equivalent: `sudo launchctl kickstart -k system/org.nixos.sing-box` — kickstart requires the daemon loaded; if it was down, bootstrap).
 
-**¿Cuándo usar cada uno?**
+**When to use each one?**
 
-| Situación | Knob |
-|----------|------|
-| Un servicio corporativo se rompe porque el enlace cambia su ruta de salida | `link.directDomains` |
-| Un rango/subred corporativa (NAC, intranet, VPN) inalcanzable vía enlace | `link.directCidrs` |
-| Un dominio bloqueado por el agente de seguridad que querés alcanzar | **Ninguno** — usá la puerta proxy per-app (es dominio-agnóstica, lo cubre todo) |
+| Situation | Knob |
+|-----------|------|
+| A corporate service breaks because the link changes its egress route | `link.directDomains` |
+| A corporate range/subnet (NAC, intranet, VPN) unreachable via the link | `link.directCidrs` |
+| A domain blocked by the security agent that you need to reach | **None** — use the per-app proxy door (it is domain-agnostic, covers everything) |
 
-### Lo que NO funciona en macOS (probado — no pierdas tiempo)
+### What does NOT work on macOS (tested — do not waste time)
 
-| Truco | Por qué muere |
-|-------|---------------|
-| `/etc/hosts` apuntando dominios a rog | El agente de seguridad filtra por **valor SNI**, no por IP — el ClientHello con SNI prohibido es interceptado igual |
-| Proxy PAC del sistema | El agente shadowea el diccionario de proxy global del sistema |
-| Proxy manual en Settings → Network | Ídem — seteás, y el agente re-assertea |
-| WireGuard / UDP / SSH directo a rog | Bloqueados por el firewall corporativo in-building |
+| Trick | Why it dies |
+|-------|-------------|
+| `/etc/hosts` pointing domains at rog | The security agent filters by **SNI value**, not by IP — the ClientHello with a forbidden SNI is intercepted all the same |
+| System PAC proxy | The agent shadows the system's global proxy dictionary |
+| Manual proxy in Settings → Network | Same — you set it, and the agent re-asserts |
+| WireGuard / UDP / direct SSH to rog | Blocked by the in-building corporate firewall |
 
-### Cómo verificar por dónde salió un dominio
+### How to verify where a domain egressed
 
-Después de tocar el dominio en cuestión, en rog:
+After adjusting the domain in question, on rog:
 
 ```bash
 journalctl -u sing-box --since "5 min ago" | grep "\[mact2\]" | grep -i dominio
 ```
 
-- **Aparece** → fue por el enlace (rog lo resolvió y conectó)
-- **No aparece** → fue directo (exclusión activa) o lo interceptó el agente (para dominios con ruteo por categoría sin proxy per-app)
+- **It appears** → it went through the link (rog resolved and connected)
+- **It does not appear** → it went direct (active exclusion) or the agent intercepted it (for domains with category routing without a per-app proxy)
 
-## Comandos día a día (en mact2)
+## Day-to-day commands (on mact2)
 
-### Prender / apagar / estado del enlace
+### Start / stop / status of the link
 
-Interfaz principal: `linkctl` (envuelto en `bin/linkctl`, empaquetado en `pkgs/nixos-scripts` — systemctl-style para el daemon del enlace en mact2). Se escribe a secas, desde cualquier ruta: start/stop/restart se auto-elevan con sudo solos (re-exec con la ruta absoluta del script resuelta al vuelo — no depende del PATH de root); status corre sin privilegios:
+Main interface: `linkctl` (wrapped as `bin/linkctl`, packaged in `pkgs/nixos-scripts` — systemctl-style for the link daemon on mact2). Type it bare, from any path: start/stop/restart auto-promote with sudo on their own (re-exec with the script's absolute path resolved on the fly — does not depend on root's PATH); status runs unprivileged:
 
 ```bash
-linkctl start     # PRENDER (bootstrap+kickstart si nunca cargó; kickstart si ya estaba cargado)
-linkctl stop      # APAGAR (TUN desaparece → Mac 100% corporativo); idempotente
-linkctl restart   # REINICIAR — OBLIGATORIO tras cualquier cambio de config del enlace
-linkctl status    # ESTADO (state/pid; distingue stopped de registrado-idle post-reboot)
+linkctl start     # UP (bootstrap+kickstart if never loaded; kickstart if already loaded)
+linkctl stop      # DOWN (TUN disappears → Mac 100% corporate); idempotent
+linkctl restart   # RESTART — MANDATORY after any link config change
+linkctl status    # STATE (state/pid; distinguishes stopped from registered-idle post-reboot)
 ```
 
-> El auto-sudo pedirá contraseña la primera vez (como siempre). Ya no hay que teclear `sudo` delante: antes fallaba porque el PATH de root no incluye el perfil de usuario donde vive `linkctl`. En mact2 el binario también vive en el perfil del sistema (`/run/current-system/sw/bin/linkctl`) como respaldo para shells con PATH raro.
+> Auto-sudo will ask for the password the first time (as always). No more typing `sudo` in front: it used to fail because root's PATH does not include the user profile where `linkctl` lives. On mact2 the binary also lives in the system profile (`/run/current-system/sw/bin/linkctl`) as a backup for shells with an odd PATH.
 
-Equivalente crudo (los mismos `launchctl` que `linkctl` ejecuta):
+Raw equivalent (the same `launchctl` calls `linkctl` runs):
 
 ```bash
-# APAGAR (TUN desaparece → Mac 100% corporativo):
+# DOWN (TUN disappears → Mac 100% corporate):
 sudo launchctl bootout system/org.nixos.sing-box
 
-# PRENDER (solo cuando rog está arriba — el daemon NO autostarta;
-# tras un reboot queda registrado pero PARADO → kickstart basta):
+# UP (only while rog is up — the daemon does NOT autostart;
+# after a reboot it stays registered but STOPPED → kickstart is enough):
 sudo launchctl kickstart system/org.nixos.sing-box
 
-# si dice "Could not find service" (fue bootout'eado antes):
+# if it says "Could not find service" (it was booted out earlier):
 sudo launchctl bootstrap system /Library/LaunchDaemons/org.nixos.sing-box.plist
 sudo launchctl kickstart system/org.nixos.sing-box
 
-# ESTADO (state = running + pid):
+# STATE (state = running + pid):
 launchctl print system/org.nixos.sing-box | grep -E "state|pid"
 
-# REINICIAR — kickstart funciona con el daemon cargado (corriendo o parado); -k mata la
-# instancia previa si está corriendo:
+# RESTART — kickstart works with the daemon loaded (running or stopped); -k kills the
+# previous instance if it is running:
 sudo launchctl kickstart -k system/org.nixos.sing-box
 ```
 
-⚠️ Daemon de operación manual (`RunAtLoad=false`, `KeepAlive=false`, verificado contra Apple TN2083: "run purely on demand"): nunca autostarta al boot y si el proceso muere, queda caído — esperado, el camino corporativo funciona sin él. Con `bootstrap` a secas el job queda **registrado pero parado** (sin MachServices no hay "demand" que lo despierte) — por eso PRENDER = `kickstart`. APAGAR sobrevive reboots, switches y crashes; PRENDER hay que re-emitirlo tras cada reboot. Tras un reboot `linkctl status` muestra el job **registrado, idle** (sin pid) — normal; `linkctl start` lo levanta.
+⚠️ Manual-operation daemon (`RunAtLoad=false`, `KeepAlive=false`, verified against Apple TN2083: "run purely on demand"): never autostarts at boot and if the process dies it stays down — expected, the corporate path works without it. With plain `bootstrap` the job ends up **registered but stopped** (without MachServices there is no "demand" to wake it) — that is why UP = `kickstart`. DOWN survives reboots, switches and crashes; UP must be re-issued after every reboot. After a reboot `linkctl status` shows the job **registered, idle** (no pid) — normal; `linkctl start` raises it.
 
-### OpenCode con OpenAI nativo
+### OpenCode with native OpenAI
 
 ```bash
-opencode-home          # NO usar `opencode` a secas: el wrapper scopea el proxy
-                       # al proceso y deja los MCPs hijos limpios.
-                       # Si el enlace está apagado, arranca igual (sin proxy).
+opencode-home          # do NOT use plain `opencode`: the wrapper scopes the proxy
+                       # to the process and keeps child MCPs clean.
+                       # If the link is down, it still starts (without proxy).
 ```
 
-### Browser con enlace (para OpenAI y lo que surja)
+### Browser with the link (for OpenAI and whatever comes up)
 
 ```bash
-# Edge/Chromium — flag por lanzamiento:
+# Edge/Chromium — per-launch flag:
 open -a "Microsoft Edge" --args --proxy-server=http://127.0.0.1:2080
 ```
 
 ```text
-Firefox — configuración UNA sola vez (persiste en el profile):
-Settings → Network Settings → Manual proxy → HTTP 127.0.0.1 puerto 2080
+Firefox — one-time setup (persists in the profile):
+Settings → Network Settings → Manual proxy → HTTP 127.0.0.1 port 2080
 (√ "also use for HTTPS") · No proxy for: localhost, 127.0.0.1
 ```
 
-**Dominios nuevos bloqueados por el agente de seguridad**: no hay lista que mantener — cualquier dominio que accedas **a través del proxy** ya viaja por el enlace. La puerta per-app es dominio-agnóstica. (Las listas `link.directDomains`/`directCidrs` son para lo contrario: excluir dominios DEL enlace.)
+**New domains blocked by the security agent**: there is no list to maintain — any domain you access **through the proxy** already rides the link. The per-app door is domain-agnostic. (The `link.directDomains`/`directCidrs` lists are for the opposite: excluding domains FROM the link.)
 
-### Mecanismo genérico: apuntar CUALQUIER app al enlace
+### Generic mechanism: point ANY app at the link
 
-El proxy del sistema está descartado (el agente de seguridad lo shadowea). Para cualquier app bloqueada, la pregunta es: *"¿esta app acepta que le indique un proxy por su propio mecanismo?"*
+The system proxy is ruled out (the security agent shadows it). For any blocked app, the question is: *"does this app accept being told a proxy through its own mechanism?"*
 
-| Clase de app | Mecanismo | Persistencia |
-|--------------|-----------|--------------|
-| **Chromium** (Edge, Chrome, Brave, Arc) | Launch flag `--proxy-server=http://127.0.0.1:2080`, o config file: `defaults write com.microsoft.Edge ProxyMode -string fixed_servers` + `defaults write com.microsoft.Edge ProxyServer -string 127.0.0.1:2080` | Flag: cada lanzamiento · defaults: permanente (⚠️ si IT empuja policies Edge por MDM, las managed ganan) · localhost se excluye del proxy automáticamente (OAuth callback OK) |
-| **Firefox / Gecko** | Profile → Manual proxy `127.0.0.1:2080` | Permanente en el profile |
-| **CLI** (curl, git, npm, pip…) | Env en la invocación o wrapper: `HTTPS_PROXY=http://127.0.0.1:2080 curl …`, `git -c http.proxy=http://127.0.0.1:2080 clone …` | Per-invocación |
-| **OpenCode** | `opencode-home` (wrapper del repo — scopea env + MCPs limpios) | Cero (auto-detecta) |
-| **Apps nativas CFNetwork** (Mail, App Store…) | Sin puerta per-app confiable — el dict de proxy lo pisa el agente | — |
+| App class | Mechanism | Persistence |
+|-----------|-----------|-------------|
+| **Chromium** (Edge, Chrome, Brave, Arc) | Launch flag `--proxy-server=http://127.0.0.1:2080`, or config file: `defaults write com.microsoft.Edge ProxyMode -string fixed_servers` + `defaults write com.microsoft.Edge ProxyServer -string 127.0.0.1:2080` | Flag: every launch · defaults: permanent (⚠️ if IT pushes Edge policies via MDM, managed wins) · localhost is excluded from the proxy automatically (OAuth callback OK) |
+| **Firefox / Gecko** | Profile → Manual proxy `127.0.0.1:2080` | Permanent in the profile |
+| **CLI** (curl, git, npm, pip…) | Env at invocation or wrapper: `HTTPS_PROXY=http://127.0.0.1:2080 curl …`, `git -c http.proxy=http://127.0.0.1:2080 clone …` | Per-invocation |
+| **OpenCode** | `opencode-home` (repo wrapper — scoped env + clean MCPs) | Zero (auto-detects) |
+| **Native CFNetwork apps** (Mail, App Store…) | No reliable per-app door — the proxy dict is stomped by the agent | — |
 
-**Regla general**: si la app tiene config propia de proxy, apuntala a `127.0.0.1:2080` y todo su tráfico (incluidos dominios bloqueados) viaja por el enlace. Si solo lee el proxy del sistema, no hay nada que hacer sin wrapper. Nunca exportes `HTTP(S)_PROXY` en shell profiles — solo wrappers (los MCPs hijos heredan el env y deben seguir limpios).
+**General rule**: if the app has its own proxy config, point it at `127.0.0.1:2080` and all its traffic (blocked domains included) rides the link. If it only reads the system proxy, there is nothing to do without a wrapper. Never export `HTTP(S)_PROXY` in shell profiles — wrappers only (child MCPs inherit the env and must stay clean).
 
-### Bootstrap OAuth de un dispositivo (el flujo completo)
+### Device OAuth bootstrap (the full flow)
 
-Cada dispositivo hace su **propio** login OAuth — no se copian auth.json entre hosts (el seed script quedó obsoleto como mecanismo; es fallback dormido).
+Each device does its **own** OAuth login — auth.json is not copied between hosts (the seed script is obsolete as a mechanism; it is a dormant fallback).
 
 ```bash
-# en el dispositivo, CON el enlace corriendo:
-opencode-home auth login       # wrapper: el exchange del token viaja por el enlace
+# on the device, WITH the link up:
+opencode-home auth login       # wrapper: the token exchange rides the link
 ```
 
-1. Copiás la URL que imprime opencode
-2. La abrís en un browser **con el proxy configurado** (Edge flag/policy o Firefox profile)
-3. Login en auth.openai.com (el agente no ve ese flujo — viaja por el enlace)
-4. Redirect a `localhost:1455` → Chromium excluye localhost del proxy → opencode captura el código
-5. El exchange del token lo hace el propio opencode **por el enlace** (por eso el wrapper)
+1. Copy the URL opencode prints
+2. Open it in a browser **with the proxy configured** (Edge flag/policy or Firefox profile)
+3. Log in at auth.openai.com (the agent does not see that flow — it rides the link)
+4. Redirect to `localhost:1455` → Chromium excludes localhost from the proxy → opencode captures the code
+5. The token exchange is done by opencode itself **over the link** (hence the wrapper)
 
-⚠️ No corras `opencode auth login` a secas: el exchange del token es un flujo OpenAI-bound que el agente interceptaría sin el proxy env del wrapper.
+⚠️ Do not run bare `opencode auth login`: the token exchange is an OpenAI-bound flow the agent would intercept without the wrapper's proxy env.
 
-### Prueba de salud (30 segundos)
+### Health check (30 seconds)
 
 ```bash
-# 1. El enlace trae certificados REALES (no el CA corporativo del agente):
+# 1. The link delivers REAL certificates (not the agent's corporate CA):
 curl -x http://127.0.0.1:2080 -sSIv https://auth.openai.com/ 2>&1 | grep "issuer:"
-#    esperado: O=Google Trust Services / Cloudflare
-#    mal señal: issuer del CA corporativo (el agente interceptó)
+#    expected: O=Google Trust Services / Cloudflare
+#    bad sign: issuer of the corporate CA (the agent intercepted)
 
-# 2. El enlace completo está activo (TUN capturando):
-curl -sS https://ipinfo.io/ip        # → 201.188.187.112 (egres por rog)
+# 2. The full link is active (TUN capturing):
+curl -sS https://ipinfo.io/ip        # → 201.188.187.112 (egress via rog)
 
-# 3. Fallback: si rog está caído, el mismo curl sigue devolviendo TU ip
-#    corporativa en ≤30 s y todo sigue navegando — degradación automática.
+# 3. Fallback: if rog is down, the same curl keeps returning YOUR corporate
+#    IP within ≤30 s and everything keeps browsing — automatic degradation.
 ```
 
-### Teléfono (sing-box Android / SFA)
+### Phone (sing-box Android / SFA)
 
 ```bash
-# en rog — genera link (QR interactivo) o config JSON para SFA:
-sudo bin/device-link phone            # link vless:// + QR (v2rayNG-class)
-sudo bin/device-link phone --config   # JSON completo → SFA Local profile
+# on rog — generates link (interactive QR) or config JSON for SFA:
+sudo bin/device-link phone            # vless:// link + QR (v2rayNG-class)
+sudo bin/device-link phone --config   # full JSON → SFA Local profile
 ```
 
-El `--config` es el que funciona con SFA (no parsea `vless://`). Importar: Profiles → + → Local → clipboard. El perfil del teléfono usa DNS del sistema (`type: local`) — funciona en cualquier red móvil/WiFi.
+`--config` is the one that works with SFA (it does not parse `vless://`). Import: Profiles → + → Local → clipboard. The phone profile uses system DNS (`type: local`) — works on any mobile/WiFi network.
 
-## Comandos server (en rog)
+## Server commands (on rog)
 
 ```bash
-systemctl status sing-box --no-pager        # servicio del server
-journalctl -u sing-box -f                   # ver conexiones EN VIVO: [mact2], [phone]
+systemctl status sing-box --no-pager        # server service
+journalctl -u sing-box -f                   # watch connections LIVE: [mact2], [phone]
 journalctl -u sing-box --since "30 min ago" | grep phone
-ss -tln | grep 4011                         # loopback inbound escuchando
+ss -tln | grep 4011                         # loopback inbound listening
 ```
 
-Cada conexión autenticada aparece con el nombre del dispositivo (`[mact2]`, `[phone]`) — así sabés quién está usando el enlace y qué destinos visita (por dominio, el server resuelve).
+Every authenticated connection appears with the device name (`[mact2]`, `[phone]`) — that is how you know who is using the link and which destinations they visit (by domain; the server resolves).
 
-## Revocar / rotar dispositivos
+## Revoke / rotate devices
 
-La revocación es **autoritativa del server**: cambia qué UUIDs acepta rog; lo que el cliente tenga guardado deja de servir.
+Revocation is **server-authoritative**: it changes which UUIDs rog accepts; whatever the client has stored stops working.
 
-> Los UUIDs viven en `secrets/shared/link-uuids.yaml` (sops), con declaraciones `link/uuid_*` — renombrados desde el namespace histórico por el change `naming-hygiene`.
+> The UUIDs live in `secrets/shared/link-uuids.yaml` (sops), with `link/uuid_*` declarations — renamed from the historical namespace by the `naming-hygiene` change.
 
 ```bash
-# ROTAR un dispositivo (nuevo UUID, mismo slot):
-sops secrets/shared/link-uuids.yaml         # editar uuid_phone: <nuevo>
+# ROTATE a device (new UUID, same slot):
+sops secrets/shared/link-uuids.yaml         # edit uuid_phone: <new>
 git add + commit + push
-nixos-build                                  # rog ahora espera el nuevo
-sudo bin/device-link phone                   # nuevo link → re-importar en el teléfono
+nixos-build                                  # rog now expects the new one
+sudo bin/device-link phone                   # new link → re-import on the phone
 
-# REVOCAR por completo (ejemplo: phone):
-#   1. sacar la entry "phone" del array users (linux/system/services/network/sing-box-link.nix)
-#   2. sacar la declaración en hosts/rog/secrets.nix
-#   3. sacar la key uuid_phone del sops file
-#   4. nixos-build en rog
-# mact2 no se entera — cada UUID es independiente.
+# REVOKE completely (example: phone):
+#   1. remove the "phone" entry from the users array (linux/system/services/network/sing-box-link.nix)
+#   2. remove the declaration in hosts/rog/secrets.nix
+#   3. remove the uuid_phone key from the sops file
+#   4. nixos-build on rog
+# mact2 never notices — each UUID is independent.
 ```
 
-## Fallas conocidas y su significado
+## Known failures and what they mean
 
-| Síntoma | Causa | Acción |
+| Symptom | Cause | Action |
 |---------|-------|--------|
-| Todo el browsing muere | Daemon ON + rog caído aún no degradó (≤30 s) | Esperar el probe del urltest (intervalo 30 s + corte de conexiones existentes) |
-| Página "Aplicación No Permitida" de Falabella en el browser | Estás en el camino corporativo para ese dominio (enlace apagado, o navegador sin proxy) | Prender enlace / usar browser con proxy |
-| `issuer:` del CA corporativo en un test | El flujo NO pasó por el proxy loopback | Verificar `--proxy-server` / profile |
-| Cambiaste la config del enlace y no aplica | launchd no reinicia si el plist no cambió | `linkctl restart` (o crudo: `kickstart -k` si cargado, `bootstrap` si descargado) |
-| `WARN icmp is not supported by outbound` en logs viejos | Config anterior a la regla ICMP→direct | Ya resuelto; si reaparece post-rebuild, kickstart |
+| All browsing dies | Daemon ON + rog down, not yet degraded (≤30 s) | Wait for the urltest probe (30 s interval + teardown of existing connections) |
+| Falabella "Application Not Allowed" page in the browser | You are on the corporate path for that domain (link down, or browser without proxy) | Raise the link / use a browser with proxy |
+| `issuer:` of the corporate CA in a test | The flow did NOT go through the loopback proxy | Check `--proxy-server` / profile |
+| You changed the link config and it does not apply | launchd does not restart if the plist did not change | `linkctl restart` (or raw: `kickstart -k` if loaded, `bootstrap` if unloaded) |
+| `WARN icmp is not supported by outbound` in old logs | Config older than the ICMP→direct rule | Already resolved; if it reappears post-rebuild, kickstart |
 
-> Lección del incidente 2026-08 (rog caído 2 días): el urltest de sing-box sondea **solo TCP** — la selección UDP quedó clavada al enlace muerto (QUIC/HTTP-3 colgando) mientras TCP degradaba bien a directo. Por eso ahora se bloquea UDP/443 (el QUIC cae a TCP: solo TCP cruza el enlace) y el fallback es ≤30 s con corte de conexiones existentes. Además el urltest lista `direct` primero: sin historial de probes (boot/recién configurado) elige la primera de la lista — el default seguro es el camino corporativo, no un enlace posiblemente caído.
+> Lesson from the 2026-08 incident (rog down 2 days): the sing-box urltest probes **TCP only** — UDP selection stayed pinned to the dead link (QUIC/HTTP-3 hanging) while TCP degraded fine to direct. That is why UDP/443 is now blocked (QUIC falls back to TCP: only TCP crosses the link) and the fallback is ≤30 s with teardown of existing connections. Also, the urltest lists `direct` first: with no probe history (boot/freshly configured) it picks the first entry — the safe default is the corporate path, not a possibly dead link.
 
-## Dónde vive todo
+## Where everything lives
 
-| Pieza | Archivo |
-|-------|---------|
-| Cliente macOS (TUN + mixed + launchd + urltest) | `darwin/system/sing-box-link.nix` |
-| Server rog (VLESS multi-usuario, :4011) | `linux/system/services/network/sing-box-link.nix` |
-| Vhost tun.glats.org (cover page + WS path) | `linux/system/services/web/nginx.nix` |
-| Launchers | `bin/opencode-home`, `bin/device-link`, `bin/linkctl` (empaquetados en `pkgs/nixos-scripts`) |
-| Scrub MCP (hosts agnóstico) | `shared/opencode/runtime-config.nix` |
-| Credenciales (2 UUIDs) | `secrets/shared/link-uuids.yaml` (sops; regla específica en `.sops.yaml`; declaraciones `link/uuid_*`) |
-| Reglas de exclusión del cliente | `hosts/mact2/default.nix` (`link.directCidrs`, `link.mode`) |
-| Change SDD de renombre | `openspec/changes/naming-hygiene/` (el change SDD histórico de esta pila conserva su narrativa original y está pendiente de reubicación fuera del repo) |
+| Piece | File |
+|-------|------|
+| macOS client (TUN + mixed + launchd + urltest) | `darwin/system/sing-box-link.nix` |
+| rog server (multi-user VLESS, :4011) | `linux/system/services/network/sing-box-link.nix` |
+| tun.glats.org vhost (cover page + WS path) | `linux/system/services/web/nginx.nix` |
+| Launchers | `bin/opencode-home`, `bin/device-link`, `bin/linkctl` (packaged in `pkgs/nixos-scripts`) |
+| MCP scrub (host-agnostic) | `shared/opencode/runtime-config.nix` |
+| Credentials (2 UUIDs) | `secrets/shared/link-uuids.yaml` (sops; specific rule in `.sops.yaml`; `link/uuid_*` declarations) |
+| Client exclusion rules | `hosts/mact2/default.nix` (`link.directCidrs`, `link.mode`) |
+| Rename SDD change | `openspec/changes/naming-hygiene/` (the historical SDD change for this stack keeps its original narrative and is pending relocation out of the repo) |
 
-## Pendiente (no bloquea el uso diario)
+## Pending (does not block day-to-day use)
 
-- **OFFICE GATES** — validación dentro del edificio: coexistencia con FortiClient, CrowdStrike, firewall corporativo (WS long-lived), SNI observado = `tun.glats.org` only.
-- Test de revocación del teléfono y flip runtime a scoped mode — procedimientos en el change SDD histórico.
-- Rollback total = revert de los commits en master (todo es declarativo; los UUIDs sobreviven en sops).
+- **OFFICE GATES** — validation inside the building: coexistence with FortiClient, CrowdStrike, corporate firewall (WS long-lived), observed SNI = `tun.glats.org` only.
+- Phone revocation test and runtime flip to scoped mode — procedures in the historical SDD change.
+- Full rollback = reverting the commits on master (everything is declarative; the UUIDs survive in sops).
