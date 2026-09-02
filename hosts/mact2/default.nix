@@ -92,7 +92,11 @@
     variables = {
       DISPLAY = ":0";
     };
-    systemPackages = with pkgs; [ git ];
+    # nixos-scripts (linkctl) at the SYSTEM level too: linkctl
+    # start/stop/restart re-exec via sudo with an absolute path, and a
+    # /run/current-system/sw/bin/linkctl copy guarantees a stable
+    # resolution even in shells whose PATH lacks the user's HM profile.
+    systemPackages = with pkgs; [ git nixos-scripts ];
     # Intel uses /usr/local; Apple Silicon uses /opt/homebrew
     systemPath = [
       (if pkgs.stdenv.isAarch64 then "/opt/homebrew/bin" else "/usr/local/bin")
