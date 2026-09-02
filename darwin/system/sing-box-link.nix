@@ -148,7 +148,7 @@ let
       # the alternate per-app door. The endpoint security agent's local
       # AppProxy intercepts OpenAI-bound flows at socket level BEFORE
       # they reach the TUN: with the link up, auth.openai.com still
-      # presented the corporate CA ("el CA corporativo") instead of the
+      # presented the corporate CA instead of the
       # origin cert, because its category routing matches the SNI of
       # outbound connections. A loopback CONNECT/SOCKS request carries
       # no SNI for that matching to act on, so the flow is not
