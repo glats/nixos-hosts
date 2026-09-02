@@ -9,8 +9,9 @@
 # corporate path never depends on it. linkctl just makes the launchctl
 # incantations memorable: start|stop|restart|status, systemctl-style.
 #
-# start/stop/restart need root (system-domain launchctl — run via
-# sudo); status works unprivileged. Post-reboot the job is
+# start/stop/restart mutate the system domain (root-only) and
+# auto-promote via sudo re-exec; status works unprivileged.
+# Post-reboot the job is
 # auto-registered but idle (RunAtLoad=false → no pid): that is normal,
 # `linkctl start` raises it.
 
@@ -84,6 +85,17 @@ cmd_restart() {
 }
 
 [[ $# -eq 1 ]] || usage
+
+# Auto-promote: start/stop/restart mutate the SYSTEM domain (root-only).
+# Re-exec with sudo using this script's resolved absolute path so it
+# works from any directory and any PATH. `status` stays unprivileged.
+if [[ $EUID -ne 0 && "$1" != "status" ]]; then
+  self="$(command -v -- linkctl 2>/dev/null || true)"
+  [[ -z "$self" || "$self" -ef "$0" ]] && self="$0"
+  case "$self" in /*) ;; *) self="$PWD/${self#./}" ;; esac
+  exec sudo "$self" "$@"
+fi
+
 case "$1" in
   start) cmd_start ;;
   stop) cmd_stop ;;
