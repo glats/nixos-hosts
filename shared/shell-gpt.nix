@@ -37,10 +37,15 @@ in
 
     home.sessionVariables = {
       API_BASE_URL = cfg.baseUrl;
-      OPENAI_API_KEY = "$(cat ${config.sops.secrets."opencode/nvidia_api_key".path})";
       DEFAULT_MODEL = cfg.model;
       SHELL_INTERACTION = "true";
       DEFAULT_EXECUTE_SHELL_CMD = "false";
     };
+
+    programs.zsh.initContent = lib.mkAfter ''
+      if [ -f "${config.sops.secrets."opencode/nvidia_api_key".path}" ]; then
+        export OPENAI_API_KEY="$(cat ${config.sops.secrets."opencode/nvidia_api_key".path})"
+      fi
+    '';
   };
 }
