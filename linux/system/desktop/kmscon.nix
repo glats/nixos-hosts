@@ -7,6 +7,12 @@ let
 in
 
 {
+  # Clipboard boundary (docs-only, no functional change): kmscon is a bare
+  # console with no X11/Wayland session, so it has no external/graphical
+  # clipboard receiver and no OSC 52 support. Text copied via tmux-yank
+  # inside a kmscon-hosted tmux session is retrievable only via
+  # `tmux paste-buffer` after reattaching from a supported client (e.g. SSH
+  # + Ghostty/Kitty/Alacritty). See docs/terminal-clipboard.md.
   fonts.packages = [ pkgs.nerd-fonts.caskaydia-cove ];
 
   services.kmscon = {
