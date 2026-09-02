@@ -81,6 +81,51 @@
       nix-format() {
         nix fmt -- "$NIXOS_REPO"
       }
+
+      # tmux-resume: bounded-retry attach that lets Continuum's async
+      # `@continuum-restore on` land before reporting a verdict. Continuum
+      # remains the sole restore authority — this never calls Resurrect's
+      # restore.sh and never creates a bootstrap session (no `new-session -A`).
+      # See openspec/changes/tmux-restore-attach/design.md for the contract.
+      tmux-resume() {
+        command -v tmux >/dev/null 2>&1 || {
+          echo "tmux-resume: tmux not found" >&2
+          return 127
+        }
+
+        local tries=15 delay=0.2 i err errfile
+        errfile="$(mktemp)"
+
+        for ((i = 0; i < tries; i++)); do
+          if tmux has-session 2>"$errfile"; then
+            rm -f "$errfile"
+            exec tmux attach
+          fi
+          err="$(cat "$errfile" 2>/dev/null)"
+          # A real tmux error (not "no server"/"no session(s)") short-circuits
+          # immediately instead of being masked as a restore-in-progress wait.
+          if [[ -n "$err" && "$err" != *"no server"* && "$err" != *"no session"* ]]; then
+            rm -f "$errfile"
+            echo "$err" >&2
+            return 1
+          fi
+          sleep "$delay"
+        done
+        rm -f "$errfile"
+
+        local snapshot
+        for snapshot in \
+          "''${XDG_DATA_HOME:-$HOME/.local/share}/tmux/resurrect/last" \
+          "$HOME/.tmux/resurrect/last"; do
+          if [[ -e "$snapshot" ]]; then
+            echo "tmux-resume: restore did not finish within timeout" >&2
+            return 1
+          fi
+        done
+
+        echo "tmux-resume: no snapshot to restore" >&2
+        return 1
+      }
     '';
 
     # Syntax highlighting styles via prezto's declarative option instead of
