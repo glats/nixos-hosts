@@ -63,8 +63,8 @@ cmd_stop() {
   out="$(launchctl bootout "system/${LABEL}" 2>&1)" && rc=0 || rc=$?
   if [[ $rc -eq 0 ]]; then
     echo "linkctl: ${LABEL} booted out — TUN down, 100% corporate path"
-  elif grep -q "Could not find service" <<<"$out"; then
-    echo "linkctl: ${LABEL} already stopped"
+  elif [[ $rc -eq 3 ]] || grep -qiE "no such process|Could not find service" <<<"$out"; then
+    echo "linkctl: ${LABEL} already stopped (nada corriendo — camino corporativo activo)"
   else
     echo "linkctl: bootout failed (rc=${rc}): ${out}" >&2
   fi
