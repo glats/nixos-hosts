@@ -42,9 +42,6 @@
     "gentle-orchestrator": [
       "../rules/explore-mcp.md",
       "../rules/output-format.md"
-    ],
-    "subagent": [
-      "../rules/output-format.md"
     ]
   }
 }
