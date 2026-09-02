@@ -171,13 +171,7 @@
       # --- Home module lists ---
       # Canonical base list of shared Home Manager modules for Linux. See
       # `linux/home/shared-modules.nix` for the full list.
-      # NOTE: After the Linux HM composition alignment refactor,
-      # `linuxHomeModules` is no longer the sync mechanism for Linux
-      # standalone entries. `rog` and `thinkcentre` now import their
-      # per-host `hosts/<host>/home/default.nix` files directly, and the
-      # NixOS-integrated path (`linux/system/base/home-manager.nix`) does the same.
-      # This binding is retained because `mkHomeConfig` still references it in
-      # the platform-conditional branch.
+      # Shared lists are imported by each platform/host Home Manager entry.
       linuxHomeModules = import ./linux/home/shared-modules.nix {
         inherit inputs;
       };
@@ -191,9 +185,10 @@
         hostname: system: username: extraModules:
         home-manager.lib.homeManagerConfiguration {
           pkgs = pkgsFor system;
-          modules =
-            (if nixpkgs.lib.hasSuffix "linux" system then linuxHomeModules else darwinHomeModules)
-            ++ extraModules;
+          # `extraModules` is the complete per-host module list. Do not prepend
+          # a platform-wide list: host/default.nix already composes it, and
+          # prepending would evaluate shared modules twice.
+          modules = extraModules;
           extraSpecialArgs = {
             inherit inputs username;
             hostName = hostname;
