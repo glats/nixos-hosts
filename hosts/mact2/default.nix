@@ -64,7 +64,7 @@
       # `home.opencode.activeProviderName` in shared/opencode.nix and
       # the openai-{full,medium,light} tiers in
       # shared/opencode/providers-base.nix.
-      home.opencode.activeProviderName = "anthropic-copilot";
+      home.opencode.activeProviderName = "work-copilot-anthropic";
     };
     extraSpecialArgs = {
       inherit
