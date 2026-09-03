@@ -214,6 +214,37 @@ EOF
 )
 [[ $? -eq 0 ]] || fail=1
 
+# --- Case 7: boots the tmux server before polling (start-server) -----------
+(
+  d="$WORKDIR/case7"
+  setup_fake_tmux "$d"
+  state="$WORKDIR/case7-server"
+  : >"$state"
+  cat >"$d/tmux" <<EOF
+#!/usr/bin/env bash
+STATE="$state"
+case "\$1" in
+  start-server) echo 1 >"\$STATE"; exit 0 ;;
+  has-session)
+    if [[ -s "\$STATE" ]]; then
+      exit 0
+    fi
+    echo "error connecting to /run/user/1000/tmux-1000/default (No such file or directory)" >&2
+    exit 1
+    ;;
+  attach) echo "ATTACHED"; exit 0 ;;
+esac
+EOF
+  chmod +x "$d/tmux"
+  out="$(run_case)"
+  if [[ "$out" == *"ATTACHED"* ]]; then
+    pass "case 7: runs start-server before polling, then attaches"
+  else
+    bad "case 7: expected start-server-driven attach, got: $out"
+  fi
+)
+[[ $? -eq 0 ]] || fail=1
+
 if [[ "$fail" -eq 0 ]]; then
   echo "All tmux-resume regression cases passed."
 else
