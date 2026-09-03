@@ -93,7 +93,13 @@
           return 127
         }
 
-        local tries=50 delay=0.2 i err
+        local tries=75 delay=0.2 i err
+
+        # has-session/ls only query — they never spawn a server, so without
+        # this the Continuum auto-restore hook (loaded from tmux.conf at
+        # server init) never fires on a true cold start. start-server boots
+        # tmux without creating any session; idempotent if already running.
+        tmux start-server
 
         for ((i = 0; i < tries; i++)); do
           # stderr captured in a variable, not redirected to a pre-created
