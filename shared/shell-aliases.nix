@@ -93,25 +93,28 @@
           return 127
         }
 
-        local tries=15 delay=0.2 i err errfile
-        errfile="$(mktemp)"
+        local tries=50 delay=0.2 i err
 
         for ((i = 0; i < tries; i++)); do
-          if tmux has-session 2>"$errfile"; then
-            rm -f "$errfile"
+          # stderr captured in a variable, not redirected to a pre-created
+          # file: zsh's noclobber (enabled by prezto) refuses `>` on an
+          # existing file with "file exists", which silently prevented
+          # has-session from ever running.
+          err="$(tmux has-session 2>&1)"
+          if [[ -z "$err" ]]; then
             exec tmux attach
           fi
-          err="$(cat "$errfile" 2>/dev/null)"
-          # A real tmux error (not "no server"/"no session(s)") short-circuits
-          # immediately instead of being masked as a restore-in-progress wait.
-          if [[ -n "$err" && "$err" != *"no server"* && "$err" != *"no session"* ]]; then
-            rm -f "$errfile"
+          # Transient cold-start conditions: no server/session yet, or the
+          # Linux socket-connect failure before the server exists ("error
+          # connecting ... No such file or directory"). A genuine tmux error
+          # (e.g. Permission denied) short-circuits immediately instead of
+          # being masked as a restore-in-progress wait.
+          if [[ "$err" != *"no server"* && "$err" != *"no session"* && "$err" != *"No such file or directory"* ]]; then
             echo "$err" >&2
             return 1
           fi
           sleep "$delay"
         done
-        rm -f "$errfile"
 
         local snapshot
         for snapshot in \
