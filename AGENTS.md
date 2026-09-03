@@ -69,7 +69,7 @@ Formatter is `nixpkgs-fmt` set as flake `formatter`. Never invoke `nixpkgs-fmt <
 - NixOS-integrated path: `linux/system/base/home-manager.nix` imports `hosts/<host>/home/default.nix`. Standalone `homeConfigurations` in flake.nix import the same per-host file.
 - `linux/home/shared-modules.nix` is the single source of truth for shared Linux HM modules — do not duplicate the list elsewhere. Darwin equivalent: `darwin/home/shared-modules.nix`. Cross-platform modules live in `shared/` and are listed in both.
 - **Host-conditional modules** (conky-rog, conky-thinkcentre, openfang) are NOT in shared-modules.nix — each `hosts/<host>/home/default.nix` extends the base list with its own extras.
-- Per-host OpenCode provider override lives there too: `{ home.opencode.activeProviderName = "..."; }` (e.g. rog: `openai-go-balanced`, thinkcentre: `openai-medium`, mact2: `openai-medium-proxy`).
+- Per-host OpenCode provider override lives there too: `{ home.opencode.activeProviderName = "..."; }` (e.g. rog: `openai-opencode-balanced`, thinkcentre: `openai-medium`, mact2: `openai-medium-proxy`).
 
 ## When Coding
 
