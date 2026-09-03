@@ -181,6 +181,39 @@ EOF
 )
 [[ $? -eq 0 ]] || fail=1
 
+# --- Case 6: Linux socket error before server exists is transient ----------
+(
+  d="$WORKDIR/case6"
+  setup_fake_tmux "$d"
+  counter_file="$WORKDIR/case6-count"
+  echo 0 >"$counter_file"
+  cat >"$d/tmux" <<EOF
+#!/usr/bin/env bash
+COUNTER_FILE="$counter_file"
+case "\$1" in
+  has-session)
+    n=\$(cat "\$COUNTER_FILE")
+    n=\$((n + 1))
+    echo "\$n" >"\$COUNTER_FILE"
+    if [[ "\$n" -ge 3 ]]; then
+      exit 0
+    fi
+    echo "error connecting to /run/user/1000/tmux-1000/default (No such file or directory)" >&2
+    exit 1
+    ;;
+  attach) echo "ATTACHED"; exit 0 ;;
+esac
+EOF
+  chmod +x "$d/tmux"
+  out="$(run_case)"
+  if [[ "$out" == *"ATTACHED"* ]]; then
+    pass "case 6: Linux socket error treated as transient, then attaches"
+  else
+    bad "case 6: expected retry through socket error, got: $out"
+  fi
+)
+[[ $? -eq 0 ]] || fail=1
+
 if [[ "$fail" -eq 0 ]]; then
   echo "All tmux-resume regression cases passed."
 else
