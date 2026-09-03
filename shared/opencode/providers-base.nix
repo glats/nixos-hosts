@@ -354,89 +354,109 @@ let
 
   allProviders = nvidiaProvider // opencodeProvider // anthropicProvider // githubCopilotProvider;
 
-  providers = [
+  # ============================================================
+  # CANONICAL: evidence-backed, manually-selected profiles.
+  # Order here is a structural guarantee (canonicalProviders is
+  # concatenated before legacyProviders below), not a comment
+  # convention — see openspec/changes/evidence-based-opencode-routing.
+  # ============================================================
+  canonicalProviders = [
     {
-      name = "alpha-free";
+      name = "opencode-free";
+      # Audit 2026-08-23 (`opencode models | grep free`): 6 modelos free en opencode/,
+      # 1 en opencode-go/. Excluidos por hang/broken: x-preview-f-free y ox-alpha-free
+      # (payload con tools → network_error, #44382/#44385), muse-spark-1.2-contributor-free
+      # (sin finish_reason en cada request, #43882). deepseek-v4-flash-free ya no existe
+      # en el catálogo free actual. Reemplaza a las antiguas `alpha-free` y `opencode-free`.
       phases = {
-        gentle-orchestrator = "opencode/x-preview-f-free";
+        # nemotron-3-ultra-free: mejor modelo agentic free (SWE-Bench ~70%, 1M ctx,
+        # tool calling verificado, TTFT 1.67s) — exactamente lo que necesita orquestación.
+        gentle-orchestrator = "opencode/nemotron-3-ultra-free";
+        # nemotron-3.5-lightning-free: construido para ejecución ligera de alto volumen.
         sdd-init = "opencode/nemotron-3.5-lightning-free";
-        sdd-explore = "opencode/x-preview-f-free";
-        sdd-propose = "opencode/x-preview-f-free";
+        # nemotron-3-ultra-free: 1M ctx + RULER@1M 94.7 — mejor para explorar repos grandes.
+        sdd-explore = "opencode/nemotron-3-ultra-free";
+        # nemotron-3-ultra-free: GPQA 87 — mejor razonamiento/planning free.
+        sdd-propose = "opencode/nemotron-3-ultra-free";
+        # hy3-free: mejor escritor productivo free (blind eval > GLM-5.1).
         sdd-spec = "opencode/hy3-free";
+        # nemotron-3-ultra-free: decisiones de arquitectura.
         sdd-design = "opencode/nemotron-3-ultra-free";
+        # nemotron-3.5-lightning-free: descomposición mecánica a alto volumen.
         sdd-tasks = "opencode/nemotron-3.5-lightning-free";
+        # mimo-v2.5-free: 70 tok/s para edits de código, worker de apply probado en audits previos.
         sdd-apply = "opencode/mimo-v2.5-free";
-        sdd-verify = "opencode/x-preview-f-free";
+        # nemotron-3-ultra-free: SWE-Bench Verified ~70% — mejor reviewer free contra spec.
+        sdd-verify = "opencode/nemotron-3-ultra-free";
+        # nemotron-3.5-lightning-free: la clase más rápida/barata para copy-and-close.
         sdd-archive = "opencode/nemotron-3.5-lightning-free";
-        sdd-onboard = "opencode/x-preview-f-free";
-        neutral = "github-copilot/gpt-5.5";
+        # mimo-v2.5-free: walkthrough guiado barato.
+        sdd-onboard = "opencode/mimo-v2.5-free";
+        # nemotron-3-ultra-free: default balanceado.
+        neutral = "opencode/nemotron-3-ultra-free";
       };
     }
     {
-      name = "copilot-custom";
+      name = "work-copilot-anthropic";
+      # Replaces old `anthropic-copilot`. Low Copilot credit + larger Anthropic quota:
+      # orchestration/help phases prefer github-copilot/*, heavy phases prefer anthropic/*.
+      # Auth is two separate native `/connect` OAuth flows (Copilot's own + OpenCode's
+      # Anthropic OAuth) — no Claude-Pro/Max-as-Anthropic-API-billing substitution claimed.
+      # PLAN DEPENDENCY: github-copilot/claude-sonnet-5 requires a Copilot plan that
+      # exposes Sonnet 5 (Pro+/Business/Enterprise tiers) — verify with
+      # `opencode run -m github-copilot/claude-sonnet-5 "hi"` before relying on it.
       phases = {
         gentle-orchestrator = "github-copilot/gpt-5.6-luna";
         sdd-init = "github-copilot/gpt-5.4-mini";
-        sdd-explore = "github-copilot/gpt-5.6-terra";
-        sdd-propose = "github-copilot/gpt-5.6-terra";
+        # anthropic/claude-sonnet-4-6: fixed from undeclared "claude-sonnet-5" (old block bug).
+        sdd-explore = "anthropic/claude-sonnet-4-6";
+        # anthropic/claude-sonnet-4-6: heavy phase, fixed from undeclared "claude-sonnet-5".
+        sdd-propose = "anthropic/claude-sonnet-4-6";
         sdd-spec = "github-copilot/claude-sonnet-5";
-        sdd-design = "github-copilot/claude-sonnet-5";
+        sdd-design = "anthropic/claude-sonnet-4-6";
         sdd-tasks = "github-copilot/gpt-5.4-mini";
-        sdd-apply = "github-copilot/claude-sonnet-5";
-        sdd-verify = "github-copilot/claude-sonnet-5";
-        sdd-archive = "github-copilot/claude-haiku-4.5";
-        sdd-onboard = "github-copilot/gpt-5.4-mini";
-        neutral = "github-copilot/gpt-5.6-luna";
-      };
-    }
-    {
-      name = "anthropic-copilot";
-      phases = {
-        gentle-orchestrator = "github-copilot/gpt-5.6-luna";
-        sdd-init = "anthropic/claude-haiku-4-5";
-        sdd-explore = "anthropic/claude-sonnet-5";
-        sdd-propose = "github-copilot/claude-sonnet-5";
-        sdd-spec = "github-copilot/claude-sonnet-5";
-        sdd-design = "anthropic/claude-sonnet-5";
-        sdd-tasks = "github-copilot/gpt-5.4-mini";
-        sdd-apply = "anthropic/claude-sonnet-5";
-        sdd-verify = "anthropic/claude-sonnet-5";
+        sdd-apply = "anthropic/claude-sonnet-4-6";
+        sdd-verify = "anthropic/claude-sonnet-4-6";
         sdd-archive = "anthropic/claude-haiku-4-5";
         sdd-onboard = "github-copilot/gpt-5.4-mini";
         neutral = "github-copilot/gpt-5.6-luna";
       };
     }
     {
-      name = "openai-go-balanced";
+      name = "anthropic-light";
       phases = {
-        # Hybrid recommended for ChatGPT Plus/Pro + OpenCode Go:
-        # - OpenAI GPT-5.6 Terra/Luna: best fixed-plan value for judgment-heavy phases.
-        # - OpenCode Go: absorbs the high-volume/tool-loop phases so ChatGPT limits are less likely.
-        # - Avoids GPT-5.3-Codex-Spark because OpenAI documents it as Pro-only.
-        # - Avoids GPT-5.4/5.4-mini because OpenAI says ChatGPT-account Codex removes them on 2026-08-31.
-        # GLM-5.3-Flash is available on OpenCode Go with 1M context, tool calls,
-        # and mandatory reasoning. Its high Go request headroom makes it the
-        # better repeated-routing default than the non-Flash GLM-5.3.
-        gentle-orchestrator = "opencode-go/glm-5.3-flash";
-        sdd-init = "opencode-go/deepseek-v4-flash";
-        # Explore is the biggest limit-burner in large repos: many reads, MCP research, long context.
-        sdd-explore = "opencode-go/deepseek-v4-pro";
-        # Propose/spec/design benefit more from judgment than raw volume, so keep them on Terra.
-        sdd-propose = "openai/gpt-5.6-terra";
-        sdd-spec = "openai/gpt-5.6-terra";
-        sdd-design = "openai/gpt-5.6-terra";
-        # `deepseek-v4-flash` is the current stable alias for Flash-0731.
-        # It remains the fit for high-volume task decomposition: 1M context,
-        # tool calls, and substantially more concurrency than V4 Pro.
-        sdd-tasks = "opencode-go/deepseek-v4-flash";
-        # GLM-5.3-Flash: 1M context, structured tool calls, and lower Go cost.
-        # Prefer it over MiniMax M3 for Nix changes and iterative verification.
-        sdd-apply = "opencode-go/glm-5.3-flash";
-        # Final acceptance/judgment pass stays on OpenAI.
-        sdd-verify = "openai/gpt-5.6-terra";
-        sdd-archive = "opencode-go/deepseek-v4-flash";
-        sdd-onboard = "openai/gpt-5.6-luna";
-        neutral = "openai/gpt-5.6-terra";
+        # claude-sonnet-4-6: good enough for light tier coordination
+        gentle-orchestrator = "anthropic/claude-sonnet-4-6";
+        sdd-init = "anthropic/claude-haiku-4-5";
+        sdd-explore = "anthropic/claude-sonnet-4-6";
+        sdd-propose = "anthropic/claude-sonnet-4-6";
+        sdd-spec = "anthropic/claude-sonnet-4-6";
+        sdd-design = "anthropic/claude-sonnet-4-6";
+        sdd-tasks = "anthropic/claude-haiku-4-5";
+        sdd-apply = "anthropic/claude-sonnet-4-6";
+        sdd-verify = "anthropic/claude-sonnet-4-6";
+        sdd-archive = "anthropic/claude-haiku-4-5";
+        sdd-onboard = "anthropic/claude-haiku-4-5";
+        neutral = "anthropic/claude-sonnet-4-6";
+      };
+    }
+    {
+      name = "anthropic-medium";
+      phases = {
+        # claude-sonnet-4-6: balanced default for coordination
+        gentle-orchestrator = "anthropic/claude-sonnet-4-6";
+        sdd-init = "anthropic/claude-haiku-4-5";
+        sdd-explore = "anthropic/claude-sonnet-4-6";
+        # claude-opus-4-8: only the two heaviest architecture phases get opus
+        sdd-propose = "anthropic/claude-opus-4-8";
+        sdd-spec = "anthropic/claude-sonnet-4-6";
+        sdd-design = "anthropic/claude-opus-4-8";
+        sdd-tasks = "anthropic/claude-sonnet-4-6";
+        sdd-apply = "anthropic/claude-sonnet-4-6";
+        sdd-verify = "anthropic/claude-sonnet-4-6";
+        sdd-archive = "anthropic/claude-haiku-4-5";
+        sdd-onboard = "anthropic/claude-sonnet-4-6";
+        neutral = "anthropic/claude-sonnet-4-6";
       };
     }
     {
@@ -467,13 +487,15 @@ let
       };
     }
     {
-      name = "anthropic-medium";
+      name = "reliable";
+      # Evidence: Anthropic native OAuth transport only, zero BROKEN-annotated models,
+      # no cross-provider indirection — Opus reserved for the heaviest judgment phase.
       phases = {
-        # claude-sonnet-4-6: balanced default for coordination
+        # claude-sonnet-4-6: no BROKEN annotation, stable native OAuth transport.
         gentle-orchestrator = "anthropic/claude-sonnet-4-6";
         sdd-init = "anthropic/claude-haiku-4-5";
         sdd-explore = "anthropic/claude-sonnet-4-6";
-        # claude-opus-4-8: only the two heaviest architecture phases get opus
+        # claude-opus-4-8: heaviest architecture phase, strongest reliable reasoning.
         sdd-propose = "anthropic/claude-opus-4-8";
         sdd-spec = "anthropic/claude-sonnet-4-6";
         sdd-design = "anthropic/claude-opus-4-8";
@@ -486,21 +508,124 @@ let
       };
     }
     {
-      name = "anthropic-light";
+      name = "high-volume";
+      # Evidence: OpenCode Go throughput tier — glm-5.3-flash (1M ctx, mandatory
+      # reasoning, high Go request headroom) and deepseek-v4-pro/flash for the
+      # tool-loop-heavy phases, matching `opencode-go-*`/`openai-opencode-balanced` precedent.
       phases = {
-        # claude-sonnet-4-6: good enough for light tier coordination
+        # glm-5.3-flash: 1M ctx, structured tool calls, highest Go request headroom.
+        gentle-orchestrator = "opencode-go/glm-5.3-flash";
+        sdd-init = "opencode-go/deepseek-v4-flash";
+        # deepseek-v4-pro: heaviest read/MCP-research phase needs the larger reasoning budget.
+        sdd-explore = "opencode-go/deepseek-v4-pro";
+        sdd-propose = "opencode-go/deepseek-v4-pro";
+        sdd-spec = "opencode-go/glm-5.3-flash";
+        sdd-design = "opencode-go/deepseek-v4-pro";
+        sdd-tasks = "opencode-go/deepseek-v4-flash";
+        sdd-apply = "opencode-go/glm-5.3-flash";
+        sdd-verify = "opencode-go/deepseek-v4-pro";
+        sdd-archive = "opencode-go/deepseek-v4-flash";
+        sdd-onboard = "opencode-go/deepseek-v4-flash";
+        neutral = "opencode-go/deepseek-v4-flash";
+      };
+    }
+    {
+      name = "quality";
+      # Evidence: Opus-heavy Anthropic tier for maximum judgment quality; only
+      # mechanical phases (init/tasks/archive/onboard) step down to Sonnet.
+      phases = {
+        # claude-opus-4-8: strongest available reasoning for orchestration judgment.
+        gentle-orchestrator = "anthropic/claude-opus-4-8";
+        sdd-init = "anthropic/claude-sonnet-4-6";
+        sdd-explore = "anthropic/claude-opus-4-8";
+        # claude-opus-4-8: heaviest architecture phase.
+        sdd-propose = "anthropic/claude-opus-4-8";
+        sdd-spec = "anthropic/claude-opus-4-8";
+        sdd-design = "anthropic/claude-opus-4-8";
+        sdd-tasks = "anthropic/claude-sonnet-4-6";
+        sdd-apply = "anthropic/claude-opus-4-8";
+        sdd-verify = "anthropic/claude-opus-4-8";
+        sdd-archive = "anthropic/claude-sonnet-4-6";
+        sdd-onboard = "anthropic/claude-sonnet-4-6";
+        neutral = "anthropic/claude-opus-4-8";
+      };
+    }
+    {
+      name = "cross-provider-review";
+      # Evidence: intentionally spans 4 provider prefixes (anthropic, github-copilot,
+      # opencode-go, openai) so review/verification isn't anchored to one vendor's
+      # blind spots — no BROKEN-annotated models used.
+      phases = {
+        # anthropic/claude-sonnet-4-6: cross-family review anchor, native OAuth.
         gentle-orchestrator = "anthropic/claude-sonnet-4-6";
-        sdd-init = "anthropic/claude-haiku-4-5";
-        sdd-explore = "anthropic/claude-sonnet-4-6";
-        sdd-propose = "anthropic/claude-sonnet-4-6";
-        sdd-spec = "anthropic/claude-sonnet-4-6";
-        sdd-design = "anthropic/claude-sonnet-4-6";
-        sdd-tasks = "anthropic/claude-haiku-4-5";
-        sdd-apply = "anthropic/claude-sonnet-4-6";
+        sdd-init = "github-copilot/gpt-5.4-mini";
+        sdd-explore = "opencode-go/deepseek-v4-pro";
+        # anthropic/claude-opus-4-8: heaviest phase gets the strongest cross-checked model.
+        sdd-propose = "anthropic/claude-opus-4-8";
+        sdd-spec = "openai/gpt-5.4";
+        sdd-design = "anthropic/claude-opus-4-8";
+        sdd-tasks = "github-copilot/gpt-5.4-mini";
+        sdd-apply = "opencode-go/glm-5.3-flash";
         sdd-verify = "anthropic/claude-sonnet-4-6";
-        sdd-archive = "anthropic/claude-haiku-4-5";
-        sdd-onboard = "anthropic/claude-haiku-4-5";
+        sdd-archive = "github-copilot/claude-haiku-4.5";
+        sdd-onboard = "openai/gpt-5.4-mini";
         neutral = "anthropic/claude-sonnet-4-6";
+      };
+    }
+    {
+      name = "openai-opencode-balanced";
+      phases = {
+        # Hybrid recommended for ChatGPT Plus/Pro + OpenCode Go:
+        # - OpenAI GPT-5.6 Terra/Luna: best fixed-plan value for judgment-heavy phases.
+        # - OpenCode Go: absorbs the high-volume/tool-loop phases so ChatGPT limits are less likely.
+        # - Avoids GPT-5.3-Codex-Spark because OpenAI documents it as Pro-only.
+        # - Avoids GPT-5.4/5.4-mini because OpenAI says ChatGPT-account Codex removes them on 2026-08-31.
+        # GLM-5.3-Flash is available on OpenCode Go with 1M context, tool calls,
+        # and mandatory reasoning. Its high Go request headroom makes it the
+        # better repeated-routing default than the non-Flash GLM-5.3.
+        gentle-orchestrator = "opencode-go/glm-5.3-flash";
+        sdd-init = "opencode-go/deepseek-v4-flash";
+        # Explore is the biggest limit-burner in large repos: many reads, MCP research, long context.
+        sdd-explore = "opencode-go/deepseek-v4-pro";
+        # Propose/spec/design benefit more from judgment than raw volume, so keep them on Terra.
+        sdd-propose = "openai/gpt-5.6-sol";
+        sdd-spec = "openai/gpt-5.6-sol";
+        sdd-design = "openai/gpt-5.6-sol";
+        # `deepseek-v4-flash` is the current stable alias for Flash-0731.
+        # It remains the fit for high-volume task decomposition: 1M context,
+        # tool calls, and substantially more concurrency than V4 Pro.
+        sdd-tasks = "opencode-go/deepseek-v4-flash";
+        # GLM-5.3-Flash: 1M context, structured tool calls, and lower Go cost.
+        # Prefer it over MiniMax M3 for Nix changes and iterative verification.
+        sdd-apply = "opencode-go/glm-5.3-flash";
+        # Final acceptance/judgment pass stays on OpenAI.
+        sdd-verify = "openai/gpt-5.6-terra";
+        sdd-archive = "opencode-go/deepseek-v4-flash";
+        sdd-onboard = "openai/gpt-5.6-luna";
+        neutral = "openai/gpt-5.6-terra";
+      };
+    }
+  ];
+
+  # ============================================================
+  # LEGACY: non-replaced profiles, mappings unchanged, moved as-is.
+  # ============================================================
+  legacyProviders = [
+    {
+      name = "copilot-custom";
+      phases = {
+        gentle-orchestrator = "github-copilot/gpt-5.6-luna";
+        sdd-init = "github-copilot/gpt-5.4-mini";
+        sdd-explore = "github-copilot/gpt-5.6-terra";
+        sdd-propose = "github-copilot/gpt-5.6-terra";
+        sdd-spec = "github-copilot/claude-sonnet-5";
+        sdd-design = "github-copilot/claude-sonnet-5";
+        sdd-tasks = "github-copilot/gpt-5.4-mini";
+        sdd-apply = "github-copilot/claude-sonnet-5";
+        sdd-verify = "github-copilot/claude-sonnet-5";
+        sdd-archive = "github-copilot/claude-haiku-4.5";
+        sdd-onboard = "github-copilot/gpt-5.4-mini";
+        neutral = "github-copilot/gpt-5.6-luna";
       };
     }
     {
@@ -746,49 +871,24 @@ let
         neutral = "opencode-go/deepseek-v4-flash";
       };
     }
-    {
-      name = "opencode-free";
-      # Audit 2026-08-23 (`opencode models | grep free`): 6 modelos free en opencode/,
-      # 1 en opencode-go/. Excluidos por hang/broken: x-preview-f-free y ox-alpha-free
-      # (payload con tools → network_error, #44382/#44385), muse-spark-1.2-contributor-free
-      # (sin finish_reason en cada request, #43882). deepseek-v4-flash-free ya no existe
-      # en el catálogo free actual.
-      phases = {
-        # nemotron-3-ultra-free: mejor modelo agentic free (SWE-Bench ~70%, 1M ctx,
-        # tool calling verificado, TTFT 1.67s) — exactamente lo que necesita orquestación.
-        gentle-orchestrator = "opencode/nemotron-3-ultra-free";
-        # nemotron-3.5-lightning-free: construido para ejecución ligera de alto volumen.
-        sdd-init = "opencode/nemotron-3.5-lightning-free";
-        # nemotron-3-ultra-free: 1M ctx + RULER@1M 94.7 — mejor para explorar repos grandes.
-        sdd-explore = "opencode/nemotron-3-ultra-free";
-        # nemotron-3-ultra-free: GPQA 87 — mejor razonamiento/planning free.
-        sdd-propose = "opencode/nemotron-3-ultra-free";
-        # hy3-free: mejor escritor productivo free (blind eval > GLM-5.1).
-        sdd-spec = "opencode/hy3-free";
-        # nemotron-3-ultra-free: decisiones de arquitectura.
-        sdd-design = "opencode/nemotron-3-ultra-free";
-        # nemotron-3.5-lightning-free: descomposición mecánica a alto volumen.
-        sdd-tasks = "opencode/nemotron-3.5-lightning-free";
-        # mimo-v2.5-free: 70 tok/s para edits de código, worker de apply probado en audits previos.
-        sdd-apply = "opencode/mimo-v2.5-free";
-        # nemotron-3-ultra-free: SWE-Bench Verified ~70% — mejor reviewer free contra spec.
-        sdd-verify = "opencode/nemotron-3-ultra-free";
-        # nemotron-3.5-lightning-free: la clase más rápida/barata para copy-and-close.
-        sdd-archive = "opencode/nemotron-3.5-lightning-free";
-        # mimo-v2.5-free: walkthrough guiado barato.
-        sdd-onboard = "opencode/mimo-v2.5-free";
-        # nemotron-3-ultra-free: default balanceado.
-        neutral = "opencode/nemotron-3-ultra-free";
-      };
-    }
   ];
+
+  providers = canonicalProviders ++ legacyProviders;
+
+  _assertUniqueProviderNames =
+    let
+      names = map (p: p.name) providers;
+    in
+    assert lib.assertMsg (lib.length names == lib.length (lib.unique names))
+      "providers-base.nix: duplicate provider name in providers list";
+    true;
 
   activeProvider = builtins.foldl'
     (
       acc: p: if p.name == activeProviderName then p else acc
     )
     null
-    providers;
+    (assert _assertUniqueProviderNames; providers);
   getModelForPhase =
     phase: provider: if provider == null then null else provider.phases.${phase} or null;
 
