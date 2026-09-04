@@ -9,9 +9,7 @@ let
   # Bash scripts still awaiting their Go port (bash-to-go-migration).
   # Deleted from this list wave-by-wave as cmd/ entries reach parity.
   bashScripts = [
-    "ai-backup"
     "nixos-build"
-    "sync-opencode-remote"
   ];
 in
 buildGoModule {
@@ -31,17 +29,21 @@ buildGoModule {
   };
 
   subPackages = [
+    "cmd/ai-backup"
     "cmd/code-work"
     "cmd/compare-palette"
     "cmd/device-link"
     "cmd/export-mate-config"
     "cmd/format-nix"
     "cmd/git-id"
+    "cmd/install-opencode-auth-seed"
     "cmd/linkctl"
+    "cmd/netdiag"
     "cmd/nixos-build-all"
     "cmd/opencode-home"
     "cmd/opencode2"
     "cmd/sops-rotate-keys"
+    "cmd/sync-opencode-remote"
     "cmd/wg-peer"
   ];
 
