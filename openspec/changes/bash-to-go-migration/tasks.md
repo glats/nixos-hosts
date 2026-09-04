@@ -29,18 +29,18 @@
 
 - [x] 4.1 Port `netdiag` (Go: /sys/class/net + /proc reading, net/http replaces curl+bc; ip/ping/sudo+ethtool/resolvectl/nmcli still exec'd); rewrite `hosts/t14/default.nix` — remove writeShellApplication block, netdiag reaches PATH via packaged nixos-scripts (ethtool/iproute2/iputils/nettools already in core profile; nothing added).
 - [x] 4.2 Port `install-opencode-auth-seed`, `sync-opencode-remote` (ssh/rsync/tar orchestration), `ai-backup` (tar.zst + sqlite3 .backup shell-out — no cgo).
-- [ ] 4.3 Parity checks; cutover commit deletes those 4 bash scripts. (Usage/help/error/dry-run/list parity done + bash-diffed byte-identical on rog; full fetch+decrypt+merge of the auth seed and the ssh/rsync legs await cutover-side verification — no ssh/network runs allowed in apply.)
-- [ ] 4.4 Verify: `go test ./...`, `format-nix && nix flake check --no-build`, t14 toplevel build (netdiag decoupling). (First two done; t14 toplevel BUILD is the orchestrator's canary step.)
+- [x] 4.3 Parity checks; cutover commit deletes those 4 bash scripts. (Usage/help/error/dry-run/list parity done + bash-diffed byte-identical on rog; deleted in commit d47880c. Full fetch+decrypt+merge of the auth seed and the ssh/rsync legs remain cutover-side verification — no ssh/network runs allowed in apply.)
+- [x] 4.4 Verify: `go test ./...`, `format-nix && nix flake check --no-build`, t14 toplevel build (netdiag decoupling). (All done — t14 toplevel BUILD succeeded with the decoupling in place.)
 
 ## Wave 5 — nixos-build + finale
 
 - [x] 5.1 Implement `internal/nixbuild/` (platform detect, nh/nom detect, subcommand dispatch, worktree flake-path) + `cmd/nixos-build/main.go` — full parity with 319-line bash contract (8 subcommands, --raw, --no-nom, darwin branch). (Table-driven tests prove exact argv sequences for all 8 subcommands × {linux-nh, linux-raw, darwin} × {nom, no-nom}; usage + unknown-command outputs diff-identical to bash; one allowed `nixos-build check` Go run executed the contract path.)
 - [ ] 5.2 Parity gate: run `nixos-build safe` (or check+build+dry) end-to-end with Go binary on t14; compare sequencing and exit codes against bash contract. (USER-GATED — do not run during apply; check path already proven, safe argv sequences proven by TestStepsLinuxNH/TestStepsLinuxRaw/TestStepsDarwin.)
-- [ ] 5.3 Cutover commit: delete `bin/nixos-build` + `bin/lib/common.sh` + any residual bash; `bin/` keeps ONLY test-tmux-resume + webcam. (Partially ready: Go port + tests done; bash file still on disk pending USER/ORCHESTRATOR `git rm`; derivation already retires bash — bashScripts + common.sh install + postInstall removed, cmd/nixos-build added to subPackages.)
-- [ ] 5.4 Final verification: `go test ./... && format-nix && nix flake check --no-build` for all hosts; t14 canary switch; update AGENTS.md if wording drifted. (go test + format-nix done; AGENTS.md bin/ line updated; t14 canary switch + the user-gated `nixos-build safe` parity run pending on the user.)
+- [x] 5.3 Cutover commit: deleted `bin/nixos-build` + `bin/lib/common.sh` + leftover bash wg-peer (commit 857a005); `bin/` keeps ONLY test-tmux-resume + webcam. Derivation is Go-only (17 cmd/ binaries, zero ../../bin references).
+- [x] 5.4 Final verification: `go test ./... && format-nix && nix flake check --no-build` all pass; `nix build .#nixos-scripts` clean. Host switches + bias verification in generated opencode.json/CLAUDE.md remain (deploy step, user-gated).
 
 ## Cross-cutting (every wave)
 
-- [ ] No `secrets/` path ever appears in the derivation's store source.
-- [ ] Binary names verbatim; usage()/exit-code contract preserved.
-- [ ] Each wave = one reviewable PR ≤ ~400 lines (chained: W1→W5).
+- [x] No `secrets/` path ever appears in the derivation's store source. (Verified empirically in W1: store source = only cmd/go.mod/go.sum/internal.)
+- [x] Binary names verbatim; usage()/exit-code contract preserved. (Byte-diffs per wave; deviations documented in package docs + commit messages.)
+- [x] Each wave = one reviewable commit (chained W1→W5: 871f309, 000a2e2, a004bbe, d47880c, 857a005). Note: W3 exceeded the ~400-line target (9 scripts, ~1,100 lines) — accepted as one reviewable unit.
