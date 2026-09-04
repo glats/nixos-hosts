@@ -27,10 +27,10 @@
 
 ## Wave 4 — Critical scripts
 
-- [ ] 4.1 Port `netdiag` (Go: /sys/class/net + /proc reading, shell-out to ip/ethtool/nettools/curl); rewrite `hosts/t14/default.nix` — remove writeShellApplication block, netdiag reaches PATH via packaged nixos-scripts.
-- [ ] 4.2 Port `install-opencode-auth-seed`, `sync-opencode-remote` (ssh/rsync/tar orchestration), `ai-backup` (tar.zst + sqlite3 .backup shell-out — no cgo).
-- [ ] 4.3 Parity checks; cutover commit deletes those 4 bash scripts.
-- [ ] 4.4 Verify: `go test ./...`, `format-nix && nix flake check --no-build`, t14 toplevel build (netdiag decoupling).
+- [x] 4.1 Port `netdiag` (Go: /sys/class/net + /proc reading, net/http replaces curl+bc; ip/ping/sudo+ethtool/resolvectl/nmcli still exec'd); rewrite `hosts/t14/default.nix` — remove writeShellApplication block, netdiag reaches PATH via packaged nixos-scripts (ethtool/iproute2/iputils/nettools already in core profile; nothing added).
+- [x] 4.2 Port `install-opencode-auth-seed`, `sync-opencode-remote` (ssh/rsync/tar orchestration), `ai-backup` (tar.zst + sqlite3 .backup shell-out — no cgo).
+- [ ] 4.3 Parity checks; cutover commit deletes those 4 bash scripts. (Usage/help/error/dry-run/list parity done + bash-diffed byte-identical on rog; full fetch+decrypt+merge of the auth seed and the ssh/rsync legs await cutover-side verification — no ssh/network runs allowed in apply.)
+- [ ] 4.4 Verify: `go test ./...`, `format-nix && nix flake check --no-build`, t14 toplevel build (netdiag decoupling). (First two done; t14 toplevel BUILD is the orchestrator's canary step.)
 
 ## Wave 5 — nixos-build + finale
 
