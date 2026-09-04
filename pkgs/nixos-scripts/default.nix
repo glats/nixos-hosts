@@ -10,20 +10,16 @@ let
   # Deleted from this list wave-by-wave as cmd/ entries reach parity.
   bashScripts = [
     "code-work"
-    "add-wireguard-peer"
     "ai-backup"
     "compare-palette"
     "export-mate-config"
-    "generate-thinkpad-wireguard"
     "linkctl"
     "nixos-build"
     "nixos-build-all"
     "opencode2"
     "opencode-home"
-    "remove-wireguard-peer"
     "sops-rotate-keys"
     "sync-opencode-remote"
-    "wg-peer"
     "device-link"
   ];
 in
@@ -46,6 +42,7 @@ buildGoModule {
   subPackages = [
     "cmd/git-id"
     "cmd/format-nix"
+    "cmd/wg-peer"
   ];
 
   # Zero external dependencies so far — no vendor FOD needed. Revisit when a
