@@ -270,20 +270,12 @@
       '';
     })
 
-    # Network diagnostic tool for r8169 multi-NIC debugging.
-    # Run `netdiag` when slowness is felt; use `netdiag --watch 5`
-    # to monitor and capture snapshots automatically.
-    (pkgs.writeShellApplication {
-      name = "netdiag";
-      runtimeInputs = with pkgs; [
-        bc
-        curl
-        ethtool
-        iproute2
-        nettools
-      ];
-      text = builtins.readFile ../../bin/netdiag;
-    })
+    # netdiag: Go binary from pkgs.nixos-scripts (bash-to-go-migration W4).
+    # Reaches user PATH via home.packages (linux/home/shell.nix); the
+    # former writeShellApplication wrapper is gone. Runtime shell-outs
+    # still resolve system-wide: ethtool, iproute2 (ip), iputils (ping)
+    # and nettools ship in linux/system/base/profiles/core.nix, already
+    # imported by linux/system/base/packages.nix on every host.
   ];
 
   environment.variables.NIXOS_OZONE_WL = "1";
