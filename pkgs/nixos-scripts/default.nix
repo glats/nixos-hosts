@@ -1,84 +1,76 @@
-{ lib, stdenvNoCC, makeWrapper, qrencode }:
+{ lib
+, buildGoModule
+, makeWrapper
+, qrencode
+,
+}:
 
-stdenvNoCC.mkDerivation {
+let
+  # Bash scripts still awaiting their Go port (bash-to-go-migration).
+  # Deleted from this list wave-by-wave as cmd/ entries reach parity.
+  bashScripts = [
+    "code-work"
+    "add-wireguard-peer"
+    "ai-backup"
+    "compare-palette"
+    "export-mate-config"
+    "generate-thinkpad-wireguard"
+    "linkctl"
+    "nixos-build"
+    "nixos-build-all"
+    "opencode2"
+    "opencode-home"
+    "remove-wireguard-peer"
+    "sops-rotate-keys"
+    "sync-opencode-remote"
+    "wg-peer"
+    "device-link"
+  ];
+in
+buildGoModule {
   pname = "nixos-scripts";
-  version = "0.1.0";
+  version = "1.0.0";
 
-  src = ../../bin;
+  # Whitelist: Go module sources ONLY. secrets/, .sops.yaml and every other
+  # repo path must never enter the build sandbox.
+  src = lib.fileset.toSource {
+    root = ../../.;
+    fileset = lib.fileset.unions [
+      ../../go.mod
+      ../../go.sum
+      ../../cmd
+      ../../internal
+    ];
+  };
 
-  # qrencode is a runtime dep of device-link (terminal QR output).
-  # wrapProgram puts it on that script's PATH without exposing the dep
-  # to the whole environment.
+  subPackages = [
+    "cmd/git-id"
+    "cmd/format-nix"
+  ];
+
+  # Zero external dependencies so far — no vendor FOD needed. Revisit when a
+  # go.mod dependency lands (fakeHash → `got:` loop, see gentle-ai/engram).
+  vendorHash = null;
+
   nativeBuildInputs = [ makeWrapper ];
 
-  installPhase = ''
-    mkdir -p $out/bin
+  postInstall = ''
+    # Bash originals pending migration (parallel-run until Go parity).
     mkdir -p $out/bin/lib
+    ${lib.concatStringsSep "\n" (
+      map (s: "install -m755 ${../../bin}/${s} $out/bin/${s}") bashScripts
+    )}
+    install -m755 ${../../bin}/lib/common.sh $out/bin/lib/common.sh
+  '';
 
-    # Install shared library
-    cp $src/lib/common.sh $out/bin/lib/
-    chmod +x $out/bin/lib/common.sh
-
-    # Install worktree workflow script
-    cp $src/code-work $out/bin/
-    chmod +x $out/bin/code-work
-
-    # Install utility scripts
-    cp $src/add-wireguard-peer $out/bin/
-    chmod +x $out/bin/add-wireguard-peer
-
-    cp $src/compare-palette $out/bin/
-    chmod +x $out/bin/compare-palette
-
-    cp $src/export-mate-config $out/bin/
-    chmod +x $out/bin/export-mate-config
-
-    cp $src/format-nix $out/bin/
-    chmod +x $out/bin/format-nix
-
-    cp $src/git-id $out/bin/
-    chmod +x $out/bin/git-id
-
-    cp $src/generate-thinkpad-wireguard $out/bin/
-    chmod +x $out/bin/generate-thinkpad-wireguard
-
-    cp $src/linkctl $out/bin/
-    chmod +x $out/bin/linkctl
-
-    cp $src/nixos-build $out/bin/
-    chmod +x $out/bin/nixos-build
-
-    cp $src/nixos-build-all $out/bin/
-    chmod +x $out/bin/nixos-build-all
-
-    cp $src/opencode2 $out/bin/
-    chmod +x $out/bin/opencode2
-
-    cp $src/opencode-home $out/bin/
-    chmod +x $out/bin/opencode-home
-
-    cp $src/remove-wireguard-peer $out/bin/
-    chmod +x $out/bin/remove-wireguard-peer
-
-    cp $src/sops-rotate-keys $out/bin/
-    chmod +x $out/bin/sops-rotate-keys
-
-    cp $src/sync-opencode-remote $out/bin/
-    chmod +x $out/bin/sync-opencode-remote
-
-    cp $src/wg-peer $out/bin/
-    chmod +x $out/bin/wg-peer
-
-    cp $src/device-link $out/bin/
-    chmod +x $out/bin/device-link
+  postFixup = ''
+    # qrencode is a runtime dep of device-link (terminal QR output).
     wrapProgram $out/bin/device-link \
       --prefix PATH : ${lib.makeBinPath [ qrencode ]}
-
-    # webcam excluded: already provided by linux/home/webcam.nix
   '';
 
   meta = with lib; {
-    description = "Shell scripts for NixOS workflow management";
+    description = "Go + bash operational scripts for the NixOS workflow (Go-only after bash-to-go-migration)";
     license = licenses.mit;
   };
 }

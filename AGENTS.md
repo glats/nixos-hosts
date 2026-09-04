@@ -22,7 +22,10 @@ shared/                          # Cross-platform HM modules (opencode, sops, tm
 lib/                             # mkHost.nix, mkDarwinHost.nix, packages.nix
 overlays/                        # linux.nix, darwin.nix — imported via `import`, NOT modules
 pkgs/                            # Custom package derivations
-bin/                             # Shell scripts (nixos-build, format-nix, wg-peer, ...)
+go.mod, go.sum                   # Go module for operational scripts (Go-only policy)
+cmd/<name>/main.go               # One Go entry point per operational binary
+internal/                        # Shared Go packages (reporoot, ui, gitutil, sopsutil, wg, nixbuild)
+bin/                             # Bash scripts pending Go migration + 2 documented exceptions
 secrets/                         # sops-encrypted: host/<hostname>/, shared/, user/
 docs/                            # Operational runbooks (sops-new-host.md, multi-github-identity.md, wg-peer.md, ...)
 ```
@@ -63,6 +66,7 @@ Formatter is `nixpkgs-fmt` set as flake `formatter`. Never invoke `nixpkgs-fmt <
 | Build one host without switching | `nix build .#nixosConfigurations.<host>.config.system.build.toplevel` |
 | Build HM alone | `nix build .#homeConfigurations.<host>.activationPackage` — keys are bare hostnames, **not** `<user>@<host>` |
 | Fastest eval sanity check | t14 build (command above) |
+| Go scripts | `go test ./...` (plus `go build ./...` / `go vet ./...` while iterating) |
 
 ## Home Manager Composition
 
@@ -81,6 +85,7 @@ Formatter is `nixpkgs-fmt` set as flake `formatter`. Never invoke `nixpkgs-fmt <
 6. Secrets → `sops <specific-file>.yaml`. Agents must NEVER decrypt secrets — read ciphertext only. New host setup: follow `docs/sops-new-host.md`.
 7. `hardware-configuration.nix` — never edit (auto-generated).
 8. Unfree packages: `allowUnfree = true` is already global in flake.nix; license-gated packages additionally need host-level `allowUnfreePackages` + accept-license options (e.g. joypixels).
+9. **Operational scripts are Go, never bash** — new/modified tooling goes in `cmd/<name>/main.go` + `internal/`, ships via `pkgs/nixos-scripts` (`buildGoModule`). See `shared/rules/go-scripts.md`. Only exceptions: `bin/test-tmux-resume`, `bin/webcam`. Verify with `go test ./...` plus the standard Nix gate.
 
 ## Reviewing
 
@@ -97,6 +102,7 @@ Formatter is `nixpkgs-fmt` set as flake `formatter`. Never invoke `nixpkgs-fmt <
 5. **t14**: omarchy-nix + nixos-hardware T14 AMD gen4 profile arrive via `extraModules` in flake.nix. Its HM config block is `hosts/t14/home/omarchy.nix`, imported by t14's `home/default.nix`.
 6. **mact2**: built via `mkDarwinHost` (includes Determinate module); username jcuzmar.
 7. **nixpkgs is pinned to nixos-26.05** because 26.11 dropped x86_64-darwin and mact2 is an Intel Mac. Do not bump nixpkgs or nix-darwin (matched `nix-darwin-26.05` branch) until mact2 migrates to Apple Silicon. For the same reason `nix-vscode-extensions` is pinned to a pre-drop commit and gated behind `isDarwin`.
+8. **Go-only scripts**: never write a new bash script for operational tooling. `pkgs/nixos-scripts` builds Go binaries from `cmd/` with a source whitelist (`go.mod`, `go.sum`, `cmd/`, `internal/` only — `secrets/` must never enter the build sandbox).
 
 ## Secrets (sops-nix)
 

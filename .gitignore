@@ -38,9 +38,6 @@ temp/
 # Backup
 backup/
 
-# CLI tools (separate projects)
-cmd/
-
 # SDD artifacts (external workflow)
 sdd/
 
