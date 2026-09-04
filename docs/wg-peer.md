@@ -10,10 +10,16 @@ wg-peer add samsung2      # creates peer: keypair, next free IP, rebuild, conf +
 wg-peer list              # see all peers with IPs and last handshake
 wg-peer qr samsung2       # reprint the QR any time
 wg-peer remove samsung2   # delete peer and clean up its files
+wg-peer generate guard.glats.org   # fresh thinkpad client conf + key rotation
 ```
 
 After `add`, scan the printed QR with the WireGuard app (Android/iOS) or import
 the `.conf` file (macOS/Windows/Linux) and activate the VPN link.
+
+> `wg-peer` is a Go binary (`cmd/wg-peer`, ships in `pkgs/nixos-scripts`).
+> The retired bash scripts `add-wireguard-peer`, `remove-wireguard-peer` and
+> `generate-thinkpad-wireguard` targeted the old `modules/wireguard.nix`
+> layout and are gone; `wg-peer add/remove/generate` replace them.
 
 ## Where things live
 

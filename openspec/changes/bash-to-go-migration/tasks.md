@@ -2,21 +2,21 @@
 
 ## Wave 1 — Scaffold + bias + pilot
 
-- [ ] 1.1 Create `go.mod` (module path `github.com/glats/nixos-scripts`), `cmd/git-id/main.go`, `cmd/format-nix/main.go`, `internal/reporoot/` (NIXOS_REPO env → git rev-parse → ~/.nixos fallback, worktree flake-path rule) with table-driven tests, `internal/ui/` (colors/headers/die/confirm — port of `bin/lib/common.sh`).
-- [ ] 1.2 Rewrite `pkgs/nixos-scripts/default.nix` as `buildGoModule` with `lib.fileset` whitelist (go.mod, go.sum, cmd/, internal/ only), enumerated `subPackages`, `postFixup` wrapProgram for device-link (qrencode), `vendorHash` resolved via fakeHash → `got:` loop. Bash originals still installed alongside until wave cutover.
-- [ ] 1.3 Add `shared/rules/go-scripts.md` (Go mandate + bash prohibition + MCP-research-first recipe + repo verification conventions, ≤30 lines).
-- [ ] 1.4 Wire bias: append fragment to `agentsMdSources` default in `shared/ai-assets.nix`; add `"subagent": ["../rules/go-scripts.md"]` and append to `gentle-orchestrator` in `shared/opencode/local-agent-overlays.json`.
-- [ ] 1.5 Update repo `AGENTS.md`: Go rule in "When Coding" + "Critical Rules", documented exceptions (test-tmux-resume, webcam), go.mod/cmd/internal layout note.
-- [ ] 1.6 Parity check git-id + format-nix side-by-side (exit codes, flags, outputs); cutover commit deletes `bin/git-id`, `bin/format-nix`.
-- [ ] 1.7 Verify: `go test ./...`, `format-nix && nix flake check --no-build`, inspect store source of `nixos-scripts` (no secrets/ paths), build one host toplevel.
+- [x] 1.1 Create `go.mod` (module path `github.com/glats/nixos-scripts`), `cmd/git-id/main.go`, `cmd/format-nix/main.go`, `internal/reporoot/` (NIXOS_REPO env → git rev-parse → ~/.nixos fallback, worktree flake-path rule) with table-driven tests, `internal/ui/` (colors/headers/die/confirm — port of `bin/lib/common.sh`).
+- [x] 1.2 Rewrite `pkgs/nixos-scripts/default.nix` as `buildGoModule` with `lib.fileset` whitelist (go.mod, go.sum, cmd/, internal/ only), enumerated `subPackages`, `postFixup` wrapProgram for device-link (qrencode). **vendorHash = null (zero deps — no loop needed)**. Bash originals coexist in postInstall until wave cutover.
+- [x] 1.3 Add `shared/rules/go-scripts.md` (Go mandate + bash prohibition + MCP-research-first recipe + repo verification conventions, ≤30 lines).
+- [x] 1.4 Wire bias: append fragment to `agentsMdSources` default in `shared/ai-assets.nix`; add `"subagent": ["../rules/go-scripts.md"]` and append to `gentle-orchestrator` in `shared/opencode/local-agent-overlays.json`.
+- [x] 1.5 Update repo `AGENTS.md`: Go rule in "When Coding" + "Critical Rules", documented exceptions (test-tmux-resume, webcam), go.mod/cmd/internal layout note.
+- [x] 1.6 Parity check git-id + format-nix side-by-side: usage/help/exit-codes identical, git-id functional on scratch repo (set + Already set), format-nix --check 397 files rc=0. **Cutover deletion pending user-approved commit.**
+- [x] 1.7 Verify: `go test ./...` ok, `format-nix && nix flake check --no-build` ok, store source = only cmd/go.mod/go.sum/internal (no secrets/, no .sops.yaml, no bin/), `nix build .#nixos-scripts` ok (18 binaries + lib). Note: `bin/ai-backup` was untracked → staged (flake source excludes untracked files). Note: `.gitignore` legacy `cmd/` pattern removed.
 
 ## Wave 2 — WireGuard unification
 
-- [ ] 2.1 Implement `internal/wg/`: marker-based parse/mutate of declarative `wireguard.nix` (replaces awk surgery + python3 regex), PSK generation via `wg genpsk`, sops decrypt hook for thinkpad generate — table-driven tests first.
-- [ ] 2.2 Implement `cmd/wg-peer/main.go` with subcommands `add`, `remove`, `generate`, `list` (behavioral parity with the three bash siblings + listing).
-- [ ] 2.3 Grep callers of add-wireguard-peer / remove-wireguard-peer / generate-thinkpad-wireguard; update any references; update `docs/wg-peer.md` to subcommand surface.
-- [ ] 2.4 Parity check per subcommand on a scratch branch config; cutover commit deletes the three bash siblings.
-- [ ] 2.5 Verify: `go test ./...`, `format-nix && nix flake check --no-build`.
+- [x] 2.1 Implement `internal/wg/`: marker-based parse/mutate of declarative `wireguard.nix` (replaces awk surgery + python3 regex), PSK generation via `wg genpsk`, sops decrypt hook for thinkpad generate — table-driven tests first. (PSK gen not needed: wg-peer model B has no PSK for new peers; sops via `--extract`, zero deps.)
+- [x] 2.2 Implement `cmd/wg-peer/main.go` with subcommands `add`, `remove`, `generate`, `list` (+`qr`, preserved from bash wg-peer).
+- [x] 2.3 Grep callers of add-wireguard-peer / remove-wireguard-peer / generate-thinkpad-wireguard: only pkgs derivation references them. Legacy scripts were STALE (edited dead paths `modules/wireguard.nix` and `hosts/rog/services/wireguard.nix` — neither exists). Updated `docs/wg-peer.md` to subcommand surface + retirement note.
+- [x] 2.4 Parity checks: usage byte-identical to old header, `list` against real module parses 5 peers with live handshake (improved timestamp vs bash truncation), invalid-name die path exact. Cutover commit deletes the three bash siblings.
+- [x] 2.5 Verify: `go test ./...` ok, `format-nix && nix flake check --no-build` ok.
 
 ## Wave 3 — Workflow scripts
 
