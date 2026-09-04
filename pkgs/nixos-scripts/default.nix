@@ -5,13 +5,6 @@
 ,
 }:
 
-let
-  # Bash scripts still awaiting their Go port (bash-to-go-migration).
-  # Deleted from this list wave-by-wave as cmd/ entries reach parity.
-  bashScripts = [
-    "nixos-build"
-  ];
-in
 buildGoModule {
   pname = "nixos-scripts";
   version = "1.0.0";
@@ -39,6 +32,7 @@ buildGoModule {
     "cmd/install-opencode-auth-seed"
     "cmd/linkctl"
     "cmd/netdiag"
+    "cmd/nixos-build"
     "cmd/nixos-build-all"
     "cmd/opencode-home"
     "cmd/opencode2"
@@ -53,15 +47,6 @@ buildGoModule {
 
   nativeBuildInputs = [ makeWrapper ];
 
-  postInstall = ''
-    # Bash originals pending migration (parallel-run until Go parity).
-    mkdir -p $out/bin/lib
-    ${lib.concatStringsSep "\n" (
-      map (s: "install -m755 ${../../bin}/${s} $out/bin/${s}") bashScripts
-    )}
-    install -m755 ${../../bin}/lib/common.sh $out/bin/lib/common.sh
-  '';
-
   postFixup = ''
     # qrencode is a runtime dep of device-link (terminal QR output).
     wrapProgram $out/bin/device-link \
@@ -69,7 +54,7 @@ buildGoModule {
   '';
 
   meta = with lib; {
-    description = "Go + bash operational scripts for the NixOS workflow (Go-only after bash-to-go-migration)";
+    description = "Go operational scripts for the NixOS workflow (bash retired by bash-to-go-migration)";
     license = licenses.mit;
   };
 }

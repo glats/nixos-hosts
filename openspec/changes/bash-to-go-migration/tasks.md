@@ -34,10 +34,10 @@
 
 ## Wave 5 — nixos-build + finale
 
-- [ ] 5.1 Implement `internal/nixbuild/` (platform detect, nh/nom detect, subcommand dispatch, worktree flake-path) + `cmd/nixos-build/main.go` — full parity with 319-line bash contract (8 subcommands, --raw, --no-nom, darwin branch).
-- [ ] 5.2 Parity gate: run `nixos-build safe` (or check+build+dry) end-to-end with Go binary on t14; compare sequencing and exit codes against bash contract.
-- [ ] 5.3 Cutover commit: delete `bin/nixos-build` + `bin/lib/common.sh` + any residual bash; `bin/` keeps ONLY test-tmux-resume + webcam.
-- [ ] 5.4 Final verification: `go test ./... && format-nix && nix flake check --no-build` for all hosts; t14 canary switch; update AGENTS.md if wording drifted.
+- [x] 5.1 Implement `internal/nixbuild/` (platform detect, nh/nom detect, subcommand dispatch, worktree flake-path) + `cmd/nixos-build/main.go` — full parity with 319-line bash contract (8 subcommands, --raw, --no-nom, darwin branch). (Table-driven tests prove exact argv sequences for all 8 subcommands × {linux-nh, linux-raw, darwin} × {nom, no-nom}; usage + unknown-command outputs diff-identical to bash; one allowed `nixos-build check` Go run executed the contract path.)
+- [ ] 5.2 Parity gate: run `nixos-build safe` (or check+build+dry) end-to-end with Go binary on t14; compare sequencing and exit codes against bash contract. (USER-GATED — do not run during apply; check path already proven, safe argv sequences proven by TestStepsLinuxNH/TestStepsLinuxRaw/TestStepsDarwin.)
+- [ ] 5.3 Cutover commit: delete `bin/nixos-build` + `bin/lib/common.sh` + any residual bash; `bin/` keeps ONLY test-tmux-resume + webcam. (Partially ready: Go port + tests done; bash file still on disk pending USER/ORCHESTRATOR `git rm`; derivation already retires bash — bashScripts + common.sh install + postInstall removed, cmd/nixos-build added to subPackages.)
+- [ ] 5.4 Final verification: `go test ./... && format-nix && nix flake check --no-build` for all hosts; t14 canary switch; update AGENTS.md if wording drifted. (go test + format-nix done; AGENTS.md bin/ line updated; t14 canary switch + the user-gated `nixos-build safe` parity run pending on the user.)
 
 ## Cross-cutting (every wave)
 

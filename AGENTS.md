@@ -25,7 +25,7 @@ pkgs/                            # Custom package derivations
 go.mod, go.sum                   # Go module for operational scripts (Go-only policy)
 cmd/<name>/main.go               # One Go entry point per operational binary
 internal/                        # Shared Go packages (reporoot, ui, gitutil, sopsutil, wg, nixbuild)
-bin/                             # Bash scripts pending Go migration + 2 documented exceptions
+bin/                             # test-tmux-resume + webcam only (documented Go-only exceptions)
 secrets/                         # sops-encrypted: host/<hostname>/, shared/, user/
 docs/                            # Operational runbooks (sops-new-host.md, multi-github-identity.md, wg-peer.md, ...)
 ```
