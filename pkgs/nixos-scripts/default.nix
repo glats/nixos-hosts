@@ -9,18 +9,9 @@ let
   # Bash scripts still awaiting their Go port (bash-to-go-migration).
   # Deleted from this list wave-by-wave as cmd/ entries reach parity.
   bashScripts = [
-    "code-work"
     "ai-backup"
-    "compare-palette"
-    "export-mate-config"
-    "linkctl"
     "nixos-build"
-    "nixos-build-all"
-    "opencode2"
-    "opencode-home"
-    "sops-rotate-keys"
     "sync-opencode-remote"
-    "device-link"
   ];
 in
 buildGoModule {
@@ -40,8 +31,17 @@ buildGoModule {
   };
 
   subPackages = [
-    "cmd/git-id"
+    "cmd/code-work"
+    "cmd/compare-palette"
+    "cmd/device-link"
+    "cmd/export-mate-config"
     "cmd/format-nix"
+    "cmd/git-id"
+    "cmd/linkctl"
+    "cmd/nixos-build-all"
+    "cmd/opencode-home"
+    "cmd/opencode2"
+    "cmd/sops-rotate-keys"
     "cmd/wg-peer"
   ];
 
