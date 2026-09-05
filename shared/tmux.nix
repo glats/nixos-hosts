@@ -77,6 +77,11 @@
 
       set -g @resurrect-capture-pane-contents 'on'
 
+      # Relaunch every saved process on restore (not just resurrect's
+      # conservative default: vim/ssh/less/tail...). This is what makes
+      # "leave it as I left it" work — lazygit, btop, running builds, etc.
+      set -g @resurrect-processes ':all:'
+
       # tmux-continuum: continuous saving + auto-restore
       set -g @continuum-save-interval '15'
       set -g @continuum-restore on
