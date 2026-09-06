@@ -14,7 +14,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"strings"
 	"syscall"
 )
 
@@ -44,23 +43,7 @@ func main() {
 	}
 	args := append([]string{"opencode"}, os.Args[1:]...)
 	if err := syscall.Exec(bin, args, os.Environ()); err != nil {
-		// Some environments restrict exec; fall back to run-and-exit with
-		// the same exit code semantics.
-		if strings.Contains(err.Error(), "permission denied") {
-			fmt.Fprintln(os.Stderr, "ERROR:", err)
-			os.Exit(126)
-		}
-		c := exec.Command(bin, os.Args[1:]...)
-		c.Stdout = os.Stdout
-		c.Stderr = os.Stderr
-		c.Stdin = os.Stdin
-		if err := c.Run(); err != nil {
-			if exitErr, ok := err.(*exec.ExitError); ok {
-				os.Exit(exitErr.ExitCode())
-			}
-			fmt.Fprintln(os.Stderr, "ERROR:", err)
-			os.Exit(1)
-		}
-		os.Exit(0)
+		fmt.Fprintln(os.Stderr, "ERROR:", err)
+		os.Exit(127)
 	}
 }
