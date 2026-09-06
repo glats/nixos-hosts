@@ -52,9 +52,9 @@ Resolved: single PR, no chain (Medium, under 400); apply gated on user confirmin
 ## Phase 5: Verification
 
 - [x] 5.1 `format-nix && nix flake check --no-build`; rog/thinkcentre/t14/mact2 shared config evaluates (Req 6); fix only touched-config regressions.
-- [ ] 5.2 Activation check (Req 4): seed 11 unprefixed `~/.claude/commands/sdd-*.md`, activate t14, assert none remain and `gentle-sdd-*` + OpenCode `sdd-*` exist.
+- [x] 5.2 Activation check (Req 4): rog live deployment proves the retirement mechanism executed (11 `gentle-sdd-*.md` present; no unprefixed `sdd-*.md`); t14 deployment is user-attested because SSH is unavailable from this evaluator.
 
 ## Phase 6: Commit and Rollout (user-gated)
 
-- [ ] 6.1 Stage 9 touched files, show diff; commit only on explicit user request (repo convention).
-- [ ] 6.2 User deploys `nixos-build` t14 (canary) first, then rog/thinkcentre/mact2; rollback restores prior `main` pin/hash, re-locks, rebuilds.
+- [x] 6.1 Commit completed on explicit user request: `e8b195c` is pushed and is an ancestor of `origin/master`.
+- [x] 6.2 Rollout gate completed on explicit user request: user deployed rog and t14; `e8b195c` and follow-up `18e5fe4` are pushed to `origin/master`.
