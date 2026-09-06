@@ -304,5 +304,16 @@
       # Keep this aligned with `format-nix`; do not invoke formatter binaries directly.
       formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixpkgs-fmt;
       formatter.x86_64-darwin = nixpkgs.legacyPackages.x86_64-darwin.nixpkgs-fmt;
+
+      # --- Go toolchain devshell (pkgs/nixos-scripts) ---
+      # Dev iteration only: `nix develop -c go -C pkgs/nixos-scripts test ./...`
+      # or `nix develop -c go -C pkgs/nixos-scripts run ./cmd/<name>`.
+      # Deployed binaries are always the Nix-built ones (buildGoModule).
+      devShells.x86_64-linux.default = nixpkgs.legacyPackages.x86_64-linux.mkShell {
+        packages = with nixpkgs.legacyPackages.x86_64-linux; [ go ];
+      };
+      devShells.x86_64-darwin.default = nixpkgs.legacyPackages.x86_64-darwin.mkShell {
+        packages = with nixpkgs.legacyPackages.x86_64-darwin; [ go ];
+      };
     };
 }
