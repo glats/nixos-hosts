@@ -22,9 +22,11 @@ shared/                          # Cross-platform HM modules (opencode, sops, tm
 lib/                             # mkHost.nix, mkDarwinHost.nix, packages.nix
 overlays/                        # linux.nix, darwin.nix — imported via `import`, NOT modules
 pkgs/                            # Custom package derivations
-go.mod, go.sum                   # Go module for operational scripts (Go-only policy)
-cmd/<name>/main.go               # One Go entry point per operational binary
-internal/                        # Shared Go packages (reporoot, ui, gitutil, sopsutil, wg, nixbuild)
+pkgs/nixos-scripts/              # Go module for operational scripts (Go-only policy) —
+                                 #   source + tests + derivation co-located (src = ./.)
+pkgs/nixos-scripts/cmd/<name>/main.go  # One thin Go entry point per operational binary
+pkgs/nixos-scripts/internal/     # Shared Go packages (reporoot, ui, gitutil, wg, nixbuild) —
+                                 #   logic used by ≥2 scripts lives here, never copied between cmd/
 bin/                             # test-tmux-resume + webcam only (documented Go-only exceptions)
 secrets/                         # sops-encrypted: host/<hostname>/, shared/, user/
 docs/                            # Operational runbooks (sops-new-host.md, multi-github-identity.md, wg-peer.md, ...)
@@ -66,7 +68,7 @@ Formatter is `nixpkgs-fmt` set as flake `formatter`. Never invoke `nixpkgs-fmt <
 | Build one host without switching | `nix build .#nixosConfigurations.<host>.config.system.build.toplevel` |
 | Build HM alone | `nix build .#homeConfigurations.<host>.activationPackage` — keys are bare hostnames, **not** `<user>@<host>` |
 | Fastest eval sanity check | t14 build (command above) |
-| Go scripts | `go test ./...` (plus `go build ./...` / `go vet ./...` while iterating) |
+| Go scripts | `go -C pkgs/nixos-scripts test ./...` (plus `go build`/`go vet`/`go run ./cmd/<name>` with `-C pkgs/nixos-scripts` while iterating; deployed binaries are always Nix-built) |
 
 ## Home Manager Composition
 
@@ -85,7 +87,7 @@ Formatter is `nixpkgs-fmt` set as flake `formatter`. Never invoke `nixpkgs-fmt <
 6. Secrets → `sops <specific-file>.yaml`. Agents must NEVER decrypt secrets — read ciphertext only. New host setup: follow `docs/sops-new-host.md`.
 7. `hardware-configuration.nix` — never edit (auto-generated).
 8. Unfree packages: `allowUnfree = true` is already global in flake.nix; license-gated packages additionally need host-level `allowUnfreePackages` + accept-license options (e.g. joypixels).
-9. **Operational scripts are Go, never bash** — new/modified tooling goes in `cmd/<name>/main.go` + `internal/`, ships via `pkgs/nixos-scripts` (`buildGoModule`). See `shared/rules/go-scripts.md`. Only exceptions: `bin/test-tmux-resume`, `bin/webcam`. Verify with `go test ./...` plus the standard Nix gate.
+9. **Operational scripts are Go, never bash** — new/modified tooling goes in `pkgs/nixos-scripts/cmd/<name>/main.go` + shared logic in `pkgs/nixos-scripts/internal/`, shipped via `pkgs/nixos-scripts` (`buildGoModule`, `src = ./.`). See `shared/rules/go-scripts.md`. Only exceptions: `bin/test-tmux-resume`, `bin/webcam`. Verify with `go -C pkgs/nixos-scripts test ./...` plus the standard Nix gate.
 
 ## Reviewing
 
@@ -102,7 +104,7 @@ Formatter is `nixpkgs-fmt` set as flake `formatter`. Never invoke `nixpkgs-fmt <
 5. **t14**: omarchy-nix + nixos-hardware T14 AMD gen4 profile arrive via `extraModules` in flake.nix. Its HM config block is `hosts/t14/home/omarchy.nix`, imported by t14's `home/default.nix`.
 6. **mact2**: built via `mkDarwinHost` (includes Determinate module); username jcuzmar.
 7. **nixpkgs is pinned to nixos-26.05** because 26.11 dropped x86_64-darwin and mact2 is an Intel Mac. Do not bump nixpkgs or nix-darwin (matched `nix-darwin-26.05` branch) until mact2 migrates to Apple Silicon. For the same reason `nix-vscode-extensions` is pinned to a pre-drop commit and gated behind `isDarwin`.
-8. **Go-only scripts**: never write a new bash script for operational tooling. `pkgs/nixos-scripts` builds Go binaries from `cmd/` with a source whitelist (`go.mod`, `go.sum`, `cmd/`, `internal/` only — `secrets/` must never enter the build sandbox).
+8. **Go-only scripts**: never write a new bash script for operational tooling. `pkgs/nixos-scripts` builds Go binaries from `cmd/` with `src = ./.` — the module dir is its own build sandbox (source, tests and derivation co-located; `secrets/` structurally out of reach).
 
 ## Secrets (sops-nix)
 
