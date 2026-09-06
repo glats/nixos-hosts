@@ -13,9 +13,14 @@
 //     original had the same limitation.
 //   - The mktemp + cp staging is collapsed into a single write (the temp
 //     file was invisible state; the final file content is identical).
-//   - The output path stays <repo>/modules/home/mate.nix as in the bash
-//     original even though that path no longer exists in the current repo
-//     layout (parity port; repointing it is an orchestrator decision).
+//   - Post-migration modernizations (bash-to-go-migration follow-up):
+//     output repointed from the dead <repo>/modules/home/mate.nix to
+//     linux/home/suites/mate/mate-dconf-export.nix — an UNIMPORTED review
+//     artifact, because the live mate-dconf.nix is a curated module
+//     (colors.nix integration) that a raw dconf dump must not overwrite.
+//     Formatting goes through the flake formatter (`nix fmt --`) instead
+//     of calling nixfmt/nixpkgs-fmt directly, and validation runs
+//     `nix flake check --no-build`.
 package main
 
 import (
@@ -244,7 +249,9 @@ func main() {
 		fmt.Fprintln(os.Stderr, "Error:", err)
 		os.Exit(1)
 	}
-	outputFile := filepath.Join(repoRoot, "modules", "home", "mate.nix")
+	// Unimported review artifact: the live mate-dconf.nix is curated
+	// (colors.nix integration) — merge changes into it by hand.
+	outputFile := filepath.Join(repoRoot, "linux", "home", "suites", "mate", "mate-dconf-export.nix")
 
 	if _, err := exec.LookPath("dconf"); err != nil {
 		fmt.Fprintln(os.Stderr, "Error: dconf command not found")
@@ -268,12 +275,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Println("> Formatting with nixfmt...")
-	if _, err := exec.LookPath("nixfmt"); err == nil {
-		runInherit("nixfmt", outputFile)
-	} else if _, err := exec.LookPath("nixpkgs-fmt"); err == nil {
-		runInherit("nixpkgs-fmt", outputFile)
-	}
+	fmt.Println("> Formatting with the flake formatter (nix fmt)...")
+	runInherit("nix", "fmt", "--", outputFile)
 
 	fmt.Println("> Validating configuration...")
 	if err := os.Chdir(repoRoot); err != nil {
@@ -282,7 +285,7 @@ func main() {
 	}
 
 	var combined bytes.Buffer
-	flake := exec.Command("nix", "flake", "check")
+	flake := exec.Command("nix", "flake", "check", "--no-build")
 	flake.Stdout = &combined
 	flake.Stderr = &combined
 	if err := flake.Run(); err != nil {
@@ -292,5 +295,7 @@ func main() {
 	}
 	printLastLines(combined.String(), 10)
 	fmt.Printf("> Success! Configuration exported to %s\n", outputFile)
-	fmt.Println("> Apply with: home-manager switch --flake '/home/glats/.nixos#glats@rog'")
+	fmt.Println("> Review the dump and merge what you want into mate-dconf.nix by hand")
+	fmt.Println(">   (this export file is NOT imported by the suite; discard with git checkout)")
+	fmt.Println("> Apply with: nixos-build")
 }
