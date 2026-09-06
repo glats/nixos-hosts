@@ -15,9 +15,7 @@ package wg
 
 import (
 	"fmt"
-	"os"
 	"regexp"
-	"sort"
 	"strconv"
 	"strings"
 )
@@ -87,15 +85,6 @@ func ParsePeers(content string) ([]Peer, error) {
 		}
 	}
 	return peers, nil
-}
-
-// ParseModuleFile reads path and returns its managed peers.
-func ParseModuleFile(path string) ([]Peer, error) {
-	b, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-	return ParsePeers(string(b))
 }
 
 // AllIPs returns every `ip = "..."` assignment in the whole module (parity
@@ -208,15 +197,6 @@ func ParseWGShowHandshakes(show string) map[string]string {
 		}
 	}
 	return hs
-}
-
-// SortedPeers returns peers ordered by IP (display convenience).
-func SortedPeers(peers []Peer) []Peer {
-	out := append([]Peer(nil), peers...)
-	sort.Slice(out, func(i, j int) bool {
-		return out[i].IP < out[j].IP
-	})
-	return out
 }
 
 func extractQuoted(line string) string {
