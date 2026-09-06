@@ -1,5 +1,5 @@
-{ lib
-, buildGoModule
+{ buildGoModule
+, lib
 , makeWrapper
 , qrencode
 ,
@@ -9,17 +9,10 @@ buildGoModule {
   pname = "nixos-scripts";
   version = "1.0.0";
 
-  # Whitelist: Go module sources ONLY. secrets/, .sops.yaml and every other
-  # repo path must never enter the build sandbox.
-  src = lib.fileset.toSource {
-    root = ../../.;
-    fileset = lib.fileset.unions [
-      ../../go.mod
-      ../../go.sum
-      ../../cmd
-      ../../internal
-    ];
-  };
+  # Source, tests and derivation co-located: this directory IS the Go module
+  # (src = ./.), so the build sandbox only ever sees Go module files —
+  # secrets/ and the rest of the repo are structurally out of reach.
+  src = ./.;
 
   subPackages = [
     "cmd/ai-backup"
@@ -53,8 +46,12 @@ buildGoModule {
       --prefix PATH : ${lib.makeBinPath [ qrencode ]}
   '';
 
+  # checkPhase runs `go test ./...` on every build, so every host switch
+  # executes the module's test suite.
+  doCheck = true;
+
   meta = with lib; {
-    description = "Go operational scripts for the NixOS workflow (bash retired by bash-to-go-migration)";
+    description = "Go operational tools for the NixOS workflow (source co-located with derivation)";
     license = licenses.mit;
   };
 }
