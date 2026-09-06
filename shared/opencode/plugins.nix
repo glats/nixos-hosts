@@ -8,19 +8,20 @@ with lib;
 
 {
   options.home.opencode.plugins = {
-    backgroundAgents = {
-      enable = mkOption {
-        type = types.bool;
-        default = false;
-        description = ''
-          Enable the background-agents plugin.
+    modelVariants = {
+      enable = mkEnableOption "the model-variants plugin";
+    };
 
-          WARNING: This plugin has known orchestration issues.
-          See: https://github.com/Gentleman-Programming/agent-teams-lite/issues/58
+    opencodeReviewTransport = {
+      enable = mkEnableOption "the opencode-review-transport plugin";
+    };
 
-          Enable only if you understand the risks and have tested in a non-production environment.
-        '';
-      };
+    sddTaskResultArtifacts = {
+      enable = mkEnableOption "the sdd-task-result-artifacts plugin";
+    };
+
+    skillRegistry = {
+      enable = mkEnableOption "the skill-registry plugin";
     };
 
     engram = {
@@ -104,7 +105,10 @@ with lib;
   # Set the actual active plugins in the config section
   config.home.opencode.activePlugins = mkIf config.home.opencode.enable (
     lib.filterAttrs (name: enabled: enabled) {
-      background-agents = config.home.opencode.plugins.backgroundAgents.enable;
+      model-variants = config.home.opencode.plugins.modelVariants.enable;
+      opencode-review-transport = config.home.opencode.plugins.opencodeReviewTransport.enable;
+      sdd-task-result-artifacts = config.home.opencode.plugins.sddTaskResultArtifacts.enable;
+      skill-registry = config.home.opencode.plugins.skillRegistry.enable;
       engram = config.home.opencode.plugins.engram.enable;
       secret-guard = config.home.opencode.plugins.secretGuard.enable;
     }

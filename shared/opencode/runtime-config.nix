@@ -57,9 +57,21 @@ let
   tuiPluginsToInstall = lib.filterAttrs (name: cfg: cfg.enable) tuiPluginsConfig;
 
   managedPlugins = {
-    "background-agents.ts" = {
-      enable = cfg.plugins.backgroundAgents.enable;
-      src = "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/plugins/background-agents.ts";
+    "model-variants.ts" = {
+      enable = cfg.plugins.modelVariants.enable;
+      src = "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/plugins/model-variants.ts";
+    };
+    "opencode-review-transport.ts" = {
+      enable = cfg.plugins.opencodeReviewTransport.enable;
+      src = "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/plugins/opencode-review-transport.ts";
+    };
+    "sdd-task-result-artifacts.ts" = {
+      enable = cfg.plugins.sddTaskResultArtifacts.enable;
+      src = "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/plugins/sdd-task-result-artifacts.ts";
+    };
+    "skill-registry.ts" = {
+      enable = cfg.plugins.skillRegistry.enable;
+      src = "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/plugins/skill-registry.ts";
     };
     "engram.ts" = {
       enable = cfg.plugins.engram.enable;
@@ -255,6 +267,11 @@ in
           ${pkgs.coreutils}/bin/rm -f "$runtime_dir/plugins"
         fi
         mkdir -p "$runtime_dir/plugins"
+
+        # Remove the legacy background-agents plugin unconditionally.
+        # The option was removed in the gentle-ai v2.5.0 alignment, but
+        # installations predating that change may still carry the file.
+        ${pkgs.coreutils}/bin/rm -f "$runtime_dir/plugins/background-agents.ts"
 
         # Remove Nix-managed plugins that are now disabled.
         ${lib.concatStringsSep "\n" (
