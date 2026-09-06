@@ -28,10 +28,11 @@
       "google"
     ];
 
-    # backgroundAgents: disabled due to known orchestration issues (gentle-ai#58)
-    # Keep option definition in plugins.nix but do not enable here
+    # v2.5.0 managed plugins: sdd-task-result-artifacts and skill-registry
+    # enabled; model-variants and opencode-review-transport stay off (opt-in).
     plugins = {
-      # backgroundAgents.enable = true; # DISABLED - see issue #58
+      sddTaskResultArtifacts.enable = true;
+      skillRegistry.enable = true;
       engram.enable = true;
       secretGuard.enable = true; # Runtime redaction of secrets from bash output
     };

@@ -43,8 +43,9 @@
     };
 
     # gentle-ai upstream (for skills, commands, plugins)
+    # Pinned to v2.5.0 tag (release f5dd1a6c) — do not track main.
     gentle-ai-src = {
-      url = "github:Gentleman-Programming/gentle-ai/main";
+      url = "github:Gentleman-Programming/gentle-ai/v2.5.0";
       flake = false;
     };
 
