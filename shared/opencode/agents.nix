@@ -88,14 +88,17 @@ let
     name: upstream:
     let
       localModel = models.${name} or null;
-      localTools =
-        if name == "gentle-orchestrator" then
-          localOverlays.toolOverlays.gentle-orchestrator or { }
-        else if upstream.mode or "" == "subagent" then
-          localOverlays.toolOverlays.subagent or { }
+      # Permission-only grants: the generic subagent class overlay is merged
+      # with the per-agent named overlay; named entries win (recursiveUpdate
+      # is recursive RHS precedence). Values are permission-shaped strings or
+      # command maps — never booleans.
+      classOverlay =
+        if upstream.mode or "" == "subagent" then
+          localOverlays.permissionOverlays.class.subagent or { }
         else
           { };
-      localPermission = localOverlays.permissionOverlays.${name} or { };
+      namedOverlay = localOverlays.permissionOverlays.named.${name} or { };
+      localPermission = lib.recursiveUpdate classOverlay namedOverlay;
       localInstructions =
         if name == "gentle-orchestrator" then
           localOverlays.instructionOverlays.gentle-orchestrator or [ ]
@@ -119,15 +122,14 @@ let
           else
             upstream.prompt or "";
       in
-      (removeAttrs upstream [ ])
+      # Upstream `tools` is deprecated (v2.5.0 migrated to `permission`);
+        # always strip it so no agent ever emits a `tools` field.
+      (removeAttrs upstream [ "tools" ])
       // lib.optionalAttrs (localModel != null) { model = localModel; }
       // lib.optionalAttrs (instructionPrompt != "" || basePrompt != "") {
         prompt = instructionPrompt + basePrompt;
       }
-      // lib.optionalAttrs (localTools != { }) {
-        tools = smartMerge localTools (upstream.tools or { });
-      }
-      // lib.optionalAttrs (localPermission != { }) {
+      // {
         permission = smartMerge localPermission (upstream.permission or { });
       }
     );
