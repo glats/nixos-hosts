@@ -58,9 +58,9 @@ func main() {
 	git := func(args ...string) (string, int) {
 		cmd := exec.Command("git", args...)
 		cmd.Dir = dir
-		var out, errOut strings.Builder
+		var out strings.Builder
 		cmd.Stdout = &out
-		cmd.Stderr = &errOut
+		cmd.Stderr = os.Stderr
 		err := cmd.Run()
 		code := 0
 		if exitErr, ok := err.(*exec.ExitError); ok {
@@ -69,7 +69,6 @@ func main() {
 			fmt.Fprintln(os.Stderr, "ERROR:", err)
 			os.Exit(1)
 		}
-		_ = errOut
 		return out.String(), code
 	}
 

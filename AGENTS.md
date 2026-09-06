@@ -25,7 +25,7 @@ pkgs/                            # Custom package derivations
 pkgs/nixos-scripts/              # Go module for operational scripts (Go-only policy) —
                                  #   source + tests + derivation co-located (src = ./.)
 pkgs/nixos-scripts/cmd/<name>/main.go  # One thin Go entry point per operational binary
-pkgs/nixos-scripts/internal/     # Shared Go packages (reporoot, ui, gitutil, wg, nixbuild) —
+pkgs/nixos-scripts/internal/     # Shared Go packages (reporoot, gitutil, wg, nixbuild) —
                                  #   logic used by ≥2 scripts lives here, never copied between cmd/
 bin/                             # test-tmux-resume + webcam only (documented Go-only exceptions)
 secrets/                         # sops-encrypted: host/<hostname>/, shared/, user/

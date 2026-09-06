@@ -1,6 +1,9 @@
 package wg
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 const sampleModule = `let
   peers = {
@@ -88,12 +91,12 @@ func TestInsertPeerByteFormat(t *testing.T) {
 		t.Fatalf("InsertPeer: %v", err)
 	}
 	wantBlock := "    samsung2 = {\n      ip = \"10.13.13.4\";\n      publicKey = \"CCC=\";\n      psk = null;\n    };\n"
-	if !contains(out, wantBlock) {
+	if !strings.Contains(out, wantBlock) {
 		t.Fatalf("inserted block not byte-exact:\n%q", wantBlock)
 	}
 	// Must land immediately before the end marker line.
-	endIdx := indexOf(out, EndMark)
-	blockIdx := indexOf(out, wantBlock)
+	endIdx := strings.Index(out, EndMark)
+	blockIdx := strings.Index(out, wantBlock)
 	if blockIdx == -1 || endIdx == -1 || blockIdx > endIdx {
 		t.Fatal("block must appear before the end marker")
 	}
@@ -109,10 +112,10 @@ func TestRemovePeer(t *testing.T) {
 	if !removed {
 		t.Fatal("expected removal")
 	}
-	if contains(out, "BBB=") || contains(out, "mac = {") {
+	if strings.Contains(out, "BBB=") || strings.Contains(out, "mac = {") {
 		t.Fatal("mac block should be gone")
 	}
-	if !contains(out, "AAA=") {
+	if !strings.Contains(out, "AAA=") {
 		t.Fatal("other peers must survive")
 	}
 	peers, err := ParsePeers(out)
@@ -136,7 +139,7 @@ func TestUpdatePeerPublicKey(t *testing.T) {
 	if !ok {
 		t.Fatal("expected replacement")
 	}
-	if contains(out, "OLD=") || !contains(out, `publicKey = "NEW=";`) {
+	if strings.Contains(out, "OLD=") || !strings.Contains(out, `publicKey = "NEW=";`) {
 		t.Fatalf("replacement wrong:\n%s", out)
 	}
 	if _, ok := UpdatePeerPublicKey(content, "ghost", "NEW="); ok {
@@ -166,17 +169,4 @@ peer: BBB=
 	if _, ok := hs["BBB="]; ok {
 		t.Fatal("BBB has no handshake")
 	}
-}
-
-func contains(s, sub string) bool {
-	return indexOf(s, sub) >= 0
-}
-
-func indexOf(s, sub string) int {
-	for i := 0; i+len(sub) <= len(s); i++ {
-		if s[i:i+len(sub)] == sub {
-			return i
-		}
-	}
-	return -1
 }

@@ -102,13 +102,13 @@ func main() {
 	os.Exit(rc)
 }
 
-// checkFile formats a temp copy of f and reports whether the file would
-// change; on any failure it sets *rc = 1 (parity with the bash original).
-func checkFile(f string, rc *int) bool {
+// checkFile formats a temp copy of f and sets *rc = 1 if the file would
+// change or the formatter fails (parity with the bash original).
+func checkFile(f string, rc *int) {
 	src, err := os.ReadFile(f)
 	if err != nil {
 		fmt.Printf("Skipping unreadable file: %s\n", f)
-		return false
+		return
 	}
 	tmp, err := os.CreateTemp("", "format-nix-")
 	if err != nil {
@@ -127,19 +127,18 @@ func checkFile(f string, rc *int) bool {
 	if err := cmd.Run(); err != nil {
 		fmt.Printf("Formatter (check) failed on %s\n", f)
 		*rc = 1
-		return false
+		return
 	}
 	got, err := os.ReadFile(tmpName)
 	if err != nil {
 		fmt.Printf("Formatter (check) failed on %s\n", f)
 		*rc = 1
-		return false
+		return
 	}
 	if !bytes.Equal(src, got) {
 		fmt.Printf("Would reformat %s\n", f)
 		*rc = 1
 	}
-	return true
 }
 
 // nixFiles walks root and returns .nix file paths, skipping .git, in
