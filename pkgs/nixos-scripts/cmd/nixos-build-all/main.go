@@ -6,12 +6,14 @@
 package main
 
 import (
+	"errors"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/glats/nixos-scripts/internal/nixbuild"
 )
 
 const usageText = `Usage: nixos-build-all [command]
@@ -77,45 +79,26 @@ func main() {
 	}
 }
 
-// runBuild pipes stdout+stderr through nom when available (bash `|& nom`).
+// runBuild executes args with output through nom when available — the bash
+// `|& nom` piping. Failures die silently with the child's (or nom's, per
+// pipefail) status, matching the bash original's set -e semantics.
 func runBuild(args ...string) {
-	nom, err := exec.LookPath("nom")
-	if err != nil {
-		c := exec.Command(args[0], args[1:]...)
-		c.Stdout = os.Stdout
-		c.Stderr = os.Stderr
-		if err := c.Run(); err != nil {
-			fmt.Fprintln(os.Stderr, "ERROR:", err)
-			os.Exit(1)
+	if nom, err := exec.LookPath("nom"); err == nil {
+		if rc := nixbuild.RunThroughNom(args, nom); rc != 0 {
+			os.Exit(rc)
 		}
 		return
 	}
 	c := exec.Command(args[0], args[1:]...)
-	pr, pw := io.Pipe()
-	c.Stdout = pw
-	c.Stderr = pw
-	n := exec.Command(nom)
-	n.Stdin = pr
-	n.Stdout = os.Stdout
-	n.Stderr = os.Stderr
-	if err := c.Start(); err != nil {
+	c.Stdout = os.Stdout
+	c.Stderr = os.Stderr
+	if err := c.Run(); err != nil {
+		var ee *exec.ExitError
+		if errors.As(err, &ee) {
+			os.Exit(ee.ExitCode())
+		}
 		fmt.Fprintln(os.Stderr, "ERROR:", err)
-		os.Exit(1)
-	}
-	if err := n.Start(); err != nil {
-		fmt.Fprintln(os.Stderr, "ERROR:", err)
-		os.Exit(1)
-	}
-	if err := c.Wait(); err != nil {
-		pw.Close()
-		n.Wait()
-		fmt.Fprintln(os.Stderr, "ERROR:", err)
-		os.Exit(1)
-	}
-	pw.Close()
-	if err := n.Wait(); err != nil {
-		fmt.Fprintln(os.Stderr, "ERROR:", err)
-		os.Exit(1)
+		os.Exit(127)
 	}
 }
 

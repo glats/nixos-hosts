@@ -6,7 +6,7 @@ and Claude Code.
 
 - New or modified operational tooling lives in the Go module at
   `pkgs/nixos-scripts/`: `cmd/<binary-name>/main.go` (thin entry: flag
-  parsing + dispatch only) + shared logic in `internal/` (`reporoot`, `ui`,
+  parsing + dispatch only) + shared logic in `internal/` (`reporoot`,
   `gitutil`, `wg`, `nixbuild`). One `go.mod` inside the package dir — source,
   tests and derivation co-located.
 - **Shared functions**: logic used by ≥2 scripts lives in `internal/` and is

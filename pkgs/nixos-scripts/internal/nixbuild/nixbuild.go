@@ -329,7 +329,7 @@ func Run(steps []Step, nomPath string) int {
 		case KindExec:
 			rc := 0
 			if st.ThroughNom && nomPath != "" {
-				rc = runThroughNom(st.Args, nomPath)
+				rc = RunThroughNom(st.Args, nomPath)
 			} else {
 				rc = runDirect(st.Args)
 			}
@@ -367,11 +367,11 @@ func runDirect(argv []string) int {
 	return 0
 }
 
-// runThroughNom ports run_with_nom(): `"$@" |& nom` — the child's stdout
+// RunThroughNom ports run_with_nom(): `"$@" |& nom` — the child's stdout
 // and stderr are merged into nom's stdin; nom inherits the terminal's
 // stdout/stderr. With `set -o pipefail` the pipeline status is the
 // rightmost non-zero status, so when both fail, nom's status wins.
-func runThroughNom(argv []string, nomPath string) int {
+func RunThroughNom(argv []string, nomPath string) int {
 	c := exec.Command(argv[0], argv[1:]...)
 	c.Stdin = os.Stdin
 	n := exec.Command(nomPath)
