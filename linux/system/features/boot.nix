@@ -7,16 +7,6 @@
 {
   options.boot-settings = {
     enable = lib.mkEnableOption "shared boot configuration";
-    includeAcpiOsi = lib.mkOption {
-      type = lib.types.bool;
-      default = false;
-      description = "Include ACPI OSI overrides (for ASUS laptops)";
-    };
-    includePoweroffFix = lib.mkOption {
-      type = lib.types.bool;
-      default = false;
-      description = "Include ACPI poweroff fix kernel params (for ASUS ROG)";
-    };
     includeDiagLogging = lib.mkOption {
       type = lib.types.bool;
       default = false;
@@ -50,15 +40,6 @@
         "rd.udev.log_level=3"
         "udev.log_priority=3"
         "vt.global_cursor_default=0"
-      ]
-      ++ lib.optionals config.boot-settings.includeAcpiOsi [
-        "acpi_osi=!"
-        "acpi_osi=\"Windows 2018\""
-      ]
-      ++ lib.optionals config.boot-settings.includePoweroffFix [
-        "acpi=force"
-        "pcie_aspm=off"
-        "reboot=acpi"
       ]
       ++ lib.optionals config.boot-settings.includeDiagLogging [
         # Kernel uses the last occurrence when the same key appears

@@ -54,7 +54,6 @@
 
   boot-settings = {
     enable = true;
-    includeAcpiOsi = false;
   };
 
   boot.kernelPackages = pkgs.linuxPackages;
