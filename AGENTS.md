@@ -77,6 +77,39 @@ Formatter is `nixpkgs-fmt` set as flake `formatter`. Never invoke `nixpkgs-fmt <
 - **Host-conditional modules** (conky-rog, conky-thinkcentre, openfang) are NOT in shared-modules.nix — each `hosts/<host>/home/default.nix` extends the base list with its own extras.
 - Per-host OpenCode provider override lives there too: `{ home.opencode.activeProviderName = "..."; }` (e.g. rog: `openai-opencode-balanced`, thinkcentre: `openai-medium`, mact2: `openai-medium-proxy`).
 
+## Go-Only Operational Scripts
+
+All operational scripts in this repo are **Go, never bash**. This binds every
+agent working here (OpenCode orchestrator, subagents, build/plan) and Claude
+Code.
+
+**Scope.** The ban is on shell scripts, not on artifacts whose native
+language is not a script: Nix expressions stay Nix, out-of-tree kernel
+modules are C by nature (derivation in `pkgs/` + `boot.extraModulePackages`),
+third-party upstream code stays upstream. Rule of thumb: an executable CLI
+that orchestrates commands → Go; kernel code, Nix modules, assets → native
+form.
+
+**Where code lives.** The Go module is `pkgs/nixos-scripts/` — source, tests
+and derivation co-located (`buildGoModule`, `src = ./.`). Thin
+`cmd/<name>/main.go` entries (flag parsing + dispatch only); shared logic in
+`internal/` (`reporoot`, `gitutil`, `wg`, `nixbuild`). Logic used by ≥2
+scripts lives in `internal/`, never copied between `cmd/`; genuinely new
+logic lands there too, with tests. Every host switch recompiles all binaries
+and runs the test suite in checkPhase — deployed binaries are always the
+Nix-built ones; `nix develop` / `go -C pkgs/nixos-scripts run ./cmd/<name>`
+is dev iteration only.
+
+**Exceptions** (the only bash allowed): `bin/test-tmux-resume` (tests a zsh
+function) and `bin/webcam`.
+
+**Workflow.** Verify before implementing: MCP (`nixos_nix` for
+packages/options, GitHub for prior art, context7/exa for docs) — never guess
+APIs or option paths. When porting bash, keep the binary name, flags, exit
+codes and key outputs, with `go test` coverage for parsing before cutover.
+Done means:
+`go -C pkgs/nixos-scripts test ./... && format-nix && nix flake check --no-build`.
+
 ## When Coding
 
 1. **Research first** — verify options/packages/APIs with MCP tools before writing; never guess option paths.
@@ -87,7 +120,7 @@ Formatter is `nixpkgs-fmt` set as flake `formatter`. Never invoke `nixpkgs-fmt <
 6. Secrets → `sops <specific-file>.yaml`. Agents must NEVER decrypt secrets — read ciphertext only. New host setup: follow `docs/sops-new-host.md`.
 7. `hardware-configuration.nix` — never edit (auto-generated).
 8. Unfree packages: `allowUnfree = true` is already global in flake.nix; license-gated packages additionally need host-level `allowUnfreePackages` + accept-license options (e.g. joypixels).
-9. **Operational scripts are Go, never bash** — new/modified tooling goes in `pkgs/nixos-scripts/cmd/<name>/main.go` + shared logic in `pkgs/nixos-scripts/internal/`, shipped via `pkgs/nixos-scripts` (`buildGoModule`, `src = ./.`). See `shared/rules/go-scripts.md`. Only exceptions: `bin/test-tmux-resume`, `bin/webcam`. Verify with `go -C pkgs/nixos-scripts test ./...` plus the standard Nix gate.
+9. **Operational scripts are Go, never bash** — see the "Go-Only Operational Scripts" section above for the full policy.
 10. **Everything in English, regardless of input language** — replies, code, comments, commits, PRs, docs, CLI messages, memory notes. A Spanish prompt still gets an English answer. See `shared/rules/output-format.md`.
 
 ## Reviewing
@@ -105,7 +138,7 @@ Formatter is `nixpkgs-fmt` set as flake `formatter`. Never invoke `nixpkgs-fmt <
 5. **t14**: omarchy-nix + nixos-hardware T14 AMD gen4 profile arrive via `extraModules` in flake.nix. Its HM config block is `hosts/t14/home/omarchy.nix`, imported by t14's `home/default.nix`.
 6. **mact2**: built via `mkDarwinHost` (includes Determinate module); username jcuzmar.
 7. **nixpkgs is pinned to nixos-26.05** because 26.11 dropped x86_64-darwin and mact2 is an Intel Mac. Do not bump nixpkgs or nix-darwin (matched `nix-darwin-26.05` branch) until mact2 migrates to Apple Silicon. For the same reason `nix-vscode-extensions` is pinned to a pre-drop commit and gated behind `isDarwin`.
-8. **Go-only scripts**: never write a new bash script for operational tooling. `pkgs/nixos-scripts` builds Go binaries from `cmd/` with `src = ./.` — the module dir is its own build sandbox (source, tests and derivation co-located; `secrets/` structurally out of reach).
+8. **Go-only scripts**: never a new bash script for operational tooling — full policy in the "Go-Only Operational Scripts" section.
 
 ## Secrets (sops-nix)
 
