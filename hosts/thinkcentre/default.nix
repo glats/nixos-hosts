@@ -72,6 +72,71 @@
   networking = {
     hostName = "thinkcentre";
     networkmanager.enable = true;
+
+    # Netconsole receiver address (Slice 1 of rog-shutdown-s5-diagnose-and-fix):
+    # pin the wired NIC statically so the netconsole target never moves.
+    # Checkpoint A (live, 2026-09-07): enp0s31f6, single NM profile, gateway
+    # and DNS 172.16.0.1, search domain "lan"; decision: fully static
+    # ipv4.method=manual, no DHCP dependency.
+    #
+    # Option verified against pinned nixpkgs 26.05
+    # (nixos/modules/services/networking/networkmanager.nix): there is no
+    # networking.networkmanager.connectionConfigurations there — the
+    # declarative mechanism is networking.networkmanager.ensureProfiles
+    # .profiles, freeform INI atoms, so keyfile list settings
+    # (addresses/dns/dns-search) are comma-separated strings.
+    #
+    # The runtime-created DHCP profile "Wired connection 1" still exists in
+    # /etc/NetworkManager/system-connections; autoconnect-priority makes this
+    # profile win for autoconnect. NixOS cannot delete runtime NM profiles,
+    # so at deploy also run: nmcli con delete "Wired connection 1".
+    networkmanager.ensureProfiles.profiles.enp0s31f6-static = {
+      connection = {
+        id = "enp0s31f6-static";
+        type = "ethernet";
+        interface-name = "enp0s31f6";
+        autoconnect = true;
+        autoconnect-priority = 100;
+      };
+      ipv4 = {
+        method = "manual";
+        addresses = "172.16.0.11/24";
+        gateway = "172.16.0.1";
+        dns = "172.16.0.1";
+        dns-search = "lan";
+      };
+    };
+  };
+
+  # Netconsole UDP receiver: durably appends kernel lines (RFC3339 receive
+  # timestamp prefix) to /var/log/netconsole/ and ACKs rog's nonce probes
+  # (contract in pkgs/nixos-scripts/internal/netconsole). UDP 6666 inbound
+  # and the ACK return to rog's :6665 need no firewall rule — the NixOS
+  # firewall is disabled on thinkcentre via linux/system/networking/firewall.nix.
+  systemd.services.netconsole-log = {
+    description = "Netconsole UDP kernel log receiver";
+    wantedBy = [ "multi-user.target" ];
+    wants = [ "network-online.target" ];
+    after = [ "network-online.target" ];
+    serviceConfig = {
+      ExecStart = "${pkgs.nixos-scripts}/bin/netconsole-log";
+      DynamicUser = true;
+      LogsDirectory = "netconsole";
+      ReadWritePaths = [ "/var/log/netconsole" ];
+      Restart = "always";
+      RestartSec = "2s";
+      NoNewPrivileges = true;
+      ProtectSystem = "strict";
+      ProtectHome = true;
+    };
+  };
+
+  # Receiver log retention: weekly rotation, 8 weeks kept, compressed.
+  services.logrotate.settings.netconsole = {
+    files = [ "/var/log/netconsole/*.log" ];
+    frequency = "weekly";
+    rotate = 8;
+    compress = true;
   };
 
   services.wol-custom.interface = "enp0s31f6";
@@ -80,6 +145,7 @@
 
   environment.systemPackages = with pkgs; [
     microsoft-edge
+    nixos-scripts
     pipewire-module-xrdp
     intel-vaapi-driver
     libva-vdpau-driver
