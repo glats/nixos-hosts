@@ -151,7 +151,8 @@
       "../rules/go-scripts.md"
     ],
     "subagent": [
-      "../rules/go-scripts.md"
+      "../rules/go-scripts.md",
+      "../rules/output-format.md"
     ]
   }
 }

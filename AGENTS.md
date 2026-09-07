@@ -88,6 +88,7 @@ Formatter is `nixpkgs-fmt` set as flake `formatter`. Never invoke `nixpkgs-fmt <
 7. `hardware-configuration.nix` — never edit (auto-generated).
 8. Unfree packages: `allowUnfree = true` is already global in flake.nix; license-gated packages additionally need host-level `allowUnfreePackages` + accept-license options (e.g. joypixels).
 9. **Operational scripts are Go, never bash** — new/modified tooling goes in `pkgs/nixos-scripts/cmd/<name>/main.go` + shared logic in `pkgs/nixos-scripts/internal/`, shipped via `pkgs/nixos-scripts` (`buildGoModule`, `src = ./.`). See `shared/rules/go-scripts.md`. Only exceptions: `bin/test-tmux-resume`, `bin/webcam`. Verify with `go -C pkgs/nixos-scripts test ./...` plus the standard Nix gate.
+10. **Everything in English, regardless of input language** — replies, code, comments, commits, PRs, docs, CLI messages, memory notes. A Spanish prompt still gets an English answer. See `shared/rules/output-format.md`.
 
 ## Reviewing
 
