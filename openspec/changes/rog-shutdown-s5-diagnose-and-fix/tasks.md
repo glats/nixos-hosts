@@ -1,0 +1,69 @@
+# Tasks: Diagnose and Fix rog S5 Shutdown
+
+## Review Workload Forecast
+
+| Field | Value |
+|-------|-------|
+| Estimated changed lines | 1300-1600 |
+| 400-line budget risk | High |
+| Chained PRs recommended | Yes |
+| Suggested split | PR 1 (receiver) → PR 2 (diagnostics) → PR 3 (S5 write) → PR 4 (EFI fallback) |
+| Delivery strategy | ask-on-risk |
+| Chain strategy | pending |
+
+Decision needed before apply: Yes
+Chained PRs recommended: Yes
+Chain strategy: pending
+400-line budget risk: High
+
+### Suggested Work Units
+
+| Unit | Goal | Likely PR | Focused test command | Runtime harness | Rollback boundary |
+|------|------|-----------|----------------------|-----------------|-------------------|
+| 1 | thinkcentre static receiver (Slice 1) | PR 1 | `go -C pkgs/nixos-scripts test ./... && format-nix && nix flake check --no-build` | deploy thinkcentre, then `printf x \| nc -u 172.16.0.11 6666` → fsync'd log line + nonce ACK | `hosts/thinkcentre/default.nix` profile/service block; drop `cmd/netconsole-log` from subPackages |
+| 2 | rog diagnostics gate (Slice 2) | PR 2 | `go -C pkgs/nixos-scripts test ./... && format-nix && nix flake check --no-build` | rog rebuild → netconsole-setup unit ACK-ok, Gate-1 supervised diagnostic-only shutdown | `hardware.rog.s5-recovery.diagnostics.enable = false` (reboot clears kernelParams) |
+| 3 | firmware-derived S5 write (Slice 3) | PR 3 | `go -C pkgs/nixos-scripts test ./...` (RED refusals + fixtures) | Gate-2 supervised poweroff → physical-off with receiver/pstore evidence | `s5Write.enable = false`; delete ramfs JSON/tables on rog |
+| 4 | EFI fallback + runbook (Slice 4) | PR 4 | `nix build .#nixosConfigurations.rog.config.system.build.toplevel` + `modinfo rog_efi_poweroff` | Gate-3 trial, then 3x unattended poweroffs with evidence | `efiFallback.enable = false`; drop `rog-efi-poweroff` from extraModulePackages |
+
+Host tags: `[rog-host]` must run on rog (live fixtures, trials); `[thinkcentre-host]` via SSH to thinkcentre; `[any-host]` Nix eval/Go tests anywhere. Checkpoints STOP apply until resolved.
+
+## Phase 1: Receiver side first — thinkcentre (Slice 1)
+
+- [x] 1.1 **[thinkcentre-host] CHECKPOINT A (design open Q1)**: inspect live `nmcli con show` / `ip addr` / docker bridge pools to confirm no prefix or static-address conflict for 172.16.0.11/24 on enp0s31f6; read-only, stop for review on any conflict. (verify: commands above + notes in change dir) — PASSED live 2026-09-07; decision: fully static ipv4.method=manual (172.16.0.11/24, gw/DNS 172.16.0.1, search "lan").
+- [x] 1.2 **[any-host]** In `hosts/thinkcentre/default.nix` add a NetworkManager keyfile profile for enp0s31f6 (method auto keeps DHCP route/DNS + `address1=172.16.0.11/24`), disable the competing wired profile; confirm option availability in pinned nixpkgs 26.05 first. (verify: `format-nix && nix flake check --no-build`) — DONE, superseded by Checkpoint A decision: fully static `ipv4.method=manual`. Option verified in pinned 26.05 module source: `networking.networkmanager.ensureProfiles.profiles` (NO `connectionConfigurations`); `autoconnect-priority=100` beats the runtime "Wired connection 1" DHCP profile (runtime profile deletion is live-only: `nmcli con delete` at deploy).
+- [x] 1.3 **[any-host]** Note shared `linux/system/networking/firewall.nix` sets `networking.firewall.enable = false` on thinkcentre — confirm no host re-enables it; no port rule needed, but record UDP 6666 inbound + ACK return (listener source port 6666 → rog 6665) as the receiver contract. (verify: `nix eval .#nixosConfigurations.thinkcentre.config.networking.firewall.enable`) — VERIFIED `false`; contract recorded in `internal/netconsole` package doc + `hosts/thinkcentre/default.nix` comment.
+- [x] 1.4 **[any-host]** Add shared framing package `internal/netconsole/` (nonce line format, ACK reply on the receiving socket, timeout) with table tests for framing/ACK/ordering; create thin `cmd/netconsole-log/main.go` (bind UDP 6666, fsync-append timestamped lines under `/var/log/netconsole/`, ACK nonce lines). (verify: `go -C pkgs/nixos-scripts test ./...`) — nonce marker contract: `netconsole-verify: nonce=<token>` → ACK `netconsole-ack: nonce=<token>` (rog 2s window, Slice 2 must emit the marker).
+- [x] 1.5 **[any-host]** Wire in `hosts/thinkcentre/default.nix`: `systemd.services.netconsole-log` (static user + `LogsDirectory`, `ReadWritePaths`), logrotate for `/var/log/netconsole/`, `pkgs/nixos-scripts` in systemPackages; add `cmd/netconsole-log` to `subPackages` in `pkgs/nixos-scripts/default.nix`. (verify: `format-nix && nix flake check --no-build`) — DONE with DynamicUser (allowed by design) + LogsDirectory/ReadWritePaths; logrotate weekly/rotate 8/compress; NOTE: new Go files must be `git add -N`-ed or Nix dirty-tree source excludes them (flake build failed until staged).
+- [ ] 1.6 **[thinkcentre-host]** Deploy, then smoke: send a test UDP line to 172.16.0.11:6666 → line durably logged with timestamp and nonce ACK returned; retry with listener stopped → no ACK. (verify: log file + `nc -ul 6665` capture)
+
+## Phase 2: Diagnostics gate — rog (Slice 2)
+
+- [ ] 2.1 **[any-host]** Create `linux/system/hardware/rog-poweroff.nix` with `hardware.rog.s5-recovery = { diagnostics.enable; netconsole = { enable; interface="enp3s0"; localPort=6665; remoteIP="172.16.0.11"; remoteMAC="6c:4b:90:2d:97:42"; remotePort=6666; }; s5Write.enable; efiFallback.enable; }` and assertions: s5Write/efiFallback require `diagnostics.enable`. (verify: `format-nix && nix flake check --no-build`)
+- [ ] 2.2 **[any-host]** Add `internal/kmsg/` (write `/dev/kmsg`, shared later by rog-poweroff-hook); create thin `cmd/netconsole-setup/main.go`: discover enp3s0 current IPv4 (DHCP-safe), write configfs target1 dev/local_ip/local_port 6665/remote_ip/remote_mac/remote_port 6666, emit nonce via `/dev/kmsg`, wait ≤2s for matching ACK, exit nonzero on timeout. (verify: `go -C pkgs/nixos-scripts test ./...`; RED tests: ACK timeout, spoofed/non-matching nonce, missing configfs/sysfs paths)
+- [ ] 2.3 **[any-host]** In `rog-poweroff.nix` wire diagnostics: `boot.kernelModules = [ "configfs" "netconsole" ]`, `boot.kernelParams = [ "printk.always_kmsg_dump=1" "efi_pstore.pstore_disable=0" ]`, oneshot `netconsole-setup` unit after `network-online.target` failing visibly, pstore/EFI parameter check at startup; import module + enable stage in `hosts/rog/default.nix`. (verify: `format-nix && nix flake check --no-build`)
+- [ ] 2.4 **[any-host]** Modify `linux/system/base/shutdown-debug.nix` with an opt-in EFI-pstore collection option (default unchanged): when enabled, copy `/sys/fs/pstore/*` into the `/var/log/shutdown-debug/<boot-id>/` capture before shutdown. (verify: `format-nix && nix flake check --no-build`)
+- [ ] 2.5 **[rog-host] Gate 1**: rebuild rog (diagnostics + netconsole), confirm ACK readiness end-to-end, then run one supervised diagnostic-only shutdown (s5Write off) — ordered `rog-s5:` breadcrumbs must reach the thinkcentre log and/or pstore with timestamps. (verify: receiver log grep + pstore listing)
+
+## Phase 3: Firmware-derived S5 write — rog (Slice 3)
+
+- [ ] 3.1 **[rog-host] CHECKPOINT B (design open Q2)**: dump live rog FADT + DSDT from `/sys/firmware/acpi/tables`, sanitize, commit as `internal/fadt/testdata/` + `internal/dsdt/testdata/`; confirm root `\_S5` is one `Name(..., Package(...))` with literal integers only — stop for parser-scope review if the live DSDT deviates. (verify: fixture files + recorded confirmation)
+- [ ] 3.2 **[any-host]** Add `internal/fadt/` strict parser (signature/length/checksum; X_PM1a_CNT GAS at offset 172 preferred, legacy PM1a_CNT_BLK offset 64 fallback — offset 116 is RESET_REG, never PM1a) with table tests incl. malformed/checksum-mismatch fixtures. (verify: `go -C pkgs/nixos-scripts test ./...`)
+- [ ] 3.3 **[any-host]** Add `internal/dsdt/` strict AML scanner: exactly one root `\_S5` Package of literal integers (no named refs/operators); ambiguity or anything else → error, with fixture tests. (verify: `go -C pkgs/nixos-scripts test ./...`)
+- [ ] 3.4 **[any-host]** Add `internal/s5write/` validation + injectable 16-bit `/dev/port` writer: refuse non-I/O GAS, port 0 or >0xfffe, non-16-bit width, SLP_TYP outside 1–7, ambiguous S5, wrong DMI (GL553VD only); RED tests assert ZERO port writes on every refusal path. (verify: `go -C pkgs/nixos-scripts test ./...`)
+- [ ] 3.5 **[any-host]** Add thin `cmd/rog-poweroff-hook/main.go`: reads gate JSON from shutdown ramfs (JSON never embeds firmware values — a boot-time generator parses live FADT/DSDT, validates, stages raw tables + gate JSON in the ramfs), 16-bit read-modify-write replacing SLP_TYP bits 10–12 + SLP_EN bit 13; emits `rog-s5:` hook-start/modules-state/s5-attempt/s5-refused|s5-returned/hook-end via `internal/kmsg`; non-poweroff verbs exit 0. (verify: `go -C pkgs/nixos-scripts test ./...`; RED: verb handling, breadcrumb ordering, zero writes)
+- [ ] 3.6 **[any-host]** In `rog-poweroff.nix` wire `s5Write.enable`: generator oneshot unit + `systemd.shutdownRamfs.contents`/storePaths (hook binary, staged tables, gate JSON linked at `/etc/systemd/system-shutdown/rog-poweroff`); add `cmd/rog-poweroff-hook` to subPackages; enable in `hosts/rog/default.nix` only after Gate 1. (verify: `format-nix && nix flake check --no-build` + inspect generated ramfs)
+- [ ] 3.7 **[rog-host] Gate 2 (supervised)**: only after fixtures match live values (PM1a `0x1804`), run ONE supervised `systemctl poweroff` with s5Write enabled — physical-off (`Power down` on thinkcentre) + receiver/pstore evidence; capture refusal/return evidence for Gate 3. (verify: receiver log + pstore)
+
+## Phase 4: EFI fallback + runbook (Slice 4)
+
+- [ ] 4.1 **[any-host]** Create `pkgs/rog-efi-poweroff/{rog-efi-poweroff.c,Makefile,default.nix}`: ~30-line C module DMI-scoped to GL553VD registering `SYS_OFF_MODE_POWER_OFF` at `SYS_OFF_PRIO_FIRMWARE+1` (225); handler emits `efi-fallback` breadcrumb then `efi.reset_system(EFI_RESET_SHUTDOWN, ...)`; `default.nix` takes the kernel and installs to `$out/lib/modules/${kernel.modDirVersion}/` (mirror acpi_call wiring; rog uses `pkgs.linuxPackages`). (verify: `nix build .#nixosConfigurations.rog.config.system.build.toplevel` + `modinfo rog_efi_poweroff`)
+- [ ] 4.2 **[any-host]** In `rog-poweroff.nix` add `efiFallback.enable` (asserts `diagnostics.enable`), build against `config.boot.kernelPackages`, add to `boot.extraModulePackages`; enable on rog only after Gate 3 evidence. (verify: `format-nix && nix flake check --no-build`)
+- [ ] 4.3 **[any-host]** Create `docs/rog-s5-poweroff.md` runbook: option gates, supervised trial procedure, evidence collection (thinkcentre log + pstore), rollback to `8dc4ed4` baseline (disable the three booleans, remove kernel params). (verify: prose review; `format-nix` unaffected)
+- [ ] 4.4 **[rog-host] Gate 3**: enable `efiFallback.enable` only after `s5-refused`/`s5-returned` evidence is logged; supervised poweroff → `efi-fallback` breadcrumb then physical off. (verify: receiver log + pstore)
+- [ ] 4.5 **[rog-host] Acceptance**: three consecutive unattended poweroffs each reach physical-off with receiver and/or pstore evidence, no manual intervention. (verify: per-trial receiver log + pstore)
+- [ ] 4.6 **[any-host]** Full gate: `go -C pkgs/nixos-scripts test ./... && format-nix && nix flake check --no-build` plus rog toplevel build. (verify: all pass)
+
+## Cross-cutting
+
+- [ ] C1 Non-rog hosts (t14, thinkcentre baseline, mact2 eval) unchanged; `acpi_call`, `asus-fan-control`, WMI blacklist, and `shutdown-debug` defaults behave as before. (verify: `nix flake check --no-build`)
+- [ ] C2 No secrets in plaintext; netconsole receiver restricted to trusted LAN target `6c:4b:90:2d:97:42`. (verify: diff review)
