@@ -56,6 +56,19 @@ const (
 // so it is matched anywhere in the line.
 var nonceRe = regexp.MustCompile(`netconsole-verify: nonce=([A-Za-z0-9]+)`)
 
+// ackNonceRe is the sender-side counterpart of nonceRe: rog's setup matches
+// the ACK the receiver replies with, anywhere inside a received line.
+var ackNonceRe = regexp.MustCompile(`netconsole-ack: nonce=([A-Za-z0-9]+)`)
+
+// ExtractACKNonce returns the nonce token acknowledged by line, if any.
+func ExtractACKNonce(line string) (string, bool) {
+	m := ackNonceRe.FindStringSubmatch(line)
+	if m == nil {
+		return "", false
+	}
+	return m[1], true
+}
+
 // ExtractNonce returns the nonce token carried by line, if any.
 func ExtractNonce(line string) (string, bool) {
 	m := nonceRe.FindStringSubmatch(line)
