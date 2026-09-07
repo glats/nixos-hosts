@@ -1,7 +1,9 @@
 ## Go-Only Operational Scripts (MANDATORY)
 
-All operational scripts in this repo are **Go, never bash** — this binds
-every OpenCode agent (orchestrator, subagents, build/plan) and Claude Code.
+In the NixOS configuration repo (`~/.nixos`, symlinked at `/etc/nixos`),
+all operational scripts are **Go, never bash**. This binds every agent
+working in that repo (OpenCode orchestrator, subagents, build/plan, Claude
+Code); other projects follow their own conventions.
 
 **Scope.** The ban is on shell scripts, not on artifacts whose native
 language is not a script: Nix expressions stay Nix, out-of-tree kernel
