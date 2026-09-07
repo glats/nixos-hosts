@@ -72,3 +72,69 @@ func TestVerifyPstoreRejectsInactiveBackend(t *testing.T) {
 		})
 	}
 }
+
+// writeMap records runtime writes; a key absent from allowed simulates a
+// read-only parameter file.
+func writeMap(allowed map[string]bool) (func(string, []byte) error, *[]string) {
+	var written []string
+	return func(path string, val []byte) error {
+		if !allowed[path] {
+			return fmt.Errorf("read-only file system")
+		}
+		written = append(written, path)
+		return nil
+	}, &written
+}
+
+func TestEnsurePstoreSelfHealsWrongValue(t *testing.T) {
+	files := map[string]string{
+		LivePstoreParams.AlwaysKmsgDump: "n\n", // default: cmdline not applied yet
+		LivePstoreParams.PstoreDisable:  "N\n",
+	}
+	write, seen := writeMap(map[string]bool{LivePstoreParams.AlwaysKmsgDump: true})
+	// the runtime write is visible to the re-read through a shared store:
+	mutating := func(path string) ([]byte, error) {
+		if path == LivePstoreParams.AlwaysKmsgDump && len(*seen) > 0 {
+			return []byte("1"), nil
+		}
+		return readMap(files)(path)
+	}
+	if err := EnsurePstore(mutating, write, LivePstoreParams); err != nil {
+		t.Fatalf("EnsurePstore: %v", err)
+	}
+	if len(*seen) != 1 || (*seen)[0] != LivePstoreParams.AlwaysKmsgDump {
+		t.Errorf("expected exactly one runtime write to %s, got %v", LivePstoreParams.AlwaysKmsgDump, *seen)
+	}
+}
+
+func TestEnsurePstoreFailsClosedOnReadOnlyParam(t *testing.T) {
+	files := map[string]string{
+		LivePstoreParams.AlwaysKmsgDump: "n\n",
+		LivePstoreParams.PstoreDisable:  "N\n",
+	}
+	write, seen := writeMap(nil) // nothing writable
+	err := EnsurePstore(readMap(files), write, LivePstoreParams)
+	if err == nil {
+		t.Fatal("expected error when runtime write is impossible")
+	}
+	if !strings.Contains(err.Error(), "reboot to apply kernel params") {
+		t.Errorf("error should advise reboot, got: %v", err)
+	}
+	if len(*seen) != 0 {
+		t.Errorf("no write should succeed, got %v", *seen)
+	}
+}
+
+func TestEnsurePstoreNoWriteWhenCorrect(t *testing.T) {
+	files := map[string]string{
+		LivePstoreParams.AlwaysKmsgDump: "Y\n",
+		LivePstoreParams.PstoreDisable:  "0",
+	}
+	write, seen := writeMap(nil)
+	if err := EnsurePstore(readMap(files), write, LivePstoreParams); err != nil {
+		t.Fatalf("EnsurePstore: %v", err)
+	}
+	if len(*seen) != 0 {
+		t.Errorf("correct values must not trigger writes, got %v", *seen)
+	}
+}
