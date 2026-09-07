@@ -36,6 +36,7 @@
     ../../linux/system/hardware/nvidia-custom.nix
     ../../linux/system/hardware/keyring.nix
     ../../linux/system/hardware/asus-fan-control.nix
+    ../../linux/system/hardware/rog-poweroff.nix
     ../../linux/system/hardware/adb.nix
 
     # Networking
@@ -100,6 +101,20 @@
   # Enable the shutdown-debug-capture service. Without this the
   # imported module is a no-op.
   my.shutdownDebug.enable = true;
+
+  # Also copy EFI pstore records (dmesg-efi-*) into the capture dir —
+  # with the diagnostics kernel params below, a failed shutdown leaves
+  # its kmsg dump there and rog keeps it across the reboot.
+  my.shutdownDebug.efiPstore = true;
+
+  # Diagnostics gate for the S5 shutdown investigation (slice 2 of
+  # openspec change rog-shutdown-s5-diagnose-and-fix): netconsole probe
+  # to the thinkcentre receiver (defaults already match the deployed
+  # receiver: enp3s0 -> 172.16.0.11:6666, MAC 6c:4b:90:2d:97:42, rog
+  # source port 6665), printk.always_kmsg_dump=1 + EFI pstore kept
+  # active. s5Write/efiFallback stay disabled — diagnostics never
+  # changes shutdown behavior.
+  hardware.rog.s5-recovery.diagnostics.enable = true;
 
   # Blacklist non-essential ASUS WMI modules: their AML calls
   # (_SB.ATKD.WMNB) fail loudly on this firmware and add ACPI
