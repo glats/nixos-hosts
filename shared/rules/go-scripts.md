@@ -4,6 +4,14 @@ All operational/system scripts in this NixOS repo are written in **Go**, never
 bash. This binds every OpenCode agent (orchestrator, subagents, build/plan)
 and Claude Code.
 
+- **Scope**: this policy bans new **shell scripts** for operational tooling —
+  it does not ban artifacts whose native language is not a script. Nix
+  expressions stay Nix; out-of-tree kernel modules are C by nature
+  (derivation in `pkgs/` wired via `boot.extraModulePackages`); third-party
+  upstream code stays whatever upstream ships. Rule of thumb: an executable
+  CLI that orchestrates commands → Go in `pkgs/nixos-scripts`; kernel code,
+  Nix modules, or assets → their native form.
+
 - New or modified operational tooling lives in the Go module at
   `pkgs/nixos-scripts/`: `cmd/<binary-name>/main.go` (thin entry: flag
   parsing + dispatch only) + shared logic in `internal/` (`reporoot`,
