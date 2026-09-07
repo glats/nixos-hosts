@@ -104,6 +104,17 @@ in
       "efi_pstore.pstore_disable=0"
     ];
 
+    # netconsole is a console driver: it only receives printk output that
+    # passes console_loglevel. boot.nix sets consoleLogLevel = 0 (quiet
+    # plymouth boot) and that loglevel=0 lands AFTER the diagnostic
+    # loglevel=7 on the cmdline, so the kernel uses it — and every
+    # breadcrumb below KERN_EMERG is silently filtered out before it can
+    # reach thinkcentre (root cause of the first failed handshake,
+    # 2026-09-07). Force the console loglevel to 7 while diagnostics are
+    # enabled so the :kmsg breadcrumbs (user notice, level 5) are
+    # delivered to the netconsole console.
+    boot.consoleLogLevel = lib.mkIf cfg.diagnostics.enable (lib.mkForce 7);
+
     systemd.services.netconsole-setup = lib.mkIf (cfg.diagnostics.enable && netconsoleCfg.enable) {
       description = "Configure netconsole target and verify receiver readiness";
       wantedBy = [ "multi-user.target" ];
