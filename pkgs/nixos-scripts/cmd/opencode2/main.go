@@ -34,7 +34,7 @@ func main() {
 	v1Cfg := filepath.Join(home, ".config", "opencode", "opencode.json")
 
 	if err := exec.Command("docker", "image", "inspect", image).Run(); err != nil {
-		fmt.Fprintf(os.Stderr, "[opencode2] construyendo imagen %s...\n", image)
+		fmt.Fprintf(os.Stderr, "[opencode2] building image %s...\n", image)
 		build := exec.Command("docker", "build", "-t", image, "-")
 		build.Stdin = strings.NewReader(dockerfile)
 		build.Stdout = nil
