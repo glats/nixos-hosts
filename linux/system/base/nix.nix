@@ -1,4 +1,4 @@
-{ lib, inputs, ... }:
+{ lib, inputs, pkgs, ... }:
 
 {
   nix.gc = {
@@ -80,12 +80,36 @@
   # generation, so the weekly `nh clean` can never collect them again.
   # Nix has no built-in flake-source GC root; this is the canonical
   # workaround. Ref: https://github.com/NixOS/nix/issues/3995
+  #
+  # Second GC-victim class: eval-time DERIVED source paths (lib.fileset
+  # `fs.toSource` — Hyprland's, Walker's, Elephant's and xdph's package
+  # src). Nix recomputes the same hash on every evaluation but materialises
+  # the store path only ONCE; `nh clean` deletes it and every later eval
+  # dies with "error: path '…-source' is not valid" — no flag recovers it
+  # (not --refresh, not --no-eval-cache, not `nix flake archive --refresh`;
+  # verified 2026-09-07). Forcing `.src` computes only the deterministic
+  # hash (no store copy, no realisation), so listing the values here pins
+  # the paths in each host's toplevel manifest → GC root.
   system.extraDependencies =
     let
       collectFlakeInputs =
         input:
         [ input.outPath ]
         ++ builtins.concatMap collectFlakeInputs (builtins.attrValues (input.inputs or { }));
+
+      derivedSrcs =
+        let
+          srcsOf =
+            flake: map (p: p.src or null) (builtins.attrValues (flake.packages.${pkgs.system} or { }));
+          candidates =
+            srcsOf inputs.omarchy-nix.inputs.hyprland
+            ++ srcsOf inputs.omarchy-nix.inputs.walker
+            ++ srcsOf inputs.omarchy-nix.inputs.elephant
+            ++ srcsOf (inputs.omarchy-nix.inputs.walker.inputs.elephant or { })
+            ++ srcsOf (inputs.omarchy-nix.inputs.hyprland.inputs.xdph or { });
+          tried = builtins.tryEval (builtins.filter (s: s != null) candidates);
+        in
+        if tried.success then tried.value else [ ];
     in
-    builtins.concatMap collectFlakeInputs (builtins.attrValues inputs);
+    builtins.concatMap collectFlakeInputs (builtins.attrValues inputs) ++ derivedSrcs;
 }
