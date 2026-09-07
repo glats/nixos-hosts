@@ -73,6 +73,13 @@
     hostName = "thinkcentre";
     networkmanager.enable = true;
 
+    # Never let NM auto-create a default wired connection for enp0s31f6:
+    # the declarative enp0s31f6-static profile (below) is the only profile
+    # this NIC may have. This makes the one-time runtime cleanup
+    # (nmcli con delete "Wired connection 1") permanent — if the stale
+    # auto profile ever reappears, it cannot be recreated for this device.
+    networkmanager.settings.main.no-auto-default = "enp0s31f6";
+
     # Netconsole receiver address (Slice 1 of rog-shutdown-s5-diagnose-and-fix):
     # pin the wired NIC statically so the netconsole target never moves.
     # Checkpoint A (live, 2026-09-07): enp0s31f6, single NM profile, gateway
