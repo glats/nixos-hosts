@@ -35,7 +35,6 @@ with lib;
         "${pkgs.gentle-ai-assets}/share/gentle-ai/AGENTS.md"
         ./rules/explore-mcp.md
         ./rules/output-format.md
-        ./rules/go-scripts.md
       ];
       description = "Ordered AGENTS.md/CLAUDE.md fragments to concatenate.";
     };
