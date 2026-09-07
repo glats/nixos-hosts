@@ -47,8 +47,13 @@ func main() {
 	}
 
 	// Diagnostics-gate check first: without persistent kmsg dumping the
-	// pstore half of the evidence chain is missing, so fail fast.
-	if err := netconsole.VerifyPstore(os.ReadFile, netconsole.LivePstoreParams); err != nil {
+	// pstore half of the evidence chain is missing, so fail fast. The
+	// check self-heals via runtime sysfs writes when the kernel cmdline
+	// has not been applied yet (first boot after switching the gate on).
+	if err := netconsole.EnsurePstore(os.ReadFile,
+		func(path string, val []byte) error {
+			return os.WriteFile(path, val, 0o644)
+		}, netconsole.LivePstoreParams); err != nil {
 		fatal(km, "pstore check failed: "+err.Error())
 	}
 
