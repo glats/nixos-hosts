@@ -11,6 +11,30 @@ let
   # Import centralized provider configuration
   providers = import ./opencode/providers.nix { inherit lib; };
 
+  # Bare GitHub MCP tool names pruned from both servers (github-personal,
+  # github-work): releases, tags, teams, collaborators, labels, repo
+  # creation/fork, Copilot assignment, sub-issues, user search. Core
+  # workflows (issues, PRs, reviews, branches, commits, content, search)
+  # stay enabled. Names follow github/github-mcp-server tool IDs.
+  githubRareTools = [
+    "assign_copilot_to_issue"
+    "create_repository"
+    "fork_repository"
+    "get_label"
+    "get_latest_release"
+    "get_release_by_tag"
+    "get_tag"
+    "get_team_members"
+    "get_teams"
+    "list_issue_types"
+    "list_releases"
+    "list_repository_collaborators"
+    "list_tags"
+    "request_copilot_review"
+    "search_users"
+    "sub_issue_write"
+  ];
+
   # Single runtime configuration
   runtimeConfig = {
     dir = "opencode";
@@ -49,6 +73,52 @@ in
         Name of the active OpenCode provider tier (e.g. "opencode-go-full",
         "github-copilot"). Per-host plain assignments override this default
         without needing `mkForce`.
+      '';
+    };
+
+    disabledTools = mkOption {
+      type = types.listOf types.str;
+      default = concatMap
+        (server: map (tool: "${server}_${tool}") githubRareTools)
+        [
+          "github-personal"
+          "github-work"
+        ];
+      description = ''
+        Fully-qualified tool names disabled globally (serialized as
+        tools."name" = false). OpenCode removes disabled tools from the
+        provider request entirely, so their schemas stop costing tokens
+        on every turn. Default prunes rarely-used GitHub tool families
+        (releases, tags, teams, collaborators, repo creation/fork,
+        Copilot, sub-issues) from both GitHub MCP servers.
+      '';
+    };
+
+    compaction = mkOption {
+      type = types.submodule {
+        options = {
+          auto = mkOption {
+            type = types.bool;
+            default = true;
+            description = "Automatically compact the session when context is full.";
+          };
+          prune = mkOption {
+            type = types.bool;
+            default = true;
+            description = "Remove old tool outputs to save tokens (upstream default: false).";
+          };
+          reserved = mkOption {
+            type = types.int;
+            default = 10000;
+            description = "Token buffer kept free so compaction never overflows the window.";
+          };
+        };
+      };
+      description = ''
+        Session compaction settings, serialized as the top-level
+        `compaction` key. Key set verified against the pinned OpenCode
+        1.18.18: `keep.tokens`/`buffer` are unshipped v2 draft keys and
+        must NOT be emitted.
       '';
     };
   };

@@ -103,6 +103,26 @@ let
         plugin = cfg.plugins.npmPlugins;
       }
       // lib.optionalAttrs (cfg.disabledProviders != [ ]) { disabled_providers = cfg.disabledProviders; }
+      // lib.optionalAttrs (cfg.disabledTools != [ ]) {
+        # Globally disabled tools: OpenCode drops these from provider requests
+        # (session/llm/request.ts resolveTools filters user.tools[name]==false),
+        # so the pruned MCP tool schemas stop costing tokens on every turn.
+        tools = builtins.listToAttrs (
+          map
+            (name: {
+              inherit name;
+              value = false;
+            })
+            cfg.disabledTools
+        );
+      }
+      // {
+        # OpenCode 1.18.18 compaction keys. keep.tokens/buffer exist only in
+        # the unshipped v2 spec draft — do not emit them.
+        compaction = {
+          inherit (cfg.compaction) auto prune reserved;
+        };
+      }
     )
   );
 in
