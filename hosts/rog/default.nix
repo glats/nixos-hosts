@@ -36,8 +36,6 @@
     ../../linux/system/hardware/nvidia-custom.nix
     ../../linux/system/hardware/keyring.nix
     ../../linux/system/hardware/asus-fan-control.nix
-    ../../linux/system/hardware/rog-shutdown.nix # KEPT — under test, possible future use
-    ../../linux/system/hardware/rog-poweroff-workaround.nix
     ../../linux/system/hardware/adb.nix
 
     # Networking
@@ -93,10 +91,8 @@
 
   boot-settings = {
     enable = true;
-    includeAcpiOsi = false;
-    includePoweroffFix = false;
     # Verbose kernel/systemd logging to the console for shutdown-hang
-    # post-mortem. Pairs with modules/base/shutdown-debug.nix which
+    # post-mortem. Pairs with linux/system/base/shutdown-debug.nix which
     # snapshots the journal to /var/log/ at end of shutdown.
     includeDiagLogging = true;
   };
@@ -105,12 +101,9 @@
   # imported module is a no-op.
   my.shutdownDebug.enable = true;
 
-  hardware.rog.poweroffWorkaround.enable = true;
-  hardware.rog.poweroffWorkaround.mode = "direct";
-  services.asus-fan-control-custom.enable = false;
-
-  # Blacklist non-essential ASUS WMI modules to prevent firmware
-  # ACPI interactions that cause shutdown hangs. asus_wmi + hid_asus
+  # Blacklist non-essential ASUS WMI modules: their AML calls
+  # (_SB.ATKD.WMNB) fail loudly on this firmware and add ACPI
+  # interaction noise at the S5 boundary. asus_wmi + hid_asus
   # (keyboard) remain loaded.
   boot.blacklistedKernelModules = [
     "asus_nb_wmi"
@@ -122,10 +115,16 @@
 
   boot = {
     kernelPackages = pkgs.linuxPackages;
+    # acpi_call is required by the manually-run `sudo asus-fan-control
+    # set-temps ...` CLI. The periodic service stays disabled
+    # (disabled during shutdown-hang isolation, 2026-07); manual use only.
     extraModulePackages = with config.boot.kernelPackages; [ acpi_call ];
     kernelModules = [ "acpi_call" ];
-    # NOTE: acpi=noirq removed — breaks NVIDIA IRQ assignment.
-    # Shutdown hang fix now handled by rog-shutdown.nix + poweroff-workaround.
+    # NOTE: previous shutdown-hack layers (rog-shutdown service, port-I/O
+    # poweroff hook, acpi=noirq) were removed 2026-09-07 —
+    # see openspec change rog-shutdown-s5-diagnose-and-fix for the
+    # current approach. Only the working baseline remains: shutdown-debug
+    # capture + WMI blacklist + watchdog config in shutdown-fix.nix.
   };
 
   zramSwap.enable = true;
