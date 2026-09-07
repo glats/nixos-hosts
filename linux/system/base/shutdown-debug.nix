@@ -36,6 +36,16 @@ let
       /run/current-system/sw/bin/nvidia-smi > nvidia-smi.log 2>&1 || true
     fi
 
+    # Optional (efiPstore): list the EFI pstore backend and copy every
+    # dmesg record the previous failed boot/shutdown left there, so a
+    # shutdown hang that reached pstore keeps its trace on this boot too.
+    ${lib.optionalString cfg.efiPstore ''
+      ${pkgs.coreutils}/bin/ls -la /sys/fs/pstore > pstore-list.log 2>&1 || true
+      for f in /sys/fs/pstore/dmesg-efi-*; do
+        ${pkgs.coreutils}/bin/cp "$f" . 2>/dev/null || true
+      done
+    ''}
+
     # Self-clean: keep last 7 days of diagnostic dirs
     find /var/log/shutdown-debug -mindepth 1 -maxdepth 1 \
       -type d -mtime +7 -exec rm -rf {} \; 2>/dev/null || true
@@ -55,6 +65,13 @@ in
         post-mortem evidence.
       '';
     };
+
+    efiPstore = lib.mkEnableOption ''copying EFI pstore records
+      (`/sys/fs/pstore/dmesg-efi-*` left by a previous failed boot or
+      shutdown, plus a pstore listing) into the same capture directory.
+      Requires `enable`. Off by default; used by rog's S5 shutdown
+      diagnostics (openspec change rog-shutdown-s5-diagnose-and-fix).
+    '';
   };
 
   config = lib.mkIf cfg.enable {

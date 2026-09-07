@@ -25,6 +25,7 @@ buildGoModule {
     "cmd/install-opencode-auth-seed"
     "cmd/linkctl"
     "cmd/netconsole-log"
+    "cmd/netconsole-setup"
     "cmd/netdiag"
     "cmd/nixos-build"
     "cmd/nixos-build-all"
