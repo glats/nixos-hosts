@@ -24,6 +24,12 @@ stdenvNoCC.mkDerivation {
       mkdir -p $out/share/gentle-ai/skills
       cp -r $src/skills/* $out/share/gentle-ai/skills/ 2>/dev/null || true
     fi
+    # Local override: worktree-root fix for the skill-registry startup plugin
+    # (pairs with the postPatch in pkgs/gentle-ai). TODO(upstream): drop once
+    # gentle-ai-src carries the fix. The cp loop mirrors the read-only store
+    # mode (0555) for directories, so grant u+w before replacing the file.
+    chmod u+w $out/share/gentle-ai/opencode/plugins
+    install -m 0644 ${./skill-registry-worktree-root.ts} $out/share/gentle-ai/opencode/plugins/skill-registry.ts
   '';
 
   meta = with lib; {
