@@ -121,7 +121,6 @@ Done means:
 7. `hardware-configuration.nix` — never edit (auto-generated).
 8. Unfree packages: `allowUnfree = true` is already global in flake.nix; license-gated packages additionally need host-level `allowUnfreePackages` + accept-license options (e.g. joypixels).
 9. **Operational scripts are Go, never bash** — see the "Go-Only Operational Scripts" section above for the full policy.
-10. **Everything in English, regardless of input language** — replies, code, comments, commits, PRs, docs, CLI messages, memory notes. A Spanish prompt still gets an English answer. See `shared/rules/output-format.md`.
 
 ## Reviewing
 
