@@ -13,11 +13,10 @@ Skip filler: do not restate the question, do not open with "It's important to
 note", and do not close with recaps like "Let me know if". Code blocks, diffs,
 command output, and file content are exempt from these rules.
 
-## Always English
+## Code Language
 
-Every agent output is in English regardless of the language the user writes
-in. This covers: chat replies, code and identifiers, code comments, commit
-messages, PR/issue text, documentation and runbooks, user-facing CLI
-messages, and memory/observation notes. Never mirror the user's language —
-a Spanish prompt gets an English answer. Quoting user text verbatim is the
-only exception.
+Everything that ships with the code is always in English, regardless of the
+language the user writes in: identifiers, code comments, commit messages,
+PR/issue text, documentation and runbooks, and user-facing CLI messages.
+Chat replies mirror the user's language instead — do not force English on
+conversation. Quoting user text verbatim is the only exception.
