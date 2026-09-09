@@ -36,12 +36,13 @@ let
       enabled = true;
     };
 
+    # Official Atlassian Rovo MCP Server (remote, OAuth 2.1). OpenCode
+    # triggers the browser OAuth flow on first use; the authorized Atlassian
+    # Cloud account (e.g. falabella.atlassian.net) determines site access.
+    # See docs/atlassian-rovo-mcp.md.
     atlassian = {
-      type = "local";
-      command = [
-        "atlassian-mcp-server"
-      ];
-      timeout = 60000;
+      type = "remote";
+      url = "https://mcp.atlassian.com/v2/mcp";
       enabled = true;
     };
 
