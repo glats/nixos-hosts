@@ -234,6 +234,9 @@ let
         "claude-opus-4-8" = {
           name = "Claude Opus 4.8";
         };
+        "claude-sonnet-5" = {
+          name = "Claude Sonnet 5";
+        };
         "claude-sonnet-4-6" = {
           name = "Claude Sonnet 4.6";
         };
@@ -363,11 +366,11 @@ let
   canonicalProviders = [
     {
       name = "opencode-free";
-      # Audit 2026-08-23 (`opencode models | grep free`): 6 modelos free en opencode/,
-      # 1 en opencode-go/. Excluidos por hang/broken: x-preview-f-free y ox-alpha-free
-      # (payload con tools → network_error, #44382/#44385), muse-spark-1.2-contributor-free
-      # (sin finish_reason en cada request, #43882). deepseek-v4-flash-free ya no existe
-      # en el catálogo free actual. Reemplaza a las antiguas `alpha-free` y `opencode-free`.
+      # Audit 2026-09-09 (`opencode models --refresh`): catálogo free actual =
+      # nemotron-3-ultra-free, nemotron-3.5-lightning-free, mimo-v2.5-free, big-pickle,
+      # ling-3.0-flash-fin-free, muse-spark-1.2/1.3-contributor-free. hy3-free y
+      # x-preview-f-free rotaron fuera; muse-spark-1.2 sigue BROKEN (#43882, #44659).
+      # Reemplaza a las antiguas `alpha-free` y `opencode-free` legacy.
       phases = {
         # nemotron-3-ultra-free: mejor modelo agentic free (SWE-Bench ~70%, 1M ctx,
         # tool calling verificado, TTFT 1.67s) — exactamente lo que necesita orquestación.
@@ -398,14 +401,14 @@ let
     }
     {
       name = "anthropic-opencode-free";
-      # Audit 2026-08-23 (`opencode models | grep free`): 6 modelos free en opencode/,
-      # 1 en opencode-go/. Excluidos por hang/broken: x-preview-f-free y ox-alpha-free
-      # (payload con tools → network_error, #44382/#44385), muse-spark-1.2-contributor-free
-      # (sin finish_reason en cada request, #43882). deepseek-v4-flash-free ya no existe
-      # en el catálogo free actual. Reemplaza a las antiguas `alpha-free` y `opencode-free`.
+      # Audit 2026-09-09 (`opencode models --refresh`): catálogo free actual =
+      # nemotron-3-ultra-free, nemotron-3.5-lightning-free, mimo-v2.5-free, big-pickle,
+      # ling-3.0-flash-fin-free, muse-spark-1.2/1.3-contributor-free. hy3-free y
+      # x-preview-f-free rotaron fuera del catálogo. muse-spark-1.2 sigue BROKEN
+      # (#43882, #44659, #45744). Estrategia: cuota Anthropic reservada para juicio —
+      # orchestrator en Sonnet 5, spec y verify en Sonnet 4.6; el resto en free de Zen.
       phases = {
-        # nemotron-3-ultra-free: mejor modelo agentic free (SWE-Bench ~70%, 1M ctx,
-        # tool calling verificado, TTFT 1.67s) — exactamente lo que necesita orquestación.
+        # anthropic/claude-sonnet-5: orquestador en cuota Anthropic (petición explícita).
         gentle-orchestrator = "anthropic/claude-sonnet-5";
         # nemotron-3.5-lightning-free: construido para ejecución ligera de alto volumen.
         sdd-init = "opencode/nemotron-3.5-lightning-free";
@@ -413,16 +416,18 @@ let
         sdd-explore = "opencode/nemotron-3-ultra-free";
         # nemotron-3-ultra-free: GPQA 87 — mejor razonamiento/planning free.
         sdd-propose = "opencode/nemotron-3-ultra-free";
-        # hy3-free: mejor escritor productivo free (blind eval > GLM-5.1).
-        sdd-spec = "opencode/hy3-free";
-        # nemotron-3-ultra-free: decisiones de arquitectura.
+        # anthropic/claude-sonnet-4-6: hy3-free rotó fuera del catálogo free (audit 2026-09-09);
+        # un spec malo propaga defectos a todo el chain (design→tasks→apply→verify).
+        sdd-spec = "anthropic/claude-sonnet-4-6";
+        # nemotron-3-ultra-free: decisiones de arquitectura (GPQA 87, 1M ctx).
         sdd-design = "opencode/nemotron-3-ultra-free";
         # nemotron-3.5-lightning-free: descomposición mecánica a alto volumen.
         sdd-tasks = "opencode/nemotron-3.5-lightning-free";
         # mimo-v2.5-free: 70 tok/s para edits de código, worker de apply probado en audits previos.
         sdd-apply = "opencode/mimo-v2.5-free";
-        # nemotron-3-ultra-free: SWE-Bench Verified ~70% — mejor reviewer free contra spec.
-        sdd-verify = "opencode/nemotron-3-ultra-free";
+        # anthropic/claude-sonnet-4-6: puerta de aceptación — un defecto no detectado cuesta
+        # un re-loop completo apply→verify; nemotron-free (~70% SWE-bench) queda corto aquí.
+        sdd-verify = "anthropic/claude-sonnet-4-6";
         # nemotron-3.5-lightning-free: la clase más rápida/barata para copy-and-close.
         sdd-archive = "opencode/nemotron-3.5-lightning-free";
         # mimo-v2.5-free: walkthrough guiado barato.
@@ -460,7 +465,7 @@ let
     {
       name = "anthropic-light";
       phases = {
-        # claude-sonnet-4-6: good enough for light tier coordination
+        # claude-sonnet-5: current Anthropic flagship for orchestration; 4-6 stays the tier workhorse.
         gentle-orchestrator = "anthropic/claude-sonnet-5";
         sdd-init = "anthropic/claude-haiku-4-5";
         sdd-explore = "anthropic/claude-sonnet-4-6";
@@ -638,6 +643,43 @@ let
         sdd-archive = "opencode-go/deepseek-v4-flash";
         sdd-onboard = "openai/gpt-5.6-luna";
         neutral = "openai/gpt-5.6-terra";
+      };
+    }
+    {
+      name = "opencode-go-free";
+      # Audit 2026-09-09. Gemelo de `anthropic-opencode-free`: mismo backbone free
+      # de Zen, pero las dos fases de juicio canjean Anthropic por modelos PAGADOS
+      # de opencode-go con mejor fit por fase. El orquestador SE MANTIENE en
+      # anthropic/claude-sonnet-5 (requisito del usuario).
+      #   sdd-spec   -> glm-5.3-flash (escritura estructurada + mandatory reasoning, 1M ctx)
+      #   sdd-verify -> deepseek-v4-pro (gate de aceptación = el mejor razonador de Go)
+      # Evidence: el perfil canónico high-volume usa exactamente este par para spec/verify.
+      phases = {
+        # anthropic/claude-sonnet-5: orquestador en cuota Anthropic (petición explícita).
+        gentle-orchestrator = "anthropic/claude-sonnet-5";
+        # nemotron-3.5-lightning-free: construido para ejecución ligera de alto volumen.
+        sdd-init = "opencode/nemotron-3.5-lightning-free";
+        # nemotron-3-ultra-free: 1M ctx + RULER@1M 94.7 — mejor para explorar repos grandes.
+        sdd-explore = "opencode/nemotron-3-ultra-free";
+        # nemotron-3-ultra-free: GPQA 87 — mejor razonamiento/planning free.
+        sdd-propose = "opencode/nemotron-3-ultra-free";
+        # opencode-go/glm-5.3-flash: escritura estructurada con mandatory reasoning, 1M ctx.
+        sdd-spec = "opencode-go/glm-5.3-flash";
+        # nemotron-3-ultra-free: decisiones de arquitectura (GPQA 87, 1M ctx).
+        sdd-design = "opencode/nemotron-3-ultra-free";
+        # nemotron-3.5-lightning-free: descomposición mecánica a alto volumen.
+        sdd-tasks = "opencode/nemotron-3.5-lightning-free";
+        # mimo-v2.5-free: 70 tok/s para edits de código, worker de apply probado en audits previos.
+        sdd-apply = "opencode/mimo-v2.5-free";
+        # opencode-go/deepseek-v4-pro: gate de aceptación — un defecto no detectado cuesta
+        # un re-loop completo apply→verify; es el razonador más fuerte de opencode-go.
+        sdd-verify = "opencode-go/deepseek-v4-pro";
+        # nemotron-3.5-lightning-free: la clase más rápida/barata para copy-and-close.
+        sdd-archive = "opencode/nemotron-3.5-lightning-free";
+        # mimo-v2.5-free: walkthrough guiado barato.
+        sdd-onboard = "opencode/mimo-v2.5-free";
+        # nemotron-3-ultra-free: default balanceado.
+        neutral = "opencode/nemotron-3-ultra-free";
       };
     }
   ];
