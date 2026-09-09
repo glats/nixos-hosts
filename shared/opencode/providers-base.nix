@@ -397,6 +397,41 @@ let
       };
     }
     {
+      name = "anthropic-opencode-free";
+      # Audit 2026-08-23 (`opencode models | grep free`): 6 modelos free en opencode/,
+      # 1 en opencode-go/. Excluidos por hang/broken: x-preview-f-free y ox-alpha-free
+      # (payload con tools → network_error, #44382/#44385), muse-spark-1.2-contributor-free
+      # (sin finish_reason en cada request, #43882). deepseek-v4-flash-free ya no existe
+      # en el catálogo free actual. Reemplaza a las antiguas `alpha-free` y `opencode-free`.
+      phases = {
+        # nemotron-3-ultra-free: mejor modelo agentic free (SWE-Bench ~70%, 1M ctx,
+        # tool calling verificado, TTFT 1.67s) — exactamente lo que necesita orquestación.
+        gentle-orchestrator = "anthropic/claude-sonnet-5";
+        # nemotron-3.5-lightning-free: construido para ejecución ligera de alto volumen.
+        sdd-init = "opencode/nemotron-3.5-lightning-free";
+        # nemotron-3-ultra-free: 1M ctx + RULER@1M 94.7 — mejor para explorar repos grandes.
+        sdd-explore = "opencode/nemotron-3-ultra-free";
+        # nemotron-3-ultra-free: GPQA 87 — mejor razonamiento/planning free.
+        sdd-propose = "opencode/nemotron-3-ultra-free";
+        # hy3-free: mejor escritor productivo free (blind eval > GLM-5.1).
+        sdd-spec = "opencode/hy3-free";
+        # nemotron-3-ultra-free: decisiones de arquitectura.
+        sdd-design = "opencode/nemotron-3-ultra-free";
+        # nemotron-3.5-lightning-free: descomposición mecánica a alto volumen.
+        sdd-tasks = "opencode/nemotron-3.5-lightning-free";
+        # mimo-v2.5-free: 70 tok/s para edits de código, worker de apply probado en audits previos.
+        sdd-apply = "opencode/mimo-v2.5-free";
+        # nemotron-3-ultra-free: SWE-Bench Verified ~70% — mejor reviewer free contra spec.
+        sdd-verify = "opencode/nemotron-3-ultra-free";
+        # nemotron-3.5-lightning-free: la clase más rápida/barata para copy-and-close.
+        sdd-archive = "opencode/nemotron-3.5-lightning-free";
+        # mimo-v2.5-free: walkthrough guiado barato.
+        sdd-onboard = "opencode/mimo-v2.5-free";
+        # nemotron-3-ultra-free: default balanceado.
+        neutral = "opencode/nemotron-3-ultra-free";
+      };
+    }
+    {
       name = "work-copilot-anthropic";
       # Replaces old `anthropic-copilot`. Low Copilot credit + larger Anthropic quota:
       # orchestration/help phases prefer github-copilot/*, heavy phases prefer anthropic/*.
@@ -426,7 +461,7 @@ let
       name = "anthropic-light";
       phases = {
         # claude-sonnet-4-6: good enough for light tier coordination
-        gentle-orchestrator = "anthropic/claude-opus-5";
+        gentle-orchestrator = "anthropic/claude-sonnet-5";
         sdd-init = "anthropic/claude-haiku-4-5";
         sdd-explore = "anthropic/claude-sonnet-4-6";
         sdd-propose = "anthropic/claude-sonnet-4-6";
