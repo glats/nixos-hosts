@@ -104,7 +104,7 @@ credentials — Claude Code re-authenticates after a restore.
 Usage:
   ai-backup [TARGET]              backup TARGET (default mact2) -> rog
   ai-backup list                  list archives in the destination
-  ai-backup restore ARCHIVE [--to TARGET] [--dry-run]
+  ai-backup restore ARCHIVE [--to TARGET] [--dry-run] [--force]
                                   restore archive into TARGET ($HOME)
 
 TARGET: local | mact2 | t14 | thinkcentre | user@host
@@ -369,11 +369,79 @@ fi
 // the archive's .claude.json member overwrites the live file during
 // the plain-file extraction, so the current one must be kept first.
 const preRestoreScript = `set -eu
+# Runs after the pre-flight has passed (clean target or explicit
+# --force) and before extraction: the archive's plain-file members
+# overwrite whatever exists, so every irreplaceable live item is moved
+# aside first as .pre-restore-<stamp> — restore REPLACES state, it
+# never silently merges it. Databases are handled post-extract in
+# remoteRestoreScript (which also resolves destination symlinks).
 stamp="$(date +%Y%m%d-%H%M%S)"
 if [ -f "$HOME/.claude.json" ]; then
   cp -p "$HOME/.claude.json" "$HOME/.claude.json.pre-restore-$stamp"
   echo "  kept old .claude.json as .claude.json.pre-restore-$stamp"
 fi
+for path in \
+  .claude/projects \
+  .claude/history.jsonl \
+  .claude/.claude \
+  .local/share/opencode/storage \
+  .local/share/opencode/auth.json
+do
+  if [ -e "$HOME/$path" ]; then
+    mv "$HOME/$path" "$HOME/$path.pre-restore-$stamp"
+    echo "  kept old $path as $path.pre-restore-$stamp"
+  fi
+done
+`
+
+// restorePreflightScript runs FIRST, before any pre-restore copy or
+// extraction: a smart guard that refuses to clobber irreplaceable
+// state. Two refusal classes — (1) opencode/claude running on the
+// target: replacing a WAL database under a live handle loses every
+// write the process makes after the swap; (2) target already has
+// state (its own conversations, newer than this archive). Both are
+// overridable with --force (AI_BACKUP_RESTORE_FORCE=1, forwarded by
+// the Go wrapper — ssh does not forward environment variables).
+// Refusal is exit 4 and NOTHING on the target is touched.
+const restorePreflightScript = `set -eu
+if [ "${AI_BACKUP_RESTORE_FORCE:-0}" = "1" ]; then
+  echo "ai-backup: pre-flight skipped (--force)"
+  exit 0
+fi
+for p in opencode claude; do
+  if pgrep -x "$p" >/dev/null 2>&1; then
+    echo "ai-backup: REFUSING — $p is running on this target; close it before restoring (or pass --force)" >&2
+    exit 4
+  fi
+done
+hits=""
+for path in \
+  "$HOME/.claude.json" \
+  "$HOME/.claude/projects" \
+  "$HOME/.claude/history.jsonl" \
+  "$HOME/.claude/.claude" \
+  "$HOME/.local/share/opencode/auth.json" \
+  "$HOME/.local/share/opencode/storage" \
+  "$HOME/.engram/engram.db"
+do
+  if [ -e "$path" ]; then
+    hits="$hits $path"
+  fi
+done
+for db in "$HOME"/.local/share/opencode/*.db; do
+  if [ -e "$db" ]; then
+    hits="$hits $(readlink -f "$db")"
+  fi
+done
+if [ -n "$hits" ]; then
+  echo "ai-backup: REFUSING — target already has state that this restore would overwrite:" >&2
+  for h in $hits; do
+    echo "  $h" >&2
+  done
+  echo "  re-run with --force to proceed; every replaced item is kept as a .pre-restore-<ts> copy" >&2
+  exit 4
+fi
+echo "ai-backup: pre-flight clean — nothing to overwrite on target."
 `
 
 // remoteRestoreScript relocates the staged snapshots to their live
@@ -454,7 +522,7 @@ func runOnCmd(target, payload string) *exec.Cmd {
 }
 
 // shQuote renders s as a single POSIX-sh word: single quotes around it,
-// with embedded single quotes replaced by the '\'' escape sequence.
+// with embedded single quotes replaced by the '\” escape sequence.
 func shQuote(s string) string {
 	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
 }
@@ -466,6 +534,16 @@ func shQuote(s string) string {
 // for local targets.
 func backupPayload() string {
 	return "AI_BACKUP_EXTRA=" + shQuote(os.Getenv("AI_BACKUP_EXTRA")) + "\n" + remoteBackupScript
+}
+
+// restorePreflightPayload forwards the --force decision to the
+// pre-flight payload as an sh assignment, mirroring backupPayload().
+func restorePreflightPayload(force bool) string {
+	v := "0"
+	if force {
+		v = "1"
+	}
+	return "AI_BACKUP_RESTORE_FORCE=" + v + "\n" + restorePreflightScript
 }
 
 // sshRC runs a remote command with inherited stdio and returns its exit
@@ -603,6 +681,7 @@ func doRestore(args []string) {
 	archive := ""
 	to := "local"
 	dry := false
+	force := false
 	for len(args) > 0 {
 		switch {
 		case args[0] == "--to":
@@ -620,6 +699,9 @@ func doRestore(args []string) {
 			args = args[1:]
 		case args[0] == "--dry-run":
 			dry = true
+			args = args[1:]
+		case args[0] == "--force":
+			force = true
 			args = args[1:]
 		case args[0] == "-h", args[0] == "--help":
 			usage(0)
@@ -682,7 +764,7 @@ func doRestore(args []string) {
 	}
 
 	fmt.Printf("ai-backup: restoring %s -> %s:$HOME\n", filepath.Base(archive), target)
-	fmt.Println("           (close opencode/claude on the target first)")
+	fmt.Println("           (pre-flight refuses if opencode/claude run or state exists — override with --force)")
 	// Restore-phase failures (pre-restore copy, extraction, snapshot
 	// relocation, integrity check) map to exit 4 — the documented
 	// "restore failure" category (design decision; the retired bash
@@ -695,6 +777,13 @@ func doRestore(args []string) {
 		if err := sh.Run(); err != nil && rc == 0 {
 			rc = 4
 		}
+	}
+	// Smart pre-flight runs BEFORE anything is touched: a refusal
+	// (running opencode/claude, existing state, no --force) aborts
+	// here with the target completely untouched.
+	runPayload(restorePreflightPayload(force))
+	if rc != 0 {
+		os.Exit(rc)
 	}
 	// Keep the current .claude.json before the archive's plain-file
 	// member overwrites it during extraction.
