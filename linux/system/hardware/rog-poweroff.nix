@@ -143,5 +143,42 @@ in
         '';
       };
     };
+
+    # Stage 2 (s5Write): firmware-derived S5 poweroff. Two pieces:
+    #
+    # 1. Boot-time staging unit: parses /sys/firmware/acpi/tables/{FACP,
+    #    DSDT} + live DMI, validates strictly (fails closed, exit 1) and
+    #    writes the derived values to /run/rog-poweroff/staged.json. By
+    #    hook time /sys is unmounted, so the values MUST be computed here.
+    #    RuntimeDirectoryPreserve keeps the JSON after the unit stops —
+    #    without it systemd deletes /run/rog-poweroff at shutdown, before
+    #    the ramfs hook could read it.
+    systemd.services.rog-poweroff-stage = lib.mkIf cfg.s5Write.enable {
+      description = "Stage validated S5 poweroff values for the shutdown ramfs hook";
+      wantedBy = [ "multi-user.target" ];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        RuntimeDirectory = "rog-poweroff";
+        RuntimeDirectoryPreserve = "yes";
+        # Root context: reads /sys firmware tables, writes /run, breadcrumbs
+        # /dev/kmsg. A nonzero exit leaves the unit visibly failed.
+        ExecStart = "${pkgs.nixos-scripts}/bin/rog-poweroff-hook stage";
+      };
+    };
+
+    # 2. Late shutdown hook: systemd-shutdown runs /etc/systemd/system-shutdown/*
+    #    with no arguments (the Go binary defaults to the poweroff verb) in
+    #    the ramfs, right before reboot(RB_POWER_OFF) — after umounts, which
+    #    is exactly the pre-S5 window where the previous layers hung. The
+    #    binary is fully static (pure Go), but the store path is copied into
+    #    the ramfs via storePaths so the contents symlink resolves there.
+    systemd.shutdownRamfs.contents."/etc/systemd/system-shutdown/rog-poweroff" =
+      lib.mkIf cfg.s5Write.enable {
+        source = "${pkgs.nixos-scripts}/bin/rog-poweroff-hook";
+      };
+    systemd.shutdownRamfs.storePaths = lib.mkIf cfg.s5Write.enable [
+      "${pkgs.nixos-scripts}/bin"
+    ];
   };
 }

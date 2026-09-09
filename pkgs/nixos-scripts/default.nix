@@ -26,6 +26,7 @@ buildGoModule {
     "cmd/linkctl"
     "cmd/netconsole-log"
     "cmd/netconsole-setup"
+    "cmd/rog-poweroff-hook"
     "cmd/netdiag"
     "cmd/nixos-build"
     "cmd/nixos-build-all"
