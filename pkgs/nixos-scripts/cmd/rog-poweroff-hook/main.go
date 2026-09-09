@@ -112,7 +112,7 @@ func runStage(d deps, args []string) int {
 	if err != nil {
 		return fail(d.km, "stage", err)
 	}
-	dmi := readDMI(d.dmiDirs)
+	dmi, _ := readDMI(d.dmiDirs)
 	p, err := s5write.Stage(fadtRaw, dsdtRaw, dmi)
 	if err != nil {
 		return fail(d.km, "stage", err)
@@ -153,9 +153,17 @@ func runPoweroff(d deps, args []string) int {
 	if err := s5write.Validate(p); err != nil {
 		return refuse(d, err)
 	}
-	live := readDMI(d.dmiDirs)
-	if err := p.MatchesDMI(live); err != nil {
-		return refuse(d, err)
+	live, dmiReadable := readDMI(d.dmiDirs)
+	if dmiReadable {
+		if err := p.MatchesDMI(live); err != nil {
+			return refuse(d, err)
+		}
+	} else {
+		// Neither candidate DMI directory was readable (ramfs without
+		// sysfs and no old-root sysfs). The boot-time stage unit already
+		// verified GL553VD on this machine — proceed with a breadcrumb
+		// instead of refusing, so the trial still exercises the write.
+		_ = d.km.Write(kmsg.UserNotice, prefix+" dmi-live-unreadable — staged DMI trusted (boot-time gate matched GL553VD)")
 	}
 
 	was := uint16(0)
@@ -246,17 +254,27 @@ func readStaged(d deps) ([]byte, error) {
 	return os.ReadFile(staleJSONFallback())
 }
 
-// readDMI reads the live machine identity; trailing newlines are trimmed
-// by s5write.CheckDMI. In the ramfs /proc, /dev, /sys, /run are bind
-// mounts maintained by switch_root, so sysfs is readable.
-func readDMI(dmiDirs string) s5write.DMI {
-	dir := "/sys/class/dmi/id"
+// readDMI reads the live machine identity from the first candidate DMI
+// directory that is readable. In the shutdown ramfs /sys is unmounted
+// (verified fact); the old root parked at /oldroot may still carry the
+// sysfs mount, so it is tried first. The second parameter reports whether
+// ANY candidate was readable — when false, the caller breadcrumbs and
+// trusts the boot-time DMI gate (the stage unit verified GL553VD on this
+// exact machine earlier): unreadable is not the same as wrong. Tests
+// inject dmiDirs to pin a single candidate directory.
+func readDMI(dmiDirs string) (s5write.DMI, bool) {
+	candidates := []string{oldRootPath + "/sys/class/dmi/id", "/sys/class/dmi/id"}
 	if dmiDirs != "" {
-		dir = dmiDirs
+		candidates = []string{dmiDirs}
 	}
-	vendor, _ := os.ReadFile(dir + "/sys_vendor")
-	product, _ := os.ReadFile(dir + "/product_name")
-	return s5write.DMI{SysVendor: string(vendor), ProductName: string(product)}
+	for _, dir := range candidates {
+		vendor, verr := os.ReadFile(dir + "/sys_vendor")
+		product, perr := os.ReadFile(dir + "/product_name")
+		if verr == nil && perr == nil {
+			return s5write.DMI{SysVendor: string(vendor), ProductName: string(product)}, true
+		}
+	}
+	return s5write.DMI{}, false
 }
 
 func main() {
@@ -276,6 +294,10 @@ func main() {
 	d := deps{
 		km:  kmsg.New(),
 		out: "/run/rog-poweroff/staged.json",
+		// Primary read path (poweroff verb): the bind-transferred /run.
+		// readStaged falls back to /oldroot/run/... for systemd builds
+		// that park /run under the old root instead — both are attempted.
+		config: "/run/rog-poweroff/staged.json",
 		openRF: func() (s5write.RegisterFile, error) { return (s5write.DevPort{}).Open() },
 	}
 	os.Exit(run(verb, d, extraArgs))
