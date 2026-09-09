@@ -62,7 +62,7 @@ setup_fake_tmux() {
   cat >"$d/tmux" <<'EOF'
 #!/usr/bin/env bash
 case "$1" in
-  has-session) exit 0 ;;
+  list-sessions) exit 0 ;;
   attach) echo "ATTACHED"; exit 0 ;;
 esac
 EOF
@@ -88,14 +88,20 @@ EOF
 #!/usr/bin/env bash
 COUNTER_FILE="$counter_file"
 case "\$1" in
-  has-session)
+  list-sessions)
     n=\$(cat "\$COUNTER_FILE")
     n=\$((n + 1))
     echo "\$n" >"\$COUNTER_FILE"
     if [[ "\$n" -ge 3 ]]; then
       exit 0
     fi
-    echo "no server running on socket" >&2
+    # Iteration 1 reproduces the mact2 cold-start message (server alive,
+    # restore hasn't created a session yet); iteration 2 the classic one.
+    if [[ "\$n" -eq 1 ]]; then
+      echo "no current target" >&2
+    else
+      echo "no server running on socket" >&2
+    fi
     exit 1
     ;;
   attach) echo "ATTACHED"; exit 0 ;;
@@ -118,7 +124,7 @@ EOF
   cat >"$d/tmux" <<'EOF'
 #!/usr/bin/env bash
 case "$1" in
-  has-session) echo "no server running on socket" >&2; exit 1 ;;
+  list-sessions) echo "no server running on socket" >&2; exit 1 ;;
 esac
 EOF
   chmod +x "$d/tmux"
@@ -142,7 +148,7 @@ EOF
   cat >"$d/tmux" <<'EOF'
 #!/usr/bin/env bash
 case "$1" in
-  has-session) echo "no server running on socket" >&2; exit 1 ;;
+  list-sessions) echo "no server running on socket" >&2; exit 1 ;;
 esac
 EOF
   chmod +x "$d/tmux"
@@ -165,7 +171,7 @@ EOF
   cat >"$d/tmux" <<'EOF'
 #!/usr/bin/env bash
 case "$1" in
-  has-session) echo "error connecting to /tmp/tmux-1000/default (Permission denied)" >&2; exit 1 ;;
+  list-sessions) echo "error connecting to /tmp/tmux-1000/default (Permission denied)" >&2; exit 1 ;;
 esac
 EOF
   chmod +x "$d/tmux"
@@ -191,7 +197,7 @@ EOF
 #!/usr/bin/env bash
 COUNTER_FILE="$counter_file"
 case "\$1" in
-  has-session)
+  list-sessions)
     n=\$(cat "\$COUNTER_FILE")
     n=\$((n + 1))
     echo "\$n" >"\$COUNTER_FILE"
@@ -225,7 +231,7 @@ EOF
 STATE="$state"
 case "\$1" in
   start-server) echo 1 >"\$STATE"; exit 0 ;;
-  has-session)
+  list-sessions)
     if [[ -s "\$STATE" ]]; then
       exit 0
     fi
