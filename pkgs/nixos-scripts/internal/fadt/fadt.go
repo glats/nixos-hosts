@@ -25,16 +25,16 @@ const Signature = "FACP"
 
 // Field offsets inside the FADT (acpica actbl.h, byte-packed).
 const (
-	offsetPM1aCntLegacy = 64        // u32 PM1a_CNT_BLK (legacy field)
-	offsetPM1bCntLegacy = 68        // u32 PM1b_CNT_BLK (legacy field)
-	offsetPM1CntLen     = 89        // u8  PM1_CNT_LEN (register width in bytes)
-	offsetFlags         = 112       // u32 flags
-	offsetResetReg      = 116       // GAS RESET_REG (12 bytes) — NOT PM1a
-	offsetXfacs         = 132       // u64 pointer
-	offsetXdsdt         = 140       // u64 pointer
-	offsetXPM1aCnt      = 172       // GAS X_PM1a_CNT_BLK (12 bytes)
-	offsetXPM1bCnt      = 184       // GAS X_PM1b_CNT_BLK
-	gasLen              = 12        // sizeof acpi_generic_address: u8 + u8 + u8 + u8 + u64
+	offsetPM1aCntLegacy = 64  // u32 PM1a_CNT_BLK (legacy field)
+	offsetPM1bCntLegacy = 68  // u32 PM1b_CNT_BLK (legacy field)
+	offsetPM1CntLen     = 89  // u8  PM1_CNT_LEN (register width in bytes)
+	offsetFlags         = 112 // u32 flags
+	offsetResetReg      = 116 // GAS RESET_REG (12 bytes) — NOT PM1a
+	offsetXfacs         = 132 // u64 pointer
+	offsetXdsdt         = 140 // u64 pointer
+	offsetXPM1aCnt      = 172 // GAS X_PM1a_CNT_BLK (12 bytes)
+	offsetXPM1bCnt      = 184 // GAS X_PM1b_CNT_BLK
+	gasLen              = 12  // sizeof acpi_generic_address: u8 + u8 + u8 + u8 + u64
 )
 
 // ACPI GenericAddressStructure space IDs that are meaningful here.
@@ -45,12 +45,12 @@ const (
 
 // GAS is the subset of acpi_generic_address this parser carries.
 type GAS struct {
-	SpaceID      uint8
-	BitWidth     uint8
-	BitOffset    uint8
-	AccessSize   uint8
-	AddrBase     uint64
-	AddrValid    bool // Address field is nonzero
+	SpaceID    uint8
+	BitWidth   uint8
+	BitOffset  uint8
+	AccessSize uint8
+	AddrBase   uint64
+	AddrValid  bool // Address field is nonzero
 }
 
 // Header is the ACPI table header the parser validates.

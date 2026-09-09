@@ -52,8 +52,8 @@ const ExpectedProduct = "GL553VD"
 
 // DMI is the host identity read from /sys/class/dmi/id/{sys_vendor,product_name}.
 type DMI struct {
-	SysVendor    string
-	ProductName  string
+	SysVendor   string
+	ProductName string
 }
 
 // Plan is the validated derivation staged as JSON in /run and consumed
@@ -61,12 +61,12 @@ type DMI struct {
 // already-validated derived values plus the DMI strings the write gate
 // re-checks at poweroff time.
 type Plan struct {
-	Version     int    `json:"version"`
-	Gate        bool   `json:"gate"`        // explicit gate flag; false refuses
-	PM1aCntBase uint64 `json:"pm1a_cnt_base"` // I/O port (0x1804 on rog)
-	SLPTyp      uint64 `json:"slp_typ"`       // value for SLP_TYP bits 10-12
-	GasSpaceID  uint8  `json:"gas_space_id"`  // must be SystemIO
-	GasBitWidth uint8  `json:"gas_bit_width"` // must be 16
+	Version        int    `json:"version"`
+	Gate           bool   `json:"gate"`          // explicit gate flag; false refuses
+	PM1aCntBase    uint64 `json:"pm1a_cnt_base"` // I/O port (0x1804 on rog)
+	SLPTyp         uint64 `json:"slp_typ"`       // value for SLP_TYP bits 10-12
+	GasSpaceID     uint8  `json:"gas_space_id"`  // must be SystemIO
+	GasBitWidth    uint8  `json:"gas_bit_width"` // must be 16
 	DMISysVendor   string `json:"dmi_sys_vendor"`
 	DMIProductName string `json:"dmi_product_name"`
 }
@@ -198,7 +198,7 @@ func Power(rf RegisterFile, p Plan) (uint16, error) {
 		return 0, fmt.Errorf("s5write: read PM1a_CNT: %w", err)
 	}
 	was := binary.LittleEndian.Uint16(buf)
-	changed := was &^ maskSLPField | (uint16(p.SLPTyp) << 10) | bitSLPEN
+	changed := was&^maskSLPField | (uint16(p.SLPTyp) << 10) | bitSLPEN
 	binary.LittleEndian.PutUint16(buf, changed)
 	if _, err := rf.WriteAt(buf, int64(p.PM1aCntBase)); err != nil {
 		return 0, fmt.Errorf("s5write: write PM1a_CNT: %w", err)
