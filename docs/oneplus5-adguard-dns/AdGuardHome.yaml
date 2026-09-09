@@ -1,0 +1,66 @@
+# AdGuard Home baseline for the OnePlus 5 (172.16.0.12) — log-only DNS for
+# manually enrolled TVs.
+#
+# Canonical repository config (deploy via docs/oneplus5-adguard-dns.md).
+# AdGuard Home rewrites this file at runtime; the deployed copy is the live
+# state, this file is the baseline used for redeploy/drift correction.
+#
+# Log-only policy: filtering, protection, safebrowsing, parental, safe search
+# and all filter lists are OFF. Zero rules prove the baseline blocks nothing.
+# Hagezi vendor lists are an explicit operator opt-in (docs/oneplus5-adguard-dns.md).
+schema_version: 34
+http:
+  address: 172.16.0.12:3000
+dns:
+  bind_hosts:
+    - 172.16.0.12
+  port: 53
+  upstream_dns:
+    - 9.9.9.10
+  fallback_dns:
+    - 1.1.1.1
+  bootstrap_dns:
+    - 9.9.9.10:53
+    - 1.1.1.1:53
+  upstream_mode: load_balance
+  ratelimit: 50
+  cache_enabled: true
+  cache_size: 33554432
+  cache_optimistic: true
+  anonymize_client_ip: false
+filtering:
+  protection_enabled: false
+  filtering_enabled: false
+  safebrowsing_enabled: false
+  parental_enabled: false
+  safe_search:
+    enabled: false
+filters: []
+whitelist_filters: []
+user_rules: []
+querylog:
+  enabled: true
+  file_enabled: true
+  interval: 7d
+  size_memory: 1000
+statistics:
+  enabled: true
+  interval: 24h
+clients:
+  # IMPORTANT: AGH 0.107.79 fatal-errors at startup on any persistent client
+  # whose `ids` list is empty ("init client storage: ... id required"), so the
+  # baseline ships NO client entries. Name TVs via the UI (Settings ->
+  # Client settings) after enrollment; UI-created clients are user data on the
+  # phone, never repo state (see docs/oneplus5-adguard-dns.md).
+  # Suggested names: samsung-tv, lg-tv.
+  persistent: []
+  runtime_sources:
+    whois: false
+    arp: true
+    rdns: true
+    dhcp: false
+    hosts: true
+dhcp:
+  enabled: false
+tls:
+  enabled: false
