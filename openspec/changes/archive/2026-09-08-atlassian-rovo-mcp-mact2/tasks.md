@@ -61,10 +61,14 @@ Chain strategy: pending
 
 ## Phase 4: Manual Post-Deployment Gates (on mact2, human)
 
-- [ ] 4.1 Rebuild on mact2 (`nixos-build`) — NOT runnable from this Linux host (x86_64-darwin
+- [x] 4.1 Rebuild on mact2 (`nixos-build`) — NOT runnable from this Linux host (x86_64-darwin
       drv blocker, browser-mcp-opencode 3.4 precedent).
-- [ ] 4.2 Complete the first OAuth 2.1 login (OpenCode prompts; browser → Falabella Atlassian
+      - user-confirmed deployment on mact2, 2026-09-08 ("quedó bien").
+- [x] 4.2 Complete the first OAuth 2.1 login (OpenCode prompts; browser → Falabella Atlassian
       account) and confirm with `opencode mcp list`.
-- [ ] 4.3 Run the sooperset uninstall steps from the runbook.
+      - user-confirmed deployment on mact2, 2026-09-08 ("quedó bien").
+- [x] 4.3 Run the sooperset uninstall steps from the runbook.
+      - user-confirmed deployment on mact2, 2026-09-08 ("quedó bien").
 - [ ] 4.4 (Optional, human-only) Confirm legacy secret contents:
       `sops -d secrets/user/atlassian.yaml` → verify site + email.
+      - optional, not confirmed.
