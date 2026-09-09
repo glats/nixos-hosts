@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -578,9 +579,10 @@ func TestPayloadSyntaxShN(t *testing.T) {
 		t.Skip("/bin/sh not available")
 	}
 	for name, payload := range map[string]string{
-		"remoteBackupScript":  remoteBackupScript,
-		"remoteRestoreScript": remoteRestoreScript,
-		"preRestoreScript":    preRestoreScript,
+		"remoteBackupScript":     remoteBackupScript,
+		"remoteRestoreScript":    remoteRestoreScript,
+		"preRestoreScript":       preRestoreScript,
+		"restorePreflightScript": restorePreflightScript,
 	} {
 		t.Run(name, func(t *testing.T) {
 			cmd := exec.Command("/bin/sh", "-n")
@@ -591,4 +593,186 @@ func TestPayloadSyntaxShN(t *testing.T) {
 			}
 		})
 	}
+}
+
+// --- restore pre-flight (smart collision detection) --------------------------
+
+// runPreflightPayload executes restorePreflightScript with controllable
+// pgrep and sqlite3 shims: pgrepExit 0 simulates opencode/claude
+// RUNNING on the target, 1 simulates a quiet machine. Deterministic —
+// the real rog host may legitimately have opencode open during tests.
+func runPreflightPayload(t *testing.T, payload string, home string, pgrepExit int, extraEnv ...string) (int, *bytes.Buffer, *bytes.Buffer) {
+	t.Helper()
+	if _, err := os.Stat("/bin/sh"); err != nil {
+		t.Skip("/bin/sh not available")
+	}
+	shimDir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(shimDir, "sqlite3"), []byte(fakeSQLite), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	pgrep := fmt.Sprintf("#!/bin/sh\nexit %d\n", pgrepExit)
+	if err := os.WriteFile(filepath.Join(shimDir, "pgrep"), []byte(pgrep), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	var stdout, stderr bytes.Buffer
+	cmd := exec.Command("/bin/sh", "-s")
+	cmd.Stdin = strings.NewReader(payload)
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	cmd.Env = append([]string{
+		"HOME=" + home,
+		"TMPDIR=" + t.TempDir(),
+		"PATH=" + shimDir + ":" + fallbackPath(),
+		"FAKE_SQLITE_INTEGRITY=ok",
+	}, extraEnv...)
+	rc := 0
+	if err := cmd.Run(); err != nil {
+		exitErr, ok := err.(*exec.ExitError)
+		if !ok {
+			t.Fatalf("preflight payload run: %v\nstderr:\n%s", err, stderr.String())
+		}
+		rc = exitErr.ExitCode()
+	}
+	return rc, &stdout, &stderr
+}
+
+func TestRestorePreflightRefusesRunningProcess(t *testing.T) {
+	// Smart restore: opencode/claude running on the target => refusal
+	// (exit 4) before anything is touched; --force is the documented
+	// override.
+	home := t.TempDir()
+	rc, _, stderr := runPreflightPayload(t, restorePreflightScript, home, 0)
+	if rc != 4 {
+		t.Fatalf("running process must refuse with 4, got %d", rc)
+	}
+	if !strings.Contains(stderr.String(), "REFUSING") || !strings.Contains(stderr.String(), "--force") {
+		t.Errorf("refusal must name the override, stderr: %s", stderr.String())
+	}
+}
+
+func TestRestorePreflightRefusesExistingState(t *testing.T) {
+	// Smart restore: existing irreplaceable state on the target =>
+	// refusal listing every colliding path, without touching anything.
+	home := t.TempDir()
+	if err := os.WriteFile(filepath.Join(home, ".claude.json"), []byte("cfg"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	opencode := filepath.Join(home, ".local/share/opencode")
+	if err := os.MkdirAll(opencode, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(opencode, "opencode-stable.db"), []byte("db"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	rc, _, stderr := runPreflightPayload(t, restorePreflightScript, home, 1)
+	if rc != 4 {
+		t.Fatalf("existing state must refuse with 4, got %d", rc)
+	}
+	for _, want := range []string{"REFUSING", ".claude.json", "opencode-stable.db", "--force"} {
+		if !strings.Contains(stderr.String(), want) {
+			t.Errorf("refusal must mention %q, stderr: %s", want, stderr.String())
+		}
+	}
+	// Nothing was modified by a refusal.
+	if old, err := os.ReadFile(filepath.Join(home, ".claude.json")); err != nil || string(old) != "cfg" {
+		t.Fatalf("refused restore must not touch the target: got %q err=%v", old, err)
+	}
+}
+
+func TestRestorePreflightCleanTargetPasses(t *testing.T) {
+	// Fresh machine: no collisions, nothing running => restore proceeds.
+	home := t.TempDir()
+	rc, stdout, stderr := runPreflightPayload(t, restorePreflightScript, home, 1)
+	if rc != 0 {
+		t.Fatalf("clean target must pass, got %d (stderr: %s)", rc, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "pre-flight clean") {
+		t.Errorf("clean pass must be reported, stdout: %s", stdout.String())
+	}
+}
+
+func TestRestorePreflightForceSkipsEverything(t *testing.T) {
+	// --force overrides both refusal classes and must be reported.
+	home := t.TempDir()
+	if err := os.WriteFile(filepath.Join(home, ".claude.json"), []byte("cfg"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	rc, stdout, stderr := runPreflightPayload(t, restorePreflightScript, home, 0, "AI_BACKUP_RESTORE_FORCE=1")
+	if rc != 0 {
+		t.Fatalf("--force must proceed, got %d (stderr: %s)", rc, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "skipped (--force)") {
+		t.Errorf("--force must be reported, stdout: %s", stdout.String())
+	}
+}
+
+func TestRestorePreflightPayloadForceForwarding(t *testing.T) {
+	// The Go wrapper forwards --force as an sh assignment (ssh does
+	// not forward environment), mirroring backupPayload().
+	if got := restorePreflightPayload(false); !strings.HasPrefix(got, "AI_BACKUP_RESTORE_FORCE=0\n") || !strings.Contains(got, restorePreflightScript) {
+		t.Fatalf("restorePreflightPayload(false) = %q", got)
+	}
+	if got := restorePreflightPayload(true); !strings.HasPrefix(got, "AI_BACKUP_RESTORE_FORCE=1\n") {
+		t.Fatalf("restorePreflightPayload(true) = %q", got)
+	}
+}
+
+func TestPreRestoreMovesAsideStateDirs(t *testing.T) {
+	// Smart restore replaces state; replaced items are moved aside as
+	// .pre-restore-<ts> so nothing silently merges — the archive's
+	// copy lands fresh and the old one stays intact under the renamed
+	// dir. The live dirs are MOVED (tar recreates them), not deleted.
+	home := t.TempDir()
+	projects := filepath.Join(home, ".claude/projects")
+	if err := os.MkdirAll(projects, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	transcript := filepath.Join(projects, "-Users-jcuzmar-proj/session.jsonl")
+	if err := os.MkdirAll(filepath.Dir(transcript), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(transcript, []byte("old-transcript"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	storage := filepath.Join(home, ".local/share/opencode/storage")
+	if err := os.MkdirAll(filepath.Join(storage, "session"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	auth := filepath.Join(home, ".local/share/opencode/auth.json")
+	if err := os.WriteFile(auth, []byte("old-auth"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	rc, stdout, stderr := runShellPayload(t, preRestoreScript, home)
+	if rc != 0 {
+		t.Fatalf("pre-restore payload exit = %d (stderr: %s)", rc, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), ".claude/projects") {
+		t.Errorf("pre-restore must report the moved-aside dirs, stdout: %s", stdout.String())
+	}
+	// The live path is gone; the old tree lives under .pre-restore-<ts>.
+	if _, err := os.Stat(projects); !os.IsNotExist(err) {
+		t.Fatalf("live projects dir must be moved aside (err=%v)", err)
+	}
+	kept, err := filepath.Glob(filepath.Join(home, ".claude/projects.pre-restore-*"))
+	if err != nil || len(kept) != 1 {
+		t.Fatalf("moved-aside projects missing (glob %v err %v)", kept, err)
+	}
+	if old, err := os.ReadFile(filepath.Join(kept[0], "-Users-jcuzmar-proj/session.jsonl")); err != nil || string(old) != "old-transcript" {
+		t.Fatalf("moved-aside tree content: got %q err=%v", old, err)
+	}
+	if _, err := os.Stat(storage); !os.IsNotExist(err) {
+		t.Fatalf("live storage dir must be moved aside (err=%v)", err)
+	}
+	if old, err := os.ReadFile(globFirstOrDie(t, filepath.Join(home, ".local/share/opencode/auth.json.pre-restore-*"))); err != nil || string(old) != "old-auth" {
+		t.Fatalf("kept auth.json: got %q err=%v", old, err)
+	}
+}
+
+func globFirstOrDie(t *testing.T, pattern string) string {
+	t.Helper()
+	hits, err := filepath.Glob(pattern)
+	if err != nil || len(hits) != 1 {
+		t.Fatalf("expected exactly one match for %s: %v err=%v", pattern, hits, err)
+	}
+	return hits[0]
 }
