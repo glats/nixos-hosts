@@ -646,7 +646,7 @@ let
       };
     }
     {
-      name = "opencode-go-free";
+      name = "anthropic-opencode-go";
       # Audit 2026-09-09. Gemelo de `anthropic-opencode-free`: mismo backbone free
       # de Zen, pero las dos fases de juicio canjean Anthropic por modelos PAGADOS
       # de opencode-go con mejor fit por fase. El orquestador SE MANTIENE en
