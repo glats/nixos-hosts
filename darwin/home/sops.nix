@@ -11,27 +11,11 @@
     ../../shared/sops.nix
   ];
 
-  # macOS-specific secrets (Atlassian, Confluence)
-  sops.secrets."opencode/atlassian_jira_url" = {
-    sopsFile = ../../secrets/user/atlassian.yaml;
-    mode = "0400";
-  };
-  sops.secrets."opencode/atlassian_username" = {
-    sopsFile = ../../secrets/user/atlassian.yaml;
-    mode = "0400";
-  };
-  sops.secrets."opencode/atlassian_api_token" = {
-    sopsFile = ../../secrets/user/atlassian.yaml;
-    mode = "0400";
-  };
-  sops.secrets."opencode/confluence_url" = {
-    sopsFile = ../../secrets/user/atlassian.yaml;
-    mode = "0400";
-  };
-  sops.secrets."opencode/confluence_pat" = {
-    sopsFile = ../../secrets/user/atlassian.yaml;
-    mode = "0400";
-  };
+  # Legacy Atlassian/Confluence API-token secrets (secrets/user/atlassian.yaml)
+  # are retained in the repo as inert ciphertext but are no longer declared
+  # here: the local sooperset mcp-atlassian stack was replaced by the official
+  # remote Atlassian Rovo MCP (OAuth 2.1), which consumes no secrets.
+  # See openspec/changes/atlassian-rovo-mcp-mact2 and docs/atlassian-rovo-mcp.md.
   # GitHub tokens are now managed by `gh auth token` on darwin.
   # Linux hosts migrated to the same pattern (change: unify-github-auth).
 }
