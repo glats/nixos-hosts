@@ -42,7 +42,8 @@
         "mem_get_observation": "allow",
         "task": {
           "*": "deny",
-          "sdd-*": "allow"
+          "sdd-*": "allow",
+          "jd-*": "allow"
         }
       },
       "general": {
