@@ -7,7 +7,7 @@ mact2 now uses the **official Atlassian Rovo MCP Server**
 remote MCP at `https://mcp.atlassian.com/v2/mcp`, authenticated via OAuth 2.1. This replaces
 the previous community `mcp-atlassian` (sooperset) stdio server that was installed out-of-band
 with `uv` and driven by API-token sops secrets. Change record:
-`openspec/changes/atlassian-rovo-mcp-mact2/`.
+`openspec/changes/archive/2026-09-08-atlassian-rovo-mcp-mact2/`.
 
 ## What Changed
 
@@ -79,7 +79,7 @@ Jira Service Management tools work **only** with API-token auth, and that mode r
 Falabella org admin to enable it (Atlassian Administration → Rovo → Rovo MCP server →
 Authentication) plus a scoped token. With OAuth you get Jira/Confluence/Bitbucket/Loom/platform
 tools but no JSM. If JSM becomes necessary, revisit
-`openspec/changes/atlassian-rovo-mcp-mact2/exploration.md` (Approach notes) — OpenCode remote
+`openspec/changes/archive/2026-09-08-atlassian-rovo-mcp-mact2/exploration.md` (Approach notes) — OpenCode remote
 MCPs accept static `headers` with `{env:...}` interpolation, but sops values would need a shell
 hook; the retained `secrets/user/atlassian.yaml` holds a valid token pair.
 
