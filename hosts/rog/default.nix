@@ -107,14 +107,23 @@
   # its kmsg dump there and rog keeps it across the reboot.
   my.shutdownDebug.efiPstore = true;
 
-  # Diagnostics gate for the S5 shutdown investigation (slice 2 of
-  # openspec change rog-shutdown-s5-diagnose-and-fix): netconsole probe
-  # to the thinkcentre receiver (defaults already match the deployed
-  # receiver: enp3s0 -> 172.16.0.11:6666, MAC 6c:4b:90:2d:97:42, rog
-  # source port 6665), printk.always_kmsg_dump=1 + EFI pstore kept
-  # active. s5Write/efiFallback stay disabled — diagnostics never
-  # changes shutdown behavior.
+  # Diagnostics gate + S5 write hook (openspec change
+  # rog-shutdown-s5-diagnose-and-fix): netconsole probe to the thinkcentre
+  # receiver (defaults already match the deployed receiver: enp3s0 ->
+  # 172.16.0.11:6666, MAC 6c:4b:90:2d:97:42, rog source port 6665),
+  # printk.always_kmsg_dump=1 + EFI pstore kept active.
+  #
+  # s5Write = Gate 2, enabled for the SUPERVISED TRIAL (judgment-day
+  # round 1 APPROVED: 3 confirmed severe fixes applied, commit 81de32b).
+  # The hook only fires after the boot-time stage unit validated
+  # PM1a=0x1804 + _S5 literal form on this exact machine; every refusal
+  # path exits 0 without touching the register, so a failure mode is a
+  # normal (still-hanging) poweroff with breadcrumbs, never worse.
+  # One supervised systemctl poweroff decides: physical off inside the
+  # hook = the fix works; "s5-returned" breadcrumb = evidence for the
+  # EFI fallback (slice 4).
   hardware.rog.s5-recovery.diagnostics.enable = true;
+  hardware.rog.s5-recovery.s5Write.enable = true;
 
   # Blacklist non-essential ASUS WMI modules: their AML calls
   # (_SB.ATKD.WMNB) fail loudly on this firmware and add ACPI
