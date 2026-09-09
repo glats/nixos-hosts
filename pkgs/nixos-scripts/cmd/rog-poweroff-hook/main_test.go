@@ -81,8 +81,17 @@ func newHook(t *testing.T, vendor, productName string) *hookVM {
 	h := &hookVM{t: t, kmLog: kmLog}
 	h.d = deps{
 		km:          &kmsg.Writer{Path: kmLog},
-		dmiDirs:     dmiDir(t, vendor, productName),
 		returnedMax: 1, // single s5-returned breadcrumb, no sleeping
+	}
+	// An empty productName pins the PRODUCTION DMI probing path: the
+	// injected directory exists but has no dmi files, so readDMI returns
+	// unreadable and runPoweroff exercises the dmi-live-unreadable branch
+	// (judgment-day re-judgment S1) deterministically — the real
+	// /sys/class/dmi/id of the test machine must not be reached.
+	if productName != "" {
+		h.d.dmiDirs = dmiDir(t, vendor, productName)
+	} else {
+		h.d.dmiDirs = t.TempDir() // exists, empty: unreadable, not the real sysfs
 	}
 	return h
 }
@@ -190,6 +199,8 @@ func TestPoweroffVerbMatrix(t *testing.T) {
 			0, 0, []string{"hook-start", "s5-refused", "hook-end"}},
 		{"write fires from the ramfs", "poweroff", true, true, rogProduct.vendor, rogProduct.name,
 			0, 1, []string{"hook-start", "modules-state", "s5-attempt pm1a=0x1804 slp_typ=7", "s5-returned", "hook-end outcome=s5-returned"}},
+		{"unreadable live DMI proceeds", "poweroff", true, true, "", "",
+			0, 1, []string{"hook-start", "modules-state", "dmi-live-unreadable", "s5-attempt pm1a=0x1804 slp_typ=7", "s5-returned", "hook-end outcome=s5-returned"}},
 	}
 	for _, tc := range cases {
 		tc := tc
