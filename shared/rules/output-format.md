@@ -20,3 +20,11 @@ language the user writes in: identifiers, code comments, commit messages,
 PR/issue text, documentation and runbooks, and user-facing CLI messages.
 Chat replies mirror the user's language instead — do not force English on
 conversation. Quoting user text verbatim is the only exception.
+
+## Inter-Agent Language
+
+Agent-to-agent outputs are always in English, regardless of the language of
+the user conversation: subagent reports, task prompts and handoffs, review
+findings, and SDD artifacts (explorations, proposals, specs, designs, task
+registers). These are machine-to-machine context, not conversation with the
+user — the chat-replies-mirror-the-user rule does not apply to them.
