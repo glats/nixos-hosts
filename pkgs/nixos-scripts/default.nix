@@ -15,6 +15,7 @@ buildGoModule {
   src = ./.;
 
   subPackages = [
+    "cmd/adguard-tunnel"
     "cmd/ai-backup"
     "cmd/code-work"
     "cmd/compare-palette"
