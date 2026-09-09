@@ -279,3 +279,15 @@ func TestDevPortMissingNodeFailsClosed(t *testing.T) {
 		t.Errorf("left non-device file behind at %s", path)
 	}
 }
+
+// F3 (judgment-day round 1, confirmed by both judges): the device-number
+// encoding was swapped (minor<<8|major). /dev/port is char 1:4, which in
+// Linux old-style encoding is 0x0104 — major in the HIGH byte.
+func TestMknodDevEncoding(t *testing.T) {
+	if got := mknodDev(1, 4); got != 0x0104 {
+		t.Errorf("mknodDev(1,4) = %#x, want 0x0104 (/dev/port char 1:4)", got)
+	}
+	if got := mknodDev(4, 1); got != 0x0401 {
+		t.Errorf("mknodDev(4,1) = %#x, want 0x0401 (the swapped value must belong to major 4)", got)
+	}
+}
