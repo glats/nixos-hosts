@@ -2,8 +2,13 @@
 // assistant state (Claude Code, OpenCode, Engram) as a single .tar.zst
 // archive, with consistent sqlite snapshots taken on the source host.
 //
-// Port of bin/ai-backup: usage text, messages, flags, env overrides and
-// exit codes preserved byte-for-byte.
+// Go port of the retired bin/ai-backup bash script: messages, flags,
+// env overrides, pipeline shapes and the 0/1/2/3/4 exit-code categories
+// are preserved. The embedded POSIX-sh payloads are NOT a verbatim
+// port: SDD change ai-backup-manifest-scope redesigned them around an
+// explicit tar member list (no --exclude patterns), .db.snapshot
+// staging and a symlink-safe restore — each payload's comment block
+// carries the rationale.
 //
 //	0 success · 1 usage/config · 2 ssh/connectivity · 3 snapshot/backup
 //	failure · 4 restore failure
@@ -13,6 +18,13 @@
 // source host (shell-out, no cgo driver), alongside tar, readlink and
 // mktemp; zstd, ssh, sha256sum, du, find and sort are exec'd by this
 // command in the same pipeline shapes as bash.
+//
+// AI_BACKUP_EXTRA (space-separated project .engram/ directory paths,
+// archived as chunks/, manifest.json and config.json only) is read on
+// the orchestrating host and forwarded into the backup payload as an
+// sh assignment: ssh does not forward environment variables, so
+// injecting the value into the payload keeps local and ssh targets
+// identical.
 //
 // Faithfully-replicated pipefail quirks (the bash runs under
 // `set -euo pipefail`):
@@ -52,23 +64,42 @@ func envOr(key, fallback string) string {
 	return fallback
 }
 
-// usageText is the bash header block (lines 2-31) as extracted by the
-// awk in the original usage(): every "# " prefix stripped, printed to
-// stdout for -h/--help/help (exit 0) AND for the restore missing-archive
-// case (exit 1).
+// usageText is the CLI help header: printed to stdout for -h/--help/
+// help (exit 0) AND for the restore missing-archive case (exit 1).
+// The member-list summary below is the documented backup manifest; it
+// must stay in sync with remoteBackupScript (asserted by
+// TestUsageTextDescribesManifest).
 const usageText = `ai-backup - One-shot compressed backup/restore of AI assistant state.
 
-Backs up Claude Code, OpenCode and Engram data from a source host
-(default: mact2) into rog's samba share as a single .tar.zst archive:
+Backs up Claude Code, OpenCode and Engram state from a source host
+(default: mact2) into rog's samba share as a single .tar.zst archive.
+The archive is an explicit member list — no --exclude patterns — so
+only the following ever enters it:
 
-  ~/.claude                      (conversations, history, skills, settings)
-  ~/.config/opencode             (config, skills, plugins; no node_modules)
-  ~/.local/share/opencode        (auth.json, storage, snapshot, delegations)
-  ~/.engram                      (global engram DB)
+  ~/.claude                      (projects/, history.jsonl, plans/,
+                                  todos/, keybindings.json, nested
+                                  .claude/ tree)
+  ~/.claude.json                 (Claude config; may hold OAuth tokens)
+  ~/.local/share/opencode        (storage/, auth.json,
+                                  opencode-multimodal.json)
+  ~/.engram                      (engram.db snapshot only; the live
+                                  tree is never archived)
+  home-snap/                     (staged sqlite snapshots, see below)
+  $AI_BACKUP_EXTRA dirs          (project .engram/{chunks,manifest.json,
+                                  config.json})
 
-Live SQLite databases (opencode *.db, engram.db) are snapshotted with
-` + "`sqlite3 .backup`" + ` first — consistent even with WAL — and stored inside the
-archive under home-snap/, which restore relocates to their live paths.
+Live SQLite databases (channel-dependent opencode-<channel>.db and
+engram.db) are snapshotted with ` + "`sqlite3 .backup`" + ` first — consistent even
+with WAL — staged under home-snap/ as <real-basename>.db.snapshot
+(symlinks resolved first). Backup fails with exit 3 unless at least
+one non-empty OpenCode snapshot exists; restore relocates snapshots to
+their live paths, keeps timestamped pre-restore copies and preserves
+existing symlinks.
+
+Regenerable or live state is excluded by not being listed:
+.config/opencode, opencode bin/log/snapshot dirs, live *.db and their
+-wal/-shm sidecars, node_modules, Claude caches/settings/skills/
+credentials — Claude Code re-authenticates after a restore.
 
 Usage:
   ai-backup [TARGET]              backup TARGET (default mact2) -> rog
@@ -82,6 +113,7 @@ Environment overrides:
   AI_BACKUP_DEST        destination root (default samba share on rog)
   AI_BACKUP_ZSTD_LEVEL  zstd level, 1-19 (default 6)
   AI_BACKUP_SSH_OPTS    extra ssh options
+  AI_BACKUP_EXTRA       space-separated project .engram/ dirs to include
 
 Exit codes:
   0 success  1 usage/config  2 ssh/connectivity  3 snapshot/backup failure
@@ -194,10 +226,18 @@ func pipeTwo(src, dst *exec.Cmd) (int, error) {
 
 // --- Remote payloads (POSIX sh, run on the source host) ----------------------
 //
-// Both payloads are the bash quoted heredocs verbatim: they run under
-// /bin/sh -s with the script on stdin (locally or via ssh), emit their
-// own messages, and own their exit codes.
+// All three payloads run under /bin/sh -s with the script on stdin
+// (locally or via ssh), emit their own messages, and own their exit
+// codes. They must stay POSIX-compatible: restore targets include
+// macOS, so no bashisms.
 
+// remoteBackupScript is the backup payload: stage consistent sqlite
+// snapshots, validate them, then stream an archive built from an
+// EXPLICIT member list. The member list below IS the backup manifest —
+// the only auditable artifact of what is archived.
+//
+// The first line of the shipped payload is the AI_BACKUP_EXTRA
+// assignment injected by backupPayload() (see its comment).
 const remoteBackupScript = `set -eu
 HOME_DIR="$(cd ~ && pwd)"
 SQLITE="$(command -v sqlite3 || echo /usr/bin/sqlite3)"
@@ -205,74 +245,193 @@ STAGING="$(mktemp -d "${TMPDIR:-/tmp}/ai-backup.XXXXXX")"
 trap 'rm -rf "$STAGING"' EXIT INT TERM
 mkdir -p "$STAGING/home-snap/.local/share/opencode" "$STAGING/home-snap/.engram"
 
-snap() { # $1=live db path  $2=relative dest under home-snap/
+# Snapshot one live sqlite database into home-snap/.
+#   $1 = live db path   $2 = destination dir under home-snap/
+# The live path is resolved with readlink -f first (opencode.db is a
+# symlink to opencode-stable.db on some hosts, and Home Manager
+# re-creates that symlink on every rebuild) and the staged copy is
+# named after the REAL basename plus a .snapshot suffix. The suffix
+# keeps staged copies distinct from live *.db so the explicit tar
+# member list below (which includes the home-snap/ tree wholesale) can
+# never pick up a live database, and so a snapshot moved back by a
+# restore is never mistaken for a live db by this payload's *.db
+# globs. Two live symlink names resolving to the same real db stage
+# one file (the second .backup overwrites the first, same content).
+snap() { # $1=live db path  $2=relative dest dir under home-snap/
   [ -f "$1" ] || return 0
   real="$(readlink -f "$1")"
-  "$SQLITE" "$1" ".backup '$STAGING/home-snap/$2/$(basename "$real")'" || {
+  "$SQLITE" "$1" ".backup '$STAGING/home-snap/$2/$(basename "$real").snapshot'" || {
     echo "ai-backup: sqlite snapshot FAILED: $1" >&2
     exit 3
   }
 }
 
+# OpenCode: database names are channel-dependent (opencode-<channel>.db,
+# e.g. opencode-main.db) and the live db is typically a symlink, so
+# snapshot every *.db the data dir exposes; realpath naming in snap()
+# collapses duplicates.
 for db in "$HOME_DIR"/.local/share/opencode/*.db; do
   [ -e "$db" ] || continue
-  real="$(readlink -f "$db")"
   snap "$db" ".local/share/opencode"
 done
+# Engram: only the global db rides, as its snapshot. The live tree is
+# never archived, so stale engram.db.before-* / engram.db.pre-cleanup.*
+# copies and the -wal/-shm sidecars cannot enter (they are not staged).
 snap "$HOME_DIR/.engram/engram.db" ".engram"
 
-# Bail out before shipping if any snapshot is empty/corrupt.
-for s in "$STAGING"/home-snap/.local/share/opencode/*.db "$STAGING"/home-snap/.engram/*.db; do
+# Fail closed BEFORE anything is published: at least one non-empty
+# OpenCode snapshot must exist, and every staged snapshot must be
+# non-empty. A backup carrying zero OpenCode state would be silent
+# data loss pretending to succeed.
+snapcount=0
+for s in "$STAGING"/home-snap/.local/share/opencode/*.db.snapshot; do
+  [ -e "$s" ] || continue
+  [ -s "$s" ] || { echo "ai-backup: empty snapshot: $s" >&2; exit 3; }
+  snapcount=$((snapcount + 1))
+done
+[ "$snapcount" -ge 1 ] || {
+  echo "ai-backup: no OpenCode database snapshots staged (expected opencode-<channel>.db under $HOME_DIR/.local/share/opencode)" >&2
+  exit 3
+}
+for s in "$STAGING"/home-snap/.engram/*.db.snapshot; do
   [ -e "$s" ] || continue
   [ -s "$s" ] || { echo "ai-backup: empty snapshot: $s" >&2; exit 3; }
 done
 
-# NOTE: do not ` + "`exec`" + ` — the EXIT trap must survive to clean STAGING.
-tar -cf - \
-  --exclude='node_modules' \
-  --exclude='.local/share/opencode/bin' \
-  --exclude='.local/share/opencode/log' \
-  --exclude='.local/share/opencode/logs' \
-  --exclude='.local/share/opencode/*.db' \
-  --exclude='.local/share/opencode/*.db-wal' \
-  --exclude='.local/share/opencode/*.db-shm' \
-  --exclude='.local/share/opencode/*.backup' \
-  --exclude='.local/share/opencode/*.backup-*' \
-  --exclude='.engram/engram.db' \
-  --exclude='.engram/engram.db-wal' \
-  --exclude='.engram/engram.db-shm' \
-  --exclude='.engram/engram.db.*' \
-  --exclude='.claude/cache' \
-  -C "$HOME_DIR" .claude .config/opencode .local/share/opencode .engram \
-  -C "$STAGING" home-snap
+# Home members: the manifest. Members absent on this host (fresh
+# installs may lack some) are skipped silently; everything listed is
+# archived, and nothing else is — .config/opencode, opencode bin/log/
+# snapshot dirs, live *.db and sidecars, node_modules, Claude caches,
+# settings and credentials are excluded by NOT BEING NAMED. There are
+# deliberately zero --exclude patterns: no portable pattern syntax
+# exists (bsdtar suffix-matches unanchored patterns; GNU tar reads a
+# leading ^ as a literal), so an enumerated list is the only thing
+# auditable on both tar flavors.
+set --
+for m in \
+  .claude/projects \
+  .claude/history.jsonl \
+  .claude/plans \
+  .claude/todos \
+  .claude/keybindings.json \
+  .claude/.claude \
+  .claude.json \
+  .local/share/opencode/storage \
+  .local/share/opencode/auth.json \
+  .local/share/opencode/opencode-multimodal.json
+do
+  [ -e "$HOME_DIR/$m" ] || continue
+  set -- "$@" "$m"
+done
+
+# Project engram dirs, opt-in via AI_BACKUP_EXTRA: a space-separated
+# list of project .engram/ directory paths on the source host (the Go
+# wrapper forwards the value from the orchestrating host as an
+# assignment at the top of this payload). For each existing dir, only
+# the required members — chunks/, manifest.json, config.json — are
+# copied VERBATIM into STAGING/extras/<project>/.engram/ (where
+# <project> is the dir's own parent basename), then tar'd from
+# $STAGING. Copying is what preserves the <project>/.engram/...
+# member layout: tar -C cannot add path prefixes (a plain -C
+# "<parent>" would archive members as .engram/... and clobber the
+# global ~/.engram on restore). Copying (instead of archiving in
+# place) also guarantees the live project engram.db and its rotate/
+# sidecar siblings never enter. On restore these land untouched
+# under ~/extras/<project>/.engram/. Absent dirs and members are
+# skipped silently.
+for extra in ${AI_BACKUP_EXTRA:-}; do
+  [ -d "$extra" ] || continue
+  proj="$(basename "$(dirname "$extra")")"
+  for m in chunks manifest.json config.json; do
+    [ -e "$extra/$m" ] || continue
+    mkdir -p "$STAGING/extras/$proj/.engram"
+    cp -pR "$extra/$m" "$STAGING/extras/$proj/.engram/$m"
+  done
+done
+
+# NOTE: do not exec — the EXIT trap must survive to clean STAGING.
+# COPYFILE_DISABLE=1 stops macOS bsdtar from injecting copyfile xattr
+# headers and AppleDouble members; it is a no-op under GNU tar. The
+# extras/ branch only fires when AI_BACKUP_EXTRA staged anything, so
+# the archetype (single tar invocation, explicit member list) stays.
+if [ -d "$STAGING/extras" ]; then
+  COPYFILE_DISABLE=1 tar -cf - \
+    -C "$HOME_DIR" "$@" \
+    -C "$STAGING" home-snap extras
+else
+  COPYFILE_DISABLE=1 tar -cf - \
+    -C "$HOME_DIR" "$@" \
+    -C "$STAGING" home-snap
+fi
 `
 
+// preRestoreScript runs BEFORE tar extraction on the restore target:
+// the archive's .claude.json member overwrites the live file during
+// the plain-file extraction, so the current one must be kept first.
+const preRestoreScript = `set -eu
+stamp="$(date +%Y%m%d-%H%M%S)"
+if [ -f "$HOME/.claude.json" ]; then
+  cp -p "$HOME/.claude.json" "$HOME/.claude.json.pre-restore-$stamp"
+  echo "  kept old .claude.json as .claude.json.pre-restore-$stamp"
+fi
+`
+
+// remoteRestoreScript relocates the staged snapshots to their live
+// paths and verifies every database it can find.
 const remoteRestoreScript = `set -eu
 SQLITE="$(command -v sqlite3 || echo /usr/bin/sqlite3)"
 SNAP="$HOME/home-snap"
 stamp="$(date +%Y%m%d-%H%M%S)"
+# Place a staged snapshot at its live destination.
+#   $1 = staged .db.snapshot   $2 = live destination path
+# The .snapshot suffix is stripped on relocation: the staged name is
+# <real-basename>.db.snapshot, the live name is the realpath basename.
+# An existing destination SYMLINK is resolved first — moving onto a
+# symlink would follow it and clobber the real target (rog keeps
+# opencode.db as a symlink to opencode-stable.db, and Home Manager
+# re-creates that symlink on rebuild), so the snapshot is placed at
+# the resolved path and the symlink itself survives untouched.
 place() { # $1=snapshot file  $2=live destination
-  if [ -f "$2" ]; then
-    echo "  replacing $(basename "$2") (old kept as $(basename "$2").pre-restore-$stamp)"
-    mv "$2" "$2.pre-restore-$stamp"
+  dest="$2"
+  if [ -L "$dest" ]; then
+    dest="$(readlink -f "$dest")"
   fi
-  mkdir -p "$(dirname "$2")"
-  mv "$1" "$2"
+  mkdir -p "$(dirname "$dest")"
+  if [ -f "$dest" ]; then
+    echo "  replacing $(basename "$dest") (old kept as $(basename "$dest").pre-restore-$stamp)"
+    mv "$dest" "$dest.pre-restore-$stamp"
+  fi
+  mv "$1" "$dest"
 }
 if [ -d "$SNAP" ]; then
-  for f in "$SNAP"/.local/share/opencode/*.db; do
+  for f in "$SNAP"/.local/share/opencode/*.db.snapshot; do
     [ -e "$f" ] || continue
-    place "$f" "$HOME/.local/share/opencode/$(basename "$f")"
+    name="$(basename "$f")"
+    place "$f" "$HOME/.local/share/opencode/${name%.snapshot}"
   done
-  [ -f "$SNAP/.engram/engram.db" ] && place "$SNAP/.engram/engram.db" "$HOME/.engram/engram.db"
+  for f in "$SNAP"/.engram/*.db.snapshot; do
+    [ -e "$f" ] || continue
+    name="$(basename "$f")"
+    place "$f" "$HOME/.engram/${name%.snapshot}"
+  done
   rm -rf "$SNAP"
 fi
+# Every database under the restored paths must pass
+# PRAGMA integrity_check and its output must say ok: the pipeline's
+# exit status is head's (the payload does not set pipefail), so the
+# output text is the authoritative failure signal. Pre-existing dbs
+# are checked too — corruption is not allowed to hide behind a
+# successful relocation.
 echo "  integrity check:"
 rc=0
-for db in "$HOME"/.local/share/opencode/*.db "$HOME"/.engram/engram.db; do
+for db in "$HOME"/.local/share/opencode/*.db "$HOME"/.engram/*.db; do
   [ -f "$db" ] || continue
-  out="$("$SQLITE" "$db" 'PRAGMA integrity_check;' 2>&1 | head -1)" || rc=1
+  out="$("$SQLITE" "$db" 'PRAGMA integrity_check;' 2>&1 | head -1)"
   echo "    $(basename "$db"): $out"
+  case "$out" in
+    ok) ;;
+    *) rc=1 ;;
+  esac
 done
 exit $rc
 `
@@ -292,6 +451,21 @@ func runOnCmd(target, payload string) *exec.Cmd {
 	}
 	cmd.Stdin = strings.NewReader(payload)
 	return cmd
+}
+
+// shQuote renders s as a single POSIX-sh word: single quotes around it,
+// with embedded single quotes replaced by the '\'' escape sequence.
+func shQuote(s string) string {
+	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
+}
+
+// backupPayload returns the payload shipped to the source host for a
+// backup: the AI_BACKUP_EXTRA value captured on THIS host is prepended
+// as an sh assignment. The injection exists because ssh does not
+// forward environment variables — without it, extras would work only
+// for local targets.
+func backupPayload() string {
+	return "AI_BACKUP_EXTRA=" + shQuote(os.Getenv("AI_BACKUP_EXTRA")) + "\n" + remoteBackupScript
 }
 
 // sshRC runs a remote command with inherited stdio and returns its exit
@@ -336,7 +510,7 @@ func doBackup(targetArg string) {
 	t0 := time.Now().Unix()
 
 	// run_on "$target" < payload | zstd -T0 -$LEVEL > "$part"
-	src := runOnCmd(target, remoteBackupScript)
+	src := runOnCmd(target, backupPayload())
 	z := exec.Command("zstd", "-T0", "-"+zstdLevel)
 	f, err := os.Create(part)
 	if err != nil {
@@ -509,38 +683,49 @@ func doRestore(args []string) {
 
 	fmt.Printf("ai-backup: restoring %s -> %s:$HOME\n", filepath.Base(archive), target)
 	fmt.Println("           (close opencode/claude on the target first)")
+	// Restore-phase failures (pre-restore copy, extraction, snapshot
+	// relocation, integrity check) map to exit 4 — the documented
+	// "restore failure" category (design decision; the retired bash
+	// returned 1 here, its own header already claimed 4).
 	rc := 0
-	if target == "local" {
-		z := exec.Command("zstd", "-dc", archive)
-		t := exec.Command("tar", "-xf", "-", "-C", os.Getenv("HOME"))
-		t.Stdout = os.Stdout
-		if _, err := pipeTwo(z, t); err != nil {
-			rc = 1
+	runPayload := func(payload string) {
+		sh := runOnCmd(target, payload)
+		sh.Stdout = os.Stdout
+		sh.Stderr = os.Stderr
+		if err := sh.Run(); err != nil && rc == 0 {
+			rc = 4
 		}
-		if rc == 0 {
-			sh := runOnCmd("local", remoteRestoreScript)
-			sh.Stdout = os.Stdout
-			sh.Stderr = os.Stderr
-			if err := sh.Run(); err != nil {
-				rc = 1
+	}
+	// Keep the current .claude.json before the archive's plain-file
+	// member overwrites it during extraction.
+	runPayload(preRestoreScript)
+	if rc == 0 {
+		if target == "local" {
+			// No --warning=no-unknown-keyword is added on the extract
+			// side: the source-side COPYFILE_DISABLE=1 suppression is
+			// authoritative, and that keyword is GNU-tar-only — bsdtar
+			// on macOS targets rejects unknown warnings, so passing it
+			// would disturb remote portability (design: apply only if
+			// it keeps that portability).
+			z := exec.Command("zstd", "-dc", archive)
+			t := exec.Command("tar", "-xf", "-", "-C", os.Getenv("HOME"))
+			t.Stdout = os.Stdout
+			if _, err := pipeTwo(z, t); err != nil {
+				rc = 4
+			}
+		} else {
+			// zstd -dc ARCHIVE | ssh $SSH_OPTS TARGET "tar -xf - -C \$HOME"
+			z := exec.Command("zstd", "-dc", archive)
+			s := exec.Command("ssh", append(strings.Fields(sshOpts), target, "tar -xf - -C $HOME")...)
+			s.Stdout = os.Stdout
+			if _, err := pipeTwo(z, s); err != nil {
+				rc = 4
 			}
 		}
-	} else {
-		// zstd -dc ARCHIVE | ssh $SSH_OPTS TARGET "tar -xf - -C \$HOME"
-		z := exec.Command("zstd", "-dc", archive)
-		s := exec.Command("ssh", append(strings.Fields(sshOpts), target, "tar -xf - -C $HOME")...)
-		s.Stdout = os.Stdout
-		if _, err := pipeTwo(z, s); err != nil {
-			rc = 1
-		}
-		if rc == 0 {
-			sh := runOnCmd(target, remoteRestoreScript)
-			sh.Stdout = os.Stdout
-			sh.Stderr = os.Stderr
-			if err := sh.Run(); err != nil {
-				rc = 1
-			}
-		}
+	}
+	if rc == 0 {
+		// Relocate snapshots, preserve symlinks, integrity-check.
+		runPayload(remoteRestoreScript)
 	}
 	if rc == 0 {
 		fmt.Println("ai-backup: restore complete.")
