@@ -25,7 +25,7 @@ the source host — including macOS).
 ```
 ai-backup backup [TARGET]     # default target mact2
 ai-backup list
-ai-backup restore ARCHIVE [--to TARGET] [--dry-run]
+ai-backup restore ARCHIVE [--to TARGET] [--dry-run] [--force]
 ```
 
 Examples:
@@ -75,6 +75,36 @@ a `.sha256` sidecar. Dry-run and `list` never modify data.
 [^engram]: Snapshot semantics follow the store's own backup path in
     <https://github.com/Gentleman-Programming/engram> (`store.go`).
 [^sqlite]: <https://www.sqlite.org/backup.html>.
+
+## Restore ordering and collision policy
+
+Run restore **with opencode and claude closed** — before their first
+launch on a fresh target, or after quitting them on a machine that
+already has state. A restore replaces state; it never silently merges.
+
+The restore runs a smart pre-flight BEFORE anything is touched:
+
+- if `opencode` or `claude` is running on the target → **refused**
+  (exit 4): replacing a WAL database under a live handle loses every
+  write the process makes after the swap;
+- if the target already has irreplaceable state (`.claude.json`,
+  `.claude/projects`, `.claude/history.jsonl`, nested `.claude/.claude`,
+  `auth.json`, legacy `storage/`, any live opencode DB, engram DB) →
+  **refused** with the full list of colliding paths;
+- `--force` overrides both refusals and is the only way to restore over
+  existing state — and even then every replaced item is kept first:
+  DBs get `.pre-restore-<ts>` copies at relocation, plain-file trees
+  (`projects/`, `storage/`, …) are moved aside whole as
+  `<path>.pre-restore-<ts>` and the archive's copy lands fresh, so
+  repeat restores never merge two machines' state.
+
+Ordering rule of thumb: restore happens **before** launching
+opencode/claude. On a fresh host that means: restore → first launch
+(opencode picks up the restored DB and any pending `storage/` → DB
+migration sees the legacy sessions) → `claude` re-login. On a machine
+with newer local state, decide deliberately: either restore the older
+backup over it with `--force` (older conversations win, newer ones live
+in the `.pre-restore-<ts>` dirs), or do not restore.
 
 ## After restore
 
