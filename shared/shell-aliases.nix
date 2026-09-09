@@ -106,16 +106,22 @@
           # file: zsh's noclobber (enabled by prezto) refuses `>` on an
           # existing file with "file exists", which silently prevented
           # has-session from ever running.
-          err="$(tmux has-session 2>&1)"
+          # Poll with list-sessions, not has-session: bare has-session
+          # resolves a NULL target and reports "no current target" when the
+          # server is alive but the restore hasn't created a session yet —
+          # a transient window, not a genuine error. list-sessions reports
+          # "no server running on ..." in both cold states instead.
+          err="$(tmux list-sessions 2>&1)"
           if [[ -z "$err" ]]; then
             exec tmux attach
           fi
-          # Transient cold-start conditions: no server/session yet, or the
+          # Transient cold-start conditions: no server/sessions yet, the
           # Linux socket-connect failure before the server exists ("error
-          # connecting ... No such file or directory"). A genuine tmux error
-          # (e.g. Permission denied) short-circuits immediately instead of
-          # being masked as a restore-in-progress wait.
-          if [[ "$err" != *"no server"* && "$err" != *"no session"* && "$err" != *"No such file or directory"* ]]; then
+          # connecting ... No such file or directory"), or the has-session
+          # style "no current target". A genuine tmux error (e.g. Permission
+          # denied) short-circuits immediately instead of being masked as a
+          # restore-in-progress wait.
+          if [[ "$err" != *"no server"* && "$err" != *"no session"* && "$err" != *"no current target"* && "$err" != *"No such file or directory"* ]]; then
             echo "$err" >&2
             return 1
           fi
