@@ -247,8 +247,17 @@ func (d DevPort) path() string {
 	return d.Path
 }
 
+// mknodDev encodes a Linux old-style 16-bit device number: major in the
+// high byte, minor in the low byte — mknod(1,4) for /dev/port must yield
+// 0x0104, NOT 0x0401 (which decodes as major 4, a ttyS). Kept as a pure
+// function so the encoding is testable without real device-node creation
+// privileges; mknodChar verifies empirically at Gate 2 (root context).
+func mknodDev(major, minor uint32) uint32 {
+	return major<<8 | minor
+}
+
 func mknodChar(path string, major, minor uint32) error {
-	dev := minor<<8 | major // Linux old-style 16-bit device encoding
+	dev := mknodDev(major, minor)
 	if err := syscall.Mknod(path, syscall.S_IFCHR|0o600, int(dev)); err != nil {
 		return err
 	}
