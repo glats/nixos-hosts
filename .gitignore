@@ -45,3 +45,6 @@ sdd/
 # boundary-fix commit is still unpushed; safe to remove after push).
 omarchy-nix/
 .mcp.json
+
+# Local AI runtime state
+.atl/
