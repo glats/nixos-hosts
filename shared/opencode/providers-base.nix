@@ -426,7 +426,7 @@ let
       name = "anthropic-light";
       phases = {
         # claude-sonnet-4-6: good enough for light tier coordination
-        gentle-orchestrator = "anthropic/claude-sonnet-4-6";
+        gentle-orchestrator = "anthropic/claude-opus-5";
         sdd-init = "anthropic/claude-haiku-4-5";
         sdd-explore = "anthropic/claude-sonnet-4-6";
         sdd-propose = "anthropic/claude-sonnet-4-6";
