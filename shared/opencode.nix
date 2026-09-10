@@ -129,8 +129,11 @@ in
       home.packages = with pkgs; [
         gentle-ai
         engram
+        rtk
         poppler-utils # PDF page rendering: needed by OpenCode read tool and Claude Code for PDF support
       ];
+
+      home.sessionVariables.RTK_TELEMETRY_DISABLED = "1";
 
       # Export API keys from sops secrets at shell startup
       programs.zsh.initContent = lib.mkAfter ''

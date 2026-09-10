@@ -53,6 +53,10 @@ with lib;
       };
     };
 
+    rtk = {
+      enable = mkEnableOption "the RTK shell-output rewriting plugin";
+    };
+
     npmPlugins = mkOption {
       type = types.listOf types.str;
       default = [
@@ -111,6 +115,7 @@ with lib;
       skill-registry = config.home.opencode.plugins.skillRegistry.enable;
       engram = config.home.opencode.plugins.engram.enable;
       secret-guard = config.home.opencode.plugins.secretGuard.enable;
+      rtk = config.home.opencode.plugins.rtk.enable;
     }
   );
 }

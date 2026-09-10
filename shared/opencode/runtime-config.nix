@@ -81,6 +81,10 @@ let
       enable = cfg.plugins.secretGuard.enable;
       src = "${pkgs.secret-guard-assets}/share/secret-guard/opencode/plugins/secret-guard.ts";
     };
+    "rtk.ts" = {
+      enable = cfg.plugins.rtk.enable;
+      src = ./rtk.ts;
+    };
   };
   enabledManagedPlugins = lib.filterAttrs (_: plugin: plugin.enable) managedPlugins;
   disabledManagedPluginNames = lib.attrNames (
