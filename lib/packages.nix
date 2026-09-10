@@ -52,6 +52,7 @@ let
         claude-code = pkgs.callPackage ../pkgs/claude-code {
           claude-code-unwrapped = inputs.claude-code-nix.packages.${pkgs.stdenv.hostPlatform.system}.default;
         };
+        rtk = pkgs.rtk;
       };
     in
     self;

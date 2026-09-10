@@ -63,6 +63,22 @@ let
 
   # Generate settings.json with permissions.
   # Main model is NOT managed here — the claude-code wrapper injects --model sonnet.
+  rtkPreToolUse = {
+    matcher = "Bash";
+    hooks = [
+      {
+        type = "command";
+        command = "rtk hook claude";
+        timeout = 5;
+      }
+    ];
+  };
+  hasRtkPreToolUse = any
+    (entry:
+      (entry.matcher or "") == "Bash"
+      && any (hook: (hook.command or "") == "rtk hook claude") (entry.hooks or [ ]))
+    cfg.hooks.preToolUse;
+  preToolUse = cfg.hooks.preToolUse ++ optional (!hasRtkPreToolUse) rtkPreToolUse;
   settingsJson = pkgs.writeText "claude-settings.json" (
     builtins.toJSON {
       # Auto-approve project-scope MCPs (.mcp.json)
@@ -90,6 +106,9 @@ let
         commit = "";
         pr = "";
         sessionUrl = false;
+      };
+      hooks = {
+        PreToolUse = preToolUse;
       };
       # Custom rules are injected via CLAUDE.md (agentsMdSources in ai-assets.nix).
       # No customInstructions here — this field does not exist in Claude Code's
@@ -146,6 +165,20 @@ in
       };
       default = { };
       description = "Permission rules for Claude Code command execution.";
+    };
+
+    hooks = mkOption {
+      type = types.submodule {
+        options = {
+          preToolUse = mkOption {
+            type = types.listOf types.attrs;
+            default = [ ];
+            description = "Declarative Claude Code PreToolUse hook entries.";
+          };
+        };
+      };
+      default = { };
+      description = "Claude Code lifecycle hooks merged into generated settings.";
     };
   };
 
