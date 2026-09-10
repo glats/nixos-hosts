@@ -617,7 +617,9 @@ let
       phases = {
         # Hybrid recommended for ChatGPT Plus/Pro + OpenCode Go:
         # - OpenAI GPT-5.6 Terra/Luna: best fixed-plan value for judgment-heavy phases.
-        # - OpenCode Go: absorbs the high-volume/tool-loop phases so ChatGPT limits are less likely.
+        # - OpenCode Go: absorbs the high-volume/tool-loop phases (orchestrator,
+        #   explore, tasks, archive) so ChatGPT limits are less likely. sdd-apply
+        #   moved from Go to Luna on 2026-09-09 (user request to drop GLM 5.3).
         # - Avoids GPT-5.3-Codex-Spark because OpenAI documents it as Pro-only.
         # - Avoids GPT-5.4/5.4-mini because OpenAI says ChatGPT-account Codex removes them on 2026-08-31.
         # GLM-5.3-Flash is available on OpenCode Go with 1M context, tool calls,
@@ -635,12 +637,59 @@ let
         # It remains the fit for high-volume task decomposition: 1M context,
         # tool calls, and substantially more concurrency than V4 Pro.
         sdd-tasks = "opencode-go/deepseek-v4-flash";
-        # GLM-5.3-Flash: 1M context, structured tool calls, and lower Go cost.
-        # Prefer it over MiniMax M3 for Nix changes and iterative verification.
-        sdd-apply = "opencode-go/glm-5.3-flash";
+        # gpt-5.6-luna (audit 2026-09-09): apply is the tool-loop-heaviest phase,
+        # so it goes to the 10x-cheaper OpenAI tier — Luna burns 5/0.5/30 Codex
+        # credits per M tokens vs Terra's 50/5/300, and the Plus 5h window allows
+        # 250-2000 Luna messages vs 25-200 Terra. Coding quality stays within
+        # 0.7pp of Terra (SWE-Bench Pro 62.7 vs 63.4, Coding Agent Index 74.6 vs
+        # 77.4), and OpenAI positions Luna for bounded, spec-driven edits — the
+        # apply contract. Replaces glm-5.3-flash (user request); no blocking
+        # GPT-5.6 issues in opencode-ai/opencode.
+        sdd-apply = "openai/gpt-5.6-luna";
         # Final acceptance/judgment pass stays on OpenAI.
         sdd-verify = "openai/gpt-5.6-terra";
         sdd-archive = "opencode-go/deepseek-v4-flash";
+        sdd-onboard = "opencode-go/deepseek-v4-flash";
+        neutral = "openai/gpt-5.6-terra";
+      };
+    }
+    {
+      name = "opencode-go-openai";
+      # Audit 2026-09-09. Go ONLY for orchestration; every SDD phase on OpenAI.
+      # - gentle-orchestrator = opencode-go/glm-5.3-flash: the best opencode-go
+      #   orchestrator — 1M ctx, structured tool calls, mandatory reasoning, and
+      #   the highest Go request headroom, which is what repeated subagent
+      #   routing actually needs. Canonical precedent (high-volume,
+      #   openai-opencode-balanced) uses exactly this pairing. Usage data backs
+      #   it: glm-5.3-flash +91% weekly, 84.5% weekly retention (top-3 Go model
+      #   on opencode.ai/data) while deepseek-v4-pro is declining (-38%).
+      # - OpenAI tiers by phase fit (Codex credit rates per M tokens:
+      #   Sol 125/750, Terra 50/300, Luna 5/0.5/30; Plus 5h windows 10-100 /
+      #   25-200 / 250-2000 messages):
+      #   * Sol (judgment): propose/spec/design — a bad spec propagates defects
+      #     through the whole chain.
+      #   * Terra (retrieval + acceptance): explore and verify. Luna is
+      #     disqualified for explore by its documented weak long-context
+      #     retrieval (MRCR v2 8-needle 512K-1M: 41.3 vs Sol 73.8); verify
+      #     beats a full re-loop on Terra's agentic edge over Luna (Coding
+      #     Agent Index 77.4 vs 74.6, DeepSWE 69.6 vs 67.2). Sol stays the
+      #     escalation option for the verify gate.
+      #   * Luna (volume): init/tasks/apply/archive/onboard — bounded,
+      #     spec-driven work with deterministic checks; apply stays 10x cheaper
+      #     than Terra with SWE-Bench Pro within 0.7pp (62.7 vs 63.4).
+      # - No blocking GPT-5.6 issues in opencode-ai/opencode (search 2026-09-09).
+      # - All three tiers are Plus/Pro-eligible in Codex (OpenAI help center).
+      phases = {
+        gentle-orchestrator = "opencode-go/glm-5.3-flash";
+        sdd-init = "openai/gpt-5.6-luna";
+        sdd-explore = "openai/gpt-5.6-terra";
+        sdd-propose = "openai/gpt-5.6-sol";
+        sdd-spec = "openai/gpt-5.6-sol";
+        sdd-design = "openai/gpt-5.6-sol";
+        sdd-tasks = "openai/gpt-5.6-luna";
+        sdd-apply = "openai/gpt-5.6-luna";
+        sdd-verify = "openai/gpt-5.6-terra";
+        sdd-archive = "openai/gpt-5.6-luna";
         sdd-onboard = "openai/gpt-5.6-luna";
         neutral = "openai/gpt-5.6-terra";
       };
