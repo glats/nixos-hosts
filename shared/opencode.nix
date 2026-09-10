@@ -9,7 +9,10 @@ with lib;
 
 let
   # Import centralized provider configuration
-  providers = import ./opencode/providers.nix { inherit lib; };
+  providers = import ./opencode/providers.nix {
+    inherit lib;
+    activeProviderName = config.home.opencode.activeProviderName;
+  };
 
   # Bare GitHub MCP tool names pruned from both servers (github-personal,
   # github-work): releases, tags, teams, collaborators, labels, repo
@@ -76,6 +79,12 @@ in
       '';
     };
 
+    omo.enable = mkOption {
+      type = types.bool;
+      default = false;
+      description = "Enable the declarative, host-scoped oh-my-openagent pilot.";
+    };
+
     disabledTools = mkOption {
       type = types.listOf types.str;
       default = concatMap
@@ -133,7 +142,11 @@ in
         poppler-utils # PDF page rendering: needed by OpenCode read tool and Claude Code for PDF support
       ];
 
-      home.sessionVariables.RTK_TELEMETRY_DISABLED = "1";
+      home.sessionVariables = {
+        RTK_TELEMETRY_DISABLED = "1";
+      } // lib.optionalAttrs config.home.opencode.omo.enable {
+        OMO_DISABLE_POSTHOG = "1";
+      };
 
       # Export API keys from sops secrets at shell startup
       programs.zsh.initContent = lib.mkAfter ''

@@ -94,6 +94,21 @@ let
   # Use providers from centralized providers.nix
   allProviders = providers.allProviders;
 
+  omoConfigFile = pkgs.writeText "omo.jsonc" (builtins.toJSON {
+    "$schema" = "https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/dev/assets/omo.schema.json";
+    "[opencode]" = {
+      disabled_mcps = [ "websearch" "context7" "grep_app" ];
+      disabled_hooks = [ "directory-agents-injector" "rules-injector" ];
+      telemetry = false;
+      team_mode = { enabled = false; };
+      categories = {
+        quick = { model = providers.getModelForPhase "sdd-apply" providers.activeProvider; };
+        deep = { model = providers.getModelForPhase "sdd-design" providers.activeProvider; };
+        ultrabrain = { model = providers.getModelForPhase "sdd-design" providers.activeProvider; };
+      };
+    };
+  });
+
   # Generate JSON file with providers, agents, and extra config
   jsonFile = pkgs.writeText "opencode.json" (
     builtins.toJSON (
@@ -104,7 +119,7 @@ let
         permission = cfg.permissions;
         instructions = [ ];
         # Managed npm plugins auto-installed by OpenCode at startup
-        plugin = cfg.plugins.npmPlugins;
+        plugin = cfg.plugins.npmPlugins ++ lib.optionals cfg.omo.enable [ "oh-my-openagent" ];
       }
       // lib.optionalAttrs (cfg.disabledProviders != [ ]) { disabled_providers = cfg.disabledProviders; }
       // lib.optionalAttrs (cfg.disabledTools != [ ]) {
@@ -159,7 +174,11 @@ in
         plugin = lib.attrNames tuiPluginsToInstall ++ [ "opencode-multimodal" ];
       };
     };
-    # Plugin .ts files are copied by activation script below, not as symlinks
+  } // lib.optionalAttrs cfg.omo.enable {
+    ".omo/omo.jsonc" = {
+      force = true;
+      source = omoConfigFile;
+    };
   };
 
   # Convert HM symlinks to real files so OpenCode can write config at runtime.

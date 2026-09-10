@@ -15,7 +15,7 @@
 }:
 
 let
-  version = "1.18.18";
+  version = "1.18.22";
 
   system = stdenvNoCC.hostPlatform.system;
   isLinux = lib.hasSuffix "linux" system;
@@ -25,19 +25,19 @@ let
     {
       x86_64-linux = {
         url = "https://github.com/anomalyco/opencode/releases/download/v${version}/opencode-linux-x64.tar.gz";
-        sha256 = "sha256-DN3CIkGLhVNmmQWomAwM2nCI8A2iTYPWrHawHJ/bKq8=";
+        sha256 = "sha256-I+ymqJLGtTwPm6IzO2kGvcMZAmNGMdVM8XUA5+jL+iA=";
       };
       aarch64-linux = {
         url = "https://github.com/anomalyco/opencode/releases/download/v${version}/opencode-linux-arm64.tar.gz";
-        sha256 = "sha256-3LG17FaHtD+HdJVgAh+SA/OAngzlrkT/m+iuFwg/5Lo=";
+        sha256 = "sha256-ckPnpBfRkO+ht7CYHb8NbIqni6L7AYHqIzNv27UcUXg=";
       };
       x86_64-darwin = {
         url = "https://github.com/anomalyco/opencode/releases/download/v${version}/opencode-darwin-x64.zip";
-        sha256 = "sha256-lYG9doOnUoRWF5+xHjN32e9WjhCpNWEaLGci40lFTYM=";
+        sha256 = "sha256-0a+F4eY6BCH2fT5wxhx7Vjk8fDL/XvTknwLzsfKcN3A=";
       };
       aarch64-darwin = {
         url = "https://github.com/anomalyco/opencode/releases/download/v${version}/opencode-darwin-arm64.zip";
-        sha256 = "sha256-fWaL8mSW/shobU5R67GsK9Ljk/DBYgqmlsTCQqnlgGo=";
+        sha256 = "sha256-ec44ETagmBlTzMMpQXZ4SYsluNMsKhp7Ve5e0lWQ+Uw=";
       };
     }.${system} or (throw "Unsupported system: ${system}");
 

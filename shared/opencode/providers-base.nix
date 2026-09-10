@@ -274,12 +274,14 @@ let
     }
     {
       name = "high-volume";
-      # Evidence: OpenCode Go throughput tier — glm-5.3-flash (1M ctx, mandatory
-      # reasoning, high Go request headroom) and deepseek-v4-pro/flash for the
-      # tool-loop-heavy phases, matching `opencode-go-*`/`openai-opencode-balanced` precedent.
+      # Evidence: OpenCode Go tier — kimi-k3 orchestrator (best model on the Go
+      # catalog, amended 2026-09-10, was glm-5.3-flash) and deepseek-v4-pro/flash
+      # for the tool-loop-heavy phases, matching `opencode-go-*`/`openai-opencode-balanced` precedent.
       phases = {
-        # glm-5.3-flash: 1M ctx, structured tool calls, highest Go request headroom.
-        gentle-orchestrator = "opencode-go/glm-5.3-flash";
+        # kimi-k3: agent-first generation (long-horizon agent work; tools +
+        # reasoning + structured). Rollback: glm-5.3-flash (1M ctx, structured
+        # tool calls, highest Go request headroom).
+        gentle-orchestrator = "opencode-go/kimi-k3";
         sdd-init = "opencode-go/deepseek-v4-flash";
         # deepseek-v4-pro: heaviest read/MCP-research phase needs the larger reasoning budget.
         sdd-explore = "opencode-go/deepseek-v4-pro";
@@ -347,10 +349,10 @@ let
         #   moved from Go to Luna on 2026-09-09 (user request to drop GLM 5.3).
         # - Avoids GPT-5.3-Codex-Spark because OpenAI documents it as Pro-only.
         # - Avoids GPT-5.4/5.4-mini because OpenAI says ChatGPT-account Codex removes them on 2026-08-31.
-        # GLM-5.3-Flash is available on OpenCode Go with 1M context, tool calls,
-        # and mandatory reasoning. Its high Go request headroom makes it the
-        # better repeated-routing default than the non-Flash GLM-5.3.
-        gentle-orchestrator = "opencode-go/glm-5.3-flash";
+        # Orchestrator upgraded to opencode-go/kimi-k3 on 2026-09-10 (user:
+        # best model on the Go catalog; agent-first, tools+reasoning+structured).
+        # Rollback: opencode-go/glm-5.3-flash (1M ctx, high Go request headroom).
+        gentle-orchestrator = "opencode-go/kimi-k3";
         sdd-init = "opencode-go/deepseek-v4-flash";
         # Explore is the biggest limit-burner in large repos: many reads, MCP research, long context.
         sdd-explore = "opencode-go/deepseek-v4-pro";
@@ -381,13 +383,13 @@ let
     {
       name = "opencode-go-openai";
       # Audit 2026-09-09. Go ONLY for orchestration; every SDD phase on OpenAI.
-      # - gentle-orchestrator = opencode-go/glm-5.3-flash: the best opencode-go
-      #   orchestrator — 1M ctx, structured tool calls, mandatory reasoning, and
-      #   the highest Go request headroom, which is what repeated subagent
-      #   routing actually needs. Canonical precedent (high-volume,
-      #   openai-opencode-balanced) uses exactly this pairing. Usage data backs
-      #   it: glm-5.3-flash +91% weekly, 84.5% weekly retention (top-3 Go model
-      #   on opencode.ai/data) while deepseek-v4-pro is declining (-38%).
+      # - gentle-orchestrator = opencode-go/kimi-k3: user-selected best model on the
+      #   Go catalog (amended 2026-09-10, superseding the MiMo-V2.5 cheap pilot).
+      #   K3 is the agent-first generation ("long-horizon agent work"; tools +
+      #   reasoning + structured all supported); the documented K2.x failure was
+      #   NIM transport (opencode#26662/#26405), not model behavior. Cost note:
+      #   $3.00/$15.00 per M vs Flash $0.15/$0.50. Rollback to
+      #   opencode-go/glm-5.3-flash if delegation quality or completion gates regress.
       # - OpenAI tiers by phase fit (Codex credit rates per M tokens:
       #   Sol 125/750, Terra 50/300, Luna 5/0.5/30; Plus 5h windows 10-100 /
       #   25-200 / 250-2000 messages):
@@ -405,7 +407,7 @@ let
       # - No blocking GPT-5.6 issues in opencode-ai/opencode (search 2026-09-09).
       # - All three tiers are Plus/Pro-eligible in Codex (OpenAI help center).
       phases = {
-        gentle-orchestrator = "opencode-go/glm-5.3-flash";
+        gentle-orchestrator = "opencode-go/kimi-k3";
         sdd-init = "openai/gpt-5.6-luna";
         sdd-explore = "openai/gpt-5.6-terra";
         sdd-propose = "openai/gpt-5.6-sol";
