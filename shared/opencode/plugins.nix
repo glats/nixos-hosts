@@ -116,6 +116,7 @@ with lib;
       engram = config.home.opencode.plugins.engram.enable;
       secret-guard = config.home.opencode.plugins.secretGuard.enable;
       rtk = config.home.opencode.plugins.rtk.enable;
+      omo = config.home.opencode.omo.enable;
     }
   );
 }
