@@ -138,7 +138,7 @@ let
         # nemotron-3.5-lightning-free: construido para ejecución ligera de alto volumen.
         sdd-init = "opencode/nemotron-3.5-lightning-free";
         # nemotron-3-ultra-free: 1M ctx + RULER@1M 94.7 — mejor para explorar repos grandes.
-        sdd-explore = "opencode/nemotron-3-ultra-free";
+        sdd-explore = "opencode-go/glm-5.3-flash";
         # nemotron-3-ultra-free: GPQA 87 — mejor razonamiento/planning free.
         sdd-propose = "opencode/nemotron-3-ultra-free";
         # anthropic/claude-sonnet-4-6: hy3-free rotó fuera del catálogo free (audit 2026-09-09);
