@@ -1,5 +1,5 @@
 ---
-name: sdd-model-fit
+name: gentle-ai-model-fit
 description: >
   Fit SDD phases to OpenCode models under hard stability and tool-call gates,
   and iteratively mold the named routing profiles in shared/opencode/providers-base.nix.
