@@ -113,17 +113,17 @@
   # 172.16.0.11:6666, MAC 6c:4b:90:2d:97:42, rog source port 6665),
   # printk.always_kmsg_dump=1 + EFI pstore kept active.
   #
-  # s5Write = Gate 2, enabled for the SUPERVISED TRIAL (judgment-day
-  # round 1 APPROVED: 3 confirmed severe fixes applied, commit 81de32b).
-  # The hook only fires after the boot-time stage unit validated
-  # PM1a=0x1804 + _S5 literal form on this exact machine; every refusal
-  # path exits 0 without touching the register, so a failure mode is a
-  # normal (still-hanging) poweroff with breadcrumbs, never worse.
-  # One supervised systemctl poweroff decides: physical off inside the
-  # hook = the fix works; "s5-returned" breadcrumb = evidence for the
-  # EFI fallback (slice 4).
+  # s5Write = Gate 2: EXECUTED 2026-09-10 00:34 — CONCLUSIVE NEGATIVE. The
+  # corrected write fired (breadcrumbs) and the firmware froze at the S5
+  # transition itself; no kernel/AML-side change can fix a non-AML hang.
+  # Disabled again so the write can never pre-empt the EFI handler.
   hardware.rog.s5-recovery.diagnostics.enable = true;
-  hardware.rog.s5-recovery.s5Write.enable = true;
+  hardware.rog.s5-recovery.s5Write.enable = false;
+
+  # efiFallback = Gate 3 (supervised trial): DMI-scoped EFI ResetSystem
+  # power-off handler (priority 225 replaces the freezing ACPI S5 final
+  # entry; acpi_power_off_prepare still runs first per T14 RFC v3 lesson).
+  hardware.rog.s5-recovery.efiFallback.enable = true;
 
   # Blacklist non-essential ASUS WMI modules: their AML calls
   # (_SB.ATKD.WMNB) fail loudly on this firmware and add ACPI

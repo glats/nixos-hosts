@@ -95,9 +95,14 @@ in
     #    default-disable option unset, so this pins the intended state).
     #  - configfs + netconsole modules: the runtime target is created in
     #    configfs by netconsole-setup (CONFIG_NETCONSOLE_DYNAMIC=y).
-    boot.kernelModules = lib.mkIf cfg.diagnostics.enable [
-      "configfs"
-      "netconsole"
+    boot.kernelModules = lib.mkMerge [
+      (lib.mkIf cfg.diagnostics.enable [
+        "configfs"
+        "netconsole"
+      ])
+      (lib.mkIf cfg.efiFallback.enable [
+        "rog-efi-poweroff"
+      ])
     ];
     boot.kernelParams = lib.mkIf cfg.diagnostics.enable [
       "printk.always_kmsg_dump=1"
@@ -179,6 +184,21 @@ in
       };
     systemd.shutdownRamfs.storePaths = lib.mkIf cfg.s5Write.enable [
       "${pkgs.nixos-scripts}/bin"
+    ];
+
+    # Stage 3 (efiFallback): DMI-scoped out-of-tree kernel module that
+    # registers a SYS_OFF_MODE_POWER_OFF handler at SYS_OFF_PRIO_FIRMWARE+1
+    # (225), the same priority mainline's efi/reboot.c uses. It REPLACES the
+    # final ACPI S5 entry (acpi_power_off, priority 224 — the step that
+    # freezes this firmware, proven by the Gate 2 trial 2026-09-10) while
+    # the kernel's own acpi_power_off_prepare (POWER_OFF_PREPARE) still runs
+    # first, preserving _PTS/_GTS notification and wake-GPE disarming (T14
+    # Gen 5 RFC v3 lesson). Gate 3 requires s5Write DISABLED: the ramfs hook
+    # write freezes the box before the kernel's EFI handler could ever run.
+    boot.extraModulePackages = lib.mkIf cfg.efiFallback.enable [
+      (pkgs.callPackage ../../../pkgs/rog-efi-poweroff {
+        kernel = config.boot.kernelPackages.kernel;
+      })
     ];
   };
 }
