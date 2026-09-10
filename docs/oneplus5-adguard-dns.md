@@ -138,8 +138,25 @@ a clear error. SSH key auth is the access control for the admin UI — the
 helper works only where `~/.ssh/oneplus5` resolves to the authorized key.
 
 Run it as `adguard-tunnel` — it ships in `pkgs/nixos-scripts` and is on
-PATH (`/run/current-system/sw/bin/`) after the next host switch
-(`nixos-build`).
+PATH (per-user home-manager profile, `/etc/profiles/per-user/<user>/bin/`)
+after a host switch (`nixos-build`).
+
+**Phone-side prerequisite (one-time):** the phone's sshd ships with
+`AllowTcpForwarding no` (deliberate hardening in `/etc/ssh/sshd_config`),
+which makes every forward fail with `channel open failed:
+administratively prohibited`. A scoped drop-in fixes exactly this case
+without loosening the rest:
+
+```sh
+# /etc/ssh/sshd_config.d/100-adguard-tunnel.conf (on the phone)
+AllowTcpForwarding local
+PermitOpen 172.16.0.12:3000
+```
+
+Then `sudo sshd -t && sudo systemctl restart sshd` (`sshd -t` first — a
+broken config would lock new SSH sessions out). `local` forbids `-R`/`-D`
+and `PermitOpen` restricts forward targets to the AdGuard UI only. Add
+further targets by appending to `PermitOpen`.
 
 
 ## Enroll TVs (operator, on each TV)
