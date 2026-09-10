@@ -518,6 +518,11 @@ func runOnCmd(target, payload string) *exec.Cmd {
 		cmd = exec.Command("ssh", args...)
 	}
 	cmd.Stdin = strings.NewReader(payload)
+	// nil Stderr in os/exec is /dev/null, NOT inherited — the bash
+	// original inherited the pipeline's stderr, so remote payload
+	// failures (sqlite snapshot errors, tar refusal) must reach the
+	// operator instead of dying silently.
+	cmd.Stderr = os.Stderr
 	return cmd
 }
 
@@ -588,8 +593,9 @@ func doBackup(targetArg string) {
 	t0 := time.Now().Unix()
 
 	// run_on "$target" < payload | zstd -T0 -$LEVEL > "$part"
-	src := runOnCmd(target, backupPayload())
+	src := runOnCmd(target, remoteBackupScript)
 	z := exec.Command("zstd", "-T0", "-"+zstdLevel)
+	z.Stderr = os.Stderr // zstd failures (bad level, ENOSPC) must be visible
 	f, err := os.Create(part)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err) // bash: redirection failure under set -e
