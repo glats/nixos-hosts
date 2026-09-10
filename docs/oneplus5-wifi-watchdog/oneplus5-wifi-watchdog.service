@@ -1,0 +1,13 @@
+[Unit]
+Description=Recover OnePlus 5 Wi-Fi
+Wants=NetworkManager.service
+After=NetworkManager.service
+
+[Service]
+Type=oneshot
+User=root
+UMask=0077
+ExecStart=/usr/local/sbin/wifi-watchdog.sh
+TimeoutStartSec=55
+StandardOutput=journal
+StandardError=journal
