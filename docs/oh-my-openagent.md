@@ -52,11 +52,23 @@ regex detector over the message text, edge-triggered per message (known issue
 |---|---|---|
 | `think` / `ultrathink` | Sets the message reasoning variant to `high` | available |
 
+Usage rules: the literal English words only (the detector is regex — Spanish
+"piensa" does not match), edge-triggered per message like every other
+keyword, and it costs reasoning tokens — use it on hard questions, not
+mechanical work. It stacks with any other prompt content (it is a boost of
+the current message, not a mode).
+
 ### Named agent mentions (plain language, read-only)
 
-`@librarian <question>`, `@explore <question>`, or asking for
-`task(category: "architect")` — the orchestrator spawns the read-only agents.
-This is the scouting mechanism (see below).
+Invocable by you — the three: `@explore` (fast repo greps), `@librarian`
+(docs/OSS/GitHub research with sources), and `@architect` / asking for
+`task(category: "architect")` (design trade-offs, proposes without
+implementing). The scouting mechanism (see below).
+
+Not name-invocable: `plan-consultant` and `plan-reviewer` run only inside
+`/ulw-plan` (plan-gated; the reviewer is additionally one-shot); Kibitzer is
+the automatic memory nudge; category workers and the ultra workers/deep
+agents spawn only inside an `ulw` run.
 
 ### Skill text-triggers (auto-activate when the trigger appears)
 
