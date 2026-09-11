@@ -1,0 +1,12 @@
+[Unit]
+Description=OnePlus 5 power monitor (battery/charger Telegram alerts)
+After=NetworkManager.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=glats
+Group=users
+NoNewPrivileges=yes
+TimeoutStartSec=30s
+ExecStart=/usr/local/sbin/power-monitor.sh
