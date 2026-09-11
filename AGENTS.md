@@ -70,6 +70,7 @@ Formatter is `nixpkgs-fmt` set as flake `formatter`. Never invoke `nixpkgs-fmt <
 | Fastest eval sanity check | t14 build (command above) |
 | Go scripts | `go -C pkgs/nixos-scripts test ./...` (plus `go build`/`go vet`/`go run ./cmd/<name>` with `-C pkgs/nixos-scripts` while iterating; deployed binaries are always Nix-built) |
 
+<!-- rtk-init-managed v1 -->
 ## RTK (command output filter)
 
 RTK 0.41.0 is installed on all hosts. An OpenCode plugin and a Claude Code Bash hook rewrite supported commands **automatically** (fail-open) — run plain commands (`git status`) and let them rewrite; do NOT prefix `rtk` by hand.
@@ -77,7 +78,9 @@ RTK 0.41.0 is installed on all hosts. An OpenCode plugin and a Claude Code Bash 
 - Manual rtk forms are only the top-level ones from `rtk --help` (`rtk ls`, `rtk git <sub>`, `rtk test <cmd>`, `rtk err <cmd>`, ...). There is no `rtk rev-parse` — git builtins go through `rtk git rev-parse` or plain `git rev-parse`.
 - `rtk git status` hides ahead/behind divergence — use plain `git status -sb` when sync state matters.
 - Savings data: `rtk gain --project` (local SQLite, shell-output only, not total spend). Telemetry is off via `RTK_TELEMETRY_DISABLED=1`; bypass one command with `RTK_DISABLED=1 <cmd>`. Full runbook: `docs/rtk-pilot.md`.
-- Never run `rtk init` in this repo — it writes a generated assistant-instructions file; this section is the contract instead.
+- Never run `rtk init` in this repo — it writes a generated assistant-instructions file; `rtk-init` is the regen tool and this section is the contract instead.
+
+<!-- /rtk-init-managed -->
 
 ## Home Manager Composition
 
