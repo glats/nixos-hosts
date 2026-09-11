@@ -96,15 +96,26 @@ agents spawn only inside an `ulw` run.
 
 ### The `ulw`-substring collision (learned the hard way)
 
-IntentGate regex-matches ANY occurrence of `ulw` in your message. The literal
-chain `ulw-research` therefore wakes ULTRAWORK (execution mode) instead of the
-research skill — with the mandatory "ULTRAWORK MODE ENABLED!" opener. Rules:
+IntentGate regex-matches ANY occurrence of `ulw` in your message text. The
+literal chain `ulw-research` therefore wakes ULTRAWORK (execution mode)
+instead of the research skill — with the mandatory "ULTRAWORK MODE ENABLED!"
+opener. Same for plain-text "ulw-plan" or "ulw research". Verified exemptions
+from the detector source (`detector.ts` + `hook.ts`, dev @ cf3758f):
 
-- Never write a chain containing `ulw` unless you want execution mode.
-- For research: plain language + explicit delegation rule (below), or
-  `@librarian`/`@explore`, or ask the orchestrator to load the saturation
-  research skill internally ("load the saturation research skill") — invoking
-  it via the skill tool never touches your text, so the detector stays quiet.
+- **Slash commands are exempt**: a message starting with `/command` skips
+  keyword detection entirely — `/ulw-plan` is planning-only (no code until
+  you run `/ulw-execute`).
+- **Inline code and code blocks are stripped before scanning**: mentioning
+  `` `ulw-research` `` inside backticks does NOT trigger.
+- **Mode persistence**: an explicit `ulw` marks the session; follow-up
+  messages get compact re-injection (`<ultrawork-mode>active</ultrawork-mode>`)
+  until `/stop-continuation`, session end, or compaction restore. (Known
+  issue #5806 documents the older edge-trigger-only behavior.)
+
+Rules for research: plain language + explicit delegation rule (below), or
+`@librarian`/`@explore`, or backtick the skill name, or ask the orchestrator
+to load the saturation research skill internally. Never write a bare
+`ulw`-containing token in a message unless you want execution mode.
 
 Anything without the keywords above is 100% your normal gentle-ai flow. OmO is
 asleep.
