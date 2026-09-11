@@ -22,52 +22,104 @@ its keywords.
   - `telemetry: false` + `OMO_DISABLE_POSTHOG=1`
   - `disabled_mcps: ["websearch", "context7", "grep_app"]` (lsp kept — the user
     already runs exa/context7/github MCPs)
-  - `disabled_hooks: ["directory-agents-injector", "rules-injector"]`
-    (AGENTS.md is loaded natively by opencode; no double injection)
+  - `disabled_hooks: ["directory-agents-injector", "rules-injector", "auto-update-checker"]`
+    (AGENTS.md is loaded natively by opencode — no double injection; the
+    update-check ping is noise because Nix owns the version)
   - `team_mode.enabled: false`
   - `categories`: `quick -> openai/gpt-5.6-luna`, `deep`/`ultrabrain ->
     openai/gpt-5.6-sol` (resolved from the active provider tier)
 - Never run `bunx oh-my-openagent install` — it fights the Nix-generated config.
 
-## Waking it up: keywords and commands
+## Waking it up: the complete user-facing surface
 
-IntentGate is a regex keyword injector (upstream: "It does not semantically
-classify requests"; prompts without the keywords continue untouched).
+Verified against `docs/reference/features.md` (dev @ cf3758f). IntentGate is a
+regex detector over the message text, edge-triggered per message (known issue
+#5806: repeat the keyword in every follow-up you want kept in mode).
 
-| You type | What happens |
-|---|---|
-| `ulw <task>` (or the full word `ultrawork`) | Ultrawork mode on that task: decompose into todo checkboxes, classify LIGHT/HEAVY, fan out category workers in parallel, independent reviewer verifies each done-claim. |
-| `mass ulw <task>` | Ultrawork with multi-model spread across workers. |
-| `hyperplan <task>` | Five hostile critics attack the plan before execution. |
-| `/ulw-plan` | Planning interview: the agent questions you, runs `plan-consultant` (gap analysis) and `plan-reviewer` (review rounds, max 5), writes a decision-complete work plan. No code touched yet. |
-| `/ulw-execute [plan] [--worktree <path>] [--make-pr] [--ship]` | Executes an approved ulw-plan in the same session, todo per task, verified independently, resumable across sessions (`.omo/boulder.json`). |
-| `/btw <question>` (alias `/side`) | Side conversation while the main agent keeps working: ask "what is the risky part of this?" without polluting the main transcript. `Esc Esc` returns; `Ctrl+/` opens the picker. |
+### Mode keywords (IntentGate `keyword-detector` hook)
 
-Placement tip: put the keyword at the start of the prompt — it is regex text
-detection, and leading placement avoids ambiguity.
+| Keyword | What activates | Pilot status |
+|---|---|---|
+| `ulw <task>` (or the full word `ultrawork`) | Ultrawork execution mode: decompose into todo checkboxes, classify LIGHT/HEAVY, fan out category workers, independent done-claim review | available |
+| `mass ulw <task>` | Ultrawork with multi-model spread (own protocol: `mass-ulw-protocol.md`) | available |
+| `hyperplan` / `/hyperplan` | Five hostile critics attack the plan | BLOCKED — requires `team_mode.enabled: true` (ours: off) |
+| `team`, `team mode`, `team-mode`, `team_mode`, `teammode` | Team Mode lead + members | BLOCKED — same gate |
+| `hyperplan-ultrawork` | Combo of both | BLOCKED — same gate |
 
-## What you never type (internal machinery)
+### Reasoning-boost keywords (separate `think-mode` hook)
 
-`librarian`, `explore`, `architect`, `plan-consultant`, `plan-reviewer`,
-`quick`, `deep`, `ultrabrain`, and the workers are NOT keywords. They are
-curated agents and categories the ORCHESTRATOR picks internally when you ask
-in plain language:
+| Keyword | What happens | Pilot status |
+|---|---|---|
+| `think` / `ultrathink` | Sets the message reasoning variant to `high` | available |
 
-> You: "is it feasible to move our nix cache to a private mirror? look into
-> approaches" — the orchestrator spawns `librarian` (upstream docs), `explore`
-> (repo greps), and the `architect` consult lane (read-only trade-offs) and
-> returns a feasibility picture.
+### Named agent mentions (plain language, read-only)
 
-## Scouting / feasibility — plain language, no keyword
+`@librarian <question>`, `@explore <question>`, or asking for
+`task(category: "architect")` — the orchestrator spawns the read-only agents.
+This is the scouting mechanism (see below).
 
-Factibility checks use the READ-ONLY agents above, spawned by the orchestrator
-from a normal prompt. Never use `ulw` for scouting: `ulw` is the execution
-mode and will start implementing instead of scoping. Sequence: scout in plain
-language → decide → if it merits a formal change, run the SDD cycle
-(`sdd-explore` onward), reusing that evidence.
+### Skill text-triggers (auto-activate when the trigger appears)
+
+| Trigger text | Skill | Notes |
+|---|---|---|
+| `ulw-research` | saturation research swarm with citations | see collision warning below |
+| "review work" / "review my work" / "QA my work" | post-implementation gate review | |
+| "remove AI slop" / "de-AI" / "humanize" | removes AI-slop from code | also `/remove-ai-slops` |
+| commit / rebase / squash / "who wrote X" | `git-master` expert | |
+| browser / testing / screenshots | `playwright` (or agent-browser/dev-browser) | |
+| UI/UX / styling | `frontend` designer persona | |
+
+### Slash commands
+
+| Command | What it does | Pilot status |
+|---|---|---|
+| `/ulw-plan` | Planning interview → `plan-consultant` + `plan-reviewer` (max 5 rounds) → decision-complete work plan | available |
+| `/ulw-execute [plan] [--worktree <path>] [--make-pr] [--ship]` | Executes the approved plan in-session, resumable (`.omo/boulder.json`) | available |
+| `/refactor <target> [--scope] [--strategy]` | Refactor with LSP + ast-grep + TDD verification | available |
+| `/btw <question>` (alias `/side`) | Side conversation while main works; `Esc Esc` returns, `Ctrl+/` picker | available |
+| `/handoff` | Context summary to continue in a fresh session | available |
+| `/stop-continuation` | Emergency brake: stops todo-continuation, Goal, and boulder for the session | available |
+| `/remove-ai-slops` | Removes AI-slop from branch changes | available |
+| `/goal <objective>` | Persistent objective with idle continuations | BLOCKED — `goal.enabled: false` |
+
+### The `ulw`-substring collision (learned the hard way)
+
+IntentGate regex-matches ANY occurrence of `ulw` in your message. The literal
+chain `ulw-research` therefore wakes ULTRAWORK (execution mode) instead of the
+research skill — with the mandatory "ULTRAWORK MODE ENABLED!" opener. Rules:
+
+- Never write a chain containing `ulw` unless you want execution mode.
+- For research: plain language + explicit delegation rule (below), or
+  `@librarian`/`@explore`, or ask the orchestrator to load the saturation
+  research skill internally ("load the saturation research skill") — invoking
+  it via the skill tool never touches your text, so the detector stays quiet.
 
 Anything without the keywords above is 100% your normal gentle-ai flow. OmO is
 asleep.
+
+## Scouting / feasibility — plain language, read-only
+
+Factibility checks use the read-only agents (`librarian`, `explore`, the
+`architect` consult lane), spawned by the orchestrator from a normal prompt.
+Never use `ulw` for scouting: `ulw` is the execution mode and will start
+implementing instead of scoping.
+
+Pilot-verified lesson: delegation in free-form chat is a MODEL JUDGMENT, not a
+guarantee. First scouting attempt ran 6 file reads inline (session ses_f723);
+the same prompt plus one explicit rule delegated to three parallel read-only
+agents (session ses_f722). The reliable recipe:
+
+```
+<question> Investigación read-only, NO implementes nada.
+
+REGLA DE EJECUCIÓN — no hagas las lecturas inline: delega la investigación
+(librarian/explore de OmO, en paralelo) y devuélveme solo el resumen final.
+```
+
+If the scouting will feed a formal change anyway, the contractual instrument
+is the SDD cycle itself (`sdd-explore`): the orchestrator MUST delegate there,
+MCP research is mandatory, and the result is a durable `exploration.md`.
+Sequence: scout → decide → `sdd-explore` onward if it merits a change.
 
 ## The workers OmO spawns (mapped to our stack)
 
@@ -119,6 +171,8 @@ Kibitzer is a read-only memory nudge. All live inside the same session.
 
 ## Sources
 
+- Features reference (keyword surface, hooks, commands, tools): `docs/reference/features.md` (dev @ cf3758f)
+- Known issues (incl. #5806 edge-triggered keyword detection): `docs/reference/known-issues.md`
 - Overview/philosophy/IntentGate: `docs/guide/overview.md` (dev @ 7918f24)
 - Delegation deep-dive: `docs/guide/orchestration.md`
 - Categories/agents/model chains: `docs/guide/agent-model-matching.md`

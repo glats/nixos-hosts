@@ -48,3 +48,9 @@ omarchy-nix/
 
 # Local AI runtime state
 .atl/
+
+# OmO plugin state (run-continuation, goal, plans, session work)
+.omo/
+
+# Exported opencode session transcripts (transient analysis material)
+session-ses_*.md
