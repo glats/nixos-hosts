@@ -53,6 +53,11 @@ RTK_DISABLED=1 git status
 git status
 ```
 
+Known hidden-detail gotchas observed in the pilot: `rtk git status` compresses
+away the ahead/behind divergence marker (check plain `git status -sb` when
+sync state matters), and unsupported commands never reach the gain database,
+so their output volume is invisible to `rtk gain` reports.
+
 The bypass executes the original command without rewriting. Compare output
 meaning and `$?`, not only token estimates.
 
