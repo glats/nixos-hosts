@@ -22,6 +22,7 @@ buildGoModule {
     "cmd/device-link"
     "cmd/export-mate-config"
     "cmd/format-nix"
+    "cmd/rtk-init"
     "cmd/git-id"
     "cmd/install-opencode-auth-seed"
     "cmd/linkctl"
