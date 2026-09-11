@@ -98,7 +98,9 @@ let
     "$schema" = "https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/dev/assets/omo.schema.json";
     "[opencode]" = {
       disabled_mcps = [ "websearch" "context7" "grep_app" ];
-      disabled_hooks = [ "directory-agents-injector" "rules-injector" ];
+      # auto-update-checker disabled: Nix owns the version (pinned
+      # oh-my-opencode); the hook's update ping is noise here.
+      disabled_hooks = [ "directory-agents-injector" "rules-injector" "auto-update-checker" ];
       telemetry = false;
       team_mode = { enabled = false; };
       categories = {
