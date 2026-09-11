@@ -46,7 +46,27 @@ classify requests"; prompts without the keywords continue untouched).
 Placement tip: put the keyword at the start of the prompt — it is regex text
 detection, and leading placement avoids ambiguity.
 
-Anything without those keywords is 100% your normal gentle-ai flow. OmO is
+## What you never type (internal machinery)
+
+`librarian`, `explore`, `architect`, `plan-consultant`, `plan-reviewer`,
+`quick`, `deep`, `ultrabrain`, and the workers are NOT keywords. They are
+curated agents and categories the ORCHESTRATOR picks internally when you ask
+in plain language:
+
+> You: "is it feasible to move our nix cache to a private mirror? look into
+> approaches" — the orchestrator spawns `librarian` (upstream docs), `explore`
+> (repo greps), and the `architect` consult lane (read-only trade-offs) and
+> returns a feasibility picture.
+
+## Scouting / feasibility — plain language, no keyword
+
+Factibility checks use the READ-ONLY agents above, spawned by the orchestrator
+from a normal prompt. Never use `ulw` for scouting: `ulw` is the execution
+mode and will start implementing instead of scoping. Sequence: scout in plain
+language → decide → if it merits a formal change, run the SDD cycle
+(`sdd-explore` onward), reusing that evidence.
+
+Anything without the keywords above is 100% your normal gentle-ai flow. OmO is
 asleep.
 
 ## The workers OmO spawns (mapped to our stack)
