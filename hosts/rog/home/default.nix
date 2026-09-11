@@ -16,6 +16,10 @@ baseModules
   # Override active OpenCode provider for this host
   {
     home.opencode.activeProviderName = "opencode-go-openai";
-    home.opencode.omo.enable = true;
+    # OmO pilot retired 2026-09-11: agent-name routing confusion (a plain
+    # "apply" routed to OmO's Sisyphus-Junior worker instead of sdd-apply).
+    # Kimi-k3 orchestrator and opencode 1.18.22 stay. Re-enable with `true`
+    # to restore the full pilot (docs/oh-my-openagent.md).
+    # home.opencode.omo.enable = true;
   }
 ]
