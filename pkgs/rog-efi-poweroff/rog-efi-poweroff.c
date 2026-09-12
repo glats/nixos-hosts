@@ -46,6 +46,32 @@ static const struct dmi_system_id rog_dmi_table[] __initconst = {
 
 static struct sys_off_handler *rog_sys_off;
 
+/*
+ * Diagnostic hook (judgment-day Gate 3 discrimination): writing 1 to
+ * /sys/module/rog_efi_poweroff/parameters/test_reset calls
+ * ResetSystem(EfiResetShutdown) from a RUNNING system instead of the
+ * power-off path. The runtime call site has the NIC alive, so the
+ * "entering" breadcrumb reaches netconsole either way:
+ *   - machine powers off  -> the UEFI ResetSystem path WORKS on this
+ *     firmware; the Gate 3 freeze happened earlier (device shutdown),
+ *     not inside ResetSystem.
+ *   - machine freezes     -> the firmware's ResetSystem path is broken
+ *     too, closing the EFI door definitively.
+ */
+static int test_reset(const char *val, const struct kernel_param *kp)
+{
+	pr_notice("rog-efi-poweroff: TEST ResetSystem(EfiResetShutdown) entering (runtime probe)\n");
+	efi.reset_system(EFI_RESET_SHUTDOWN, EFI_SUCCESS, 0, NULL);
+	pr_notice("rog-efi-poweroff: TEST ResetSystem returned without powering off\n");
+	return 0;
+}
+
+static const struct kernel_param_ops test_reset_ops = {
+	.set = test_reset,
+};
+module_param_cb(test_reset, &test_reset_ops, NULL, 0200);
+MODULE_PARM_DESC(test_reset, "write 1: runtime ResetSystem probe (powers off or freezes, evidence via netconsole)");
+
 static int rog_efi_power_off(struct sys_off_data *data)
 {
 	pr_notice("rog-efi-poweroff: ResetSystem(EfiResetShutdown) entering\n");
