@@ -120,10 +120,10 @@
   hardware.rog.s5-recovery.diagnostics.enable = true;
   hardware.rog.s5-recovery.s5Write.enable = false;
 
-  # efiFallback = Gate 3 (supervised trial): DMI-scoped EFI ResetSystem
-  # power-off handler (priority 225 replaces the freezing ACPI S5 final
-  # entry; acpi_power_off_prepare still runs first per T14 RFC v3 lesson).
-  hardware.rog.s5-recovery.efiFallback.enable = true;
+  # efiFallback = OFF during the kernel-bisect trial: its priority-225
+  # handler would replace the ACPI S5 entry and mask whether 6.12 itself
+  # powers off cleanly. Re-enable after the bisect verdict.
+  hardware.rog.s5-recovery.efiFallback.enable = false;
 
   # Blacklist non-essential ASUS WMI modules: their AML calls
   # (_SB.ATKD.WMNB) fail loudly on this firmware and add ACPI
@@ -138,17 +138,17 @@
   my.desktop.suite = "mate";
 
   boot = {
-    kernelPackages = pkgs.linuxPackages;
+    # KERNEL BISECT (2026-09-12): the shutdown hang started ~2025 while on
+    # Arch (user report) — a mainline kernel regression interacting with
+    # this firmware. Trial: LTS 6.12 as the first bisect point, with BOTH
+    # workaround stages OFF (pure kernel poweroff path — the EFI handler
+    # would mask the result by replacing the S5 entry).
+    kernelPackages = pkgs.linuxPackages_6_12;
     # acpi_call is required by the manually-run `sudo asus-fan-control
     # set-temps ...` CLI. The periodic service stays disabled
     # (disabled during shutdown-hang isolation, 2026-07); manual use only.
     extraModulePackages = with config.boot.kernelPackages; [ acpi_call ];
     kernelModules = [ "acpi_call" ];
-    # NOTE: previous shutdown-hack layers (rog-shutdown service, port-I/O
-    # poweroff hook, acpi=noirq) were removed 2026-09-07 —
-    # see openspec change rog-shutdown-s5-diagnose-and-fix for the
-    # current approach. Only the working baseline remains: shutdown-debug
-    # capture + WMI blacklist + watchdog config in shutdown-fix.nix.
   };
 
   zramSwap.enable = true;
