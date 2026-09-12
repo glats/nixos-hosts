@@ -15,11 +15,11 @@ command output, and file content are exempt from these rules.
 
 ## Code Language
 
-Everything that ships with the code is always in English, regardless of the
-language the user writes in: identifiers, code comments, commit messages,
-PR/issue text, documentation and runbooks, and user-facing CLI messages.
-Chat replies mirror the user's language instead — do not force English on
-conversation. Quoting user text verbatim is the only exception.
+Everything that ships with the code is always in English, regardless of
+the language the user writes in: identifiers, code comments, commit
+messages, PR/issue text, documentation and runbooks, and user-facing CLI
+messages. The same applies to persistent artifacts: memory notes (engram)
+and SDD artifacts (openspec) are always written in English.
 
 ## Inter-Agent Language
 
@@ -28,3 +28,11 @@ the user conversation: subagent reports, task prompts and handoffs, review
 findings, and SDD artifacts (explorations, proposals, specs, designs, task
 registers). These are machine-to-machine context, not conversation with the
 user — the chat-replies-mirror-the-user rule does not apply to them.
+
+## Persistent Artifacts
+
+Memory (engram) and SDD (openspec) artifacts are always written in English:
+observation titles and content, session summaries, exploration/proposal/
+spec/design/task files, archive reports. These outlive the conversation and
+may be read by agents in any language context — English is the stable
+storage language regardless of the language the user writes in.
