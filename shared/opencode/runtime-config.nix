@@ -77,10 +77,6 @@ let
       enable = cfg.plugins.engram.enable;
       src = "${pkgs.engram-assets}/share/engram/opencode/plugins/engram.ts";
     };
-    "secret-guard.ts" = {
-      enable = cfg.plugins.secretGuard.enable;
-      src = "${pkgs.secret-guard-assets}/share/secret-guard/opencode/plugins/secret-guard.ts";
-    };
     "rtk.ts" = {
       enable = cfg.plugins.rtk.enable;
       src = ./rtk.ts;
@@ -295,6 +291,9 @@ in
         # The option was removed in the gentle-ai v2.5.0 alignment, but
         # installations predating that change may still carry the file.
         ${pkgs.coreutils}/bin/rm -f "$runtime_dir/plugins/background-agents.ts"
+
+        # Remove the retired local secret-guard plugin unconditionally.
+        ${pkgs.coreutils}/bin/rm -f "$runtime_dir/plugins/secret-guard.ts"
 
         # Remove Nix-managed plugins that are now disabled.
         ${lib.concatStringsSep "\n" (

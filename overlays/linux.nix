@@ -16,7 +16,6 @@ final: prev: {
     local-ai-assets
     engram-assets
     engram-assets-vanilla
-    secret-guard-assets
     opencode-npm-packages
     opencode
     leaf
