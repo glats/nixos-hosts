@@ -1,5 +1,13 @@
 # Oh My OpenAgent (OmO) — Pilot Tutorial
 
+> **PILOT RETIRED 2026-09-11.** Kept as reference and revival rules. Retired
+> after an agent-routing confusion incident (a plain "apply" prompt routed to
+> OmO's Sisyphus-Junior worker instead of sdd-apply — 36 registered agents vs
+> ~21 native degrades name routing in a stack that owns its orchestrator
+> contracts). If ever revived: disable OmO's Sisyphus agents and keep only the
+> curated four, or run it on a stack without gentle-ai. The full keyword
+> surface below remains accurate for any future reinstall.
+
 Grounded in upstream docs (`code-yeongyu/oh-my-openagent`, dev branch — `docs/guide/overview.md`,
 `docs/guide/orchestration.md`, `docs/guide/agent-model-matching.md`, `docs/guide/btw.md`).
 Declarative pilot port lives in `openspec/changes/cheap-orchestrator-omo-pilot/`.

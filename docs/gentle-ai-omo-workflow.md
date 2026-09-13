@@ -1,5 +1,10 @@
 # Gentle-ai SDD + OmO — Working Both Together
 
+> **PILOT RETIRED 2026-09-11** — this workflow assumes both stacks live in the
+> same session, which proved to confuse orchestrator routing (see the banner
+> in `docs/oh-my-openagent.md`). Kept as reference for a curated-only revival
+> (librarian/explore/plan-* without the Sisyphus execution agents).
+
 Real-workflow guide grounded in the installed skills (`sdd-explore` through
 `sdd-archive`, `sdd-verify`, `judgment-day`) and OmO upstream docs
 (`overview.md`, `orchestration.md`, `btw.md`). Worked example is a real

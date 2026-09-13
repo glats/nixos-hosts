@@ -121,6 +121,15 @@ let
         # mimo-v2.5-free: walkthrough guiado barato.
         sdd-onboard = "opencode/mimo-v2.5-free";
         # nemotron-3-ultra-free: default balanceado.
+        jd-judge-a = "opencode/nemotron-3-ultra-free";
+        jd-judge-b = "opencode/nemotron-3-ultra-free";
+        jd-fix-agent = "opencode/mimo-v2.5-free";
+        review-readability = "opencode/nemotron-3-ultra-free";
+        review-refuter = "opencode/nemotron-3-ultra-free";
+        review-reliability = "opencode/nemotron-3-ultra-free";
+        review-resilience = "opencode/nemotron-3-ultra-free";
+        review-risk = "opencode/nemotron-3-ultra-free";
+        review-validator = "opencode/nemotron-3-ultra-free";
         neutral = "opencode/nemotron-3-ultra-free";
       };
     }
@@ -158,6 +167,15 @@ let
         # mimo-v2.5-free: walkthrough guiado barato.
         sdd-onboard = "opencode/mimo-v2.5-free";
         # nemotron-3-ultra-free: default balanceado.
+        jd-judge-a = "anthropic/claude-sonnet-4-6";
+        jd-judge-b = "anthropic/claude-sonnet-4-6";
+        jd-fix-agent = "opencode/mimo-v2.5-free";
+        review-readability = "anthropic/claude-sonnet-4-6";
+        review-refuter = "anthropic/claude-sonnet-4-6";
+        review-reliability = "anthropic/claude-sonnet-4-6";
+        review-resilience = "anthropic/claude-sonnet-4-6";
+        review-risk = "anthropic/claude-sonnet-4-6";
+        review-validator = "anthropic/claude-sonnet-4-6";
         neutral = "opencode/nemotron-3-ultra-free";
       };
     }
@@ -184,6 +202,15 @@ let
         sdd-verify = "anthropic/claude-sonnet-4-6";
         sdd-archive = "anthropic/claude-haiku-4-5";
         sdd-onboard = "github-copilot/gpt-5.4-mini";
+        jd-judge-a = "anthropic/claude-sonnet-4-6";
+        jd-judge-b = "anthropic/claude-sonnet-4-6";
+        jd-fix-agent = "anthropic/claude-sonnet-4-6";
+        review-readability = "anthropic/claude-sonnet-4-6";
+        review-refuter = "anthropic/claude-sonnet-4-6";
+        review-reliability = "anthropic/claude-sonnet-4-6";
+        review-resilience = "anthropic/claude-sonnet-4-6";
+        review-risk = "anthropic/claude-sonnet-4-6";
+        review-validator = "anthropic/claude-sonnet-4-6";
         neutral = "github-copilot/gpt-5.6-luna";
       };
     }
@@ -202,6 +229,15 @@ let
         sdd-verify = "anthropic/claude-sonnet-4-6";
         sdd-archive = "anthropic/claude-haiku-4-5";
         sdd-onboard = "anthropic/claude-haiku-4-5";
+        jd-judge-a = "anthropic/claude-sonnet-4-6";
+        jd-judge-b = "anthropic/claude-sonnet-4-6";
+        jd-fix-agent = "anthropic/claude-sonnet-4-6";
+        review-readability = "anthropic/claude-sonnet-4-6";
+        review-refuter = "anthropic/claude-sonnet-4-6";
+        review-reliability = "anthropic/claude-sonnet-4-6";
+        review-resilience = "anthropic/claude-sonnet-4-6";
+        review-risk = "anthropic/claude-sonnet-4-6";
+        review-validator = "anthropic/claude-sonnet-4-6";
         neutral = "anthropic/claude-sonnet-4-6";
       };
     }
@@ -221,6 +257,15 @@ let
         sdd-verify = "anthropic/claude-sonnet-4-6";
         sdd-archive = "anthropic/claude-haiku-4-5";
         sdd-onboard = "anthropic/claude-sonnet-4-6";
+        jd-judge-a = "anthropic/claude-sonnet-4-6";
+        jd-judge-b = "anthropic/claude-sonnet-4-6";
+        jd-fix-agent = "anthropic/claude-sonnet-4-6";
+        review-readability = "anthropic/claude-sonnet-4-6";
+        review-refuter = "anthropic/claude-sonnet-4-6";
+        review-reliability = "anthropic/claude-sonnet-4-6";
+        review-resilience = "anthropic/claude-sonnet-4-6";
+        review-risk = "anthropic/claude-sonnet-4-6";
+        review-validator = "anthropic/claude-sonnet-4-6";
         neutral = "anthropic/claude-sonnet-4-6";
       };
     }
@@ -248,6 +293,15 @@ let
         # claude-haiku-4-5: 0.33x cost, fastest — copy and close
         sdd-archive = "anthropic/claude-haiku-4-5";
         sdd-onboard = "anthropic/claude-sonnet-4-6";
+        jd-judge-a = "anthropic/claude-sonnet-4-6";
+        jd-judge-b = "anthropic/claude-sonnet-4-6";
+        jd-fix-agent = "anthropic/claude-sonnet-4-6";
+        review-readability = "anthropic/claude-sonnet-4-6";
+        review-refuter = "anthropic/claude-sonnet-4-6";
+        review-reliability = "anthropic/claude-sonnet-4-6";
+        review-resilience = "anthropic/claude-sonnet-4-6";
+        review-risk = "anthropic/claude-sonnet-4-6";
+        review-validator = "anthropic/claude-sonnet-4-6";
         neutral = "anthropic/claude-sonnet-4-6";
       };
     }
@@ -269,6 +323,15 @@ let
         sdd-verify = "anthropic/claude-sonnet-4-6";
         sdd-archive = "anthropic/claude-haiku-4-5";
         sdd-onboard = "anthropic/claude-sonnet-4-6";
+        jd-judge-a = "anthropic/claude-sonnet-4-6";
+        jd-judge-b = "anthropic/claude-sonnet-4-6";
+        jd-fix-agent = "anthropic/claude-sonnet-4-6";
+        review-readability = "anthropic/claude-sonnet-4-6";
+        review-refuter = "anthropic/claude-sonnet-4-6";
+        review-reliability = "anthropic/claude-sonnet-4-6";
+        review-resilience = "anthropic/claude-sonnet-4-6";
+        review-risk = "anthropic/claude-sonnet-4-6";
+        review-validator = "anthropic/claude-sonnet-4-6";
         neutral = "anthropic/claude-sonnet-4-6";
       };
     }
@@ -314,6 +377,15 @@ let
         sdd-verify = "anthropic/claude-opus-4-8";
         sdd-archive = "anthropic/claude-sonnet-4-6";
         sdd-onboard = "anthropic/claude-sonnet-4-6";
+        jd-judge-a = "anthropic/claude-opus-4-8";
+        jd-judge-b = "anthropic/claude-opus-4-8";
+        jd-fix-agent = "anthropic/claude-opus-4-8";
+        review-readability = "anthropic/claude-opus-4-8";
+        review-refuter = "anthropic/claude-opus-4-8";
+        review-reliability = "anthropic/claude-opus-4-8";
+        review-resilience = "anthropic/claude-opus-4-8";
+        review-risk = "anthropic/claude-opus-4-8";
+        review-validator = "anthropic/claude-opus-4-8";
         neutral = "anthropic/claude-opus-4-8";
       };
     }
@@ -336,6 +408,15 @@ let
         sdd-verify = "anthropic/claude-sonnet-4-6";
         sdd-archive = "github-copilot/claude-haiku-4.5";
         sdd-onboard = "openai/gpt-5.4-mini";
+        jd-judge-a = "anthropic/claude-sonnet-4-6";
+        jd-judge-b = "anthropic/claude-sonnet-4-6";
+        jd-fix-agent = "opencode-go/glm-5.3-flash";
+        review-readability = "anthropic/claude-sonnet-4-6";
+        review-refuter = "anthropic/claude-sonnet-4-6";
+        review-reliability = "anthropic/claude-sonnet-4-6";
+        review-resilience = "anthropic/claude-sonnet-4-6";
+        review-risk = "anthropic/claude-sonnet-4-6";
+        review-validator = "anthropic/claude-sonnet-4-6";
         neutral = "anthropic/claude-sonnet-4-6";
       };
     }
@@ -377,6 +458,15 @@ let
         sdd-verify = "openai/gpt-5.6-terra";
         sdd-archive = "opencode-go/deepseek-v4-flash";
         sdd-onboard = "opencode-go/deepseek-v4-flash";
+        jd-judge-a = "openai/gpt-5.6-terra";
+        jd-judge-b = "openai/gpt-5.6-terra";
+        jd-fix-agent = "openai/gpt-5.6-luna";
+        review-readability = "openai/gpt-5.6-terra";
+        review-refuter = "openai/gpt-5.6-terra";
+        review-reliability = "openai/gpt-5.6-terra";
+        review-resilience = "openai/gpt-5.6-terra";
+        review-risk = "openai/gpt-5.6-terra";
+        review-validator = "openai/gpt-5.6-terra";
         neutral = "openai/gpt-5.6-terra";
       };
     }
@@ -418,6 +508,15 @@ let
         sdd-verify = "openai/gpt-5.6-terra";
         sdd-archive = "openai/gpt-5.6-luna";
         sdd-onboard = "openai/gpt-5.6-luna";
+        jd-judge-a = "openai/gpt-5.6-terra";
+        jd-judge-b = "openai/gpt-5.6-terra";
+        jd-fix-agent = "openai/gpt-5.6-luna";
+        review-readability = "openai/gpt-5.6-terra";
+        review-refuter = "openai/gpt-5.6-terra";
+        review-reliability = "openai/gpt-5.6-terra";
+        review-resilience = "openai/gpt-5.6-terra";
+        review-risk = "openai/gpt-5.6-terra";
+        review-validator = "openai/gpt-5.6-terra";
         neutral = "openai/gpt-5.6-terra";
       };
     }
@@ -477,6 +576,17 @@ let
         sdd-verify = "openai/gpt-5.6-sol";
         sdd-archive = "openai/gpt-5.6-luna";
         sdd-onboard = "openai/gpt-5.6-luna";
+        # Judgment and review roles are explicit so they do not silently
+        # inherit the orchestrator model.
+        jd-judge-a = "openai/gpt-5.6-sol";
+        jd-judge-b = "openai/gpt-5.6-sol";
+        jd-fix-agent = "openai/gpt-5.6-terra";
+        review-readability = "openai/gpt-5.6-sol";
+        review-refuter = "openai/gpt-5.6-sol";
+        review-reliability = "openai/gpt-5.6-sol";
+        review-resilience = "openai/gpt-5.6-sol";
+        review-risk = "openai/gpt-5.6-sol";
+        review-validator = "openai/gpt-5.6-sol";
         neutral = "openai/gpt-5.6-sol";
       };
     }
@@ -496,6 +606,15 @@ let
         sdd-verify = "openai/gpt-5.6-terra";
         sdd-archive = "openai/gpt-5.6-luna";
         sdd-onboard = "openai/gpt-5.6-luna";
+        jd-judge-a = "openai/gpt-5.6-terra";
+        jd-judge-b = "openai/gpt-5.6-terra";
+        jd-fix-agent = "openai/gpt-5.6-luna";
+        review-readability = "openai/gpt-5.6-terra";
+        review-refuter = "openai/gpt-5.6-terra";
+        review-reliability = "openai/gpt-5.6-terra";
+        review-resilience = "openai/gpt-5.6-terra";
+        review-risk = "openai/gpt-5.6-terra";
+        review-validator = "openai/gpt-5.6-luna";
         neutral = "openai/gpt-5.6-terra";
       };
     }
@@ -515,6 +634,15 @@ let
         sdd-verify = "openai/gpt-5.6-terra";
         sdd-archive = "openai/gpt-5.6-luna";
         sdd-onboard = "openai/gpt-5.6-luna";
+        jd-judge-a = "openai/gpt-5.6-terra";
+        jd-judge-b = "openai/gpt-5.6-terra";
+        jd-fix-agent = "openai/gpt-5.6-luna";
+        review-readability = "openai/gpt-5.6-terra";
+        review-refuter = "openai/gpt-5.6-terra";
+        review-reliability = "openai/gpt-5.6-terra";
+        review-resilience = "openai/gpt-5.6-terra";
+        review-risk = "openai/gpt-5.6-terra";
+        review-validator = "openai/gpt-5.6-luna";
         neutral = "openai/gpt-5.6-luna";
       };
     }
@@ -538,6 +666,15 @@ let
         sdd-verify = "github-copilot/claude-sonnet-5";
         sdd-archive = "github-copilot/claude-haiku-4.5";
         sdd-onboard = "github-copilot/gpt-5.4-mini";
+        jd-judge-a = "anthropic/claude-sonnet-5";
+        jd-judge-b = "anthropic/claude-sonnet-5";
+        jd-fix-agent = "anthropic/claude-sonnet-5";
+        review-readability = "anthropic/claude-sonnet-5";
+        review-refuter = "anthropic/claude-sonnet-5";
+        review-reliability = "anthropic/claude-sonnet-5";
+        review-resilience = "anthropic/claude-sonnet-5";
+        review-risk = "anthropic/claude-sonnet-5";
+        review-validator = "anthropic/claude-sonnet-5";
         neutral = "github-copilot/gpt-5.6-luna";
       };
     }
@@ -555,6 +692,15 @@ let
         sdd-verify = "nvidia/nvidia/nemotron-3-ultra-550b-a55b";
         sdd-archive = "nvidia/deepseek-ai/deepseek-v4-flash";
         sdd-onboard = "nvidia/deepseek-ai/deepseek-v4-flash";
+        jd-judge-a = "nvidia/nemotron-3-ultra-550b-a55b";
+        jd-judge-b = "nvidia/nemotron-3-ultra-550b-a55b";
+        jd-fix-agent = "opencode-go/minimax-m3";
+        review-readability = "nvidia/nemotron-3-ultra-550b-a55b";
+        review-refuter = "nvidia/nemotron-3-ultra-550b-a55b";
+        review-reliability = "nvidia/nemotron-3-ultra-550b-a55b";
+        review-resilience = "nvidia/nemotron-3-ultra-550b-a55b";
+        review-risk = "nvidia/nemotron-3-ultra-550b-a55b";
+        review-validator = "nvidia/nemotron-3-ultra-550b-a55b";
         neutral = "nvidia/nvidia/nemotron-3-ultra-550b-a55b";
       };
     }
@@ -588,6 +734,15 @@ let
         # gpt-5.4-mini: fast, cheap, good enough for guided walkthrough
         sdd-onboard = "github-copilot/gpt-5.4-mini";
         # claude-sonnet-4.6: balanced default — cross-family from orchestrator (Rubber Duck principle)
+        jd-judge-a = "github-copilot/claude-sonnet-4.6";
+        jd-judge-b = "github-copilot/claude-sonnet-4.6";
+        jd-fix-agent = "github-copilot/gpt-5.3-codex";
+        review-readability = "github-copilot/claude-sonnet-4.6";
+        review-refuter = "github-copilot/claude-sonnet-4.6";
+        review-reliability = "github-copilot/claude-sonnet-4.6";
+        review-resilience = "github-copilot/claude-sonnet-4.6";
+        review-risk = "github-copilot/claude-sonnet-4.6";
+        review-validator = "github-copilot/claude-sonnet-4.6";
         neutral = "github-copilot/claude-sonnet-4.6";
       };
     }
@@ -616,6 +771,15 @@ let
         sdd-archive = "github-copilot/claude-haiku-4.5";
         # gpt-5.4-mini: good enough for guided walkthroughs while staying cheap.
         sdd-onboard = "github-copilot/gpt-5.4-mini";
+        jd-judge-a = "github-copilot/claude-sonnet-5";
+        jd-judge-b = "github-copilot/claude-sonnet-5";
+        jd-fix-agent = "github-copilot/gpt-5.3-codex";
+        review-readability = "github-copilot/claude-sonnet-5";
+        review-refuter = "github-copilot/claude-sonnet-5";
+        review-reliability = "github-copilot/claude-sonnet-5";
+        review-resilience = "github-copilot/claude-sonnet-5";
+        review-risk = "github-copilot/claude-sonnet-5";
+        review-validator = "github-copilot/claude-sonnet-5";
         neutral = "github-copilot/claude-sonnet-5";
       };
     }
@@ -644,6 +808,15 @@ let
         sdd-archive = "github-copilot/claude-haiku-4.5";
         # gpt-5.4-mini: good enough for guided walkthroughs while staying cheap.
         sdd-onboard = "github-copilot/gpt-5.4-mini";
+        jd-judge-a = "github-copilot/claude-sonnet-5";
+        jd-judge-b = "github-copilot/claude-sonnet-5";
+        jd-fix-agent = "github-copilot/gpt-5.3-codex";
+        review-readability = "github-copilot/claude-sonnet-5";
+        review-refuter = "github-copilot/claude-sonnet-5";
+        review-reliability = "github-copilot/claude-sonnet-5";
+        review-resilience = "github-copilot/claude-sonnet-5";
+        review-risk = "github-copilot/claude-sonnet-5";
+        review-validator = "github-copilot/claude-sonnet-5";
         neutral = "github-copilot/claude-sonnet-5";
       };
     }

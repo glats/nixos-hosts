@@ -79,12 +79,6 @@ in
       '';
     };
 
-    omo.enable = mkOption {
-      type = types.bool;
-      default = false;
-      description = "Enable the declarative, host-scoped oh-my-openagent pilot.";
-    };
-
     disabledTools = mkOption {
       type = types.listOf types.str;
       default = concatMap
@@ -144,8 +138,6 @@ in
 
       home.sessionVariables = {
         RTK_TELEMETRY_DISABLED = "1";
-      } // lib.optionalAttrs config.home.opencode.omo.enable {
-        OMO_DISABLE_POSTHOG = "1";
       };
 
       # Export API keys from sops secrets at shell startup
