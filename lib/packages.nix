@@ -45,7 +45,6 @@ let
           engram = self.engram;
           vanilla = self.engram-assets-vanilla;
         };
-        secret-guard-assets = pkgs.callPackage ../pkgs/secret-guard-assets { };
         opencode-npm-packages = pkgs.callPackage ../pkgs/opencode-npm-packages { };
         opencode = pkgs.callPackage ../pkgs/opencode { };
         leaf = pkgs.callPackage ../pkgs/leaf { };
