@@ -4,8 +4,5 @@
   "unique-names-generator": "sha256-lMgTsgNpjzJGOIwvQKCwhU9Ze/aq0oPGh0JLNdBUecY=",
   "opencode-subagent-statusline": "sha256-4INj8l4a9TXhbjnQhZvfwMsm7fGuZyeN30KTIu5pkck=",
   "opencode-sdd-engram-manage": "sha256-5Q6/e8Xuger/p/LkWshP+phniI7PAzF7xYaHtM1m4zM=",
-  "opencode-multimodal": "sha256-vkWlfrkMrf/gmK4XQB6PkmjRWP5qzTEGpnlktBN7VSE=",
-  "oh-my-opencode": "sha256-H++arKwq+4miQ1FjHZKmtRohOglW5wt+HoI9Jq+iX+k=",
-  "detect-libc": "sha256-Jw3sD8Bs/4ZIHaivLdjxje5rYCeQsU7w4cLBjX2jlCc=",
-  "oh-my-opencode-linux-x64": "sha256-4gIB9GWqInrPHUsIhFLcLpbiyE6EuJjACN74J8ePq9E="
+  "opencode-multimodal": "sha256-vkWlfrkMrf/gmK4XQB6PkmjRWP5qzTEGpnlktBN7VSE="
 }

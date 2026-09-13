@@ -20,8 +20,10 @@ let
   );
   upstreamAgents = upstreamOverlay.agent or { };
 
-  # SDD phase names (for model assignment lookup)
-  sddPhases = [
+  # Agent names whose models are selected by the active provider profile.
+  # Judge Day and review agents are upstream subagents too; leaving them out
+  # makes OpenCode inherit the orchestrator model instead of their role fit.
+  routedAgents = [
     "sdd-init"
     "sdd-explore"
     "sdd-propose"
@@ -32,6 +34,15 @@ let
     "sdd-verify"
     "sdd-archive"
     "sdd-onboard"
+    "jd-judge-a"
+    "jd-judge-b"
+    "jd-fix-agent"
+    "review-readability"
+    "review-refuter"
+    "review-reliability"
+    "review-resilience"
+    "review-risk"
+    "review-validator"
   ];
 
   # Build agent models from active provider
@@ -48,7 +59,7 @@ let
                 name = p;
                 value = null;
               })
-              sddPhases
+              routedAgents
           )
         )
     else
