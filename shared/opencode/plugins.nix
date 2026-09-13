@@ -39,20 +39,6 @@ with lib;
       };
     };
 
-    secretGuard = {
-      enable = mkOption {
-        type = types.bool;
-        default = false;
-        description = ''
-          Enable the secret-guard plugin to prevent accidental secret exposure.
-
-          This plugin:
-          - Redacts secret patterns from bash output (API keys, age keys, tokens)
-          - Strips SOPS_AGE_KEY and SOPS_AGE_KEY_FILE from shell environment
-        '';
-      };
-    };
-
     rtk = {
       enable = mkEnableOption "the RTK shell-output rewriting plugin";
     };
@@ -62,6 +48,7 @@ with lib;
       default = [
         "opencode-claude-auth@latest"
         "opencode-multimodal@latest"
+        "opencode-warden@1.2.0"
       ];
       description = ''
         NPM plugins auto-installed by OpenCode at startup.
@@ -114,7 +101,6 @@ with lib;
       sdd-task-result-artifacts = config.home.opencode.plugins.sddTaskResultArtifacts.enable;
       skill-registry = config.home.opencode.plugins.skillRegistry.enable;
       engram = config.home.opencode.plugins.engram.enable;
-      secret-guard = config.home.opencode.plugins.secretGuard.enable;
       rtk = config.home.opencode.plugins.rtk.enable;
     }
   );
