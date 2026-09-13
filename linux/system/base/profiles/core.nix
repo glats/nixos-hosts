@@ -55,6 +55,7 @@ with pkgs;
   avahi
   thttpd
   sqlite
+  wireguard-tools
 
   # Nix tooling
   git
