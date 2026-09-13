@@ -111,7 +111,10 @@
           # server is alive but the restore hasn't created a session yet —
           # a transient window, not a genuine error. list-sessions reports
           # "no server running on ..." in both cold states instead.
-          err="$(tmux list-sessions 2>&1)"
+          # Keep stdout out of the capture: on success list-sessions prints
+          # the session listing to stdout, which must not be mistaken for
+          # an error (that made tmux-resume exit without attaching).
+          err="$(tmux list-sessions 2>&1 >/dev/null)"
           if [[ -z "$err" ]]; then
             exec tmux attach
           fi
