@@ -34,7 +34,6 @@
       sddTaskResultArtifacts.enable = true;
       skillRegistry.enable = true;
       engram.enable = true;
-      secretGuard.enable = true; # Runtime redaction of secrets from bash output
       rtk.enable = true;
     };
 
