@@ -91,6 +91,13 @@
   # mact2 replying "0/0/1" (empty), nscd=nsncd 1.5.2 doing the lookup.
   services.avahi.nssmdns6 = lib.mkForce false;
 
+  # Publish t14.local only on its primary LAN NIC. Without this whitelist,
+  # Avahi also publishes Docker's 172.17.0.1 and dynamic veth addresses.
+  # Rog then resolved t14.local to 172.17.0.1 and SSH timed out, despite
+  # sshd listening normally on the LAN. Keeping one canonical address also
+  # avoids ambiguous mDNS answers while the laptop has multiple NICs.
+  services.avahi.allowInterfaces = [ "enp2s0f0" ];
+
   nixpkgs.config = {
     allowUnfree = true;
     # fonts.nix includes joypixels; requires explicit license acceptance.
