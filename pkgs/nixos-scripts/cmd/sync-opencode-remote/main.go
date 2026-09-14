@@ -17,6 +17,8 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -183,6 +185,153 @@ func sshCapture(userhost, remoteCmd string) string {
 	return strings.TrimRight(string(out), "\n")
 }
 
+const compatibilityTempName = ".opencode.json.compat.tmp"
+
+var compatibilityPluginPaths = []string{
+	"plugins/rtk.ts",
+	"plugins/skill-registry.ts",
+}
+
+// adaptOpencodeJSON disables BrowserMCP without inspecting or changing agents.
+func adaptOpencodeJSON(input []byte) ([]byte, []string, error) {
+	var config map[string]json.RawMessage
+	if err := json.Unmarshal(input, &config); err != nil {
+		return nil, nil, fmt.Errorf("parse opencode.json: %w", err)
+	}
+
+	actions := []string{}
+	if raw, ok := config["mcp"]; ok {
+		var mcps map[string]json.RawMessage
+		if err := json.Unmarshal(raw, &mcps); err != nil || mcps == nil {
+			return nil, nil, fmt.Errorf("parse opencode.json: mcp must be an object")
+		}
+		if browser, ok := mcps["browsermcp"]; ok {
+			var browserConfig map[string]json.RawMessage
+			if err := json.Unmarshal(browser, &browserConfig); err != nil || browserConfig == nil {
+				return nil, nil, fmt.Errorf("parse opencode.json: mcp.browsermcp must be an object")
+			}
+			browserConfig["enabled"] = json.RawMessage("false")
+			mcps["browsermcp"], _ = json.Marshal(browserConfig)
+			actions = append(actions, "Disable MCP: browsermcp")
+			config["mcp"], _ = json.Marshal(mcps)
+		}
+	}
+	if len(actions) == 0 {
+		return input, actions, nil
+	}
+
+	output, err := json.MarshalIndent(config, "", "  ")
+	if err != nil {
+		return nil, nil, fmt.Errorf("encode opencode.json: %w", err)
+	}
+	output = append(output, '\n')
+	return output, actions, nil
+}
+
+func compatibilityPlugins() ([]string, []string) {
+	paths := append([]string(nil), compatibilityPluginPaths...)
+	actions := []string{
+		"Remove remote asset: plugins/rtk.ts",
+		"Remove remote asset: plugins/skill-registry.ts",
+	}
+	return paths, actions
+}
+
+type compatibilitySSHReader func(userhost, remoteCmd string) ([]byte, error)
+type compatibilitySSHWriter func(userhost, remoteCmd string, input []byte) error
+
+func writeRemoteCompatibility(userhost, remoteDir string, content []byte, write compatibilitySSHWriter) error {
+	temp := filepath.Join(remoteDir, compatibilityTempName)
+	target := filepath.Join(remoteDir, "opencode.json")
+	command := "cat > " + shellQuote(temp) + " && mv -f " + shellQuote(temp) + " " + shellQuote(target)
+	return write(userhost, command, content)
+}
+
+func applyCompatibility(dry bool, localRoot, remoteRoot, userhost string, read compatibilitySSHReader, write compatibilitySSHWriter, remove func(string, string) error) ([]string, error) {
+	var input []byte
+	var err error
+	if dry {
+		input, err = os.ReadFile(filepath.Join(localRoot, "opencode.json"))
+	} else {
+		input, err = read(userhost, "cat "+shellQuote(filepath.Join(remoteRoot, "opencode.json")))
+	}
+	if err != nil {
+		return nil, fmt.Errorf("read target opencode.json: %w", err)
+	}
+	adapted, actions, err := adaptOpencodeJSON(input)
+	if err != nil {
+		return nil, err
+	}
+	pluginPaths, pluginActions := compatibilityPlugins()
+	configActions := len(actions)
+	actions = append(actions, pluginActions...)
+	for _, action := range actions {
+		if dry {
+			fmt.Println("[DRY RUN] Would " + strings.ToLower(action[:1]) + action[1:])
+		} else {
+			fmt.Println("      " + action)
+		}
+	}
+	if dry {
+		return actions, nil
+	}
+	if configActions > 0 {
+		if err := writeRemoteCompatibility(userhost, remoteRoot, adapted, write); err != nil {
+			return actions, fmt.Errorf("write compatible remote opencode.json: %w", err)
+		}
+	}
+	if len(pluginPaths) > 0 {
+		quoted := make([]string, len(pluginPaths))
+		for i, relative := range pluginPaths {
+			quoted[i] = shellQuote(filepath.Join(remoteRoot, relative))
+		}
+		if err := remove(userhost, "rm -f "+strings.Join(quoted, " ")); err != nil {
+			return actions, fmt.Errorf("remove incompatible remote assets: %w", err)
+		}
+	}
+	return actions, nil
+}
+
+func shellQuote(value string) string {
+	return "'" + strings.ReplaceAll(value, "'", "'\\''") + "'"
+}
+
+func sshStream(userhost, remoteCmd string, input []byte) error {
+	cmd := exec.Command("ssh", userhost, remoteCmd)
+	cmd.Stdin = bytes.NewReader(input)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
+func applyRemoteCompatibility() {
+	_, err := applyCompatibility(
+		dryRun,
+		localDir,
+		remoteDir,
+		remoteUser+"@"+remoteHost,
+		func(userhost, command string) ([]byte, error) {
+			return exec.Command("ssh", userhost, command).Output()
+		},
+		sshStream,
+		func(userhost, command string) error {
+			if sshRC(userhost, command) != 0 {
+				return fmt.Errorf("remote command failed")
+			}
+			return nil
+		},
+	)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "ERROR: PostmarketOS compatibility failed:", err)
+		backup := backupPath
+		if backup == "" {
+			backup = "none (backup not reached)"
+		}
+		fmt.Fprintf(os.Stderr, "       Backup is at: %s\n", backup)
+		os.Exit(3)
+	}
+}
+
 // preflight: rsync present, local dir exists (→ exit 1), then SSH
 // reachability with a 5s connect timeout (→ exit 2).
 func preflight() {
@@ -240,7 +389,7 @@ func backupRemote() {
 }
 
 // doRsync: whitelist-first include/exclude transfer.
-func doRsync() {
+func doRsync() error {
 	label := "[2/4]"
 	if dryRun {
 		label = "[DRY RUN]"
@@ -299,8 +448,17 @@ func doRsync() {
 			backup = "none (backup not reached)"
 		}
 		fmt.Fprintf(os.Stderr, "       Backup is at: %s\n", backup)
-		os.Exit(3)
+		return err
 	}
+	return nil
+}
+
+func runTransferAndCompatibility(transfer func() error, compatibility func()) error {
+	if err := transfer(); err != nil {
+		return err
+	}
+	compatibility()
+	return nil
 }
 
 // doNpmInstall: node_modules/ is excluded from the transfer; deps are
@@ -453,7 +611,9 @@ func main() {
 
 	preflight()
 	backupRemote()
-	doRsync()
+	if err := runTransferAndCompatibility(doRsync, applyRemoteCompatibility); err != nil {
+		os.Exit(3)
+	}
 	doNpmInstall()
 	installGithubMcpRemote()
 	disableMcpsRemote()
