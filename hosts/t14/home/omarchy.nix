@@ -295,6 +295,13 @@
     "x-scheme-handler/https" = "microsoft-edge.desktop";
     "x-scheme-handler/ftp" = "microsoft-edge.desktop";
     "application/xhtml+xml" = "microsoft-edge.desktop";
+    "image/png" = "org.gnome.Loupe.desktop";
+    "image/jpeg" = "org.gnome.Loupe.desktop";
+    "image/jpg" = "org.gnome.Loupe.desktop";
+    "image/gif" = "org.gnome.Loupe.desktop";
+    "image/webp" = "org.gnome.Loupe.desktop";
+    "image/bmp" = "org.gnome.Loupe.desktop";
+    "image/tiff" = "org.gnome.Loupe.desktop";
   };
 
   # Override copyScreensaverTxt: upstream runs it after writeBoundary but
