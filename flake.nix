@@ -20,9 +20,33 @@
     nix-colors.url = "github:misterio77/nix-colors";
 
     omarchy-nix = {
-      url = "github:glats/omarchy-nix/main";
+      # Consumer boundary for the Quattro-capable main line. Its nested
+      # quattro inputs remain independent; the host still evaluates against
+      # this flake's nixpkgs 26.05.
+      url = "github:glats/omarchy-nix/5c01ca65d42d520f45d2fb2ddd2526eb6e10494d";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.home-manager.follows = "home-manager";
+      inputs.quattro-nixpkgs.follows = "t14-nixpkgs";
+      inputs.quattro-home-manager.follows = "t14-home-manager";
+      inputs.quattro-hyprland.follows = "t14-hyprland";
+      inputs.quickshell.follows = "t14-quickshell";
+    };
+
+    # Quattro's newer Linux-only dependency boundary. These inputs are routed
+    # exclusively to t14; the shared inputs remain on 26.05 for every other
+    # host, including the Intel mact2 configuration.
+    t14-nixpkgs.url = "github:NixOS/nixpkgs/ef34387ddd751e1ab8857adf4676492d32eb24ec";
+    t14-home-manager = {
+      url = "github:nix-community/home-manager/cda90fd8838825c689fde9d3f3b4e937937790df";
+      inputs.nixpkgs.follows = "t14-nixpkgs";
+    };
+    t14-hyprland = {
+      url = "github:hyprwm/Hyprland/efb50993780079460b0cbed1363e2166a2de1d9f";
+      inputs.nixpkgs.follows = "t14-nixpkgs";
+    };
+    t14-quickshell = {
+      url = "github:quickshell-mirror/quickshell/1a4716cde794a59928d9d9fc15f2afc7a95de360";
+      inputs.nixpkgs.follows = "t14-nixpkgs";
     };
 
     # nixos-hardware — community-maintained hardware profiles.
@@ -150,13 +174,24 @@
         inherit inputs self;
       };
 
-      pkgsFor =
-        s:
-        import nixpkgs {
+      mkPkgsFor =
+        nixpkgsInput: extraOverlays: s:
+        import nixpkgsInput {
           system = s;
           config.allowUnfree = true;
-          overlays = if nixpkgs.lib.hasSuffix "linux" s then [ linuxOverlay ] else [ darwinOverlay ];
+          overlays = (if nixpkgsInput.lib.hasSuffix "linux" s then [ linuxOverlay ] else [ darwinOverlay ])
+            ++ extraOverlays;
         };
+
+      pkgsFor = mkPkgsFor nixpkgs [ ];
+
+      # Quattro packages are exposed by omarchy-nix's matching input set and
+      # overlaid only into t14. This keeps the global nixpkgs boundary intact,
+      # especially for the Intel mact2 configuration.
+      t14QuattroOverlay = final: _prev: {
+        omarchy-runtime = inputs.omarchy-nix.packages.${final.system}.omarchy-runtime;
+        quickshell = inputs.omarchy-nix.packages.${final.system}.quickshell;
+      };
 
       # Per-system package definitions.
       # See lib/packages.nix for the full interface.
@@ -183,15 +218,29 @@
 
       # --- mkHomeConfig: standalone home-manager for any platform ---
       mkHomeConfig =
-        hostname: system: username: extraModules:
-        home-manager.lib.homeManagerConfiguration {
-          pkgs = pkgsFor system;
+        { hostname
+        , system
+        , username
+        , extraModules
+        , nixpkgsInput ? nixpkgs
+        , homeManagerInput ? home-manager
+        , extraOverlays ? [ ]
+        }:
+        let
+          hostInputs = inputs // {
+            nixpkgs = nixpkgsInput;
+            home-manager = homeManagerInput;
+          };
+        in
+        homeManagerInput.lib.homeManagerConfiguration {
+          pkgs = mkPkgsFor nixpkgsInput extraOverlays system;
           # `extraModules` is the complete per-host module list. Do not prepend
           # a platform-wide list: host/default.nix already composes it, and
           # prepending would evaluate shared modules twice.
           modules = extraModules;
           extraSpecialArgs = {
-            inherit inputs username;
+            inherit username;
+            inputs = hostInputs;
             hostName = hostname;
             # Darwin-specific extras (ignored by linux modules)
             primaryUser = username;
@@ -252,23 +301,41 @@
       homeConfigurations =
         let
           baseHomeConfig =
-            hostname: system: username: extraModules:
-            mkHomeConfig hostname system username extraModules;
+            { hostname
+            , system
+            , username
+            , extraModules
+            , nixpkgsInput ? nixpkgs
+            , homeManagerInput ? home-manager
+            , extraOverlays ? [ ]
+            }:
+            mkHomeConfig {
+              inherit hostname system username extraModules nixpkgsInput homeManagerInput extraOverlays;
+            };
         in
         {
           # Standalone HM entries use the same wrapper so hostname, system,
           # username, and extra modules are passed consistently.
-          rog = baseHomeConfig "rog" "x86_64-linux" "glats" (
-            import ./hosts/rog/home/default.nix { inherit inputs; }
-          );
-          thinkcentre = baseHomeConfig "thinkcentre" "x86_64-linux" "glats" (
-            import ./hosts/thinkcentre/home/default.nix { inherit inputs; }
-          );
+          rog = baseHomeConfig {
+            hostname = "rog";
+            system = "x86_64-linux";
+            username = "glats";
+            extraModules = import ./hosts/rog/home/default.nix { inherit inputs; };
+          };
+          thinkcentre = baseHomeConfig {
+            hostname = "thinkcentre";
+            system = "x86_64-linux";
+            username = "glats";
+            extraModules = import ./hosts/thinkcentre/home/default.nix { inherit inputs; };
+          };
           # t14 appends the omarchy config block that the NixOS path provides
           # via osConfig (standalone HM has no osConfig).
-          t14 = baseHomeConfig "t14" "x86_64-linux" "glats" (
-            import ./hosts/t14/home/default.nix { inherit inputs; }
-            ++ [
+          t14 = baseHomeConfig {
+            hostname = "t14";
+            system = "x86_64-linux";
+            username = "glats";
+            extraModules = import ./hosts/t14/home/default.nix { inherit inputs; }
+              ++ [
               {
                 omarchy = {
                   theme = "glats";
@@ -283,20 +350,25 @@
                   wayvnc.enable = true;
                 };
               }
-            ]
-          );
-          mact2 = baseHomeConfig "mact2" "x86_64-darwin" "jcuzmar" [
-            # Include home-darwin/default.nix so the standalone
-            # home-manager build for mact2 picks up the per-host base
-            # config (home.username, home.homeDirectory, etc.) on top of
-            # the canonical module list from `darwinHomeModules`.
-            ./darwin/home
-            {
-              # Native OpenAI tier via the sing-box private link (scoped
-              # bin/opencode-home launcher; see hosts/mact2/default.nix).
-              home.opencode.activeProviderName = "openai-medium";
-            }
-          ];
+            ];
+          };
+          mact2 = baseHomeConfig {
+            hostname = "mact2";
+            system = "x86_64-darwin";
+            username = "jcuzmar";
+            extraModules = [
+              # Include home-darwin/default.nix so the standalone
+              # home-manager build for mact2 picks up the per-host base
+              # config (home.username, home.homeDirectory, etc.) on top of
+              # the canonical module list from `darwinHomeModules`.
+              ./darwin/home
+              {
+                # Native OpenAI tier via the sing-box private link (scoped
+                # bin/opencode-home launcher; see hosts/mact2/default.nix).
+                home.opencode.activeProviderName = "openai-medium";
+              }
+            ];
+          };
         };
 
       # --- Formatter ---
