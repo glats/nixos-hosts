@@ -1,5 +1,6 @@
 { lib
 , stdenvNoCC
+, archifySkill
 }:
 
 stdenvNoCC.mkDerivation {
@@ -13,6 +14,7 @@ stdenvNoCC.mkDerivation {
   installPhase = ''
     mkdir -p $out/share/local-ai/skills
     cp -r $src/. $out/share/local-ai/skills/
+    cp -r "${archifySkill}" "$out/share/local-ai/skills/archify"
   '';
 
   meta = with lib; {
