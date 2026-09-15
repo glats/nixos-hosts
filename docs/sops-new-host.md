@@ -1,90 +1,51 @@
-# SOPS Setup for New Hosts
+# SOPS setup for a new host
 
-## Quick Reference: Adding a new host to sops
+This procedure describes the authorized, on-host SOPS steps for `macm5`.
+Remote preparation may document the steps, but must not read, decrypt, rotate,
+or write encrypted secret files without the host and authorization present.
 
-### 1. Post-install: Generate SSH host key
+## Host recipient
 
-```bash
-sudo ssh-keygen -t ed25519 -f /etc/ssh/ssh_host_ed25519_key -N ""
+On the physical host, generate or verify the SSH host key and derive its age
+recipient without displaying private material:
+
+```text
+sudo ssh-keygen -t ed25519 -f /etc/ssh/ssh_host_ed25519_key -N ''
+nix shell nixpkgs#ssh-to-age --command ssh-to-age \
+  -i /etc/ssh/ssh_host_ed25519_key.pub
 ```
 
-### 2. Get age key from SSH host key
+An authorized maintainer adds the resulting recipient to `.sops.yaml` and to
+only the required creation rules. Do not guess a recipient and do not commit
+the output of a secret decryption command.
 
-```bash
-nix shell nixpkgs#ssh-to-age --command ssh-to-age -i /etc/ssh/ssh_host_ed25519_key.pub
+## Encrypted data and link identity
+
+The host recipient and the dedicated `uuid_macm5` value must be staged by the
+SOPS owner. The identity is not a copy of another device identity. The owner
+must verify the encrypted diff and use `sops updatekeys` only for the approved
+files. This change intentionally does not perform that operation.
+
+After rotation, verify only ciphertext metadata and repository status:
+
+```text
+git diff --check
+git status --short
 ```
 
-Copy the output (e.g., `age196hvyhz9nhwdxyadwj36umtssxqdhde80x3xyhkt9l9va73mtq3s3pxvnk`).
+Do not use `sops -d`, shell interpolation, logs, or diagnostic output that
+could expose UUIDs. If the required recipient or authorization is unavailable,
+stop and leave all existing records unchanged.
 
-### 3. Update `.sops.yaml` in repo
+## Activation dependency
 
-Add the new host key to the `keys:` section:
+The first macm5 switch is blocked until the encrypted files are available to
+the host and the native preflight passes. Follow `docs/macm5-migration.md` for
+the non-secret checks and `docs/macm5-acceptance.md` for the release evidence.
 
-```yaml
-keys:
-  - &host_t14 age196hvyhz9nhwdxyadwj36umtssxqdhde80x3xyhkt9l9va73mtq3s3pxvnk
-```
+## Recovery
 
-Add to relevant creation rules:
-
-```yaml
-creation_rules:
-  - path_regex: secrets/system/.+
-    key_groups:
-      - age:
-          - *admin_glats
-          - *host_rog
-          - *host_thinkcentre
-          - *host_t14
-```
-
-### 4. Copy admin key to new host
-
-From an existing host (rog, thinkcentre):
-
-```bash
-scp /home/glats/.config/sops/age/keys.txt newhost:/home/glats/.config/sops/age/keys.txt
-```
-
-### 5. Re-encrypt secrets
-
-On the new host:
-
-```bash
-cd ~/.nixos
-for f in secrets/system/*.yaml; do
-  sops updatekeys --yes "$f"
-done
-```
-
-### 6. Enable sops in host config
-
-In `hosts/<newhost>/default.nix`, uncomment:
-
-```nix
-../../modules/base/sops.nix
-./secrets.nix
-```
-
-### 7. Rebuild
-
-```bash
-nixos-rebuild switch --flake .#<newhost>
-```
-
-## Important Notes
-
-- **Admin key is required** for re-encryption. If lost, all secrets must be regenerated.
-- **User secrets** (`secrets/user/*.yaml`) need a separate rule or `*host_t14` added.
-- **Always backup** `.sops.yaml` and the admin key.
-- **New host** must be installed and bootable before enabling sops (to generate SSH key).
-
-## Current Hosts
-
-| Host | Key |
-|------|-----|
-| admin_glats | `age1j4mxejwmktekgf24sju92ryayh5jlmv4ldxj62e2srwghpkpuujscct9lt` |
-| rog | `age1q46qlf4kt0pc255nrl4r24m5hnvqwqf9wd8n6206f0zg95v6993qvd9cr8` |
-| thinkcentre | `age1uhv0z8e04q2385wlrn0vgd237ts2exea375yr4yeqwx5v9zgw9esdg3rsn` |
-| mact2 | `age1ngeetv5mnt8ax30tmm6799qs2779905v0jafpywuydrvw2sz7yds7rlp5z` |
-| t14 | `age196hvyhz9nhwdxyadwj36umtssxqdhde80x3xyhkt9l9va73mtq3s3pxvnk` |
+SOPS changes are reverted through the reviewed Git revision and an authorized
+ciphertext rotation. Do not recover by reusing a different device identity or
+by removing an existing host record. A missing age key is an authorization
+failure; stop and contact the maintainer.
