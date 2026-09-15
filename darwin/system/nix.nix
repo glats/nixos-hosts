@@ -31,8 +31,7 @@
     # faster rebuilds.
     keep-outputs = true;
 
-    # Limit concurrent jobs to prevent OOM and laptop freezes on this
-    # Intel Mac (same intent as the linux max-jobs setting).
+    # Keep activation/build resource use bounded on Darwin hosts.
     max-jobs = 1;
   };
 

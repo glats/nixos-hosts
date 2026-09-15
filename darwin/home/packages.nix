@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ lib, pkgs, ... }:
 let
   # Google Cloud SDK with the GKE auth plugin component included.
   gdk = pkgs.google-cloud-sdk.withExtraComponents (
@@ -10,62 +10,68 @@ let
 in
 {
   home = {
-    packages = with pkgs; [
-      pandoc
-      wkhtmltopdf
-      curl
-      git
-      tmux
-      htop
-      tree
-      nerd-fonts.caskaydia-cove
-      defaultbrowser
-      docker-compose
-      lazydocker
-      freerdp
-      colima
-      docker
-      maven
-      gradle
-      micronaut
-      nixpkgs-fmt
-      fastfetch
-      wget
-      jq
-      lsd
-      vscode
-      gdk
-      btop
-      nix-index
-      gnupg
-      pinentry_mac
-      netcat
-      sshfs-fuse
-      protobuf
-      plantuml
-      lazygit
-      mise
-      speedtest-cli
-      wireguard-go
-      wireguard-tools
-      bat
-      gh
-      wakeonlan
-      glab
-      yarn
-      kubectl
-      nodejs
-      opencode
-      uv
-      ripgrep
-      sops
-      home-manager
-      superfile
-      ffmpeg
+    packages = with pkgs;
+      [
+        pandoc
+      ]
+      # wkhtmltopdf has no aarch64-darwin build in nixpkgs 26.05.
+      ++ lib.optionals (stdenv.hostPlatform.system == "x86_64-darwin") [
+        wkhtmltopdf
+      ]
+      ++ [
+        curl
+        git
+        tmux
+        htop
+        tree
+        nerd-fonts.caskaydia-cove
+        defaultbrowser
+        docker-compose
+        lazydocker
+        freerdp
+        colima
+        docker
+        maven
+        gradle
+        micronaut
+        nixpkgs-fmt
+        fastfetch
+        wget
+        jq
+        lsd
+        vscode
+        gdk
+        btop
+        nix-index
+        gnupg
+        pinentry_mac
+        netcat
+        sshfs-fuse
+        protobuf
+        plantuml
+        lazygit
+        mise
+        speedtest-cli
+        wireguard-go
+        wireguard-tools
+        bat
+        gh
+        wakeonlan
+        glab
+        yarn
+        kubectl
+        nodejs
+        opencode
+        uv
+        ripgrep
+        sops
+        home-manager
+        superfile
+        ffmpeg
 
-      # Android platform tools (adb, fastboot)
-      android-tools
-      yt-dlp
-    ];
+        # Android platform tools (adb, fastboot)
+        android-tools
+        yt-dlp
+      ];
   };
 }
