@@ -1,4 +1,9 @@
-# mact2↔rog link: architecture and day-to-day operation
+# Darwin↔rog link: architecture and day-to-day operation
+
+The current operational link remains unchanged while macm5 onboarding is
+prepared. macm5 onboarding requires a dedicated encrypted identity and native
+acceptance; it must not reuse an existing device identity or serve as an
+implicit acceptance claim.
 
 **What it is**: your corporate Mac (mact2) browses through your home server (rog) over a private TLS link that the endpoint security agent cannot inspect. This is **not an OpenAI-only tool**: it is a **general-purpose** private egress for any application — the TUN automatically covers the IP traffic the security agent lets through, and the loopback proxy `127.0.0.1:2080` is a per-app door for the categories the security agent intercepts at socket level (any app that accepts its own proxy; see the "Generic mechanism" table below). OpenCode with native OpenAI is the flagship consumer and the worked example of this doc.
 
