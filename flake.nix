@@ -167,6 +167,7 @@
       inherit (packages)
         linuxPackages
         darwinPackages
+        aarch64DarwinPackages
         ;
 
       # --- Home module lists ---
@@ -203,6 +204,7 @@
       packages.x86_64-linux = linuxPackages;
 
       packages.x86_64-darwin = darwinPackages;
+      packages.aarch64-darwin = aarch64DarwinPackages;
 
       # --- Apps for nix run ---
       apps.x86_64-linux = {
@@ -246,6 +248,7 @@
       # --- Darwin configurations ---
       darwinConfigurations = {
         mact2 = mkDarwinHost { hostname = "mact2"; };
+        macm5 = mkDarwinHost { hostname = "macm5"; system = "aarch64-darwin"; };
       };
 
       # --- Standalone home-manager configurations ---
@@ -297,6 +300,12 @@
               home.opencode.activeProviderName = "openai-medium";
             }
           ];
+          macm5 = baseHomeConfig "macm5" "aarch64-darwin" "jcuzmar" [
+            ./darwin/home
+            {
+              home.opencode.activeProviderName = "anthropic-opencode-free";
+            }
+          ];
         };
 
       # --- Formatter ---
@@ -304,6 +313,7 @@
       # Keep this aligned with `format-nix`; do not invoke formatter binaries directly.
       formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixpkgs-fmt;
       formatter.x86_64-darwin = nixpkgs.legacyPackages.x86_64-darwin.nixpkgs-fmt;
+      formatter.aarch64-darwin = nixpkgs.legacyPackages.aarch64-darwin.nixpkgs-fmt;
 
       # --- Go toolchain devshell (pkgs/nixos-scripts) ---
       # Dev iteration only: `nix develop -c go -C pkgs/nixos-scripts test ./...`

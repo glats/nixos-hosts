@@ -7,6 +7,7 @@
 #   {
 #     packages.x86_64-linux = packages.linuxPackages;
 #     packages.x86_64-darwin = packages.darwinPackages;
+#     packages.aarch64-darwin = packages.aarch64DarwinPackages;
 #   }
 { inputs
 , pkgsFor
@@ -15,6 +16,7 @@
 let
   linuxPkgs = pkgsFor "x86_64-linux";
   darwinPkgs = pkgsFor "x86_64-darwin";
+  aarch64DarwinPkgs = pkgsFor "aarch64-darwin";
 
   # Packages built identically on both platforms.
   commonPackages =
@@ -67,10 +69,12 @@ let
   };
 
   darwinPackages = commonPackages darwinPkgs;
+  aarch64DarwinPackages = commonPackages aarch64DarwinPkgs;
 in
 {
   inherit
     linuxPackages
     darwinPackages
+    aarch64DarwinPackages
     ;
 }
