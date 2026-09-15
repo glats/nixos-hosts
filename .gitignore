@@ -54,3 +54,6 @@ omarchy-nix/
 
 # Exported opencode session transcripts (transient analysis material)
 session-ses_*.md
+
+# Explicitly reviewed Archify output (never runtime or verification proof)
+docs/artifacts/archify/

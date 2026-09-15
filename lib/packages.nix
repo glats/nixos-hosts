@@ -39,7 +39,10 @@ let
         ponytail-assets = pkgs.callPackage ../pkgs/ponytail-assets/default.nix {
           ponytail-src = inputs.ponytail-src;
         };
-        local-ai-assets = pkgs.callPackage ../pkgs/local-ai-assets { };
+        archify-skill = pkgs.callPackage ../pkgs/archify-skill { };
+        local-ai-assets = pkgs.callPackage ../pkgs/local-ai-assets {
+          archifySkill = self.archify-skill;
+        };
         engram-assets-vanilla = pkgs.callPackage ../pkgs/engram-assets/vanilla.nix {
           engram-src = inputs.engram-src;
         };

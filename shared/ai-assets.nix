@@ -45,4 +45,8 @@ with lib;
       description = "Engram configuration shared across Gentle AI tools.";
     };
   };
+
+  config = mkIf config.home.ai-assets.enable {
+    home.sessionVariables.ARCHIFY_UPDATE_CHECK_DISABLED = "1";
+  };
 }
