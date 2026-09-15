@@ -68,13 +68,20 @@ After the native prerequisites pass, run on macm5:
 cd ~/.nixos
 nix eval --raw '.#darwinConfigurations.macm5.config.system.build.toplevel.drvPath'
 nix eval --raw '.#homeConfigurations.macm5.activationPackage.drvPath'
-nixos-build dry
-nixos-build switch
+sudo nix run nix-darwin/nix-darwin-26.05#darwin-rebuild -- \
+  switch --flake ~/.nixos#macm5
 ```
 
 The Darwin configuration keeps `nix.enable = false`; Determinate remains the
 sole Nix owner. Daemon and cache settings are emitted through
 `determinateNix.customSettings`, not `nix.settings`.
+
+After this first successful switch, use the installed wrapper for later changes:
+
+```text
+nixos-build dry
+nixos-build switch
+```
 
 ## Phase 4: native acceptance
 
