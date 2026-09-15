@@ -89,6 +89,10 @@ RTK 0.41.0 is installed on all hosts. An OpenCode plugin and a Claude Code Bash 
 - **Host-conditional modules** (conky-rog, conky-thinkcentre, openfang) are NOT in shared-modules.nix — each `hosts/<host>/home/default.nix` extends the base list with its own extras.
 - Per-host OpenCode provider override lives there too: `{ home.opencode.activeProviderName = "..."; }` (e.g. rog: `openai-opencode-balanced`, thinkcentre: `openai-medium`, mact2: `openai-medium-proxy`).
 
+## Project Skills
+
+- `tool-adoption` — evaluate externally proposed tools before adoption; research source, lifecycle, security, Nix support, and fit, then recommend adopt, defer, or reject.
+
 ## Go-Only Operational Scripts
 
 All operational scripts in this repo are **Go, never bash**. This binds every
