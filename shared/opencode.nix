@@ -140,6 +140,10 @@ in
         RTK_TELEMETRY_DISABLED = "1";
       };
 
+      home.file.".config/opencode/opencode-warden.json".text = builtins.toJSON {
+        audit.filePath = "${config.home.homeDirectory}/.local/state/opencode/warden/audit.log";
+      };
+
       # Export API keys from sops secrets at shell startup
       programs.zsh.initContent = lib.mkAfter ''
               if [ -f "${config.sops.secrets."opencode/nvidia_api_key".path}" ]; then
