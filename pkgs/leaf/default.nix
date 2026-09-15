@@ -22,6 +22,10 @@ let
       url = "https://github.com/RivoLink/leaf/releases/download/${version}/leaf-macos-x86_64";
       sha256 = "sha256-0zJvhyz5soar0si7TzRANApdkQzIpfbjXPSTv247Qrs=";
     };
+    aarch64-darwin = {
+      url = "https://github.com/RivoLink/leaf/releases/download/${version}/leaf-macos-arm64";
+      sha256 = "sha256-q+B/PZVZlsR7qX12e9jFwsT9A2W8883En46sYkVFcU0=";
+    };
   }.${system} or (throw "Unsupported system: ${system}");
 in
 stdenvNoCC.mkDerivation {
@@ -56,6 +60,7 @@ stdenvNoCC.mkDerivation {
     platforms = [
       "x86_64-linux"
       "x86_64-darwin"
+      "aarch64-darwin"
     ];
     mainProgram = "leaf";
   };
