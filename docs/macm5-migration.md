@@ -47,7 +47,8 @@ launchd, Home Manager, Homebrew, remote access, or private-link behavior.
 
 On the physical Mac, complete this checklist before the first switch:
 
-- [ ] Finish macOS setup and set LocalHostName to `macm5`.
+- [ ] Preserve the company-controlled LocalHostName `CLFTCLGV2FHWW0W`; the
+      configuration must not declare or override `networking.hostName`.
 - [ ] Install Xcode Command Line Tools.
 - [ ] Install Nix with Determinate from a fresh base; do not layer it over
       another Nix installer or install a second daemon to repair a mixed state.
@@ -93,7 +94,7 @@ Run the command checks below on macm5:
 
 ```text
 test "$(uname -m)" = arm64
-test "$(scutil --get LocalHostName)" = macm5
+test "$(scutil --get LocalHostName)" = CLFTCLGV2FHWW0W
 mount | grep ' /nix '
 launchctl print system/systems.determinate.nix-daemon
 command -v nix
@@ -115,6 +116,7 @@ Also verify the following behavior:
 - [ ] Home Manager activation succeeded.
 - [ ] SSH and Screen Sharing are reachable from the approved network.
 - [ ] wsdd advertises `macm5`.
+- [ ] The physical LocalHostName remains `CLFTCLGV2FHWW0W`.
 - [ ] The rendered sing-box configuration is root-owned and mode `0400`.
 - [ ] Private and corporate CIDRs remain direct.
 - [ ] The private link uses the safe direct default before probe history exists.

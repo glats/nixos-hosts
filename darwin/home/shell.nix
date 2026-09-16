@@ -1,4 +1,4 @@
-{ config, pkgs, lib, ... }:
+{ config, pkgs, lib, primaryUser, ... }:
 {
   home.packages = [ pkgs.nixos-scripts ];
 
@@ -67,7 +67,7 @@
       # cost ~150ms of startup each (see openspec optimize-zsh-startup-time).
 
       path=(
-        /etc/profiles/per-user/jcuzmar/bin
+        /etc/profiles/per-user/${primaryUser}/bin
         /run/current-system/sw/bin
         /nix/var/nix/profiles/default/bin
         $HOME/.nix-profile/bin

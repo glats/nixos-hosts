@@ -8,12 +8,12 @@
 | 400-line budget risk | High |
 | Chained PRs recommended | Yes |
 | Suggested split | PR 1 hardening/identity → PR 2 native evidence/runbook → PR 3 gated retirement |
-| Delivery strategy | ask-on-risk |
-| Chain strategy | pending user choice |
+| Delivery strategy | exception-ok |
+| Chain strategy | size:exception accepted by maintainer |
 
-Decision needed before apply: Yes
-Chained PRs recommended: Yes
-Chain strategy: pending
+Decision needed before apply: No — maintainer accepted `size:exception` for this coherent remote-safe slice
+Chained PRs recommended: Yes, but not required for this accepted slice
+Chain strategy: size:exception
 400-line budget risk: High
 
 ### Suggested Work Units
@@ -46,3 +46,9 @@ Chain strategy: pending
 
 - [ ] 4.1 After accepted evidence only, remove mact2 from `flake.nix`, delete `hosts/mact2/default.nix`, remove stale targets from `linux/home/remote-desktop.nix`, `linux/home/ssh.nix`, and `darwin/home/remote-desktop.nix`, then revoke required rog/SOPS records.
 - [ ] 4.2 Run `format-nix && nix flake check --no-build`, verify macm5 remains healthy and mact2 authentication fails; recovery MUST use macm5 Git/generation/identity state only.
+
+## Phase 5: Confirmed Corporate Identity Correction
+
+- [x] 5.1 Decouple the logical Darwin configuration selector from the physical hostname in `mkDarwinHost`, `flake.nix`, and macm5 host configuration; configure local account `juan` and preserve `CLFTCLGV2FHWW0W` by omitting `networking.hostName`.
+- [x] 5.2 Make Darwin `nixos-build` target `macm5` by default, document the `NIXOS_DARWIN_HOST` override, and add focused resolver tests.
+- [x] 5.3 Replace the hard-coded Darwin user PATH entry with `primaryUser`, keep GitHub identity explicitly `jcuzmar`, and update macm5 onboarding artifacts.

@@ -368,6 +368,26 @@ func TestParseArgs(t *testing.T) {
 	}
 }
 
+func TestResolveHost(t *testing.T) {
+	physical := func() (string, error) { return "CLFTCLGV2FHWW0W", nil }
+	noOverride := func(string) string { return "" }
+
+	if got := ResolveHost(true, noOverride, physical); got != "macm5" {
+		t.Fatalf("Darwin default = %q, want macm5", got)
+	}
+	if got := ResolveHost(true, func(key string) string {
+		if key == "NIXOS_DARWIN_HOST" {
+			return "mact2"
+		}
+		return ""
+	}, physical); got != "mact2" {
+		t.Fatalf("Darwin override = %q, want mact2", got)
+	}
+	if got := ResolveHost(false, noOverride, physical); got != "CLFTCLGV2FHWW0W" {
+		t.Fatalf("Linux hostname = %q, want physical hostname", got)
+	}
+}
+
 func TestIsHelpAndKnown(t *testing.T) {
 	for _, c := range []string{"help", "-h", "--help"} {
 		if !IsHelp(c) {
