@@ -33,7 +33,7 @@ import (
 // wsPath is the obscurity-not-secret WS path constant — must stay
 // byte-identical across the rog server
 // (linux/system/services/network/sing-box-link.nix), the nginx vhost
-// (linux/system/services/web/nginx.nix) and the mact2 client
+// (linux/system/services/web/nginx.nix) and the macm5 client
 // (darwin/system/sing-box-link.nix).
 const wsPath = "/ed59280aa562f4b7eba4519e3c316e24"
 
@@ -106,9 +106,10 @@ func stripSpace(s string) string {
 // profile name in SFA. Params (verified against the sing-box vless parser
 // per addendum R5): encryption=none — VLESS without inner encryption;
 // security=tls — outer TLS, terminated by nginx; sni/fp — outer ClientHello
-// matches mact2's uTLS chrome fingerprint; type=ws over :443.
+// matches macm5's uTLS chrome fingerprint; type=ws over :443.
 func buildLink(uuid, device string) string {
-	return fmt.Sprintf("vless://%s@tun.glats.org:443?encryption=none&security=tls&sni=tun.glats.org&fp=chrome&type=ws&host=tun.glats.org&path=%s#mact2-link-%s", uuid, wsPath, device)
+	return fmt.Sprintf("vless://%s@tun.glats.org:443?encryption=none&security=tls&sni=tun.glats.org&fp=chrome&type=ws&host=tun.glats.org&path=%s#macm5-link-%s", uuid, wsPath, device)
+
 }
 
 // isTerminal reports whether f is attached to a character device (the bash
@@ -133,7 +134,7 @@ Arguments:
   <uuid-file>   Optional explicit path to the rendered UUID file.
                 Defaults:
                   - rog:     /run/secrets/link/uuid_phone
-                  - mact2:   /run/secrets/link/uuid_phone
+                  - macm5:   /run/secrets/link/uuid_phone
 
 Environment:
   LINK_PHONE_UUID_FILE   Override the UUID file path (CI / scripting).
@@ -164,7 +165,7 @@ func main() {
 	// Resolve the UUID file path. Priority:
 	//   1. explicit positional argument
 	//   2. LINK_PHONE_UUID_FILE env var
-	//   3. default path (rog + mact2 layout is identical)
+	//   3. default path (rog + macm5 layout is identical)
 	uuidFile := defaultUUIDFile
 	if v := os.Getenv("LINK_PHONE_UUID_FILE"); v != "" {
 		uuidFile = v
@@ -198,7 +199,7 @@ func main() {
 
 	if mode == "config" {
 		// Full sing-box client config for SFA (Local profile via clipboard).
-		// Mirrors the mact2 darwin client minus macOS-specific bits (no
+		// Mirrors the macm5 darwin client minus macOS-specific bits (no
 		// process rules on Android; endpoint-agent CIDR exclusion is a Mac
 		// concern). Validated shape: identical rule/dns/urltest structure
 		// passes `sing-box check` on 1.13.x. urltest order note: the Mac

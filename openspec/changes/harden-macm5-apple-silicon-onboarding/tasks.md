@@ -38,13 +38,13 @@ Chain strategy: size:exception
 
 ## Phase 3: Native Acceptance and Runbook
 
-- [ ] 3.1 Update `hosts/macm5/default.nix`, `darwin/system/settings.nix`, and `darwin/home/remote-desktop.nix` for macm5-only onboarding; preserve arm64 Homebrew and direct-default routing.
+- [x] 3.1 Update `hosts/macm5/default.nix`, `darwin/system/settings.nix`, and `darwin/home/remote-desktop.nix` for macm5-only onboarding; preserve arm64 Homebrew and direct-default routing.
 - [x] 3.2 Write `docs/macm5-migration.md`, `docs/sops-new-host.md`, and `docs/home-link.md` covering evaluation, switch, `/nix`, Determinate launchd, PATH, Home Manager, Homebrew, SSH/Screen Sharing, wsdd, `sing-box check`, permissions, routing, and Git/generation recovery; mact2 MUST NOT appear as fallback, test, or rollback.
-- [ ] 3.3 Run native macm5 acceptance and record release evidence plus known-good generation; stop and recover on APFS or daemon-socket failure.
+- [x] 3.3 Run native macm5 acceptance and record release evidence plus known-good generation; stop and recover on APFS or daemon-socket failure.
 
 ## Phase 4: Evidence-Gated Retirement
 
-- [ ] 4.1 After accepted evidence only, remove mact2 from `flake.nix`, delete `hosts/mact2/default.nix`, remove stale targets from `linux/home/remote-desktop.nix`, `linux/home/ssh.nix`, and `darwin/home/remote-desktop.nix`, then revoke required rog/SOPS records.
+- [x] 4.1 After accepted evidence only, remove mact2 from `flake.nix`, delete `hosts/mact2/default.nix`, remove stale targets from `linux/home/remote-desktop.nix`, `linux/home/ssh.nix`, and `darwin/home/remote-desktop.nix`, then revoke required rog/SOPS records.
 - [ ] 4.2 Run `format-nix && nix flake check --no-build`, verify macm5 remains healthy and mact2 authentication fails; recovery MUST use macm5 Git/generation/identity state only.
 
 ## Phase 5: Confirmed Corporate Identity Correction

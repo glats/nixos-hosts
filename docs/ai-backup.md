@@ -23,7 +23,7 @@ the source host — including macOS).
 ## Commands
 
 ```
-ai-backup backup [TARGET]     # default target mact2
+ai-backup backup [TARGET]     # default target macm5
 ai-backup list
 ai-backup restore ARCHIVE [--to TARGET] [--dry-run] [--force]
 ```
@@ -31,17 +31,17 @@ ai-backup restore ARCHIVE [--to TARGET] [--dry-run] [--force]
 Examples:
 
 ```bash
-# Backup the default source (mact2) to the default destination.
+# Backup the default source (macm5) to the default destination.
 ai-backup backup
 
 # Local snapshot of this host, dry-run inspection only.
-ai-backup restore /run/media/stuff/samba/backup/ai/mact2/ai-backup-mact2-YYYYMMDD-HHMMSS.tar.zst --dry-run
+ai-backup restore /run/media/stuff/samba/backup/ai/macm5/ai-backup-macm5-YYYYMMDD-HHMMSS.tar.zst --dry-run
 
 # Inspect an archive without decompressing to disk:
 zstd -dc ARCHIVE | tar -tf - | less
 
 # Verify a published checksum sidecar:
-cd /run/media/stuff/samba/backup/ai/mact2 && sha256sum -c ai-backup-mact2-*.sha256
+cd /run/media/stuff/samba/backup/ai/macm5 && sha256sum -c ai-backup-macm5-*.sha256
 
 # Restore locally, keeping pre-restore copies of everything replaced:
 ai-backup restore ARCHIVE --to local
@@ -152,7 +152,7 @@ payload, per db:
 | `AI_BACKUP_DEST` | `/run/media/stuff/samba/backup/ai` | destination root for backup/list |
 | `AI_BACKUP_ZSTD_LEVEL` | `6` | `zstd -T0 -<level>` compression level (1–19) |
 | `AI_BACKUP_SSH_OPTS` | `-o BatchMode=yes -o ConnectTimeout=8` | extra ssh options for the source host |
-| `AI_BACKUP_EXTRA` | *(unset)* | Space-separated list of absolute paths on the source host; only paths that exist are archived, skipped silently when absent. Typically project `.engram/` dirs: their `chunks/`, `manifest.json` and `config.json` members are archived verbatim as `extras/<project>/.engram/...`, and after restore they land in `~/extras/<project>/.engram/` (never over the global `~/.engram`). The live project `engram.db` never enters. Usage example: `AI_BACKUP_EXTRA="/home/glats/dev/gentle-ai/.engram /home/glats/work/notesta/.engram" ai-backup backup mact2` |
+| `AI_BACKUP_EXTRA` | *(unset)* | Space-separated list of absolute paths on the source host; only paths that exist are archived, skipped silently when absent. Typically project `.engram/` dirs: their `chunks/`, `manifest.json` and `config.json` members are archived verbatim as `extras/<project>/.engram/...`, and after restore they land in `~/extras/<project>/.engram/` (never over the global `~/.engram`). The live project `engram.db` never enters. Usage example: `AI_BACKUP_EXTRA="/home/glats/dev/gentle-ai/.engram /home/glats/work/notesta/.engram" ai-backup backup macm5` |
 
 ## Limitations
 

@@ -34,7 +34,7 @@ let
     };
 
     # Prepend user-local bin to PATH so scripts dropped in ~/.local/bin
-    # are resolvable on Darwin hosts (mact2). Mirrors home-linux/base.nix.
+    # are resolvable on Darwin hosts. Mirrors home-linux/base.nix.
     home.sessionPath = [ "$HOME/.local/bin" ];
 
     # Use symlinks instead of copying app bundles to ~/Applications.

@@ -34,7 +34,6 @@
 , lib
 , pkgs
 , inputs
-, host
 , ...
 }:
 
@@ -48,10 +47,7 @@ let
   # sops module sets `config.sops.placeholder.<name>` for every declared
   # secret; the activation script replaces the placeholder text with the
   # decrypted secret value.
-  uuidValue =
-    if host == "macm5"
-    then config.sops.placeholder."link/uuid_macm5"
-    else config.sops.placeholder."link/uuid_mact2";
+  uuidValue = config.sops.placeholder."link/uuid_macm5";
   uuidPhone = config.sops.placeholder."link/uuid_phone";
 
   # Build the route rules. Ordered (full mode):
@@ -314,13 +310,7 @@ in
     # same host when generating share links.
     sops.age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
 
-    sops.secrets."link/uuid_mact2" = lib.mkIf (host != "macm5") {
-      sopsFile = ../../secrets/shared/link-uuids.yaml;
-      key = "uuid_mact2";
-      owner = "root";
-      mode = "0400";
-    };
-    sops.secrets."link/uuid_macm5" = lib.mkIf (host == "macm5") {
+    sops.secrets."link/uuid_macm5" = {
       sopsFile = ../../secrets/shared/link-uuids.yaml;
       key = "uuid_macm5";
       owner = "root";

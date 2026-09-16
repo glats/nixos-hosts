@@ -34,7 +34,7 @@ cd /home/glats/.nixos
 umask 077
 uuidgen > "$TMPDIR/uuid_macm5"
 sops secrets/shared/link-uuids.yaml
-# Add uuid_macm5 using the generated value; do not change uuid_mact2 or uuid_phone.
+# Add uuid_macm5 using the generated value; do not change uuid_phone.
 rm -f "$TMPDIR/uuid_macm5"
 sops updatekeys -y secrets/shared/link-uuids.yaml
 sops updatekeys -y secrets/shared/passwords.yaml
@@ -60,6 +60,31 @@ git status --short
 Do not use `sops -d`, shell interpolation, logs, or diagnostic output that
 could expose UUIDs. If the required recipient or authorization is unavailable,
 stop and leave all existing records unchanged.
+
+## Final retirement ciphertext procedure
+
+After the redacted macm5 acceptance record is approved and the declarative
+retirement is ready, an authorized SOPS owner MUST remove the scalar
+`uuid_mact2` from `secrets/shared/link-uuids.yaml` and re-encrypt the file
+for the remaining recipients. This repository session MUST NOT perform that
+operation or read the encrypted file.
+
+On the authorized admin workstation, review the recipient diff first, edit
+the ciphertext with the SOPS editor, remove only `uuid_mact2`, save, and then
+run:
+
+```text
+cd /home/glats/.nixos
+sops secrets/shared/link-uuids.yaml
+sops updatekeys -y secrets/shared/link-uuids.yaml
+git status --short
+```
+
+The final encrypted file MUST retain `uuid_macm5` and `uuid_phone`, contain no
+plaintext UUID in command output, logs, temporary files, backups, or Git, and
+be encrypted only for the recipients declared by the post-retirement
+`.sops.yaml`. Do not run `sops -d`; verify ciphertext metadata and the
+encrypted diff only.
 
 ## Activation dependency
 
