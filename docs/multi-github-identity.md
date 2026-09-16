@@ -164,6 +164,35 @@ Los MCP entries aparecen en OpenCode:
 
 Ambos habilitados. Eliges cual usar segun en que repo estes trabajando.
 
+### Autenticar GitHub CLI para los MCP
+
+Los dos MCP obtienen sus credenciales desde las cuentas OAuth locales de `gh`.
+Autentica primero la cuenta personal y luego la de trabajo, completando el flujo
+web con la cuenta indicada en cada caso:
+
+```bash
+gh auth login --hostname github.com
+# elegir: glats
+
+gh auth login --hostname github.com
+# elegir: jcuzmar-Falabella_FTC
+```
+
+Verifica que ambas cuentas esten disponibles y que OpenCode vea los servidores:
+
+```bash
+gh auth status --hostname github.com
+opencode mcp list
+```
+
+`github-personal` siempre usa `glats` y `github-work` siempre usa
+`jcuzmar-Falabella_FTC`, independientemente de la cuenta activa de `gh`.
+Para dejar la cuenta personal activa para los comandos normales de GitHub CLI:
+
+```bash
+gh auth switch --hostname github.com --user glats
+```
+
 ---
 
 ## Troubleshooting
