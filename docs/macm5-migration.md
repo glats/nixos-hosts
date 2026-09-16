@@ -55,7 +55,8 @@ On the physical Mac, complete this checklist before the first switch:
 - [ ] Confirm that `/nix` is mounted and writable by Determinate.
 - [ ] Confirm the Determinate daemon socket and launchd services are healthy.
 - [ ] Complete the authorized host-recipient and link-identity steps in
-      `docs/sops-new-host.md`; keep ciphertext opaque.
+      `docs/sops-new-host.md`; only an authorized SOPS admin may generate
+      `uuid_macm5` and rotate ciphertext, and the operator must keep it opaque.
 
 If the installer state is mixed, `/nix` is not mounted, or the daemon socket is
 missing, stop. Record the failure and repair the Determinate installation

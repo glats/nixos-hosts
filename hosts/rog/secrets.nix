@@ -74,10 +74,8 @@
     sopsFile = ../../secrets/host/rog/romm.yaml;
   };
 
-  # mact2↔rog private link — per-device VLESS UUIDs (shared with
-  # mact2). Renamed from the historical launcher-based namespace by
-  # the naming-hygiene change (sops file: secrets/shared/link-uuids.yaml;
-  # content keys stay uuid_mact2/uuid_phone).
+  # Darwin↔rog private link — per-device VLESS UUIDs. Each device has an
+  # independently revocable credential in secrets/shared/link-uuids.yaml.
   # One scalar key per device; each is its own 0400 file owned by the
   # sing-box system user so the service can read them at activation.
   # Removing a key + this decl + the matching users entry in
@@ -86,6 +84,13 @@
   sops.secrets."link/uuid_mact2" = {
     sopsFile = ../../secrets/shared/link-uuids.yaml;
     key = "uuid_mact2";
+    owner = "sing-box";
+    group = "sing-box";
+    mode = "0400";
+  };
+  sops.secrets."link/uuid_macm5" = {
+    sopsFile = ../../secrets/shared/link-uuids.yaml;
+    key = "uuid_macm5";
     owner = "sing-box";
     group = "sing-box";
     mode = "0400";

@@ -1,4 +1,4 @@
-# Root sing-box TUN client daemon of the mact2↔rog private link.
+# Root sing-box TUN client daemon of the Darwin↔rog private link.
 #
 # Runs as a root LaunchDaemon (sops-nix manages /run/secrets and the
 # rendered config template; launchd invokes sing-box with -c pointing at
@@ -34,6 +34,7 @@
 , lib
 , pkgs
 , inputs
+, host
 , ...
 }:
 
@@ -47,7 +48,10 @@ let
   # sops module sets `config.sops.placeholder.<name>` for every declared
   # secret; the activation script replaces the placeholder text with the
   # decrypted secret value.
-  uuidMact2 = config.sops.placeholder."link/uuid_mact2";
+  uuidValue =
+    if host == "macm5"
+    then config.sops.placeholder."link/uuid_macm5"
+    else config.sops.placeholder."link/uuid_mact2";
   uuidPhone = config.sops.placeholder."link/uuid_phone";
 
   # Build the route rules. Ordered (full mode):
@@ -180,7 +184,7 @@ let
         tag = "home-out";
         server = "tun.glats.org";
         server_port = 443;
-        uuid = uuidMact2;
+        uuid = uuidValue;
         tls = {
           enabled = true;
           server_name = "tun.glats.org";
@@ -304,15 +308,21 @@ in
   };
 
   config = {
-    # Sops-nix: declare the per-device UUIDs we need. The phone secret
-    # is declared here even though only mact2 uses the link outbound,
-    # because bin/device-link reads the rendered phone UUID file on the
+    # Sops-nix: declare the per-device UUID needed by this Darwin client.
+    # The phone secret is declared here even though only the phone uses the
+    # link, because bin/device-link reads the rendered phone UUID file on the
     # same host when generating share links.
     sops.age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
 
-    sops.secrets."link/uuid_mact2" = {
+    sops.secrets."link/uuid_mact2" = lib.mkIf (host != "macm5") {
       sopsFile = ../../secrets/shared/link-uuids.yaml;
       key = "uuid_mact2";
+      owner = "root";
+      mode = "0400";
+    };
+    sops.secrets."link/uuid_macm5" = lib.mkIf (host == "macm5") {
+      sopsFile = ../../secrets/shared/link-uuids.yaml;
+      key = "uuid_macm5";
       owner = "root";
       mode = "0400";
     };

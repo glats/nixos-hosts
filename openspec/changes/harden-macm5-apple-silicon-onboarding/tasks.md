@@ -34,7 +34,7 @@ Chain strategy: size:exception
 ## Phase 2: Determinate and Identity Production Work
 
 - [x] 2.1 Move Darwin daemon/cache values to `darwin/system/nix.nix`, `darwin/system/cachix.nix`, and `shared/cachix.nix` via `determinateNix.customSettings`; retain `nix.enable = false` and Linux behavior.
-- [ ] 2.2 Add `uuid_macm5` recipient/key/user across `darwin/system/sing-box-link.nix`, `linux/system/services/network/sing-box-link.nix`, `hosts/rog/secrets.nix`, `.sops.yaml`, and encrypted `secrets/shared/link-uuids.yaml`; rotate ciphertext without exposing plaintext.
+- [x] 2.2 Add the `uuid_macm5` recipient/key/user across the Darwin client, rog server declarations, `.sops.yaml`, and sing-box VLESS users; leave `mact2` unchanged and document the admin-only ciphertext rotation procedure.
 
 ## Phase 3: Native Acceptance and Runbook
 
