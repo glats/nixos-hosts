@@ -21,11 +21,20 @@ let
   # Mozilla + Netskope corporate CA bundle and point NIX_SSL_CERT_FILE at it
   # so Nix-built programs (curl, git, nvim-treesitter) verify TLS behind
   # the corporate MITM proxy.
+  #
+  # The Netskope root CA is extracted from Apple SecTrust during the build
+  # phase — the cert never lives in the repo.
   corporateCaBundle = pkgs.runCommand "corporate-ca-bundle" { } ''
     mkdir -p $out/etc/ssl/certs
-    cat ${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt \
-        ${../../certs/netskope-falabella.crt} \
+
+    # Extract Netskope root CA from macOS system keychain.
+    /usr/bin/security find-certificate -a -c "certadmin" -p \
+      /Library/Keychains/System.keychain > /tmp/netskope-root.crt
+
+    cat ${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt /tmp/netskope-root.crt \
       > $out/etc/ssl/certs/ca-bundle.crt
+
+    rm /tmp/netskope-root.crt
   '';
 in
 {
