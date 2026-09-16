@@ -42,6 +42,7 @@ in
         vscode
         gdk
         btop
+        flameshot
         nix-index
         gnupg
         pinentry_mac
