@@ -231,8 +231,11 @@ in
         ${pkgs.coreutils}/bin/cp "$mcp_json" "$claude_json"
         echo "deployClaudeCodeAssets: created $claude_json"
       fi
+      # The initial copy can inherit the read-only Nix store mode. Make it
+      # mutable before mv replaces it with the merged user-scope config.
+      chmod 644 "$claude_json"
       if ${pkgs.jq}/bin/jq -s '.[0] * {mcpServers: ((.[0].mcpServers // {}) * .[1].mcpServers)}' "$claude_json" "$mcp_json" > "$claude_json.tmp"; then
-        ${pkgs.coreutils}/bin/mv "$claude_json.tmp" "$claude_json"
+        ${pkgs.coreutils}/bin/mv -f "$claude_json.tmp" "$claude_json"
         echo "deployClaudeCodeAssets: merged MCP servers into $claude_json"
       else
         echo "deployClaudeCodeAssets: ERROR: jq merge failed for $claude_json" >&2

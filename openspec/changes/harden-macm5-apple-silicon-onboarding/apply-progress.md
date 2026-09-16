@@ -32,6 +32,14 @@
 - Removed the broken Homebrew `vnc-viewer` cask alias and the redundant RealVNC remote launchers; TigerVNC launchers remain configured.
 - `format-nix && nix flake check --no-build` passed. No activation or secret access was performed.
 
+## Additional Remote-Safe Fix: Flameshot Packaging
+
+- Replaced the unavailable Homebrew `flameshot` cask with nixpkgs `flameshot` in the Darwin Home Manager package set; Homebrew no longer manages Flameshot.
+- The change preserves native `aarch64-darwin` packaging and does not add unsigned DMG handling or Gatekeeper bypasses.
+- `nix fmt -- darwin/home/packages.nix` completed successfully.
+- `nix flake check --no-build` passed.
+- `nix eval --impure --raw --system aarch64-darwin --expr '(builtins.getFlake (toString ./.)).inputs.nixpkgs.legacyPackages.aarch64-darwin.flameshot.drvPath'` evaluated `/nix/store/y8n4awdppa44n21lrx2ykh3h0mvcysni-flameshot-13.3.0.drv`.
+
 ## Remaining Tasks
 
 - Native acceptance and evidence remain pending: tasks 1.1-1.3, 2.2, 3.1-3.3, and 4.1-4.2.
