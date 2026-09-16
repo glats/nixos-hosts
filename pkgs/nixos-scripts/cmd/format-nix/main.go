@@ -27,7 +27,7 @@ Formatter workflow in this repo:
   Single file:  nix fmt -- <path>
 
 Avoid this anti-pattern:
-  nixpkgs-fmt <path>
+  nixfmt-tree <path>
 The flake formatter should be invoked through ` + "`nix fmt`" + `.
 
 Options:
@@ -102,6 +102,30 @@ func main() {
 	os.Exit(rc)
 }
 
+// createCheckCopy creates a repository-local temp copy for treefmt's root
+// discovery and returns its path.
+func createCheckCopy(f string) (string, error) {
+	src, err := os.ReadFile(f)
+	if err != nil {
+		return "", err
+	}
+	tmp, err := os.CreateTemp(".", ".format-nix-*.nix")
+	if err != nil {
+		return "", err
+	}
+	tmpName := tmp.Name()
+	if _, err := tmp.Write(src); err != nil {
+		tmp.Close()
+		os.Remove(tmpName)
+		return "", err
+	}
+	if err := tmp.Close(); err != nil {
+		os.Remove(tmpName)
+		return "", err
+	}
+	return tmpName, nil
+}
+
 // checkFile formats a temp copy of f and sets *rc = 1 if the file would
 // change or the formatter fails (parity with the bash original).
 func checkFile(f string, rc *int) {
@@ -110,14 +134,11 @@ func checkFile(f string, rc *int) {
 		fmt.Printf("Skipping unreadable file: %s\n", f)
 		return
 	}
-	tmp, err := os.CreateTemp("", "format-nix-")
+	tmpName, err := createCheckCopy(f)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "ERROR: %v\n", err)
 		os.Exit(1)
 	}
-	tmpName := tmp.Name()
-	tmp.Write(src)
-	tmp.Close()
 	defer os.Remove(tmpName)
 
 	// Parity with bash: quiet formatter run, compare original vs formatted.
@@ -157,6 +178,9 @@ func nixFiles(root string) ([]string, error) {
 					return filepath.SkipDir
 				}
 			}
+			return nil
+		}
+		if strings.HasPrefix(d.Name(), ".format-nix-") {
 			return nil
 		}
 		if strings.HasSuffix(d.Name(), ".nix") {
