@@ -274,11 +274,17 @@
       };
 
       # --- Checks ---
-      checks.x86_64-linux = {
-        rog = self.nixosConfigurations.rog.config.system.build.toplevel;
-        thinkcentre = self.nixosConfigurations.thinkcentre.config.system.build.toplevel;
-        t14 = self.nixosConfigurations.t14.config.system.build.toplevel;
-      };
+      checks.x86_64-linux.format =
+        let
+          pkgs = nixpkgs.legacyPackages.x86_64-linux;
+        in
+        pkgs.runCommand "nix-format-check" { nativeBuildInputs = [ pkgs.nixfmt-tree ]; } ''
+          cp -r ${self} source
+          chmod -R u+w source
+          cd source
+          treefmt --ci --walk filesystem --tree-root .
+          touch $out
+        '';
 
       # --- NixOS configurations ---
       nixosConfigurations = {

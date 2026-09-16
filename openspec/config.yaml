@@ -42,7 +42,7 @@ rules:
   apply:
     guidelines:
       - Follow existing Nix patterns (AGENTS.md)
-      - Edit Nix files -> format-nix -> nix flake check --no-build
+       - In the main checkout, edit Nix files -> format-nix -> nix flake check --no-build; in a worktree, use cwd-scoped nix fmt -> nix flake check --no-build and never run format-nix
       - Do NOT edit hardware-configuration.nix (auto-generated)
     tdd: false
     test_command: "nix flake check --no-build"
