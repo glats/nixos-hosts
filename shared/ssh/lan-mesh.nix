@@ -18,5 +18,32 @@ assert lib.assertMsg (lib.all validRecord records) "LAN SSH mesh records must be
 {
   inherit members;
   peerKeys = target: map (name: members.${name}.publicKey) (builtins.filter (name: name != target) names);
-  sshSettingsFor = { source, sshDir }: lib.listToAttrs (map (target: let member = members.${target}; in { name = target; value = { HostName = member.hostName; User = member.user; IdentityFile = "${sshDir}/${members.${source}.identityFile}"; IdentitiesOnly = true; }; }) (builtins.filter (name: name != source) names));
+  sshSettingsFor =
+    { source, sshDir }:
+    lib.listToAttrs (
+      lib.concatMap
+        (
+          target:
+          let
+            member = members.${target};
+            value = {
+              HostName = member.hostName;
+              User = member.user;
+              IdentityFile = "${sshDir}/${members.${source}.identityFile}";
+              IdentitiesOnly = true;
+            };
+          in
+          [
+            {
+              name = target;
+              inherit value;
+            }
+            {
+              name = "${target}.local";
+              inherit value;
+            }
+          ]
+        )
+        (builtins.filter (name: name != source) names)
+    );
 }

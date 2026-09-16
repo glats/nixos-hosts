@@ -165,6 +165,10 @@
     networkmanager.enable = true;
   };
 
+  # Publish rog.local only on the physical LAN interface. Otherwise Avahi
+  # advertises Docker bridge addresses, which peers cannot use to reach SSH.
+  services.avahi.allowInterfaces = [ "enp3s0" ];
+
   services.wol-custom.interface = "enp3s0";
 
   fileSystems."/run/media/library" = {
