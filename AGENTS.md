@@ -2,8 +2,8 @@
 
 ## Overview
 
-- **Hosts**: `rog` (MATE desktop via XRDP + NVIDIA + home server), `thinkcentre` (headless box accessed via XRDP), `t14` (ThinkPad laptop, Omarchy/Hyprland), `mact2` (Intel Mac via nix-darwin)
-- **Users**: glats (Linux hosts), jcuzmar (mact2)
+- **Hosts**: `rog` (MATE desktop via XRDP + NVIDIA + home server), `thinkcentre` (headless box accessed via XRDP), `t14` (ThinkPad laptop, Omarchy/Hyprland), `macm5` (Apple Silicon Mac via nix-darwin)
+- **Users**: glats (Linux hosts), juan (macm5; GitHub identity `jcuzmar`)
 - **Stack**: NixOS Flakes + Home Manager (NixOS-integrated and standalone) + sops-nix + nix-darwin
 - `/etc/nixos` is a symlink to this repo (`~/.nixos`) — scripts may reference either path.
 
@@ -17,7 +17,7 @@ linux/
   system/services/               # xrdp + portable services: media/, web/, network/
   system/virtualisation/         # docker, libvirt
   home/                          # Linux HM modules; shared-modules.nix = canonical list
-darwin/system|services|home/     # nix-darwin modules; darwin/default.nix = entry point
+darwin/system|services|home/     # nix-darwin modules; hosts/macm5/default.nix = entry point
 shared/                          # Cross-platform HM modules (opencode, sops, tmux, ...)
 lib/                             # mkHost.nix, mkDarwinHost.nix, packages.nix
 overlays/                        # linux.nix, darwin.nix — imported via `import`, NOT modules
@@ -95,7 +95,7 @@ RTK 0.41.0 is installed on all hosts. An OpenCode plugin and a Claude Code Bash 
 - NixOS-integrated path: `linux/system/base/home-manager.nix` imports `hosts/<host>/home/default.nix`. Standalone `homeConfigurations` in flake.nix import the same per-host file.
 - `linux/home/shared-modules.nix` is the single source of truth for shared Linux HM modules — do not duplicate the list elsewhere. Darwin equivalent: `darwin/home/shared-modules.nix`. Cross-platform modules live in `shared/` and are listed in both.
 - **Host-conditional modules** (conky-rog, conky-thinkcentre, openfang) are NOT in shared-modules.nix — each `hosts/<host>/home/default.nix` extends the base list with its own extras.
-- Per-host OpenCode provider override lives there too: `{ home.opencode.activeProviderName = "..."; }` (e.g. rog: `openai-opencode-balanced`, thinkcentre: `openai-medium`, mact2: `openai-medium-proxy`).
+- Per-host OpenCode provider override lives there too: `{ home.opencode.activeProviderName = "..."; }` (e.g. rog: `openai-opencode-balanced`, thinkcentre: `openai-medium`, macm5: `anthropic-opencode-free`).
 
 ## Project Skills
 
@@ -159,14 +159,14 @@ Done means:
 3. **Overlays** are `import`ed in flake.nix/lib builders, never added as modules.
 4. **Formatter**: `format-nix` (full repo) / `nix fmt -- <path>` (single file); never formatter binaries directly.
 5. **t14**: omarchy-nix + nixos-hardware T14 AMD gen4 profile arrive via `extraModules` in flake.nix. Its HM config block is `hosts/t14/home/omarchy.nix`, imported by t14's `home/default.nix`.
-6. **mact2**: built via `mkDarwinHost` (includes Determinate module); username jcuzmar.
-7. **nixpkgs is pinned to nixos-26.05** because 26.11 dropped x86_64-darwin and mact2 is an Intel Mac. Do not bump nixpkgs or nix-darwin (matched `nix-darwin-26.05` branch) until mact2 migrates to Apple Silicon. For the same reason `nix-vscode-extensions` is pinned to a pre-drop commit and gated behind `isDarwin`.
+6. **macm5**: built via `mkDarwinHost` (includes Determinate module); local username `juan`, GitHub identity `jcuzmar`.
+7. **nixpkgs is pinned to nixos-26.05** and nix-darwin remains on the matched `nix-darwin-26.05` branch. Do not migrate channels in the macm5 retirement slice.
 8. **Go-only scripts**: never a new bash script for operational tooling — full policy in the "Go-Only Operational Scripts" section.
 
 ## Secrets (sops-nix)
 
 - Config at `.sops.yaml` (repo root). Layout: `secrets/host/<hostname>/*.yaml`, `secrets/shared/`, `secrets/user/`.
-- Creation-rule ordering matters: specific path_regex rules must come BEFORE generic host catch-alls (e.g. `openai-proxy.yaml` is encrypted for rog+mact2+admin, placed above the rog-only rule).
+- Creation-rule ordering matters: specific path_regex rules must come BEFORE generic host catch-alls (e.g. `openai-proxy.yaml` is encrypted for its explicit recipients, placed above the rog-only rule).
 - Adding a host: derive age key from SSH host key, add to `.sops.yaml` keys + relevant creation rules, re-encrypt with `sops updatekeys` — full runbook in `docs/sops-new-host.md`.
 
 ## When Blocked

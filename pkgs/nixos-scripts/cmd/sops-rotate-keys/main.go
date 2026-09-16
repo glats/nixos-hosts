@@ -166,7 +166,7 @@ func addHost(repoDir string, args []string) {
 	if hostname == "" {
 		fmt.Fprintf(os.Stderr, "ERROR: Usage: %s add-host <hostname> [secrets-file]\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "  Example: %s add-host t14\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "  Example: %s add-host mact2 secrets/user/opencode.yaml\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "  Example: %s add-host macm5 secrets/user/opencode.yaml\n", os.Args[0])
 		os.Exit(1)
 	}
 	secretsFile := "secrets/user/opencode.yaml"

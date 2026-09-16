@@ -15,6 +15,18 @@
 
 let
   mesh = import ../../shared/ssh/lan-mesh.nix { inherit lib; };
+
+  # Determinate Nix owns /etc/ssl/certs/ca-certificates.crt, making
+  # nix-darwin's security.pki.certificateFiles a no-op. Build a combined
+  # Mozilla + Netskope corporate CA bundle and point NIX_SSL_CERT_FILE at it
+  # so Nix-built programs (curl, git, nvim-treesitter) verify TLS behind
+  # the corporate MITM proxy.
+  corporateCaBundle = pkgs.runCommand "corporate-ca-bundle" { } ''
+    mkdir -p $out/etc/ssl/certs
+    cat ${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt \
+        ${../../certs/netskope-falabella.crt} \
+      > $out/etc/ssl/certs/ca-bundle.crt
+  '';
 in
 {
   imports = [
@@ -75,6 +87,7 @@ in
   environment = {
     variables = {
       DISPLAY = ":0";
+      NIX_SSL_CERT_FILE = "${corporateCaBundle}/etc/ssl/certs/ca-bundle.crt";
     };
     systemPackages = with pkgs; [ git nixos-scripts ];
     # Intel uses /usr/local; Apple Silicon uses /opt/homebrew.

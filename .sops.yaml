@@ -3,12 +3,6 @@ keys:
   - &admin_glats age1j4mxejwmktekgf24sju92ryayh5jlmv4ldxj62e2srwghpkpuujscct9lt
   - &host_rog age1q46qlf4kt0pc255nrl4r24m5hnvqwqf9wd8n6206f0zg95v6993qvd9cr8
   - &host_thinkcentre age1uhv0z8e04q2385wlrn0vgd237ts2exea375yr4yeqwx5v9zgw9esdg3rsn
-  - &host_mact2 age1ngeetv5mnt8ax30tmm6799qs2779905v0jafpywuydrvw2sz7yds7rlp5z
-  # mact2 HOST key (derived from /etc/ssh/ssh_host_ed25519_key at activation,
-  # per docs/sops-new-host.md). Needed by system-level sops (sops-install-secrets
-  # imports the host key); the anchor above is the USER key that Home Manager
-  # sops uses via ~/.config/sops/age/keys.txt. System daemons -> use host key.
-  - &host_mact2_system age1dzufdqqf6sysvsmz7tuenkur4l49gtzwe3wj4fjlwqkt0wpps5nstvv06e
   - &host_macm5 age1cthdpfdak79gmnvt9puypv4effjs86ukz94dm35pv46dj24ehpxqlena3f
   - &host_t14 age1kc4mnetans8hwzwy24gsnw2hzxzcz3c5wcthcsr5wdfwk5e7vvtqvku74u
 
@@ -27,7 +21,7 @@ creation_rules:
           - *host_thinkcentre
 
   # link-uuids: per-device VLESS UUIDs for the private-link daemon.
-  # Admin needs to rotate; rog hosts the sing-box server; mact2 runs the
+  # Admin needs to rotate; rog hosts the sing-box server; macm5 runs the
   # client. Encrypted only for these three recipients — thinkcentre/t14
   # neither host nor consume the link. Place BEFORE the shared catch-all
   # so the specific rule wins.
@@ -36,8 +30,6 @@ creation_rules:
       - age:
           - *admin_glats
           - *host_rog
-          - *host_mact2
-          - *host_mact2_system
           - *host_macm5
 
   # macm5 Home Manager needs only the shared GitHub/GPG password records.
@@ -48,7 +40,6 @@ creation_rules:
           - *host_rog
           - *host_thinkcentre
           - *host_t14
-          - *host_mact2
           - *host_macm5
 
   # Shared system secrets
@@ -67,7 +58,6 @@ creation_rules:
           - *host_rog
           - *host_thinkcentre
           - *host_t14
-          - *host_mact2
 
   # Cross-platform user secrets
   - path_regex: secrets/user/opencode.yaml
@@ -76,7 +66,6 @@ creation_rules:
           - *admin_glats
           - *host_rog
           - *host_thinkcentre
-          - *host_mact2
           - *host_macm5
           - *host_t14
 
@@ -88,7 +77,6 @@ creation_rules:
           - *host_rog
           - *host_thinkcentre
           - *host_t14
-          - *host_mact2
           - *host_macm5
 
   # User secrets (catch-all for other user files)
@@ -99,10 +87,3 @@ creation_rules:
           - *host_rog
           - *host_thinkcentre
           - *host_t14
-
-  # macOS-only user secrets
-  - path_regex: secrets/user/atlassian.yaml
-    key_groups:
-      - age:
-          - *admin_glats
-          - *host_mact2

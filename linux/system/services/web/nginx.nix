@@ -460,7 +460,7 @@ in
       # vhost static-root pattern). generated-once random hex (NOT
       # sops) — obscurity, not authentication. The same value is the
       # `transport.path` in linux/system/services/network/sing-box-link.nix
-      # and the `path` in the mact2 client + phone share link.
+      # and the `path` in the macm5 client + phone share link.
       "tun.${domain}" = {
         useACMEHost = "glats.org";
         forceSSL = true;

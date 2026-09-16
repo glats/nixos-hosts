@@ -255,14 +255,6 @@ in
         server = "172.16.0.109:5900";
       };
     };
-    ".local/share/remmina/vnc-mact2.remmina" = {
-      force = true;
-      text = mkRemminaProfile vncDefaults {
-        name = "mact2";
-        server = "mact2.local";
-      };
-    };
-
     # === Desktop launchers ===
     ".local/share/applications/remote-rog.desktop" = {
       force = true;
@@ -306,14 +298,6 @@ in
         #!/usr/bin/env bash
         exec remmina -c /home/glats/.local/share/remmina/vnc-t14.remmina
       '';
-    };
-    ".local/share/applications/remote-mact2.desktop" = {
-      force = true;
-      text = mkDesktop {
-        name = "mact2";
-        comment = "VNC connection to mact2.local";
-        exec = "${pkgs.remmina}/bin/remmina -c /home/glats/.local/share/remmina/vnc-mact2.remmina";
-      };
     };
   };
 }
