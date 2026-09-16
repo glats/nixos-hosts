@@ -58,7 +58,6 @@
       "losslesscut"
       "kitty"
       "tigervnc"
-      "vnc-viewer"
       "visual-studio-code"
       "claude"
       "betterdisplay"
