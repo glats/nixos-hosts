@@ -1,6 +1,12 @@
 { pkgs, lib, ... }:
 
+let
+  mesh = import ../../../shared/ssh/lan-mesh.nix { inherit lib; };
+in
+
 {
+  programs.ssh.knownHosts = mesh.knownHosts;
+
   services.openssh = {
     enable = true;
     settings = {

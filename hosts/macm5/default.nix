@@ -71,6 +71,7 @@ in
     shell = pkgs.zsh;
     openssh.authorizedKeys.keys = mesh.peerKeys host;
   };
+  programs.ssh.knownHosts = mesh.knownHosts;
   environment = {
     variables = {
       DISPLAY = ":0";
