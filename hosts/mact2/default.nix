@@ -92,29 +92,37 @@
   };
   # Corporate MITM proxy (Netskope/Goskope) intercepts HTTPS. macOS trusts
   # the Falabella CA via Apple SecTrust (MDM), but Nix programs use OpenSSL's
-  # file-based CA store. Adding the CA here ensures all Nix-built programs
-  # (curl, git, nvim-treesitter, etc.) can verify TLS peers.
-  # On a new machine, re-extract with:
+  # file-based CA store. Determinate Nix owns /etc/ssl/certs/ca-certificates.crt
+  # so security.pki.certificateFiles is a no-op on this host. Instead, we build
+  # a combined CA bundle (Mozilla + Netskope) and point NIX_SSL_CERT_FILE at it.
+  # This makes all Nix-built programs (curl, git, nvim-treesitter, etc.) verify
+  # TLS through our combined store.
+  # On a new machine, re-extract the Netskope CA with:
   #   echo | openssl s_client -connect github.com:443 -showcerts 2>/dev/null | \
   #     awk 'BEGIN{n=0} /BEGIN CERTIFICATE/{n++} n==2{print} n==2 && /END CERTIFICATE/{exit}' \
   #     > certs/netskope-falabella.crt
-  security.pki.certificateFiles = [ ../../certs/netskope-falabella.crt ];
-
-  environment = {
-    variables = {
-      DISPLAY = ":0";
+  environment =
+    let
+      corporateCaBundle = pkgs.runCommand "corporate-ca-bundle" { } ''
+        cat ${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt ${../../certs/netskope-falabella.crt} > $out
+      '';
+    in
+    {
+      variables = {
+        DISPLAY = ":0";
+        NIX_SSL_CERT_FILE = "${corporateCaBundle}";
+      };
+      # nixos-scripts (linkctl) at the SYSTEM level too: linkctl
+      # start/stop/restart re-exec via sudo with an absolute path, and a
+      # /run/current-system/sw/bin/linkctl copy guarantees a stable
+      # resolution even in shells whose PATH lacks the user's HM profile.
+      systemPackages = with pkgs; [ git nixos-scripts ];
+      # Intel uses /usr/local; Apple Silicon uses /opt/homebrew
+      systemPath = [
+        (if pkgs.stdenv.isAarch64 then "/opt/homebrew/bin" else "/usr/local/bin")
+      ];
+      pathsToLink = [ "/Applications" ];
     };
-    # nixos-scripts (linkctl) at the SYSTEM level too: linkctl
-    # start/stop/restart re-exec via sudo with an absolute path, and a
-    # /run/current-system/sw/bin/linkctl copy guarantees a stable
-    # resolution even in shells whose PATH lacks the user's HM profile.
-    systemPackages = with pkgs; [ git nixos-scripts ];
-    # Intel uses /usr/local; Apple Silicon uses /opt/homebrew
-    systemPath = [
-      (if pkgs.stdenv.isAarch64 then "/opt/homebrew/bin" else "/usr/local/bin")
-    ];
-    pathsToLink = [ "/Applications" ];
-  };
 
   services.wsdd.enable = true;
 
