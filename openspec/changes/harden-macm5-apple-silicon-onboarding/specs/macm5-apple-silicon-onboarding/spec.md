@@ -27,3 +27,22 @@ Define Determinate-first, native Apple Silicon activation and recoverable accept
 - WHEN the operator activates and performs the documented native checks
 - THEN all acceptance checks and release evidence pass on macm5
 - AND the known-good generation and Git recovery reference are recorded
+
+### Requirement: Stable Logical Darwin Selection
+
+The Darwin flake selector MUST be independent of the physical macOS hostname.
+`macm5` MUST use the local account `juan`, MUST preserve the corporate
+LocalHostName `CLFTCLGV2FHWW0W`, and MUST NOT declare a host-name override.
+The Darwin `nixos-build` helper MUST select `macm5` by default and MAY use the
+documented `NIXOS_DARWIN_HOST` override for an explicitly selected declared
+configuration. GitHub identity MUST remain `jcuzmar` independently of the
+primary local account.
+
+#### Scenario: Build the stable macm5 selector [hosts: macm5]
+
+- GIVEN the physical LocalHostName is `CLFTCLGV2FHWW0W`
+- WHEN `nixos-build` runs on Darwin without an override
+- THEN it targets `darwinConfigurations.macm5`
+- AND the host configuration provisions `juan` without declaring
+  `networking.hostName`
+- AND GitHub identity remains `jcuzmar`

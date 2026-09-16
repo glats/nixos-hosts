@@ -222,6 +222,7 @@
         { hostname
         , system
         , username
+        , githubUser ? "jcuzmar"
         , extraModules
         , nixpkgsInput ? nixpkgs
         , homeManagerInput ? home-manager
@@ -245,6 +246,7 @@
             hostName = hostname;
             # Darwin-specific extras (ignored by linux modules)
             primaryUser = username;
+            inherit githubUser;
             javaVersion = "temurin-25.0.1+8.0.LTS";
           };
         };
@@ -296,8 +298,13 @@
 
       # --- Darwin configurations ---
       darwinConfigurations = {
-        mact2 = mkDarwinHost { hostname = "mact2"; };
-        macm5 = mkDarwinHost { hostname = "macm5"; system = "aarch64-darwin"; };
+        mact2 = mkDarwinHost { configName = "mact2"; };
+        macm5 = mkDarwinHost {
+          configName = "macm5";
+          system = "aarch64-darwin";
+          primaryUser = "juan";
+          githubUser = "jcuzmar";
+        };
       };
 
       # --- Standalone home-manager configurations ---
@@ -307,13 +314,14 @@
             { hostname
             , system
             , username
+            , githubUser ? "jcuzmar"
             , extraModules
             , nixpkgsInput ? nixpkgs
             , homeManagerInput ? home-manager
             , extraOverlays ? [ ]
             }:
             mkHomeConfig {
-              inherit hostname system username extraModules nixpkgsInput homeManagerInput extraOverlays;
+              inherit hostname system username githubUser extraModules nixpkgsInput homeManagerInput extraOverlays;
             };
         in
         {
@@ -375,7 +383,8 @@
           macm5 = baseHomeConfig {
             hostname = "macm5";
             system = "aarch64-darwin";
-            username = "jcuzmar";
+            username = "juan";
+            githubUser = "jcuzmar";
             extraModules = [
               ./darwin/home
               {

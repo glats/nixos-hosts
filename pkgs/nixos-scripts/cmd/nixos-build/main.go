@@ -59,7 +59,7 @@ func main() {
 
 	darwin := nixbuild.IsDarwin()
 	nhPath, nomPath := nixbuild.DetectTools(darwin)
-	hostname, _ := os.Hostname() // bash `hostname` always yields a name
+	hostname := nixbuild.ResolveHost(darwin, os.Getenv, os.Hostname)
 
 	env := nixbuild.Env{
 		Darwin:    darwin,

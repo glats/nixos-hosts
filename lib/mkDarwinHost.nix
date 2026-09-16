@@ -2,9 +2,10 @@
 
 let
   mkDarwinHost =
-    { hostname
+    { configName
     , system ? "x86_64-darwin"
-    , username ? "jcuzmar"
+    , primaryUser ? "jcuzmar"
+    , githubUser ? "jcuzmar"
     , extraModules ? [ ]
     ,
     }:
@@ -14,11 +15,11 @@ let
         inherit
           inputs
           self
-          username
+          primaryUser
+          githubUser
           system
           ;
-        host = hostname;
-        primaryUser = username;
+        host = configName;
         javaVersion = "temurin-25.0.1+8.0.LTS";
       };
       modules = [
@@ -26,7 +27,7 @@ let
         inputs.determinate.darwinModules.default
 
         # Host-specific configuration (includes darwin modules)
-        ../hosts/${hostname}
+        ../hosts/${configName}
 
         # Overlays for custom packages
         {

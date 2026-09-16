@@ -4,6 +4,13 @@
 
 Keep Determinate Nix as the sole Nix owner on `macm5`: `nix.enable = false`; all daemon, cache substituter, and trusted-key settings flow through `determinateNix.customSettings`. Stage an independently revocable `uuid_macm5` on both endpoints, activate and prove the Apple Silicon host natively, then make one declarative retirement change for `mact2`. The existing `tunnel-device-onboarding` and TLS-tunnel requirements remain the routing authority.
 
+The Darwin builder receives a logical `configName`, separate from physical
+macOS naming. The macm5 host declares the primary account as `juan` while the
+GitHub identity remains the explicit `jcuzmar` value. No macm5 module declares
+`networking.hostName`, so the managed LocalHostName stays
+`CLFTCLGV2FHWW0W`. On Darwin, `nixos-build` resolves `macm5` by default and
+accepts `NIXOS_DARWIN_HOST` only as an explicit override.
+
 ## Architecture Decisions
 
 | Decision | Choice | Alternative | Rationale |
@@ -32,6 +39,8 @@ The macm5 client retains `full` as default: private IPs, configured CIDRs, confi
 | `hosts/rog/secrets.nix`, `linux/system/services/network/sing-box-link.nix`, `.sops.yaml`, `secrets/shared/link-uuids.yaml` | Modify | Stage macm5 recipient/key/user, then remove mact2 recipient/key/user after acceptance; never commit plaintext. |
 | `flake.nix`, `hosts/mact2/default.nix`, `linux/home/{remote-desktop,ssh}.nix`, `darwin/home/remote-desktop.nix` | Modify/Delete | Remove mact2 configurations, host directory, and stale access targets after the gate. |
 | `docs/{macm5-migration,sops-new-host,home-link}.md` | Modify | Replace obsolete instructions with activation evidence, retirement order, and recovery. |
+| `pkgs/nixos-scripts/{cmd/nixos-build,internal/nixbuild}` | Modify | Resolve the stable Darwin logical selector with a tested explicit override. |
+| `darwin/home/{shell,git}.nix`, `hosts/macm5/default.nix` | Modify | Use `primaryUser` for profiles, configure `juan`, preserve independent `jcuzmar` identity, and avoid hostname override. |
 
 ## Interfaces / Contracts
 
