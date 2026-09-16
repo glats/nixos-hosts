@@ -6,6 +6,7 @@
 , inputs
 , self
 , primaryUser
+, githubUser
 , javaVersion
 , lib
 , ...
@@ -52,6 +53,7 @@
         inputs
         self
         primaryUser
+        githubUser
         javaVersion
         ;
     };
