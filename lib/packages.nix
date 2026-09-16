@@ -9,9 +9,10 @@
 #     packages.x86_64-darwin = packages.darwinPackages;
 #     packages.aarch64-darwin = packages.aarch64DarwinPackages;
 #   }
-{ inputs
-, pkgsFor
-, ...
+{
+  inputs,
+  pkgsFor,
+  ...
 }:
 let
   linuxPkgs = pkgsFor "x86_64-linux";

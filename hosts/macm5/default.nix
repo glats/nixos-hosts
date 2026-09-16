@@ -2,15 +2,16 @@
 # Imports the darwin base profile (system modules) and retains only
 # per-host concerns: nix-homebrew, home-manager, users, environment,
 # and service enablements.
-{ pkgs
-, inputs
-, self
-, primaryUser
-, githubUser
-, javaVersion
-, lib
-, host
-, ...
+{
+  pkgs,
+  inputs,
+  self,
+  primaryUser,
+  githubUser,
+  javaVersion,
+  lib,
+  host,
+  ...
 }:
 
 let
@@ -101,7 +102,10 @@ in
       # Force 26.5 until Apple fixes the SDK or CLI tools are updated.
       SDKROOT = "/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk";
     };
-    systemPackages = with pkgs; [ git nixos-scripts ];
+    systemPackages = with pkgs; [
+      git
+      nixos-scripts
+    ];
     # Intel uses /usr/local; Apple Silicon uses /opt/homebrew.
     systemPath = [
       (if pkgs.stdenv.isAarch64 then "/opt/homebrew/bin" else "/usr/local/bin")

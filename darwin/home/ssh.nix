@@ -1,4 +1,11 @@
-{ config, host ? null, hostName ? null, lib, primaryUser, ... }:
+{
+  config,
+  host ? null,
+  hostName ? null,
+  lib,
+  primaryUser,
+  ...
+}:
 let
   sshDir = "${config.home.homeDirectory}/.ssh";
   meshHost = if host != null then host else hostName;
@@ -90,9 +97,12 @@ in
         UseKeychain = "yes";
         IdentitiesOnly = "yes";
       };
-    } // lib.optionalAttrs (meshHost == "macm5") (mesh.sshSettingsFor {
-      source = "macm5";
-      inherit sshDir;
-    });
+    }
+    // lib.optionalAttrs (meshHost == "macm5") (
+      mesh.sshSettingsFor {
+        source = "macm5";
+        inherit sshDir;
+      }
+    );
   };
 }

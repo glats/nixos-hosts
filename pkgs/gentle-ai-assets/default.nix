@@ -1,7 +1,7 @@
-{ lib
-, stdenvNoCC
-, gentle-ai-src
-,
+{
+  lib,
+  stdenvNoCC,
+  gentle-ai-src,
 }:
 
 stdenvNoCC.mkDerivation {

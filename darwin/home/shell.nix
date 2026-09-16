@@ -1,4 +1,10 @@
-{ config, pkgs, lib, primaryUser, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  primaryUser,
+  ...
+}:
 {
   home.packages = [ pkgs.nixos-scripts ];
 

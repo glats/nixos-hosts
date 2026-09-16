@@ -146,10 +146,11 @@
   };
 
   outputs =
-    inputs@{ self
-    , nixpkgs
-    , home-manager
-    , ...
+    inputs@{
+      self,
+      nixpkgs,
+      home-manager,
+      ...
     }:
     let
       # --- Builders ---
@@ -169,7 +170,8 @@
         import nixpkgsInput {
           system = s;
           config.allowUnfree = true;
-          overlays = (if nixpkgsInput.lib.hasSuffix "linux" s then [ linuxOverlay ] else [ darwinOverlay ])
+          overlays =
+            (if nixpkgsInput.lib.hasSuffix "linux" s then [ linuxOverlay ] else [ darwinOverlay ])
             ++ extraOverlays;
         };
 
@@ -209,14 +211,15 @@
 
       # --- mkHomeConfig: standalone home-manager for any platform ---
       mkHomeConfig =
-        { hostname
-        , system
-        , username
-        , githubUser ? "jcuzmar"
-        , extraModules
-        , nixpkgsInput ? nixpkgs
-        , homeManagerInput ? home-manager
-        , extraOverlays ? [ ]
+        {
+          hostname,
+          system,
+          username,
+          githubUser ? "jcuzmar",
+          extraModules,
+          nixpkgsInput ? nixpkgs,
+          homeManagerInput ? home-manager,
+          extraOverlays ? [ ],
         }:
         let
           hostInputs = inputs // {
@@ -301,17 +304,27 @@
       homeConfigurations =
         let
           baseHomeConfig =
-            { hostname
-            , system
-            , username
-            , githubUser ? "jcuzmar"
-            , extraModules
-            , nixpkgsInput ? nixpkgs
-            , homeManagerInput ? home-manager
-            , extraOverlays ? [ ]
+            {
+              hostname,
+              system,
+              username,
+              githubUser ? "jcuzmar",
+              extraModules,
+              nixpkgsInput ? nixpkgs,
+              homeManagerInput ? home-manager,
+              extraOverlays ? [ ],
             }:
             mkHomeConfig {
-              inherit hostname system username githubUser extraModules nixpkgsInput homeManagerInput extraOverlays;
+              inherit
+                hostname
+                system
+                username
+                githubUser
+                extraModules
+                nixpkgsInput
+                homeManagerInput
+                extraOverlays
+                ;
             };
         in
         {
@@ -335,8 +348,7 @@
             hostname = "t14";
             system = "x86_64-linux";
             username = "glats";
-            extraModules = import ./hosts/t14/home/default.nix { inherit inputs; }
-              ++ [
+            extraModules = import ./hosts/t14/home/default.nix { inherit inputs; } ++ [
               {
                 omarchy = {
                   theme = "glats";

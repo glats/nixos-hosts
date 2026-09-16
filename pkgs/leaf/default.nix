@@ -1,10 +1,10 @@
-{ lib
-, stdenvNoCC
-, fetchurl
-, autoPatchelfHook
-, zlib
-, stdenv
-,
+{
+  lib,
+  stdenvNoCC,
+  fetchurl,
+  autoPatchelfHook,
+  zlib,
+  stdenv,
 }:
 
 let
@@ -13,20 +13,22 @@ let
   system = stdenvNoCC.hostPlatform.system;
   isLinux = lib.hasSuffix "linux" system;
 
-  platformSrc = {
-    x86_64-linux = {
-      url = "https://github.com/RivoLink/leaf/releases/download/${version}/leaf-linux-x86_64";
-      sha256 = "sha256-QwiH5L63j2xA0cT10XfAbFAWxgJVS1/gCpQh27pcuI4=";
-    };
-    x86_64-darwin = {
-      url = "https://github.com/RivoLink/leaf/releases/download/${version}/leaf-macos-x86_64";
-      sha256 = "sha256-0zJvhyz5soar0si7TzRANApdkQzIpfbjXPSTv247Qrs=";
-    };
-    aarch64-darwin = {
-      url = "https://github.com/RivoLink/leaf/releases/download/${version}/leaf-macos-arm64";
-      sha256 = "sha256-q+B/PZVZlsR7qX12e9jFwsT9A2W8883En46sYkVFcU0=";
-    };
-  }.${system} or (throw "Unsupported system: ${system}");
+  platformSrc =
+    {
+      x86_64-linux = {
+        url = "https://github.com/RivoLink/leaf/releases/download/${version}/leaf-linux-x86_64";
+        sha256 = "sha256-QwiH5L63j2xA0cT10XfAbFAWxgJVS1/gCpQh27pcuI4=";
+      };
+      x86_64-darwin = {
+        url = "https://github.com/RivoLink/leaf/releases/download/${version}/leaf-macos-x86_64";
+        sha256 = "sha256-0zJvhyz5soar0si7TzRANApdkQzIpfbjXPSTv247Qrs=";
+      };
+      aarch64-darwin = {
+        url = "https://github.com/RivoLink/leaf/releases/download/${version}/leaf-macos-arm64";
+        sha256 = "sha256-q+B/PZVZlsR7qX12e9jFwsT9A2W8883En46sYkVFcU0=";
+      };
+    }
+    .${system} or (throw "Unsupported system: ${system}");
 in
 stdenvNoCC.mkDerivation {
   pname = "leaf";

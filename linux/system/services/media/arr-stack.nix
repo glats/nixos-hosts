@@ -1,4 +1,9 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 {
   # ============================================================
@@ -110,7 +115,13 @@
     description = "Fix permissions for ARR stack media directories";
     after = [ "run-media-library.mount" ];
     wantedBy = [ "multi-user.target" ];
-    before = [ "radarr.service" "sonarr.service" "bazarr.service" "qbittorrent.service" "prowlarr.service" ];
+    before = [
+      "radarr.service"
+      "sonarr.service"
+      "bazarr.service"
+      "qbittorrent.service"
+      "prowlarr.service"
+    ];
 
     serviceConfig = {
       Type = "oneshot";

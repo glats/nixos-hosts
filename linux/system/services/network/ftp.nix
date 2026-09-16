@@ -42,8 +42,16 @@
   };
 
   # Open ports in firewall
-  networking.firewall.allowedTCPPorts = [ 20 21 ];
-  networking.firewall.allowedTCPPortRanges = [{ from = 47400; to = 47470; }];
+  networking.firewall.allowedTCPPorts = [
+    20
+    21
+  ];
+  networking.firewall.allowedTCPPortRanges = [
+    {
+      from = 47400;
+      to = 47470;
+    }
+  ];
 
   # Ensure directory exists
   systemd.tmpfiles.rules = [

@@ -1,4 +1,9 @@
-{ lib, stdenvNoCC, fetchurl, pkgs }:
+{
+  lib,
+  stdenvNoCC,
+  fetchurl,
+  pkgs,
+}:
 
 let
   versions = lib.importJSON ./versions.json;
@@ -9,13 +14,10 @@ let
   # Compute tarball name from package name:
   # @scope/name -> name (e.g. @opencode-ai/sdk -> sdk)
   # unscoped -> same (e.g. unique-names-generator -> unique-names-generator)
-  tarballName = name:
-    if lib.hasPrefix "@" name then
-      lib.last (lib.splitString "/" name)
-    else
-      name;
+  tarballName = name: if lib.hasPrefix "@" name then lib.last (lib.splitString "/" name) else name;
 
-  sources = lib.genAttrs (lib.attrNames versions) (name:
+  sources = lib.genAttrs (lib.attrNames versions) (
+    name:
     let
       encodedName = lib.replaceStrings [ "/" ] [ "%2F" ] name;
       version = versions.${name};
@@ -28,16 +30,14 @@ let
     }
   );
 
-  copyCommands = lib.concatStrings (lib.mapAttrsToList
-    (name: src: ''
+  copyCommands = lib.concatStrings (
+    lib.mapAttrsToList (name: src: ''
       mkdir -p $out/lib/node_modules/${name}
       tar -xzf ${src} -C $out/lib/node_modules/${name} --strip-components=1
-    '')
-    sources);
-
-  packageJson = builtins.toJSON (
-    lib.mapAttrs (n: v: "^${v}") versions
+    '') sources
   );
+
+  packageJson = builtins.toJSON (lib.mapAttrs (n: v: "^${v}") versions);
 in
 
 stdenvNoCC.mkDerivation {

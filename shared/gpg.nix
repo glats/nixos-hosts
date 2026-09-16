@@ -10,7 +10,12 @@
 #   - github/work_gpg_key
 #   - github/personal_gpg_fingerprint
 #   - github/personal_gpg_key
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   # Import a GPG key from sops secrets into the keyring if not already present.
@@ -24,12 +29,11 @@ let
   '';
 in
 {
-  home.activation.importGpgKeys = lib.hm.dag.entryAfter [ "writeBoundary" ]
-    (importKey "work"
-      config.sops.secrets."github/work_gpg_fingerprint".path
+  home.activation.importGpgKeys = lib.hm.dag.entryAfter [ "writeBoundary" ] (
+    importKey "work" config.sops.secrets."github/work_gpg_fingerprint".path
       config.sops.secrets."github/work_gpg_key".path
-    + importKey "personal"
-      config.sops.secrets."github/personal_gpg_fingerprint".path
-      config.sops.secrets."github/personal_gpg_key".path
-    );
+    +
+      importKey "personal" config.sops.secrets."github/personal_gpg_fingerprint".path
+        config.sops.secrets."github/personal_gpg_key".path
+  );
 }

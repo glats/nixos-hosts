@@ -1,4 +1,9 @@
-{ config, hostName, lib, ... }:
+{
+  config,
+  hostName,
+  lib,
+  ...
+}:
 
 let
   sshDir = "${config.home.homeDirectory}/.ssh";
@@ -10,10 +15,11 @@ in
     enable = true;
     enableDefaultConfig = false;
 
-    settings = mesh.sshSettingsFor
-      {
+    settings =
+      mesh.sshSettingsFor {
         source = hostName;
         inherit sshDir;
-      } // { };
+      }
+      // { };
   };
 }

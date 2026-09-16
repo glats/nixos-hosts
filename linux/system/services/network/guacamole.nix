@@ -358,4 +358,3 @@ in
     "d /srv/glats/guacamole/drive 0750 1000 1000 -"
   ];
 }
-

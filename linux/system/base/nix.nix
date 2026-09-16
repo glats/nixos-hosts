@@ -1,4 +1,9 @@
-{ lib, inputs, pkgs, ... }:
+{
+  lib,
+  inputs,
+  pkgs,
+  ...
+}:
 
 {
   nix.gc = {
@@ -99,8 +104,7 @@
 
       derivedSrcs =
         let
-          srcsOf =
-            flake: map (p: p.src or null) (builtins.attrValues (flake.packages.${pkgs.system} or { }));
+          srcsOf = flake: map (p: p.src or null) (builtins.attrValues (flake.packages.${pkgs.system} or { }));
           candidates =
             srcsOf inputs.omarchy-nix.inputs.hyprland
             ++ srcsOf inputs.omarchy-nix.inputs.walker

@@ -1,7 +1,8 @@
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }:
 
 let
@@ -40,11 +41,9 @@ in
       "adbusers"
     ];
     shell = pkgs.zsh;
-    hashedPasswordFile = lib.mkIf
-      (
-        config ? sops && config.sops.secrets ? "glats_hashed_password"
-      )
-      config.sops.secrets."glats_hashed_password".path;
+    hashedPasswordFile = lib.mkIf (
+      config ? sops && config.sops.secrets ? "glats_hashed_password"
+    ) config.sops.secrets."glats_hashed_password".path;
     openssh.authorizedKeys.keys = mesh.peerKeys config.networking.hostName;
   };
 

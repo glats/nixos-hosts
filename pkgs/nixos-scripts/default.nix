@@ -1,8 +1,8 @@
-{ buildGoModule
-, lib
-, makeWrapper
-, qrencode
-,
+{
+  buildGoModule,
+  lib,
+  makeWrapper,
+  qrencode,
 }:
 
 buildGoModule {

@@ -1,10 +1,11 @@
 # Gentle AI ecosystem assets shared across all tools (OpenCode, Claude Code, etc.)
 # Defines skill/command/AGENTS.md sources, MCPs, and Engram config — consumed by
 # tool-specific modules.
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }:
 
 with lib;

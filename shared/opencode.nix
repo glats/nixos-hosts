@@ -1,8 +1,9 @@
-{ config
-, lib
-, pkgs
-, inputs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
 }:
 
 with lib;
@@ -81,12 +82,10 @@ in
 
     disabledTools = mkOption {
       type = types.listOf types.str;
-      default = concatMap
-        (server: map (tool: "${server}_${tool}") githubRareTools)
-        [
-          "github-personal"
-          "github-work"
-        ];
+      default = concatMap (server: map (tool: "${server}_${tool}") githubRareTools) [
+        "github-personal"
+        "github-work"
+      ];
       description = ''
         Fully-qualified tool names disabled globally (serialized as
         tools."name" = false). OpenCode removes disabled tools from the
