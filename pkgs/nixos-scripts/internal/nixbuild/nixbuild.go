@@ -39,6 +39,24 @@ type Env struct {
 	FlakePath string // worktree-aware: "." inside <root>/.worktrees
 }
 
+const DefaultDarwinHost = "macm5"
+
+// ResolveHost selects the logical flake configuration independently of the
+// machine's physical hostname. Darwin defaults to the stable macm5
+// configuration; NIXOS_DARWIN_HOST is an explicit escape hatch for another
+// declared Darwin configuration. Linux retains hostname-based selection.
+func ResolveHost(darwin bool, getenv func(string) string, hostname func() (string, error)) string {
+	if darwin {
+		if configured := getenv("NIXOS_DARWIN_HOST"); configured != "" {
+			return configured
+		}
+		return DefaultDarwinHost
+	}
+
+	host, _ := hostname()
+	return host
+}
+
 // Kind is the action a Step performs.
 type Kind int
 

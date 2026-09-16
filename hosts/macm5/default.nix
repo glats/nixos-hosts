@@ -8,7 +8,6 @@
 , primaryUser
 , javaVersion
 , lib
-, host
 , ...
 }:
 {
@@ -27,8 +26,6 @@
     inputs.nix-homebrew.darwinModules.nix-homebrew
     inputs.sops-nix.darwinModules.sops
   ];
-
-  networking.hostName = host;
 
   # Keep corporate EDR traffic direct if the private link is unavailable.
   link.directCidrs = [ "163.116.0.0/16" ];
