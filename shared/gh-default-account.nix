@@ -6,7 +6,7 @@
 #
 # The platform-derived default is `glats` on Linux hosts and
 # `jcuzmar-Falabella_FTC` on Darwin hosts, so all four current hosts
-# (rog, t14, thinkcentre on Linux; mact2 on Darwin) receive the
+# (rog, t14, thinkcentre on Linux; macm5 on Darwin) receive the
 # intended policy through their existing shared module lists. The
 # option is overridable per host without duplicating the activation
 # entry.
@@ -37,7 +37,7 @@
       Existing github.com `gh` login selected as the active account
       after Home Manager activation. The default is the work account
       on Darwin hosts and the personal account on Linux hosts, so
-      rog/t14/thinkcentre activate as `glats` and mact2 activates as
+      rog/t14/thinkcentre activate as `glats` and macm5 activates as
       `jcuzmar-Falabella_FTC`.
 
       This option is a host policy, not an authentication option. It

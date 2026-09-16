@@ -184,12 +184,6 @@ let
       port = "5900";
     }
     {
-      name = "mact2-tigervnc";
-      protocol = "vnc";
-      viewer = "tigervnc";
-      host = "mact2.local";
-    }
-    {
       name = "oneplus5";
       protocol = "rdp";
       host = "172.16.0.12";

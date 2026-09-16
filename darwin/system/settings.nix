@@ -71,7 +71,7 @@
       # smb.NetBIOSName omitted: writing to com.apple.smb.server requires
       # entitlements the activation script doesn't have; it exits 1 under
       # set -e and aborts activation before Homebrew bundle runs.
-      # The name is already "mact2" (matches the hostname) so no effect.
+      # The corporate LocalHostName is managed outside nix-darwin.
     };
   };
 

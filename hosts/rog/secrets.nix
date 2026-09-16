@@ -78,16 +78,8 @@
   # independently revocable credential in secrets/shared/link-uuids.yaml.
   # One scalar key per device; each is its own 0400 file owned by the
   # sing-box system user so the service can read them at activation.
-  # Removing a key + this decl + the matching users entry in
-  # linux/system/services/network/sing-box-link.nix revokes that
-  # device only — mact2 and other devices stay connected.
-  sops.secrets."link/uuid_mact2" = {
-    sopsFile = ../../secrets/shared/link-uuids.yaml;
-    key = "uuid_mact2";
-    owner = "sing-box";
-    group = "sing-box";
-    mode = "0400";
-  };
+  # Removing a key + this declaration + the matching users entry in
+  # linux/system/services/network/sing-box-link.nix revokes that device only.
   sops.secrets."link/uuid_macm5" = {
     sopsFile = ../../secrets/shared/link-uuids.yaml;
     key = "uuid_macm5";

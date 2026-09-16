@@ -6,12 +6,12 @@
 # proxied by nginx from tun.glats.org. Each approved device gets its
 # own entry in the `users` array; the UUID is pulled at activation from
 # a per-device sops file (one _secret per UUID, never the whole array),
-# so removing a key + decl + users entry revokes only that device.
+# so removing a key + declaration + users entry revokes only that device.
 #
 # The WS path is a one-time random hex constant, NOT sops: it's
 # obscurity, not auth. nginx passes the location path through (the same
 # value lives in linux/system/services/web/nginx.nix), and the same
-# value is referenced by the mact2 client (darwin/system/sing-box-link.nix)
+# value is referenced by the macm5 client (darwin/system/sing-box-link.nix)
 # and by bin/device-link for phone link generation. Generating it
 # once keeps the three sites byte-identical without a shared secret.
 #
@@ -34,7 +34,7 @@ in
 {
   options.services.sing-box-link = {
     enable = lib.mkEnableOption
-      "loopback VLESS+WS server of the mact2↔rog private link";
+      "loopback VLESS+WS server of the macm5↔rog private link";
 
     port = lib.mkOption {
       type = lib.types.port;
@@ -50,9 +50,8 @@ in
 
       # Freeform JSON. Each `users[].uuid = { _secret = ...; }` is
       # replaced at activation by the NixOS sing-box module's
-      # `genJqSecretsReplacementSnippet` (verified against nixpkgs
-      # nixos-26.05 modules/services/networking/sing-box.nix). The file
-      # content is embedded as a JSON string (default `quote = true`).
+      # genJqSecretsReplacementSnippet. The file content is embedded as
+      # a JSON string (default `quote = true`).
       settings = {
         log = {
           level = "info";
@@ -65,16 +64,12 @@ in
             listen_port = config.services.sing-box-link.port;
             users = [
               {
-                name = "mact2";
-                uuid = { _secret = config.sops.secrets."link/uuid_mact2".path; };
-              }
-              {
                 name = "macm5";
                 uuid = { _secret = pathFor "link/uuid_macm5"; };
               }
               {
                 name = "phone";
-                uuid = { _secret = config.sops.secrets."link/uuid_phone".path; };
+                uuid = { _secret = pathFor "link/uuid_phone"; };
               }
             ];
             transport = {

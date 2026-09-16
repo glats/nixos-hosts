@@ -70,7 +70,7 @@ func TestBuildLink(t *testing.T) {
 	const uuid = "d3b07384-d9a0-4d7f-9c93-2f9c1a6b4e21"
 	want := "vless://d3b07384-d9a0-4d7f-9c93-2f9c1a6b4e21@tun.glats.org:443" +
 		"?encryption=none&security=tls&sni=tun.glats.org&fp=chrome&type=ws" +
-		"&host=tun.glats.org&path=/ed59280aa562f4b7eba4519e3c316e24#mact2-link-phone"
+		"&host=tun.glats.org&path=/ed59280aa562f4b7eba4519e3c316e24#macm5-link-phone"
 	if got := buildLink(uuid, "phone"); got != want {
 		t.Errorf("buildLink() =\n  %s\nwant\n  %s", got, want)
 	}

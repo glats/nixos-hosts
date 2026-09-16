@@ -1288,27 +1288,6 @@
         "type": "github"
       }
     },
-    "nix-vscode-extensions": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1784708718,
-        "narHash": "sha256-+tUJuSur9ZL1tKWhXSgjR1kILUAcTV3dPZawCBsR4js=",
-        "owner": "nix-community",
-        "repo": "nix-vscode-extensions",
-        "rev": "1c7bb95446387973178363916a51b14515fa5ee4",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nix-community",
-        "repo": "nix-vscode-extensions",
-        "rev": "1c7bb95446387973178363916a51b14515fa5ee4",
-        "type": "github"
-      }
-    },
     "nixos-hardware": {
       "inputs": {
         "nixpkgs": [
@@ -1621,7 +1600,6 @@
         "nix-colors": "nix-colors",
         "nix-darwin": "nix-darwin",
         "nix-homebrew": "nix-homebrew",
-        "nix-vscode-extensions": "nix-vscode-extensions",
         "nixos-hardware": "nixos-hardware",
         "nixpkgs": "nixpkgs_2",
         "omarchy-nix": "omarchy-nix",

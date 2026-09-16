@@ -72,7 +72,7 @@ func envOr(key, fallback string) string {
 const usageText = `ai-backup - One-shot compressed backup/restore of AI assistant state.
 
 Backs up Claude Code, OpenCode and Engram state from a source host
-(default: mact2) into rog's samba share as a single .tar.zst archive.
+(default: macm5) into rog's samba share as a single .tar.zst archive.
 The archive is an explicit member list — no --exclude patterns — so
 only the following ever enters it:
 
@@ -102,12 +102,12 @@ Regenerable or live state is excluded by not being listed:
 credentials — Claude Code re-authenticates after a restore.
 
 Usage:
-  ai-backup [TARGET]              backup TARGET (default mact2) -> rog
+  ai-backup [TARGET]              backup TARGET (default macm5) -> rog
   ai-backup list                  list archives in the destination
   ai-backup restore ARCHIVE [--to TARGET] [--dry-run] [--force]
                                   restore archive into TARGET ($HOME)
 
-TARGET: local | mact2 | t14 | thinkcentre | user@host
+TARGET: local | macm5 | t14 | thinkcentre | user@host
 
 Environment overrides:
   AI_BACKUP_DEST        destination root (default samba share on rog)
@@ -133,8 +133,8 @@ func resolveTarget(t string) string {
 	switch t {
 	case "local":
 		return "local"
-	case "mact2":
-		return "jcuzmar@mact2.local"
+	case "macm5":
+		return "juan@macm5"
 	case "t14":
 		return "glats@t14.local"
 	case "thinkcentre":
@@ -844,12 +844,12 @@ func tarListing(archive string) (string, int) {
 
 func main() {
 	args := os.Args[1:]
-	// No subcommand or a bare TARGET means: run a backup (default mact2).
+	// No subcommand or a bare TARGET means: run a backup (default macm5).
 	switch {
 	case len(args) == 0:
-		doBackup("mact2")
+		doBackup("macm5")
 	case args[0] == "backup":
-		target := "mact2"
+		target := "macm5"
 		if len(args) > 1 {
 			target = args[1]
 		}

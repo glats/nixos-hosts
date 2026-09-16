@@ -15,7 +15,7 @@ func TestResolveTarget(t *testing.T) {
 		in, want string
 	}{
 		{"local", "local"},
-		{"mact2", "jcuzmar@mact2.local"},
+		{"macm5", "juan@macm5"},
 		{"t14", "glats@t14.local"},
 		{"thinkcentre", "glats@thinkcentre.local"},
 		{"jcuzmar@mact2.local", "jcuzmar@mact2.local"}, // passthrough
@@ -34,7 +34,7 @@ func TestTargetLabel(t *testing.T) {
 	}{
 		// Shorthand targets label as-is; only user@host passthrough
 		// args get the "${1%%@*}-${1#*@}" + tr './' '--' treatment.
-		{"mact2", "mact2"},
+		{"macm5", "macm5"},
 		{"t14", "t14"},
 		{"thinkcentre", "thinkcentre"},
 		{"jcuzmar@mact2.local", "jcuzmar-mact2-local"},

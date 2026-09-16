@@ -7,7 +7,7 @@ Dos identidades GitHub con sus respectivos tokens, GPG keys, y MCP servers:
 | Identidad | Cuenta | Hosts | GPG |
 |-----------|--------|-------|-----|
 | **personal** | github.com/glats | rog, thinkcentre, t14 (default) | key propia (generar) |
-| **work** (trabajo) | github.com/jcuzmar | mact2 (default), ~/Work/** en Linux | key propia (B658D64...) |
+| **work** (trabajo) | github.com/jcuzmar | macm5 (default), ~/Work/** en Linux | key propia (B658D64...) |
 
 > **Note**: Real identity values (name, email) are stored in `secrets/user/identities.yaml` (sops-encrypted).
 > They are decrypted at Home Manager activation time and written as git include files.
@@ -106,11 +106,11 @@ git checkout feat/multi-github-identity
 nixos-build switch    # o nixos-build safe
 ```
 
-### macOS (mact2)
+### macOS (macm5)
 
 ```bash
 git checkout feat/multi-github-identity
-nh home switch --hostname mact2 .   # o como deployes normalmente
+nh home switch --hostname macm5 .   # o como deployes normalmente
 ```
 
 ---

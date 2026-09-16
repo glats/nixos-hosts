@@ -1,5 +1,5 @@
 // Command linkctl is a sysvinit-style control for the macOS link daemon
-// (org.nixos.sing-box) on mact2.
+// (org.nixos.sing-box) on macm5.
 //
 // Port of bin/linkctl. start/stop/restart mutate the system domain
 // (root-only) and auto-promote via sudo re-exec (syscall.Exec, the Go
