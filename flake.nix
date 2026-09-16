@@ -243,6 +243,7 @@
           extraSpecialArgs = {
             inherit username;
             inputs = hostInputs;
+            host = hostname;
             hostName = hostname;
             # Darwin-specific extras (ignored by linux modules)
             primaryUser = username;
