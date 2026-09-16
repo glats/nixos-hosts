@@ -4,6 +4,10 @@
 , ...
 }:
 
+let
+  mesh = import ../../../shared/ssh/lan-mesh.nix { inherit lib; };
+in
+
 {
   programs = {
     dconf.enable = true;
@@ -41,10 +45,7 @@
         config ? sops && config.sops.secrets ? "glats_hashed_password"
       )
       config.sops.secrets."glats_hashed_password".path;
-    openssh.authorizedKeys.keys = [
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMmEZnnbGhOicYhWnRFRQ7f8DEDHElwqQ5mHp9Zr+Xwi glats@nixos-rog"
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKtoFLEVCeMwSVSCEdiUQgauZoKzU/aYZG8PBMN7CHQu glats@mac-t14"
-    ];
+    openssh.authorizedKeys.keys = mesh.peerKeys config.networking.hostName;
   };
 
   users.groups.netdev = { };
