@@ -71,7 +71,7 @@ let
               "-wallpaper",
               "-themes",
               "-fonts",
-              "/kbd:layout:0x0000040A,lang:0x040A",
+              "/kbd:layout:0x0000080A,lang:0x040A",
               NULL
             };
             execv(rdpbin, (char *const *)args);
