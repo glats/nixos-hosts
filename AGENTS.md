@@ -54,20 +54,21 @@ docs/                            # Operational runbooks (sops-new-host.md, multi
 |------|------|---------|
 | 1. Format | After editing `.nix` files | `nix fmt -- <touched-file>` (instant) |
 | 2. Targeted eval | Before declaring done on a host-scoped change | NixOS: `nix eval .#nixosConfigurations.<host>.config.system.build.toplevel.drvPath` · HM: `nix eval .#homeConfigurations.<host>.activationPackage.drvPath` · Darwin: `nix eval .#darwinConfigurations.<name>.config.system.build.toplevel.drvPath` |
-| 3. Full gate | Shared-scope changes, non-obvious eval failures, or pre-commit | `format-nix && nix flake check --no-build` |
+| 3. Full gate | Shared-scope changes, non-obvious eval failures, or pre-commit | Main checkout: `format-nix && nix flake check --no-build`; worktree: `nix fmt -- --ci && nix flake check --no-build` |
 
 **Shared scope** (tier 3 mandatory): `flake.nix`, `flake.lock`, `lib/`, `overlays/`, `shared/`, `pkgs/`, `linux/home/shared-modules.nix`, `darwin/home/shared-modules.nix` — anything imported by more than one host.
 
-⚠️ `flake.nix` exposes `checks.x86_64-linux` containing all three NixOS hosts' toplevels, so `nix flake check` (even with `--no-build`) evaluates every host — that is exactly why it is reserved for tier 3. Never run plain `nix flake check` without `--no-build`: it evaluates AND builds every host.
+⚠️ `nix flake check --no-build` evaluates every declared `nixosConfiguration`, but does not evaluate `darwinConfigurations` or standalone `homeConfigurations`. Run targeted `nix eval` commands for those blind spots, including both Darwin toplevels and all standalone Home Manager activation packages. Never run plain `nix flake check` without `--no-build`: it evaluates AND builds every host.
 
 ### Formatting
 
 | Task | Command |
 |------|---------|
-| Full repo | `format-nix` (targets `/etc/nixos` = this repo via symlink; full-repo only, supports `--check`) |
+| Full repo (main checkout) | `format-nix` (targets `/etc/nixos` = this repo via symlink; full-repo only, supports `--check`) |
 | Single file | `nix fmt -- <path>` |
+| Worktree full repo | `nix fmt` or `nix fmt -- --ci` from the worktree root; never run `format-nix` in a worktree |
 
-Formatter is `nixpkgs-fmt` set as flake `formatter`. Never invoke `nixpkgs-fmt <path>` directly — always go through `nix fmt`.
+Formatter is RFC-166 `nixfmt-tree` set as flake `formatter`. Never invoke formatter binaries directly — always go through `nix fmt`.
 
 ### Development
 
