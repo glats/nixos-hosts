@@ -141,7 +141,8 @@ func checkFile(f string, rc *int) {
 	}
 }
 
-// nixFiles walks root and returns .nix file paths, skipping .git, in
+// nixFiles walks root and returns .nix file paths, skipping .git and
+// .worktrees (full repo copies that would triple the work), in
 // deterministic (lexical) order.
 func nixFiles(root string) ([]string, error) {
 	var files []string
@@ -150,8 +151,11 @@ func nixFiles(root string) ([]string, error) {
 			return err
 		}
 		if d.IsDir() {
-			if d.Name() == ".git" && path != "." {
-				return filepath.SkipDir
+			switch d.Name() {
+			case ".git", ".worktrees":
+				if path != "." {
+					return filepath.SkipDir
+				}
 			}
 			return nil
 		}
