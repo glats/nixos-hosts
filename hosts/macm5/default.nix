@@ -88,6 +88,9 @@ in
     variables = {
       DISPLAY = ":0";
       NIX_SSL_CERT_FILE = "${corporateCaBundle}/etc/ssl/certs/ca-bundle.crt";
+      # MacOSX27.0.sdk has a broken .tbd (tapi error: malformed file).
+      # Force 26.5 until Apple fixes the SDK or CLI tools are updated.
+      SDKROOT = "/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk";
     };
     systemPackages = with pkgs; [ git nixos-scripts ];
     # Intel uses /usr/local; Apple Silicon uses /opt/homebrew.
