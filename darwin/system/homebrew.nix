@@ -44,7 +44,6 @@
       "stats"
       "postman"
       "caffeine"
-      "flameshot"
       "meld"
       "macfuse"
       "key-codes"
