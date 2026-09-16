@@ -1,4 +1,4 @@
-# Server-side loopback inbound of the mact2↔rog private link
+# Server-side loopback inbound of the Darwin↔rog private link
 # (general-purpose private egress; OpenCode's native OpenAI access is
 # the flagship use case, not the purpose).
 #
@@ -29,6 +29,7 @@ let
   wsPath = "/ed59280aa562f4b7eba4519e3c316e24";
 
   cfg = config.services.sing-box-link;
+  pathFor = name: config.sops."secrets".${name}.path;
 in
 {
   options.services.sing-box-link = {
@@ -66,6 +67,10 @@ in
               {
                 name = "mact2";
                 uuid = { _secret = config.sops.secrets."link/uuid_mact2".path; };
+              }
+              {
+                name = "macm5";
+                uuid = { _secret = pathFor "link/uuid_macm5"; };
               }
               {
                 name = "phone";

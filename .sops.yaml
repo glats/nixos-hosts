@@ -9,6 +9,7 @@ keys:
   # imports the host key); the anchor above is the USER key that Home Manager
   # sops uses via ~/.config/sops/age/keys.txt. System daemons -> use host key.
   - &host_mact2_system age1dzufdqqf6sysvsmz7tuenkur4l49gtzwe3wj4fjlwqkt0wpps5nstvv06e
+  - &host_macm5 age1cthdpfdak79gmnvt9puypv4effjs86ukz94dm35pv46dj24ehpxqlena3f
   - &host_t14 age1kc4mnetans8hwzwy24gsnw2hzxzcz3c5wcthcsr5wdfwk5e7vvtqvku74u
 
 creation_rules:
@@ -37,6 +38,18 @@ creation_rules:
           - *host_rog
           - *host_mact2
           - *host_mact2_system
+          - *host_macm5
+
+  # macm5 Home Manager needs only the shared GitHub/GPG password records.
+  - path_regex: secrets/shared/passwords\.yaml
+    key_groups:
+      - age:
+          - *admin_glats
+          - *host_rog
+          - *host_thinkcentre
+          - *host_t14
+          - *host_mact2
+          - *host_macm5
 
   # Shared system secrets
   - path_regex: secrets/system/.+
@@ -64,6 +77,7 @@ creation_rules:
           - *host_rog
           - *host_thinkcentre
           - *host_mact2
+          - *host_macm5
           - *host_t14
 
   # Identities file -- needed on all hosts including macOS
@@ -75,6 +89,7 @@ creation_rules:
           - *host_thinkcentre
           - *host_t14
           - *host_mact2
+          - *host_macm5
 
   # User secrets (catch-all for other user files)
   - path_regex: secrets/user/.+

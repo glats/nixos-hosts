@@ -22,9 +22,33 @@ the output of a secret decryption command.
 ## Encrypted data and link identity
 
 The host recipient and the dedicated `uuid_macm5` value must be staged by the
-SOPS owner. The identity is not a copy of another device identity. The owner
-must verify the encrypted diff and use `sops updatekeys` only for the approved
-files. This change intentionally does not perform that operation.
+SOPS owner. The identity is not a copy of another device identity. This is an
+admin-only procedure; do not perform it from an ordinary host account or from
+an automated activation.
+
+From an authorized admin workstation, after reviewing the exact recipient
+diff, rotate only the four files consumed by macm5:
+
+```text
+cd /home/glats/.nixos
+umask 077
+uuidgen > "$TMPDIR/uuid_macm5"
+sops secrets/shared/link-uuids.yaml
+# Add uuid_macm5 using the generated value; do not change uuid_mact2 or uuid_phone.
+rm -f "$TMPDIR/uuid_macm5"
+sops updatekeys -y secrets/shared/link-uuids.yaml
+sops updatekeys -y secrets/shared/passwords.yaml
+sops updatekeys -y secrets/user/opencode.yaml
+sops updatekeys -y secrets/user/identities.yaml
+```
+
+The admin MUST keep the generated value out of shell history, command output,
+logs, unmanaged temporary copies, backups, and Git. The `umask 077` temporary
+file above exists only to paste the value into the SOPS editor and MUST be
+removed immediately. In the editor, add only the scalar
+`uuid_macm5` key; never copy or replace another device UUID. Verify only
+ciphertext metadata and the encrypted diff before handing the change to the
+macm5 operator.
 
 After rotation, verify only ciphertext metadata and repository status:
 
