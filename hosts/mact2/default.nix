@@ -90,13 +90,19 @@
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMigT6lscyISTW6jbk9c34gMYSaRQIq4tUxMvn7vd6K7 t14"
     ];
   };
+  # Corporate MITM proxy (Netskope/Goskope) intercepts HTTPS. macOS trusts
+  # the Falabella CA via Apple SecTrust (MDM), but Nix programs use OpenSSL's
+  # file-based CA store. Adding the CA here ensures all Nix-built programs
+  # (curl, git, nvim-treesitter, etc.) can verify TLS peers.
+  # On a new machine, re-extract with:
+  #   echo | openssl s_client -connect github.com:443 -showcerts 2>/dev/null | \
+  #     awk 'BEGIN{n=0} /BEGIN CERTIFICATE/{n++} n==2{print} n==2 && /END CERTIFICATE/{exit}' \
+  #     > certs/netskope-falabella.crt
+  security.pki.certificateFiles = [ ../../certs/netskope-falabella.crt ];
+
   environment = {
     variables = {
       DISPLAY = ":0";
-      # Nix-built curl uses its own CA bundle which may lack certificates
-      # present in the macOS system store. Point OpenSSL to the system certs
-      # so nvim-treesitter (and other Nix programs) can verify TLS peers.
-      SSL_CERT_FILE = "/etc/ssl/cert.pem";
     };
     # nixos-scripts (linkctl) at the SYSTEM level too: linkctl
     # start/stop/restart re-exec via sudo with an absolute path, and a
@@ -111,4 +117,16 @@
   };
 
   services.wsdd.enable = true;
+
+  # Inject corporate CA into Colima VM so Docker can pull from ghcr.io etc.
+  # The VM has its own CA store separate from macOS; this runs on every
+  # nix-darwin activation and is idempotent.
+  system.activationScripts.corporate-ca-colima = lib.mkAfter ''
+    if command -v colima >/dev/null 2>&1 && colima status >/dev/null 2>&1; then
+      echo "Injecting corporate CA into Colima VM..."
+      cat ${../../certs/netskope-falabella.crt} | colima ssh -- sudo tee /usr/local/share/ca-certificates/netskope-falabella.crt > /dev/null
+      colima ssh -- sudo update-ca-certificates >/dev/null 2>&1 || true
+      colima ssh -- sudo systemctl restart docker >/dev/null 2>&1 || true
+    fi
+  '';
 }
