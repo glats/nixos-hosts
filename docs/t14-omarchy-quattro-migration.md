@@ -431,7 +431,7 @@ QR capture decodifica a clipboard marcado sensible.
    `nix flake update nixpkgs home-manager`.
 2. Verificar: `nix eval nixpkgs#hyprland.version` (≥0.56) y
    `nix eval nixpkgs#quickshell.version` (≥0.3; anotar si <0.3.1 → override en F2).
-3. Gate: build de t14, rog, thinkcentre (+ darwin mact2) y `nix flake check --no-build`.
+3. Gate: build de t14, rog, thinkcentre (+ darwin macm5) y `nix flake check --no-build`.
    Si algo rompe, arreglar aquí antes de continuar.
 4. Commit: `chore(flake): move nixpkgs to nixos-unstable` (standalone, reversible).
 

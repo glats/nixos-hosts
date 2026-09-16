@@ -18,7 +18,7 @@ configure. The pairing lives entirely in the browser profile.
 ## Prerequisites
 
 - `npx` is available on the system — already true on all hosts (Nix hosts ship
-  Node.js; mact2 has Node via Homebrew/mise).
+  Node.js; macm5 has Node via Homebrew/mise).
 - Network access to the npm registry (`registry.npmjs.org`) on the **first**
   server start — the repo scrubs proxy environment variables for MCP child
   processes, so the first `npx` run cannot go through a proxy. See
@@ -33,7 +33,7 @@ configure. The pairing lives entirely in the browser profile.
 | rog | glats | Chromium-family browser in an **active desktop (XRDP)** session | The server stays dormant until an active desktop session has a browser open and paired |
 | thinkcentre | glats | Chromium-family browser in an **active desktop (XRDP)** session | Same dormant-until-paired behavior as rog |
 | t14 | glats | Chromium-family browser under Hyprland (Omarchy) | Browser window must be open and paired during agent use |
-| mact2 | jcuzmar | macOS Chrome | Chrome running with the profile paired during agent use |
+| macm5 | jcuzmar | macOS Chrome | Chrome running with the profile paired during agent use |
 
 Setup is **per browser profile**. Each profile where you want Browser MCP
 needs the extension installed and its own **Connect** pairing. Pairing does

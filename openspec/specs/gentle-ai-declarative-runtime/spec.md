@@ -10,7 +10,7 @@ Define the v2.5.0-aligned Gentle AI source, assets, plugins, agent permissions, 
 
 `gentle-ai-src` MUST reference `github:Gentleman-Programming/gentle-ai/v2.5.0`; the lock entry MUST resolve that tag, and `pkgs/gentle-ai` MUST carry a valid `vendorHash`. Both derivations MUST consume this source.
 
-#### Scenario: Pin and derivations agree [hosts: rog, thinkcentre, t14, mact2]
+#### Scenario: Pin and derivations agree [hosts: rog, thinkcentre, t14, macm5]
 - GIVEN the updated flake and package definitions
 - WHEN the lock entry and derivation inputs are inspected and built
 - THEN the source resolves v2.5.0 and the vendor hash is accepted
@@ -22,12 +22,12 @@ The module MUST expose `home.opencode.plugins.{modelVariants,opencodeReviewTrans
 
 `backgroundAgents`, its managed entry, and the `agent-teams-lite#58` warning MUST be absent. Activation MUST remove any existing `background-agents.ts`, including installations predating this option removal.
 
-#### Scenario: Enabled plugin deploys [hosts: rog, thinkcentre, t14, mact2]
+#### Scenario: Enabled plugin deploys [hosts: rog, thinkcentre, t14, macm5]
 - GIVEN one managed plugin option is enabled
 - WHEN Home Manager activation runs
 - THEN its matching plugin file is deployed from `gentle-ai-assets`
 
-#### Scenario: Disabled and legacy plugins are removed [hosts: rog, thinkcentre, t14, mact2]
+#### Scenario: Disabled and legacy plugins are removed [hosts: rog, thinkcentre, t14, macm5]
 - GIVEN a managed plugin is disabled or `background-agents.ts` already exists
 - WHEN activation runs
 - THEN the disabled or legacy file is absent
@@ -58,7 +58,7 @@ The v2.5.0 deployment MUST retain upstream `gentle-sdd-*` Claude commands and Op
 
 The update guide MUST prescribe: bump the input tag, run `nix flake lock --update-input gentle-ai-src`, recompute `vendorHash`, build `.#gentle-ai-assets`, run `format-nix && nix flake check --no-build`, canary t14, then roll out other hosts. It MUST NOT reference v1.22.0, a `main` pin, or `.last-sync`.
 
-#### Scenario: Runbook is current [hosts: rog, thinkcentre, t14, mact2]
+#### Scenario: Runbook is current [hosts: rog, thinkcentre, t14, macm5]
 - GIVEN `docs/gentle-ai-update.md` after the change
 - WHEN its commands and version references are inspected
 - THEN the ordered v2.x tagged workflow is complete and stale references are absent
@@ -69,7 +69,7 @@ All changed Nix MUST be formatted. `nix flake check --no-build`, a full-JSON-equ
 
 (Previously: The gate required only formatting and `nix flake check --no-build`.)
 
-#### Scenario: Repository and provider checks pass [hosts: rog, thinkcentre, t14, mact2]
+#### Scenario: Repository and provider checks pass [hosts: rog, thinkcentre, t14, macm5]
 - GIVEN all scoped edits are complete
 - WHEN `format-nix`, the flake check, both provider checks, and the t14 build evaluation run
 - THEN every command and comparison succeeds
@@ -79,7 +79,7 @@ All changed Nix MUST be formatted. `nix flake check --no-build`, a full-JSON-equ
 
 The declarative provider catalog MUST contain only NVIDIA's custom OpenAI-compatible declaration and OpenCode's timeout overrides. It MUST NOT declare model pins for `anthropic`, `github-copilot`, `openai`, or `opencode`, and MUST NOT emit the unsupported `thinking` key; NVIDIA's existing declaration MUST remain unchanged.
 
-#### Scenario: Generated catalog excludes built-in model pins [hosts: rog, thinkcentre, t14, mact2]
+#### Scenario: Generated catalog excludes built-in model pins [hosts: rog, thinkcentre, t14, macm5]
 - GIVEN the shared OpenCode configuration is evaluated
 - WHEN its provider catalog is inspected
 - THEN only `nvidia` and option-only `opencode` provider entries are present
@@ -90,7 +90,7 @@ The declarative provider catalog MUST contain only NVIDIA's custom OpenAI-compat
 
 Every routing profile present in the baseline `providers` list MUST remain byte-identical, as verified by a full-JSON-equality A/B evaluation of the pruned file against the baseline revision. Every built-in phase model identifier MUST resolve with zero missing model IDs against the live models.dev catalog at verification time; NVIDIA identifiers MUST remain resolved by the explicit custom declaration.
 
-#### Scenario: Pruned and baseline routing are equivalent [hosts: rog, thinkcentre, t14, mact2]
+#### Scenario: Pruned and baseline routing are equivalent [hosts: rog, thinkcentre, t14, macm5]
 - GIVEN baseline and pruned provider evaluations plus the current models.dev catalog
 - WHEN all profiles, phase mappings, and unique built-in model identifiers are compared
 - THEN every routing profile present in the baseline `providers` list is byte-identical in the pruned evaluation
@@ -100,7 +100,7 @@ Every routing profile present in the baseline `providers` list MUST remain byte-
 
 Generated `opencode.json` MUST retain `provider.opencode.options.timeout = 3600000` and `chunkTimeout = 3600000` without declaring OpenCode models.
 
-#### Scenario: Free routing retains one-hour limits [hosts: t14, mact2]
+#### Scenario: Free routing retains one-hour limits [hosts: t14, macm5]
 - GIVEN a host configuration containing the `opencode-free` routing profile
 - WHEN its generated `opencode.json` is inspected
 - THEN both OpenCode timeout options equal 3,600,000 milliseconds
@@ -110,7 +110,7 @@ Generated `opencode.json` MUST retain `provider.opencode.options.timeout = 36000
 
 The runtime configuration MUST NOT contain `providers-extra.nix`, thread `extraProviders`, or retain any repository consumer of `extraProviders`.
 
-#### Scenario: Dead extension path is grep-clean [hosts: rog, thinkcentre, t14, mact2]
+#### Scenario: Dead extension path is grep-clean [hosts: rog, thinkcentre, t14, macm5]
 - GIVEN the provider cleanup is complete
 - WHEN tracked files and references are searched
 - THEN `providers-extra.nix` is absent
@@ -120,7 +120,7 @@ The runtime configuration MUST NOT contain `providers-extra.nix`, thread `extraP
 
 Existing sops-backed provider environment exports in `shared/opencode.nix`, including Groq and Cerebras credentials, MUST remain unchanged because they support catalog-resolved providers independently of static provider blocks.
 
-#### Scenario: Built-in credentials survive pruning [hosts: rog, thinkcentre, t14, mact2]
+#### Scenario: Built-in credentials survive pruning [hosts: rog, thinkcentre, t14, macm5]
 - GIVEN the pre-change and pruned shared OpenCode environment definitions
 - WHEN their sops-backed provider exports are compared
 - THEN every existing export is byte-identical

@@ -130,7 +130,7 @@ clipboard.
 
 ## Cross-Platform Parity (Linux / macOS)
 
-`shared/tmux.nix` is imported by both Linux hosts and `mact2` (Darwin), and
+`shared/tmux.nix` is imported by both Linux hosts and `macm5` (Darwin), and
 contains the entire `allow-passthrough`/`set-clipboard`/
 `@override_copy_command` contract in one place. Both platforms get an
 identical OSC 52 write configuration; only escape-time and plugin-loading
@@ -228,8 +228,8 @@ already correct with no override needed). If a future change modifies:
 - `linux/home/kitty.nix` / `linux/home/alacritty.nix` — affects every Linux
   host importing `linux/home/shared-modules.nix` (`rog`, `thinkcentre`,
   `t14`) plus any host-specific extras. Rebuild/switch each touched host.
-- `shared/tmux.nix` — affects every Linux host AND `mact2` (Darwin). Rebuild
-  Linux hosts with `nixos-build`; rebuild `mact2` with `darwin-rebuild`
+- `shared/tmux.nix` — affects every Linux host AND `macm5` (Darwin). Rebuild
+  Linux hosts with `nixos-build`; rebuild `macm5` with `darwin-rebuild`
   (or its documented build path) separately.
 
 ## Completion Gate (Phase 4.3)

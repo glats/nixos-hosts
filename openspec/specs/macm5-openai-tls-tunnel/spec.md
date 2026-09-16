@@ -1,8 +1,8 @@
-# mact2-openai-tls-tunnel Specification
+# macm5-openai-tls-tunnel Specification
 
 ## Purpose
 
-Provide `mact2` and approved devices a stealth-hardened VLESS transport through `rog` without proxy environment variables.
+Provide `macm5` and approved devices a stealth-hardened VLESS transport through `rog` without proxy environment variables.
 
 ## Requirements
 
@@ -21,7 +21,7 @@ Provide `mact2` and approved devices a stealth-hardened VLESS transport through 
 
 The VLESS inbound MUST use a `users` array with one named entry per approved device. Each UUID MUST be supplied from its own scalar sops key at runtime, MUST NOT occur in the Nix store or generated declarative configuration, and each UUID-bearing runtime file MUST be root-owned with mode `0400`.
 
-#### Scenario: Authenticate an approved device [hosts: rog, mact2, Android]
+#### Scenario: Authenticate an approved device [hosts: rog, macm5, Android]
 
 - GIVEN valid and absent-or-wrong per-device UUID credentials
 - WHEN each client attempts the VLESS handshake
@@ -30,17 +30,17 @@ The VLESS inbound MUST use a `users` array with one named entry per approved dev
 
 ### Requirement: Root-Managed Full-Link Routing
 
-`mact2` MUST run the TUN client as a root LaunchDaemon. `link.mode` MUST default to `full`: rules MUST send `ip_is_private` direct first, then `link.directDomains` and `link.directCidrs` direct, then select `home-out` as final. `link.mode = "scoped"` MUST instead tunnel only `chatgpt.com` and `auth.openai.com` and select direct as final.
+`macm5` MUST run the TUN client as a root LaunchDaemon. `link.mode` MUST default to `full`: rules MUST send `ip_is_private` direct first, then `link.directDomains` and `link.directCidrs` direct, then select `home-out` as final. `link.mode = "scoped"` MUST instead tunnel only `chatgpt.com` and `auth.openai.com` and select direct as final.
 `process_name` exclusions MAY supplement the direct lists but MUST NOT be their sole enforcement, because macOS process resolution is best-effort.
 
-#### Scenario: Prove full default and direct exclusions [hosts: mact2, rog]
+#### Scenario: Prove full default and direct exclusions [hosts: macm5, rog]
 
 - GIVEN full mode and a configured LAN `link.directDomains` endpoint
 - WHEN `sing-box check -c <rendered-config>`, `launchctl print system/sing-box`, an IP-echo HTTPS request, and the LAN request run
 - THEN the echo service reports rog's egress IP
 - AND logs show the LAN request selected `direct`, not `home-out`
 
-#### Scenario: Flip to scoped routing [hosts: mact2]
+#### Scenario: Flip to scoped routing [hosts: macm5]
 
 - GIVEN the declared mode is changed to `scoped`
 - WHEN the configuration is rebuilt and requests target OpenAI and a non-OpenAI HTTPS host
@@ -51,7 +51,7 @@ The VLESS inbound MUST use a `users` array with one named entry per approved dev
 
 The client MUST use `tun.glats.org` for transport connection and TLS server name and MUST configure `route.auto_detect_interface` plus a direct `route.default_domain_resolver`. If orange-cloud WebSockets fail, a DNS-only record MAY replace wildcard resolution without changing that identity.
 
-#### Scenario: Smoke-test endpoint resolution first [hosts: mact2]
+#### Scenario: Smoke-test endpoint resolution first [hosts: macm5]
 
 - GIVEN the client has just started
 - WHEN `tun.glats.org` is resolved and requested directly
@@ -63,13 +63,13 @@ The client MUST use `tun.glats.org` for transport connection and TLS server name
 
 Proxy environment variables MUST be exported ONLY by the scoped `bin/opencode-home` launcher, and ONLY while the loopback mixed inbound (127.0.0.1:2080) is listening. Shell profiles and the tunnel daemon MUST NOT export `HTTP_PROXY` or `HTTPS_PROXY`. MCP child processes MUST retain clean proxy environments, enforced declaratively via `mcp.environment` in the generated opencode.json; in full mode their network traffic MAY traverse the tunnel solely by routing.
 
-#### Scenario: Inspect MCP environments [hosts: mact2]
+#### Scenario: Inspect MCP environments [hosts: macm5]
 
 - GIVEN OpenCode has launched representative MCP children through the active tunnel
 - WHEN `ps eww` is inspected for each child
 - THEN no child contains `HTTP_PROXY` or `HTTPS_PROXY`
 
-#### Scenario: Scoped launcher exports proxy conditionally [hosts: mact2]
+#### Scenario: Scoped launcher exports proxy conditionally [hosts: macm5]
 
 - GIVEN `opencode-home` is launched once with the tunnel up and once with the tunnel down
 - WHEN the opencode process environment is inspected in each case
@@ -81,7 +81,7 @@ Proxy environment variables MUST be exported ONLY by the scoped `bin/opencode-ho
 
 The VLESS client TLS MUST enable uTLS with the `chrome` fingerprint for the outer connection to `tun.glats.org`.
 
-#### Scenario: Inspect the outer ClientHello policy [hosts: mact2]
+#### Scenario: Inspect the outer ClientHello policy [hosts: macm5]
 
 - GIVEN the rendered client configuration and an active tunnel
 - WHEN `sing-box check -c <rendered-config>` and a TLS fingerprint capture are inspected
@@ -92,7 +92,7 @@ The VLESS client TLS MUST enable uTLS with the `chrome` fingerprint for the oute
 
 The active home daemon MUST support a TLS request to the OAuth host through the full tunnel before native authentication is relied on.
 
-#### Scenario: Prove the home TLS path [hosts: mact2]
+#### Scenario: Prove the home TLS path [hosts: macm5]
 
 - GIVEN the daemon is active on the home network in full mode
 - WHEN `curl -Iv https://auth.openai.com/` runs
@@ -103,9 +103,9 @@ The active home daemon MUST support a TLS request to the OAuth host through the 
 
 Retirement of the old gateway MUST NOT proceed until an in-building test proves the TUN coexists with FortiClient, Netskope, and CrowdStrike; corporate, EDR, Netskope, and FortiClient management traffic remains direct; Cloudflare permits a long-lived WebSocket; outer SNI is only `tun.glats.org`; and CrowdStrike does not flag or block the root daemon.
 
-#### Scenario: Prove office coexistence [hosts: mact2]
+#### Scenario: Prove office coexistence [hosts: macm5]
 
-- GIVEN `mact2` is in the office with FortiClient and both security agents active
+- GIVEN `macm5` is in the office with FortiClient and both security agents active
 - WHEN tunnel traffic, management heartbeats, and a long-lived Cloudflare WebSocket are exercised
 - THEN captures show only `tun.glats.org` as outer SNI and no daemon alert
 - AND management and corporate traffic remain direct, healthy, and loop-free
@@ -114,7 +114,7 @@ Retirement of the old gateway MUST NOT proceed until an in-building test proves 
 
 Reverting the declarative tunnel configuration MUST restore the prior network state; before retirement it MUST leave the proxy gateway available. Emergency daemon unload MAY precede that reversion.
 
-#### Scenario: Revert the tunnel [hosts: mact2, rog]
+#### Scenario: Revert the tunnel [hosts: macm5, rog]
 
 - GIVEN the tunnel has been activated and the proxy gateway is still retained
 - WHEN the daemon is booted out and the declarative tunnel changes are reverted

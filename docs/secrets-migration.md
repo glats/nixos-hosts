@@ -56,14 +56,14 @@ sops --merge secrets/user/api_keys.yaml /home/glats/Work/nix-macos/.secrets/user
 
 ## SOPS Configuration
 
-The unified `.sops.yaml` now includes the mact2 host key:
+The unified `.sops.yaml` now includes the macm5 host key:
 
 ```yaml
 keys:
   - &admin_glats age1j4mxejwmktekgf24sju92ryayh5jlmv4ldxj62e2srwghpkpuujscct9lt
   - &host_rog age1q46qlf4kt0pc255nrl4r24m5hnvqwqf9wd8n6206f0zg95v6993qvd9cr8
   - &host_thinkcentre age1uhv0z8e04q2385wlrn0vgd237ts2exea375yr4yeqwx5v9zgw9esdg3rsn
-  - &host_mact2 age1ngeetv5mnt8ax30tmm6799qs2779905v0jafpywuydrvw2sz7yds7rlp5z
+  - &host_macm5 age1cthdpfdak79gmnvt9puypv4effjs86ukz94dm35pv46dj24ehpxqlena3f
 ```
 
 ## Verification
@@ -74,6 +74,6 @@ After merging, verify the secrets are accessible:
 # On Linux (rog/thinkcentre)
 sops -d secrets/user/api_keys.yaml | grep atlassian
 
-# On macOS (mact2)
+# On macOS (macm5)
 sops -d secrets/user/api_keys.yaml | grep atlassian
 ```

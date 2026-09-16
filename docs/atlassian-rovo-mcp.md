@@ -1,8 +1,8 @@
-# Atlassian Rovo MCP (mact2) — OAuth Migration Runbook
+# Atlassian Rovo MCP (macm5) — OAuth Migration Runbook
 
 ## Purpose
 
-mact2 now uses the **official Atlassian Rovo MCP Server**
+macm5 now uses the **official Atlassian Rovo MCP Server**
 ([atlassian/atlassian-mcp-server](https://github.com/atlassian/atlassian-mcp-server)) as a
 remote MCP at `https://mcp.atlassian.com/v2/mcp`, authenticated via OAuth 2.1. This replaces
 the previous community `mcp-atlassian` (sooperset) stdio server that was installed out-of-band
@@ -23,13 +23,13 @@ inert ciphertext — reusable if a future API-token setup is needed (see below).
 
 ## Prerequisites
 
-- mact2 rebuilt after the Nix change: `nixos-build` (on mact2).
-- A browser on mact2 for the OAuth consent screen.
+- macm5 rebuilt after the Nix change: `nixos-build` (on macm5).
+- A browser on macm5 for the OAuth consent screen.
 - Your Falabella Atlassian Cloud account with access to `falabella.atlassian.net`.
   The official server does not take a site URL anywhere — the account you authorize decides
   which sites (Jira/Confluence spaces) the MCP can reach.
 
-## First-Time OAuth Login (mact2)
+## First-Time OAuth Login (macm5)
 
 1. Open OpenCode (new session).
 2. On first use of an Atlassian tool (or via `/mcp` → `atlassian` → authenticate), OpenCode
@@ -85,7 +85,7 @@ hook; the retained `secrets/user/atlassian.yaml` holds a valid token pair.
 
 ## Troubleshooting
 
-- **TLS/certificate errors or blocked OAuth**: mact2 sits behind Netskope corporate TLS
+- **TLS/certificate errors or blocked OAuth**: macm5 sits behind Netskope corporate TLS
   interception (issuer `ca.grupofalabella.goskope.com`). The CA is trust-pinned on the Mac and
   the same remote+OAuth pattern already works for `drawio`; if `mcp.atlassian.com` is blocked by
   policy, contact IT to allowlist it.
@@ -103,7 +103,7 @@ sooperset stack revives after re-running its `uv` install.
 
 ## Notes
 
-- Claude Code on mact2 receives the same server automatically
+- Claude Code on macm5 receives the same server automatically
   (`~/.claude.json` → `atlassian: { type: "http", url: "https://mcp.atlassian.com/v2/mcp" }`);
   Claude Code runs its own OAuth prompt on first use.
 - Optional post-login optimization: pin `cloudId` / default Jira project / Confluence space in

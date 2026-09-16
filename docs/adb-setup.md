@@ -43,7 +43,7 @@ import the module). The user `glats` is added to it there too.
 - `hosts/rog/default.nix` — imports `adb.nix`
 - `hosts/thinkcentre/default.nix` — imports `adb.nix`
 
-## macOS (mact2)
+## macOS (macm5)
 
 macOS doesn't use udev. USB permissions are handled by the OS
 (on-first-connect prompt). Just the package in `home.packages`.
