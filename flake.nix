@@ -398,9 +398,9 @@
       # --- Formatter ---
       # Use through `nix fmt -- <path>` in this repo.
       # Keep this aligned with `format-nix`; do not invoke formatter binaries directly.
-      formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixpkgs-fmt;
-      formatter.x86_64-darwin = nixpkgs.legacyPackages.x86_64-darwin.nixpkgs-fmt;
-      formatter.aarch64-darwin = nixpkgs.legacyPackages.aarch64-darwin.nixpkgs-fmt;
+      formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixfmt-tree;
+      formatter.x86_64-darwin = nixpkgs.legacyPackages.x86_64-darwin.nixfmt-tree;
+      formatter.aarch64-darwin = nixpkgs.legacyPackages.aarch64-darwin.nixfmt-tree;
 
       # --- Go toolchain devshell (pkgs/nixos-scripts) ---
       # Dev iteration only: `nix develop -c go -C pkgs/nixos-scripts test ./...`
