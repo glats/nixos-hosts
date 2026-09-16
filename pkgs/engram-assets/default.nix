@@ -1,4 +1,9 @@
-{ lib, stdenvNoCC, vanilla, engram }:
+{
+  lib,
+  stdenvNoCC,
+  vanilla,
+  engram,
+}:
 
 stdenvNoCC.mkDerivation {
   pname = "engram-assets";

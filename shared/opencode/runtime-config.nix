@@ -1,12 +1,12 @@
 # Generate Home Manager file and activation definitions for a single
 # OpenCode runtime (config dir, plugins, commands, skills, AGENTS.md).
-{ config
-, lib
-, pkgs
-, providers
-, cfg
-, runtimeConfig
-,
+{
+  config,
+  lib,
+  pkgs,
+  providers,
+  cfg,
+  runtimeConfig,
 }:
 
 let
@@ -35,14 +35,13 @@ let
     ALL_PROXY = "";
     NO_PROXY = "*";
   };
-  enabledMcps = lib.mapAttrs
-    (_: mcp:
-      if (mcp.type or "local") == "local" then
-        mcp // { environment = (mcp.environment or { }) // proxyScrubEnv; }
-      else
-        mcp
-    )
-    (lib.filterAttrs (_: mcp: mcp.enabled or false) allMcps);
+  enabledMcps = lib.mapAttrs (
+    _: mcp:
+    if (mcp.type or "local") == "local" then
+      mcp // { environment = (mcp.environment or { }) // proxyScrubEnv; }
+    else
+      mcp
+  ) (lib.filterAttrs (_: mcp: mcp.enabled or false) allMcps);
 
   # TUI plugins configuration (name -> enabled)
   # Versions come from pkgs.opencode-npm-packages/versions.json
@@ -108,12 +107,10 @@ let
         # (session/llm/request.ts resolveTools filters user.tools[name]==false),
         # so the pruned MCP tool schemas stop costing tokens on every turn.
         tools = builtins.listToAttrs (
-          map
-            (name: {
-              inherit name;
-              value = false;
-            })
-            cfg.disabledTools
+          map (name: {
+            inherit name;
+            value = false;
+          }) cfg.disabledTools
         );
       }
       // {

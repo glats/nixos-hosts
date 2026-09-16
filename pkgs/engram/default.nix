@@ -1,6 +1,7 @@
-{ lib
-, buildGoModule
-, engram-src
+{
+  lib,
+  buildGoModule,
+  engram-src,
 }:
 
 buildGoModule {

@@ -2,14 +2,14 @@
 
 let
   mkNixosHost =
-    { hostname
-    , system ? "x86_64-linux"
-    , username ? "glats"
-    , extraModules ? [ ]
-    , extraOverlays ? [ ]
-    , nixpkgsInput ? inputs.nixpkgs
-    , homeManagerInput ? inputs.home-manager
-    ,
+    {
+      hostname,
+      system ? "x86_64-linux",
+      username ? "glats",
+      extraModules ? [ ],
+      extraOverlays ? [ ],
+      nixpkgsInput ? inputs.nixpkgs,
+      homeManagerInput ? inputs.home-manager,
     }:
     let
       hostInputs = inputs // {
@@ -36,8 +36,12 @@ let
         # Overlays for custom packages
         {
           nixpkgs.overlays = [
-            (import ../overlays/linux.nix { inherit self; inputs = hostInputs; })
-          ] ++ extraOverlays;
+            (import ../overlays/linux.nix {
+              inherit self;
+              inputs = hostInputs;
+            })
+          ]
+          ++ extraOverlays;
         }
 
         # Pass inputs to home-manager for module access

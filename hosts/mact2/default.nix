@@ -2,15 +2,16 @@
 # Imports the darwin base profile (system modules) and retains only
 # per-host concerns: nix-homebrew, home-manager, users, environment,
 # and service enablements.
-{ pkgs
-, inputs
-, self
-, primaryUser
-, githubUser
-, javaVersion
-, lib
-, host
-, ...
+{
+  pkgs,
+  inputs,
+  self,
+  primaryUser,
+  githubUser,
+  javaVersion,
+  lib,
+  host,
+  ...
 }:
 {
   imports = [
@@ -108,7 +109,10 @@
     # start/stop/restart re-exec via sudo with an absolute path, and a
     # /run/current-system/sw/bin/linkctl copy guarantees a stable
     # resolution even in shells whose PATH lacks the user's HM profile.
-    systemPackages = with pkgs; [ git nixos-scripts ];
+    systemPackages = with pkgs; [
+      git
+      nixos-scripts
+    ];
     # Intel uses /usr/local; Apple Silicon uses /opt/homebrew
     systemPath = [
       (if pkgs.stdenv.isAarch64 then "/opt/homebrew/bin" else "/usr/local/bin")

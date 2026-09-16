@@ -38,10 +38,11 @@
 #   - rog / thinkcentre: no omarchy-nix — `lib.mkDefault` is the
 #     effective value. Both hosts get CaskaydiaCove 11, same
 #     settings, byte-identical config.
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }:
 
 {

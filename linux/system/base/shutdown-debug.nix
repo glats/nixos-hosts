@@ -1,7 +1,8 @@
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }:
 let
   cfg = config.my.shutdownDebug;
@@ -66,11 +67,12 @@ in
       '';
     };
 
-    efiPstore = lib.mkEnableOption ''copying EFI pstore records
-      (`/sys/fs/pstore/dmesg-efi-*` left by a previous failed boot or
-      shutdown, plus a pstore listing) into the same capture directory.
-      Requires `enable`. Off by default; used by rog's S5 shutdown
-      diagnostics (openspec change rog-shutdown-s5-diagnose-and-fix).
+    efiPstore = lib.mkEnableOption ''
+      copying EFI pstore records
+            (`/sys/fs/pstore/dmesg-efi-*` left by a previous failed boot or
+            shutdown, plus a pstore listing) into the same capture directory.
+            Requires `enable`. Off by default; used by rog's S5 shutdown
+            diagnostics (openspec change rog-shutdown-s5-diagnose-and-fix).
     '';
   };
 

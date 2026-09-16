@@ -1,7 +1,8 @@
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }:
 
 let
@@ -179,9 +180,10 @@ in
     #    binary is fully static (pure Go), but the store path is copied into
     #    the ramfs via storePaths so the contents symlink resolves there.
     systemd.shutdownRamfs.contents."/etc/systemd/system-shutdown/rog-poweroff" =
-      lib.mkIf cfg.s5Write.enable {
-        source = "${pkgs.nixos-scripts}/bin/rog-poweroff-hook";
-      };
+      lib.mkIf cfg.s5Write.enable
+        {
+          source = "${pkgs.nixos-scripts}/bin/rog-poweroff-hook";
+        };
     systemd.shutdownRamfs.storePaths = lib.mkIf cfg.s5Write.enable [
       "${pkgs.nixos-scripts}/bin"
     ];

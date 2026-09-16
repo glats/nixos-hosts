@@ -15,7 +15,10 @@
 # Usage:
 #   let themeToml = import ../../shared/superfile.nix { colorScheme = config.colorScheme; };
 #   in { xdg.configFile."superfile/theme/glats.toml".text = themeToml; ... }
-{ colorScheme, codeSyntaxHighlight ? "onedark" }:
+{
+  colorScheme,
+  codeSyntaxHighlight ? "onedark",
+}:
 let
   p = colorScheme.palette;
 in

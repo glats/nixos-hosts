@@ -17,10 +17,11 @@
 #
 # Runs as the unprivileged `sing-box` system user created by the NixOS
 # module. Loopback inbound only — no public listener, no TUN, no caps.
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }:
 
 let
@@ -33,8 +34,7 @@ let
 in
 {
   options.services.sing-box-link = {
-    enable = lib.mkEnableOption
-      "loopback VLESS+WS server of the mact2↔rog private link";
+    enable = lib.mkEnableOption "loopback VLESS+WS server of the mact2↔rog private link";
 
     port = lib.mkOption {
       type = lib.types.port;
@@ -66,15 +66,21 @@ in
             users = [
               {
                 name = "mact2";
-                uuid = { _secret = config.sops.secrets."link/uuid_mact2".path; };
+                uuid = {
+                  _secret = config.sops.secrets."link/uuid_mact2".path;
+                };
               }
               {
                 name = "macm5";
-                uuid = { _secret = pathFor "link/uuid_macm5"; };
+                uuid = {
+                  _secret = pathFor "link/uuid_macm5";
+                };
               }
               {
                 name = "phone";
-                uuid = { _secret = config.sops.secrets."link/uuid_phone".path; };
+                uuid = {
+                  _secret = config.sops.secrets."link/uuid_phone".path;
+                };
               }
             ];
             transport = {

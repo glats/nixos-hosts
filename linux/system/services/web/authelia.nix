@@ -234,13 +234,25 @@ in
   };
 
   systemd.services.docker-autheliadb = {
-    after = [ "docker-network-authelia.service" "authelia-secrets.service" ];
-    requires = [ "docker-network-authelia.service" "authelia-secrets.service" ];
+    after = [
+      "docker-network-authelia.service"
+      "authelia-secrets.service"
+    ];
+    requires = [
+      "docker-network-authelia.service"
+      "authelia-secrets.service"
+    ];
   };
 
   systemd.services.docker-authelia-redis = {
-    after = [ "docker-network-authelia.service" "authelia-secrets.service" ];
-    requires = [ "docker-network-authelia.service" "authelia-secrets.service" ];
+    after = [
+      "docker-network-authelia.service"
+      "authelia-secrets.service"
+    ];
+    requires = [
+      "docker-network-authelia.service"
+      "authelia-secrets.service"
+    ];
   };
 
   # Authelia container using official Docker image
@@ -288,8 +300,16 @@ in
   };
 
   systemd.services.docker-authelia = {
-    after = [ "docker-network-authelia.service" "authelia-secrets.service" "authelia-config.service" ];
-    requires = [ "docker-network-authelia.service" "authelia-secrets.service" "authelia-config.service" ];
+    after = [
+      "docker-network-authelia.service"
+      "authelia-secrets.service"
+      "authelia-config.service"
+    ];
+    requires = [
+      "docker-network-authelia.service"
+      "authelia-secrets.service"
+      "authelia-config.service"
+    ];
   };
 
   # Create authelia service directory
