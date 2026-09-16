@@ -27,6 +27,11 @@
 - `nix flake check --no-build` passed; incompatible Darwin systems were omitted by the Linux check.
 - Target evaluation confirmed `aarch64-darwin`, `juan`, and `juan` for macm5 system and standalone Home Manager users.
 
+## Additional Remote-Safe Fix
+
+- Removed the broken Homebrew `vnc-viewer` cask alias and the redundant RealVNC remote launchers; TigerVNC launchers remain configured.
+- `format-nix && nix flake check --no-build` passed. No activation or secret access was performed.
+
 ## Remaining Tasks
 
 - Native acceptance and evidence remain pending: tasks 1.1-1.3, 2.2, 3.1-3.3, and 4.1-4.2.
