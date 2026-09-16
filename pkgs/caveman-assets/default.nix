@@ -1,7 +1,7 @@
-{ lib
-, stdenvNoCC
-, caveman-src
-,
+{
+  lib,
+  stdenvNoCC,
+  caveman-src,
 }:
 
 stdenvNoCC.mkDerivation {

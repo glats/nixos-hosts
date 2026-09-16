@@ -3,10 +3,10 @@
 # ASUS ROG GL553VD, whose firmware freezes at the hardware-level ACPI S5
 # transition (kernel modules are inherently C — documented exception to
 # the Go-only operational-scripts policy, per repo AGENTS.md).
-{ lib
-, stdenv
-, kernel
-,
+{
+  lib,
+  stdenv,
+  kernel,
 }:
 
 stdenv.mkDerivation {

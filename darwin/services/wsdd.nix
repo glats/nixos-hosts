@@ -1,8 +1,9 @@
-{ config
-, lib
-, pkgs
-, host
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  host,
+  ...
 }:
 let
   cfg = config.services.wsdd;

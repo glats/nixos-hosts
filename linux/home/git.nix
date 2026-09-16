@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   identities = import ../../shared/git-identity.nix;
@@ -21,8 +26,10 @@ in
 
     # Explicitly set signing format to silence home-manager warning (legacy default)
     # If personal GPG key is set, also sign personal commits with it
-    signing = { format = "openpgp"; }
-      // lib.optionalAttrs (identities.personal.signingKey != "") {
+    signing = {
+      format = "openpgp";
+    }
+    // lib.optionalAttrs (identities.personal.signingKey != "") {
       key = identities.personal.signingKey;
       signByDefault = true;
     };

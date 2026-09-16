@@ -1,7 +1,7 @@
-{ lib
-, stdenvNoCC
-, ponytail-src
-,
+{
+  lib,
+  stdenvNoCC,
+  ponytail-src,
 }:
 
 stdenvNoCC.mkDerivation {

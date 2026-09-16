@@ -24,15 +24,17 @@
 #   `gh auth token --user <account>` and are independent of the
 #   active account. Do not add `programs.gh.hosts`, fake hostnames,
 #   or token/PAT management here.
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
   options.home.github.defaultAccount = lib.mkOption {
     type = lib.types.str;
-    default =
-      if pkgs.stdenv.hostPlatform.isDarwin
-      then "jcuzmar-Falabella_FTC"
-      else "glats";
+    default = if pkgs.stdenv.hostPlatform.isDarwin then "jcuzmar-Falabella_FTC" else "glats";
     description = ''
       Existing github.com `gh` login selected as the active account
       after Home Manager activation. The default is the work account
@@ -63,17 +65,16 @@
     # `hosts.yml` or missing target user becomes a successful no-op,
     # and a failed `gh auth switch` is suppressed with `|| true`. This
     # keeps first-run hosts (no `gh` logins yet) activating cleanly.
-    home.activation.ghDefaultAccount = lib.hm.dag.entryAfter [ "writeBoundary" ]
-      (
-        let
-          account = config.home.github.defaultAccount;
-        in
-        ''
-          if [ -f "$HOME/.config/gh/hosts.yml" ] \
-             && grep -qE "^[[:space:]]+${account}:" "$HOME/.config/gh/hosts.yml"; then
-            ${pkgs.gh}/bin/gh auth switch --hostname github.com --user "${account}" >/dev/null 2>&1 || true
-          fi
-        ''
-      );
+    home.activation.ghDefaultAccount = lib.hm.dag.entryAfter [ "writeBoundary" ] (
+      let
+        account = config.home.github.defaultAccount;
+      in
+      ''
+        if [ -f "$HOME/.config/gh/hosts.yml" ] \
+           && grep -qE "^[[:space:]]+${account}:" "$HOME/.config/gh/hosts.yml"; then
+          ${pkgs.gh}/bin/gh auth switch --hostname github.com --user "${account}" >/dev/null 2>&1 || true
+        fi
+      ''
+    );
   };
 }

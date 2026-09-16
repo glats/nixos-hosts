@@ -1,6 +1,6 @@
-{ lib ? throw "providers-base.nix must be imported with lib"
-, activeProviderName ? "opencode-go-medium"
-,
+{
+  lib ? throw "providers-base.nix must be imported with lib",
+  activeProviderName ? "opencode-go-medium",
 }:
 
 let
@@ -904,16 +904,15 @@ let
     let
       names = map (p: p.name) providers;
     in
-    assert lib.assertMsg (lib.length names == lib.length (lib.unique names))
-      "providers-base.nix: duplicate provider name in providers list";
+    assert lib.assertMsg (
+      lib.length names == lib.length (lib.unique names)
+    ) "providers-base.nix: duplicate provider name in providers list";
     true;
 
-  activeProvider = builtins.foldl'
-    (
-      acc: p: if p.name == activeProviderName then p else acc
-    )
-    null
-    (assert _assertUniqueProviderNames; providers);
+  activeProvider = builtins.foldl' (acc: p: if p.name == activeProviderName then p else acc) null (
+    assert _assertUniqueProviderNames;
+    providers
+  );
   getModelForPhase =
     phase: provider: if provider == null then null else provider.phases.${phase} or null;
 

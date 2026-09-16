@@ -2,12 +2,12 @@
 
 let
   mkDarwinHost =
-    { configName
-    , system ? "x86_64-darwin"
-    , primaryUser ? "jcuzmar"
-    , githubUser ? "jcuzmar"
-    , extraModules ? [ ]
-    ,
+    {
+      configName,
+      system ? "x86_64-darwin",
+      primaryUser ? "jcuzmar",
+      githubUser ? "jcuzmar",
+      extraModules ? [ ],
     }:
     inputs.nix-darwin.lib.darwinSystem {
       inherit system;

@@ -7,9 +7,10 @@
 # Usage:
 #   let ghostty = import ../../shared/ghostty.nix { colorScheme = config.colorScheme; };
 #   in { programs.ghostty.settings = ghostty.settings; ... }
-{ colorScheme
-, selectionForegroundPalette ? "base05"
-, extraSettings ? { }
+{
+  colorScheme,
+  selectionForegroundPalette ? "base05",
+  extraSettings ? { },
 }:
 let
   p = colorScheme.palette;
@@ -32,7 +33,8 @@ in
     theme = "nix-colors";
     window-padding-balance = true;
     window-padding-color = "extend";
-  } // extraSettings;
+  }
+  // extraSettings;
   theme = {
     nix-colors = {
       palette = [

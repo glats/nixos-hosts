@@ -30,11 +30,12 @@
 # The `inputs` arg is required by sops-nix templates (Darwin nix-darwin
 # modules need access to the flake input). The flake passes `inputs`
 # via mkDarwinHost.specialArgs already.
-{ config
-, lib
-, pkgs
-, inputs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
 }:
 
 let
@@ -75,7 +76,10 @@ let
   #   2. final -> direct
   fullRules = [
     { action = "sniff"; }
-    { protocol = "dns"; action = "hijack-dns"; }
+    {
+      protocol = "dns";
+      action = "hijack-dns";
+    }
     # Reject QUIC (UDP/443): sing-box urltest probes TCP only and keeps a
     # SEPARATE UDP selection that never fails over — during the 2-day rog
     # outage TCP degraded to direct while UDP stayed pinned to the dead
@@ -84,14 +88,30 @@ let
     # failover; standard practice when the link is unstable. Scoped mode
     # needs no equivalent (final is direct, so UDP/443 carries no link
     # dependency).
-    { network = [ "udp" ]; port = [ 443 ]; outbound = "block"; }
+    {
+      network = [ "udp" ];
+      port = [ 443 ];
+      outbound = "block";
+    }
     # ICMP (ping) is unsupported by the VLESS outbound — route it direct.
     # Valid since sing-box 1.13.0 for echo requests from TUN inbounds.
-    { network = [ "icmp" ]; outbound = "direct"; }
-    { ip_is_private = true; outbound = "direct"; }
+    {
+      network = [ "icmp" ];
+      outbound = "direct";
+    }
+    {
+      ip_is_private = true;
+      outbound = "direct";
+    }
   ]
-  ++ map (cidr: { ip_cidr = cidr; outbound = "direct"; }) cfg.directCidrs
-  ++ map (dom: { domain_suffix = dom; outbound = "direct"; }) cfg.directDomains
+  ++ map (cidr: {
+    ip_cidr = cidr;
+    outbound = "direct";
+  }) cfg.directCidrs
+  ++ map (dom: {
+    domain_suffix = dom;
+    outbound = "direct";
+  }) cfg.directDomains
   ++ [
     {
       process_name = [
@@ -107,7 +127,13 @@ let
   ];
 
   scopedRules = [
-    { domain_suffix = [ "chatgpt.com" "auth.openai.com" ]; outbound = "home-out"; }
+    {
+      domain_suffix = [
+        "chatgpt.com"
+        "auth.openai.com"
+      ];
+      outbound = "home-out";
+    }
     { outbound = "direct"; }
   ];
 
@@ -125,149 +151,167 @@ let
   # activation; we hand sops-install-secrets a JSON file with the
   # placeholder string in the two UUID positions and it rewrites them
   # to the decrypted values before sing-box reads the file.
-  configFile = pkgs.writeText "sing-box.json" (builtins.toJSON {
-    log = { level = "info"; };
+  configFile = pkgs.writeText "sing-box.json" (
+    builtins.toJSON {
+      log = {
+        level = "info";
+      };
 
-    # TUN inbound. Stack "system" uses native utun (needed for process
-    # resolution on macOS). auto_route + strict_route claim the default
-    # route and prevent DNS leaks / unreachable marking. Sniff is
-    # configured via a route action (not on the inbound — that field
-    # was removed in sing-box 1.13.0). address uses the merged 1.10+
-    # format. mtu is omitted to take the sing-box default.
-    inbounds = [
-      {
-        type = "tun";
-        tag = "sb-openai";
-        address = [ "172.19.0.1/30" ];
-        auto_route = true;
-        strict_route = true;
-        stack = "system";
-      }
-
-      # Loopback mixed inbound (HTTP CONNECT + SOCKS on 127.0.0.1:2080) —
-      # the alternate per-app door. The endpoint security agent's local
-      # AppProxy intercepts OpenAI-bound flows at socket level BEFORE
-      # they reach the TUN: with the link up, auth.openai.com still
-      # presented the corporate CA instead of the
-      # origin cert, because its category routing matches the SNI of
-      # outbound connections. A loopback CONNECT/SOCKS request carries
-      # no SNI for that matching to act on, so the flow is not
-      # intercepted; sing-box unwraps it here and the payload rides the
-      # link with outer SNI tun.glats.org only.
-      #
-      # Any app that can take a per-app proxy can ride this door —
-      # browser OAuth flows, the OpenCode runtime, arbitrary GUI/CLI
-      # tools — with OpenCode as the flagship consumer, not the purpose.
-      #
-      # No inbound-specific route rules: mixed-in traffic flows through
-      # the same route rules + final as TUN traffic (full → "auto"
-      # urltest, scoped → domain_suffix → "direct") — that is the desired
-      # semantic. CONNECT/SOCKS request targets are hostnames, so the
-      # scoped domain_suffix rules match them without sniffing.
-      # `listen_port` is the sing-box 1.11+ unified inbound field
-      # (verified against sing-box 1.13.19 schema).
-      {
-        type = "mixed";
-        tag = "mixed-in";
-        listen = "127.0.0.1";
-        listen_port = 2080;
-      }
-    ];
-
-    outbounds = [
-      {
-        type = "vless";
-        tag = "home-out";
-        server = "tun.glats.org";
-        server_port = 443;
-        uuid = uuidValue;
-        tls = {
-          enabled = true;
-          server_name = "tun.glats.org";
-          utls = {
-            enabled = true;
-            fingerprint = "chrome";
-          };
-        };
-        transport = {
-          type = "ws";
-          path = wsPath;
-          # Host header goes in headers, not in a top-level `host`
-          # field — that field exists on HTTP transport but not on
-          # WebSocket (verified against sing-box 1.13.19 schema).
-          headers = { Host = "tun.glats.org"; };
-        };
-      }
-      { type = "direct"; tag = "direct"; }
-      { type = "block"; tag = "block"; }
-      # Resilience group: full-mode final. urltest probes gstatic 204
-      # through each child every 30s; home-out wins while rog answers,
-      # direct takes over within that window when it does not, and the
-      # switch back is automatic. interrupt_exist_connections kills
-      # connections riding the previously selected outbound the moment the
-      # selection flips — without it, established flows (e.g. long-lived
-      # WS) would keep heading into a dead link until they fail on their
-      # own. urltest still probes TCP only (its UDP selection never fails
-      # over), which is why the route rules block QUIC in full mode.
-      #
-      # Order matters as a SAFE DEFAULT: "direct" is listed first because
-      # sing-box urltest Select() falls back to the FIRST entry of the
-      # list when no probe history exists yet (source-verified) — i.e.
-      # on boot or fresh config, before the first probe lands, the group
-      # selects direct: the Mac behaves like a normal corporate endpoint
-      # instead of pushing traffic at a possibly-dead link. Once history
-      # exists, lowest-latency selection (with `tolerance`) applies as
-      # usual and the 30s probe keeps it current.
-      {
-        type = "urltest";
-        tag = "auto";
-        outbounds = [ "direct" "home-out" ];
-        url = "https://www.gstatic.com/generate_204";
-        interval = "30s";
-        tolerance = 50;
-        interrupt_exist_connections = true;
-      }
-    ];
-
-    # DNS: a dedicated direct resolver is required so the host lookup
-    # of `tun.glats.org` (the link endpoint) does NOT loop into the
-    # TUN. Without this, every link startup is a chicken-and-egg
-    # recursive failure. Uses sing-box 1.12+ server format (the legacy
-    # `address: "1.1.1.1"` shorthand is deprecated and rejected in
-    # 1.14).
-    #
-    # NOTE: no `detour` here — sing-box 1.13 DNS dialers already default
-    # to an empty direct outbound, and an explicit detour to a direct
-    # outbound is a fatal error ("detour to an empty direct outbound
-    # makes no sense"). With route.auto_detect_interface the dialer
-    # binds to the physical NIC, which is the off-link path we want.
-    dns = {
-      servers = [
+      # TUN inbound. Stack "system" uses native utun (needed for process
+      # resolution on macOS). auto_route + strict_route claim the default
+      # route and prevent DNS leaks / unreachable marking. Sniff is
+      # configured via a route action (not on the inbound — that field
+      # was removed in sing-box 1.13.0). address uses the merged 1.10+
+      # format. mtu is omitted to take the sing-box default.
+      inbounds = [
         {
-          tag = "direct-dns";
-          type = "udp";
-          server = "1.1.1.1";
+          type = "tun";
+          tag = "sb-openai";
+          address = [ "172.19.0.1/30" ];
+          auto_route = true;
+          strict_route = true;
+          stack = "system";
+        }
+
+        # Loopback mixed inbound (HTTP CONNECT + SOCKS on 127.0.0.1:2080) —
+        # the alternate per-app door. The endpoint security agent's local
+        # AppProxy intercepts OpenAI-bound flows at socket level BEFORE
+        # they reach the TUN: with the link up, auth.openai.com still
+        # presented the corporate CA instead of the
+        # origin cert, because its category routing matches the SNI of
+        # outbound connections. A loopback CONNECT/SOCKS request carries
+        # no SNI for that matching to act on, so the flow is not
+        # intercepted; sing-box unwraps it here and the payload rides the
+        # link with outer SNI tun.glats.org only.
+        #
+        # Any app that can take a per-app proxy can ride this door —
+        # browser OAuth flows, the OpenCode runtime, arbitrary GUI/CLI
+        # tools — with OpenCode as the flagship consumer, not the purpose.
+        #
+        # No inbound-specific route rules: mixed-in traffic flows through
+        # the same route rules + final as TUN traffic (full → "auto"
+        # urltest, scoped → domain_suffix → "direct") — that is the desired
+        # semantic. CONNECT/SOCKS request targets are hostnames, so the
+        # scoped domain_suffix rules match them without sniffing.
+        # `listen_port` is the sing-box 1.11+ unified inbound field
+        # (verified against sing-box 1.13.19 schema).
+        {
+          type = "mixed";
+          tag = "mixed-in";
+          listen = "127.0.0.1";
+          listen_port = 2080;
         }
       ];
-    };
 
-    # Route. auto_detect_interface binds the link's outbound
-    # connection to the physical NIC; default_domain_resolver keeps
-    # endpoint hostname resolution off-link. Both are required for
-    # boot, not optional hardening.
-    route = {
-      auto_detect_interface = true;
-      default_domain_resolver = "direct-dns";
-      rules = routeRules;
-      final = routeFinal;
-    };
-  });
+      outbounds = [
+        {
+          type = "vless";
+          tag = "home-out";
+          server = "tun.glats.org";
+          server_port = 443;
+          uuid = uuidValue;
+          tls = {
+            enabled = true;
+            server_name = "tun.glats.org";
+            utls = {
+              enabled = true;
+              fingerprint = "chrome";
+            };
+          };
+          transport = {
+            type = "ws";
+            path = wsPath;
+            # Host header goes in headers, not in a top-level `host`
+            # field — that field exists on HTTP transport but not on
+            # WebSocket (verified against sing-box 1.13.19 schema).
+            headers = {
+              Host = "tun.glats.org";
+            };
+          };
+        }
+        {
+          type = "direct";
+          tag = "direct";
+        }
+        {
+          type = "block";
+          tag = "block";
+        }
+        # Resilience group: full-mode final. urltest probes gstatic 204
+        # through each child every 30s; home-out wins while rog answers,
+        # direct takes over within that window when it does not, and the
+        # switch back is automatic. interrupt_exist_connections kills
+        # connections riding the previously selected outbound the moment the
+        # selection flips — without it, established flows (e.g. long-lived
+        # WS) would keep heading into a dead link until they fail on their
+        # own. urltest still probes TCP only (its UDP selection never fails
+        # over), which is why the route rules block QUIC in full mode.
+        #
+        # Order matters as a SAFE DEFAULT: "direct" is listed first because
+        # sing-box urltest Select() falls back to the FIRST entry of the
+        # list when no probe history exists yet (source-verified) — i.e.
+        # on boot or fresh config, before the first probe lands, the group
+        # selects direct: the Mac behaves like a normal corporate endpoint
+        # instead of pushing traffic at a possibly-dead link. Once history
+        # exists, lowest-latency selection (with `tolerance`) applies as
+        # usual and the 30s probe keeps it current.
+        {
+          type = "urltest";
+          tag = "auto";
+          outbounds = [
+            "direct"
+            "home-out"
+          ];
+          url = "https://www.gstatic.com/generate_204";
+          interval = "30s";
+          tolerance = 50;
+          interrupt_exist_connections = true;
+        }
+      ];
+
+      # DNS: a dedicated direct resolver is required so the host lookup
+      # of `tun.glats.org` (the link endpoint) does NOT loop into the
+      # TUN. Without this, every link startup is a chicken-and-egg
+      # recursive failure. Uses sing-box 1.12+ server format (the legacy
+      # `address: "1.1.1.1"` shorthand is deprecated and rejected in
+      # 1.14).
+      #
+      # NOTE: no `detour` here — sing-box 1.13 DNS dialers already default
+      # to an empty direct outbound, and an explicit detour to a direct
+      # outbound is a fatal error ("detour to an empty direct outbound
+      # makes no sense"). With route.auto_detect_interface the dialer
+      # binds to the physical NIC, which is the off-link path we want.
+      dns = {
+        servers = [
+          {
+            tag = "direct-dns";
+            type = "udp";
+            server = "1.1.1.1";
+          }
+        ];
+      };
+
+      # Route. auto_detect_interface binds the link's outbound
+      # connection to the physical NIC; default_domain_resolver keeps
+      # endpoint hostname resolution off-link. Both are required for
+      # boot, not optional hardening.
+      route = {
+        auto_detect_interface = true;
+        default_domain_resolver = "direct-dns";
+        rules = routeRules;
+        final = routeFinal;
+      };
+    }
+  );
 
 in
 {
   options.link = {
     mode = lib.mkOption {
-      type = lib.types.enum [ "full" "scoped" ];
+      type = lib.types.enum [
+        "full"
+        "scoped"
+      ];
       default = "full";
       description = ''
         Routing mode for the sing-box TUN client.
@@ -282,7 +326,10 @@ in
     directDomains = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ ];
-      example = [ "company.com" "vendor.example" ];
+      example = [
+        "company.com"
+        "vendor.example"
+      ];
       description = ''
         Domains matched via domain_suffix that must always go direct
         (corporate, endpoint security / EDR management, etc.). Empty
@@ -293,7 +340,10 @@ in
     directCidrs = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ ];
-      example = [ "10.0.0.0/8" "192.168.0.0/16" ];
+      example = [
+        "10.0.0.0/8"
+        "192.168.0.0/16"
+      ];
       description = ''
         CIDRs that must always go direct (corporate subnets, EDR
         management networks, LAN ranges the user wants to reach

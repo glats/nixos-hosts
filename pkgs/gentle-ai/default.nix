@@ -1,6 +1,7 @@
-{ lib
-, buildGoModule
-, gentle-ai-src
+{
+  lib,
+  buildGoModule,
+  gentle-ai-src,
 }:
 
 buildGoModule {

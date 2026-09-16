@@ -27,11 +27,12 @@
 # The omarchy HM module is imported FIRST so that any conflicting
 # definitions from t14/home/default.nix can be overridden via
 # lib.mkForce when needed.
-{ config
-, pkgs
-, lib
-, inputs
-, ...
+{
+  config,
+  pkgs,
+  lib,
+  inputs,
+  ...
 }:
 
 {
