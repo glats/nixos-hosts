@@ -15,6 +15,9 @@ result-*
 .env.*
 credentials.json
 
+# Corporate CA cert (extracted from Apple SecTrust, never committed)
+certs/netskope-falabella.crt
+
 # Git worktrees
 .worktrees/
 
