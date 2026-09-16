@@ -93,6 +93,10 @@
   environment = {
     variables = {
       DISPLAY = ":0";
+      # Nix-built curl uses its own CA bundle which may lack certificates
+      # present in the macOS system store. Point OpenSSL to the system certs
+      # so nvim-treesitter (and other Nix programs) can verify TLS peers.
+      SSL_CERT_FILE = "/etc/ssl/cert.pem";
     };
     # nixos-scripts (linkctl) at the SYSTEM level too: linkctl
     # start/stop/restart re-exec via sudo with an absolute path, and a
