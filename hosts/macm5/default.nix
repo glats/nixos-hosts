@@ -9,8 +9,13 @@
 , githubUser
 , javaVersion
 , lib
+, host
 , ...
 }:
+
+let
+  mesh = import ../../shared/ssh/lan-mesh.nix { inherit lib; };
+in
 {
   imports = [
     # Flattened from modules/darwin/profiles/base.nix
@@ -55,6 +60,7 @@
         primaryUser
         githubUser
         javaVersion
+        host
         ;
     };
   };
@@ -63,10 +69,7 @@
   users.users.${primaryUser} = {
     home = "/Users/${primaryUser}";
     shell = pkgs.zsh;
-    openssh.authorizedKeys.keys = [
-      # rog machine (glats)
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMigT6lscyISTW6jbk9c34gMYSaRQIq4tUxMvn7vd6K7 t14"
-    ];
+    openssh.authorizedKeys.keys = mesh.peerKeys host;
   };
   environment = {
     variables = {

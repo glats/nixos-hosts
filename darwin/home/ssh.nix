@@ -1,6 +1,8 @@
-{ config, primaryUser, ... }:
+{ config, host ? null, hostName ? null, lib, primaryUser, ... }:
 let
   sshDir = "${config.home.homeDirectory}/.ssh";
+  meshHost = if host != null then host else hostName;
+  mesh = import ../../shared/ssh/lan-mesh.nix { inherit lib; };
 in
 {
   programs.ssh = {
@@ -88,6 +90,9 @@ in
         UseKeychain = "yes";
         IdentitiesOnly = "yes";
       };
-    };
+    } // lib.optionalAttrs (meshHost == "macm5") (mesh.sshSettingsFor {
+      source = "macm5";
+      inherit sshDir;
+    });
   };
 }
