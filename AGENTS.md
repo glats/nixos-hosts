@@ -36,7 +36,7 @@ docs/                            # Operational runbooks (sops-new-host.md, multi
 
 ### Build & Deploy
 
-`nixos-build` auto-detects platform (Linux vs Darwin), hostname, tools (`nh` preferred over nixos-rebuild/darwin-rebuild, `nom` for output), and worktrees (run inside `.worktrees/*` builds the local flake copy).
+`nixos-build` auto-detects platform (Linux vs Darwin), selects the stable `macm5` flake configuration by default on Darwin, detects tools (`nh` preferred over nixos-rebuild/darwin-rebuild, `nom` for output), and detects worktrees (run inside `.worktrees/*` builds the local flake copy). Set `NIXOS_DARWIN_HOST` to explicitly select another declared Darwin configuration.
 
 | Task | Command |
 |------|---------|

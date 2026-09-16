@@ -26,6 +26,7 @@ private keys, or raw logs containing credentials.
 - [ ] arm64 Homebrew resolves under `/opt/homebrew/bin`.
 - [ ] SSH and Screen Sharing reachability passed.
 - [ ] wsdd advertises `macm5`.
+- [ ] Company-controlled LocalHostName remains `CLFTCLGV2FHWW0W`.
 - [ ] `sing-box check` passed and rendered config is root-owned `0400`.
 - [ ] Private-link direct CIDRs and safe direct default passed.
 - [ ] Link-down behavior leaves ordinary connectivity usable.

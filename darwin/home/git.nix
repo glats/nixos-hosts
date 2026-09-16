@@ -1,6 +1,6 @@
 { pkgs
 , config
-, primaryUser
+, githubUser
 , lib
 , ...
 }:
@@ -20,7 +20,7 @@ in
         email = "placeholder";
       };
 
-      github.user = primaryUser;
+      github.user = githubUser;
       init.defaultBranch = "main";
       core.editor = "nvim -u NONE";
       gpg.program = "${pkgs.gnupg}/bin/gpg";
