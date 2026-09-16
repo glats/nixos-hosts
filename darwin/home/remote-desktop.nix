@@ -184,22 +184,9 @@ let
       port = "5900";
     }
     {
-      name = "t14-realvnc";
-      protocol = "vnc";
-      viewer = "realvnc";
-      host = "172.16.0.10";
-      port = "5900";
-    }
-    {
       name = "mact2-tigervnc";
       protocol = "vnc";
       viewer = "tigervnc";
-      host = "mact2.local";
-    }
-    {
-      name = "mact2-realvnc";
-      protocol = "vnc";
-      viewer = "realvnc";
       host = "mact2.local";
     }
     {
