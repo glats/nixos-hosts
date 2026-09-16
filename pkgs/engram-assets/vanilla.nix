@@ -1,4 +1,8 @@
-{ lib, stdenv, engram-src }:
+{
+  lib,
+  stdenv,
+  engram-src,
+}:
 
 stdenv.mkDerivation {
   pname = "engram-assets-vanilla";

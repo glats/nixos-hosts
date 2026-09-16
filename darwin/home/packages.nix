@@ -10,7 +10,8 @@ let
 in
 {
   home = {
-    packages = with pkgs;
+    packages =
+      with pkgs;
       [
         pandoc
       ]

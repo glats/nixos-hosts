@@ -1,4 +1,9 @@
-{ config, hostName, lib, ... }:
+{
+  config,
+  hostName,
+  lib,
+  ...
+}:
 
 let
   sshDir = "${config.home.homeDirectory}/.ssh";
@@ -10,21 +15,22 @@ in
     enable = true;
     enableDefaultConfig = false;
 
-    settings = mesh.sshSettingsFor
-      {
+    settings =
+      mesh.sshSettingsFor {
         source = hostName;
         inherit sshDir;
-      } // {
-      "mact2.local" = {
-        HostName = "mact2.local";
-        User = "jcuzmar";
-        IdentityFile = "${sshDir}/mact2";
-        IdentitiesOnly = true;
-        SetEnv = {
-          TERM = "xterm-256color";
+      }
+      // {
+        "mact2.local" = {
+          HostName = "mact2.local";
+          User = "jcuzmar";
+          IdentityFile = "${sshDir}/mact2";
+          IdentitiesOnly = true;
+          SetEnv = {
+            TERM = "xterm-256color";
+          };
         };
-      };
 
-    };
+      };
   };
 }

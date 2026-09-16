@@ -1,6 +1,7 @@
-{ lib
-, stdenvNoCC
-, archifySkill
+{
+  lib,
+  stdenvNoCC,
+  archifySkill,
 }:
 
 stdenvNoCC.mkDerivation {

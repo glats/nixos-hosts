@@ -21,8 +21,9 @@ in
   # `-default-opacity` to opt out, so a plain `match:tag default-opacity`
   # rule alone is insufficient -- the match-all is required to force every
   # window opaque.
-  wayland.windowManager.hyprland.extraConfig =
-    lib.optionalString forceFullOpacity (lib.mkAfter ''
+  wayland.windowManager.hyprland.extraConfig = lib.optionalString forceFullOpacity (
+    lib.mkAfter ''
       windowrule = opacity 1.0 1.0, match:class .*
-    '');
+    ''
+  );
 }

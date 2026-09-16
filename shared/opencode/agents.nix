@@ -1,7 +1,8 @@
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }:
 
 with lib;
@@ -51,17 +52,14 @@ let
       active = providersConfig.activeProvider;
     in
     if active != null then
-      builtins.mapAttrs (phase: _: providersConfig.getModelForPhase phase active)
-        (
-          builtins.listToAttrs (
-            map
-              (p: {
-                name = p;
-                value = null;
-              })
-              routedAgents
-          )
+      builtins.mapAttrs (phase: _: providersConfig.getModelForPhase phase active) (
+        builtins.listToAttrs (
+          map (p: {
+            name = p;
+            value = null;
+          }) routedAgents
         )
+      )
     else
       { };
 
@@ -134,7 +132,7 @@ let
             upstream.prompt or "";
       in
       # Upstream `tools` is deprecated (v2.5.0 migrated to `permission`);
-        # always strip it so no agent ever emits a `tools` field.
+      # always strip it so no agent ever emits a `tools` field.
       (removeAttrs upstream [ "tools" ])
       // lib.optionalAttrs (localModel != null) { model = localModel; }
       // lib.optionalAttrs (instructionPrompt != "" || basePrompt != "") {

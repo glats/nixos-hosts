@@ -1,7 +1,8 @@
-{ lib
-, stdenvNoCC
-, makeBinaryWrapper
-, claude-code-unwrapped
+{
+  lib,
+  stdenvNoCC,
+  makeBinaryWrapper,
+  claude-code-unwrapped,
 }:
 
 stdenvNoCC.mkDerivation {

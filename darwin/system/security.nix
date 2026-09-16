@@ -1,9 +1,10 @@
-{ self
-, system
-, primaryUser
-, host
-, lib
-, ...
+{
+  self,
+  system,
+  primaryUser,
+  host,
+  lib,
+  ...
 }:
 {
   # touch ID for sudo

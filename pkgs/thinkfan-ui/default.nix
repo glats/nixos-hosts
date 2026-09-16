@@ -2,16 +2,16 @@
 # PyQt6 GUI for manual ThinkPad fan control.
 # Writes to /proc/acpi/ibm/fan (mutually exclusive with services.thinkfan).
 # Source: https://github.com/zocker-160/thinkfan-ui
-{ lib
-, stdenv
-, makeWrapper
-, wrapQtAppsHook
-, python3
-, qtbase
-, qtsvg
-, lm_sensors
-, thinkfan-ui-src
-,
+{
+  lib,
+  stdenv,
+  makeWrapper,
+  wrapQtAppsHook,
+  python3,
+  qtbase,
+  qtsvg,
+  lm_sensors,
+  thinkfan-ui-src,
 }:
 
 let
@@ -35,7 +35,10 @@ stdenv.mkDerivation {
   # qtsvg provides the SVG image format plugin (libqsvg.so) which
   # QIcon needs to load .svg files. Without it, QIcon(path-to-svg)
   # returns null and QSystemTrayIcon shows "No Icon set".
-  buildInputs = [ qtbase qtsvg ];
+  buildInputs = [
+    qtbase
+    qtsvg
+  ];
 
   dontBuild = true;
 
