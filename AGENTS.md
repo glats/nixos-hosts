@@ -48,9 +48,17 @@ docs/                            # Operational runbooks (sops-new-host.md, multi
 | Validate flake | `nixos-build check` (= `nix flake check`) |
 | Force nixos-rebuild / disable nom | `--raw` / `--no-nom` |
 
-**Required verification after every Nix change**: `format-nix && nix flake check --no-build`.
+**Verification is tiered** — do NOT run the full gate after every edit:
 
-⚠️ `flake.nix` exposes `checks.x86_64-linux` containing all three NixOS hosts' toplevels, so plain `nix flake check` evaluates AND builds every host — always pass `--no-build` while iterating.
+| Tier | When | Command |
+|------|------|---------|
+| 1. Format | After editing `.nix` files | `nix fmt -- <touched-file>` (instant) |
+| 2. Targeted eval | Before declaring done on a host-scoped change | NixOS: `nix eval .#nixosConfigurations.<host>.config.system.build.toplevel.drvPath` · HM: `nix eval .#homeConfigurations.<host>.activationPackage.drvPath` · Darwin: `nix eval .#darwinConfigurations.<name>.config.system.build.toplevel.drvPath` |
+| 3. Full gate | Shared-scope changes, non-obvious eval failures, or pre-commit | `format-nix && nix flake check --no-build` |
+
+**Shared scope** (tier 3 mandatory): `flake.nix`, `flake.lock`, `lib/`, `overlays/`, `shared/`, `pkgs/`, `linux/home/shared-modules.nix`, `darwin/home/shared-modules.nix` — anything imported by more than one host.
+
+⚠️ `flake.nix` exposes `checks.x86_64-linux` containing all three NixOS hosts' toplevels, so `nix flake check` (even with `--no-build`) evaluates every host — that is exactly why it is reserved for tier 3. Never run plain `nix flake check` without `--no-build`: it evaluates AND builds every host.
 
 ### Formatting
 
@@ -124,12 +132,12 @@ packages/options, GitHub for prior art, context7/exa for docs) — never guess
 APIs or option paths. When porting bash, keep the binary name, flags, exit
 codes and key outputs, with `go test` coverage for parsing before cutover.
 Done means:
-`go -C pkgs/nixos-scripts test ./... && format-nix && nix flake check --no-build`.
+`go -C pkgs/nixos-scripts test ./... && nix build .#nixos-scripts` (the derivation runs the test suite in checkPhase). Go sources cannot break flake evaluation, so the full gate (`format-nix && nix flake check --no-build`) is only required when the derivation's Nix wiring changes (`default.nix`, `lib/packages.nix`) or pre-commit.
 
 ## When Coding
 
 1. **Research first** — verify options/packages/APIs with MCP tools before writing; never guess option paths.
-2. After editing any `.nix`: `format-nix && nix flake check --no-build` before declaring done.
+2. Verify per the tiered policy (see Commands): `nix fmt` touched files while iterating; targeted `nix eval` of the affected host before declaring done; full `format-nix && nix flake check --no-build` only for shared-scope changes or pre-commit.
 3. New NixOS module → `linux/system/<category>/`, import in host `default.nix`. Flat imports only — no profile chains.
 4. New portable service → `linux/system/services/<category>/`, importable by any Linux host.
 5. New HM module → platform `home/` dir, or `shared/` if cross-platform; register in that platform's shared-modules list.
@@ -140,7 +148,7 @@ Done means:
 
 ## Reviewing
 
-- Diff covers what was asked; `nix flake check --no-build` passes for at least the touched hosts.
+- Diff covers what was asked; the correct verification tier passed (targeted eval for host-scoped diffs, `nix flake check --no-build` for shared scope).
 - No secrets exposed in plaintext anywhere in the diff.
 - Skill note: do NOT load `nix-verify` for non-Nix files (JSON/YAML/TOML/MD) even inside this repo — it is exclusively for Nix constructs.
 
