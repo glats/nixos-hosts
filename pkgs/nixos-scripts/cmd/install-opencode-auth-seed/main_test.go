@@ -45,7 +45,7 @@ func TestFirstLine(t *testing.T) {
 	}
 }
 
-func TestUsageInterpolatesCurrentValues(t *testing.T) {
+func TestUsageDescribesExplicitSeedURLRequirement(t *testing.T) {
 	// The bash heredoc is unquoted: usage shows the CURRENT resolved
 	// values (env or earlier flags), not static defaults.
 	oldURL := seedURL
@@ -64,8 +64,8 @@ func TestUsageInterpolatesCurrentValues(t *testing.T) {
 		t.Fatal(err)
 	}
 	out := string(data)
-	if !strings.Contains(out, "(default: https://staging.example.com/seed.age)") {
-		t.Fatalf("usage did not interpolate the current seed-url: %q", out)
+	if !strings.Contains(out, "(required unless SEED_URL is set)") {
+		t.Fatalf("usage did not describe the explicit seed-url requirement: %q", out)
 	}
 	if !strings.Contains(out, "0 success  1 args  2 fetch  3 decrypt  4 json  5 backup  6 merge") {
 		t.Fatal("usage lost its exit-code table")

@@ -10,8 +10,8 @@ strict_tdd: false
 
 context: |
   Stack: NixOS Flakes + Home Manager + sops-nix + nix-darwin
-  Hosts: rog (desktop+nvidia+server), thinkcentre (headless+xrdp), t14 (laptop/Omarchy/Hyprland), mact2 (macOS/darwin)
-  User: glats (linux), jcuzmar (mact2/darwin)
+  Hosts: rog (desktop+nvidia+server), thinkcentre (headless+xrdp), t14 (laptop/Omarchy/Hyprland), macm5 (Apple Silicon/darwin)
+  User: glats (linux), juan (macm5/darwin; GitHub identity jcuzmar)
   Structure: hosts/<host>/default.nix (entry), modules/{profiles,base,desktop,features,hardware,networking,virtualisation}/, home-linux/, home-darwin/, shared/, darwin/, lib/, overlays/, pkgs/, bin/
   Convention: AGENTS.md (primary), flake.nix (single source of truth)
   Profile chain: base.nix -> desktop.nix -> server.nix
@@ -23,7 +23,7 @@ testing:
   formatter: "format-nix"
   build:
     linux: "nixos-build build"
-    darwin: "nix build .#darwinConfigurations.mact2.config.system.build.toplevel"
+    darwin: "nix build .#darwinConfigurations.macm5.config.system.build.toplevel"
 
 rules:
   proposal:

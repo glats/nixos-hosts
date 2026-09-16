@@ -1,4 +1,4 @@
-// Command opencode-home is the scoped proxy launcher for OpenCode on mact2.
+// Command opencode-home is the scoped proxy launcher for OpenCode on macm5.
 //
 // Port of bin/opencode-home. Exports HTTPS_PROXY/HTTP_PROXY pointing at the
 // sing-box loopback mixed inbound (127.0.0.1:2080) ONLY while that inbound

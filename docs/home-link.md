@@ -1,11 +1,10 @@
 # Darwin↔rog link: architecture and day-to-day operation
 
-The current operational link remains unchanged while macm5 onboarding is
-prepared. macm5 onboarding requires a dedicated encrypted identity and native
-acceptance; it must not reuse an existing device identity or serve as an
-implicit acceptance claim.
+The operational link now runs from macm5 to rog with a dedicated encrypted
+identity. macm5 is the only supported Darwin endpoint; mact2 was handed over
+and is not a fallback or recovery path.
 
-**What it is**: your corporate Mac (mact2) browses through your home server (rog) over a private TLS link that the endpoint security agent cannot inspect. This is **not an OpenAI-only tool**: it is a **general-purpose** private egress for any application — the TUN automatically covers the IP traffic the security agent lets through, and the loopback proxy `127.0.0.1:2080` is a per-app door for the categories the security agent intercepts at socket level (any app that accepts its own proxy; see the "Generic mechanism" table below). OpenCode with native OpenAI is the flagship consumer and the worked example of this doc.
+**What it is**: your corporate Mac (macm5) browses through your home server (rog) over a private TLS link that the endpoint security agent cannot inspect. This is **not an OpenAI-only tool**: it is a **general-purpose** private egress for any application — the TUN automatically covers the IP traffic the security agent lets through, and the loopback proxy `127.0.0.1:2080` is a per-app door for the categories the security agent intercepts at socket level (any app that accepts its own proxy; see the "Generic mechanism" table below). OpenCode with native OpenAI is the flagship consumer and the worked example of this doc.
 
 ## Architecture in 30 seconds
 
@@ -40,9 +39,9 @@ same fallback           │    final → urltest auto)                          
 1. The TUN captures the connection and the `sniff` rule extracts the real domain from the TLS ClientHello (SNI) — it does not depend on system DNS
 2. The route rules compare that domain/IP against the exclusion lists, in order
 3. Whatever matches no rule goes to `final` (auto urltest: link ↔ direct). Before that, QUIC (UDP/443) is **blocked**: the sing-box urltest only probes TCP and its UDP selection does not fail over — blocking QUIC forces browsers (HTTP-3) down to TCP, the only path that crosses the link and the one with real failover
-4. The hostname travels encrypted up to rog — it is rog who resolves and connects (that is why the server log shows `[mact2] inbound connection to chatgpt.com:443` with the domain, not the IP)
+4. The hostname travels encrypted up to rog — it is rog who resolves and connects (that is why the server log shows `[macm5] inbound connection to example.com:443` with the domain, not the IP)
 
-### The two declarative knobs (hosts/mact2/default.nix)
+### The two declarative knobs (hosts/macm5/default.nix)
 
 ```nix
 # Domains that must NOT ride the link (they go direct, corporate path):
@@ -76,17 +75,17 @@ After a change: `nixos-build` + `linkctl restart` (raw equivalent: `sudo launchc
 After adjusting the domain in question, on rog:
 
 ```bash
-journalctl -u sing-box --since "5 min ago" | grep "\[mact2\]" | grep -i dominio
+journalctl -u sing-box --since "5 min ago" | grep "\[macm5\]" | grep -i example.com
 ```
 
 - **It appears** → it went through the link (rog resolved and connected)
 - **It does not appear** → it went direct (active exclusion) or the agent intercepted it (for domains with category routing without a per-app proxy)
 
-## Day-to-day commands (on mact2)
+## Day-to-day commands (on macm5)
 
 ### Start / stop / status of the link
 
-Main interface: `linkctl` (wrapped as `bin/linkctl`, packaged in `pkgs/nixos-scripts` — systemctl-style for the link daemon on mact2). Type it bare, from any path: start/stop/restart auto-promote with sudo on their own (re-exec with the script's absolute path resolved on the fly — does not depend on root's PATH); status runs unprivileged:
+Main interface: `linkctl` (wrapped as `bin/linkctl`, packaged in `pkgs/nixos-scripts` — systemctl-style for the link daemon on macm5). Type it bare, from any path: start/stop/restart auto-promote with sudo on their own (re-exec with the script's absolute path resolved on the fly — does not depend on root's PATH); status runs unprivileged:
 
 ```bash
 linkctl start     # UP (bootstrap+kickstart if never loaded; kickstart if already loaded)
@@ -95,7 +94,7 @@ linkctl restart   # RESTART — MANDATORY after any link config change
 linkctl status    # STATE (state/pid; distinguishes stopped from registered-idle post-reboot)
 ```
 
-> Auto-sudo will ask for the password the first time (as always). No more typing `sudo` in front: it used to fail because root's PATH does not include the user profile where `linkctl` lives. On mact2 the binary also lives in the system profile (`/run/current-system/sw/bin/linkctl`) as a backup for shells with an odd PATH.
+> Auto-sudo will ask for the password the first time (as always). No more typing `sudo` in front: it used to fail because root's PATH does not include the user profile where `linkctl` lives. On macm5 the binary also lives in the system profile (`/run/current-system/sw/bin/linkctl`) as a backup for shells with an odd PATH.
 
 Raw equivalent (the same `launchctl` calls `linkctl` runs):
 
@@ -204,12 +203,12 @@ sudo bin/device-link phone --config   # full JSON → SFA Local profile
 
 ```bash
 systemctl status sing-box --no-pager        # server service
-journalctl -u sing-box -f                   # watch connections LIVE: [mact2], [phone]
+journalctl -u sing-box -f                   # watch connections LIVE: [macm5], [phone]
 journalctl -u sing-box --since "30 min ago" | grep phone
 ss -tln | grep 4011                         # loopback inbound listening
 ```
 
-Every authenticated connection appears with the device name (`[mact2]`, `[phone]`) — that is how you know who is using the link and which destinations they visit (by domain; the server resolves).
+Every authenticated connection appears with the device name (`[macm5]`, `[phone]`) — that is how you know who is using the link and which destinations they visit (by domain; the server resolves).
 
 ## Revoke / rotate devices
 
@@ -229,7 +228,7 @@ sudo bin/device-link phone                   # new link → re-import on the pho
 #   2. remove the declaration in hosts/rog/secrets.nix
 #   3. remove the uuid_phone key from the sops file
 #   4. nixos-build on rog
-# mact2 never notices — each UUID is independent.
+# macm5 remains authenticated; each UUID is independent.
 ```
 
 ## Known failures and what they mean
@@ -254,7 +253,7 @@ sudo bin/device-link phone                   # new link → re-import on the pho
 | Launchers | `bin/opencode-home`, `bin/device-link`, `bin/linkctl` (packaged in `pkgs/nixos-scripts`) |
 | MCP scrub (host-agnostic) | `shared/opencode/runtime-config.nix` |
 | Credentials (2 UUIDs) | `secrets/shared/link-uuids.yaml` (sops; specific rule in `.sops.yaml`; `link/uuid_*` declarations) |
-| Client exclusion rules | `hosts/mact2/default.nix` (`link.directCidrs`, `link.mode`) |
+| Client exclusion rules | `hosts/macm5/default.nix` (`link.directCidrs`, `link.mode`) |
 | Rename SDD change | `openspec/changes/naming-hygiene/` (the historical SDD change for this stack keeps its original narrative and is pending relocation out of the repo) |
 
 ## Pending (does not block day-to-day use)

@@ -3,8 +3,7 @@
 
   inputs = {
     # Unified nixpkgs 26.05 for all hosts (NixOS + Darwin).
-    # 26.11 dropped x86_64-darwin — mact2 (Intel Mac) stays on 26.05
-    # until hardware upgrade to Apple Silicon. Security fixes until end of 2026.
+    # Security fixes are provided until the end of 2026.
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
 
     home-manager = {
@@ -34,7 +33,7 @@
 
     # Quattro's newer Linux-only dependency boundary. These inputs are routed
     # exclusively to t14; the shared inputs remain on 26.05 for every other
-    # host, including the Intel mact2 configuration.
+    # host.
     t14-nixpkgs.url = "github:NixOS/nixpkgs/ef34387ddd751e1ab8857adf4676492d32eb24ec";
     t14-home-manager = {
       url = "github:nix-community/home-manager/cda90fd8838825c689fde9d3f3b4e937937790df";
@@ -116,7 +115,7 @@
     };
 
     # --- macOS-only inputs ---
-    # nix-darwin must match the nixpkgs release: 26.05 for mact2.
+    # nix-darwin must match the nixpkgs release: 26.05.
     nix-darwin = {
       url = "github:nix-darwin/nix-darwin/nix-darwin-26.05";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -137,15 +136,6 @@
       # Master incluye fix de `to_sym for nil` y `--force-cleanup` (nix-darwin requerido)
       url = "github:Homebrew/brew/master";
       flake = false;
-    };
-
-    # VS Code extensions as Nix — darwin-only (mact2).
-    # Gated behind isDarwin in darwin/home/vscode.nix so Linux evals skip it.
-    # Pinned to 1c7bb95: the last commit before x86_64-darwin was dropped
-    # (nix-vscode-extensions PR #187, merged 2026-07-22).
-    nix-vscode-extensions = {
-      url = "github:nix-community/nix-vscode-extensions/1c7bb95446387973178363916a51b14515fa5ee4";
-      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     ghostty = {
@@ -187,7 +177,7 @@
 
       # Quattro packages are exposed by omarchy-nix's matching input set and
       # overlaid only into t14. This keeps the global nixpkgs boundary intact,
-      # especially for the Intel mact2 configuration.
+      # especially for the Darwin configuration.
       t14QuattroOverlay = final: _prev: {
         omarchy-runtime = inputs.omarchy-nix.packages.${final.system}.omarchy-runtime;
         quickshell = inputs.omarchy-nix.packages.${final.system}.quickshell;
@@ -299,7 +289,6 @@
 
       # --- Darwin configurations ---
       darwinConfigurations = {
-        mact2 = mkDarwinHost { configName = "mact2"; };
         macm5 = mkDarwinHost {
           configName = "macm5";
           system = "aarch64-darwin";
@@ -361,23 +350,6 @@
                   light_theme_detection.enable = false;
                   wayvnc.enable = true;
                 };
-              }
-            ];
-          };
-          mact2 = baseHomeConfig {
-            hostname = "mact2";
-            system = "x86_64-darwin";
-            username = "jcuzmar";
-            extraModules = [
-              # Include home-darwin/default.nix so the standalone
-              # home-manager build for mact2 picks up the per-host base
-              # config (home.username, home.homeDirectory, etc.) on top of
-              # the canonical module list from `darwinHomeModules`.
-              ./darwin/home
-              {
-                # Native OpenAI tier via the sing-box private link (scoped
-                # bin/opencode-home launcher; see hosts/mact2/default.nix).
-                home.opencode.activeProviderName = "openai-medium";
               }
             ];
           };

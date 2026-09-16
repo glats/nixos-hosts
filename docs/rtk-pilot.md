@@ -7,7 +7,7 @@ source files, or arbitrary interactive command output.
 
 ## Installation and privacy
 
-RTK 0.41.0 is installed declaratively on rog, thinkcentre, t14, and mact2.
+RTK 0.41.0 is installed declaratively on rog, thinkcentre, t14, and macm5.
 The managed OpenCode plugin lives in `~/.config/opencode/plugins/`, and Claude
 Code receives a Bash-only `PreToolUse` hook. Verify the installation with:
 

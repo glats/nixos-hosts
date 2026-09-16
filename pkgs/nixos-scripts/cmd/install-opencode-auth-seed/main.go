@@ -36,7 +36,7 @@ import (
 
 // --- Configuration (override via flags or env) ---
 var (
-	seedURL  = envOr("SEED_URL", "https://glats.org/uploads/opencode/mact2-auth-seed.age")
+	seedURL  = os.Getenv("SEED_URL")
 	authFile = envOr("AUTH_FILE", os.Getenv("HOME")+"/.local/share/opencode/auth.json")
 	keyFile  = envOr("KEY_FILE", os.Getenv("HOME")+"/.config/sops/age/keys.txt")
 	dryRun   bool
@@ -78,7 +78,7 @@ decrypt it with the local age identity, back up the existing auth.json,
 and merge the seed payload into ~/.local/share/opencode/auth.json.
 
 Options:
-  --seed-url URL     Override the seed URL (default: %s)
+  --seed-url URL     Seed URL (required unless SEED_URL is set)
   --auth-file PATH   Override the auth.json path (default: %s)
   --key-file PATH    Override the age identity path (default: %s)
   --dry-run          Fetch + decrypt only; do not touch auth.json
@@ -91,7 +91,7 @@ Environment variables (override defaults):
 
 Exit codes:
   0 success  1 args  2 fetch  3 decrypt  4 json  5 backup  6 merge
-`, filepath.Base(os.Args[0]), seedURL, authFile, keyFile)
+	`, filepath.Base(os.Args[0]), authFile, keyFile)
 }
 
 // firstLine returns the first line of data (head -1).
@@ -353,6 +353,11 @@ func main() {
 			usage(os.Stderr)
 			os.Exit(1)
 		}
+	}
+	if seedURL == "" {
+		fmt.Fprintln(os.Stderr, "ERROR: --seed-url or SEED_URL is required")
+		usage(os.Stderr)
+		os.Exit(1)
 	}
 
 	// --- Main ---
