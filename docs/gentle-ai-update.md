@@ -120,7 +120,7 @@ are gone after activation.
 
 ### Step 8: Roll Out Other Hosts
 
-After the t14 canary passes, deploy rog, thinkcentre, and mact2 with
+After the t14 canary passes, deploy rog, thinkcentre, and macm5 with
 `nixos-build` on each host.
 
 ## Verification Checklist

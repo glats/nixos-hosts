@@ -45,7 +45,7 @@ Chain strategy: size:exception
 ## Phase 4: Evidence-Gated Retirement
 
 - [x] 4.1 After accepted evidence only, remove mact2 from `flake.nix`, delete `hosts/mact2/default.nix`, remove stale targets from `linux/home/remote-desktop.nix`, `linux/home/ssh.nix`, and `darwin/home/remote-desktop.nix`, then revoke required rog/SOPS records.
-- [ ] 4.2 Run `format-nix && nix flake check --no-build`, verify macm5 remains healthy and mact2 authentication fails; recovery MUST use macm5 Git/generation/identity state only.
+- [x] 4.2 Reconcile `format-nix && nix flake check --no-build` evidence, verify macm5 remains healthy, and record that direct mact2 failed-auth testing is unavailable; recovery MUST use macm5 Git/generation/identity state only. Accepted evidence: the authorized SOPS owner completed `uuid_mact2` removal/re-encryption and rog was deployed. The inactive/formatted client plus deployed rog configuration is the accepted retirement evidence.
 
 ## Phase 5: Confirmed Corporate Identity Correction
 

@@ -22,13 +22,14 @@ or raw logs containing credentials.
 - [x] The local proxy served a public Cloudflare issuer.
 - [x] rog logged authenticated `[macm5]` VLESS connections, including `example.com`.
 - [x] macm5 remained the only supported Darwin recovery path; mact2 was handed over and was not used as fallback.
+- [x] Retirement evidence accepted: the authorized SOPS owner removed/re-encrypted `uuid_mact2` and rog was deployed; mact2 was enterprise-formatted, so direct failed-auth testing is unavailable.
 
 ## Evidence references
 
 Use redacted command results or links to an approved evidence store:
 
 - Evidence location: maintainer-approved native deployment evidence (redacted)
-- Failure/recovery notes: no APFS or daemon-socket failure reported; macm5 generation retained on host
+- Failure/recovery notes: no APFS or daemon-socket failure reported; macm5 generation retained on host. The inactive/formatted mact2 client plus deployed rog configuration is the accepted retirement evidence.
 - Reviewer notes: evidence supports tasks 3.3 and 4.1; repository checks remain evaluation-only
 
 The record contains only redacted native evidence. Retirement authorization was

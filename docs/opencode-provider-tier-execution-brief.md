@@ -198,7 +198,7 @@ Do not edit these in the next session unless the user explicitly asks.
 | `rog` | `models-mix2` |
 | `t14` | `openai-full` |
 | `thinkcentre` | `openai-medium` |
-| `mact2` | `github-copilot-safe` |
+| `macm5` | `github-copilot-safe` |
 | Darwin default | `opencode-free` |
 
 ## Exact edit scope for the next session

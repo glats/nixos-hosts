@@ -15,7 +15,8 @@
 - [x] 2.2 Stage the macm5 link identity declarations and recipient scope without modifying mact2 or encrypted ciphertext.
 - [x] 3.1 Keep macm5 as the only Darwin onboarding target, preserving `juan`, arm64 Homebrew, direct-default routing, and native remote access.
 - [x] 3.3 Record accepted native evidence: physical macm5 deployed successfully, SOPS decrypted on-host, `linkctl` ran, the local proxy served a public Cloudflare issuer, and rog logged authenticated `[macm5]` VLESS traffic including `example.com`.
-- [x] 4.1 After maintainer authorization, remove mact2 outputs, host/configuration, stale remote targets, VLESS user, and public SOPS recipient/rules. The encrypted UUID ciphertext remains untouched pending the documented admin-only procedure.
+- [x] 4.1 After maintainer authorization, remove mact2 outputs, host/configuration, stale remote targets, VLESS user, and public SOPS recipient/rules. The authorized SOPS owner separately completed the documented `uuid_mact2` removal and recipient re-encryption; this session did not read or modify ciphertext.
+- [x] 4.2 Reconcile the retirement evidence and verification state: the authorized SOPS owner completed `uuid_mact2` removal/re-encryption and rog was deployed; mact2 was enterprise-formatted, so direct failed-auth testing is unavailable. The inactive/formatted client plus deployed rog configuration is accepted evidence, and recovery remains limited to macm5 Git, generation, and identity state.
 
 ## Work Unit Evidence
 
@@ -30,6 +31,7 @@
 - `nix fmt --` completed for the changed Nix files. The repository-wide `format-nix` run was interrupted while traversing existing worktrees; it did not change encrypted files.
 - `nix flake check --no-build` passed; incompatible Darwin systems were omitted by the Linux check.
 - Target evaluation confirmed `aarch64-darwin`, `juan`, and `juan` for macm5 system and standalone Home Manager users.
+- This reconciliation changed only Markdown/OpenSpec artifacts; no Nix files changed, so no new activation or flake evaluation was run for this slice. `git diff --check` passed.
 
 ## Additional Remote-Safe Fix
 
@@ -46,5 +48,5 @@
 
 ## Remaining Tasks
 
-- Tasks 1.1-1.3 and 4.2 remain pending; they are harness/verification work, not evidence required to authorize this retirement slice.
-- The encrypted link UUID file still requires the documented admin-only removal of `uuid_mact2` followed by recipient re-encryption; this session did not read or modify ciphertext.
+- Tasks 1.1-1.3 remain pending; they are harness work and are intentionally not marked complete. Task 4.2 is accepted on deployment evidence because the inactive/formatted mact2 client cannot provide direct failed-auth proof.
+- The encrypted link UUID file was not read or modified in this session; its authorized owner completed the documented `uuid_mact2` removal and recipient re-encryption outside this session.
