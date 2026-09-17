@@ -16,7 +16,7 @@ let
   # Generate C source for native Mach-O launcher
   mkLauncherC =
     {
-      name,
+      id,
       protocol,
       host,
       port ? "",
@@ -94,7 +94,7 @@ let
 
           if (pw) {
               char logpath[1024];
-              snprintf(logpath, sizeof(logpath), "%s/Library/Logs/remote-${name}.log", pw->pw_dir);
+               snprintf(logpath, sizeof(logpath), "%s/Library/Logs/remote-${id}.log", pw->pw_dir);
               FILE *log = fopen(logpath, "a");
               if (log) {
                   dup2(fileno(log), STDOUT_FILENO);
@@ -112,7 +112,8 @@ let
 
   mkRemoteApp =
     {
-      name,
+      id,
+      bundleName,
       protocol,
       host,
       port ? "",
@@ -122,7 +123,7 @@ let
     let
       launcherC = mkLauncherC {
         inherit
-          name
+          id
           protocol
           host
           port
@@ -132,7 +133,7 @@ let
       };
     in
     pkgs.stdenv.mkDerivation {
-      name = "remote-${name}.app";
+      name = "remote-${id}.app";
       phases = [
         "buildPhase"
         "installPhase"
@@ -144,22 +145,22 @@ let
         $CC -O2 -o launcher launcher.c
       '';
       installPhase = ''
-        mkdir -p $out/remote-${name}.app/Contents/MacOS
-        mkdir -p $out/remote-${name}.app/Contents/Resources
+        mkdir -p "$out/${bundleName}.app/Contents/MacOS"
+        mkdir -p "$out/${bundleName}.app/Contents/Resources"
 
-        cp launcher $out/remote-${name}.app/Contents/MacOS/launcher
+        cp launcher "$out/${bundleName}.app/Contents/MacOS/launcher"
 
-        cat > $out/remote-${name}.app/Contents/Info.plist <<'EOF'
+        cat > "$out/${bundleName}.app/Contents/Info.plist" <<'EOF'
         <?xml version="1.0" encoding="UTF-8"?>
         <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
         <plist version="1.0">
         <dict>
           <key>CFBundleName</key>
-          <string>remote-${name}</string>
+          <string>${bundleName}</string>
           <key>CFBundleDisplayName</key>
-          <string>${name} (${protocol})</string>
+          <string>${bundleName}</string>
           <key>CFBundleIdentifier</key>
-          <string>com.glats.remote.${name}</string>
+          <string>com.glats.remote.${id}</string>
           <key>CFBundleVersion</key>
           <string>1.0</string>
           <key>CFBundlePackageType</key>
@@ -168,6 +169,8 @@ let
           <string>launcher</string>
           <key>LSUIElement</key>
           <true/>
+          <key>CFBundleIconFile</key>
+          <string>GenericNetworkIcon.icns</string>
           <key>NSLocalNetworkUsageDescription</key>
           <string>Remote desktop needs local network access to connect to your machines.</string>
         </dict>
@@ -178,24 +181,32 @@ let
 
   apps = [
     {
-      name = "t14-tigervnc";
+      id = "t14-tigervnc";
+      bundleName = "Remote T14";
+      legacyBundleName = "remote-t14-tigervnc.app";
       protocol = "vnc";
       viewer = "tigervnc";
       host = "172.16.0.10";
       port = "5900";
     }
     {
-      name = "oneplus5";
+      id = "oneplus5";
+      bundleName = "Remote oneplus";
+      legacyBundleName = "remote-oneplus5.app";
       protocol = "rdp";
       host = "172.16.0.12";
     }
     {
-      name = "rog";
+      id = "rog";
+      bundleName = "Remote Rog";
+      legacyBundleName = "remote-rog.app";
       protocol = "rdp";
       host = "172.16.0.5";
     }
     {
-      name = "thinkcentre";
+      id = "thinkcentre";
+      bundleName = "Remote ThinkCentre";
+      legacyBundleName = "remote-thinkcentre.app";
       protocol = "rdp";
       host = "172.16.0.11";
     }
@@ -203,40 +214,67 @@ let
 
   appSources = lib.listToAttrs (
     map (app: {
-      name = app.name;
-      value = mkRemoteApp app;
+      name = app.id;
+      value = mkRemoteApp {
+        inherit (app)
+          id
+          bundleName
+          protocol
+          host
+          ;
+        port = app.port or "";
+        viewer = app.viewer or "tigervnc";
+        username = app.username or config.home.username;
+      };
     }) apps
   );
 
 in
 {
   home.activation.deployRemoteDesktopApps = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    icon_source="/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/GenericNetworkIcon.icns"
+    lsregister_path="/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister"
+
+    # RED safety gate: do not mutate ~/Applications unless all native inputs exist.
+    if [ ! -r "$icon_source" ]; then
+      echo "Required native network icon is not readable: $icon_source" >&2
+      exit 1
+    fi
+    if [ ! -x "$lsregister_path" ]; then
+      echo "Required LaunchServices registrar is unavailable: $lsregister_path" >&2
+      exit 1
+    fi
+
     appsDir="$HOME/Applications"
     mkdir -p "$appsDir"
 
-    lsregister_path="/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister"
-
     ${lib.concatMapStrings (app: ''
-      src="${appSources.${app.name}}/remote-${app.name}.app"
-      dst="$appsDir/remote-${app.name}.app"
+      src="${appSources.${app.id}}/${app.bundleName}.app"
+      dst="$appsDir/${app.bundleName}.app"
 
       if [ -L "$dst" ] || [ -e "$dst" ]; then
-        rm -rf "$dst"
+        /bin/rm -rf "$dst"
       fi
 
-      cp -R "$src" "$dst"
-      chmod -R +w "$dst"
+      /bin/cp -R "$src" "$dst"
+      /bin/cp "$icon_source" "$dst/Contents/Resources/GenericNetworkIcon.icns"
+      /bin/chmod -R +w "$dst"
 
-      xattr -cr "$dst" 2>/dev/null || true
-      /usr/bin/codesign --force --sign - "$dst" 2>/dev/null || true
+      /usr/bin/xattr -cr "$dst"
+      /usr/bin/codesign --force --sign - "$dst"
 
       # Register with LaunchServices so Spotlight resolves to
       # ~/Applications, not stale /nix/store paths.
-      if [ -x "$lsregister_path" ]; then
-        "$lsregister_path" -f "$dst" 2>/dev/null || true
+      "$lsregister_path" -f "$dst"
+    '') apps}
+
+    ${lib.concatMapStrings (app: ''
+      legacy="$appsDir/${app.legacyBundleName}"
+      if [ -L "$legacy" ] || [ -e "$legacy" ]; then
+        /bin/rm -rf "$legacy"
       fi
     '') apps}
 
-    mdimport "$appsDir" 2>/dev/null || true
+    /usr/bin/mdimport "$appsDir"
   '';
 }
