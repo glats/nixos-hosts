@@ -120,6 +120,22 @@
       set -g @plugin 'christoomey/vim-tmux-navigator'
       set-environment -g TMUX_PLUGIN_MANAGER_PATH "$HOME/.config/tmux/plugins"
 
+      # TPM's loader and its later run-shell bindings do not source shell
+      # startup files. Add the Nix tools they need to the tmux server once,
+      # while retaining the inherited PATH for user and platform tools.
+      if-shell -F '#{!=:#{environ:TMUX_NIX_RUNTIME_PATH},1}' {
+        set-environment -g PATH "${
+          lib.makeBinPath [
+            pkgs.bash
+            pkgs.coreutils
+            pkgs.gawk
+            pkgs.git
+            pkgs.tmux
+          ]
+        }:$PATH"
+        set-environment -g TMUX_NIX_RUNTIME_PATH 1
+      }
+
       # TPM must be the final command in the generated tmux configuration.
       run -b "$HOME/.config/tmux/plugins/tpm/tpm"
     '';
