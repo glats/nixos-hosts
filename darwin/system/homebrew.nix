@@ -4,8 +4,8 @@
     enable = true;
 
     onActivation = {
-      autoUpdate = false;
-      upgrade = false;
+      autoUpdate = true;
+      upgrade = true;
       # "uninstall" removes the app but keeps ~/Library user data (bookmarks,
       # passwords, profiles). "zap" also deletes user data — never use for browsers.
       cleanup = "uninstall";
