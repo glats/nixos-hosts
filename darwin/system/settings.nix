@@ -39,6 +39,9 @@
     startup.chime = false;
 
     defaults = {
+      trackpad = {
+        Clicking = true; # Habilita "Tap to click" para el trackpad interno y externo
+      };
       CustomUserPreferences = {
         "com.apple.SoftwareUpdate" = {
           AutomaticCheckEnabled = true;
@@ -68,6 +71,7 @@
         # can be used as the visible top bar. This mirrors the GUI setting
         # "Automatically hide and show the menu bar".
         _HIHideMenuBar = false;
+        "com.apple.mouse.tapBehavior" = 1;
       };
       # smb.NetBIOSName omitted: writing to com.apple.smb.server requires
       # entitlements the activation script doesn't have; it exits 1 under
