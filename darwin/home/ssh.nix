@@ -3,7 +3,6 @@
   host ? null,
   hostName ? null,
   lib,
-  primaryUser,
   ...
 }:
 let
@@ -23,46 +22,6 @@ in
     ];
 
     settings = {
-      # LAN hosts (legacy hosts kept for convenience)
-      "asus-rog.local" = {
-        SetEnv = {
-          TERM = "xterm-256color";
-        };
-      };
-
-      "172.16.0.198" = {
-        SetEnv = {
-          TERM = "xterm-256color";
-        };
-      };
-
-      "rog.local" = {
-        HostName = "rog.local";
-        User = "glats";
-        IdentityFile = "${sshDir}/glats-rog";
-        SetEnv = {
-          TERM = "xterm-256color";
-        };
-      };
-
-      "t14.local" = {
-        HostName = "t14.local";
-        User = "glats";
-        IdentityFile = "${sshDir}/t14";
-        SetEnv = {
-          TERM = "xterm-256color";
-        };
-      };
-
-      "CLFTCC02G54THMD6N.local" = {
-        HostName = "CLFTCC02G54THMD6N.local";
-        User = primaryUser;
-        IdentityFile = "${sshDir}/mac";
-        SetEnv = {
-          TERM = "xterm-256color";
-        };
-      };
-
       # GitHub keys managed by Home Manager
       "github.com" = {
         HostName = "github.com";
