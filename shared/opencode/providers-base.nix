@@ -423,38 +423,14 @@ let
     {
       name = "openai-opencode-balanced";
       phases = {
-        # Hybrid recommended for ChatGPT Plus/Pro + OpenCode Go:
-        # - OpenAI GPT-5.6 Terra/Luna: best fixed-plan value for judgment-heavy phases.
-        # - OpenCode Go: absorbs the high-volume/tool-loop phases (orchestrator,
-        #   explore, tasks, archive) so ChatGPT limits are less likely. sdd-apply
-        #   moved from Go to Luna on 2026-09-09 (user request to drop GLM 5.3).
-        # - Avoids GPT-5.3-Codex-Spark because OpenAI documents it as Pro-only.
-        # - Avoids GPT-5.4/5.4-mini because OpenAI says ChatGPT-account Codex removes them on 2026-08-31.
-        # Orchestrator upgraded to opencode-go/kimi-k3 on 2026-09-10 (user:
-        # best model on the Go catalog; agent-first, tools+reasoning+structured).
-        # Rollback: opencode-go/glm-5.3-flash (1M ctx, high Go request headroom).
         gentle-orchestrator = "opencode-go/kimi-k3";
         sdd-init = "opencode-go/deepseek-v4-flash";
-        # Explore is the biggest limit-burner in large repos: many reads, MCP research, long context.
         sdd-explore = "opencode-go/deepseek-v4-pro";
-        # Propose/spec/design benefit more from judgment than raw volume, so keep them on Terra.
         sdd-propose = "openai/gpt-5.6-sol";
         sdd-spec = "openai/gpt-5.6-sol";
         sdd-design = "openai/gpt-5.6-sol";
-        # `deepseek-v4-flash` is the current stable alias for Flash-0731.
-        # It remains the fit for high-volume task decomposition: 1M context,
-        # tool calls, and substantially more concurrency than V4 Pro.
         sdd-tasks = "opencode-go/deepseek-v4-flash";
-        # gpt-5.6-luna (audit 2026-09-09): apply is the tool-loop-heaviest phase,
-        # so it goes to the 10x-cheaper OpenAI tier — Luna burns 5/0.5/30 Codex
-        # credits per M tokens vs Terra's 50/5/300, and the Plus 5h window allows
-        # 250-2000 Luna messages vs 25-200 Terra. Coding quality stays within
-        # 0.7pp of Terra (SWE-Bench Pro 62.7 vs 63.4, Coding Agent Index 74.6 vs
-        # 77.4), and OpenAI positions Luna for bounded, spec-driven edits — the
-        # apply contract. Replaces glm-5.3-flash (user request); no blocking
-        # GPT-5.6 issues in opencode-ai/opencode.
         sdd-apply = "openai/gpt-5.6-luna";
-        # Final acceptance/judgment pass stays on OpenAI.
         sdd-verify = "openai/gpt-5.6-terra";
         sdd-archive = "opencode-go/deepseek-v4-flash";
         sdd-onboard = "opencode-go/deepseek-v4-flash";
@@ -472,30 +448,6 @@ let
     }
     {
       name = "opencode-go-openai";
-      # Audit 2026-09-09. Go ONLY for orchestration; every SDD phase on OpenAI.
-      # - gentle-orchestrator = opencode-go/kimi-k3: user-selected best model on the
-      #   Go catalog (amended 2026-09-10, superseding the MiMo-V2.5 cheap pilot).
-      #   K3 is the agent-first generation ("long-horizon agent work"; tools +
-      #   reasoning + structured all supported); the documented K2.x failure was
-      #   NIM transport (opencode#26662/#26405), not model behavior. Cost note:
-      #   $3.00/$15.00 per M vs Flash $0.15/$0.50. Rollback to
-      #   opencode-go/glm-5.3-flash if delegation quality or completion gates regress.
-      # - OpenAI tiers by phase fit (Codex credit rates per M tokens:
-      #   Sol 125/750, Terra 50/300, Luna 5/0.5/30; Plus 5h windows 10-100 /
-      #   25-200 / 250-2000 messages):
-      #   * Sol (judgment): propose/spec/design — a bad spec propagates defects
-      #     through the whole chain.
-      #   * Terra (retrieval + acceptance): explore and verify. Luna is
-      #     disqualified for explore by its documented weak long-context
-      #     retrieval (MRCR v2 8-needle 512K-1M: 41.3 vs Sol 73.8); verify
-      #     beats a full re-loop on Terra's agentic edge over Luna (Coding
-      #     Agent Index 77.4 vs 74.6, DeepSWE 69.6 vs 67.2). Sol stays the
-      #     escalation option for the verify gate.
-      #   * Luna (volume): init/tasks/apply/archive/onboard — bounded,
-      #     spec-driven work with deterministic checks; apply stays 10x cheaper
-      #     than Terra with SWE-Bench Pro within 0.7pp (62.7 vs 63.4).
-      # - No blocking GPT-5.6 issues in opencode-ai/opencode (search 2026-09-09).
-      # - All three tiers are Plus/Pro-eligible in Codex (OpenAI help center).
       phases = {
         gentle-orchestrator = "opencode-go/kimi-k3";
         sdd-init = "openai/gpt-5.6-luna";
@@ -522,48 +474,23 @@ let
     }
     {
       name = "anthropic-opencode-go";
-      # Audit 2026-09-09. Gemelo de `anthropic-opencode-free`: mismo backbone free
-      # de Zen, pero las dos fases de juicio canjean Anthropic por modelos PAGADOS
-      # de opencode-go con mejor fit por fase. El orquestador SE MANTIENE en
-      # anthropic/claude-sonnet-5 (requisito del usuario).
-      #   sdd-spec   -> glm-5.3-flash (escritura estructurada + mandatory reasoning, 1M ctx)
-      #   sdd-verify -> deepseek-v4-pro (gate de aceptación = el mejor razonador de Go)
-      # Evidence: el perfil canónico high-volume usa exactamente este par para spec/verify.
       phases = {
-        # anthropic/claude-sonnet-5: orquestador en cuota Anthropic (petición explícita).
         gentle-orchestrator = "anthropic/claude-sonnet-5";
-        # nemotron-3.5-lightning-free: construido para ejecución ligera de alto volumen.
         sdd-init = "opencode/nemotron-3.5-lightning-free";
-        # nemotron-3-ultra-free: 1M ctx + RULER@1M 94.7 — mejor para explorar repos grandes.
         sdd-explore = "opencode/nemotron-3-ultra-free";
-        # nemotron-3-ultra-free: GPQA 87 — mejor razonamiento/planning free.
         sdd-propose = "opencode/nemotron-3-ultra-free";
-        # opencode-go/glm-5.3-flash: escritura estructurada con mandatory reasoning, 1M ctx.
         sdd-spec = "opencode-go/glm-5.3-flash";
-        # nemotron-3-ultra-free: decisiones de arquitectura (GPQA 87, 1M ctx).
         sdd-design = "opencode/nemotron-3-ultra-free";
-        # nemotron-3.5-lightning-free: descomposición mecánica a alto volumen.
         sdd-tasks = "opencode/nemotron-3.5-lightning-free";
-        # mimo-v2.5-free: 70 tok/s para edits de código, worker de apply probado en audits previos.
         sdd-apply = "opencode/mimo-v2.5-free";
-        # opencode-go/deepseek-v4-pro: gate de aceptación — un defecto no detectado cuesta
-        # un re-loop completo apply→verify; es el razonador más fuerte de opencode-go.
         sdd-verify = "opencode-go/deepseek-v4-pro";
-        # nemotron-3.5-lightning-free: la clase más rápida/barata para copy-and-close.
         sdd-archive = "opencode/nemotron-3.5-lightning-free";
-        # mimo-v2.5-free: walkthrough guiado barato.
         sdd-onboard = "opencode/mimo-v2.5-free";
-        # nemotron-3-ultra-free: default balanceado.
         neutral = "opencode/nemotron-3-ultra-free";
       };
     }
     {
       name = "openai-full";
-      # Model fit audit 2026-09-11: ChatGPT OAuth exposes Sol, Terra, and Luna
-      # locally, and each completed a shell-tool smoke test. OpenAI positions
-      # Sol for complex judgment, Terra for everyday tool use, and Luna for
-      # bounded high-volume work. Do not use the `-fast` aliases: OpenCode
-      # issue #36241 reports a long tool-loop stream abort for Sol Fast.
       phases = {
         gentle-orchestrator = "openai/gpt-5.6-sol";
         sdd-init = "openai/gpt-5.6-luna";
@@ -576,8 +503,6 @@ let
         sdd-verify = "openai/gpt-5.6-sol";
         sdd-archive = "openai/gpt-5.6-luna";
         sdd-onboard = "openai/gpt-5.6-luna";
-        # Judgment and review roles are explicit so they do not silently
-        # inherit the orchestrator model.
         jd-judge-a = "openai/gpt-5.6-sol";
         jd-judge-b = "openai/gpt-5.6-sol";
         jd-fix-agent = "openai/gpt-5.6-terra";
