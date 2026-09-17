@@ -183,14 +183,8 @@
   # persist across logins instead of advancing on every session start.
   omarchy.rotate_on_start = lib.mkForce false;
 
-  # Omarchy-nix's tmux module is "neutralized" by linux/home/tmux.nix
-  # (imported above): it uses `lib.mkForce` on `programs.tmux.extraConfig`
-  # and `programs.tmux.plugins` to drop the omarchy prefix/status/theme
-  # at eval time.  We don't need to set `enable = false` here — the
-  # merged `enable` from omarchy-nix + shared + home-linux is `true`,
-  # and HM's tmux module runs its config block with the home-linux
-  # values.  Default C-b prefix + base16 theme from shared/tmux.nix
-  # + xclip bindings + vim-tmux-navigator plugin from nixpkgs.
+  # The shared tmux module owns the canonical TPM declarations and loader.
+  # Omarchy's tmux settings merge normally; no broad force override is needed.
 
   # Set icon theme explicitly — omarchy-nix manages gtk.theme and gtk.cursorTheme
   # but does NOT set gtk.iconTheme. Papirus-Dark is already installed system-wide
