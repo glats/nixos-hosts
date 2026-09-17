@@ -68,6 +68,7 @@ let
               "/bpp:32",
               "/sound:sys:mac",
               "/clipboard",
+              "/drive:mac-public,/Users/juan/Public",
               "/rfx-mode:video",
               "-wallpaper",
               "-themes",
@@ -202,6 +203,7 @@ let
       legacyBundleName = "remote-rog.app";
       protocol = "rdp";
       host = "172.16.0.5";
+      username = "glats";
     }
     {
       id = "thinkcentre";
