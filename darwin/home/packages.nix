@@ -74,7 +74,6 @@ in
         # Android platform tools (adb, fastboot)
         android-tools
         yt-dlp
-        awk
       ];
   };
 }
