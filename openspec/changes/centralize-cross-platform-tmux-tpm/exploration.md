@@ -1,65 +1,51 @@
 ## Exploration: centralize-cross-platform-tmux-tpm
 
 ### Current State
-`shared/tmux.nix` owns common tmux settings but not the TPM declarations. Darwin correctly declares the seven TPM repositories and starts TPM in its `programs.tmux.extraConfig`; Linux attempts the same repositories through `programs.tmux.plugins`, which Home Manager defines as packages or `{ plugin = package; extraConfig = ...; }` values, then replaces the shared `extraConfig` with `lib.mkForce`. Both platform files use `activation.install-tpm`, which is not the Home Manager `home.activation` DAG interface. The generated Linux configuration therefore cannot satisfy the plugin option type and loses shared settings. Both platform module lists import their respective tmux module; t14 also relies on Linux's forced tmux values to neutralize Omarchy's module.
+The already-centralized TPM runtime lives in `shared/tmux.nix`: it declares the seven plugins, sets `TMUX_PLUGIN_MANAGER_PATH`, and runs TPM last. Its activation bootstrap has an activation-only `PATH` containing Nix `tmux` and `git`, but the running tmux server receives no corresponding runtime `PATH`. The physical macm5 failure is therefore expected: TPM's [`plugin_functions.sh`](https://github.com/tmux-plugins/tpm/blob/master/scripts/helpers/plugin_functions.sh) parses plugin declarations with unqualified `awk`; its loader also creates later `run-shell` bindings for install, update, and clean actions. On macm5, that server/runtime path cannot find `awk`.
 
-Home Manager emits `programs.tmux.extraConfig` after its managed plugin block, while TPM requires `set -g @plugin` entries followed by its `run` command at the bottom of the tmux configuration. Its current module source confirms that `programs.tmux.plugins` accepts only tmux plugin packages/submodules. Home Manager documents `home.activation` as a `lib.hm.types.dagOf` whose state-changing nodes must be idempotent and run after `writeBoundary`; TPM installation should additionally run after `linkGeneration` so the generated tmux configuration exists. TPM's upstream README confirms its declaration format and that initialization belongs at the end of the configuration.
+`darwin/home/tmux.nix` imports the shared module, installs tmux and a Darwin clipboard helper, supplies the `.tmux.conf` compatibility shim, and sets `escapeTime = 10`. `linux/home/tmux.nix` only imports the same shared module and sets `escapeTime = 0`. Both platform shared-module lists include their respective leaf, so changing the shared runtime block applies to rog, thinkcentre, t14, and macm5 without a leaf-specific duplication.
+
+TPM upstream documents that tmux `run-shell` does not read shell startup files and recommends setting a global `PATH` before any `run` command for macOS/Brew failures ([TPM troubleshooting](https://github.com/tmux-plugins/tpm/blob/master/docs/tpm_not_working.md)). The tmux manual confirms that `$PATH` in a parsed config is expanded from the global environment, allowing a Nix prefix to preserve the inherited path ([tmux(1)](https://man7.org/linux/man-pages/man1/tmux.1.html)). Context7 was attempted for both tmux and Home Manager documentation before code inspection, but its monthly quota was exhausted; no Context7 API claims are used here. Exa independently returned TPM's upstream macOS PATH guidance and the macOS gawk failure report in [TPM issue #146](https://github.com/tmux-plugins/tpm/issues/146).
 
 ### Affected Areas
-- `shared/tmux.nix` — central location for the complete ordered TPM declaration block, TPM initialization, and the cross-platform activation contract.
-- `linux/home/tmux.nix` — remove invalid package-typed TPM strings and the forced replacement of shared configuration; retain Linux escape-time and any Linux-only integration.
-- `darwin/home/tmux.nix` — remove duplicated TPM declarations/bootstrap; retain Darwin escape-time, the legacy `.tmux.conf` shim, and Darwin-only helper integration.
-- `linux/home/shared-modules.nix` — imports the Linux tmux module for all Linux hosts, including the filtered t14 composition.
-- `darwin/home/shared-modules.nix` — imports the Darwin tmux module for macm5.
-- `hosts/t14/home/omarchy.nix` — its comment and tmux merge assumption must be updated if `lib.mkForce` is removed.
+- `shared/tmux.nix` — the only production file required: add an idempotent, global tmux runtime `PATH` prefix immediately before the TPM loader.
+- `darwin/home/tmux.nix` — inspected and intentionally unchanged; it continues to own only Darwin clipboard integration, package installation, the compatibility shim, and `escapeTime`.
+- `linux/home/tmux.nix` — inspected and intentionally unchanged; it continues to own only Linux `escapeTime`.
+- `openspec/changes/centralize-cross-platform-tmux-tpm/exploration.md` — this runtime addendum.
 
 ### Approaches
-1. **Pure nixpkgs plugins** — replace TPM with `pkgs.tmuxPlugins` packages in the shared module.
-   - Pros: reproducible store-pinned plugins, no activation-time Git network access, and direct Home Manager support.
-   - Cons: changes the requested TPM model; plugins absent from nixpkgs require custom derivations; TPM update/install workflow disappears.
-   - Effort: Medium.
-
-2. **Centralized TPM declarations** — keep TPM and declare its ordered repositories once in `shared/tmux.nix`; use only `programs.tmux.extraConfig` for those repository strings.
-   - Pros: meets the one-source requirement, preserves existing TPM behavior and plugin set, fixes the typed-option misuse, and leaves platform modules small.
-   - Cons: activation remains network-dependent and TPM-managed plugin revisions are mutable outside the Nix lock file.
+1. **Global tmux PATH before the TPM loader** — prepend a bounded Nix tool path (at least `gawk`, plus TPM's runtime dependencies such as Bash, core utilities, Git, and tmux) to the tmux global `PATH` immediately before `run -b`, while retaining the inherited `$PATH`.
+   - Pros: fixes `awk` for loader execution and later TPM key bindings; applies consistently to Darwin and Linux; keeps `/usr/bin`, `/bin`, Homebrew, and user paths available; preserves one TPM owner and no leaf changes.
+   - Cons: tmux's global environment is mutable; the implementation must guard against repeated prefixing when TPM reloads the configuration.
    - Effort: Low.
 
-3. **Hybrid TPM bootstrap with nixpkgs plugins** — use TPM for only unavailable plugins and Home Manager packages for the rest.
-   - Pros: reduces TPM's runtime surface while retaining unavailable plugins.
-   - Cons: two managers can source duplicate plugins and make ordering/debugging ambiguous; it does not minimize architecture.
+2. **Loader-specific PATH** — execute only `run -b "$HOME/.config/tmux/plugins/tpm/tpm"` with an inline PATH containing Nix and system tools.
+   - Pros: smallest textual change and no global tmux environment mutation.
+   - Cons: insufficiently durable: TPM registers later `run-shell` install/update/clean commands, and those separate processes will again use the tmux server environment without `awk`; it also diverges from TPM's own global-PATH guidance.
+   - Effort: Low.
+
+3. **Install `gawk` as a Home Manager package** — add `pkgs.gawk` to Darwin packages (or shared packages).
+   - Pros: makes `awk` available in interactive Nix-profile shells and is easy to explain.
+   - Cons: does not guarantee availability to an already-running or GUI-launched tmux server; package installation changes the profile but not tmux's captured runtime environment, so it does not address the reported failure mechanism.
+   - Effort: Low.
+
+4. **Add a module option with per-platform path injection** — expose a shared tmux runtime-path option and set Darwin/Linux values in their leaf modules.
+   - Pros: permits future host-specific toolchains, including an explicitly chosen Homebrew prefix.
+   - Cons: reintroduces platform ownership for a common TPM requirement, creates option and merge-surface complexity, and risks drift. Nix-provided TPM tools do not require Homebrew tmux paths because the loader and its scripts can use the injected Nix tools.
    - Effort: Medium.
 
 ### Recommendation
-Choose **centralized TPM declarations**. Keep every `set -g @plugin` line, `TMUX_PLUGIN_MANAGER_PATH`, and the final `run -b "$HOME/.config/tmux/plugins/tpm/tpm"` together in `shared/tmux.nix`, after its common tmux settings. Do not set `programs.tmux.plugins` for TPM repository strings; leave it unset/empty so Home Manager does not type-check them as packages or generate competing `run-shell` entries.
+Choose **global tmux PATH before the TPM loader** in `shared/tmux.nix`, with an idempotence guard. The generated tmux configuration should, immediately before the existing final `run -b`, set the global `PATH` once to a Nix prefix containing TPM's runtime commands (including `gawk` as the provider of `awk`) followed by the existing `$PATH`. Retaining `$PATH` is essential: a fixed replacement such as the upstream `/opt/homebrew/bin:/bin:/usr/bin` example would clobber the user, Nix-profile, and potentially Homebrew paths captured by tmux.
 
-Use one correct shared activation node for the common bootstrap, rather than duplicating it in both platform modules:
+The guard must test a dedicated tmux global-environment marker before prefixing, then set that marker after the prefix. That avoids Nix-store PATH duplication when TPM's install/update workflow reloads the configuration. Do not rely on the activation script's exported PATH: it affects activation only. Do not add a Darwin-only Homebrew path, a leaf option, or `gawk` to `home.packages`; the durable boundary is the tmux server environment shared by the loader and TPM's later bindings. Keep the existing final-loader ordering unchanged, because TPM requires its plugin declarations before loading and then sources plugin configuration from that loader.
 
-```nix
-home.activation.installTpm = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
-  TPM_DIR="$HOME/.config/tmux/plugins/tpm"
-  export TMUX_PLUGIN_MANAGER_PATH="$HOME/.config/tmux/plugins"
-  export PATH="${pkgs.tmux}/bin:${pkgs.git}/bin:$PATH"
-
-  run mkdir -p "$TMUX_PLUGIN_MANAGER_PATH"
-  if [ ! -d "$TPM_DIR/.git" ]; then
-    [ ! -e "$TPM_DIR" ] || run rm -rf "$TPM_DIR"
-    run ${pkgs.git}/bin/git clone --depth 1 https://github.com/tmux-plugins/tpm "$TPM_DIR"
-  fi
-  [ ! -x "$TPM_DIR/bin/install_plugins" ] || run --quiet "$TPM_DIR/bin/install_plugins"
-'';
-```
-
-The interface is exactly `home.activation.<name> = lib.hm.dag.entryAfter [ "linkGeneration" ] <script>;`, not `activation.install-tpm`. `run` preserves Home Manager dry-run behavior; the directory test makes repeated activations idempotent. Linux should retain `programs.tmux.escapeTime = 0;`. Darwin should retain `escapeTime = 10`, its `.tmux.conf` compatibility shim, and only genuinely Darwin-specific helper packages. The t14 override should stop depending on `lib.mkForce` for plugin/config replacement; if an Omarchy conflict remains, constrain only that conflict explicitly.
-
-Migration: first move the exact Darwin repository order into the shared `extraConfig`; then move the corrected activation node to shared, delete both platform copies and Linux's forced `plugins`/`extraConfig`, and update the t14 comment/override. Evaluate one Linux Home Manager configuration (including t14) and the macm5 Darwin configuration before activation. Existing TPM clones and plugin directories remain in place, so the first successful activation reuses TPM and refreshes only declared plugins.
-
-Rollback: revert the shared declaration/activation move and restore the prior Darwin block only. Do not delete `$HOME/.config/tmux/plugins`; it is user runtime state and retaining it lets the prior working Darwin TPM configuration resume. Linux has no valid prior plugin configuration to preserve, so rollback there is configuration-only.
+This leaves TPM's mutable process model intact: its Git clone, plugin installation, and `prefix + I`/`prefix + U` operations remain network-dependent and outside the Nix lock file, but every invocation now gets the same declared Nix tool prefix. The implementation scope is exactly `shared/tmux.nix`; no production leaf, package list, activation DAG, or Homebrew configuration should change.
 
 ### Risks
-- TPM clones and plugin installation require GitHub/network availability at activation time; a temporary outage can leave new plugins absent even though Nix evaluation succeeds.
-- TPM repository declarations are not Nix content-addressed; upstream changes or manual `prefix + U` updates reduce reproducibility compared with nixpkgs plugins.
-- TPM must remain the last runtime loader in the generated configuration; later platform `extraConfig` that runs after it can violate upstream TPM ordering.
-- t14 currently documents reliance on `lib.mkForce`; removing broad force semantics may expose a real Omarchy merge conflict that requires a narrow override.
+- A global PATH prefix becomes part of tmux server state; the guard must be correct so repeated `source-file`/TPM reloads do not grow PATH indefinitely.
+- Existing tmux servers keep their old environment until their configuration is reloaded or the server is restarted, so physical validation must include a fresh/reloaded macm5 server and a TPM action that reaches `plugin_functions.sh`.
+- TPM remains mutable runtime software: GitHub availability and upstream plugin revisions can still affect install/update behavior independently of Nix evaluation.
+- A static PATH replacement would break Homebrew or user-installed plugin dependencies; preserving `$PATH` is a non-negotiable compatibility condition.
 
 ### Ready for Proposal
-Yes — propose a small cross-platform Home Manager refactor for Linux hosts (rog, thinkcentre, t14) and macm5, with TPM declarations and bootstrap centralized in `shared/tmux.nix`, corrected Home Manager activation DAG syntax, and no migration to nixpkgs plugin management.
+Yes — propose a narrow runtime fix: add a guarded global tmux PATH prefix in `shared/tmux.nix` before TPM's existing loader, supplying Nix `gawk` and TPM runtime tools while preserving the inherited path. Validate on macm5 with a new/reloaded tmux server and `prefix + I` or `prefix + U`, then confirm Linux hosts retain their platform-specific `escapeTime` behavior unchanged.

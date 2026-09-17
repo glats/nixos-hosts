@@ -76,6 +76,28 @@ func TestCanonicalTPMDeclarations(t *testing.T) {
 	}
 }
 
+func TestTPMRuntimePathIsGuardedAndInherited(t *testing.T) {
+	shared := readFile(t, filepath.Join(repoRoot(t), "shared/tmux.nix"))
+	loader := strings.LastIndex(shared, `run -b "$HOME/.config/tmux/plugins/tpm/tpm"`)
+	pathGuard := strings.Index(shared, `if-shell -F '#{!=:#{environ:TMUX_NIX_RUNTIME_PATH},1}'`)
+	pathSet := strings.Index(shared, "set-environment -g PATH \"${")
+	markerSet := strings.Index(shared, `set-environment -g TMUX_NIX_RUNTIME_PATH 1`)
+	if pathGuard < 0 || pathSet < pathGuard || markerSet < pathSet || loader < markerSet {
+		t.Fatal("TPM runtime PATH guard, prefix, marker, and loader are out of order")
+	}
+	if strings.Count(shared, "TMUX_NIX_RUNTIME_PATH") != 2 {
+		t.Fatal("TPM runtime PATH marker must be tested and set exactly once")
+	}
+	if !strings.Contains(shared, "${\n          lib.makeBinPath") || !strings.Contains(shared, ":$PATH") {
+		t.Fatal("TPM runtime PATH must use a bounded Nix prefix and preserve inherited PATH")
+	}
+	for _, packageName := range []string{"pkgs.bash", "pkgs.coreutils", "pkgs.gawk", "pkgs.git", "pkgs.tmux"} {
+		if !strings.Contains(shared, packageName) {
+			t.Errorf("TPM runtime PATH is missing %s", packageName)
+		}
+	}
+}
+
 func activationScript(t *testing.T, gitRoot string) string {
 	t.Helper()
 	shared := readFile(t, filepath.Join(repoRoot(t), "shared/tmux.nix"))

@@ -40,5 +40,6 @@ Chain strategy: not applicable; user-approved single work unit
 ## Phase 3: Verification / Rollout
 
 - [ ] 3.1 Run `nix fmt -- shared/tmux.nix linux/home/tmux.nix darwin/home/tmux.nix hosts/t14/home/omarchy.nix` and focused drvPath evals for `rog`, `thinkcentre`, `t14`, and `macm5`.
+- 3.1 evidence: formatting and Linux drvPath evaluations pass; the macm5 evaluation remains blocked by the pre-existing undefined `awk` in `darwin/home/packages.nix:77` on this x86_64-linux runner.
 - [x] 3.2 Run `go -C pkgs/nixos-scripts test ./internal/tmuxtapm -run TestRealTPMRuntime`; with temporary home, verify first activation clones/installs, second reuses checkout/plugins, and injected clone/installer failures retain state and fail.
 - [x] 3.3 Run `nix flake check --no-build`; rollback only by reverting the four configuration files, never deleting `$HOME/.config/tmux/plugins`.
