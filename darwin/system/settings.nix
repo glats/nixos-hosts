@@ -67,7 +67,7 @@
         # Hide the native macOS menu bar so a custom status bar (e.g. spacebar)
         # can be used as the visible top bar. This mirrors the GUI setting
         # "Automatically hide and show the menu bar".
-        _HIHideMenuBar = true;
+        _HIHideMenuBar = false;
       };
       # smb.NetBIOSName omitted: writing to com.apple.smb.server requires
       # entitlements the activation script doesn't have; it exits 1 under
