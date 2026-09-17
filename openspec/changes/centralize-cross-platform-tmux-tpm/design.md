@@ -2,74 +2,74 @@
 
 ## Technical Approach
 
-`shared/tmux.nix` becomes the sole TPM owner for `rog`, `thinkcentre`, `t14`, and `macm5`. It will contain the ordered seven `set -g @plugin` declarations, `TMUX_PLUGIN_MANAGER_PATH`, and the final `run -b` loader in one `programs.tmux.extraConfig` value. It will also own one idempotent activation node, ordered after `linkGeneration`, which clones TPM only when absent and runs its installer. Linux and Darwin leaf modules retain only platform integration.
+`shared/tmux.nix` is the TPM owner for `rog`, `thinkcentre`, `t14`, and `macm5`: seven ordered declarations, `TMUX_PLUGIN_MANAGER_PATH`, guarded tmux-server runtime `PATH`, and final loader. Its activation after `linkGeneration` only validates or clones TPM. Plugin installation is interactive: start or reload tmux, then press `prefix + I`.
 
 ## Architecture Decisions
 
 | Option | Trade-off | Decision and rationale |
 |---|---|---|
-| Keep TPM in leaf modules | Duplicates declarations and activation behavior | Reject. Shared ownership gives one ordered runtime contract. |
-| Use `programs.tmux.plugins` | Expects derivation-backed plugin values, not repository strings | Reject. TPM repositories stay in `extraConfig`; no competing plugin manager is configured. |
-| Replace TPM with `pkgs.tmuxPlugins` | Removes network activation but changes requested mutable TPM model | Reject as out of scope. |
-| Activation after `writeBoundary` | Config links may not exist yet | Reject. Use `entryAfter [ "linkGeneration" ]` so generated tmux config exists before TPM installation. |
+| Keep TPM in leaf modules | Duplicates declarations | Reject; shared ownership preserves one ordered runtime contract. |
+| Use `programs.tmux.plugins` | Requires derivation-backed values | Reject; repositories remain in `extraConfig`. |
+| Replace TPM with `pkgs.tmuxPlugins` | Avoids network work but changes the mutable TPM model | Reject as out of scope. |
+| Run `install_plugins` in activation | Automates first use but needs a terminal and configured server | Reject; macm5 activation has `TERM=unknown`, and activation-shell variables do not configure a tmux server. |
+| Force `TERM` or create a temporary server | Bypasses one error but risks collisions, races, and configuration failure | Reject; clone-only activation has neither dependency. |
 
-The loader MUST be the final shared tmux fragment. Leaf modules MUST NOT append TPM declarations, loaders, or `programs.tmux.extraConfig`; this preserves TPM's required ordering.
+The loader MUST remain final; leaf modules MUST NOT append TPM configuration.
 
 ## Data Flow
 
 ```text
 shared/tmux.nix
-  ├─ tmux.conf: seven declarations → TPM loader (last)
-  └─ home.activation.installTpm after linkGeneration
-       → fixed $HOME/.config/tmux/plugins/tpm
-       → git clone if absent → TPM install_plugins
+  ├─ tmux.conf: declarations → runtime PATH prefix → loader (last)
+  └─ activation after linkGeneration → fixed TPM path → clone if absent
+
+interactive tmux server → managed config loads TPM → prefix + I → plugins install
 ```
 
-The node creates the parent directory through Home Manager's `run` helper, uses Nix-store `git` and `tmux` paths, quotes all runtime paths, and is idempotent. A non-Git TPM path or clone/install failure MUST fail activation without deleting existing plugin state or masking the error. A later successful activation reuses the clone and refreshes declared plugins.
+The activation node uses `run`, Nix-store `git`, quoted fixed paths, and is idempotent. A non-Git target or clone failure fails without deletion or masked success. A valid clone is reused. The existing server `PATH` prefix remains for TPM's loader and bindings; plugin-install network failures occur in tmux, never Home Manager activation.
 
 ## File Changes
 
 | File | Action | Description |
 |---|---|---|
-| `shared/tmux.nix` | Modify | Add canonical TPM config and valid DAG bootstrap; update module arguments for `lib`/`pkgs`. |
-| `linux/home/tmux.nix` | Modify | Remove invalid activation, `plugins`, and forced `extraConfig`; retain `escapeTime = 0`. |
-| `darwin/home/tmux.nix` | Modify | Remove duplicate TPM config/bootstrap; retain `escapeTime = 10`, shim, and Darwin packages. |
-| `hosts/t14/home/omarchy.nix` | Conditional modify | Update the stale broad-force comment; add only a proven narrow merge override if evaluation requires it. |
+| `shared/tmux.nix` | Modify | Retain canonical config and clone guard; remove activation-time installer and its activation-only tmux environment. |
+| `pkgs/nixos-scripts/internal/tmuxtapm/tmuxtapm_test.go` | Modify | Replace installer-success/failure activation assertions with clone-only, no-installer, and preserved-target checks. |
+| `darwin/home/tmux.nix`, `linux/home/tmux.nix`, `hosts/t14/home/omarchy.nix` | No change | Preserve Darwin/Linux settings and the existing t14 merge decision. |
 
 ## Interfaces / Contracts
 
-No custom option is introduced. The module consumes existing Home Manager interfaces:
+No custom option is introduced:
 
 ```nix
 programs.tmux.extraConfig = "...";
 home.activation.installTpm = lib.hm.dag.entryAfter [ "linkGeneration" ] '' ... '';
 ```
 
-`home.activation` is a DAG option, not the invalid `activation.install-tpm` attribute. The activation contract has one fixed user-home target and uses no caller-provided repository/path input. Host scope is Linux `rog`, `thinkcentre`, `t14`, plus Darwin `macm5`, through their existing module lists.
+`home.activation` is a DAG option. Its fixed target accepts no caller path and promises only clone reuse or bootstrap. It MUST NOT invoke TPM's installer, create a server, or set `TERM`. The runtime contract exposes `prefix + I` once managed configuration loads.
 
 ## Testing Strategy
 
-| Layer | What to test | Approach |
+| Layer | What to test | Commands / approach |
 |---|---|---|
-| RED/static | One source has seven repositories and one final loader; leaves have none | Add a focused repository assertion/search test before module edits. |
-| RED/eval | DAG node is under `home.activation`, depends on `linkGeneration`, and leaves do not populate typed `plugins` | Add evaluation assertions before implementation, then evaluate t14 and macm5. |
-| Integration | Host composition and generated configuration | Run `nix fmt` on changed Nix files; evaluate `nixosConfigurations.t14` and `darwinConfigurations.macm5` toplevel drvPaths. |
+| RED/static | Seven repositories, final loader, and no activation installer | Update `TestCanonicalTPMDeclarations` before the Nix edit. |
+| RED/runtime | First clone, repeat reuse, non-Git/clone failure preservation, installer uncalled | Update `TestRealTPMRuntime` with a fake installer that fails if called. |
+| Eval/physical | Composition and terminal-free macm5 activation followed by interactive install | `nix fmt -- shared/tmux.nix`; `go -C pkgs/nixos-scripts test ./internal/tmuxtapm`; evaluate t14, macm5 Home Manager, and macm5 Darwin drvPaths; on macm5 run `home-manager switch --flake .#macm5`, start/reload tmux, then press `prefix + I`. |
 
 ## Threat Matrix
 
 | Boundary | Applicability | Design response | Planned RED tests |
 |---|---|---|---|
 | Documentation-like paths | N/A — no file classification/execution | None | None |
-| Git repository selection | Applicable — activation initializes a fixed absolute TPM repository | Never accept relative or caller-selected paths; fail if target is non-Git, never remove it | Mock/home-fixture checks for relative, arbitrary absolute, and existing non-Git targets; only the fixed target may be cloned |
+| Git repository selection | Applicable — fixed TPM target | Reject caller-selected paths; fail for non-Git target without removal | Fixed target, non-Git target, no path input |
 | Commit state | N/A — no commit operation | None | None |
 | Push state | N/A — no push operation | None | None |
 | PR commands | N/A — no PR automation | None | None |
-| Process/network activation | Applicable — `git clone` and TPM installer contact GitHub | Use store paths and `run`; propagate network/installer failure and retain existing state | Simulate clone and installer failure; assert nonzero activation and no deletion/masked success |
+| Process/network activation | Applicable — activation clones TPM; runtime installs plugins | Store `git`; propagate clone failure; never launch tmux or installer in activation | Clone failure preserves state; fake installer remains uncalled |
 
 ## Migration / Rollout
 
-Move the exact Darwin repository order to shared first, then the DAG node, then delete both leaf copies and Linux's forced plugin/config replacement. Evaluate t14 before accepting any Omarchy override, then macm5. Roll back by reverting these declarations and restoring the prior Darwin block; never delete `$HOME/.config/tmux/plugins`.
+Deploy the narrow shared edit with its RED test update. Existing valid clones remain untouched; newly cloned TPM awaits one `prefix + I`. On macm5, reload an existing server with `tmux source-file "$HOME/.config/tmux/tmux.conf"` before attaching, or start a new session, then press `prefix + I`. Roll back by reverting only this clone-only change and test update; never delete `$HOME/.config/tmux/plugins`, kill sessions, force `TERM`, or restore activation-time installation.
 
 ## Open Questions
 
-- [ ] Does the current Omarchy tmux definition merge cleanly once Linux's broad force is removed? Resolve by t14 evaluation, not speculation.
+None. Physical macm5 activation established that plugin installation belongs to a live configured tmux runtime.

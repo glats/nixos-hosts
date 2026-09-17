@@ -9,11 +9,11 @@
 | Chained PRs recommended | No |
 | Suggested split | Single PR: RED tests → shared/leaf refactor → verification |
 | Delivery strategy | single-pr |
-| Chain strategy | not applicable; user-approved single work unit |
+| Chain strategy | pending; single PR remains under the review budget |
 
 Decision needed before apply: No — user explicitly approved the single work unit
 Chained PRs recommended: No
-Chain strategy: not applicable; user-approved single work unit
+Chain strategy: pending
 400-line budget risk: Medium
 
 ### Suggested Work Units
@@ -21,25 +21,35 @@ Chain strategy: not applicable; user-approved single work unit
 | Unit | Goal | Likely PR | Focused test command | Runtime harness | Rollback boundary |
 |------|------|-----------|----------------------|-----------------|-------------------|
 | 1 | Add threat RED tests and static assertions | PR 1 | `go -C pkgs/nixos-scripts test ./...` | N/A; tests are pre-implementation guards | Revert test-only files |
-| 2 | Centralize declarations/bootstrap and preserve leaf integration | PR 1 | Targeted `nix eval` for t14 and macm5 | `TestRealTPMRuntime` against temporary `$HOME` | Revert `shared/tmux.nix`, Linux/Darwin tmux files, and conditional t14 edit |
-| 3 | Prove all hosts and runtime behavior | PR 1 | `nix flake check --no-build` | Run harness twice, then clone/install failure cases | Revert verification-only harness changes |
+| 2 | Apply clone-only activation and preserve runtime PATH | PR 1 | `go -C pkgs/nixos-scripts test ./internal/tmuxtapm` | Temporary-home activation; no tmux server | Revert `shared/tmux.nix` and its test changes |
+| 3 | Prove macm5 interactive installation and host evals | PR 1 | Targeted `nix eval` drvPaths | Physical macm5 switch, reload/start tmux, `prefix + I` | Revert only this change; preserve plugin state |
 
 ## Phase 1: RED Tests / Safety Guards
 
-- [x] 1.1 Create `pkgs/nixos-scripts/internal/tmuxtapm/tmuxtapm_test.go` and assert only the fixed TPM target is accepted: reject relative paths, arbitrary absolute paths, and existing non-Git targets without deletion.
-- [x] 1.2 Add failing process/network tests in `pkgs/nixos-scripts/internal/tmuxtapm/tmuxtapm_test.go` for clone and installer failure; require nonzero activation, preserved existing state, and no masked success or destructive cleanup.
-- [x] 1.3 Add static/eval RED assertions in `pkgs/nixos-scripts/internal/tmuxtapm/tmuxtapm_test.go` covering seven repositories exactly once, final loader ordering, `home.activation.installTpm` after `linkGeneration`, and no leaf `programs.tmux.plugins` TPM values.
+- [x] 1.1 Create `pkgs/nixos-scripts/internal/tmuxtapm/tmuxtapm_test.go`; reject caller paths and preserve non-Git targets.
+- [x] 1.2 Add clone/installer failure tests; require nonzero activation and preserved state.
+- [x] 1.3 Add static assertions for seven repositories, final loader, activation ordering, and leaf ownership.
 
 ## Phase 2: Shared Implementation
 
-- [x] 2.1 Modify `shared/tmux.nix` to own ordered declarations, `TMUX_PLUGIN_MANAGER_PATH`, final loader, and idempotent activation using quoted fixed paths plus store `git`/`tmux`; reject non-Git targets without deletion.
-- [x] 2.2 Modify `linux/home/tmux.nix` to remove invalid activation, typed plugin strings, and forced config while retaining `escapeTime = 0` and Linux integration.
-- [x] 2.3 Modify `darwin/home/tmux.nix` to remove TPM ownership while retaining `escapeTime = 10`, `.tmux.conf` shim, and Darwin helpers.
-- [x] 2.4 Evaluate `hosts/t14/home/omarchy.nix`; update only its stale tmux-force comment or add a narrow override if evaluation proves a conflict.
+- [x] 2.1 Make `shared/tmux.nix` own declarations, path, loader, and fixed-target clone guard.
+- [x] 2.2 Preserve Linux `escapeTime = 0` and integration in `linux/home/tmux.nix`.
+- [x] 2.3 Preserve Darwin `escapeTime = 10`, shim, and helpers in `darwin/home/tmux.nix`.
+- [x] 2.4 Evaluate `hosts/t14/home/omarchy.nix`; retain the shared declaration and narrow any proven conflict fix.
+
+- [x] 2.5 Add guarded tmux-server Nix `PATH` and `TMUX_NIX_RUNTIME_PATH` in `shared/tmux.nix`; preserve inherited PATH and loader order.
+
+## Phase 2A: Revised Apply (Clone-Only Lifecycle)
+
+- [x] 2.6 RED: in `pkgs/nixos-scripts/internal/tmuxtapm/tmuxtapm_test.go`, assert activation never calls `bin/install_plugins`.
+- [x] 2.7 Apply `shared/tmux.nix`: retain fixed clone validation/order/failure propagation; remove activation installation and activation-only tmux environment.
+- [x] 2.8 Leave plugin installation to configured tmux `prefix + I`; do not change the three platform files.
 
 ## Phase 3: Verification / Rollout
 
-- [ ] 3.1 Run `nix fmt -- shared/tmux.nix linux/home/tmux.nix darwin/home/tmux.nix hosts/t14/home/omarchy.nix` and focused drvPath evals for `rog`, `thinkcentre`, `t14`, and `macm5`.
-- 3.1 evidence: formatting and Linux drvPath evaluations pass; the macm5 evaluation remains blocked by the pre-existing undefined `awk` in `darwin/home/packages.nix:77` on this x86_64-linux runner.
-- [x] 3.2 Run `go -C pkgs/nixos-scripts test ./internal/tmuxtapm -run TestRealTPMRuntime`; with temporary home, verify first activation clones/installs, second reuses checkout/plugins, and injected clone/installer failures retain state and fail.
-- [x] 3.3 Run `nix flake check --no-build`; rollback only by reverting the four configuration files, never deleting `$HOME/.config/tmux/plugins`.
+- [x] 3.1 Run `nix fmt -- shared/tmux.nix` and focused drvPath evals for `rog`, `thinkcentre`, `t14`, and `macm5`; record any unchanged macm5 blocker.
+- 3.1 evidence: `nix fmt -- shared/tmux.nix` passed; Linux drvPath evals passed for `rog`, `thinkcentre`, and `t14`. macm5 drvPath evaluation remains unavailable from this Linux host because the Darwin configuration is not evaluable here; physical macm5 still needs the rollout evidence.
+- [x] 3.2 Historical runtime tests proved clone/reuse and failure preservation; revised apply must replace the old installer-success assertion.
+- [x] 3.3 Run `nix flake check --no-build`; PASS (`all checks passed!`); rollback only by reverting the four configuration files, never deleting `$HOME/.config/tmux/plugins`.
+- [x] 3.4 Run `go -C pkgs/nixos-scripts test ./internal/tmuxtapm -run 'TestCanonicalTPMDeclarations|TestTPMRuntimePathIsGuardedAndInherited|TestRealTPMRuntime'`; prove clone-only, no installer, reuse, and preservation.
+- [ ] 3.5 On physical macm5 run `home-manager switch --flake .#macm5`; capture clean activation, then reload/start tmux and press `prefix + I` to capture seven-plugin installation.
