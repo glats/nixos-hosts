@@ -13,10 +13,25 @@ in
     doCheck = false;
   });
 
+  # Backport SDL #16077: Cocoa clipboard reads must use the pasteboard's
+  # available MIME type. SDL 3.4.10 predates the fix released in 3.4.14.
+  sdl3 = prev.sdl3.overrideAttrs (old: {
+    patches = (old.patches or [ ]) ++ [
+      (prev.fetchpatch {
+        name = "sdl3-cocoa-clipboard-mimetype.patch";
+        url = "https://github.com/libsdl-org/SDL/commit/f17fc121aaa7814d5686f9d18ba6edf0b9c06a15.patch?full_index=1";
+        hash = "sha256-YMn1QghbYrvIKYghoYFiPCMXt/NMGMr1URO6801ggd8=";
+      })
+    ];
+  });
+
   # Enable VideoToolbox hardware H.264 decode on macOS.
   # Without this, all decode is software (OpenH264), causing frame
   # timing jitter and flickering in sdl-freerdp.
   freerdp = prev.freerdp.overrideAttrs (old: {
+    buildInputs = builtins.map (
+      dependency: if (dependency.pname or "") == "sdl3" then final.sdl3 else dependency
+    ) old.buildInputs;
     cmakeFlags = old.cmakeFlags ++ [
       "-DWITH_VIDEOTOOLBOX=ON"
     ];
