@@ -74,6 +74,13 @@ func TestCanonicalTPMDeclarations(t *testing.T) {
 	if strings.Contains(shared, "activation.install-tpm") {
 		t.Fatal("invalid activation attribute remains")
 	}
+	activation := shared[strings.Index(shared, "home.activation.installTpm ="):]
+	if strings.Contains(activation, "install_plugins") {
+		t.Fatal("TPM activation must never invoke install_plugins")
+	}
+	if strings.Contains(activation, "TMUX_PLUGIN_MANAGER_PATH") || strings.Contains(activation, "export PATH=") {
+		t.Fatal("TPM activation must not configure a tmux runtime environment")
+	}
 }
 
 func TestTPMRuntimePathIsGuardedAndInherited(t *testing.T) {
@@ -141,6 +148,7 @@ for arg do destination="$arg"; done
 mkdir -p "$destination/.git" "$destination/bin"
 cat > "$destination/bin/install_plugins" <<'EOF'
 #!/bin/sh
+[ -n "$HOME" ] && touch "$HOME/installer-called"
 [ "$FAIL_INSTALL" = 1 ] && exit 24
 touch "$HOME/plugin-installed"
 EOF
@@ -157,6 +165,9 @@ chmod +x "$destination/bin/install_plugins"
 	if _, err := os.Stat(filepath.Join(tpm, ".git")); err != nil {
 		t.Fatalf("first activation did not clone TPM: %v", err)
 	}
+	if _, err := os.Stat(filepath.Join(home, "installer-called")); !os.IsNotExist(err) {
+		t.Fatalf("first activation invoked the TPM installer: %v", err)
+	}
 	if err := runActivation(t, home, gitRoot); err != nil {
 		t.Fatalf("repeat activation failed: %v", err)
 	}
@@ -170,11 +181,14 @@ chmod +x "$destination/bin/install_plugins"
 	if _, err := os.Stat(filepath.Join(cloneHome, ".config/tmux/plugins/tpm")); !os.IsNotExist(err) {
 		t.Fatalf("clone failure left unexpected TPM state: %v", err)
 	}
-	if err := runActivation(t, home, gitRoot, "FAIL_INSTALL=1"); err == nil {
-		t.Fatal("installer failure was masked")
+	if err := runActivation(t, home, gitRoot, "FAIL_INSTALL=1"); err != nil {
+		t.Fatalf("activation should not depend on the TPM installer: %v", err)
 	}
 	if _, err := os.Stat(filepath.Join(tpm, ".git")); err != nil {
-		t.Fatalf("installer failure removed TPM state: %v", err)
+		t.Fatalf("installer-only activation removed TPM state: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(home, "installer-called")); !os.IsNotExist(err) {
+		t.Fatalf("repeat activation invoked the TPM installer: %v", err)
 	}
 
 	nonGit := filepath.Join(home, ".config/tmux/plugins/tpm")

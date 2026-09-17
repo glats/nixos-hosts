@@ -2,62 +2,59 @@
 
 ## Intent
 
-Eliminate split, invalid TPM ownership while preserving the seven-repository TPM runtime model. One declaration and bootstrap must serve Linux and Darwin without changing platform-specific tmux integration.
+Separate safe TPM checkout bootstrapping from TPM's interactive plugin lifecycle. Confirmed physical macm5 evidence shows Home Manager activation has no usable terminal or configured tmux server; it MUST clone TPM only and never run `install_plugins`.
 
 ## Scope
 
 ### In Scope
-- Centralize TPM declarations, loader ordering, and idempotent Home Manager activation bootstrap in `shared/tmux.nix`.
-- Remove Linux's package-typed repository strings and `mkForce` replacement; retain Linux `escapeTime = 0` and Linux-only integration.
-- Remove Darwin's duplicate TPM block; retain `escapeTime = 10`, `.tmux.conf` shim, and Darwin-only helpers.
-- Update t14's Omarchy tmux override/comment only if needed after narrow merge resolution.
-- Hosts: `rog`, `thinkcentre`, `t14`, and Darwin `macm5`.
+- Modify the shared activation node to validate or shallow-clone TPM, then stop.
+- Preserve the canonical seven-plugin declaration, final TPM loader, and guarded tmux runtime `PATH`.
+- Define first installation and later updates as user-initiated TPM `prefix + I` actions in a real configured tmux session.
+- Host scope: `rog`, `thinkcentre`, `t14`, and Darwin `macm5`.
 
 ### Out of Scope
-- Migrating to `pkgs.tmuxPlugins`, pinning plugin revisions, or changing TPM's mutable Git-managed runtime model.
-- Changing plugin repositories, tmux behavior, host imports, or unrelated Home Manager configuration.
-- Production implementation in this phase.
+- Headless tmux servers, forced `TERM`, config-time automatic installation, plugin pinning, or migration to `pkgs.tmuxPlugins`.
+- Changes to plugin repositories, host imports, platform-specific tmux settings, or production implementation in this phase.
 
 ## Capabilities
 
 ### New Capabilities
-- `cross-platform-tmux-tpm`: A shared TPM declaration and activation contract for all scoped Home Manager hosts.
+- `cross-platform-tmux-tpm`: Shared TPM ownership with clone-only Home Manager activation and interactive plugin lifecycle for all scoped hosts.
 
 ### Modified Capabilities
-None; no existing OpenSpec capability defines tmux or TPM behavior.
+None; no archived OpenSpec capability defines tmux or TPM behavior.
 
 ## Approach
 
-Keep all seven repositories, `TMUX_PLUGIN_MANAGER_PATH`, and the final TPM `run -b` together in shared `programs.tmux.extraConfig`. Add one idempotent `home.activation` DAG node after `linkGeneration` to clone TPM when absent and install declared plugins. Platform modules retain only their platform concerns; TPM repositories will not use `programs.tmux.plugins`.
+In `shared/tmux.nix`, retain the activation DAG ordering after `linkGeneration`, fixed checkout path, invalid-path refusal, and idempotent clone guard. Remove every activation-time call to TPM's installer. Keep platform leaves unchanged. A user starts or reloads a managed tmux session and presses `prefix + I` to install or update plugins.
 
 ## Affected Areas
 
 | Area | Impact | Description |
 |------|--------|-------------|
-| `shared/tmux.nix` | Modified | Canonical TPM declarations, loader, and activation node. |
-| `linux/home/tmux.nix` | Modified | Remove invalid TPM ownership; retain Linux settings. |
-| `darwin/home/tmux.nix` | Modified | Remove duplicate TPM ownership; retain Darwin integration. |
-| `hosts/t14/home/omarchy.nix` | Modified | Narrow/update tmux merge assumption if required. |
+| `shared/tmux.nix` | Modified | Clone-only activation; preserve runtime declarations and loader. |
+| `openspec/changes/centralize-cross-platform-tmux-tpm/*` | Modified later | Reconcile spec, design, and tasks with the revised lifecycle. |
 
 ## Risks
 
 | Risk | Likelihood | Mitigation |
 |------|------------|------------|
-| Activation lacks GitHub access | Medium | Keep bootstrap idempotent; preserve existing runtime clones. |
-| Loader ordering breaks TPM | Low | Keep loader final after every plugin declaration. |
-| t14 merge conflict emerges | Medium | Replace broad force only with a proven narrow override. |
+| Fresh plugins need one user action | High | Document `prefix + I` as first-use and update workflow. |
+| Existing server predates managed config | Medium | Reload it safely before using the binding; never kill active sessions. |
+| TPM/network failure at runtime | Medium | Keep it outside activation; retry interactively without blocking generation activation. |
 
 ## Rollback Plan
 
-Revert the shared move and restore the prior Darwin declaration block if needed. Do not delete `$HOME/.config/tmux/plugins`; it is mutable user runtime state and enables recovery with an earlier generation.
+Revert the clone-only activation edit to restore the prior behavior only if explicitly required. Preserve `$HOME/.config/tmux/plugins`; it is mutable runtime state and permits recovery with an earlier generation.
 
 ## Dependencies
 
-- Home Manager activation DAG, `git`, `tmux`, and GitHub availability during TPM bootstrap.
+- Home Manager activation DAG and `git` for TPM checkout bootstrapping.
+- A real configured tmux session and TPM's documented `prefix + I` binding for plugin installation or updates.
 
 ## Success Criteria
 
-- [ ] Exactly one source declares all seven TPM repositories and the final TPM loader.
-- [ ] Scoped host evaluations succeed for Linux (including t14) and `macm5`.
-- [ ] Linux and Darwin retain their stated platform-specific tmux integration.
-- [ ] Repeated activation reuses TPM state without unnecessary destructive changes.
+- [ ] Activation on physical macm5 completes without `TERM` or TPM installer failures.
+- [ ] Activation validates/clones TPM but never invokes `install_plugins`.
+- [ ] In a configured tmux session, `prefix + I` installs the seven declared plugins.
+- [ ] Repeated activation preserves a valid TPM checkout; Linux and Darwin platform settings remain unchanged.

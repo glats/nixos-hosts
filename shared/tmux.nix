@@ -144,10 +144,8 @@
   home.activation.installTpm = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
     set -euo pipefail
     TPM_DIR="$HOME/.config/tmux/plugins/tpm"
-    export TMUX_PLUGIN_MANAGER_PATH="$HOME/.config/tmux/plugins"
-    export PATH="${pkgs.tmux}/bin:${pkgs.git}/bin:$PATH"
 
-    run mkdir -p "$TMUX_PLUGIN_MANAGER_PATH"
+    run mkdir -p "$HOME/.config/tmux/plugins"
     if [ -e "$TPM_DIR" ] && [ ! -d "$TPM_DIR/.git" ]; then
       echo "[tmux] Refusing to replace non-Git TPM path: $TPM_DIR" >&2
       exit 1
@@ -155,10 +153,6 @@
     if [ ! -d "$TPM_DIR/.git" ]; then
       echo "[tmux] Cloning plugin manager into $TPM_DIR"
       run ${pkgs.git}/bin/git clone --depth 1 https://github.com/tmux-plugins/tpm "$TPM_DIR"
-    fi
-    if [ -x "$TPM_DIR/bin/install_plugins" ]; then
-      echo "[tmux] Ensuring declared plugins are installed"
-      run --quiet "$TPM_DIR/bin/install_plugins"
     fi
   '';
 }
