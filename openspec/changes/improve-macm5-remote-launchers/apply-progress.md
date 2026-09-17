@@ -12,6 +12,7 @@
 
 - Moved the existing destination write-permission adjustment to immediately after the bundle copy and changed it to owner-only `u+w`, allowing the icon copy to succeed without broadening permissions.
 - Preserved the strict command order after icon installation: `xattr`, `codesign`, then LaunchServices registration.
+- Normalized owner-write permission recursively on an existing destination immediately before removal, allowing replacement of the read-only native bundle observed on macm5.
 
 ## Completed Tasks
 
@@ -20,22 +21,23 @@
 - [x] 1.3 Added the four literal legacy bundle records and an allowlist-only cleanup loop after friendly deployment.
 - [x] 2.1 Refactored the four records to stable technical ids and the exact requested friendly names while preserving hosts, protocols, viewers, ports, and invocation arguments.
 - [x] 2.2 Generated friendly bundle directories and matching plist names, retained `com.glats.remote.<id>`, and referenced `GenericNetworkIcon.icns`.
-- [x] 2.3 Copied the native icon into each bundle, then removed quarantine metadata, signed, registered, indexed, and cleaned only the four legacy bundles.
+- [x] 2.3 Copied the native icon into each bundle, then removed quarantine metadata, signed, registered, indexed, and cleaned only the four legacy bundles; existing destinations are normalized with recursive owner-write permission before removal.
 - [x] 3.1 Formatted the module and ran scoped repository evaluation checks; Linux results are configuration-only.
 
 ## Work Unit Evidence
 
 | Evidence | Result |
 |---|---|
-| Focused test command and exact result | `nix fmt -- darwin/home/remote-desktop.nix` passed with 0 changes; `git diff --check` passed; `nix flake check --no-build` passed with all checks passed. |
+| Focused test command and exact result | `nix fmt -- darwin/home/remote-desktop.nix` passed with 0 changes; `git diff --check` passed; `nix flake check --no-build` was run but failed while evaluating unrelated Linux configuration option `home-manager.users.glats.activation` from `linux/home/tmux.nix`. |
 | Runtime harness command/scenario and exact result | N/A on this Linux checkout: native macm5 activation, icon inspection, signing, registration, Spotlight/Finder discovery, and launch checks were not simulated. |
 | Rollback boundary | Revert `darwin/home/remote-desktop.nix`; no unrelated files or secrets are part of the implementation change. |
 
 ## Scoped Evaluation
 
 - `nix eval .#darwinConfigurations.macm5.config.system.build.toplevel.drvPath` was attempted and could not complete on Linux because the Darwin configuration evaluates an `aarch64-darwin` derivation (`platform mismatch`).
-- `nix flake check --no-build` passed and explicitly omitted incompatible Darwin systems.
+- `nix flake check --no-build` reached the Linux configurations but failed on the unrelated `home-manager.users.glats.activation` option in `linux/home/tmux.nix`; incompatible Darwin systems were not evaluated.
 - Native macm5 verification remains pending and must be performed on macm5 without treating Linux evaluation as native evidence.
+- Native macm5 activation remains needed to confirm replacement of read-only existing bundles and the previously pending Finder, Spotlight, signing, registration, and launch behavior.
 
 ## Remaining Tasks
 

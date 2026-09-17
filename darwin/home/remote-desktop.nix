@@ -253,6 +253,7 @@ in
       dst="$appsDir/${app.bundleName}.app"
 
       if [ -L "$dst" ] || [ -e "$dst" ]; then
+        /bin/chmod -R u+w "$dst"
         /bin/rm -rf "$dst"
       fi
 
