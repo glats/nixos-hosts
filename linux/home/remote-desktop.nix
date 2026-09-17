@@ -255,6 +255,13 @@ in
         server = "172.16.0.109:5900";
       };
     };
+    ".local/share/remmina/vnc-macm5.remmina" = {
+      force = true;
+      text = mkRemminaProfile vncDefaults {
+        name = "Remote MacM5";
+        server = "CLFTCLGV2FHWW0W.local:5900";
+      };
+    };
     # === Desktop launchers ===
     ".local/share/applications/remote-rog.desktop" = {
       force = true;
@@ -286,6 +293,14 @@ in
         name = "t14";
         comment = "VNC connection to 172.16.0.109:5900";
         exec = "${pkgs.remmina}/bin/remmina -c /home/glats/.local/share/remmina/vnc-t14.remmina";
+      };
+    };
+    ".local/share/applications/remote-macm5.desktop" = {
+      force = true;
+      text = mkDesktop {
+        name = "Remote MacM5";
+        comment = "VNC connection to CLFTCLGV2FHWW0W.local:5900";
+        exec = "${pkgs.remmina}/bin/remmina -c /home/glats/.local/share/remmina/vnc-macm5.remmina";
       };
     };
 
