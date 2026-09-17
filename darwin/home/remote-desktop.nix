@@ -278,4 +278,52 @@ in
 
     /usr/bin/mdimport "$appsDir"
   '';
+
+  home.activation.configureFreeRdpScrollDirection = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    config_dir="''${XDG_CONFIG_HOME:-$HOME/.config}/freerdp"
+    config_file="$config_dir/sdl-freerdp.json"
+
+    if [ -L "$config_file" ]; then
+      echo "Refusing to modify symlink: $config_file" >&2
+      exit 1
+    fi
+
+    if [ ! -e "$config_file" ]; then
+      /bin/mkdir -p "$config_dir" || exit 1
+      tmp_file="$(/usr/bin/mktemp "$config_dir/.sdl-freerdp.json.XXXXXX")" || exit 1
+      if ! (
+        umask 077
+        /usr/bin/printf '%s\n' '{"UseLocalMouseScrollDirection":true}' > "$tmp_file"
+      ); then
+        /bin/rm -f "$tmp_file"
+        exit 1
+      fi
+      if [ -e "$config_file" ] || [ -L "$config_file" ]; then
+        /bin/rm -f "$tmp_file"
+        echo "Refusing to replace newly-created target: $config_file" >&2
+        exit 1
+      fi
+      if ! /bin/mv "$tmp_file" "$config_file"; then
+        /bin/rm -f "$tmp_file"
+        exit 1
+      fi
+    else
+      if [ ! -f "$config_file" ]; then
+        echo "Refusing to modify non-regular file: $config_file" >&2
+        exit 1
+      fi
+      tmp_file="$(/usr/bin/mktemp "$config_dir/.sdl-freerdp.json.XXXXXX")" || exit 1
+      if ! ${pkgs.jq}/bin/jq -e \
+        'if type == "object" then .UseLocalMouseScrollDirection = true else error("JSON root is not an object") end' \
+        "$config_file" > "$tmp_file"; then
+        /bin/rm -f "$tmp_file"
+        echo "Refusing to modify invalid or non-object JSON: $config_file" >&2
+        exit 1
+      fi
+      if ! /bin/mv "$tmp_file" "$config_file"; then
+        /bin/rm -f "$tmp_file"
+        exit 1
+      fi
+    fi
+  '';
 }
