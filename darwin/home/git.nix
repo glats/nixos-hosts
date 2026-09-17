@@ -41,6 +41,15 @@ in
         condition = "gitdir:~/Projects/**";
         path = "~/.config/git/identity-personal";
       }
+      # nixos-hosts uses personal (glats) identity + auth
+      {
+        condition = "gitdir:~/.config/nix/**";
+        path = "~/.config/git/identity-personal";
+        contents = {
+          # Force glats account for GitHub operations in this repo
+          credential.helper = "!f() { ${pkgs.gh}/bin/gh auth switch -h github.com -u glats 2>/dev/null; exec ${pkgs.gh}/bin/gh auth git-credential \"$@\"; }; f";
+        };
+      }
     ]
     # Personal repos sign with personal key if set
     ++ lib.optional (identities.personal.signingKey != "") {
