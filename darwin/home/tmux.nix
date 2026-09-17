@@ -22,26 +22,6 @@
       if-shell "test -f $HOME/.config/tmux/tmux.conf" "source-file $HOME/.config/tmux/tmux.conf"
     '';
 
-    # Ensure TPM (tmux plugin manager) is present by cloning on activation
-    activation.install-tpm = ''
-      set -euo pipefail
-      export TMUX_PLUGIN_MANAGER_PATH="$HOME/.config/tmux/plugins"
-      export PATH="${pkgs.tmux}/bin:$PATH:/usr/bin:/bin"
-      mkdir -p "$TMUX_PLUGIN_MANAGER_PATH"
-
-      if [ ! -d "$TMUX_PLUGIN_MANAGER_PATH/tpm/.git" ]; then
-        echo "[tmux] Cloning plugin manager into $TMUX_PLUGIN_MANAGER_PATH/tpm"
-        if [ -d "$TMUX_PLUGIN_MANAGER_PATH/tpm" ]; then
-          rm -rf "$TMUX_PLUGIN_MANAGER_PATH/tpm"
-        fi
-        "${pkgs.git}/bin/git" clone https://github.com/tmux-plugins/tpm "$TMUX_PLUGIN_MANAGER_PATH/tpm"
-      fi
-
-      if [ -x "$TMUX_PLUGIN_MANAGER_PATH/tpm/bin/install_plugins" ]; then
-        echo "[tmux] Ensuring declared plugins are installed"
-        "$TMUX_PLUGIN_MANAGER_PATH/tpm/bin/install_plugins" >/tmp/tmux-install-plugins.log 2>&1 || true
-      fi
-    '';
   };
 
   programs.tmux = {
@@ -55,19 +35,6 @@
       # macOS clipboard integration via OSC 52 (set-clipboard already set in shared/tmux.nix)
       bind -T copy-mode-vi v send -X begin-selection
 
-      # TPM plugin declarations
-      set -g @plugin 'tmux-plugins/tpm'
-      set -g @plugin 'tmux-plugins/tmux-resurrect'
-      set -g @plugin 'tmux-plugins/tmux-continuum'
-      set -g @plugin 'tmux-plugins/tmux-sessionist'
-      set -g @plugin 'tmux-plugins/tmux-yank'
-      set -g @plugin 'tmux-plugins/tmux-open'
-      set -g @plugin 'christoomey/vim-tmux-navigator'
-
-      set-environment -g TMUX_PLUGIN_MANAGER_PATH "$HOME/.config/tmux/plugins"
-
-      # Initialize TPM (runs on config source)
-      run -b "$HOME/.config/tmux/plugins/tpm/tpm"
     '';
   };
 }

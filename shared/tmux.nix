@@ -3,9 +3,14 @@
 # Provides common settings (allow-passthrough, base-index, focus-events,
 # history-limit, base16 theme, resurrect, etc.). Platform files import this
 # module and add platform-specific configuration:
-#   - Linux: escapeTime=0, nixpkgs plugins, xclip clipboard bindings
-#   - Darwin: escapeTime=10, TPM-based plugins, pbcopy clipboard bindings
-{ config, ... }:
+#   - Linux: escapeTime=0, xclip clipboard bindings
+#   - Darwin: escapeTime=10, pbcopy clipboard bindings
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 {
   home.file.".local/bin/tmux-open-url-at-cursor" = {
     source = ./tmux-open-url-at-cursor.sh;
@@ -102,9 +107,42 @@
       bind -T copy-mode-vi o send-keys -X copy-pipe "$HOME/.local/bin/tmux-open-url-at-cursor"
 
       # vim-tmux-navigator key bindings (C-h/C-j/C-k/C-l) are
-      # auto-installed by the plugin itself when sourced by Home
-      # Manager (nixpkgs plugins) or TPM.  We do NOT duplicate them
+      # auto-installed by the plugin itself when sourced by TPM.  We do NOT duplicate them
       # here to avoid double-bind warnings.
+
+      # TPM plugin declarations must precede the TPM loader below.
+      set -g @plugin 'tmux-plugins/tpm'
+      set -g @plugin 'tmux-plugins/tmux-resurrect'
+      set -g @plugin 'tmux-plugins/tmux-continuum'
+      set -g @plugin 'tmux-plugins/tmux-sessionist'
+      set -g @plugin 'tmux-plugins/tmux-yank'
+      set -g @plugin 'tmux-plugins/tmux-open'
+      set -g @plugin 'christoomey/vim-tmux-navigator'
+      set-environment -g TMUX_PLUGIN_MANAGER_PATH "$HOME/.config/tmux/plugins"
+
+      # TPM must be the final command in the generated tmux configuration.
+      run -b "$HOME/.config/tmux/plugins/tpm/tpm"
     '';
   };
+
+  home.activation.installTpm = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+    set -euo pipefail
+    TPM_DIR="$HOME/.config/tmux/plugins/tpm"
+    export TMUX_PLUGIN_MANAGER_PATH="$HOME/.config/tmux/plugins"
+    export PATH="${pkgs.tmux}/bin:${pkgs.git}/bin:$PATH"
+
+    run mkdir -p "$TMUX_PLUGIN_MANAGER_PATH"
+    if [ -e "$TPM_DIR" ] && [ ! -d "$TPM_DIR/.git" ]; then
+      echo "[tmux] Refusing to replace non-Git TPM path: $TPM_DIR" >&2
+      exit 1
+    fi
+    if [ ! -d "$TPM_DIR/.git" ]; then
+      echo "[tmux] Cloning plugin manager into $TPM_DIR"
+      run ${pkgs.git}/bin/git clone --depth 1 https://github.com/tmux-plugins/tpm "$TPM_DIR"
+    fi
+    if [ -x "$TPM_DIR/bin/install_plugins" ]; then
+      echo "[tmux] Ensuring declared plugins are installed"
+      run --quiet "$TPM_DIR/bin/install_plugins"
+    fi
+  '';
 }
