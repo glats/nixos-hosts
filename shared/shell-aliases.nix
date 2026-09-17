@@ -67,10 +67,14 @@
       hms() {
         local flake="''${NIXOS_REPO:-/etc/nixos}"
         local host="$(hostname)"
+        if [[ "$(uname -s)" == "Darwin" ]]; then
+          host="''${NIXOS_DARWIN_HOST:-macm5}"
+        fi
         if [[ "$1" == "--help" || "$1" == "-h" ]]; then
           echo "Usage: hms"
           echo ""
-          echo "Runs: home-manager switch --flake <flake>#<hostname>"
+          echo "Runs: home-manager switch --flake <flake>#<host>"
+          echo "Darwin host: NIXOS_DARWIN_HOST or macm5; Linux host: hostname"
           echo ""
           echo "Flake path: $flake"
           echo "Host:       $host"
