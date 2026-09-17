@@ -257,8 +257,8 @@ in
       fi
 
       /bin/cp -R "$src" "$dst"
+      /bin/chmod -R u+w "$dst"
       /bin/cp "$icon_source" "$dst/Contents/Resources/GenericNetworkIcon.icns"
-      /bin/chmod -R +w "$dst"
 
       /usr/bin/xattr -cr "$dst"
       /usr/bin/codesign --force --sign - "$dst"

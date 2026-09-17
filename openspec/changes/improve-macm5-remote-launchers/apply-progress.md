@@ -8,6 +8,11 @@
 - Work unit: all macm5 launcher implementation and scoped Linux verification
 - Mode: Standard (strict TDD disabled)
 
+## Focused Remediation
+
+- Moved the existing destination write-permission adjustment to immediately after the bundle copy and changed it to owner-only `u+w`, allowing the icon copy to succeed without broadening permissions.
+- Preserved the strict command order after icon installation: `xattr`, `codesign`, then LaunchServices registration.
+
 ## Completed Tasks
 
 - [x] 1.1 Added a native icon readability preflight before any `~/Applications` mutation.
@@ -22,7 +27,7 @@
 
 | Evidence | Result |
 |---|---|
-| Focused test command and exact result | `nix fmt -- darwin/home/remote-desktop.nix` passed; `nix flake check --no-build` passed. |
+| Focused test command and exact result | `nix fmt -- darwin/home/remote-desktop.nix` passed with 0 changes; `git diff --check` passed; `nix flake check --no-build` passed with all checks passed. |
 | Runtime harness command/scenario and exact result | N/A on this Linux checkout: native macm5 activation, icon inspection, signing, registration, Spotlight/Finder discovery, and launch checks were not simulated. |
 | Rollback boundary | Revert `darwin/home/remote-desktop.nix`; no unrelated files or secrets are part of the implementation change. |
 
