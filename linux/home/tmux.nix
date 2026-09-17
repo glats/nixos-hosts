@@ -1,70 +1,92 @@
 # Linux tmux configuration.  Shared base lives in ../../shared/tmux.nix.
-# Platform-specific: escapeTime=0, nixpkgs plugins (no TPM, no git clones),
-# xclip clipboard bindings.
+# Platform-specific: escapeTime=0, TPM-based plugins (no nixpkgs tmuxPlugins),
+# xclip clipboard bindings via OSC 52.
 #
-# `lib.mkForce` is used on `extraConfig` and `plugins` to drop
-# omarchy-nix's tmux module contributions on t14 (its prefix C-Space,
-# status-bar theme overrides, vim-tmux-navigator plugin, etc.).  The
-# shared base16 theme is preserved by re-evaluating shared/tmux.nix
-# with the same `config` and using its extraConfig as the prefix of
-# the forced value.  `enable` stays at default priority (all three
-# sources agree on `true`) and HM's tmux module runs with the
-# home-linux values.
+# TPM (tmux Plugin Manager) is used to install plugins from GitHub,
+# just like on Darwin.  This ensures tmux-resurrect, tmux-continuum,
+# tmux-sessionist, tmux-yank, and tmux-open are available and work
+# for session save/restore.
+#
+# TPM is cloned on first activation below; plugin declarations below
+# ensure TPM installs the correct plugins from GitHub.
 {
   pkgs,
   lib,
   config,
   ...
 }:
-
-let
-  # Re-evaluate shared/tmux.nix to grab its extraConfig string with the
-  # current colorScheme interpolation.  The `imports` below also pulls
-  # in shared, but the `lib.mkForce` on extraConfig replaces the merged
-  # value (omarchy + shared) with the one we compute here, so the
-  # double-evaluation is intentional: it lets us reference shared's
-  # content without relying on the merged attrset.
-  sharedExtraConfig = (import ../../shared/tmux.nix { inherit config; }).programs.tmux.extraConfig;
-in
 {
   imports = [
     ../../shared/tmux.nix
   ];
 
-  # Pure Nix: no TPM, no git clones, everything from nixpkgs.
+  # Ensure TPM (tmux Plugin Manager) is present by cloning on activation
+  activation.install-tpm = ''
+    set -euo pipefail
+    export TMUX_PLUGIN_MANAGER_PATH="$HOME/.config/tmux/plugins"
+    export PATH="${pkgs.tmux}/bin:$PATH:/usr/bin:/bin"
+    mkdir -p "$TMUX_PLUGIN_MANAGER_PATH"
+
+    if [ ! -d "$TMUX_PLUGIN_MANAGER_PATH/tpm/.git" ]; then
+      echo "[tmux] Cloning plugin manager into $TMUX_PLUGIN_MANAGER_PATH/tpm"
+      if [ -d "$TMUX_PLUGIN_MANAGER_PATH/tpm" ]; then
+        rm -rf "$TMUX_PLUGIN_MANAGER_PATH/tpm"
+      fi
+      "${pkgs.git}/bin/git" clone https://github.com/tmux-plugins/tpm "$TMUX_PLUGIN_MANAGER_PATH/tpm"
+    fi
+
+    if [ -x "$TMUX_PLUGIN_MANAGER_PATH/tpm/bin/install_plugins" ]; then
+      echo "[tmux] Ensuring declared plugins are installed"
+      "$TMUX_PLUGIN_MANAGER_PATH/tpm/bin/install_plugins" >/tmp/tmux-install-plugins.log 2>&1 || true
+    fi
+  '';
+
+  # Pure Nix: no nixpkgs tmuxPlugins, use TPM from GitHub instead.
   programs.tmux = {
     escapeTime = 0;
 
-    # lib.mkForce replaces the merged plugin list (which on t14 would
-    # otherwise include omarchy's `vim-tmux-navigator` on top of our
-    # nixpkgs set).  Same set declared in home-darwin/tmux.nix for the
-    # darwin host, but via TPM plugin declarations.
-    plugins = lib.mkForce (
-      with pkgs.tmuxPlugins;
-      [
-        resurrect
-        continuum
-        sessionist
-        yank
-        vim-tmux-navigator
-        open
-      ]
-    );
+    plugins = lib.mkForce [
+      "tmux-plugins/tpm"
+      "tmux-plugins/tmux-resurrect"
+      "tmux-plugins/tmux-continuum"
+      "tmux-plugins/tmux-sessionist"
+      "tmux-plugins/tmux-yank"
+      "tmux-plugins/tmux-open"
+      "christoomey/vim-tmux-navigator"
+    ];
 
-    # lib.mkForce replaces the merged extraConfig.  On t14 this drops
-    # omarchy's prefix C-Space, status-position top, base16-overriding
-    # status colours, and the rest of its config/tmux/tmux.conf.
-    # Result on all Linux hosts: shared base16 theme (clipboard via OSC 52).
-    #
-    # Continuum's run-shell below is repeated here deliberately: Home
-    # Manager places plugin run-shells BEFORE extraConfig, but continuum
-    # needs to modify status-right AFTER extraConfig sets it.  Running it
-    # again at the end fixes the save interpolation that gets overwritten.
-    extraConfig = lib.mkForce (
-      sharedExtraConfig
-      + ''
-        run-shell ${pkgs.tmuxPlugins.continuum}/share/tmux-plugins/continuum/continuum.tmux
-      ''
-    );
+    extraConfig = lib.mkForce ''
+      # TPM initialization (must be after plugin declarations)
+      set-environment -g TMUX_PLUGIN_MANAGER_PATH "$HOME/.config/tmux/plugins"
+
+      # Initialize TPM (this runs on config source)
+      run -b "$HOME/.config/tmux/plugins/tpm/tpm"
+
+      # Continuum save interval
+      set -g @continuum-save-interval '15'
+
+      # Continuum auto-restore (on by default; we also explicitise here)
+      set -g @continuum-restore on
+
+      # Resurrect capture pane contents
+      set -g @resurrect-capture-pane-contents 'on'
+
+      # Universal bindings (from shared tmux.nix)
+      unbind [
+      bind Space copy-mode
+      bind s choose-tree
+      bind -T copy-mode-vi v send -X begin-selection
+      bind p paste-buffer
+
+      # Keep gx as the Vim-like copy-mode binding.
+      bind -T copy-mode-vi g switch-client -T tmux-url-open
+      bind -T tmux-url-open x send-keys -X copy-pipe "$HOME/.local/bin/tmux-open-url-at-cursor"
+      bind -T tmux-url-open Escape switch-client -T root
+
+      # Prefix+Space enters copy mode; o opens the URL under the cursor.
+      bind -T copy-mode-vi o send-keys -X copy-pipe "$HOME/.local/bin/tmux-open-url-at-cursor"
+
+      # vim-tmux-navigator key bindings are auto-installed by the plugin itself
+    '';
   };
 }
