@@ -1476,17 +1476,17 @@
         "walker": "walker"
       },
       "locked": {
-        "lastModified": 1789439692,
-        "narHash": "sha256-w3zmzEtk1lzNRx9sOdI9pemmjk2tAosw6SSq6wm+ALk=",
+        "lastModified": 1789522630,
+        "narHash": "sha256-KABjP+a/XwXXvHgrE5j4ZGvIfa4GC6Patx3clhEDvf0=",
         "owner": "glats",
         "repo": "omarchy-nix",
-        "rev": "5c01ca65d42d520f45d2fb2ddd2526eb6e10494d",
+        "rev": "c33264112bb53922765febeaf3914ec732a762f9",
         "type": "github"
       },
       "original": {
         "owner": "glats",
         "repo": "omarchy-nix",
-        "rev": "5c01ca65d42d520f45d2fb2ddd2526eb6e10494d",
+        "rev": "c33264112bb53922765febeaf3914ec732a762f9",
         "type": "github"
       }
     },
@@ -1746,17 +1746,17 @@
         ]
       },
       "locked": {
-        "lastModified": 1789430117,
-        "narHash": "sha256-t+U1mijItLJ64xZOifpfQ17kpAL73nU7pDI48ScacVc=",
+        "lastModified": 1789267039,
+        "narHash": "sha256-LWiBv9yAYFi2LPbUhDGHPGKYskJQjj2fw12OlyO1uQo=",
         "owner": "nix-community",
         "repo": "home-manager",
-        "rev": "cda90fd8838825c689fde9d3f3b4e937937790df",
+        "rev": "ec172013fa62135f58fb58dd17ae9651e8f39727",
         "type": "github"
       },
       "original": {
         "owner": "nix-community",
+        "ref": "release-26.05",
         "repo": "home-manager",
-        "rev": "cda90fd8838825c689fde9d3f3b4e937937790df",
         "type": "github"
       }
     },
@@ -1795,17 +1795,17 @@
     },
     "t14-nixpkgs": {
       "locked": {
-        "lastModified": 1789286504,
-        "narHash": "sha256-eiEK7cKZORNEvX0GeF3RtNEF/JXhgf2RqSp3230q13E=",
+        "lastModified": 1789542786,
+        "narHash": "sha256-ajQuqcxnj6RYnwCjA/9FTCnrdR2+BDzstE8UembXf60=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "ef34387ddd751e1ab8857adf4676492d32eb24ec",
+        "rev": "4c7870105e7f1fdf9c48688c8d7efc21abf0688a",
         "type": "github"
       },
       "original": {
         "owner": "NixOS",
+        "ref": "nixos-26.05",
         "repo": "nixpkgs",
-        "rev": "ef34387ddd751e1ab8857adf4676492d32eb24ec",
         "type": "github"
       }
     },

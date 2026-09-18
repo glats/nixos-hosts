@@ -22,7 +22,7 @@
       # Consumer boundary for the Quattro-capable main line. Its nested
       # quattro inputs remain independent; the host still evaluates against
       # this flake's nixpkgs 26.05.
-      url = "github:glats/omarchy-nix/5c01ca65d42d520f45d2fb2ddd2526eb6e10494d";
+      url = "github:glats/omarchy-nix/c33264112bb53922765febeaf3914ec732a762f9";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.home-manager.follows = "home-manager";
       inputs.quattro-nixpkgs.follows = "t14-nixpkgs";
@@ -31,12 +31,12 @@
       inputs.quickshell.follows = "t14-quickshell";
     };
 
-    # Quattro's newer Linux-only dependency boundary. These inputs are routed
-    # exclusively to t14; the shared inputs remain on 26.05 for every other
-    # host.
-    t14-nixpkgs.url = "github:NixOS/nixpkgs/ef34387ddd751e1ab8857adf4676492d32eb24ec";
+    # Quattro's Linux-only dependency boundary. These inputs are built against
+    # NixOS 26.05 and routed exclusively to t14; the shared inputs remain on
+    # the same release for every other host.
+    t14-nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
     t14-home-manager = {
-      url = "github:nix-community/home-manager/cda90fd8838825c689fde9d3f3b4e937937790df";
+      url = "github:nix-community/home-manager/release-26.05";
       inputs.nixpkgs.follows = "t14-nixpkgs";
     };
     t14-hyprland = {
@@ -154,7 +154,7 @@
     }:
     let
       # --- Builders ---
-      inherit (import ./lib/mkHost.nix { inherit inputs self; }) mkNixosHost mkHost;
+      inherit (import ./lib/mkHost.nix { inherit inputs self; }) mkNixosHost;
       inherit (import ./lib/mkDarwinHost.nix { inherit inputs self; }) mkDarwinHost;
 
       # --- Overlay selection by system ---
@@ -165,25 +165,13 @@
         inherit inputs self;
       };
 
-      mkPkgsFor =
-        nixpkgsInput: extraOverlays: s:
-        import nixpkgsInput {
+      pkgsFor =
+        s:
+        import nixpkgs {
           system = s;
           config.allowUnfree = true;
-          overlays =
-            (if nixpkgsInput.lib.hasSuffix "linux" s then [ linuxOverlay ] else [ darwinOverlay ])
-            ++ extraOverlays;
+          overlays = if nixpkgs.lib.hasSuffix "linux" s then [ linuxOverlay ] else [ darwinOverlay ];
         };
-
-      pkgsFor = mkPkgsFor nixpkgs [ ];
-
-      # Quattro packages are exposed by omarchy-nix's matching input set and
-      # overlaid only into t14. This keeps the global nixpkgs boundary intact,
-      # especially for the Darwin configuration.
-      t14QuattroOverlay = final: _prev: {
-        omarchy-runtime = inputs.omarchy-nix.packages.${final.system}.omarchy-runtime;
-        quickshell = inputs.omarchy-nix.packages.${final.system}.quickshell;
-      };
 
       # Per-system package definitions.
       # See lib/packages.nix for the full interface.
@@ -217,25 +205,15 @@
           username,
           githubUser ? "jcuzmar",
           extraModules,
-          nixpkgsInput ? nixpkgs,
-          homeManagerInput ? home-manager,
-          extraOverlays ? [ ],
         }:
-        let
-          hostInputs = inputs // {
-            nixpkgs = nixpkgsInput;
-            home-manager = homeManagerInput;
-          };
-        in
-        homeManagerInput.lib.homeManagerConfiguration {
-          pkgs = mkPkgsFor nixpkgsInput extraOverlays system;
+        home-manager.lib.homeManagerConfiguration {
+          pkgs = pkgsFor system;
           # `extraModules` is the complete per-host module list. Do not prepend
           # a platform-wide list: host/default.nix already composes it, and
           # prepending would evaluate shared modules twice.
           modules = extraModules;
           extraSpecialArgs = {
-            inherit username;
-            inputs = hostInputs;
+            inherit inputs username;
             host = hostname;
             hostName = hostname;
             # Darwin-specific extras (ignored by linux modules)
@@ -316,9 +294,6 @@
               username,
               githubUser ? "jcuzmar",
               extraModules,
-              nixpkgsInput ? nixpkgs,
-              homeManagerInput ? home-manager,
-              extraOverlays ? [ ],
             }:
             mkHomeConfig {
               inherit
@@ -327,9 +302,6 @@
                 username
                 githubUser
                 extraModules
-                nixpkgsInput
-                homeManagerInput
-                extraOverlays
                 ;
             };
         in
