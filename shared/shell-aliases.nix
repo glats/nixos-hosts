@@ -98,7 +98,7 @@
           return 127
         }
 
-        local tries=75 delay=0.2 i err
+        local tries=75 delay=0.2 i output status
 
         # has-session/ls only query — they never spawn a server, so without
         # this the Continuum auto-restore hook (loaded from tmux.conf at
@@ -116,13 +116,20 @@
           # server is alive but the restore hasn't created a session yet —
           # a transient window, not a genuine error. list-sessions reports
           # "no server running on ..." in both cold states instead.
-          # Keep stdout out of the capture: on success list-sessions prints
-          # the session listing to stdout, which must not be mistaken for
-          # an error (that made tmux-resume exit without attaching).
-          err="$(tmux list-sessions 2>&1 >/dev/null)"
-          if [[ -z "$err" ]]; then
+          # list-sessions prints only listings on success and errors on
+          # failure. A successful empty result means the server is alive while
+          # Continuum's async restore is still starting; do not attach yet.
+          output="$(tmux list-sessions 2>&1)"
+          status=$?
+          if [[ "$status" -eq 0 && -n "$output" ]]; then
             tmux attach
             return $?
+          fi
+          # A started server may return exit 0 with empty output until
+          # Continuum has created its restored sessions; keep polling then.
+          if [[ "$status" -eq 0 && -z "$output" ]]; then
+            sleep "$delay"
+            continue
           fi
           # Transient cold-start conditions: no server/sessions yet, the
           # Linux socket-connect failure before the server exists ("error
@@ -130,8 +137,8 @@
           # style "no current target". A genuine tmux error (e.g. Permission
           # denied) short-circuits immediately instead of being masked as a
           # restore-in-progress wait.
-          if [[ "$err" != *"no server"* && "$err" != *"no session"* && "$err" != *"no current target"* && "$err" != *"No such file or directory"* ]]; then
-            echo "$err" >&2
+          if [[ "$output" != *"no server"* && "$output" != *"no session"* && "$output" != *"no current target"* && "$output" != *"No such file or directory"* ]]; then
+            echo "$output" >&2
             return 1
           fi
           sleep "$delay"
