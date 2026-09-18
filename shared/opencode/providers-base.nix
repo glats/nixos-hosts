@@ -423,7 +423,7 @@ let
     {
       name = "openai-opencode-balanced";
       phases = {
-        gentle-orchestrator = "opencode-go/kimi-k3";
+        gentle-orchestrator = "openai/gpt-5.6-terra";
         sdd-init = "opencode-go/deepseek-v4-flash";
         sdd-explore = "opencode-go/deepseek-v4-pro";
         sdd-propose = "openai/gpt-5.6-sol";
