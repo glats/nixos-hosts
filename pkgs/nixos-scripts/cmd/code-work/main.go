@@ -17,12 +17,14 @@ import (
 	"strings"
 
 	"github.com/glats/nixos-scripts/internal/gitutil"
+	"github.com/glats/nixos-scripts/internal/managedworktree"
 )
 
 // gitignoreRe matches the grep -qE '^\.(worktrees|worktrees/)' check.
 var gitignoreRe = regexp.MustCompile(`^\.(worktrees|worktrees/)`)
 
 const usageTemplate = `Usage: %[1]s <worktree-name>    Create a named worktree
+       %[1]s managed ...        Manage isolated writing-task worktrees
        %[1]s --done            Finish worktree (success: cleanup after push)
        %[1]s --abort           Discard worktree (failure: force remove)
        %[1]s --list            List all worktrees
@@ -33,6 +35,10 @@ Examples:
   %[1]s my-feature       Create worktree 'my-feature' from current branch
   %[1]s --done           Finish current worktree (run from inside it)
   %[1]s --abort          Discard current worktree without saving
+Managed writing tasks:
+  %[1]s managed start <id> [--base <branch>]
+  %[1]s managed check <id> <fmt|eval|flake-check|build> [target]
+  %[1]s managed ready|inspect|abandon|cleanup|integrate|recover-lock ...
 `
 
 // die ports the bash die(): "Error: <msg>" to stderr, exit 1.
@@ -219,6 +225,12 @@ func main() {
 	if len(args) > 0 {
 		cmd = args[0]
 	}
+	if cmd == "managed" {
+		if err := managedCommand(args[1:]); err != nil {
+			die(err.Error())
+		}
+		return
+	}
 	switch cmd {
 	case "--done":
 		cmdDone(pwd, repoRoot, worktreesDir)
@@ -361,7 +373,7 @@ func cmdDone(pwd, repoRoot, worktreesDir string) {
 	gitFail("branch", "-D", currentBranch)
 
 	fmt.Fprintln(os.Stdout, "> Pruning stale worktree references...")
-	gitFail("worktree", "prune")
+	cmdPrune(repoRoot)
 
 	fmt.Println("")
 	fmt.Println("=====================================")
@@ -406,7 +418,7 @@ func cmdAbort(pwd, repoRoot, worktreesDir string) {
 	branch.Stderr = io.Discard
 	_ = branch.Run()
 
-	gitFail("worktree", "prune")
+	cmdPrune(repoRoot)
 
 	fmt.Printf("> Worktree '%s' discarded.\n", wtName)
 }
@@ -428,6 +440,15 @@ func cmdPrune(repoRoot string) {
 	if repoRoot == "" {
 		die("Not inside a git repository")
 	}
+	commonDir, err := managedCommonDir(repoRoot)
+	if err != nil {
+		die("Failed to determine Git common directory")
+	}
+	lock, err := managedworktree.AcquireLock(filepath.Join(commonDir, "managed-worktrees"), 0)
+	if err != nil {
+		die(err.Error())
+	}
+	defer lock.Release()
 	gitFail("-C", repoRoot, "worktree", "prune")
 	fmt.Println("> Stale worktree references pruned.")
 }

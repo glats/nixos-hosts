@@ -23,6 +23,19 @@ let
       "git push --force *" = "ask";
       "git rebase *" = "ask";
       "git reset --hard *" = "ask";
+      # Managed writing agents must never reach host or shared-generation
+      # mutation, even if a prompt attempts to disguise the command.
+      "nixos-build *" = "deny";
+      "nixos-rebuild *" = "deny";
+      "darwin-rebuild *" = "deny";
+      "home-manager *" = "deny";
+      "nix profile *" = "deny";
+      "nix-env *" = "deny";
+      "nix flake update*" = "deny";
+      "nix-collect-garbage*" = "deny";
+      "sudo *" = "deny";
+      "systemctl *" = "deny";
+      "launchctl *" = "deny";
     };
     read = {
       # Deny-list semantics: "*" must be first, then specific denies
