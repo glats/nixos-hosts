@@ -1,5 +1,6 @@
 {
   buildGoModule,
+  git,
   lib,
   makeWrapper,
   qrencode,
@@ -43,7 +44,10 @@ buildGoModule {
   # go.mod dependency lands (fakeHash → `got:` loop, see gentle-ai/engram).
   vendorHash = null;
 
-  nativeBuildInputs = [ makeWrapper ];
+  nativeBuildInputs = [
+    git
+    makeWrapper
+  ];
 
   postFixup = ''
     # qrencode is a runtime dep of device-link (terminal QR output).

@@ -49,6 +49,27 @@
       "general": {
         "task": "deny"
       },
+      "managed-writing-task": {
+        "read": "allow",
+        "edit": "allow",
+        "write": "allow",
+        "external_directory": {
+          "/**": "deny"
+        },
+        "task": "deny",
+        "webfetch": "deny",
+        "websearch": "deny",
+        "bash": {
+          "*": "deny",
+          "git status*": "allow",
+          "git diff*": "allow",
+          "git add *": "allow",
+          "git commit *": "allow",
+          "go test *": "allow",
+          "go -C * test *": "allow",
+          "code-work managed check *": "allow"
+        }
+      },
       "sdd-research": {
         "bash": "deny",
         "webfetch": "deny",

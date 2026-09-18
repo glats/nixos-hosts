@@ -150,8 +150,22 @@ let
   };
 
   # Final agent set: upstream + model overlay + tools overlay + neutral
+  managedWritingAgent = {
+    description = "Edit and test only the assigned managed worktree; never integrate or mutate a host.";
+    mode = "primary";
+    prompt = ''
+      You are the managed-writing-task agent. Work only in the assigned worktree.
+      You may edit files, inspect branch-local Git state, commit local work, run tests,
+      and use `code-work managed check` for fmt, eval, flake-check, or scoped build.
+      Never activate, update inputs, change profiles or generations, use sudo or
+      services, push, integrate, clean up, or access external directories.
+    '';
+    permission = localOverlays.permissionOverlays.named.managed-writing-task;
+  };
+
   defaultAgents = (lib.mapAttrs overlayAgent upstreamAgents) // {
     neutral = neutralAgent;
+    managed-writing-task = managedWritingAgent;
   };
 in
 {
