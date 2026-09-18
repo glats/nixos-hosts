@@ -121,7 +121,8 @@
           # an error (that made tmux-resume exit without attaching).
           err="$(tmux list-sessions 2>&1 >/dev/null)"
           if [[ -z "$err" ]]; then
-            exec tmux attach
+            tmux attach
+            return $?
           fi
           # Transient cold-start conditions: no server/sessions yet, the
           # Linux socket-connect failure before the server exists ("error

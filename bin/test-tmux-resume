@@ -43,8 +43,8 @@ pass "extracted tmux-resume() from shared/shell-aliases.nix"
 # shellcheck disable=SC1090
 source "$FUNC_FILE"
 
-# `exec tmux attach` inside the function would replace this shell; shim it
-# so a successful attach is observable without killing the test process.
+# A successful attach normally returns after the user detaches. Keep the
+# trailing exit marker so this harness catches a terminal-closing `exec`.
 run_case() {
   ( tmux-resume; echo "EXIT:$?" ) 2>&1
 }
@@ -67,13 +67,12 @@ case "$1" in
 esac
 EOF
   chmod +x "$d/tmux"
-  # `exec tmux attach` replaces the shell on success, so no trailing EXIT
-  # line is printed here — that IS the native-attach contract being tested.
   out="$(run_case)"
-  if [[ "$out" == *"ATTACHED"* ]]; then
-    pass "case 1: attaches immediately when a session already exists"
+  if [[ "$out" == *"ATTACHED"* && "$out" == *"EXIT:0"* ]]; then
+    pass "case 1: attaches immediately and returns after detach"
   else
-    bad "case 1: expected immediate attach, got: $out"
+    bad "case 1: expected attach followed by return, got: $out"
+    exit 1
   fi
 )
 [[ $? -eq 0 ]] || fail=1
