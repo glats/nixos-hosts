@@ -98,7 +98,7 @@
           return 127
         }
 
-        local tries=75 delay=0.2 i output status
+        local tries=75 delay=0.2 i output exit_status
 
         # has-session/ls only query — they never spawn a server, so without
         # this the Continuum auto-restore hook (loaded from tmux.conf at
@@ -120,14 +120,14 @@
           # failure. A successful empty result means the server is alive while
           # Continuum's async restore is still starting; do not attach yet.
           output="$(tmux list-sessions 2>&1)"
-          status=$?
-          if [[ "$status" -eq 0 && -n "$output" ]]; then
+          exit_status=$?
+          if [[ "$exit_status" -eq 0 && -n "$output" ]]; then
             tmux attach
             return $?
           fi
           # A started server may return exit 0 with empty output until
           # Continuum has created its restored sessions; keep polling then.
-          if [[ "$status" -eq 0 && -z "$output" ]]; then
+          if [[ "$exit_status" -eq 0 && -z "$output" ]]; then
             sleep "$delay"
             continue
           fi
