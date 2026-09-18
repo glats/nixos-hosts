@@ -126,6 +126,16 @@ Existing sops-backed provider environment exports in `shared/opencode.nix`, incl
 - THEN every existing export is byte-identical
 - AND no credential or secret declaration is removed
 
+### Requirement: Managed Writing-Agent Profile
+
+Generated OpenCode configuration MUST include a named managed-writing-task profile with the managed-worktree capability boundary. It MUST allow only assigned-worktree editing, branch-local Git operations, tests, and allowlisted local checks, and MUST deny host mutation and lifecycle authority. Declarative Home Manager ownership MUST remain unchanged.
+
+#### Scenario: Emit the restricted agent profile [hosts: rog, thinkcentre, t14, macm5]
+- GIVEN a host configuration that enables the managed-worktree feature
+- WHEN its generated OpenCode configuration is inspected
+- THEN the managed-writing-task profile contains the required grants and denials
+- AND Home Manager remains the configuration deployment authority
+
 ## Out of Scope
 
 The theme component, GGA replaced by `providers-base.nix`, other agents' asset directories, `sdd-overlay-multi.json`, declarative-architecture doctor false positives (`state:json`, `engram:reachable`), the pre-existing `sdd-research` model gap, and changes to host consumption are excluded. Hosts MUST NOT run `gentle-ai install` or `gentle-ai sync`.
