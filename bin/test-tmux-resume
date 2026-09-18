@@ -41,13 +41,10 @@ if [[ ! -s "$FUNC_FILE" ]]; then
 fi
 pass "extracted tmux-resume() from shared/shell-aliases.nix"
 
-# shellcheck disable=SC1090
-source "$FUNC_FILE"
-
 # A successful attach normally returns after the user detaches. Keep the
 # trailing exit marker so this harness catches a terminal-closing `exec`.
 run_case() {
-  ( tmux-resume; echo "EXIT:$?" ) 2>&1
+  zsh -fc 'source "$1"; tmux-resume; exit_code=$?; print -r -- "EXIT:$exit_code"' zsh "$FUNC_FILE" 2>&1
 }
 
 setup_fake_tmux() {
