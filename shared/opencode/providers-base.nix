@@ -421,6 +421,42 @@ let
       };
     }
     {
+      name = "openai-opencode";
+      # Audit 2026-09-18: OpenCode Go is the high-volume workforce; reserve
+      # OpenAI for architecture, implementation, and acceptance judgment.
+      # Sources: https://opencode.ai/docs/go/ (Go request headroom, 0-day
+      # retention) and https://opencode.ai/docs/zen/ (GPT 5.6 pricing/models).
+      phases = {
+        # GPT 5.6 Terra: quality anchor for the coordinating agent; the
+        # worker phases below keep the OpenCode Go request headroom.
+        gentle-orchestrator = "openai/gpt-5.6-terra";
+        sdd-init = "opencode-go/deepseek-v4-flash";
+        # DeepSeek V4 Pro: the larger Go worker for repository/MCP research.
+        sdd-explore = "opencode-go/deepseek-v4-pro";
+        sdd-propose = "opencode-go/deepseek-v4-pro";
+        sdd-spec = "opencode-go/deepseek-v4-pro";
+        # GPT 5.6 Sol: reserve the premium engineering path for architecture.
+        sdd-design = "openai/gpt-5.6-sol";
+        sdd-tasks = "opencode-go/deepseek-v4-flash";
+        # GPT 5.6 Terra: implementation and acceptance are the costly failure
+        # boundaries, so reserve the premium OpenAI path for them.
+        sdd-apply = "openai/gpt-5.6-terra";
+        sdd-verify = "openai/gpt-5.6-terra";
+        sdd-archive = "opencode-go/deepseek-v4-flash";
+        sdd-onboard = "opencode-go/deepseek-v4-flash";
+        jd-judge-a = "openai/gpt-5.6-terra";
+        jd-judge-b = "openai/gpt-5.6-terra";
+        jd-fix-agent = "openai/gpt-5.6-luna";
+        review-readability = "openai/gpt-5.6-terra";
+        review-refuter = "openai/gpt-5.6-terra";
+        review-reliability = "openai/gpt-5.6-terra";
+        review-resilience = "openai/gpt-5.6-terra";
+        review-risk = "openai/gpt-5.6-terra";
+        review-validator = "openai/gpt-5.6-terra";
+        neutral = "opencode-go/deepseek-v4-flash";
+      };
+    }
+    {
       name = "openai-opencode-balanced";
       phases = {
         gentle-orchestrator = "openai/gpt-5.6-terra";
