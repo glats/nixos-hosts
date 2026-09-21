@@ -22,7 +22,7 @@ testing:
   flake_check: "nix flake check --no-build"
   formatter: "format-nix"
   build:
-    linux: "nixos-build build"
+    linux: "nixos-build dry"
     darwin: "nix build .#darwinConfigurations.macm5.config.system.build.toplevel"
 
 rules:
@@ -48,7 +48,7 @@ rules:
     test_command: "nix flake check --no-build"
   verify:
     test_command: "nix flake check --no-build"
-    build_command: "nixos-build build"
+    build_command: "nixos-build dry"
     coverage_threshold: 0
   archive:
     - Warn before merging destructive deltas
