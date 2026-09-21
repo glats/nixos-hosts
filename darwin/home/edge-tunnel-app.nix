@@ -14,22 +14,22 @@ let
       mkdir -p "$out/Edge Home.app/Contents/MacOS"
       mkdir -p "$out/Edge Home.app/Contents/Resources"
 
-      cat > "$out/Edge Home.app/Contents/MacOS/launch" <<'EOF'
-       #!/bin/bash
-       # Self-heal icon: reuse the real Edge icon (runs on the target Mac,
-       # where Edge actually lives). The deployed bundle is user-writable.
-       ICON_DST="$HOME/Applications/Edge Home.app/Contents/Resources/appIcon.icns"
-       if [[ ! -f "$ICON_DST" ]]; then
-         ICON_SRC="$(find "/Applications/Microsoft Edge.app/Contents/Resources" -maxdepth 1 -name '*.icns' 2>/dev/null | head -n1)"
-         if [[ -n "$ICON_SRC" ]]; then
-           mkdir -p "$HOME/Applications/Edge Home.app/Contents/Resources"
-           cp "$ICON_SRC" "$ICON_DST" 2>/dev/null || true
-           /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$HOME/Applications/Edge Home.app" 2>/dev/null || true
-           touch "$HOME/Applications/Edge Home.app" 2>/dev/null || true
-         fi
-       fi
+      printf '%s\n' '#!/bin/bash' > "$out/Edge Home.app/Contents/MacOS/launch"
+      cat >> "$out/Edge Home.app/Contents/MacOS/launch" <<'EOF'
+      # Self-heal icon: reuse the real Edge icon (runs on the target Mac,
+      # where Edge actually lives). The deployed bundle is user-writable.
+      ICON_DST="$HOME/Applications/Edge Home.app/Contents/Resources/appIcon.icns"
+      if [[ ! -f "$ICON_DST" ]]; then
+        ICON_SRC="$(find "/Applications/Microsoft Edge.app/Contents/Resources" -maxdepth 1 -name '*.icns' 2>/dev/null | head -n1)"
+        if [[ -n "$ICON_SRC" ]]; then
+          mkdir -p "$HOME/Applications/Edge Home.app/Contents/Resources"
+          cp "$ICON_SRC" "$ICON_DST" 2>/dev/null || true
+          /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$HOME/Applications/Edge Home.app" 2>/dev/null || true
+          touch "$HOME/Applications/Edge Home.app" 2>/dev/null || true
+        fi
+      fi
 
-       exec '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge' --proxy-server=http://127.0.0.1:2080 --proxy-${"by" + "pass"}-list='localhost;127.0.0.1;::1' "$@"
+      exec '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge' --proxy-server=http://127.0.0.1:2080 --proxy-${"by" + "pass"}-list='localhost;127.0.0.1;::1' "$@"
       EOF
       chmod +x "$out/Edge Home.app/Contents/MacOS/launch"
 
