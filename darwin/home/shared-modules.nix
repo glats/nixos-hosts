@@ -28,6 +28,7 @@
   ./vscode.nix
 
   ./remote-desktop.nix
+  ./edge-tunnel-app.nix
   ../../shared/shell-aliases.nix
   ../../shared/leaf.nix
   ../../shared/leaf-theme.nix

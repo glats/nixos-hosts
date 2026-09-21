@@ -1,186 +1,41 @@
-# AGENTS.md - NixOS Multi-Host Configuration
+# NixOS Multi-Host Configuration
 
-## Overview
+## Repository Facts
 
-- **Hosts**: `rog` (MATE desktop via XRDP + NVIDIA + home server), `thinkcentre` (headless box accessed via XRDP), `t14` (ThinkPad laptop, Omarchy/Hyprland), `macm5` (Apple Silicon Mac via nix-darwin)
-- **Users**: glats (Linux hosts), juan (macm5; GitHub identity `jcuzmar`)
-- **Stack**: NixOS Flakes + Home Manager (NixOS-integrated and standalone) + sops-nix + nix-darwin
-- `/etc/nixos` is a symlink to this repo (`~/.nixos`) — scripts may reference either path.
+- Hosts: `rog` (MATE, XRDP, NVIDIA, home server), `thinkcentre` (headless, XRDP), `t14` (ThinkPad, Omarchy/Hyprland), and `macm5` (Apple Silicon, nix-darwin).
+- Users: `glats` on Linux; `juan` on `macm5` (GitHub identity `jcuzmar`).
+- Stack: NixOS flakes, Home Manager (integrated and standalone), sops-nix, and nix-darwin.
+- `/etc/nixos` is a symlink to this repository (`~/.nixos`).
+- `hosts/<host>/default.nix` is each host entry point; host imports are flat and explicit, one per line.
+- Linux modules live in `linux/system/` and `linux/home/`; Darwin modules live in `darwin/`; cross-platform Home Manager modules live in `shared/`.
+- `linux/home/shared-modules.nix` and `darwin/home/shared-modules.nix` are the canonical shared Home Manager module lists.
+- Overlays in `overlays/` are imported by flake builders, never used as modules.
+- Custom operational binaries live in `pkgs/nixos-scripts/`; `bin/test-tmux-resume` and `bin/webcam` are the only shell-script exceptions.
+- Secrets are sops-encrypted under `secrets/`; `.sops.yaml` defines creation-rule ordering.
 
-## Project Structure
+## Omarchy and t14
 
-```
-hosts/{hostname}/default.nix     # Host entry — flat explicit imports, one per line
-linux/
-  system/base|desktop|hardware|networking/  # NixOS modules by category
-  system/features/               # boot.nix, gaming.nix, conky/options.nix (no default.nix)
-  system/services/               # xrdp + portable services: media/, web/, network/
-  system/virtualisation/         # docker, libvirt
-  home/                          # Linux HM modules; shared-modules.nix = canonical list
-darwin/system|services|home/     # nix-darwin modules; hosts/macm5/default.nix = entry point
-shared/                          # Cross-platform HM modules (opencode, sops, tmux, ...)
-lib/                             # mkHost.nix, mkDarwinHost.nix, packages.nix
-overlays/                        # linux.nix, darwin.nix — imported via `import`, NOT modules
-pkgs/                            # Custom package derivations
-pkgs/nixos-scripts/              # Go module for operational scripts (Go-only policy) —
-                                 #   source + tests + derivation co-located (src = ./.)
-pkgs/nixos-scripts/cmd/<name>/main.go  # One thin Go entry point per operational binary
-pkgs/nixos-scripts/internal/     # Shared Go packages (reporoot, gitutil, wg, nixbuild) —
-                                 #   logic used by ≥2 scripts lives here, never copied between cmd/
-bin/                             # test-tmux-resume + webcam only (documented Go-only exceptions)
-secrets/                         # sops-encrypted: host/<hostname>/, shared/, user/
-docs/                            # Operational runbooks (sops-new-host.md, multi-github-identity.md, wg-peer.md, ...)
-```
+- `flake.nix` pins `github:glats/omarchy-nix` at commit `5c01ca65d42d520f45d2fb2ddd2526eb6e10494d`.
+- Only `t14` receives `inputs.omarchy-nix.nixosModules.default` and `inputs.nixos-hardware.nixosModules.lenovo-thinkpad-t14-amd-gen4` through `extraModules`.
+- `hosts/t14/home/omarchy.nix` imports `inputs.omarchy-nix.homeManagerModules.default`; `hosts/t14/home/default.nix` imports that entry point.
+- The Linux shared module list includes the `btop` Home Manager module. The t14 Quattro overlay exposes `omarchy-runtime` and `quickshell` only to `t14`.
 
-## Commands
+## Commands and Verification
 
-### Build & Deploy
-
-`nixos-build` auto-detects platform (Linux vs Darwin), selects the stable `macm5` flake configuration by default on Darwin, detects tools (`nh` preferred over nixos-rebuild/darwin-rebuild, `nom` for output), and detects worktrees (run inside `.worktrees/*` builds the local flake copy). Set `NIXOS_DARWIN_HOST` to explicitly select another declared Darwin configuration.
-
-| Task | Command |
-|------|---------|
-| Build + switch | `nixos-build` (switch is default) |
-| Safe rollout | `nixos-build safe` — check→build→dry→switch, stops on first failure |
-| Dry activate | `nixos-build dry` |
-| Next-boot / test activation | `nixos-build boot` / `nixos-build test` (NixOS only) |
-| Update inputs + rebuild | `nixos-build upgrade` |
-| Validate flake | `nixos-build check` (= `nix flake check`) |
-| Force nixos-rebuild / disable nom | `--raw` / `--no-nom` |
-
-**Verification is tiered** — do NOT run the full gate after every edit:
-
-| Tier | When | Command |
-|------|------|---------|
-| 1. Format | After editing `.nix` files | `nix fmt -- <touched-file>` (instant) |
-| 2. Targeted eval | Before declaring done on a host-scoped change | NixOS: `nix eval .#nixosConfigurations.<host>.config.system.build.toplevel.drvPath` · HM: `nix eval .#homeConfigurations.<host>.activationPackage.drvPath` · Darwin: `nix eval .#darwinConfigurations.<name>.config.system.build.toplevel.drvPath` |
-| 3. Full gate | Shared-scope changes, non-obvious eval failures, or pre-commit | Main checkout: `format-nix && nix flake check --no-build`; worktree: `nix fmt -- --ci && nix flake check --no-build` |
-
-**Shared scope** (tier 3 mandatory): `flake.nix`, `flake.lock`, `lib/`, `overlays/`, `shared/`, `pkgs/`, `linux/home/shared-modules.nix`, `darwin/home/shared-modules.nix` — anything imported by more than one host.
-
-⚠️ `nix flake check --no-build` evaluates every declared `nixosConfiguration`, but does not evaluate `darwinConfigurations` or standalone `homeConfigurations`. Run targeted `nix eval` commands for those blind spots, including both Darwin toplevels and all standalone Home Manager activation packages. Never run plain `nix flake check` without `--no-build`: it evaluates AND builds every host.
-
-### Formatting
-
-| Task | Command |
-|------|---------|
-| Full repo (main checkout) | `format-nix` (targets `/etc/nixos` = this repo via symlink; full-repo only, supports `--check`) |
-| Single file | `nix fmt -- <path>` |
-| Worktree full repo | `nix fmt` or `nix fmt -- --ci` from the worktree root; never run `format-nix` in a worktree |
-
-Formatter is RFC-166 `nixfmt-tree` set as flake `formatter`. Never invoke formatter binaries directly — always go through `nix fmt`.
-
-### Development
-
-| Task | Command |
-|------|---------|
-| Build one host without switching | `nix build .#nixosConfigurations.<host>.config.system.build.toplevel` |
-| Build HM alone | `nix build .#homeConfigurations.<host>.activationPackage` — keys are bare hostnames, **not** `<user>@<host>` |
-| Fastest eval sanity check | t14 build (command above) |
-| Go scripts | `go -C pkgs/nixos-scripts test ./...` (plus `go build`/`go vet`/`go run ./cmd/<name>` with `-C pkgs/nixos-scripts` while iterating; deployed binaries are always Nix-built) |
-
-<!-- rtk-init-managed v1 -->
-## RTK (command output filter)
-
-RTK 0.41.0 is installed on all hosts. An OpenCode plugin and a Claude Code Bash hook rewrite supported commands **automatically** (fail-open) — run plain commands (`git status`) and let them rewrite; do NOT prefix `rtk` by hand.
-
-- Manual rtk forms are only the top-level ones from `rtk --help` (`rtk ls`, `rtk git <sub>`, `rtk test <cmd>`, `rtk err <cmd>`, ...). There is no `rtk rev-parse` — git builtins go through `rtk git rev-parse` or plain `git rev-parse`.
-- `rtk git status` hides ahead/behind divergence — use plain `git status -sb` when sync state matters.
-- Savings data: `rtk gain --project` (local SQLite, shell-output only, not total spend). Telemetry is off via `RTK_TELEMETRY_DISABLED=1`; bypass one command with `RTK_DISABLED=1 <cmd>`. Full runbook: `docs/rtk-pilot.md`.
-- Never run `rtk init` in this repo — it writes a generated assistant-instructions file; `rtk-init` is the regen tool and this section is the contract instead.
-
-<!-- /rtk-init-managed -->
-
-## Home Manager Composition
-
-- NixOS-integrated path: `linux/system/base/home-manager.nix` imports `hosts/<host>/home/default.nix`. Standalone `homeConfigurations` in flake.nix import the same per-host file.
-- `linux/home/shared-modules.nix` is the single source of truth for shared Linux HM modules — do not duplicate the list elsewhere. Darwin equivalent: `darwin/home/shared-modules.nix`. Cross-platform modules live in `shared/` and are listed in both.
-- **Host-conditional modules** (conky-rog, conky-thinkcentre, openfang) are NOT in shared-modules.nix — each `hosts/<host>/home/default.nix` extends the base list with its own extras.
-- Per-host OpenCode provider override lives there too: `{ home.opencode.activeProviderName = "..."; }` (e.g. rog: `openai-opencode-balanced`, thinkcentre: `openai-medium`, macm5: `anthropic-opencode-free`).
-
-## Project Skills
-
-- `tool-adoption` — evaluate externally proposed tools before adoption; research source, lifecycle, security, Nix support, and fit, then recommend adopt, defer, or reject.
-
-## Go-Only Operational Scripts
-
-All operational scripts in this repo are **Go, never bash**. This binds every
-agent working here (OpenCode orchestrator, subagents, build/plan) and Claude
-Code.
-
-**Scope.** The ban is on shell scripts, not on artifacts whose native
-language is not a script: Nix expressions stay Nix, out-of-tree kernel
-modules are C by nature (derivation in `pkgs/` + `boot.extraModulePackages`),
-third-party upstream code stays upstream. Rule of thumb: an executable CLI
-that orchestrates commands → Go; kernel code, Nix modules, assets → native
-form.
-
-**Where code lives.** The Go module is `pkgs/nixos-scripts/` — source, tests
-and derivation co-located (`buildGoModule`, `src = ./.`). Thin
-`cmd/<name>/main.go` entries (flag parsing + dispatch only); shared logic in
-`internal/` (`reporoot`, `gitutil`, `wg`, `nixbuild`). Logic used by ≥2
-scripts lives in `internal/`, never copied between `cmd/`; genuinely new
-logic lands there too, with tests. Every host switch recompiles all binaries
-and runs the test suite in checkPhase — deployed binaries are always the
-Nix-built ones; `nix develop` / `go -C pkgs/nixos-scripts run ./cmd/<name>`
-is dev iteration only.
-
-**Exceptions** (the only bash allowed): `bin/test-tmux-resume` (tests a zsh
-function) and `bin/webcam`.
-
-**Workflow.** Verify before implementing: MCP (`nixos_nix` for
-packages/options, GitHub for prior art, context7/exa for docs) — never guess
-APIs or option paths. When porting bash, keep the binary name, flags, exit
-codes and key outputs, with `go test` coverage for parsing before cutover.
-Done means:
-`go -C pkgs/nixos-scripts test ./... && nix build .#nixos-scripts` (the derivation runs the test suite in checkPhase). Go sources cannot break flake evaluation, so the full gate (`format-nix && nix flake check --no-build`) is only required when the derivation's Nix wiring changes (`default.nix`, `lib/packages.nix`) or pre-commit.
-
-## When Coding
-
-1. **Research first** — verify options/packages/APIs with MCP tools before writing; never guess option paths.
-2. Verify per the tiered policy (see Commands): `nix fmt` touched files while iterating; targeted `nix eval` of the affected host before declaring done; full `format-nix && nix flake check --no-build` only for shared-scope changes or pre-commit.
-3. New NixOS module → `linux/system/<category>/`, import in host `default.nix`. Flat imports only — no profile chains.
-4. New portable service → `linux/system/services/<category>/`, importable by any Linux host.
-5. New HM module → platform `home/` dir, or `shared/` if cross-platform; register in that platform's shared-modules list.
-6. Secrets → `sops <specific-file>.yaml`. Agents must NEVER decrypt secrets — read ciphertext only. New host setup: follow `docs/sops-new-host.md`.
-7. `hardware-configuration.nix` — never edit (auto-generated).
-8. Unfree packages: `allowUnfree = true` is already global in flake.nix; license-gated packages additionally need host-level `allowUnfreePackages` + accept-license options (e.g. joypixels).
-9. **Operational scripts are Go, never bash** — see the "Go-Only Operational Scripts" section above for the full policy.
-
-## Reviewing
-
-- Diff covers what was asked; the correct verification tier passed (targeted eval for host-scoped diffs, `nix flake check --no-build` for shared scope).
-- No secrets exposed in plaintext anywhere in the diff.
-- Skill note: do NOT load `nix-verify` for non-Nix files (JSON/YAML/TOML/MD) even inside this repo — it is exclusively for Nix constructs.
+- `nixos-build` selects the local platform and host; use `safe`, `dry`, `boot`, `test`, `upgrade`, or `check` for the corresponding operation.
+- Format touched Nix files with `nix fmt -- <path>`.
+- Evaluate host-scoped changes with `nix eval .#nixosConfigurations.<host>.config.system.build.toplevel.drvPath`, `nix eval .#homeConfigurations.<host>.activationPackage.drvPath`, or `nix eval .#darwinConfigurations.<host>.config.system.build.toplevel.drvPath`.
+- Shared changes require `nix flake check --no-build`; it does not evaluate Darwin or standalone Home Manager configurations, so evaluate those targets separately.
+- Test Go operational binaries with `go -C pkgs/nixos-scripts test ./...`; deployment uses the Nix-built `nixos-scripts` derivation.
+- Run supported commands directly; RTK rewrites supported commands automatically. Use `git status -sb` when ahead/behind state matters.
 
 ## Critical Rules
 
-1. **Flat imports**: each host imports exactly what it needs, one per line. No profile chains.
-2. **features/* subcategories** have no `default.nix` — import files directly.
-3. **Overlays** are `import`ed in flake.nix/lib builders, never added as modules.
-4. **Formatter**: `format-nix` (full repo) / `nix fmt -- <path>` (single file); never formatter binaries directly.
-5. **t14**: omarchy-nix + nixos-hardware T14 AMD gen4 profile arrive via `extraModules` in flake.nix. Its HM config block is `hosts/t14/home/omarchy.nix`, imported by t14's `home/default.nix`.
-6. **macm5**: built via `mkDarwinHost` (includes Determinate module); local username `juan`, GitHub identity `jcuzmar`.
-7. **nixpkgs is pinned to nixos-26.05** and nix-darwin remains on the matched `nix-darwin-26.05` branch. Do not migrate channels in the macm5 retirement slice.
-8. **Go-only scripts**: never a new bash script for operational tooling — full policy in the "Go-Only Operational Scripts" section.
-
-## Secrets (sops-nix)
-
-- Config at `.sops.yaml` (repo root). Layout: `secrets/host/<hostname>/*.yaml`, `secrets/shared/`, `secrets/user/`.
-- Creation-rule ordering matters: specific path_regex rules must come BEFORE generic host catch-alls (e.g. `openai-proxy.yaml` is encrypted for its explicit recipients, placed above the rog-only rule).
-- Adding a host: derive age key from SSH host key, add to `.sops.yaml` keys + relevant creation rules, re-encrypt with `sops updatekeys` — full runbook in `docs/sops-new-host.md`.
-
-## When Blocked
-
-| Problem | What to do |
-|---------|-----------|
-| `nix flake check` fails on unrelated host | May be pre-existing. If your changes don't touch that host, note it and proceed. |
-| Option/package not found | Search with the `nixos_nix` MCP tool. Repo pins nixos-26.05 — results from other channels may differ. |
-| Permission denied | System-level operations need sudo — ask before using it. |
-| Encrypted file unreadable | You are NOT allowed to decrypt secrets. Read ciphertext only. |
-
-## Owned Repos
-
-| Repo | Permission |
-|------|-----------|
-| `github.com/glats/omarchy-nix` | Full clone & push access — changes involving this repo can be committed and pushed directly |
+- Never edit `hardware-configuration.nix`; it is generated.
+- New NixOS modules belong under `linux/system/<category>/` and are imported directly by the host. `linux/system/features/` has no `default.nix`.
+- New portable services belong under `linux/system/services/<category>/`; new Home Manager modules belong in the platform directory or `shared/` and must be registered in the matching shared module list.
+- Operational command-line tools are Go, not shell scripts. Keep entry points thin under `pkgs/nixos-scripts/cmd/` and shared logic under `pkgs/nixos-scripts/internal/`.
+- Never decrypt sops secrets. Add specific `.sops.yaml` creation rules before generic host rules.
+- Unfree packages are globally enabled; license-gated packages also need host-level allow-list and acceptance settings.
+- nixpkgs is pinned to `nixos-26.05`; nix-darwin uses the matching `nix-darwin-26.05` branch.
+- Repository code, comments, documentation, runbooks, and CLI messages are written in English.

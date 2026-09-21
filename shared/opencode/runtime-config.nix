@@ -130,7 +130,7 @@ in
       force = true;
       source = jsonFile;
     };
-    # skills/, commands/, and AGENTS.md are managed entirely by makeOpencodeConfigMutable activation
+    # skills and commands are managed entirely by makeOpencodeConfigMutable activation
     # (not via home.file) because HM cannot overwrite existing real directories with symlinks.
     ".config/${runtimeConfig.dir}/package.json" = {
       force = true;
@@ -164,12 +164,16 @@ in
 
         mkdir -p "$runtime_dir"
 
-         # Single-file symlinks -> real copies (hash guard via cmp)
+        # OpenCode discovers the repository-root AGENTS.md itself. Remove the
+        # formerly managed global file so it cannot duplicate that context.
+        ${pkgs.coreutils}/bin/rm -f "$runtime_dir/AGENTS.md"
+
+          # Single-file symlinks -> real copies (hash guard via cmp)
          # ALWAYS replace symlinks with real copies — even if content matches,
          # the symlink points to the read-only nix store which OpenCode can't write to.
          # After conversion, also re-copy from nix store if content diverged
          # (e.g. OpenCode modified the file at runtime).
-         for file in opencode.json AGENTS.md package.json .gitignore tui.json; do
+          for file in opencode.json package.json .gitignore tui.json; do
            target="$runtime_dir/$file"
            if [ -L "$target" ]; then
              src="$(${pkgs.coreutils}/bin/readlink -f "$target")"
@@ -245,14 +249,6 @@ in
           done
           [ "$found" = "0" ] && rm -f "$skills_target/$rel"
         done || :
-
-        # AGENTS.md: concatenate all configured sources
-        ag_md="${config.home.homeDirectory}/.config/opencode/AGENTS.md"
-        > "$ag_md"
-        for src in ${lib.concatStringsSep " " config.home.ai-assets.agentsMdSources}; do
-          [ -f "$src" ] && [ -s "$src" ] && cat "$src" >> "$ag_md"
-        done
-        chmod 644 "$ag_md"
 
         # Patch sdd-apply and sdd-verify: remove <!-- section:model-capable -->
         # marker from line 1 so OpenCode v1.17+ can detect YAML frontmatter.

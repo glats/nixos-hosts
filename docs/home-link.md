@@ -149,7 +149,7 @@ The system proxy is ruled out (the security agent shadows it). For any blocked a
 
 | App class | Mechanism | Persistence |
 |-----------|-----------|-------------|
-| **Chromium** (Edge, Chrome, Brave, Arc) | Launch flag `--proxy-server=http://127.0.0.1:2080`, or config file: `defaults write com.microsoft.Edge ProxyMode -string fixed_servers` + `defaults write com.microsoft.Edge ProxyServer -string 127.0.0.1:2080` | Flag: every launch · defaults: permanent (⚠️ if IT pushes Edge policies via MDM, managed wins) · localhost is excluded from the proxy automatically (OAuth callback OK) |
+| **Chromium** (Edge, Chrome, Brave, Arc) | Launch flag `--proxy-server=http://127.0.0.1:2080`, or config file: `defaults write com.microsoft.Edge ProxyMode -string fixed_servers` + `defaults write com.microsoft.Edge ProxyServer -string 127.0.0.1:2080` | Flag: every launch · defaults: permanent (⚠️ if IT pushes Edge policies via MDM, managed wins) · localhost is excluded from the proxy automatically (OAuth callback OK). `Edge Home.app` is deployed by this config as a double-clickable Edge launcher. **Clean Start**: quit every normal Edge instance first; Chromium ignores launch flags when it reuses an already-running instance. |
 | **Firefox / Gecko** | Profile → Manual proxy `127.0.0.1:2080` | Permanent in the profile |
 | **CLI** (curl, git, npm, pip…) | Env at invocation or wrapper: `HTTPS_PROXY=http://127.0.0.1:2080 curl …`, `git -c http.proxy=http://127.0.0.1:2080 clone …` | Per-invocation |
 | **OpenCode** | `opencode-home` (repo wrapper — scoped env + clean MCPs) | Zero (auto-detects) |
