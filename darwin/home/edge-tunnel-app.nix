@@ -1,7 +1,5 @@
-# Edge Home launcher for Darwin.
-#
-# Routes Edge through the link's loopback proxy. The system proxy is managed by
-# the endpoint agent, so Edge needs a per-app launch flag. See docs/home-link.md.
+# Edge Home launcher for Darwin. Its icon is injected at first launch on the
+# target Mac because Edge's bundle is unavailable at build time.
 {
   pkgs,
   lib,
@@ -17,8 +15,21 @@ let
       mkdir -p "$out/Edge Home.app/Contents/Resources"
 
       cat > "$out/Edge Home.app/Contents/MacOS/launch" <<'EOF'
-      #!/bin/sh
-      exec '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge' --proxy-server=http://127.0.0.1:2080 --proxy-${"by" + "pass"}-list='localhost;127.0.0.1;::1' "$@"
+       #!/bin/bash
+       # Self-heal icon: reuse the real Edge icon (runs on the target Mac,
+       # where Edge actually lives). The deployed bundle is user-writable.
+       ICON_DST="$HOME/Applications/Edge Home.app/Contents/Resources/appIcon.icns"
+       if [[ ! -f "$ICON_DST" ]]; then
+         ICON_SRC="$(find "/Applications/Microsoft Edge.app/Contents/Resources" -maxdepth 1 -name '*.icns' 2>/dev/null | head -n1)"
+         if [[ -n "$ICON_SRC" ]]; then
+           mkdir -p "$HOME/Applications/Edge Home.app/Contents/Resources"
+           cp "$ICON_SRC" "$ICON_DST" 2>/dev/null || true
+           /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$HOME/Applications/Edge Home.app" 2>/dev/null || true
+           touch "$HOME/Applications/Edge Home.app" 2>/dev/null || true
+         fi
+       fi
+
+       exec '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge' --proxy-server=http://127.0.0.1:2080 --proxy-${"by" + "pass"}-list='localhost;127.0.0.1;::1' "$@"
       EOF
       chmod +x "$out/Edge Home.app/Contents/MacOS/launch"
 
@@ -37,6 +48,8 @@ let
         <string>APPL</string>
         <key>CFBundleExecutable</key>
         <string>launch</string>
+        <key>CFBundleIconFile</key>
+        <string>appIcon</string>
       </dict>
       </plist>
       EOF
@@ -55,8 +68,6 @@ in
     appsDir="$HOME/Applications"
     src="${edgeHomeApp}/Edge Home.app"
     dst="$appsDir/Edge Home.app"
-    edge_icon="/Applications/Microsoft Edge.app/Contents/Resources/edge.icns"
-
     mkdir -p "$appsDir"
 
     if [ -L "$dst" ] || [ -e "$dst" ]; then
@@ -66,10 +77,6 @@ in
 
     /bin/cp -R "$src" "$dst"
     /bin/chmod -R u+w "$dst"
-
-    if [ -r "$edge_icon" ]; then
-      /bin/cp "$edge_icon" "$dst/Contents/Resources/edge.icns"
-    fi
 
     /usr/bin/xattr -cr "$dst"
     /usr/bin/codesign --force --sign - "$dst"
