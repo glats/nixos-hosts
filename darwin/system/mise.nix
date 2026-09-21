@@ -1,4 +1,9 @@
-{ pkgs, primaryUser, javaVersion, ... }:
+{
+  pkgs,
+  primaryUser,
+  javaVersion,
+  ...
+}:
 {
   # Declare tools in the primary user's mise state, not root's activation state.
   system.activationScripts.miseGlobalTools.text = ''
