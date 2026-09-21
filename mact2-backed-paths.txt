@@ -1,0 +1,72 @@
+# mact2 assistant-state archive path inventory
+# Archive: ai-backup-mact2-20260909-232027.tar.zst
+# Source user: /Users/jcuzmar
+# Target user on macm5: /Users/juan
+#
+# This is the set of distinct OpenCode session directories recorded in the
+# archived OpenCode database. Map the source prefix to /Users/juan when
+# recreating a path on macm5. Some paths are repositories and need cloning;
+# creating an empty directory alone is not a substitute for the worktree.
+
+/Users/jcuzmar
+/Users/jcuzmar/.config/nix
+/Users/jcuzmar/.config/nvim
+/Users/jcuzmar/Downloads
+/Users/jcuzmar/Downloads/redcielo-docs-2026-08-25
+/Users/jcuzmar/Work
+/Users/jcuzmar/Work/backend
+/Users/jcuzmar/Work/backend/APP02696-backend-sql
+/Users/jcuzmar/Work/backend/APP02696-bff-fbusinesscenter
+/Users/jcuzmar/Work/backend/APP02696-job-generate-file
+/Users/jcuzmar/Work/backend/APP02696-job-sync-users
+/Users/jcuzmar/Work/backend/APP02696-mrch-cross-backend-listener-user-authz
+/Users/jcuzmar/Work/backend/APP02696-mrch-cross-backend-rest-user-authz
+/Users/jcuzmar/Work/backend/APP02696-rest-fbusinesscenter
+/Users/jcuzmar/Work/backend/DB
+/Users/jcuzmar/Work/backend/IFT-3501
+/Users/jcuzmar/Work/backend/IFT-3501/APP02378-mrch.rpm.backend.listener-inbound-upsert-publisher
+/Users/jcuzmar/Work/backend/JOB-SYNC
+/Users/jcuzmar/Work/backend/REF-CREATE
+/Users/jcuzmar/Work/backend/RPM
+/Users/jcuzmar/Work/backend/api
+/Users/jcuzmar/Work/backend/api-quickstart
+/Users/jcuzmar/Work/backend/diff
+/Users/jcuzmar/Work/backend/domain-explain
+/Users/jcuzmar/Work/backend/domain-explain/APP02696-backend-document
+/Users/jcuzmar/Work/backend/featmw
+/Users/jcuzmar/Work/backend/job-generate-file
+/Users/jcuzmar/Work/backend/mock-testing
+/Users/jcuzmar/Work/backend/mrch.cross.backend.rest-user-authz
+/Users/jcuzmar/Work/backend/role-maintainer
+/Users/jcuzmar/Work/backend/sql
+/Users/jcuzmar/Work/backend/temp/APP02696-mrch-cross-backend-rest-user-authz
+/Users/jcuzmar/Work/backend/templates
+/Users/jcuzmar/Work/backend/worklib
+/Users/jcuzmar/Work/frontend
+/Users/jcuzmar/Work/frontend/APP02696-fbusinesscenter-web-platform
+/Users/jcuzmar/Work/frontend/APP02696-fbusinesscenter-web-platform/x2
+/Users/jcuzmar/Work/frontend/APP02696-mrch-frontend-cross-app-shell
+/Users/jcuzmar/Work/frontend/APP02696-mrch-frontend-cross-portal
+/Users/jcuzmar/Work/frontend/APP02696-mrch-frontend-cross-portal/packages/mrch.frontend.cross.app-shell
+/Users/jcuzmar/Work/frontend/chatbot
+/Users/jcuzmar/Work/frontend/front-move
+/Users/jcuzmar/Work/frontend/mrch.frontend.cross.portal
+/Users/jcuzmar/Work/frontend/mrch.frontend.cross.portal/packages/mrch.cross.frontend.user-authz
+/Users/jcuzmar/Work/infra/APP02696-microfrontend-component-registration
+/Users/jcuzmar/Work/jira
+/Users/jcuzmar/Work/nixos-hosts
+/Users/jcuzmar/Work/redcielo-docs-2026-08-25
+/Users/jcuzmar/Work/source
+/Users/jcuzmar/Work/source/gitlab
+
+# Claude Code transcript project directories present in the archive.
+# These names encode source paths; their target equivalents replace
+# -Users-jcuzmar- with -Users-juan-.
+
+-private-var-folders-3n-xzfwf5310bs1py8c0-2414d80000gn-T
+-Users-jcuzmar-Work-backend-APP02696-backend-sql
+-Users-jcuzmar-Work-backend-domain-explain
+-Users-jcuzmar-Work-backend-mock-testing
+-Users-jcuzmar-Work-backend-openapi-mock
+-Users-jcuzmar-Work-backend-templates
+-Users-jcuzmar-Work-frontend-APP02696-mrch-frontend-cross-portal

@@ -1,26 +1,20 @@
-{ primaryUser, javaVersion, ... }:
+{ pkgs, primaryUser, javaVersion, ... }:
 {
-  # After linking, ensure global tools are declared and installed (node, bun, go, java)
+  # Declare tools in the primary user's mise state, not root's activation state.
   system.activationScripts.miseGlobalTools.text = ''
     set -e
-    if ! command -v mise >/dev/null 2>&1; then
-      echo "[mise-global] mise not found; skipping tool install" >&2
-      exit 0
-    fi
-    echo "[mise-global] declaring global versions"
-    mise use --global node@lts || true
-    mise use --global bun@latest || true
-    mise use --global go@latest || true
-    mise use --global java@${javaVersion} || true
-    echo "[mise-global] installing tools if missing"
-    mise install || true
-    mise reshim || true
-    echo "[mise-global] done"
-  '';
+    MISE="sudo -H -u ${primaryUser} ${pkgs.mise}/bin/mise"
 
-  # Recreate JAVA_HOME integration for JDK installed via mise
-  system.activationScripts.miseJavaHome.text = ''
-    set -e
+    echo "[mise-global] declaring global versions"
+    $MISE use --global node@lts
+    $MISE use --global bun@latest
+    $MISE use --global go@latest
+    $MISE use --global java@${javaVersion}
+    echo "[mise-global] installing tools if missing"
+    $MISE install
+    $MISE reshim
+
+    # Recreate JAVA_HOME integration for the JDK installed by mise.
     JAVA_VERSION="${javaVersion}"
     USER_HOME="/Users/${primaryUser}"
     SRC_CONTENTS="$USER_HOME/.local/share/mise/installs/java/$JAVA_VERSION/Contents"
@@ -38,7 +32,10 @@
       fi
       echo "[mise-java] JAVA_HOME bundle linked at $DEST_DIR"
     else
-      echo "[mise-java] Source not found at $SRC_CONTENTS (run: mise use --global java@$JAVA_VERSION && mise install)" >&2
+      echo "[mise-java] Source not found at $SRC_CONTENTS" >&2
+      exit 1
     fi
+
+    echo "[mise-global] done"
   '';
 }
