@@ -16,17 +16,19 @@ let
 
       printf '%s\n' '#!/bin/bash' > "$out/Edge Home.app/Contents/MacOS/launch"
       cat >> "$out/Edge Home.app/Contents/MacOS/launch" <<'EOF'
-      # Self-heal icon: reuse the real Edge icon (runs on the target Mac,
-      # where Edge actually lives). The deployed bundle is user-writable.
+      # Self-heal icon: app icon = app.icns (verified: find grabbed
+      # pdf_document.icns first); always-copy so icon changes and deploy
+      # corrections self-heal.
       ICON_DST="$HOME/Applications/Edge Home.app/Contents/Resources/appIcon.icns"
-      if [[ ! -f "$ICON_DST" ]]; then
-        ICON_SRC="$(find "/Applications/Microsoft Edge.app/Contents/Resources" -maxdepth 1 -name '*.icns' 2>/dev/null | head -n1)"
-        if [[ -n "$ICON_SRC" ]]; then
-          mkdir -p "$HOME/Applications/Edge Home.app/Contents/Resources"
-          cp "$ICON_SRC" "$ICON_DST" 2>/dev/null || true
-          /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$HOME/Applications/Edge Home.app" 2>/dev/null || true
-          touch "$HOME/Applications/Edge Home.app" 2>/dev/null || true
-        fi
+      ICON_SRC="/Applications/Microsoft Edge.app/Contents/Resources/app.icns"
+      if [[ ! -f "$ICON_SRC" ]]; then
+        ICON_SRC="$(find "/Applications/Microsoft Edge.app/Contents/Resources" -maxdepth 1 -name '*.icns' ! -name '*document*.icns' 2>/dev/null | head -n1)"
+      fi
+      if [[ -n "$ICON_SRC" ]]; then
+        mkdir -p "$HOME/Applications/Edge Home.app/Contents/Resources"
+        cp "$ICON_SRC" "$ICON_DST" 2>/dev/null || true
+        /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$HOME/Applications/Edge Home.app" 2>/dev/null || true
+        touch "$HOME/Applications/Edge Home.app" 2>/dev/null || true
       fi
 
       exec '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge' --proxy-server=http://127.0.0.1:2080 --proxy-${"by" + "pass"}-list='localhost;127.0.0.1;::1' "$@"
