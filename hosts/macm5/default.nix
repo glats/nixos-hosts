@@ -73,7 +73,7 @@ in
         ../../darwin/home
       ];
       home.stateVersion = "25.05";
-      home.opencode.activeProviderName = "anthropic-opencode-free";
+      home.opencode.activeProviderName = "openai-medium";
     };
     extraSpecialArgs = {
       inherit
