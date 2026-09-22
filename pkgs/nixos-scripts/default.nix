@@ -3,6 +3,7 @@
   git,
   lib,
   makeWrapper,
+  openspec,
   qrencode,
 }:
 
@@ -35,6 +36,7 @@ buildGoModule {
     "cmd/nixos-build-all"
     "cmd/opencode-home"
     "cmd/opencode2"
+    "cmd/opencode-harness-init"
     "cmd/sops-rotate-keys"
     "cmd/sync-opencode-remote"
     "cmd/wg-peer"
@@ -53,6 +55,8 @@ buildGoModule {
     # qrencode is a runtime dep of device-link (terminal QR output).
     wrapProgram $out/bin/device-link \
       --prefix PATH : ${lib.makeBinPath [ qrencode ]}
+    wrapProgram $out/bin/opencode-harness-init \
+      --prefix PATH : ${lib.makeBinPath [ openspec ]}
   '';
 
   # checkPhase runs `go test ./...` on every build, so every host switch
