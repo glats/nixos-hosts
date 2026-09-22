@@ -40,6 +40,7 @@
       srv = "cd ~/Work/srv/";
 
       ncf = "cd $NIXOS_REPO";
+      ohi = "opencode-harness-init";
       spf = "superfile";
     };
 
