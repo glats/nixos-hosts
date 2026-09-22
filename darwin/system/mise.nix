@@ -1,4 +1,5 @@
 {
+  lib,
   pkgs,
   primaryUser,
   javaVersion,
@@ -6,7 +7,7 @@
 }:
 {
   # Declare tools in the primary user's mise state, not root's activation state.
-  system.activationScripts.miseGlobalTools.text = ''
+  system.activationScripts.postActivation.text = lib.mkAfter ''
     set -e
     MISE="sudo -H -u ${primaryUser} ${pkgs.mise}/bin/mise"
 
