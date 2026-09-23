@@ -42,7 +42,6 @@
     };
     shellAliases = {
       ls = "ls --color=auto";
-      ll = "ls -la";
       "wt-done" = "code-work --done";
       "wt-abort" = "code-work --abort";
       "wt-list" = "code-work --list";

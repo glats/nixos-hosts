@@ -8,6 +8,7 @@
   programs.zsh = {
     shellAliases = {
       la = "ls -la";
+      ll = "ls -la";
       ".." = "cd ..";
       vim = "nvim";
       vi = "nvim";
