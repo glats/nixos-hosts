@@ -201,7 +201,10 @@ let
         sdd-onboard = "github-copilot/gpt-5.4-mini";
         jd-judge-a = "anthropic/claude-sonnet-4-6";
         jd-judge-b = "anthropic/claude-sonnet-4-6";
-        jd-fix-agent = "anthropic/claude-sonnet-4-6";
+        # Re-fit 2026-09-23: corrections may loop, so use the already-routed
+        # Copilot Sonnet 5 ($2/$10 per MTok) instead of native Sonnet 4.6
+        # ($3/$15); reserve the native model for independent judgments.
+        jd-fix-agent = "github-copilot/claude-sonnet-5";
         review-readability = "anthropic/claude-sonnet-4-6";
         review-refuter = "anthropic/claude-sonnet-4-6";
         review-reliability = "anthropic/claude-sonnet-4-6";
@@ -213,15 +216,15 @@ let
     }
     {
       name = "work-copilot-anthropic-light";
-      # Audit 2026-09-23: use Copilot Sonnet 5 ($2/$10 per MTok) for the
-      # routine SDD path, while retaining native Sonnet 4.6 ($3/$15) only for
-      # acceptance and adversarial judgment. Sonnet 5 is GA in Copilot and is
-      # documented for general-purpose coding and agent tasks.
+      # Audit 2026-09-23: use Copilot Terra ($2/$12 per MTok) for capable
+      # orchestration and Copilot Sonnet 5 ($2/$10) for routine SDD work;
+      # retain native Sonnet 4.6 ($3/$15) only for acceptance and adversarial
+      # judgment.
       # Sources: docs.github.com/copilot/reference/copilot-billing/models-and-pricing
       # and docs.github.com/copilot/reference/ai-models/model-comparison.
       phases = {
-        # Keep the coordinating agent capable without consuming the Terra tier.
-        gentle-orchestrator = "github-copilot/claude-sonnet-5";
+        # Terra is GitHub's balanced agentic model and supports the 1M context tier.
+        gentle-orchestrator = "github-copilot/gpt-5.6-terra";
         # Mechanical and guided phases use the inexpensive native tier.
         sdd-init = "anthropic/claude-haiku-4-5";
         sdd-explore = "github-copilot/claude-sonnet-5";
