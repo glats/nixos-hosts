@@ -181,19 +181,10 @@ let
     }
     {
       name = "work-copilot-anthropic";
-      # Replaces old `anthropic-copilot`. Low Copilot credit + larger Anthropic quota:
-      # orchestration/help phases prefer github-copilot/*, heavy phases prefer anthropic/*.
-      # Auth is two separate native `/connect` OAuth flows (Copilot's own + OpenCode's
-      # Anthropic OAuth) — no Claude-Pro/Max-as-Anthropic-API-billing substitution claimed.
-      # PLAN DEPENDENCY: github-copilot/claude-sonnet-5 requires a Copilot plan that
-      # exposes Sonnet 5 (Pro+/Business/Enterprise tiers) — verify with
-      # `opencode run -m github-copilot/claude-sonnet-5 "hi"` before relying on it.
       phases = {
-        gentle-orchestrator = "github-copilot/gpt-5.6-luna";
+        gentle-orchestrator = "github-copilot/gpt-5.6-terra";
         sdd-init = "github-copilot/gpt-5.4-mini";
-        # anthropic/claude-sonnet-4-6: fixed from undeclared "claude-sonnet-5" (old block bug).
         sdd-explore = "anthropic/claude-sonnet-4-6";
-        # anthropic/claude-sonnet-4-6: heavy phase, fixed from undeclared "claude-sonnet-5".
         sdd-propose = "anthropic/claude-sonnet-4-6";
         sdd-spec = "github-copilot/claude-sonnet-5";
         sdd-design = "anthropic/claude-sonnet-4-6";
