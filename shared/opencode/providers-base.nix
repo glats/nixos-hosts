@@ -457,6 +457,44 @@ let
       };
     }
     {
+      name = "openai-opencode-go-heavy";
+      # Audit 2026-09-22: opt-in Go-heavy clone of `openai-opencode`.
+      # OpenCode Go documents GLM-5.3-Flash and DeepSeek V4 Pro as supported
+      # models with 0-day retention, plus materially higher included request
+      # headroom than the premium OpenAI path:
+      # https://opencode.ai/docs/go/.
+      # Keep OpenAI only for coordination and the design/apply/verify failure
+      # boundaries; route judges, reviews, and all non-critical SDD work to Go.
+      # The Go gateway has open provider/model reliability reports, so this
+      # profile is intentionally opt-in rather than a replacement default.
+      phases = {
+        gentle-orchestrator = "openai/gpt-5.6-terra";
+        # GLM-5.3-Flash is the high-headroom mechanical worker.
+        sdd-init = "opencode-go/glm-5.3-flash";
+        # DeepSeek V4 Pro is the larger Go worker for repository/MCP research
+        # and structured planning.
+        sdd-explore = "opencode-go/deepseek-v4-pro";
+        sdd-propose = "opencode-go/deepseek-v4-pro";
+        sdd-spec = "opencode-go/deepseek-v4-pro";
+        sdd-design = "openai/gpt-5.6-terra";
+        sdd-tasks = "opencode-go/glm-5.3-flash";
+        sdd-apply = "openai/gpt-5.6-terra";
+        sdd-verify = "openai/gpt-5.6-terra";
+        sdd-archive = "opencode-go/glm-5.3-flash";
+        sdd-onboard = "opencode-go/glm-5.3-flash";
+        jd-judge-a = "opencode-go/deepseek-v4-pro";
+        jd-judge-b = "opencode-go/deepseek-v4-pro";
+        jd-fix-agent = "opencode-go/glm-5.3-flash";
+        review-readability = "opencode-go/deepseek-v4-pro";
+        review-refuter = "opencode-go/deepseek-v4-pro";
+        review-reliability = "opencode-go/deepseek-v4-pro";
+        review-resilience = "opencode-go/deepseek-v4-pro";
+        review-risk = "opencode-go/deepseek-v4-pro";
+        review-validator = "opencode-go/deepseek-v4-pro";
+        neutral = "opencode-go/glm-5.3-flash";
+      };
+    }
+    {
       name = "openai-opencode-balanced";
       phases = {
         gentle-orchestrator = "openai/gpt-5.6-terra";

@@ -15,6 +15,6 @@ baseModules
 
   # Override active OpenCode provider for this host
   {
-    home.opencode.activeProviderName = "openai-opencode";
+    home.opencode.activeProviderName = "openai-opencode-go-heavy";
   }
 ]

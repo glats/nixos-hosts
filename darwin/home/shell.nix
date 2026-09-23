@@ -6,7 +6,10 @@
   ...
 }:
 {
-  home.packages = [ pkgs.nixos-scripts pkgs.openspec ];
+  home.packages = [
+    pkgs.nixos-scripts
+    pkgs.openspec
+  ];
 
   programs.zsh = {
     enable = true;
