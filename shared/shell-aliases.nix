@@ -40,6 +40,13 @@
       srv = "cd ~/Work/srv/";
 
       ncf = "cd $NIXOS_REPO";
+      gsk = "gentle-ai skill-registry refresh";
+      "gsk!" = "gentle-ai skill-registry refresh --force";
+      gdoc = "gentle-ai doctor";
+      gupd = "gentle-ai update";
+      gsdd = "gentle-ai sdd-status";
+      gnext = "gentle-ai sdd-continue";
+      greview = "gentle-ai review status";
       ohi = "opencode-harness-init";
       spf = "superfile";
     };
