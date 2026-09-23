@@ -189,7 +189,13 @@ let
         sdd-spec = "github-copilot/claude-sonnet-5";
         sdd-design = "anthropic/claude-sonnet-4-6";
         sdd-tasks = "github-copilot/gpt-5.4-mini";
-        sdd-apply = "anthropic/claude-sonnet-4-6";
+        # Re-fit 2026-09-23: apply is the only may-loop phase in this profile,
+        # so it moves to the already-routed Copilot Sonnet 5. GitHub lists it
+        # at $2/$10 per MTok versus native Sonnet 4.6 at $3/$15; keep native
+        # Sonnet 4.6 for the one-shot acceptance and review judgment gates.
+        # Sources: docs.github.com/copilot/reference/copilot-billing/models-and-pricing
+        # and docs.anthropic.com/en/docs/about-claude/pricing.
+        sdd-apply = "github-copilot/claude-sonnet-5";
         sdd-verify = "anthropic/claude-sonnet-4-6";
         sdd-archive = "anthropic/claude-haiku-4-5";
         sdd-onboard = "github-copilot/gpt-5.4-mini";
@@ -203,6 +209,41 @@ let
         review-risk = "anthropic/claude-sonnet-4-6";
         review-validator = "anthropic/claude-sonnet-4-6";
         neutral = "github-copilot/gpt-5.6-luna";
+      };
+    }
+    {
+      name = "work-copilot-anthropic-light";
+      # Audit 2026-09-23: use Copilot Sonnet 5 ($2/$10 per MTok) for the
+      # routine SDD path, while retaining native Sonnet 4.6 ($3/$15) only for
+      # acceptance and adversarial judgment. Sonnet 5 is GA in Copilot and is
+      # documented for general-purpose coding and agent tasks.
+      # Sources: docs.github.com/copilot/reference/copilot-billing/models-and-pricing
+      # and docs.github.com/copilot/reference/ai-models/model-comparison.
+      phases = {
+        # Keep the coordinating agent capable without consuming the Terra tier.
+        gentle-orchestrator = "github-copilot/claude-sonnet-5";
+        # Mechanical and guided phases use the inexpensive native tier.
+        sdd-init = "anthropic/claude-haiku-4-5";
+        sdd-explore = "github-copilot/claude-sonnet-5";
+        sdd-propose = "github-copilot/claude-sonnet-5";
+        sdd-spec = "github-copilot/claude-sonnet-5";
+        sdd-design = "github-copilot/claude-sonnet-5";
+        sdd-tasks = "anthropic/claude-haiku-4-5";
+        sdd-apply = "github-copilot/claude-sonnet-5";
+        # Preserve the native quality gate where a missed defect causes a re-loop.
+        sdd-verify = "anthropic/claude-sonnet-4-6";
+        sdd-archive = "anthropic/claude-haiku-4-5";
+        sdd-onboard = "anthropic/claude-haiku-4-5";
+        jd-judge-a = "anthropic/claude-sonnet-4-6";
+        jd-judge-b = "anthropic/claude-sonnet-4-6";
+        jd-fix-agent = "github-copilot/claude-sonnet-5";
+        review-readability = "anthropic/claude-sonnet-4-6";
+        review-refuter = "anthropic/claude-sonnet-4-6";
+        review-reliability = "anthropic/claude-sonnet-4-6";
+        review-resilience = "anthropic/claude-sonnet-4-6";
+        review-risk = "anthropic/claude-sonnet-4-6";
+        review-validator = "anthropic/claude-sonnet-4-6";
+        neutral = "github-copilot/claude-sonnet-5";
       };
     }
     {
