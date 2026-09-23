@@ -121,10 +121,10 @@
   hardware.rog.s5-recovery.diagnostics.enable = true;
   hardware.rog.s5-recovery.s5Write.enable = false;
 
-  # efiFallback = OFF during the kernel-bisect trial: its priority-225
-  # handler would replace the ACPI S5 entry and mask whether 6.12 itself
-  # powers off cleanly. Re-enable after the bisect verdict.
-  hardware.rog.s5-recovery.efiFallback.enable = false;
+  # Controlled fallback trial: keep the established 6.12 baseline, but
+  # replace only its final ACPI S5 entry with the DMI-scoped EFI handler.
+  # Diagnostics remain enabled and the S5-write hook stays disabled.
+  hardware.rog.s5-recovery.efiFallback.enable = true;
 
   # Blacklist non-essential ASUS WMI modules: their AML calls
   # (_SB.ATKD.WMNB) fail loudly on this firmware and add ACPI
@@ -139,11 +139,9 @@
   my.desktop.suite = "mate";
 
   boot = {
-    # KERNEL BISECT (2026-09-12): the shutdown hang started ~2025 while on
-    # Arch (user report) — a mainline kernel regression interacting with
-    # this firmware. Trial: LTS 6.12 as the first bisect point, with BOTH
-    # workaround stages OFF (pure kernel poweroff path — the EFI handler
-    # would mask the result by replacing the S5 entry).
+    # Controlled shutdown trial: retain the 6.12 baseline and enable only
+    # the EFI fallback above, so its behavior can be compared with the
+    # already-captured pure-kernel shutdown attempts.
     kernelPackages = pkgs.linuxPackages_6_12;
     # acpi_call is required by the manually-run `sudo asus-fan-control
     # set-temps ...` CLI. The periodic service stays disabled
