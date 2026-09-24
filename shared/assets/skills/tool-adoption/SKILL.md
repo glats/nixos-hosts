@@ -20,10 +20,10 @@ proposing or installing anything.
   sources as unknown; never infer APIs, security, or platform support.
 - Do not run upstream `init`, installer, `curl | sh`, or `npx @latest` commands
   in this repository during evaluation. Do not copy generated agent instructions
-  without reviewing their behavior and ownership model.
+  without reviewing their behavior and ownership model. Use the current pattern in the nix code.
 - Check license, pinning, update/telemetry behavior, network listeners, local
   state, filesystem reach, secret exposure, open security issues, and support
-  for Linux plus x86_64-darwin.
+  for Linux plus arm64-darwin.
 - Keep agent skills, MCPs, user packages, background services, and operational
   helpers as distinct integration classes. Operational helpers remain Go only.
 
@@ -44,7 +44,7 @@ proposing or installing anything.
    packages, Go scripts, existing tools, and multi-host deployment.
 3. Inspect runtime boundaries: processes, ports, browser or GUI needs, network
    calls, telemetry, update checks, emitted artifacts, and read/write scope.
-4. Run or delegate `sdd-explore` for a named change. Compare package-only,
+4. Run or delegate `explore` for a named change. Compare package-only,
    managed integration, and defer options; include validation and rollback.
 5. Require explicit user approval before proposal or implementation.
 
