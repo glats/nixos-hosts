@@ -68,7 +68,7 @@
     initContent = lib.mkAfter ''
       code-work() {
         case "''${1:-}" in
-          managed)
+          new|check|ready|status|merge|clean|abandon|recover-lock|managed)
             command code-work "$@"
             ;;
           --done|--abort)

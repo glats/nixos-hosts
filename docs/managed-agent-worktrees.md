@@ -1,12 +1,12 @@
 # Managed Agent Worktrees
 
-`code-work managed` gives each dispatched writing task a branch-attached worktree under `.worktrees/managed/<task-id>`. The task identifier is lowercase alphanumeric text with hyphens, one to 63 characters. Its branch is `managed/<task-id>`.
+`code-work` gives each dispatched writing task a branch-attached worktree under `.worktrees/managed/<task-id>`. The task identifier is lowercase alphanumeric text with hyphens, one to 63 characters. Its branch is `managed/<task-id>`.
 
 ## Lifecycle
 
-Run `managed start <task-id> [--base <branch>]` from a clean attached main checkout. The command records state in the Git common directory, locks the worktree, and launches `opencode --agent managed-writing-task <worktree>`. Repeating the command reuses only matching active metadata.
+Run `code-work new <task-id> [--base <branch>]` from a clean attached main checkout. The command records state in the Git common directory, locks the worktree, and launches `opencode --agent managed-writing-task <worktree>`. Repeating the command reuses only matching active metadata.
 
-The states are `active`, `ready-for-integration`, `integrated`, and `abandoned`. From the assigned worktree, `managed ready <task-id>` requires a clean committed branch. `managed inspect [<task-id>]` reports records; `managed abandon <task-id>` preserves the branch and worktree for diagnosis. `managed cleanup <task-id>` is human-controlled and removes only integrated or explicitly abandoned work. `managed recover-lock` is an explicit recovery action for an operator who has confirmed that no lifecycle operation is running.
+The states are `active`, `ready-for-integration`, `integrated`, and `abandoned`. From the assigned worktree, `code-work check <fmt|eval|flake-check|build> [target]`, `code-work ready`, and `code-work status` infer the task from an exact recorded workspace-path match; they reject the main checkout, subdirectories, and legacy worktrees. `code-work abandon <task-id>` preserves the branch and worktree for diagnosis. `code-work clean <task-id>` is human-controlled and removes only integrated or explicitly abandoned work. `code-work recover-lock` is an explicit recovery action for an operator who has confirmed that no lifecycle operation is running.
 
 ## Capability boundary
 
@@ -16,7 +16,11 @@ Activation, generation/profile mutation, input updates, garbage collection, daem
 
 ## Human integration gate
 
-Only a clean expected main checkout may run `managed integrate <task-id> --validate <check|build>`. The gate takes the repository lock, verifies the ready record and branch, performs a non-fast-forward merge, and validates without activation. A failed validation resets the merge where possible and retains the task record and worktree. `--activate system` or `--activate home` is an additional explicit human request; nothing pushes or cleans up automatically.
+Only a clean expected main checkout may run `code-work merge <task-id> --validate <check|build>`. The gate takes the repository lock, verifies the ready record and branch, performs a non-fast-forward merge, and validates without activation. A failed validation resets the merge where possible and retains the task record and worktree. `--activate system` or `--activate home` is an additional explicit human request; nothing pushes or cleans up automatically.
+
+## Migration
+
+For one release, the hidden `code-work managed ...` adapter accepts the previous forms and writes one stderr deprecation hint. Use the top-level commands above; the adapter and its temporary Bash permission will be removed in the next release.
 
 The contract is portable across Linux and Darwin and does not change Nix daemon concurrency. Home Manager remains the declarative owner of the generated OpenCode configuration and named agent.
 
