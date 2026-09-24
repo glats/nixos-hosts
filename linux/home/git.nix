@@ -56,12 +56,19 @@ in
   # Write git identity include files from sops-decrypted secrets at activation time.
   # Runs after writeBoundary (same timing as gpg.nix key import).
   # Gracefully skips if sops secrets are not yet available.
-  home.activation.writeGitIdentity = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+  home.activation.writeGitIdentity = lib.hm.dag.entryAfter [ "writeBoundary" "sops-nix" ] ''
     _write_identity() {
       _mode="$1"
       _name_file="$2"
       _email_file="$3"
       _out_file="$HOME/.config/git/identity-$_mode"
+
+      # sops-nix installs secrets asynchronously (systemd user service); wait
+      # briefly so the first activation does not silently skip the identity.
+      for ((i = 0; i < 50; i++)); do
+        { [ -f "$_name_file" ] && [ -f "$_email_file" ]; } && break
+        sleep 0.2
+      done
 
       if [ ! -f "$_name_file" ] || [ ! -f "$_email_file" ]; then
         return 0  # skip silently if sops secrets not available

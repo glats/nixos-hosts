@@ -61,12 +61,19 @@ in
     };
   };
 
-  home.activation.writeGitIdentity = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+  home.activation.writeGitIdentity = lib.hm.dag.entryAfter [ "writeBoundary" "sops-nix" ] ''
     _write_identity() {
       _mode="$1"
       _name_file="$2"
       _email_file="$3"
       _out_file="$HOME/.config/git/identity-$_mode"
+
+      # sops-nix installs secrets asynchronously (launchd agent); wait briefly
+      # so the first activation does not silently skip writing the identity.
+      for ((i = 0; i < 50; i++)); do
+        { [ -f "$_name_file" ] && [ -f "$_email_file" ]; } && break
+        sleep 0.2
+      done
 
       if [ ! -f "$_name_file" ] || [ ! -f "$_email_file" ]; then
         return 0  # skip silently if sops secrets not available

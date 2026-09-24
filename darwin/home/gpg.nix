@@ -8,4 +8,10 @@
     pinentry_mac
     nix-index
   ];
+
+  # git invokes gpg non-interactively; gpg-agent needs an explicit pinentry
+  # program on darwin or signing fails with "Inappropriate ioctl for device".
+  home.file.".gnupg/gpg-agent.conf".text = ''
+    pinentry-program ${pkgs.pinentry_mac}/bin/pinentry-mac
+  '';
 }
