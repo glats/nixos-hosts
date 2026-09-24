@@ -41,11 +41,18 @@ Chain strategy: pending
 - [x] 3.3 Nix eval aliases gone, wrapper kept: `nix eval --json .#homeConfigurations.rog.config.programs.zsh.shellAliases | jq -e '(has("wt-done") or has("wt-abort") or has("wt-list")) | not'` AND `nix eval --raw .#homeConfigurations.rog.config.programs.zsh.initContent | grep -c 'code-work()' > 0`.
 - [x] 3.4 Grep gates: `code-work` absent from both `shared/opencode` files; `wt-done\|wt-abort\|wt-list` absent from `linux/home/shell.nix`; wrapper still present.
 - [x] 3.5 Format touched files: `nix fmt -- shared/opencode/agents.nix linux/home/shell.nix`.
-- [ ] 3.6 Full gate: `nix flake check --no-build` passes (proves JSON parse via `builtins.fromJSON`).
-- [ ] 3.7 Evaluate host-scoped targets: `nix eval .#homeConfigurations.rog.activationPackage.drvPath` and `.#homeConfigurations.thinkcentre...` and `.#darwinConfigurations.macm5.config.system.build.toplevel.drvPath`.
-- [ ] 3.8 No Go change ⇒ `go -C pkgs/nixos-scripts test ./...` optional no-op; skip unless §3.6 fails.
+- [x] 3.6 Full gate: `nix flake check --no-build` passes (proves JSON parse via `builtins.fromJSON`).
+- [x] 3.7 Evaluate host-scoped targets: `nix eval .#homeConfigurations.rog.activationPackage.drvPath` and `.#homeConfigurations.thinkcentre...` and `.#darwinConfigurations.macm5.config.system.build.toplevel.drvPath`.
+- [x] 3.8 No Go change ⇒ `go -C pkgs/nixos-scripts test ./...` optional no-op; skipped because no Go source changed and §3.6 passed.
 
 ## Phase 4: Closeout (No Commit)
 
 - [x] 4.1 Report results to orchestrator/persisted memory. Do NOT commit — direct-to-master work only lands after explicit user authorization.
 - [x] 4.2 Leave `simplify-worktree-cli` un-archived until this change archives (ordering dependency).
+
+## Apply Evidence
+
+- `nix flake check --no-build` passed locally.
+- Commit `970e353 chore(opencode): decouple code-work` is pushed on `origin/master`.
+- macm5 pulled the commit cleanly; native `aarch64-darwin` system and Home Manager drv-path evaluations both passed.
+- No deployment, activation, or unrelated modification was performed for this closeout.
