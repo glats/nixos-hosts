@@ -29,8 +29,8 @@ const usageTemplate = `Usage: %[1]s <worktree-name>    Create a named worktree
 	%[1]s ready | status
 	%[1]s merge <task> --validate <check|build> [--activate <system|home>]
 	%[1]s clean|abandon <task> | recover-lock
-        %[1]s --done            Finish worktree (success: cleanup after push)
-       %[1]s --abort           Discard worktree (failure: force remove)
+        %[1]s --done            Finish worktree and show safe cleanup guidance
+        %[1]s --abort           Discard worktree (destructive: force remove)
        %[1]s --list            List all worktrees
        %[1]s --prune           Prune stale worktree references
        %[1]s --help            Show this help message
@@ -139,12 +139,6 @@ func getCurrentBranch() string {
 		die("Detached HEAD state. Checkout a branch before creating a worktree.")
 	}
 	return branch
-}
-
-// hasUpstream ports has_upstream(): silent rev-parse of the branch's
-// upstream ref.
-func hasUpstream(branch string) bool {
-	return exec.Command("git", "rev-parse", "--abbrev-ref", branch+"@{u}").Run() == nil
 }
 
 // hasUncommittedChanges ports the [[ -n "$(git status --porcelain 2>/dev/null)" ]]
@@ -313,14 +307,14 @@ func cmdCreate(repoRoot, worktreesDir, name string) {
 	fmt.Println("  opencode")
 	fmt.Println("")
 	fmt.Println("When done:")
-	fmt.Println("  code-work --done     # success: cleanup after push")
-	fmt.Println("  code-work --abort    # discard: throw away everything")
+	fmt.Println("  code-work --done     # show safe native cleanup guidance")
+	fmt.Println("  code-work --abort    # discard everything (destructive)")
 	fmt.Println("=====================================")
 }
 
-// cmdDone ports cmd_done(): finish the current worktree after its branch
-// has been pushed — return to the base branch, remove the worktree, delete
-// the branch and prune.
+// cmdDone validates the current legacy worktree and prints the native Git
+// commands for safe cleanup. It deliberately does not mutate Git state or
+// change the current directory.
 func cmdDone(pwd, repoRoot, worktreesDir string) {
 	if repoRoot == "" {
 		die("Not inside a git repository")
@@ -334,56 +328,26 @@ func cmdDone(pwd, repoRoot, worktreesDir string) {
 	baseBranch := readMarker(wtPath, repoRoot, worktreesDir)
 
 	if hasUncommittedChanges(wtPath) {
-		fmt.Fprintf(os.Stderr, "Error: uncommitted changes in worktree '%s'.\n", wtName)
+		fmt.Fprintf(os.Stderr, "Warning: uncommitted changes in worktree '%s'.\n", wtName)
 		fmt.Fprintln(os.Stderr, "")
-		fmt.Fprintln(os.Stderr, "Commit before finishing:")
+		fmt.Fprintln(os.Stderr, "Commit or stash them before integrating:")
 		fmt.Fprintln(os.Stderr, "  git add -A && git commit -m 'message'")
-		os.Exit(1)
+		fmt.Fprintln(os.Stderr, "  # or: git stash")
+		fmt.Fprintln(os.Stderr, "")
 	}
 
 	currentBranch := gitCapture("-C", wtPath, "rev-parse", "--abbrev-ref", "HEAD")
-	if !hasUpstream(currentBranch) {
-		fmt.Fprintf(os.Stderr, "Error: Branch '%s' has not been pushed to upstream.\n", currentBranch)
-		fmt.Fprintln(os.Stderr, "Local commits would be lost on deletion.")
-		fmt.Fprintln(os.Stderr, "")
-		fmt.Fprintln(os.Stderr, "To save your work before cleaning up:")
-		fmt.Fprintf(os.Stderr, "  git push -u origin %s\n", currentBranch)
-		fmt.Fprintln(os.Stderr, "")
-		fmt.Fprintln(os.Stderr, "Then run 'code-work --done' again.")
-		fmt.Fprintln(os.Stderr, "")
-		fmt.Fprintln(os.Stderr, "To force cleanup anyway:")
-		fmt.Fprintf(os.Stderr, "  cd %s\n", repoRoot)
-		fmt.Fprintf(os.Stderr, "  git branch -D %s\n", currentBranch)
-		fmt.Fprintf(os.Stderr, "  git worktree remove %s\n", wtPath)
-		fmt.Fprintln(os.Stderr, "  git worktree prune")
-		os.Exit(1)
-	}
-
-	// === Cleanup ===
-	if err := os.Chdir(repoRoot); err != nil {
-		die(err.Error())
-	}
-
-	fmt.Printf("> Returning to base branch '%s'...\n", baseBranch)
-	if err := gitRun("checkout", baseBranch); err != nil {
-		die(fmt.Sprintf("Failed to checkout base branch '%s'. It may have been deleted.", baseBranch))
-	}
-
-	fmt.Printf("> Removing worktree '%s'...\n", wtName)
-	if err := gitRun("worktree", "remove", wtPath, "--force"); err != nil {
-		die(fmt.Sprintf("Failed to remove worktree at %s", wtPath))
-	}
-
-	fmt.Printf("> Deleting branch '%s'...\n", currentBranch)
-	gitFail("branch", "-D", currentBranch)
-
-	fmt.Fprintln(os.Stdout, "> Pruning stale worktree references...")
-	cmdPrune(repoRoot)
-
-	fmt.Println("")
 	fmt.Println("=====================================")
-	fmt.Printf("> Worktree '%s' done and cleaned up.\n", wtName)
-	fmt.Printf("> Returned to branch '%s'.\n", baseBranch)
+	fmt.Printf("> Worktree '%s' is ready for manual cleanup.\n", wtName)
+	fmt.Println("")
+	fmt.Println("Integrate your branch before removing it:")
+	fmt.Printf("  1. Merge '%s' into '%s', or open and merge a PR\n", currentBranch, baseBranch)
+	fmt.Printf("  2. cd %s\n", repoRoot)
+	fmt.Printf("  3. git worktree remove %s\n", wtPath)
+	fmt.Printf("  4. git branch -d %s\n", currentBranch)
+	fmt.Println("")
+	fmt.Fprintln(os.Stdout, "To discard this worktree instead, run 'code-work --abort' (destructive).")
+	fmt.Fprintln(os.Stdout, "Use 'code-work --list' or 'code-work --prune' to inspect worktrees.")
 	fmt.Println("=====================================")
 }
 
