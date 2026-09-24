@@ -68,7 +68,10 @@
           new|check|ready|status|merge|clean|abandon|recover-lock|managed)
             command code-work "$@"
             ;;
-          --done|--abort)
+          --done)
+            command code-work "$@"
+            ;;
+          --abort)
             # Save repo root before script deletes the worktree
             local _main_root="$(git worktree list --porcelain 2>/dev/null | grep "^worktree " | head -1 | sed 's/^worktree //')"
             command code-work "$@"

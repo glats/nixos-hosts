@@ -76,10 +76,26 @@ func TestCodeWorkCommandHelperProcess(t *testing.T) {
 		err = managedCommand(args[1:])
 	} else if args[0] == "new" || args[0] == "check" || args[0] == "ready" || args[0] == "status" || args[0] == "merge" || args[0] == "clean" || args[0] == "abandon" || args[0] == "recover-lock" {
 		err = managedTopLevelCommand(args)
-	} else if args[0] == "prune" {
-		cmdPrune(resolveRepoRoot())
 	} else {
-		err = fmt.Errorf("unsupported helper command %q", args[0])
+		pwd, getwdErr := os.Getwd()
+		if getwdErr != nil {
+			fmt.Fprintln(os.Stderr, getwdErr)
+			os.Exit(1)
+		}
+		repoRoot := resolveRepoRoot()
+		worktreesDir := filepath.Join(repoRoot, ".worktrees")
+		switch args[0] {
+		case "--done":
+			cmdDone(pwd, repoRoot, worktreesDir)
+		case "--abort":
+			cmdAbort(pwd, repoRoot, worktreesDir)
+		case "--list", "list":
+			cmdList(pwd, repoRoot, worktreesDir)
+		case "prune":
+			cmdPrune(repoRoot)
+		default:
+			err = fmt.Errorf("unsupported helper command %q", args[0])
+		}
 	}
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -375,6 +391,70 @@ func TestLegacyPruneUsesManagedLifecycleLock(t *testing.T) {
 	if result := runCodeWork(t, repo, nil, "prune"); result.err != nil {
 		t.Fatalf("unlocked prune failed: %v\n%s", result.err, result.output)
 	}
+}
+
+func TestLegacyDoneDoesNotDeleteAndAbortDiscards(t *testing.T) {
+	repo := setupCommandRepo(t)
+
+	t.Run("done", func(t *testing.T) {
+		branch := "legacy-done"
+		path := createLegacyWorktree(t, repo, branch)
+		commitTask(t, path, "unpushed")
+		if err := os.WriteFile(filepath.Join(path, "dirty"), []byte("dirty\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		beforeHEAD := strings.TrimSpace(git(t, path, "rev-parse", "HEAD"))
+		beforeBranch := strings.TrimSpace(git(t, repo, "rev-parse", "refs/heads/"+branch))
+
+		result := runCodeWork(t, path, nil, "--done")
+		if result.err != nil {
+			t.Fatalf("done failed: %v\n%s", result.err, result.output)
+		}
+		for _, message := range []string{"uncommitted changes", "Integrate your branch", "git worktree remove " + path, "git branch -d " + branch, "code-work --abort", "code-work --list", "code-work --prune"} {
+			if !strings.Contains(result.output, message) {
+				t.Errorf("done output missing %q:\n%s", message, result.output)
+			}
+		}
+		if !pathExists(path) {
+			t.Fatal("done removed the worktree")
+		}
+		if afterHEAD := strings.TrimSpace(git(t, path, "rev-parse", "HEAD")); afterHEAD != beforeHEAD {
+			t.Fatalf("worktree HEAD changed: got %s, want %s", afterHEAD, beforeHEAD)
+		}
+		if afterBranch := strings.TrimSpace(git(t, repo, "rev-parse", "refs/heads/"+branch)); afterBranch != beforeBranch {
+			t.Fatalf("branch ref changed: got %s, want %s", afterBranch, beforeBranch)
+		}
+	})
+
+	t.Run("abort", func(t *testing.T) {
+		branch := "legacy-abort"
+		path := createLegacyWorktree(t, repo, branch)
+		commitTask(t, path, "discard")
+
+		result := runCodeWork(t, path, nil, "--abort")
+		if result.err != nil {
+			t.Fatalf("abort failed: %v\n%s", result.err, result.output)
+		}
+		if pathExists(path) {
+			t.Fatal("abort retained the worktree")
+		}
+		if err := exec.Command("git", "-C", repo, "show-ref", "--verify", "--quiet", "refs/heads/"+branch).Run(); err == nil {
+			t.Fatal("abort retained the branch")
+		}
+	})
+}
+
+func createLegacyWorktree(t *testing.T, repo, branch string) string {
+	t.Helper()
+	path := filepath.Join(repo, ".worktrees", branch)
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	git(t, repo, "worktree", "add", "-b", branch, path)
+	if err := os.WriteFile(filepath.Join(path, ".worktree-base"), []byte("master\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	return path
 }
 
 func pathExists(path string) bool {
