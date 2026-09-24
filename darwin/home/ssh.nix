@@ -22,6 +22,10 @@ in
     ];
 
     settings = {
+      # All supported terminal emulators implement xterm-256color, whereas
+      # remote hosts do not necessarily include emulator-specific terminfo.
+      "*".SetEnv.TERM = "xterm-256color";
+
       # GitHub keys managed by Home Manager
       "github.com" = {
         HostName = "github.com";
