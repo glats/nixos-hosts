@@ -19,7 +19,14 @@
 
 let
   # Import a GPG key from sops secrets into the keyring if not already present.
+  # sops-nix installs secrets asynchronously (launchd agent on darwin, systemd
+  # user service on linux), so wait briefly for the files to appear before
+  # giving up -- otherwise the import is silently skipped on first activation.
   importKey = name: fingerprintPath: keyPath: ''
+    for ((i = 0; i < 50; i++)); do
+      [ -f "${fingerprintPath}" ] && [ -f "${keyPath}" ] && break
+      sleep 0.2
+    done
     if [ -f "${fingerprintPath}" ] && [ -f "${keyPath}" ]; then
       FINGERPRINT="$(cat "${fingerprintPath}" | tr -d '\n')"
       if [ -n "$FINGERPRINT" ] && ! ${pkgs.gnupg}/bin/gpg --list-secret-keys "$FINGERPRINT" >/dev/null 2>&1; then
@@ -29,7 +36,7 @@ let
   '';
 in
 {
-  home.activation.importGpgKeys = lib.hm.dag.entryAfter [ "writeBoundary" ] (
+  home.activation.importGpgKeys = lib.hm.dag.entryAfter [ "writeBoundary" "sops-nix" ] (
     importKey "work" config.sops.secrets."github/work_gpg_fingerprint".path
       config.sops.secrets."github/work_gpg_key".path
     +
