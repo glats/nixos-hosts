@@ -15,7 +15,7 @@
 }:
 
 let
-  version = "1.18.22";
+  version = "1.18.32";
 
   system = stdenvNoCC.hostPlatform.system;
   isLinux = lib.hasSuffix "linux" system;
