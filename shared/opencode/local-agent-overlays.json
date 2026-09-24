@@ -67,6 +67,7 @@
           "git commit *": "allow",
           "go test *": "allow",
           "go -C * test *": "allow",
+          "code-work check *": "allow",
           "code-work managed check *": "allow"
         }
       },

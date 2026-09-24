@@ -74,6 +74,8 @@ func TestCodeWorkCommandHelperProcess(t *testing.T) {
 	var err error
 	if args[0] == "managed" {
 		err = managedCommand(args[1:])
+	} else if args[0] == "new" || args[0] == "check" || args[0] == "ready" || args[0] == "status" || args[0] == "merge" || args[0] == "clean" || args[0] == "abandon" || args[0] == "recover-lock" {
+		err = managedTopLevelCommand(args)
 	} else if args[0] == "prune" {
 		cmdPrune(resolveRepoRoot())
 	} else {
@@ -145,7 +147,7 @@ func git(t *testing.T, dir string, args ...string) string {
 
 func startTask(t *testing.T, repo, id string) string {
 	t.Helper()
-	result := runCodeWork(t, repo, nil, "managed", "start", id)
+	result := runCodeWork(t, repo, nil, "new", id)
 	if result.err != nil {
 		t.Fatalf("start %s: %v\n%s", id, result.err, result.output)
 	}
@@ -168,7 +170,7 @@ func TestManagedCommandDispatchAndConflicts(t *testing.T) {
 	if first == second {
 		t.Fatal("independent tasks share a workspace")
 	}
-	if result := runCodeWork(t, repo, nil, "managed", "start", "alpha"); result.err != nil {
+	if result := runCodeWork(t, repo, nil, "new", "alpha"); result.err != nil {
 		t.Fatalf("matching dispatch was not reused: %v\n%s", result.err, result.output)
 	}
 	stateDir := filepath.Join(repo, ".git", "managed-worktrees")
@@ -180,23 +182,23 @@ func TestManagedCommandDispatchAndConflicts(t *testing.T) {
 	if err := managedworktree.SaveRecord(stateDir, record); err != nil {
 		t.Fatal(err)
 	}
-	if result := runCodeWork(t, repo, nil, "managed", "start", "alpha"); result.err == nil {
+	if result := runCodeWork(t, repo, nil, "new", "alpha"); result.err == nil {
 		t.Fatal("conflicting dispatch was accepted")
 	}
 }
 
 func TestManagedCommandCheckAllowlistAndDenial(t *testing.T) {
 	repo := setupCommandRepo(t)
-	startTask(t, repo, "check")
 	marker := filepath.Join(t.TempDir(), "executed")
-	result := runCodeWork(t, repo, map[string]string{"CODE_WORK_NIX_MARKER": marker}, "managed", "check", "check", "switch")
+	path := startTask(t, repo, "check")
+	result := runCodeWork(t, path, map[string]string{"CODE_WORK_NIX_MARKER": marker}, "check", "switch")
 	if result.err == nil {
 		t.Fatal("mutating check was accepted")
 	}
 	if _, err := os.Stat(marker); !os.IsNotExist(err) {
 		t.Fatalf("denied mutation reached an executable: %v", err)
 	}
-	if result = runCodeWork(t, repo, map[string]string{"CODE_WORK_NIX_MARKER": marker}, "managed", "check", "check", "eval", ".#test"); result.err != nil {
+	if result = runCodeWork(t, path, map[string]string{"CODE_WORK_NIX_MARKER": marker}, "check", "eval", ".#test"); result.err != nil {
 		t.Fatalf("allowlisted check failed: %v\n%s", result.err, result.output)
 	}
 	if _, err := os.Stat(marker); err != nil {
@@ -204,14 +206,80 @@ func TestManagedCommandCheckAllowlistAndDenial(t *testing.T) {
 	}
 }
 
+func TestManagedContextCommandsRejectOutsideWorktree(t *testing.T) {
+	repo := setupCommandRepo(t)
+	path := startTask(t, repo, "task")
+	statePath := filepath.Join(repo, ".git", "managed-worktrees", "task.json")
+	before, err := os.ReadFile(statePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, args := range [][]string{{"check", "fmt"}, {"ready"}, {"status"}} {
+		result := runCodeWork(t, repo, nil, args...)
+		if result.err == nil || !strings.Contains(result.output, "not inside a managed worktree") {
+			t.Errorf("%v outside managed worktree = %v, %q", args, result.err, result.output)
+		}
+	}
+	legacyPath := filepath.Join(t.TempDir(), "managed")
+	git(t, repo, "branch", "legacy-managed")
+	git(t, repo, "worktree", "add", legacyPath, "legacy-managed")
+	for _, args := range [][]string{{"check", "fmt"}, {"ready"}, {"status"}} {
+		result := runCodeWork(t, legacyPath, nil, args...)
+		if result.err == nil || !strings.Contains(result.output, "not inside a managed worktree") {
+			t.Errorf("%v from legacy worktree = %v, %q", args, result.err, result.output)
+		}
+	}
+	after, err := os.ReadFile(statePath)
+	if err != nil || string(before) != string(after) {
+		t.Fatalf("outside command changed task state: %v", err)
+	}
+	if result := runCodeWork(t, path, nil, "status"); result.err != nil || !strings.Contains(result.output, "task active") {
+		t.Fatalf("status from managed worktree failed: %v\n%s", result.err, result.output)
+	}
+}
+
+func TestDeprecatedManagedShim(t *testing.T) {
+	repo := setupCommandRepo(t)
+	result := runCodeWork(t, repo, nil, "managed", "start", "demo")
+	if result.err != nil {
+		t.Fatalf("managed start failed: %v\n%s", result.err, result.output)
+	}
+	if strings.Count(result.output, "code-work managed is deprecated") != 1 {
+		t.Fatalf("deprecation hint count = %d\n%s", strings.Count(result.output, "code-work managed is deprecated"), result.output)
+	}
+	if !strings.Contains(result.output, "Created managed task demo") {
+		t.Fatalf("managed start did not forward to new: %s", result.output)
+	}
+	if strings.Contains(usageTemplate, "managed") {
+		t.Fatal("managed shim is visible in help")
+	}
+	path := managedworktree.PathFor(repo, "demo")
+	if result = runCodeWork(t, path, nil, "managed", "check", "demo", "fmt"); result.err != nil {
+		t.Fatalf("managed check failed: %v\n%s", result.err, result.output)
+	}
+	if result = runCodeWork(t, repo, nil, "managed", "inspect", "demo"); result.err != nil || !strings.Contains(result.output, "demo active") {
+		t.Fatalf("managed inspect failed: %v\n%s", result.err, result.output)
+	}
+	commitTask(t, path, "demo")
+	if result = runCodeWork(t, path, nil, "managed", "ready", "demo"); result.err != nil {
+		t.Fatalf("managed ready failed: %v\n%s", result.err, result.output)
+	}
+	if result = runCodeWork(t, repo, nil, "managed", "integrate", "demo", "--validate", "check"); result.err != nil {
+		t.Fatalf("managed integrate failed: %v\n%s", result.err, result.output)
+	}
+	if result = runCodeWork(t, repo, nil, "managed", "cleanup", "demo"); result.err != nil {
+		t.Fatalf("managed cleanup failed: %v\n%s", result.err, result.output)
+	}
+}
+
 func TestManagedCommandReadyIntegrationAndFailureRetention(t *testing.T) {
 	repo := setupCommandRepo(t)
 	path := startTask(t, repo, "success")
 	commitTask(t, path, "success")
-	if result := runCodeWork(t, path, nil, "managed", "ready", "success"); result.err != nil {
+	if result := runCodeWork(t, path, nil, "ready"); result.err != nil {
 		t.Fatalf("ready failed: %v\n%s", result.err, result.output)
 	}
-	if result := runCodeWork(t, repo, nil, "managed", "integrate", "success", "--validate", "check"); result.err != nil {
+	if result := runCodeWork(t, repo, nil, "merge", "success", "--validate", "check"); result.err != nil {
 		t.Fatalf("ready integration failed: %v\n%s", result.err, result.output)
 	}
 	record, err := managedworktree.LoadRecord(filepath.Join(repo, ".git", "managed-worktrees"), "success")
@@ -221,10 +289,10 @@ func TestManagedCommandReadyIntegrationAndFailureRetention(t *testing.T) {
 
 	path = startTask(t, repo, "failure")
 	commitTask(t, path, "failure")
-	if result := runCodeWork(t, path, nil, "managed", "ready", "failure"); result.err != nil {
+	if result := runCodeWork(t, path, nil, "ready"); result.err != nil {
 		t.Fatal(result.output)
 	}
-	result := runCodeWork(t, repo, map[string]string{"CODE_WORK_NIX_FAIL": "1"}, "managed", "integrate", "failure", "--validate", "check")
+	result := runCodeWork(t, repo, map[string]string{"CODE_WORK_NIX_FAIL": "1"}, "merge", "failure", "--validate", "check")
 	if result.err == nil {
 		t.Fatal("failed validation unexpectedly succeeded")
 	}
@@ -240,17 +308,17 @@ func TestManagedCommandRejectsDirtyNonReadyAndBranchMismatch(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(repo, "dirty"), []byte("dirty"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if result := runCodeWork(t, repo, nil, "managed", "integrate", "unsafe", "--validate", "check"); result.err == nil {
+	if result := runCodeWork(t, repo, nil, "merge", "unsafe", "--validate", "check"); result.err == nil {
 		t.Fatal("dirty main checkout was accepted")
 	}
 	if err := os.Remove(filepath.Join(repo, "dirty")); err != nil {
 		t.Fatal(err)
 	}
-	if result := runCodeWork(t, repo, nil, "managed", "integrate", "unsafe", "--validate", "check"); result.err == nil {
+	if result := runCodeWork(t, repo, nil, "merge", "unsafe", "--validate", "check"); result.err == nil {
 		t.Fatal("non-ready task was accepted")
 	}
 	commitTask(t, path, "unsafe")
-	if result := runCodeWork(t, path, nil, "managed", "ready", "unsafe"); result.err != nil {
+	if result := runCodeWork(t, path, nil, "ready"); result.err != nil {
 		t.Fatalf("ready setup failed: %v\n%s", result.err, result.output)
 	}
 	record, err := managedworktree.LoadRecord(filepath.Join(repo, ".git", "managed-worktrees"), "unsafe")
@@ -261,8 +329,25 @@ func TestManagedCommandRejectsDirtyNonReadyAndBranchMismatch(t *testing.T) {
 	if err := managedworktree.SaveRecord(filepath.Join(repo, ".git", "managed-worktrees"), record); err != nil {
 		t.Fatal(err)
 	}
-	if result := runCodeWork(t, repo, nil, "managed", "integrate", "unsafe", "--validate", "check"); result.err == nil {
+	if result := runCodeWork(t, repo, nil, "merge", "unsafe", "--validate", "check"); result.err == nil {
 		t.Fatal("branch-mismatched task was accepted")
+	}
+}
+
+func TestManagedReadyRejectsStagedChanges(t *testing.T) {
+	repo := setupCommandRepo(t)
+	path := startTask(t, repo, "staged")
+	if err := os.WriteFile(filepath.Join(path, "staged"), []byte("staged\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	git(t, path, "add", "staged")
+	result := runCodeWork(t, path, nil, "ready")
+	if result.err == nil || !strings.Contains(result.output, "uncommitted changes") {
+		t.Fatalf("ready accepted staged change: %v\n%s", result.err, result.output)
+	}
+	record, err := managedworktree.LoadRecord(filepath.Join(repo, ".git", "managed-worktrees"), "staged")
+	if err != nil || record.State != managedworktree.Active {
+		t.Fatalf("staged denial changed task state: %s, %v", record.State, err)
 	}
 }
 
@@ -275,7 +360,7 @@ func TestLegacyPruneUsesManagedLifecycleLock(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if result := runCodeWork(t, path, nil, "managed", "ready", "serialized"); result.err == nil {
+	if result := runCodeWork(t, path, nil, "ready"); result.err == nil {
 		t.Fatal("lifecycle operation ignored the shared lock")
 	}
 	if result := runCodeWork(t, repo, nil, "prune"); result.err == nil {
@@ -284,7 +369,7 @@ func TestLegacyPruneUsesManagedLifecycleLock(t *testing.T) {
 	if err := lock.Release(); err != nil {
 		t.Fatal(err)
 	}
-	if result := runCodeWork(t, path, nil, "managed", "ready", "serialized"); result.err != nil {
+	if result := runCodeWork(t, path, nil, "ready"); result.err != nil {
 		t.Fatalf("unlocked lifecycle operation failed: %v\n%s", result.err, result.output)
 	}
 	if result := runCodeWork(t, repo, nil, "prune"); result.err != nil {

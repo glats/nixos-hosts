@@ -145,7 +145,7 @@ func managedCheck(root, id, check string, target string) error {
 
 func managedStart(root, cwd string, args []string) error {
 	if len(args) < 1 || len(args) > 3 {
-		return fmt.Errorf("usage: managed start <task-id> [--base <branch>]")
+		return fmt.Errorf("usage: new <task-id> [--base <branch>]")
 	}
 	id := args[0]
 	if !managedworktree.ValidTaskID(id) {
@@ -165,7 +165,7 @@ func managedStart(root, cwd string, args []string) error {
 	if len(args) == 3 && args[1] == "--base" {
 		base = args[2]
 	} else if len(args) != 1 {
-		return fmt.Errorf("usage: managed start <task-id> [--base <branch>]")
+		return fmt.Errorf("usage: new <task-id> [--base <branch>]")
 	}
 	stateDir, err := managedCommonDir(root)
 	if err != nil {
@@ -297,7 +297,7 @@ func managedCleanup(root, id string) error {
 		return err
 	}
 	if record.State != managedworktree.Integrated && record.State != managedworktree.Abandoned {
-		return fmt.Errorf("cleanup requires integrated or abandoned task")
+		return fmt.Errorf("clean requires integrated or abandoned task")
 	}
 	managedRun(root, "git", "worktree", "unlock", record.Path)
 	if err := managedRun(root, "git", "worktree", "remove", "--force", record.Path); err != nil {
@@ -311,7 +311,7 @@ func managedCleanup(root, id string) error {
 
 func managedIntegrate(root, cwd, id string, args []string) error {
 	if len(args) < 2 || args[0] != "--validate" {
-		return fmt.Errorf("usage: managed integrate <id> --validate <check|build> [--activate <system|home>]")
+		return fmt.Errorf("usage: merge <id> --validate <check|build> [--activate <system|home>]")
 	}
 	branch, err := managedGit(root, "branch", "--show-current")
 	if err != nil {
@@ -370,7 +370,75 @@ func managedIntegrate(root, cwd, id string, args []string) error {
 	return managedworktree.SaveRecord(managedStateDir(root), record)
 }
 
+func managedTopLevelCommand(args []string) error {
+	root, cwd, err := managedRoot()
+	if err != nil {
+		return err
+	}
+	if len(args) == 0 {
+		return fmt.Errorf("usage: new|check|ready|status|merge|clean|abandon|recover-lock")
+	}
+	switch args[0] {
+	case "new":
+		return managedStart(root, cwd, args[1:])
+	case "ready":
+		if len(args) != 1 {
+			return fmt.Errorf("usage: ready")
+		}
+		id, err := managedworktree.ResolveTaskID(managedStateDir(root), cwd)
+		if err != nil {
+			return err
+		}
+		return managedReady(root, cwd, id)
+	case "check":
+		check, target, err := managedArgs(args[1:])
+		if err != nil {
+			return err
+		}
+		id, err := managedworktree.ResolveTaskID(managedStateDir(root), cwd)
+		if err != nil {
+			return err
+		}
+		return managedCheck(root, id, check, target)
+	case "status":
+		if len(args) != 1 {
+			return fmt.Errorf("usage: status")
+		}
+		id, err := managedworktree.ResolveTaskID(managedStateDir(root), cwd)
+		if err != nil {
+			return err
+		}
+		return managedInspect(root, id)
+	case "merge":
+		if len(args) < 4 {
+			return fmt.Errorf("usage: merge <id> --validate <check|build>")
+		}
+		return managedIntegrate(root, cwd, args[1], args[2:])
+	case "abandon":
+		if len(args) != 2 {
+			return fmt.Errorf("usage: abandon <id>")
+		}
+		return managedTransition(root, args[1], managedworktree.Abandoned)
+	case "clean":
+		if len(args) != 2 {
+			return fmt.Errorf("usage: clean <id>")
+		}
+		return managedCleanup(root, args[1])
+	case "recover-lock":
+		state, err := managedCommonDir(root)
+		if err != nil {
+			return err
+		}
+		return os.Remove(filepath.Join(state, "managed-worktrees", ".lock"))
+	default:
+		return fmt.Errorf("unknown managed command %q", args[0])
+	}
+}
+
+// managedCommand is a one-release hidden compatibility adapter. It keeps old
+// task-addressed forms working while directing new callers to the top-level API.
 func managedCommand(args []string) error {
+	fmt.Fprintln(os.Stderr, "code-work managed is deprecated; use code-work <canonical form>")
 	root, cwd, err := managedRoot()
 	if err != nil {
 		return err
@@ -405,12 +473,11 @@ func managedCommand(args []string) error {
 		if len(args) > 2 {
 			return fmt.Errorf("usage: managed inspect [id]")
 		}
-		return managedInspect(root, func() string {
-			if len(args) == 2 {
-				return args[1]
-			}
-			return ""
-		}())
+		id := ""
+		if len(args) == 2 {
+			id = args[1]
+		}
+		return managedInspect(root, id)
 	case "abandon":
 		if len(args) != 2 {
 			return fmt.Errorf("usage: managed abandon <id>")

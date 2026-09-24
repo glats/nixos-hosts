@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"time"
 )
 
@@ -81,6 +82,36 @@ func LoadRecord(stateDir, id string) (Record, error) {
 	}
 	err = json.Unmarshal(data, &record)
 	return record, err
+}
+
+// ResolveTaskID returns the task whose recorded worktree path exactly matches
+// cwd. It intentionally does not infer from a parent directory so legacy
+// worktrees named managed or managed-* cannot be mistaken for managed tasks.
+func ResolveTaskID(stateDir, cwd string) (string, error) {
+	entries, err := os.ReadDir(stateDir)
+	if errors.Is(err, os.ErrNotExist) {
+		return "", fmt.Errorf("not inside a managed worktree")
+	}
+	if err != nil {
+		return "", err
+	}
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".json") {
+			continue
+		}
+		id := strings.TrimSuffix(entry.Name(), ".json")
+		record, err := LoadRecord(stateDir, id)
+		if err != nil {
+			return "", fmt.Errorf("read managed task %q: %w", id, err)
+		}
+		if record.ID != id || !ValidTaskID(record.ID) || record.Path == "" {
+			return "", fmt.Errorf("managed task record %q is invalid", id)
+		}
+		if filepath.Clean(record.Path) == filepath.Clean(cwd) {
+			return record.ID, nil
+		}
+	}
+	return "", fmt.Errorf("not inside a managed worktree")
 }
 
 func Transition(record *Record, next State) error {

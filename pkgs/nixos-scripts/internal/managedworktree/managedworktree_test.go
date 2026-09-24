@@ -1,6 +1,7 @@
 package managedworktree
 
 import (
+	"os"
 	"path/filepath"
 	"sync"
 	"testing"
@@ -23,6 +24,35 @@ func TestTaskIDAndPaths(t *testing.T) {
 	}
 	if got := PathFor("/repo", "task-1"); got != filepath.Join("/repo", ".worktrees", "managed", "task-1") {
 		t.Fatalf("PathFor() = %q", got)
+	}
+}
+
+func TestResolveTaskID(t *testing.T) {
+	stateDir := t.TempDir()
+	managedPath := filepath.Join(t.TempDir(), "managed-task")
+	if err := SaveRecord(stateDir, Record{ID: "task", Branch: "managed/task", Path: managedPath, State: Active}); err != nil {
+		t.Fatal(err)
+	}
+
+	if got, err := ResolveTaskID(stateDir, managedPath); err != nil || got != "task" {
+		t.Fatalf("ResolveTaskID() = %q, %v", got, err)
+	}
+	for _, cwd := range []string{
+		filepath.Dir(managedPath),
+		filepath.Join(filepath.Dir(managedPath), "managed"),
+		filepath.Join(filepath.Dir(managedPath), "managed-demo"),
+		"relative/path",
+	} {
+		if _, err := ResolveTaskID(stateDir, cwd); err == nil || err.Error() != "not inside a managed worktree" {
+			t.Errorf("ResolveTaskID(%q) error = %v, want not inside a managed worktree", cwd, err)
+		}
+	}
+
+	if err := os.WriteFile(filepath.Join(stateDir, "broken.json"), []byte("{"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ResolveTaskID(stateDir, managedPath); err == nil {
+		t.Fatal("ResolveTaskID accepted a malformed record")
 	}
 }
 

@@ -24,8 +24,12 @@ import (
 var gitignoreRe = regexp.MustCompile(`^\.(worktrees|worktrees/)`)
 
 const usageTemplate = `Usage: %[1]s <worktree-name>    Create a named worktree
-       %[1]s managed ...        Manage isolated writing-task worktrees
-       %[1]s --done            Finish worktree (success: cleanup after push)
+	%[1]s new <task> [--base <branch>]
+	%[1]s check <fmt|eval|flake-check|build> [target]
+	%[1]s ready | status
+	%[1]s merge <task> --validate <check|build> [--activate <system|home>]
+	%[1]s clean|abandon <task> | recover-lock
+        %[1]s --done            Finish worktree (success: cleanup after push)
        %[1]s --abort           Discard worktree (failure: force remove)
        %[1]s --list            List all worktrees
        %[1]s --prune           Prune stale worktree references
@@ -35,10 +39,7 @@ Examples:
   %[1]s my-feature       Create worktree 'my-feature' from current branch
   %[1]s --done           Finish current worktree (run from inside it)
   %[1]s --abort          Discard current worktree without saving
-Managed writing tasks:
-  %[1]s managed start <id> [--base <branch>]
-  %[1]s managed check <id> <fmt|eval|flake-check|build> [target]
-  %[1]s managed ready|inspect|abandon|cleanup|integrate|recover-lock ...
+Managed writing tasks use cwd for check, ready, and status.
 `
 
 // die ports the bash die(): "Error: <msg>" to stderr, exit 1.
@@ -232,6 +233,10 @@ func main() {
 		return
 	}
 	switch cmd {
+	case "new", "check", "ready", "status", "merge", "clean", "abandon", "recover-lock":
+		if err := managedTopLevelCommand(args); err != nil {
+			die(err.Error())
+		}
 	case "--done":
 		cmdDone(pwd, repoRoot, worktreesDir)
 	case "--abort":
