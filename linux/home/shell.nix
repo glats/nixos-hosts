@@ -42,9 +42,6 @@
     };
     shellAliases = {
       ls = "ls --color=auto";
-      "wt-done" = "code-work --done";
-      "wt-abort" = "code-work --abort";
-      "wt-list" = "code-work --list";
 
       nrs = "nixos-build switch";
       nrt = "nixos-build test";
