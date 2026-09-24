@@ -15,11 +15,14 @@ in
     enable = true;
     enableDefaultConfig = false;
 
-    settings =
-      mesh.sshSettingsFor {
-        source = hostName;
-        inherit sshDir;
-      }
-      // { };
+    settings = {
+      # All supported terminal emulators implement xterm-256color, whereas
+      # macOS does not necessarily include emulator-specific terminfo entries.
+      "*".SetEnv.TERM = "xterm-256color";
+    }
+    // mesh.sshSettingsFor {
+      source = hostName;
+      inherit sshDir;
+    };
   };
 }
