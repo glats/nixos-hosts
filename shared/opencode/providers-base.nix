@@ -217,7 +217,8 @@ let
     {
       name = "work-copilot-anthropic-light";
       # Audit 2026-09-23: use Copilot Terra ($2/$12 per MTok) for capable
-      # orchestration and Copilot Sonnet 5 ($2/$10) for routine SDD work;
+      # orchestration and native Sonnet 5 ($2/$10) for planning work; retain
+      # Copilot Sonnet 5 for the implementation path to preserve its workforce.
       # retain native Sonnet 4.6 ($3/$15) only for acceptance and adversarial
       # judgment.
       # Sources: docs.github.com/copilot/reference/copilot-billing/models-and-pricing
@@ -227,10 +228,10 @@ let
         gentle-orchestrator = "github-copilot/gpt-5.6-terra";
         # Mechanical and guided phases use the inexpensive native tier.
         sdd-init = "anthropic/claude-haiku-4-5";
-        sdd-explore = "github-copilot/claude-sonnet-5";
-        sdd-propose = "github-copilot/claude-sonnet-5";
+        sdd-explore = "anthropic/claude-sonnet-5";
+        sdd-propose = "anthropic/claude-sonnet-5";
         sdd-spec = "github-copilot/claude-sonnet-5";
-        sdd-design = "github-copilot/claude-sonnet-5";
+        sdd-design = "anthropic/claude-sonnet-5";
         sdd-tasks = "anthropic/claude-haiku-4-5";
         sdd-apply = "github-copilot/claude-sonnet-5";
         # Preserve the native quality gate where a missed defect causes a re-loop.
