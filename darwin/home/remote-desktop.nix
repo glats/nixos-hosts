@@ -25,6 +25,35 @@ let
     }:
     let
       vncHost = "${host}${if port != "" then ":${port}" else ""}";
+      rdpKeyboardLayoutHelper =
+        if protocol == "rdp" then
+          ''
+            static const char *rdpKeyboardLayout(void) {
+              const char *layout = "0x0000040A";
+              TISInputSourceRef source = TISCopyCurrentKeyboardLayoutInputSource();
+              if (!source) {
+                return layout;
+              }
+
+              CFStringRef sourceId = (CFStringRef)TISGetInputSourceProperty(source, kTISPropertyInputSourceID);
+              if (sourceId && CFEqual(sourceId, CFSTR("com.apple.keylayout.LatinAmerican"))) {
+                layout = "0x0000080A";
+              } else if (
+                sourceId
+                && (
+                  CFEqual(sourceId, CFSTR("com.apple.keylayout.Spanish"))
+                  || CFEqual(sourceId, CFSTR("com.apple.keylayout.Spanish-ISO"))
+                )
+              ) {
+                layout = "0x0000040A";
+              }
+
+              CFRelease(source);
+              return layout;
+            }
+          ''
+        else
+          "";
       execCommand =
         if protocol == "vnc" && viewer == "realvnc" then
           ''
@@ -53,6 +82,8 @@ let
         else
           ''
             const char *rdpbin = "${pkgs.freerdp}/bin/sdl-freerdp";
+            char kbdArg[sizeof("/kbd:layout:0x0000040A,lang:0x040A")];
+            snprintf(kbdArg, sizeof(kbdArg), "/kbd:layout:%s,lang:0x040A", rdpKeyboardLayout());
             const char *args[] = {
               rdpbin,
               "/v:${host}",
@@ -73,7 +104,7 @@ let
               "-wallpaper",
               "-themes",
               "-fonts",
-              "/kbd:layout:0x0000080A,lang:0x040A",
+              kbdArg,
               NULL
             };
             execv(rdpbin, (char *const *)args);
@@ -85,6 +116,9 @@ let
       #include <unistd.h>
       #include <pwd.h>
       #include <string.h>
+      ${lib.optionalString (protocol == "rdp") "#include <Carbon/Carbon.h>"}
+
+      ${rdpKeyboardLayoutHelper}
 
       int main(int argc, char *argv[]) {
           struct passwd *pw = getpwuid(getuid());
@@ -143,7 +177,7 @@ let
         cat > launcher.c <<'CSOURCE'
         ${launcherC}
         CSOURCE
-        $CC -O2 -o launcher launcher.c
+        $CC -O2 -framework Carbon -o launcher launcher.c
       '';
       installPhase = ''
         mkdir -p "$out/${bundleName}.app/Contents/MacOS"
