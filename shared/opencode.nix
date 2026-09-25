@@ -39,13 +39,32 @@ let
     "sub_issue_write"
   ];
 
-  # Single runtime configuration
-  runtimeConfig = {
+  v1RuntimeConfig = {
     dir = "opencode";
     label = "default";
+    version = "v1";
+  };
+
+  v2RuntimeConfig = {
+    dir = "opencode-v2";
+    label = "v2";
+    version = "v2";
   };
 
   mkRuntimeConfig = import ./opencode/runtime-config.nix;
+  v2 = config.home.opencode.v2;
+  mkV2Environment = lib.concatStringsSep "\n" (
+    lib.mapAttrsToList (name: value: "export ${name}=${lib.escapeShellArg value}") {
+      XDG_CONFIG_HOME = "${config.home.homeDirectory}/.config/opencode-v2";
+      XDG_DATA_HOME = "${v2.runtimeRoot}/data";
+      XDG_CACHE_HOME = "${v2.runtimeRoot}/cache";
+      XDG_STATE_HOME = "${v2.runtimeRoot}/state";
+      OPENCODE_CONFIG_DIR = "${config.home.homeDirectory}/.config/opencode-v2";
+      OPENCODE_DB = "${v2.runtimeRoot}/data/opencode.db";
+      TMPDIR = "${v2.runtimeRoot}/tmp";
+      OPENCODE_DISABLE_PROJECT_CONFIG = "1";
+    }
+  );
 in
 {
   imports = [
@@ -123,6 +142,32 @@ in
         must NOT be emitted.
       '';
     };
+
+    v2 = {
+      enable = mkEnableOption "isolated OpenCode V2 runtime" // {
+        default = true;
+      };
+
+      runtimeRoot = mkOption {
+        type = types.str;
+        default = "${config.home.homeDirectory}/.local/opencode-v2";
+        description = "Version-scoped data, cache, state, database, and temporary root for OpenCode V2.";
+      };
+
+      projectConfigCommand = mkOption {
+        type = types.str;
+        default = "opencode2-project";
+        description = "Explicit command that permits V2-compatible project configuration.";
+      };
+
+      environment = mkOption {
+        type = types.lines;
+        readOnly = true;
+        internal = true;
+        default = mkV2Environment;
+        description = "Complete version-scoped environment shared by OpenCode V2 wrappers and activation.";
+      };
+    };
   };
 
   config = mkMerge [
@@ -197,7 +242,36 @@ in
         providers
         ;
       cfg = config.home.opencode;
-      inherit runtimeConfig;
+      runtimeConfig = v1RuntimeConfig;
     }))
+
+    (mkIf config.home.opencode.v2.enable (mkRuntimeConfig {
+      inherit
+        config
+        lib
+        pkgs
+        providers
+        ;
+      cfg = config.home.opencode;
+      runtimeConfig = v2RuntimeConfig;
+    }))
+
+    (mkIf config.home.opencode.v2.enable {
+      home.activation.restartOpencodeV2 = config.lib.dag.entryAfter [ "makeOpencodeConfigMutable-v2" ] ''
+        runtime_root=${lib.escapeShellArg v2.runtimeRoot}
+        config_file="${config.home.homeDirectory}/.config/opencode-v2/opencode.json"
+        stamp="$runtime_root/opencode.json.activation"
+
+        mkdir -p "$runtime_root"
+        if [ ! -f "$stamp" ] || ! ${pkgs.diffutils}/bin/cmp -s "$config_file" "$stamp"; then
+          ${mkV2Environment}
+          if ! ${pkgs.opencode-v2}/bin/opencode2 service restart; then
+            echo "restartOpencodeV2: opencode2 service restart failed" >&2
+            exit 1
+          fi
+          ${pkgs.coreutils}/bin/cp "$config_file" "$stamp"
+        fi
+      '';
+    })
   ];
 }

@@ -27,6 +27,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -40,6 +41,7 @@ var (
 	authFile = envOr("AUTH_FILE", os.Getenv("HOME")+"/.local/share/opencode/auth.json")
 	keyFile  = envOr("KEY_FILE", os.Getenv("HOME")+"/.config/sops/age/keys.txt")
 	dryRun   bool
+	v2       bool
 )
 
 func envOr(key, fallback string) string {
@@ -81,6 +83,7 @@ Options:
   --seed-url URL     Seed URL (required unless SEED_URL is set)
   --auth-file PATH   Override the auth.json path (default: %s)
   --key-file PATH    Override the age identity path (default: %s)
+	  --v2               Copy V1 auth.json to the isolated V2 migration input
   --dry-run          Fetch + decrypt only; do not touch auth.json
   -h, --help         Show this help message
 
@@ -322,6 +325,42 @@ func mergeSeed(auth, seed string) {
 	fmt.Printf("      Backups (if any): %s/%s.bak.*\n", filepath.Dir(auth), strings.TrimSuffix(filepath.Base(auth), ".json"))
 }
 
+func seedV2Auth(source string) {
+	target := filepath.Join(os.Getenv("HOME"), ".local", "opencode-v2", "data", "auth.json")
+	if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+
+	in, err := os.Open(source)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	defer in.Close()
+
+	out, err := os.OpenFile(target, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o600)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	if _, err := io.Copy(out, in); err != nil {
+		out.Close()
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	if err := out.Close(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	if err := os.Chmod(target, 0o600); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("Copied V1 auth.json to %s. V1 remains unchanged.\n", target)
+}
+
 func main() {
 	args := os.Args[1:]
 	for len(args) > 0 {
@@ -345,6 +384,9 @@ func main() {
 		case "--dry-run":
 			dryRun = true
 			args = args[1:]
+		case "--v2":
+			v2 = true
+			args = args[1:]
 		case "-h", "--help":
 			usage(os.Stdout)
 			os.Exit(0)
@@ -353,6 +395,10 @@ func main() {
 			usage(os.Stderr)
 			os.Exit(1)
 		}
+	}
+	if v2 {
+		seedV2Auth(authFile)
+		return
 	}
 	if seedURL == "" {
 		fmt.Fprintln(os.Stderr, "ERROR: --seed-url or SEED_URL is required")
