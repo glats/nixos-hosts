@@ -54,117 +54,137 @@
 
     initContent = ''
       gitNewBranchFeature() { git checkout -b feature/$1 }
-      gitNewBranchBugfix() { git checkout -b bugfix/$1 }
-      gitNewBranchHotfix() { git checkout -b hotfix/$1 }
+        gitNewBranchBugfix() { git checkout -b bugfix/$1 }
+        gitNewBranchHotfix() { git checkout -b hotfix/$1 }
 
-      gaa() { git add -A :/ "$@" }
+        gaa() { git add -A :/ "$@" }
 
-      gpo() { git push origin "$(git branch --show-current)" "$@" }
+        gpo() { git push origin "$(git branch --show-current)" "$@" }
 
-      glog() {
-        git log --topo-order --pretty='format:%C(auto)%h%d %s %C(8)%cr %C(bold blue)%an' "$@"
-      }
-
-      nix-switch() {
-        nixos-build "''${1:-switch}"
-      }
-
-      nix-upgrade() {
-        nixos-build upgrade
-      }
-
-      hms() {
-        local flake="''${NIXOS_REPO:-/etc/nixos}"
-        local host="$(hostname)"
-        if [[ "$(uname -s)" == "Darwin" ]]; then
-          host="''${NIXOS_DARWIN_HOST:-macm5}"
-        fi
-        if [[ "$1" == "--help" || "$1" == "-h" ]]; then
-          echo "Usage: hms"
-          echo ""
-          echo "Runs: home-manager switch --flake <flake>#<host>"
-          echo "Darwin host: NIXOS_DARWIN_HOST or macm5; Linux host: hostname"
-          echo ""
-          echo "Flake path: $flake"
-          echo "Host:       $host"
-          return 0
-        fi
-        home-manager switch --flake "$flake#$host" "$@"
-      }
-
-      nix-format() {
-        nix fmt -- "$NIXOS_REPO"
-      }
-
-      # tmux-resume: bounded-retry attach that lets Continuum's async
-      # `@continuum-restore on` land before reporting a verdict. Continuum
-      # remains the sole restore authority — this never calls Resurrect's
-      # restore.sh and never creates a bootstrap session (no `new-session -A`).
-      # See openspec/changes/tmux-restore-attach/design.md for the contract.
-      tmux-resume() {
-        command -v tmux >/dev/null 2>&1 || {
-          echo "tmux-resume: tmux not found" >&2
-          return 127
+        glog() {
+          git log --topo-order --pretty='format:%C(auto)%h%d %s %C(8)%cr %C(bold blue)%an' "$@"
         }
 
-        local tries=75 delay=0.2 i output exit_status
+        nix-switch() {
+          nixos-build "''${1:-switch}"
+        }
 
-        # has-session/ls only query — they never spawn a server, so without
-        # this the Continuum auto-restore hook (loaded from tmux.conf at
-        # server init) never fires on a true cold start. start-server boots
-        # tmux without creating any session; idempotent if already running.
-        tmux start-server
+        nix-upgrade() {
+          nixos-build upgrade
+        }
 
-        for ((i = 0; i < tries; i++)); do
-          # stderr captured in a variable, not redirected to a pre-created
-          # file: zsh's noclobber (enabled by prezto) refuses `>` on an
-          # existing file with "file exists", which silently prevented
-          # has-session from ever running.
-          # Poll with list-sessions, not has-session: bare has-session
-          # resolves a NULL target and reports "no current target" when the
-          # server is alive but the restore hasn't created a session yet —
-          # a transient window, not a genuine error. list-sessions reports
-          # "no server running on ..." in both cold states instead.
-          # list-sessions prints only listings on success and errors on
-          # failure. A successful empty result means the server is alive while
-          # Continuum's async restore is still starting; do not attach yet.
-          output="$(tmux list-sessions 2>&1)"
-          exit_status=$?
-          if [[ "$exit_status" -eq 0 && -n "$output" ]]; then
-            tmux attach
-            return $?
+        hms() {
+          local flake="''${NIXOS_REPO:-/etc/nixos}"
+          local host="$(hostname)"
+          if [[ "$(uname -s)" == "Darwin" ]]; then
+            host="''${NIXOS_DARWIN_HOST:-macm5}"
           fi
-          # A started server may return exit 0 with empty output until
-          # Continuum has created its restored sessions; keep polling then.
-          if [[ "$exit_status" -eq 0 && -z "$output" ]]; then
+          if [[ "$1" == "--help" || "$1" == "-h" ]]; then
+            echo "Usage: hms"
+            echo ""
+            echo "Runs: home-manager switch --flake <flake>#<host>"
+            echo "Darwin host: NIXOS_DARWIN_HOST or macm5; Linux host: hostname"
+            echo ""
+            echo "Flake path: $flake"
+            echo "Host:       $host"
+            return 0
+          fi
+          home-manager switch --flake "$flake#$host" "$@"
+        }
+
+        nix-format() {
+          nix fmt -- "$NIXOS_REPO"
+        }
+
+        # tmux-resume: bounded-retry attach that lets Continuum's async
+        # `@continuum-restore on` land before reporting a verdict. Continuum
+        # remains the sole restore authority — this never calls Resurrect's
+        # restore.sh and never creates a bootstrap session (no `new-session -A`).
+        # See openspec/changes/tmux-restore-attach/design.md for the contract.
+        tmux-resume() {
+          command -v tmux >/dev/null 2>&1 || {
+            echo "tmux-resume: tmux not found" >&2
+            return 127
+          }
+
+          local tries=75 delay=0.2 i output exit_status
+
+          # has-session/ls only query — they never spawn a server, so without
+          # this the Continuum auto-restore hook (loaded from tmux.conf at
+          # server init) never fires on a true cold start. start-server boots
+          # tmux without creating any session; idempotent if already running.
+          tmux start-server
+
+          for ((i = 0; i < tries; i++)); do
+            # stderr captured in a variable, not redirected to a pre-created
+            # file: zsh's noclobber (enabled by prezto) refuses `>` on an
+            # existing file with "file exists", which silently prevented
+            # has-session from ever running.
+            # Poll with list-sessions, not has-session: bare has-session
+            # resolves a NULL target and reports "no current target" when the
+            # server is alive but the restore hasn't created a session yet —
+            # a transient window, not a genuine error. list-sessions reports
+            # "no server running on ..." in both cold states instead.
+            # list-sessions prints only listings on success and errors on
+            # failure. A successful empty result means the server is alive while
+            # Continuum's async restore is still starting; do not attach yet.
+            output="$(tmux list-sessions 2>&1)"
+            exit_status=$?
+            if [[ "$exit_status" -eq 0 && -n "$output" ]]; then
+              tmux attach
+              return $?
+            fi
+            # A started server may return exit 0 with empty output until
+            # Continuum has created its restored sessions; keep polling then.
+            if [[ "$exit_status" -eq 0 && -z "$output" ]]; then
+              sleep "$delay"
+              continue
+            fi
+            # Transient cold-start conditions: no server/sessions yet, the
+            # Linux socket-connect failure before the server exists ("error
+            # connecting ... No such file or directory"), or the has-session
+            # style "no current target". A genuine tmux error (e.g. Permission
+            # denied) short-circuits immediately instead of being masked as a
+            # restore-in-progress wait.
+            if [[ "$output" != *"no server"* && "$output" != *"no session"* && "$output" != *"no current target"* && "$output" != *"No such file or directory"* ]]; then
+              echo "$output" >&2
+              return 1
+            fi
             sleep "$delay"
-            continue
-          fi
-          # Transient cold-start conditions: no server/sessions yet, the
-          # Linux socket-connect failure before the server exists ("error
-          # connecting ... No such file or directory"), or the has-session
-          # style "no current target". A genuine tmux error (e.g. Permission
-          # denied) short-circuits immediately instead of being masked as a
-          # restore-in-progress wait.
-          if [[ "$output" != *"no server"* && "$output" != *"no session"* && "$output" != *"no current target"* && "$output" != *"No such file or directory"* ]]; then
-            echo "$output" >&2
-            return 1
-          fi
-          sleep "$delay"
-        done
+          done
 
-        local snapshot
-        for snapshot in \
-          "''${XDG_DATA_HOME:-$HOME/.local/share}/tmux/resurrect/last" \
-          "$HOME/.tmux/resurrect/last"; do
-          if [[ -e "$snapshot" ]]; then
-            echo "tmux-resume: restore did not finish within timeout" >&2
-            return 1
-          fi
-        done
+          local snapshot
+          for snapshot in \
+            "''${XDG_DATA_HOME:-$HOME/.local/share}/tmux/resurrect/last" \
+            "$HOME/.tmux/resurrect/last"; do
+            if [[ -e "$snapshot" ]]; then
+              echo "tmux-resume: restore did not finish within timeout" >&2
+              return 1
+            fi
+          done
 
-        echo "tmux-resume: no snapshot to restore" >&2
-        return 1
+          echo "tmux-resume: no snapshot to restore" >&2
+          return 1
+      }
+    ''
+    + lib.optionalString config.home.opencode.v2.enable ''
+      opencode2() {
+        (
+          ${config.home.opencode.v2.environment}
+          exec ${pkgs.opencode-v2}/bin/opencode2 "$@"
+        )
+      }
+
+      opencode2-project() {
+        if [ -f "$PWD/.opencode/package.json" ] && ${pkgs.gnugrep}/bin/grep -Eq '"@opencode-ai/plugin"' "$PWD/.opencode/package.json"; then
+          echo "${config.home.opencode.v2.projectConfigCommand}: V1 OpenCode SDK project configuration is not compatible with OpenCode V2" >&2
+          return 1
+        fi
+        (
+          ${config.home.opencode.v2.environment}
+          unset OPENCODE_DISABLE_PROJECT_CONFIG
+          exec ${pkgs.opencode-v2}/bin/opencode2 "$@"
+        )
       }
     '';
 

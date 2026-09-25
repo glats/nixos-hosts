@@ -58,6 +58,7 @@ in
     engram-assets
     opencode-npm-packages
     opencode
+    opencode-v2
     leaf
     claude-code
     ;

@@ -18,6 +18,7 @@ final: prev: {
     engram-assets-vanilla
     opencode-npm-packages
     opencode
+    opencode-v2
     leaf
     openfang
     claude-code

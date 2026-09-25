@@ -64,6 +64,7 @@ in
         kubectl
         nodejs
         opencode
+        opencode-v2
         uv
         ripgrep
         sops
