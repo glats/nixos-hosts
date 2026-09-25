@@ -68,16 +68,7 @@
           new|check|ready|status|merge|clean|abandon|recover-lock|managed)
             command code-work "$@"
             ;;
-          --done)
-            command code-work "$@"
-            ;;
-          --abort)
-            # Save repo root before script deletes the worktree
-            local _main_root="$(git worktree list --porcelain 2>/dev/null | grep "^worktree " | head -1 | sed 's/^worktree //')"
-            command code-work "$@"
-            [[ -n "$_main_root" ]] && cd "$_main_root"
-            ;;
-          --list|--prune|--help|-h)
+          --done|--abort|--list|--prune|--help|-h)
             command code-work "$@"
             ;;
           "")
@@ -90,10 +81,10 @@
             repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || repo_root=""
             if [[ -n "$repo_root" && -d "$repo_root/.worktrees/$wt_name" ]]; then
               cd "$repo_root/.worktrees/$wt_name"
-              opencode || true
               echo ""
-              echo "> Run 'code-work --done' to save and cleanup"
-              echo "> Run 'code-work --abort' to discard everything"
+              echo "> Worktree ready. Start your preferred assistant here."
+              echo "> Run 'code-work --done $wt_name' when you finish."
+              echo "> Run 'code-work --abort $wt_name' to discard everything"
             fi
             ;;
         esac

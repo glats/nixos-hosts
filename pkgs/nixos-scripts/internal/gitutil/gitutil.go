@@ -4,6 +4,7 @@
 package gitutil
 
 import (
+	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -80,5 +81,5 @@ func WorktreeName(dir, worktreesDir string) string {
 
 // ValidName reports whether name satisfies the worktree-name rule.
 func ValidName(name string) bool {
-	return NameRe.MatchString(name)
+	return NameRe.MatchString(name) && filepath.Clean(name) == name && !filepath.IsAbs(name)
 }

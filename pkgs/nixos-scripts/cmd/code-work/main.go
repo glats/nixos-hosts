@@ -29,16 +29,16 @@ const usageTemplate = `Usage: %[1]s <worktree-name>    Create a named worktree
 	%[1]s ready | status
 	%[1]s merge <task> --validate <check|build> [--activate <system|home>]
 	%[1]s clean|abandon <task> | recover-lock
-        %[1]s --done            Finish worktree and show safe cleanup guidance
-        %[1]s --abort           Discard worktree (destructive: force remove)
+        %[1]s --done [task]     Finish worktree and show safe cleanup guidance
+        %[1]s --abort <task>    Discard worktree (destructive: force remove)
        %[1]s --list            List all worktrees
        %[1]s --prune           Prune stale worktree references
        %[1]s --help            Show this help message
 
 Examples:
   %[1]s my-feature       Create worktree 'my-feature' from current branch
-  %[1]s --done           Finish current worktree (run from inside it)
-  %[1]s --abort          Discard current worktree without saving
+  %[1]s --done my-feature    Finish worktree 'my-feature'
+  %[1]s --abort my-feature   Discard worktree 'my-feature' without saving
 Managed writing tasks use cwd for check, ready, and status.
 `
 
@@ -232,9 +232,19 @@ func main() {
 			die(err.Error())
 		}
 	case "--done":
-		cmdDone(pwd, repoRoot, worktreesDir)
+		if len(args) > 2 {
+			usage(scriptName, "--done accepts at most one worktree name")
+		}
+		name := ""
+		if len(args) == 2 {
+			name = args[1]
+		}
+		cmdDone(pwd, repoRoot, worktreesDir, name)
 	case "--abort":
-		cmdAbort(pwd, repoRoot, worktreesDir)
+		if len(args) != 2 {
+			usage(scriptName, "--abort requires a worktree name")
+		}
+		cmdAbort(repoRoot, worktreesDir, args[1])
 	case "--list", "list":
 		cmdList(pwd, repoRoot, worktreesDir)
 	case "--prune", "prune":
@@ -304,31 +314,42 @@ func cmdCreate(repoRoot, worktreesDir, name string) {
 	fmt.Println("")
 	fmt.Println("To work in this worktree:")
 	fmt.Printf("  cd %s\n", wtDir)
-	fmt.Println("  opencode")
+	fmt.Println("  # start your preferred assistant: opencode, opencode2, claude, ...")
 	fmt.Println("")
 	fmt.Println("When done:")
-	fmt.Println("  code-work --done     # show safe native cleanup guidance")
-	fmt.Println("  code-work --abort    # discard everything (destructive)")
+	fmt.Printf("  code-work --done %s    # show safe native cleanup guidance\n", name)
+	fmt.Printf("  code-work --abort %s   # discard everything (destructive)\n", name)
 	fmt.Println("=====================================")
 }
 
-// cmdDone validates the current legacy worktree and prints the native Git
+// cmdDone validates a legacy worktree named explicitly or inferred from cwd
+// when no name is supplied, then prints the native Git
 // commands for safe cleanup. It deliberately does not mutate Git state or
 // change the current directory.
-func cmdDone(pwd, repoRoot, worktreesDir string) {
+func cmdDone(pwd, repoRoot, worktreesDir, name string) {
 	if repoRoot == "" {
 		die("Not inside a git repository")
 	}
-	if !gitutil.InWorktrees(pwd, worktreesDir) {
-		die(fmt.Sprintf("Not inside a worktree directory (current: %s, worktrees: %s)", pwd, worktreesDir))
+	wtPath := ""
+	if name == "" {
+		if !gitutil.InWorktrees(pwd, worktreesDir) {
+			die(fmt.Sprintf("Not inside a worktree directory (current: %s, worktrees: %s)", pwd, worktreesDir))
+		}
+		name = gitutil.WorktreeName(pwd, worktreesDir)
+		wtPath = pwd
+	} else if !gitutil.ValidName(name) {
+		dieCode(fmt.Sprintf("Invalid worktree name '%s'.", name), 2)
+	} else {
+		wtPath = filepath.Join(worktreesDir, name)
 	}
-	wtName := gitutil.WorktreeName(pwd, worktreesDir)
-	wtPath := pwd
+	if fi, err := os.Stat(wtPath); err != nil || !fi.IsDir() {
+		die(fmt.Sprintf("Worktree '%s' not found at %s", name, wtPath))
+	}
 
 	baseBranch := readMarker(wtPath, repoRoot, worktreesDir)
 
 	if hasUncommittedChanges(wtPath) {
-		fmt.Fprintf(os.Stderr, "Warning: uncommitted changes in worktree '%s'.\n", wtName)
+		fmt.Fprintf(os.Stderr, "Warning: uncommitted changes in worktree '%s'.\n", name)
 		fmt.Fprintln(os.Stderr, "")
 		fmt.Fprintln(os.Stderr, "Commit or stash them before integrating:")
 		fmt.Fprintln(os.Stderr, "  git add -A && git commit -m 'message'")
@@ -338,7 +359,7 @@ func cmdDone(pwd, repoRoot, worktreesDir string) {
 
 	currentBranch := gitCapture("-C", wtPath, "rev-parse", "--abbrev-ref", "HEAD")
 	fmt.Println("=====================================")
-	fmt.Printf("> Worktree '%s' is ready for manual cleanup.\n", wtName)
+	fmt.Printf("> Worktree '%s' is ready for manual cleanup.\n", name)
 	fmt.Println("")
 	fmt.Println("Integrate your branch before removing it:")
 	fmt.Printf("  1. Merge '%s' into '%s', or open and merge a PR\n", currentBranch, baseBranch)
@@ -346,30 +367,31 @@ func cmdDone(pwd, repoRoot, worktreesDir string) {
 	fmt.Printf("  3. git worktree remove %s\n", wtPath)
 	fmt.Printf("  4. git branch -d %s\n", currentBranch)
 	fmt.Println("")
-	fmt.Fprintln(os.Stdout, "To discard this worktree instead, run 'code-work --abort' (destructive).")
+	fmt.Fprintf(os.Stdout, "To discard this worktree instead, run 'code-work --abort %s' (destructive).\n", name)
 	fmt.Fprintln(os.Stdout, "Use 'code-work --list' or 'code-work --prune' to inspect worktrees.")
 	fmt.Println("=====================================")
 }
 
-// cmdAbort ports cmd_abort(): discard the current worktree and its branch
+// cmdAbort discards a named worktree and its branch
 // regardless of dirty state.
-func cmdAbort(pwd, repoRoot, worktreesDir string) {
+func cmdAbort(repoRoot, worktreesDir, name string) {
 	if repoRoot == "" {
 		die("Not inside a git repository")
 	}
-	if !gitutil.InWorktrees(pwd, worktreesDir) {
-		die("Not inside a worktree directory")
+	if !gitutil.ValidName(name) {
+		dieCode(fmt.Sprintf("Invalid worktree name '%s'.", name), 2)
 	}
-	wtName := gitutil.WorktreeName(pwd, worktreesDir)
-	wtPath := pwd
+	wtPath := filepath.Join(worktreesDir, name)
+	if fi, err := os.Stat(wtPath); err != nil || !fi.IsDir() {
+		die(fmt.Sprintf("Worktree '%s' not found at %s", name, wtPath))
+	}
+	if cwd, err := os.Getwd(); err == nil && filepath.Clean(cwd) == filepath.Clean(wtPath) {
+		die(fmt.Sprintf("Refusing to discard worktree '%s': you are inside it. Run from the main checkout.", name))
+	}
 
 	currentBranch := gitCapture("-C", wtPath, "rev-parse", "--abbrev-ref", "HEAD")
 
-	fmt.Printf("> Discarding worktree '%s'...\n", wtName)
-
-	if err := os.Chdir(repoRoot); err != nil {
-		die(err.Error())
-	}
+	fmt.Printf("> Discarding worktree '%s'...\n", name)
 
 	// git worktree remove --force 2>/dev/null || rm -rf "$wt_path"
 	// (only stderr is discarded; stdout stays inherited)
@@ -389,7 +411,7 @@ func cmdAbort(pwd, repoRoot, worktreesDir string) {
 
 	cmdPrune(repoRoot)
 
-	fmt.Printf("> Worktree '%s' discarded.\n", wtName)
+	fmt.Printf("> Worktree '%s' discarded.\n", name)
 }
 
 // cmdList ports cmd_list(): worktree table plus a current-worktree hint.
