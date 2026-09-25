@@ -86,9 +86,19 @@ func TestCodeWorkCommandHelperProcess(t *testing.T) {
 		worktreesDir := filepath.Join(repoRoot, ".worktrees")
 		switch args[0] {
 		case "--done":
-			cmdDone(pwd, repoRoot, worktreesDir)
+			if len(args) > 2 {
+				usage("code-work", "--done accepts at most one worktree name")
+			}
+			name := ""
+			if len(args) == 2 {
+				name = args[1]
+			}
+			cmdDone(pwd, repoRoot, worktreesDir, name)
 		case "--abort":
-			cmdAbort(pwd, repoRoot, worktreesDir)
+			if len(args) != 2 {
+				usage("code-work", "--abort requires a worktree name")
+			}
+			cmdAbort(repoRoot, worktreesDir, args[1])
 		case "--list", "list":
 			cmdList(pwd, repoRoot, worktreesDir)
 		case "prune":
@@ -406,11 +416,11 @@ func TestLegacyDoneDoesNotDeleteAndAbortDiscards(t *testing.T) {
 		beforeHEAD := strings.TrimSpace(git(t, path, "rev-parse", "HEAD"))
 		beforeBranch := strings.TrimSpace(git(t, repo, "rev-parse", "refs/heads/"+branch))
 
-		result := runCodeWork(t, path, nil, "--done")
+		result := runCodeWork(t, repo, nil, "--done", branch)
 		if result.err != nil {
 			t.Fatalf("done failed: %v\n%s", result.err, result.output)
 		}
-		for _, message := range []string{"uncommitted changes", "Integrate your branch", "git worktree remove " + path, "git branch -d " + branch, "code-work --abort", "code-work --list", "code-work --prune"} {
+		for _, message := range []string{"uncommitted changes", "Integrate your branch", "git worktree remove " + path, "git branch -d " + branch, "code-work --abort " + branch, "code-work --list", "code-work --prune"} {
 			if !strings.Contains(result.output, message) {
 				t.Errorf("done output missing %q:\n%s", message, result.output)
 			}
@@ -431,7 +441,7 @@ func TestLegacyDoneDoesNotDeleteAndAbortDiscards(t *testing.T) {
 		path := createLegacyWorktree(t, repo, branch)
 		commitTask(t, path, "discard")
 
-		result := runCodeWork(t, path, nil, "--abort")
+		result := runCodeWork(t, repo, nil, "--abort", branch)
 		if result.err != nil {
 			t.Fatalf("abort failed: %v\n%s", result.err, result.output)
 		}
@@ -442,6 +452,36 @@ func TestLegacyDoneDoesNotDeleteAndAbortDiscards(t *testing.T) {
 			t.Fatal("abort retained the branch")
 		}
 	})
+}
+
+func TestLegacyLifecycleRequiresAndValidatesTaskName(t *testing.T) {
+	repo := setupCommandRepo(t)
+	path := createLegacyWorktree(t, repo, "legacy")
+
+	for _, args := range [][]string{{"--done", "legacy", "extra"}, {"--abort"}} {
+		result := runCodeWork(t, repo, nil, args...)
+		if result.err == nil || !strings.Contains(result.output, "worktree name") {
+			t.Errorf("%v: expected usage error, got %v\n%s", args, result.err, result.output)
+		}
+	}
+	for _, args := range [][]string{{"--done", "missing"}, {"--abort", "missing"}, {"--abort", "nested/../../escape"}} {
+		result := runCodeWork(t, repo, nil, args...)
+		if result.err == nil {
+			t.Errorf("%v unexpectedly succeeded\n%s", args, result.output)
+		}
+	}
+	if !pathExists(path) {
+		t.Fatal("invalid lifecycle calls removed the worktree")
+	}
+	result := runCodeWork(t, path, nil, "--done")
+	if result.err != nil || !strings.Contains(result.output, "Worktree 'legacy'") {
+		t.Fatalf("done from its worktree failed: %v\n%s", result.err, result.output)
+	}
+
+	result = runCodeWork(t, path, nil, "--abort", "legacy")
+	if result.err == nil || !strings.Contains(result.output, "you are inside it") {
+		t.Fatalf("abort from target worktree was accepted: %v\n%s", result.err, result.output)
+	}
 }
 
 func createLegacyWorktree(t *testing.T, repo, branch string) string {
