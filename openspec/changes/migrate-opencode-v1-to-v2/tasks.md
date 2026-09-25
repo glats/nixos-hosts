@@ -42,11 +42,11 @@ Chain strategy: stacked-to-main
 
 ## Phase 4: Verification
 
-- [ ] 4.1 `go -C pkgs/nixos-scripts test ./...`; `nix fmt` touched files; `nix flake check --no-build`.
+- [x] 4.1 `go -C pkgs/nixos-scripts test ./...`; `nix fmt` touched files; `nix flake check --no-build`.
 - [ ] 4.2 Toplevels: 3 `nixosConfigurations` + `darwinConfigurations.macm5`.
 - [ ] 4.3 Per-host smoke: versions, no fresh-launch V1-dir writes, clean credentials, V2-root server, gate refusal, one-way seed, changed-only restart (rog, thinkcentre, t14, macm5).
 
 ## Phase 5: Cleanup
 
-- [ ] 5.1 No leftover `--standalone`, daemon units, or V1-branch code.
-- [ ] 5.2 In wrapper comments: launcher removed in Phase 2; V2 GA approach.
+- [x] 5.1 No leftover `--standalone`, daemon units, or V1-branch code.
+- [x] 5.2 In wrapper comments: launcher removed in Phase 2; V2 GA approach.
