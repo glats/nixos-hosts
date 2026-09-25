@@ -82,6 +82,38 @@ let
 
   allProviders = nvidiaProvider // opencodeProvider;
 
+  # The OpenCode provider surface is defined here for both runtimes. V1
+  # disables catalog providers outside this allowlist; V2 emits a deny-first
+  # policy with these IDs as its ordered exceptions. NVIDIA remains allowed
+  # without entering the catalog-derived V1 disabled list.
+  providerAllowlist = [
+    "opencode"
+    "opencode-go"
+    "anthropic"
+    "openai"
+    "github-copilot"
+    "nvidia"
+  ];
+
+  catalogProviders = [
+    "opencode"
+    "opencode-go"
+    "anthropic"
+    "openai"
+    "github-copilot"
+    "cerebras"
+    "cloudflare-ai-gateway"
+    "cloudflare-workers-ai"
+    "cohere"
+    "groq"
+    "kilo"
+    "mistral"
+    "openrouter"
+    "google"
+  ];
+
+  disabledProviders = lib.filter (provider: !(lib.elem provider providerAllowlist)) catalogProviders;
+
   # ============================================================
   # CANONICAL: evidence-backed, manually-selected profiles.
   # Order here is a structural guarantee (canonicalProviders is
@@ -372,7 +404,7 @@ let
       };
     }
     {
-      name = "high-volume";
+      name = "opencode-high";
       # Evidence: OpenCode Go tier — kimi-k3 orchestrator (best model on the Go
       # catalog, amended 2026-09-10, was glm-5.3-flash) and deepseek-v4-pro/flash
       # for the tool-loop-heavy phases, matching `opencode-go-*`/`openai-opencode-balanced` precedent.
@@ -956,6 +988,8 @@ in
   inherit
     nvidiaProvider
     allProviders
+    providerAllowlist
+    disabledProviders
     providers
     activeProviderName
     activeProvider
