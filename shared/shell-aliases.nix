@@ -168,6 +168,7 @@
       }
     ''
     + lib.optionalString config.home.opencode.v2.enable ''
+      # Native V2 replaces the Docker launcher removed in Phase 2; V1 remains the default command.
       opencode2() {
         (
           ${config.home.opencode.v2.environment}
