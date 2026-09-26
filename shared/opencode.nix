@@ -159,6 +159,27 @@ in
         description = "Explicit command that permits V2-compatible project configuration.";
       };
 
+      browserMcp = {
+        enable = mkOption {
+          type = types.bool;
+          default = true;
+          description = "Enable the pinned BrowserMCP singleton in the global V2 configuration.";
+        };
+
+        package = mkOption {
+          type = types.package;
+          default = pkgs.browsermcp-v2;
+          description = "Pinned BrowserMCP package used by the V2 global MCP server.";
+        };
+
+        location = mkOption {
+          type = types.enum [ "global" ];
+          default = "global";
+          readOnly = true;
+          description = "BrowserMCP is emitted only in the global V2 configuration to preserve its singleton listener.";
+        };
+      };
+
     };
   };
 

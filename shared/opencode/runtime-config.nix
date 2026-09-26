@@ -52,6 +52,17 @@ let
     inherit lib;
     mcps = enabledMcps;
   };
+  v2McpsWithBrowser = v2Mcps // {
+    servers =
+      v2Mcps.servers
+      // lib.optionalAttrs cfg.v2.browserMcp.enable {
+        browsermcp = {
+          type = "local";
+          command = [ "${cfg.v2.browserMcp.package}/bin/mcp-server-browsermcp" ];
+          environment = proxyScrubEnv;
+        };
+      };
+  };
   v2AgentsMd = pkgs.writeText "opencode-v2-AGENTS.md" (
     lib.concatMapStringsSep "\n\n" builtins.readFile config.home.ai-assets.agentsMdSources
   );
@@ -122,7 +133,7 @@ let
           update = "disable";
           agents = v2Agents;
           permissions = v2Permissions;
-          mcp = v2Mcps;
+          mcp = v2McpsWithBrowser;
           experimental.policies = [
             {
               effect = "deny";

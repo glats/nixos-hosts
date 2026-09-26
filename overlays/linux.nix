@@ -18,6 +18,7 @@ final: prev: {
     engram-assets-vanilla
     opencode-npm-packages
     opencode-npm-packages-v2
+    browsermcp-v2
     opencode
     opencode-v2
     leaf

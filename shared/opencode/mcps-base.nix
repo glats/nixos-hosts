@@ -56,16 +56,6 @@ let
       enabled = true;
     };
 
-    browsermcp = {
-      type = "local";
-      command = [
-        "npx"
-        "-y"
-        "@browsermcp/mcp@latest"
-      ];
-      enabled = true;
-    };
-
     exa = {
       type = "remote";
       url = "https://mcp.exa.ai/mcp";

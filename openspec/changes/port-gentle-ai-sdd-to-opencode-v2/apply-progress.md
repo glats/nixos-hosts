@@ -61,3 +61,20 @@ unrelated to the resolved package attribute.
 |---|---|---|---|
 | R3 V1 writable skill-tree ordering | `nix fmt -- shared/opencode/runtime-config.nix shared/ai-assets.nix shared/skills.nix` — exit 0; `nix eval .#homeConfigurations.rog.config.home.activation.prepareOpencodeSkillTree.data` — exit 0; `nix build .#homeConfigurations.rog.activationPackage --no-link --print-out-paths` — exit 0 | Full generated activation completed `prepareOpencodeSkillTree`, `linkGeneration`, and `makeOpencodeConfigMutable-default` without V1 permission or `sed` errors, then stopped at the unrelated V2 command-copy failure. | `shared/opencode/runtime-config.nix`, `shared/skills.nix`, `shared/ai-assets.nix` |
 | R4 V2 writable command-tree staging | `nix fmt -- shared/opencode/runtime-config.nix` — exit 0; `nix eval .#homeConfigurations.rog.activationPackage.drvPath` — exit 0 | `nixos-build test` reached `setupOpencodePluginRuntime-v2`, continued through `syncOpencodeSkillsToOpenfang-default` and `writeGitIdentity` with no V2 copy error; V2 commands are `755` and `sdd-apply.md` is user-owned `644`. | V2 command-tree setup in `shared/opencode/runtime-config.nix` |
+
+- [x] R5-R13 restored the V2 plugin dependency closure and replaced the floating
+  BrowserMCP process with one pinned, compatibility-patched global V2 server.
+
+`@opencode/plugin` 2.0.14 declares `@opencode/schema` as a production
+dependency, not a peer or bundled dependency. The V2 package now stages it and
+the other direct production packages at the top-level Node resolution location.
+BrowserMCP is pinned to 0.1.3; its initialize response keeps `tools` but no
+longer advertises `resources`, while retaining the resource-list handler through
+the compatible pinned MCP SDK patch.
+
+| Work unit | Focused test command and exact result | Runtime harness command/scenario and exact result | Rollback boundary |
+|---|---|---|---|
+| R5/R8/R9 plugin closure | `nix build .#packages.x86_64-linux.opencode-npm-packages-v2 --no-link --print-out-paths`; `test -d "$plugin/lib/node_modules/@opencode/schema"`; ESM `import("@opencode/plugin")` from its staged `lib` — all exit 0, printed `plugin dependency closure resolves` | The five V2 adapter imports resolve from the same sibling `node_modules` topology used by the runtime. | `pkgs/opencode-npm-packages-v2/{default.nix,versions.json,node-modules.json}` |
+| R6/R7 BrowserMCP compatibility package | `nix build .#packages.x86_64-linux.browsermcp-v2 --no-link --print-out-paths` — exit 0 | JSON-RPC initialize against the built binary returned `tools` and omitted `resources`; no module-resolution failure. | `pkgs/browsermcp-v2/`, `lib/packages.nix`, platform overlays |
+| R10-R12 singleton configuration | Rog V2 `opencode.json` evaluation asserted exactly one `browsermcp` server command and no `npx` — exit 0 | The generated command is the pinned package binary and remains only in the global V2 map; project config stays disabled by `OPENCODE_DISABLE_PROJECT_CONFIG=1`. | `shared/opencode.nix`, `shared/opencode/mcps-base.nix`, `shared/opencode/runtime-config.nix` |
+| R13 focused gate | `nix flake check --no-build` — exit 0; `nix eval .#homeConfigurations.rog.activationPackage.drvPath` — exit 0 | Built BrowserMCP completed the initialize handshake with tool capability only. | All R5-R12 files |
