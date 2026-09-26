@@ -9,7 +9,7 @@ Chain strategy: size-exception
 
 ## Workload Forecast
 
-- Estimate: 1.3k to 1.7k lines.
+- Estimate: 1.4k to 1.8k lines.
 - Delivery: exception-ok; one direct-to-main commit approved; apply never commits.
 
 ### Suggested work units
@@ -78,3 +78,46 @@ Chain strategy: size-exception
   V1 skill tree writable before `linkGeneration` and before its `sed` mutation.
 - [x] R4 Recreate the V2 command tree as a writable user-owned directory and
   copy without preserving read-only store directory modes before remapping.
+
+### Plugin dependency closure (design: Node dependency closure)
+
+- [x] R5 RED eval: a consumer importing only `@opencode/plugin` 2.0.14 fails
+  module resolution for its transitive deps — assert
+  `pkgs/opencode-npm-packages-v2/node-modules.json` lacks `@opencode/schema`
+  and the V2 runtime `node_modules` has no `@opencode/schema` subtree.
+- [x] R6 Create `pkgs/browsermcp-v2/`: pin `@browsermcp/mcp` 0.1.3 with SRI
+  hash in `versions.json` and `node-modules.json`; stage its production
+  dependency closure like the plugin closure, plus the capability-only patch.
+- [x] R7 Patch pinned 0.1.3 source: initialize response advertises every
+  existing capability EXCEPT `resources` (tools stay; `resources/list`
+  remains implemented but the template-negotiation trigger is gone). Assert
+  via grep: no `resources` capability flag in the patched initialize.
+- [x] R8 Modify `pkgs/opencode-npm-packages-v2/` to fetch the full pinned
+  2.0.14 production dependency closure — record `@opencode/schema` 2.0.14
+  and every other transitive prod dep (`zod`, etc.) with SRI hashes; stage
+  them under `lib/node_modules` with correct nesting/symlink layout.
+- [x] R9 Verify `@opencode/plugin` 2.0.14 package.json `peerDependencies`/
+  `bundledDependencies` semantics; if schema is a peer dep, record that V2
+  runtime staging must place it top-level. Test: `nix eval` the staged tree,
+  assert `lib/node_modules/@opencode/schema` exists top-level.
+
+### BrowserMCP compatibility and singleton ownership (design: BrowserMCP rows)
+
+- [x] R10 Define `home.opencode.v2.browserMcp` option in `shared/opencode.nix`
+  (submodule: `enable` default true, `package` default
+  `pkgs.browsermcp-v2`, `location` — global V2 config only, read-only option
+  confirming singleton semantics).
+- [x] R11 Remove the floating `browsermcp` entry from
+  `shared/opencode/mcps-base.nix` (V1 keeps nothing stubbed; V2 is the only
+  consumer of this entry today). `v2-mcps.nix` keeps working for the other
+  6 servers.
+- [x] R12 Emit BrowserMCP exactly once into the V2 global `mcp.servers` map
+  only when `home.opencode.v2.browserMcp.enable = true`, via the V2 generator
+  branch in `shared/opencode/runtime-config.nix` merging
+  `v2Mcps // lib.optionalAttrs enable { browsermcp = <pinned package command>; }`.
+- [x] R13 Gate: `nix flake check --no-build` plus Rog evals
+  (`nix eval ... homeConfigurations.rog...`), asserting both: five-adapter
+  plugin closure (R8) resolves under the V2 runtime, and V2 `opencode.json`
+  contains exactly one `browsermcp` server entry whose command references
+  the pinned package (not `npx`), zero in project/workspace maps
+  (OPENCODE_DISABLE_PROJECT_CONFIG=1 already enforces project-map absence).
