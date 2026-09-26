@@ -52,6 +52,7 @@ let
           vanilla = self.engram-assets-vanilla;
         };
         opencode-npm-packages = pkgs.callPackage ../pkgs/opencode-npm-packages { };
+        opencode-npm-packages-v2 = pkgs.callPackage ../pkgs/opencode-npm-packages-v2 { };
         opencode = pkgs.callPackage ../pkgs/opencode { };
         opencode-v2 = pkgs.callPackage ../pkgs/opencode-v2 { };
         leaf = pkgs.callPackage ../pkgs/leaf { };

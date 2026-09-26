@@ -26,6 +26,7 @@ with lib;
         "${pkgs.caveman-assets}/share/caveman/skills"
         "${pkgs.ponytail-assets}/share/ponytail/skills"
         "${pkgs.local-ai-assets}/share/local-ai/skills"
+        ./skills
       ];
       description = "Ordered skill source directories (later wins on conflict).";
     };

@@ -24,6 +24,9 @@ stdenv.mkDerivation {
       echo "Please verify the engram-src input points to a valid repository with the plugin at this path."
       exit 1
     fi
+
+    mkdir -p $out/share/engram/opencode-v2/plugins
+    install -m 0644 ${./engram-v2.ts} $out/share/engram/opencode-v2/plugins/engram.ts
   '';
 
   meta = with lib; {

@@ -17,6 +17,7 @@ final: prev: {
     engram-assets
     engram-assets-vanilla
     opencode-npm-packages
+    opencode-npm-packages-v2
     opencode
     opencode-v2
     leaf

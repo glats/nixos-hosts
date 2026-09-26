@@ -57,6 +57,7 @@ in
     engram-assets-vanilla
     engram-assets
     opencode-npm-packages
+    opencode-npm-packages-v2
     opencode
     opencode-v2
     leaf
