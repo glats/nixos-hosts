@@ -62,3 +62,7 @@ Chain strategy: stacked-to-main
 
 - [x] 6.1 Document allowlist contract in `shared/opencode/providers-base.nix` header comment.
 - [x] 6.2 Remove stale references to deleted `disabledProviders` option.
+
+## Focused Remediation
+
+- [x] R1 Correct V2 `experimental.policies` statement keys to `effect`, `action`, and `resource`; preserve deny-all followed by ordered allow entries.

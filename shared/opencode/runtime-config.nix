@@ -125,15 +125,15 @@ let
           mcp = v2Mcps;
           experimental.policies = [
             {
-              permission = "provider.use";
-              pattern = "*";
-              action = "deny";
+              effect = "deny";
+              action = "provider.use";
+              resource = "*";
             }
           ]
           ++ map (provider: {
-            permission = "provider.use";
-            pattern = provider;
-            action = "allow";
+            effect = "allow";
+            action = "provider.use";
+            resource = provider;
           }) providerAllowlist;
         }
       else

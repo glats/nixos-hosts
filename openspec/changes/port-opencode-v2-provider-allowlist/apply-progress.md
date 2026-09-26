@@ -2,7 +2,7 @@
 
 ## Status
 
-Partial: 20 of 22 tasks are complete. The only remaining tasks are the cross-platform evaluation aggregate and the mandatory rog runtime deny smoke.
+Partial: 20 of 22 tasks are complete. Focused remediation R1 corrected the malformed V2 policy statement schema. The only remaining tasks are the cross-platform evaluation aggregate and the mandatory rog runtime deny smoke.
 
 ## Completed Tasks
 
@@ -14,6 +14,7 @@ Partial: 20 of 22 tasks are complete. The only remaining tasks are the cross-pla
 - [x] 5.2 Go regression suite
 - [x] 5.4 generated V1/V2 configuration assertions
 - [x] 6.1-6.2 contract documentation and stale-reference removal
+- [x] R1 V2 policy statement schema correction
 
 ## Pending Tasks
 
@@ -30,6 +31,18 @@ Partial: 20 of 22 tasks are complete. The only remaining tasks are the cross-pla
 | Repository checks | `nix fmt` formatted six touched Nix files; `nix flake check --no-build` passed; `go -C pkgs/nixos-scripts test ./...` passed. |
 | Runtime harness | Blocked: `opencode2 models` exceeded 120 seconds with no output. No activation was performed and no GROQ run was attempted. |
 | Rollback boundary | Revert `linux/home/groq-dictation.nix`, `linux/home/shared-modules.nix`, and the four `shared/opencode*.nix` files. Sops declarations and encrypted secrets were not changed. |
+
+## Focused Remediation R1 Evidence
+
+The generated V2 JSON used the obsolete keys `permission`, `pattern`, and `action`. OpenCode 2.0.14 policy statements require `effect`, `action`, and `resource`; the prior keys explain why every statement was logged as malformed and skipped.
+
+| Evidence | Result |
+|---|---|
+| Focused evaluation | `nix eval .#homeConfigurations.rog.activationPackage.drvPath` passed. `nix build --no-link --print-out-paths .#homeConfigurations.rog.activationPackage` produced `/nix/store/agvj6fik08rrd63r6q0c9yd6mv8mbbka-home-manager-generation`. |
+| Generated configuration proof | `jq -e` passed against the generated `opencode.json`: exactly seven policies, first `{ effect = "deny"; action = "provider.use"; resource = "*"; }`, followed by six ordered allow statements using the canonical IDs. |
+| Schema/source proof | The pinned `opencode2 --version` reports `v2.0.14`. OpenCode's provider-policy source and published policy documentation define statements as `effect`, `action`, and `resource`, with last matching statement winning. |
+| Runtime parser probe | `opencode2 --print-logs debug config` against the generated config produced no output and exceeded the 120-second safe timeout before completing. It was left untouched because the outstanding plugin/MCP runtime failures are out of scope. |
+| Rollback boundary | Revert only `shared/opencode/runtime-config.nix` to restore the former emitted keys. |
 
 ## Deviations
 
