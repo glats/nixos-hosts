@@ -53,18 +53,23 @@ let
 
   mkRuntimeConfig = import ./opencode/runtime-config.nix;
   v2 = config.home.opencode.v2;
-  mkV2Environment = lib.concatStringsSep "\n" (
-    lib.mapAttrsToList (name: value: "export ${name}=${lib.escapeShellArg value}") {
-      XDG_CONFIG_HOME = "${config.home.homeDirectory}/.config/opencode-v2";
-      XDG_DATA_HOME = "${v2.runtimeRoot}/data";
-      XDG_CACHE_HOME = "${v2.runtimeRoot}/cache";
-      XDG_STATE_HOME = "${v2.runtimeRoot}/state";
-      OPENCODE_CONFIG_DIR = "${config.home.homeDirectory}/.config/opencode-v2";
-      OPENCODE_DB = "${v2.runtimeRoot}/data/opencode.db";
-      TMPDIR = "${v2.runtimeRoot}/tmp";
-      OPENCODE_DISABLE_PROJECT_CONFIG = "1";
-    }
+  mkV2Environment = {
+    XDG_CONFIG_HOME = "${config.home.homeDirectory}/.config/opencode-v2";
+    XDG_DATA_HOME = "${v2.runtimeRoot}/data";
+    XDG_CACHE_HOME = "${v2.runtimeRoot}/cache";
+    XDG_STATE_HOME = "${v2.runtimeRoot}/state";
+    OPENCODE_CONFIG_DIR = "${config.home.homeDirectory}/.config/opencode-v2";
+    OPENCODE_DB = "${v2.runtimeRoot}/data/opencode.db";
+    TMPDIR = "${v2.runtimeRoot}/tmp";
+    OPENCODE_DISABLE_PROJECT_CONFIG = "1";
+  };
+  mkV2ShellEnvironment = lib.concatStringsSep "\n" (
+    lib.mapAttrsToList (name: value: "export ${name}=${lib.escapeShellArg value}") mkV2Environment
   );
+  mkV2SystemdEnvironment = lib.mapAttrsToList (name: value: "${name}=${value}") mkV2Environment;
+  opencodeV2EnvironmentFile = ".local/share/opencode-v2/environment";
+  opencodeV2ServiceCommand = "${pkgs.opencode-v2}/bin/opencode2 serve";
+  opencodeV2LaunchdLabel = "org.nix-community.home.opencode2";
 in
 {
   imports = [
@@ -76,12 +81,6 @@ in
 
   options.home.opencode = {
     enable = mkEnableOption "OpenCode configuration with declarative JSON generation";
-
-    disabledProviders = mkOption {
-      type = types.listOf types.str;
-      default = [ ];
-      description = "Built-in providers to disable (e.g. cloudflare-workers-ai).";
-    };
 
     extraInitContent = mkOption {
       type = types.lines;
@@ -160,13 +159,6 @@ in
         description = "Explicit command that permits V2-compatible project configuration.";
       };
 
-      environment = mkOption {
-        type = types.lines;
-        readOnly = true;
-        internal = true;
-        default = mkV2Environment;
-        description = "Complete version-scoped environment shared by OpenCode V2 wrappers and activation.";
-      };
     };
   };
 
@@ -193,41 +185,8 @@ in
               if [ -f "${config.sops.secrets."opencode/nvidia_api_key".path}" ]; then
                 export NVIDIA_API_KEY="$(cat ${config.sops.secrets."opencode/nvidia_api_key".path})"
               fi
-              if [ -f "${config.sops.secrets."opencode/groq_api_key".path}" ]; then
-                export GROQ_API_KEY="$(cat ${config.sops.secrets."opencode/groq_api_key".path})"
-              fi
-            if [ -f "${config.sops.secrets."opencode/cerebras_api_key".path}" ]; then
-              export CEREBRAS_API_KEY="$(cat ${config.sops.secrets."opencode/cerebras_api_key".path})"
-            fi
           if [ -f "${config.sops.secrets."opencode/opencode_go_api_key".path}" ]; then
             export OPENCODE_API_KEY="$(cat ${config.sops.secrets."opencode/opencode_go_api_key".path})"
-          fi
-            if [ -f "${config.sops.secrets."opencode/openrouter_api_key".path}" ]; then
-              export OPENROUTER_API_KEY="$(cat ${config.sops.secrets."opencode/openrouter_api_key".path})"
-            fi
-          if [ -f "${config.sops.secrets."opencode/mistral_api_key".path}" ]; then
-            export MISTRAL_API_KEY="$(cat ${config.sops.secrets."opencode/mistral_api_key".path})"
-          fi
-          if [ -f "${config.sops.secrets."opencode/cohere_api_key".path}" ]; then
-            export COHERE_API_KEY="$(cat ${config.sops.secrets."opencode/cohere_api_key".path})"
-          fi
-          if [ -f "${config.sops.secrets."opencode/gemini_api_key".path}" ]; then
-            export GEMINI_API_KEY="$(cat ${config.sops.secrets."opencode/gemini_api_key".path})"
-          fi
-        if [ -f "${config.sops.secrets."opencode/cloudflare_api_key".path}" ]; then
-          export CLOUDFLARE_API_TOKEN="$(cat ${config.sops.secrets."opencode/cloudflare_api_key".path})"
-        fi
-        if [ -f "${config.sops.secrets."opencode/cloudflare_account_id".path}" ]; then
-          export CLOUDFLARE_ACCOUNT_ID="$(cat ${config.sops.secrets."opencode/cloudflare_account_id".path})"
-        fi
-          if [ -f "${config.sops.secrets."opencode/huggingface_api_key".path}" ]; then
-            export HF_API_KEY="$(cat ${config.sops.secrets."opencode/huggingface_api_key".path})"
-          fi
-          if [ -f "${config.sops.secrets."opencode/kilo_api_key".path}" ]; then
-            export KILO_API_KEY="$(cat ${config.sops.secrets."opencode/kilo_api_key".path})"
-          fi
-          if [ -f "${config.sops.secrets."opencode/aihubmix_api_key".path}" ]; then
-            export AIHUBMIX_API_KEY="$(cat ${config.sops.secrets."opencode/aihubmix_api_key".path})"
           fi
         ${config.home.opencode.extraInitContent}
       '';
@@ -257,6 +216,76 @@ in
     }))
 
     (mkIf config.home.opencode.v2.enable {
+      home.file.${opencodeV2EnvironmentFile}.text = mkV2ShellEnvironment;
+
+      assertions =
+        lib.optional pkgs.stdenv.isLinux {
+          assertion =
+            config.systemd.user.enable
+            && lib.all (
+              variable: lib.elem variable config.systemd.user.services.opencode2.Service.Environment
+            ) mkV2SystemdEnvironment
+            && lib.elem opencodeV2ServiceCommand config.systemd.user.services.opencode2.Service.ExecStart
+            && config.systemd.user.services.opencode2.Service.Restart == "on-failure";
+          message = "OpenCode V2 must run under a systemd user service with the shared V2 environment.";
+        }
+        ++ lib.optional pkgs.stdenv.isDarwin {
+          assertion =
+            config.launchd.agents.opencode2.enable
+            &&
+              config.launchd.agents.opencode2.config.ProgramArguments == [
+                "${pkgs.opencode-v2}/bin/opencode2"
+                "serve"
+              ]
+            && config.launchd.agents.opencode2.config.EnvironmentVariables == mkV2Environment
+            && config.launchd.agents.opencode2.config.KeepAlive.Crashed
+            && !config.launchd.agents.opencode2.config.KeepAlive.SuccessfulExit
+            && config.launchd.agents.opencode2.config.RunAtLoad;
+          message = "OpenCode V2 must run under a launchd agent with the shared V2 environment.";
+        }
+        ++ [
+          {
+            assertion =
+              config.home.file.${opencodeV2EnvironmentFile}.text == mkV2ShellEnvironment
+              && !lib.hasInfix "opencode2 service restart" config.home.activation.restartOpencodeV2.data;
+            message = "OpenCode V2 wrappers and activation must use the shared environment and supervisor restart.";
+          }
+        ];
+
+      systemd.user.enable = lib.mkIf pkgs.stdenv.isLinux true;
+
+      systemd.user.services.opencode2 = lib.mkIf pkgs.stdenv.isLinux {
+        Unit = {
+          Description = "OpenCode V2 server";
+          After = [ "default.target" ];
+        };
+        Service = {
+          Type = "simple";
+          Environment = mkV2SystemdEnvironment;
+          ExecStart = opencodeV2ServiceCommand;
+          Restart = "on-failure";
+          RestartSec = "5s";
+        };
+        Install.WantedBy = [ "default.target" ];
+      };
+
+      launchd.agents.opencode2 = lib.mkIf pkgs.stdenv.isDarwin {
+        enable = true;
+        config = {
+          ProgramArguments = [
+            "${pkgs.opencode-v2}/bin/opencode2"
+            "serve"
+          ];
+          EnvironmentVariables = mkV2Environment;
+          KeepAlive = {
+            Crashed = true;
+            SuccessfulExit = false;
+          };
+          ProcessType = "Background";
+          RunAtLoad = true;
+        };
+      };
+
       home.activation.restartOpencodeV2 = config.lib.dag.entryAfter [ "makeOpencodeConfigMutable-v2" ] ''
         runtime_root=${lib.escapeShellArg v2.runtimeRoot}
         config_file="${config.home.homeDirectory}/.config/opencode-v2/opencode.json"
@@ -264,9 +293,13 @@ in
 
         mkdir -p "$runtime_root"
         if [ ! -f "$stamp" ] || ! ${pkgs.diffutils}/bin/cmp -s "$config_file" "$stamp"; then
-          ${mkV2Environment}
-          if ! ${pkgs.opencode-v2}/bin/opencode2 service restart; then
-            echo "restartOpencodeV2: opencode2 service restart failed" >&2
+          if ! ${
+            if pkgs.stdenv.isLinux then
+              "${pkgs.systemd}/bin/systemctl --user restart opencode2"
+            else
+              "/bin/launchctl kickstart -k gui/\"$(${pkgs.coreutils}/bin/id -u)\"/${opencodeV2LaunchdLabel}"
+          }; then
+            echo "restartOpencodeV2: supervisor restart failed" >&2
             exit 1
           fi
           ${pkgs.coreutils}/bin/cp "$config_file" "$stamp"

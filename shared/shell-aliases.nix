@@ -171,7 +171,7 @@
       # Native V2 replaces the Docker launcher removed in Phase 2; V1 remains the default command.
       opencode2() {
         (
-          ${config.home.opencode.v2.environment}
+          source "${config.home.homeDirectory}/.local/share/opencode-v2/environment"
           exec ${pkgs.opencode-v2}/bin/opencode2 "$@"
         )
       }
@@ -182,7 +182,7 @@
           return 1
         fi
         (
-          ${config.home.opencode.v2.environment}
+          source "${config.home.homeDirectory}/.local/share/opencode-v2/environment"
           unset OPENCODE_DISABLE_PROJECT_CONFIG
           exec ${pkgs.opencode-v2}/bin/opencode2 "$@"
         )

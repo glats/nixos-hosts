@@ -1,8 +1,8 @@
 # Apply Progress: Parallel Isolated OpenCode V2 Runtime
 
-**Delivery**: stacked-to-main, slice 3 (no branch, commit, push, or PR created)
+**Delivery**: stacked-to-main, slice 4 (no branch, commit, push, or PR created)
 **Mode**: Standard (`strict_tdd: false`)
-**Status**: Phase 4.1 and documentation-only cleanup are complete. Phase 4.2 and 4.3 remain open for native macm5 evaluation and host runtime smoke evidence.
+**Status**: The supervised V2 lifecycle is declared and evaluation-tested. Phase 4.2 and 4.3 remain open for native macm5 toplevel evaluation and deployed host smoke evidence.
 
 ## Completed Task Artifacts
 
@@ -18,6 +18,12 @@
 - [x] 4.1: Go suite passed, ten changed Nix files were formatter-idempotent, and `nix flake check --no-build` passed.
 - [x] 5.1: static cleanup audit found no V2 `--standalone` or V2 managed daemon; the unrelated V1 `opencode-go-proxy` systemd user service remains intentionally. V1 branches remain intentionally to preserve the required fallback.
 - [x] 5.2: documented that native GA V2 replaces the Phase 2 Docker launcher while V1 remains the default command.
+- [x] 1.6: added declarative assertions for Linux systemd and Darwin launchd supervision, one rendered environment source, and activation's supervisor-only restart.
+- [x] 3.6: replaced the internal V2 environment option with one attribute set rendered to a shell environment file and systemd/launchd service environments.
+- [x] 3.7: declared the Linux `opencode2` systemd user service with `opencode2 serve`, `Restart=on-failure`, and `default.target` enablement.
+- [x] 3.8: declared the macm5 `opencode2` launchd agent with the foreground `serve` command, V2 environment, `RunAtLoad`, and crash-only keep-alive.
+- [x] 3.9: changed the cmp-guarded activation hook to restart the applicable supervisor and copy its stamp only after that command succeeds.
+- [x] 3.10: ran the no-build flake gate and evaluated the rendered Linux unit, Darwin agent, and Linux activation command.
 
 ## Work Unit Evidence
 
@@ -33,9 +39,20 @@
 | macm5 reproduction | On macm5, run `nix eval --raw /Users/juan/.config/nix#darwinConfigurations.macm5.config.system.build.toplevel.drvPath` and `nix eval --raw /Users/juan/.config/nix#homeConfigurations.macm5.activationPackage.drvPath`, then run the same-folder smoke matrix after activation. |
 | Rollback boundary | Revert the documentation comment in `shared/shell-aliases.nix` and this task/progress evidence only; no runtime behavior changed in this slice. |
 
+## Work Unit 4 Evidence
+
+| Evidence | Result |
+|---|---|
+| RED → GREEN assertions | Before production, `nix eval --json .#homeConfigurations.rog.config.systemd.user.services.opencode2` failed because no service existed. The module now carries Linux/Darwin assertions for foreground service definitions, shared environment, recovery policy, and the supervisor-only activation path. |
+| Focused test | `nix fmt -- shared/opencode.nix shared/shell-aliases.nix && nix flake check --no-build` exited 0. The flake gate evaluated all three Linux NixOS configurations; Darwin systems are omitted on this `x86_64-linux` executor. |
+| Rendered configuration | `nix eval --impure --json --expr 'let f = builtins.getFlake "path:/home/glats/.nixos"; in { linux = f.homeConfigurations.rog.config.systemd.user.services.opencode2; darwin = f.homeConfigurations.macm5.config.launchd.agents.opencode2; }'` exited 0. Linux renders `opencode2 serve`, all eight V2 variables, `Restart=on-failure`, and `WantedBy=default.target`; Darwin renders the same binary/environment with `RunAtLoad` and crash-only `KeepAlive`. |
+| Activation rendering | `nix eval --impure --raw --expr 'let f = builtins.getFlake "path:/home/glats/.nixos"; in f.homeConfigurations.rog.config.home.activation.restartOpencodeV2.data'` exited 0 and rendered cmp-guarded `systemctl --user restart opencode2`, a failure exit before the stamp copy, and no native `service restart`. The Darwin branch evaluates `launchctl kickstart -k gui/$(id -u)/org.nix-community.home.opencode2`. |
+| Runtime harness | N/A: this executor has no deployed target user session, and starting/restarting either supervisor would mutate a host. Deployed discovery and crash recovery remain Phase 4.3 evidence. |
+| Rollback boundary | Revert `shared/opencode.nix` and `shared/shell-aliases.nix`; this removes only V2 environment rendering, user supervisors, activation restart behavior, and their assertions. V1 remains untouched. |
+
 ## Remaining Tasks
 
 - [ ] 4.2: complete native `darwinConfigurations.macm5` toplevel evaluation on macm5.
 - [ ] 4.3: complete deployed per-host V1/V2 same-folder smoke evidence on rog, thinkcentre, t14, and macm5.
 
-**Review boundary**: stacked-to-main slice 3 contains validation evidence and one documentation comment only. No product behavior was changed.
+**Review boundary**: stacked-to-main slice 4 contains only V2 user-supervisor declarations, shared environment rendering, activation restart logic, wrapper sourcing, and declarative assertions.

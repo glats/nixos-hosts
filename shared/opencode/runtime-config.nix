@@ -86,15 +86,30 @@ let
     lib.filterAttrs (_: plugin: !plugin.enable) managedPlugins
   );
 
-  # Use providers from centralized providers.nix
+  # V1 provider declarations and V1/V2 allowlist policy share this one source.
   allProviders = providers.allProviders;
+  providerAllowlist = providers.providerAllowlist;
 
   # V2 intentionally gets only native global configuration. V1 retains the
   # complete declarative runtime below without sharing its plugins or assets.
   jsonFile = pkgs.writeText "opencode.json" (
     builtins.toJSON (
       if isV2 then
-        { update = "disable"; }
+        {
+          update = "disable";
+          experimental.policies = [
+            {
+              permission = "provider.use";
+              pattern = "*";
+              action = "deny";
+            }
+          ]
+          ++ map (provider: {
+            permission = "provider.use";
+            pattern = provider;
+            action = "allow";
+          }) providerAllowlist;
+        }
       else
         {
           agent = cfg.agents;
@@ -105,7 +120,9 @@ let
           # Managed npm plugins auto-installed by OpenCode at startup
           plugin = cfg.plugins.npmPlugins;
         }
-        // lib.optionalAttrs (cfg.disabledProviders != [ ]) { disabled_providers = cfg.disabledProviders; }
+        // {
+          disabled_providers = providers.disabledProviders;
+        }
         // lib.optionalAttrs (cfg.disabledTools != [ ]) {
           # Globally disabled tools: OpenCode drops these from provider requests
           # (session/llm/request.ts resolveTools filters user.tools[name]==false),

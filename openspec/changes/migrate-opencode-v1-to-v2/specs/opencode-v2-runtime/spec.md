@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Isolated V2 runtime: pinned binary, directory isolation, shared server, project-config gating, clean auth.
+Isolated V2 runtime: pinned binary, directory isolation, supervised shared server, project-config gating, clean auth.
 
 ## Requirements
 
@@ -45,16 +45,37 @@ The `opencode2` wrapper MUST set all XDG base dirs plus `OPENCODE_CONFIG_DIR`, `
 - THEN no file appears under `~/.config/opencode` or `~/.local/share/opencode`
 - AND its credential store is empty with V1 `auth.json` unmodified
 
-### Requirement: Native shared server with restart hook
+### Requirement: Supervised service lifecycle
 
-The `opencode2` wrapper MUST NOT append `--standalone`; V2 SHALL run its native shared server under the V2 state root. A cross-platform `home.activation` hook MUST run `opencode2 service restart` only on config change. No managed systemd/launchd daemon.
+The `opencode2` wrapper MUST NOT append `--standalone`; V2 SHALL run its native shared server under the V2 state root. On Linux hosts (rog, thinkcentre, t14) the server SHALL run as a supervised systemd user service; on macm5 it SHALL run as a launchd agent. Both SHALL launch with the same central `mkV2Environment` exports as the interactive wrapper. Activation SHALL restart the supervised service ONLY when the generated V2 `opencode.json` changes.
 
 #### Scenario: Config regen restarts server [rog, macm5]
 
-- GIVEN the V2 server running
-- WHEN activation regenerates changed `opencode.json`
-- THEN the hook restarts the service with the wrapper env
+- GIVEN the supervised V2 service running
+- WHEN activation regenerates a changed `opencode.json`
+- THEN activation restarts the service with the wrapper env
 - AND unchanged config triggers no restart
+
+#### Scenario: Platform-supervised service [rog, thinkcentre, t14, macm5]
+
+- GIVEN V2 delivered on a Linux host
+- WHEN the user session starts
+- THEN a systemd user service runs `opencode2` under the V2 state root
+- AND on macm5 a launchd agent does the same with the same V2 env
+
+#### Scenario: Post-switch discovery [rog, macm5]
+
+- GIVEN V2 switched in as the active runtime
+- WHEN the user inspects the running service
+- THEN `systemctl --user status opencode2` (Linux) or `launchctl list` (macm5) shows the V2 server under the V2 state root
+- AND V1 paths and process are unaffected
+
+#### Scenario: Recovery after failure [rog, macm5]
+
+- GIVEN the supervised V2 service stopped or crashed
+- WHEN activation runs or the service is restarted
+- THEN it restarts with the V2 env
+- AND recovery never falls back to V1 nor writes under V1 dirs
 
 ### Requirement: Project config disabled by default
 
