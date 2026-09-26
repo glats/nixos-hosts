@@ -2,65 +2,67 @@
 
 ## Technical Approach
 
-Keep `opencode` and its V1 tree unchanged at 1.18.32. First package/delivery deletes stale Docker `opencode2` before native V2 delivery: the shared command makes removal a prerequisite, not a later isolation task. Native V2 uses `$HOME/.config/opencode-v2` and `$HOME/.local/opencode-v2/{data,cache,state,tmp}`. One Nix function derives launcher/restart exports. V2 uses its native shared server, never `--standalone` or a managed daemon.
+Keep V1 (`opencode`, 1.18.32) unchanged and deliver native V2 as `opencode2` with its own config and state roots. V2's shared server becomes an OS-supervised user process: a Home Manager systemd user service on rog, thinkcentre, and t14, and a Home Manager launchd agent on macm5. `mkV2Environment` remains the single source of all V2 isolation exports for the interactive wrappers and both supervisors. Activation restarts the applicable supervisor only after the generated V2 `opencode.json` changed.
 
 ## Architecture Decisions
 
 | Decision | Choice | Rejected / rationale |
 |---|---|---|
-| Distribution and delivery | First remove `pkgs/nixos-scripts/cmd/opencode2/` and its `default.nix` entry, then deliver `pkgs/opencode-v2/default.nix`: fixed-hash `@opencode/cli-<os>-<arch>@2.0.14`, Linux `autoPatchelfHook`, and `makeBinaryWrapper`; installs native `opencode2` only. | Deferral leaves two `opencode2` providers and blocks autonomous delivery. The npm meta-package runs postinstall; GitHub/standalone artifacts are not V2 distribution. Mirror V1 without changing it. |
-| Runtime | Extend `shared/opencode.nix` and `shared/opencode/runtime-config.nix` with `v1`/`v2` runtime records. Preserve V1 byte-for-byte; V2 writes only native global configuration (`update = "disable"`) and no V1 plugins, npm tree, `tui.json`, commands, or skills. | Translating V1 config/plugins is deferred; sharing them would execute V1 SDK code in V2. |
-| Isolation and lifecycle | `mkV2Environment` derives `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, `XDG_CACHE_HOME`, `XDG_STATE_HOME`, `OPENCODE_CONFIG_DIR`, `OPENCODE_DB`, and `TMPDIR` below `$HOME/.local/opencode-v2`, except config at `$HOME/.config/opencode-v2`. `opencode2` exports these plus `OPENCODE_DISABLE_PROJECT_CONFIG=1` and execs `${pkgs.opencode-v2}/bin/opencode2`. | Inherited XDG values and `--standalone` risk V1 state or multiple SQLite owners. A V2 activation stamp/cmp guard runs `opencode2 service restart` with the same exports only when V2 `opencode.json` content changes. |
-| Project and auth gates | `opencode2-project` is the sole opt-in wrapper: it removes the disable flag and refuses `$PWD/.opencode/package.json` with `@opencode-ai/plugin`. Default V2 never reads project config or `AGENTS.md`. `install-opencode-auth-seed --v2` copies V1 `auth.json` read-only to a 0600 V2 migration input; V2 owns SQLite credentials. | No automatic migration or global V2 `AGENTS.md`; V1 auth never changes. |
+| Distribution and runtime generation | Retain the pinned native `opencode-v2` package and dual V1/V2 records in `shared/opencode.nix` and `shared/opencode/runtime-config.nix`; V2 emits only its native global config. | Reusing V1 plugins, commands, skills, or npm tree would run V1 SDK code in V2; changing V1 violates the fallback contract. |
+| Environment contract | Represent `mkV2Environment` so it can render shell exports for `opencode2`/`opencode2-project` and environment attributes for service declarations. It includes all XDG roots, `OPENCODE_CONFIG_DIR`, `OPENCODE_DB`, `TMPDIR`, and default `OPENCODE_DISABLE_PROJECT_CONFIG=1`. | Duplicated wrapper, systemd, launchd, and activation environments can drift into V1 paths. |
+| Linux supervision | Declare `systemd.user.services.opencode2` in the shared HM module for Linux. It starts the V2 server in foreground mode with the rendered `mkV2Environment`, restarts on failure, and is enabled for the user session. | Invoking the native background-service command from activation leaves the process outside systemd supervision. |
+| macOS supervision | Declare a `launchd.agents.opencode2` job on macm5 with the same V2 executable, environment attributes, run-at-load, and keep-alive recovery. | A nix-darwin system daemon would use the wrong user home/session; an unsupervised background server cannot recover after failure. |
+| Activation lifecycle | Keep the V2 config stamp and `cmp` guard after `makeOpencodeConfigMutable-v2`. On a difference, restart the platform supervisor; on identical content, do nothing. Stamp only after a successful restart. | Unconditional activation restart disrupts active sessions; activation must not serve as a recovery loop. Supervisor restart policy handles crashes. |
+| Project and auth gates | Keep default project-config disablement, V1-SDK refusal in `opencode2-project`, and one-way `--v2` auth seeding. | Automatic V1 credential/config migration or a global V2 `AGENTS.md` crosses the isolation boundary. |
 
 ## Data Flow
 
 ```
-HM runtime record -> V2 config/stamp -> activation cmp -> env opencode2 service restart
-                         ^                         |
-zsh opencode2 -> same mkV2Environment -> V2 shared server/state/db
-opencode (V1) -> existing PATH/config/data, untouched
+mkV2Environment ──> zsh wrappers ────────────────> V2 client/server
+       │                                                │
+       ├──> systemd.user opencode2 (Linux) ─────────────┤
+       └──> launchd agent opencode2 (macm5) ────────────┘
+HM V2 config ──> cmp/stamp ──changed only──> platform supervisor restart
+opencode (V1) ──> existing V1 paths and process, untouched
 ```
 
-The hook runs after V2 mutable-config activation, stamps only compared/copied content, and reports restart failure without V1 fallback or V1 writes. The launcher preserves cwd and arguments. Same-folder V1/V2 have separate global state; project edits and Git contention remain normal user concurrency, documented but not locked.
+The supervisor owns crash recovery. The activation hook only performs the config-change restart and must expose a failed restart without falling back to V1 or copying a success stamp.
 
 ## File Changes
 
 | File | Action | Description |
 |---|---|---|
-| `pkgs/opencode-v2/default.nix` | Create | Pinned V2 platform derivation. |
-| `lib/packages.nix`, `overlays/{linux,darwin}.nix` | Modify | Expose `opencode-v2` on Linux and Darwin. |
-| `linux/system/base/profiles/dev.nix`, `darwin/home/packages.nix` | Modify | Deliver V2 alongside V1 to all four hosts. |
-| `shared/opencode.nix`, `shared/opencode/runtime-config.nix`, `shared/shell-aliases.nix` | Modify | Dual generator, environment function, wrappers, and cmp-guarded HM hook. |
-| `pkgs/nixos-scripts/cmd/opencode2/` | Delete | First package/delivery prerequisite: remove the stale Docker launcher. |
-| `pkgs/nixos-scripts/default.nix`, `pkgs/nixos-scripts/cmd/install-opencode-auth-seed/{main.go,main_test.go}` | Modify | First remove the launcher subpackage; later add V2's 0600 one-way seed target/tests. |
+| `shared/opencode.nix` | Modify | Render `mkV2Environment` for shell, systemd, and launchd; declare Linux and macOS V2 user supervisors; restart the correct supervisor behind the existing config comparison. |
+| `shared/shell-aliases.nix` | Modify | Keep both wrappers consuming the shell rendering of `mkV2Environment`. |
+| `shared/opencode/runtime-config.nix` | Verify / modify if needed | Preserve isolated V2 config emission and the activation DAG dependency. |
+| Existing V2 package, overlays, and host package lists | No change | Package delivery is already cross-platform and does not need a second launcher. |
 
 ## Interfaces / Contracts
 
-`home.opencode.v2` has `enable`, `runtimeRoot`, and `projectConfigCommand`, defaulting from `config.home.homeDirectory`. `mkV2Environment` solely produces launch/hook exports. `opencode2-project` returns nonzero before exec for a V1 SDK marker. `--v2` changes only the seed destination.
+`home.opencode.v2` retains `enable`, `runtimeRoot`, and `projectConfigCommand`. `mkV2Environment` is the authoritative V2 environment interface; every launcher and supervisor must derive from it. The Linux job is named `opencode2`; the macOS agent is named `opencode2`, so discovery is `systemctl --user status opencode2` or `launchctl list`. V1 receives none of the V2 variables.
 
 ## Testing Strategy
 
 | Layer | What to test | Approach |
 |---|---|---|
-| Nix evaluation | Pins, exports, host delivery, V1 bytes | `nix flake check --no-build`; evaluate four HM/NixOS/Darwin targets and compare V1 generated baseline. |
-| Go | V2 seed destination/mode and V1 immutability | Add table tests before seed changes; run `go -C pkgs/nixos-scripts test ./...`. |
-| Smoke | V1/V2 same-folder isolation | Per-host fresh-root test: versions, DB/server/config separation, no V1 writes, project gate/refusal, changed-only restart. |
+| Nix evaluation | Linux systemd and Darwin launchd declarations, rendered environment, V1 bytes | `nix flake check --no-build`; evaluate all host targets, including macm5 natively. |
+| Declarative RED checks | One environment source, foreground V2 server, Linux restart policy, launchd keep-alive, changed-only platform restart | Assert generated service/agent definitions and activation text before production changes. |
+| Smoke | Service discovery, recovery, isolation, and no-op activation | On Linux inspect `systemctl --user`; on macm5 inspect `launchctl`; crash/stop then verify supervisor recovery; compare unchanged versus changed config activation. |
 
 ## Threat Matrix
 
-| Boundary | Applicability | Safe / failure behavior | RED test |
+| Boundary | Applicability | Safe / failure behavior | Planned RED tests |
 |---|---|---|---|
 | Documentation-like paths | N/A: no executable classifier. | — | — |
-| Git repository selection | N/A: wrappers do not select repositories or invoke Git. | Preserve caller cwd; Git remains user/tool behavior. | — |
-| Commit state | N/A: no commit command. | Git `index.lock` remains clean failure during concurrent use. | — |
+| Git repository selection | N/A: wrappers preserve caller cwd and do not invoke Git. | — | — |
+| Commit state | N/A: no commit command. | — | — |
 | Push state | N/A: no push command. | — | — |
 | PR commands | N/A: no PR command. | — | — |
-| Shell/process integration | Applicable: zsh wrapper, activation subprocess, shared server. | Correct env/args target only V2; restart failure is visible and cannot mutate/fallback to V1. | Assert all exports/argument forwarding, no `--standalone`, changed-only restart, and nonzero V1-SDK refusal. |
+| Shell/process integration | Applicable: wrappers, activation subprocesses, systemd, and launchd execute V2. | Every process receives only `mkV2Environment`; supervisor failures remain visible and never fall back to V1. | Assert V2 exports and argument forwarding; no `--standalone`; Linux/launchd foreground declarations and recovery; changed-only restart; V1-SDK refusal. |
 
 ## Migration / Rollout
 
-Ship to rog, thinkcentre, t14, and macm5 with V1 default. Users opt into clean `opencode2`; optionally seed once for proxy OAuth. Roll back by a prior generation or removing V2 paths/package; delete only the V2 DB to reset V2 credentials. No systemd/launchd unit, daily standalone mode, or V1 mutation is introduced.
+Switch V2 on all four hosts while V1 remains the default. The first activation may restart the enabled V2 supervisor because the config stamp is absent; later identical activations do nothing. Roll back through a prior generation or remove V2 paths/package; delete only the V2 database to reset V2 credentials. No V1 mutation is required.
 
 ## Open Questions
 

@@ -15,6 +15,17 @@
 > the corrected "Server topology decision" section. Do **not** adopt
 > `--standalone` as the daily V2 wrapper default.
 
+> ## ⚠️ Correction (2026-09-25 — service-discovery failure diagnosed on rog/macm5)
+> The "Corrected server topology" decision (one-shot `home.activation`
+> restart-on-regen hook, **no supervisor — systemd/launchd rejected as YAGNI**)
+> is **insufficient in practice** and is the root cause of a reproducible
+> service-discovery failure. Field-diagnosed on rog: the background server the
+> activation hook starts does **not reliably persist**, so the `opencode2` TUI
+> consistently discovers **no server** and cold-starts ("Starting background
+> server..." + possible timeout). A supervisor is therefore **required**, not
+> YAGNI. Evidence and the exact contract are in the "Service discovery —
+> diagnosed contract" section below.
+
 ## Summary
 
 Revised scope: instead of migrating the repo's declarative OpenCode config from
@@ -1013,3 +1024,69 @@ declare V1 = 1.18.32 as the baseline, and 2.5 is the gate that asserts it. The
 fix is a one-file, hash-only change (plus, optionally, the broken update script),
 small enough to fold into slice 1's package/delivery work unit. It must land
 before task 2.5's verification can go green.
+
+---
+
+# Service discovery — diagnosed contract (2026-09-25, rog/macm5)
+
+> Field diagnosis of the implemented wrapper's service-discovery failure. The
+> prior "Corrected resolution" chose a one-shot `home.activation`
+> `opencode2 service restart` hook and rejected a supervisor ("YAGNI"). That
+> choice is **wrong in practice**: the server does not persist, so the TUI
+> discovers nothing and cold-starts every launch.
+
+## Verified discovery contract (2.0.14 binary)
+
+- **Registration file**: `$XDG_STATE_HOME/opencode/service.json`, written by the
+  server with `{id, version, url, pid, password}` and mode 0600. `mkV2Environment`
+  sets `XDG_STATE_HOME=$HOME/.local/opencode-v2/state`, so the real path is
+  `~/.local/opencode-v2/state/opencode/service.json`.
+- **Readiness endpoint**: `GET /api/info` (Basic auth `opencode:<password>`,
+  returns `{version, pid, urls, paths}`). **Not** `/api/health` — that route
+  returns 404 in 2.0.14 (the `next`-channel source in this repo's earlier research
+  used `/api/health`, but the GA binary does not).
+- **`opencode2 service status`** = `Service.discover(ServiceConfig.options())`:
+  read `service.json` → probe `/api/info` → verify `pid`+`version`.
+- **`opencode2` TUI** = `resolve(mismatch:"replace")` → `Service.start` →
+  `discover` first; on a miss it spawns `[execPath, "serve", "--service"]` and
+  prints `Starting background server...` (log reason `missing`), or
+  `Restarting background server (version mismatch)...` (reason `version-mismatch`).
+
+## Evidence (rog log `~/.local/opencode-v2/data/opencode/log/opencode.log`)
+
+- `00:15:45 run=c8dd9177 args=["serve","--service"]` — the activation
+  `service restart` server. It logged `database schema bootstrap` (47 migrations,
+  15 ms) and then **nothing** — no `location services booted`, no `Sent HTTP
+  response`, no graceful shutdown. It died silently before ever serving.
+- `00:22:14 run=af5de08e message="background service starting" reason=missing` —
+  the TUI found no registered server and cold-started a new one.
+- Reproduction: `opencode2 service start` / `service restart` from a plain shell
+  **does** leave a persistent server, and a subsequent TUI launch connects
+  immediately (no "Starting background server"). The discovery path is therefore
+  correct; the failure is specific to the activation lifecycle.
+
+## Root cause and exact mismatch
+
+The activation hook is a **one-shot "restart only when `opencode.json` changed"**
+(cmp-guarded) action, not a supervisor. When the server it spawned dies (during
+or after `nixos-build switch` — the detached `serve --service` child does not
+reliably survive the activation teardown), the hook does **not** restart it
+(config unchanged), so the TUI's `discover` fails with `reason=missing` and it
+falls back to a cold start that can time out. The mismatch is between the
+**client's discovery contract** (expects a live server registered in
+`service.json`) and the **hook's non-supervised lifecycle** (does not guarantee
+one). Upstream issue #41696 (port conflict), #41739 (slow migration leaves a
+detached process while the client reports the server "exited"), and #41746
+(broken spawn) all surface the same "Starting background server..." + timeout
+symptom.
+
+## Correction
+
+Reverse the "YAGNI" rejection: the V2 background server **MUST be supervised**.
+Run `opencode2 serve --service` under a `systemd.user.services` unit on Linux
+(rog/thinkcentre/t14) and a launchd agent on macm5, both exporting
+`mkV2Environment`. Keep the cmp-guarded activation hook only as a
+`service restart` trigger on config regeneration, not as the sole lifecycle
+mechanism. The minimal non-supervisor alternative — drop the hook and accept the
+TUI's discover-or-start cold boot — does not remove the failure, it only moves
+the cold-start cost (and its timeout) onto every first launch.

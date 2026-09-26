@@ -15,19 +15,6 @@
     # mkDefault so per-host plain assignments win without mkForce.
     activeProviderName = lib.mkDefault "opencode-go-full";
 
-    # Built-in providers we don't use
-    disabledProviders = [
-      "cerebras"
-      "cloudflare-ai-gateway"
-      "cloudflare-workers-ai"
-      "cohere"
-      "groq"
-      "kilo"
-      "mistral"
-      "openrouter"
-      "google"
-    ];
-
     # v2.5.0 managed plugins: sdd-task-result-artifacts and skill-registry
     # enabled; model-variants and opencode-review-transport stay off (opt-in).
     plugins = {
