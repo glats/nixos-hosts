@@ -34,6 +34,11 @@ stdenvNoCC.mkDerivation {
         --replace "ENGRAM_BIN ?? \"engram\"" \
                   "ENGRAM_BIN ?? \"${engram}/bin/engram\""
     fi
+    if [ -f "$TEMP_DIR/opencode-v2/plugins/engram.ts" ]; then
+      substituteInPlace "$TEMP_DIR/opencode-v2/plugins/engram.ts" \
+        --replace "ENGRAM_BIN ?? \"engram\"" \
+                  "ENGRAM_BIN ?? \"${engram}/bin/engram\""
+    fi
 
     # Move to final destination
     mkdir -p $out/share/engram

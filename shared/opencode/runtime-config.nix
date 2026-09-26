@@ -43,6 +43,29 @@ let
       mcp
   ) (lib.filterAttrs (_: mcp: mcp.enabled or false) allMcps);
 
+  v2Agents = import ./v2-agents.nix { inherit lib cfg; };
+  v2Permissions = import ./v2-permissions.nix {
+    inherit lib cfg;
+    disabledTools = cfg.disabledTools;
+  };
+  v2Mcps = import ./v2-mcps.nix {
+    inherit lib;
+    mcps = enabledMcps;
+  };
+  v2AgentsMd = pkgs.writeText "opencode-v2-AGENTS.md" (
+    lib.concatMapStringsSep "\n\n" builtins.readFile config.home.ai-assets.agentsMdSources
+  );
+  v2ManagedPlugins = {
+    "rtk.ts" = ./rtk-v2.ts;
+    "sdd-task-result.ts" =
+      "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode-v2/plugins/sdd-task-result.ts";
+    "opencode-review-transport.ts" =
+      "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode-v2/plugins/opencode-review-transport.ts";
+    "skill-registry.ts" =
+      "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode-v2/plugins/skill-registry.ts";
+    "engram.ts" = "${pkgs.engram-assets}/share/engram/opencode-v2/plugins/engram.ts";
+  };
+
   # TUI plugins configuration (name -> enabled)
   # Versions come from pkgs.opencode-npm-packages/versions.json
   tuiPluginsConfig = {
@@ -97,6 +120,9 @@ let
       if isV2 then
         {
           update = "disable";
+          agents = v2Agents;
+          permissions = v2Permissions;
+          mcp = v2Mcps;
           experimental.policies = [
             {
               permission = "provider.use";
@@ -150,6 +176,9 @@ if isV2 then
       force = true;
       source = jsonFile;
     };
+    home.file.".config/${runtimeConfig.dir}/cli.json".text = builtins.toJSON {
+      "$schema" = "https://opencode.ai/cli.json";
+    };
 
     home.activation."makeOpencodeConfigMutable-${runtimeConfig.label}" =
       config.lib.dag.entryAfter [ "linkGeneration" ]
@@ -158,7 +187,10 @@ if isV2 then
           opencode_json="$runtime_dir/opencode.json"
 
               mkdir -p "$runtime_dir"
-              ${pkgs.coreutils}/bin/rm -f "$runtime_dir/AGENTS.md"
+              if [ ! -f "$runtime_dir/AGENTS.md" ] || ! ${pkgs.diffutils}/bin/cmp -s "${v2AgentsMd}" "$runtime_dir/AGENTS.md"; then
+                ${pkgs.coreutils}/bin/cp -f "${v2AgentsMd}" "$runtime_dir/AGENTS.md"
+                chmod 644 "$runtime_dir/AGENTS.md"
+              fi
 
               if [ -L "$opencode_json" ]; then
                 src="$(${pkgs.coreutils}/bin/readlink -f "$opencode_json")"
@@ -171,6 +203,62 @@ if isV2 then
             ${pkgs.coreutils}/bin/cp "${jsonFile}" "$opencode_json"
             chmod 644 "$opencode_json"
           fi
+        '';
+
+    # V2 discovers native skills, commands, and adapters from its own mutable
+    # tree. Keep this separate from the V1 plugin runtime so the V1 copy/remap
+    # workflow remains writable and idempotent.
+    home.activation."setupOpencodePluginRuntime-${runtimeConfig.label}" =
+      config.lib.dag.entryAfter [ "makeOpencodeConfigMutable-${runtimeConfig.label}" ]
+        ''
+          runtime_dir="${runtimeDir}"
+
+          commands_dir="$runtime_dir/commands"
+          # Home Manager may have left a store-linked command tree here. Replace
+          # it before copying so every V2 command is owned and writable for the
+          # V2-only remap below.
+          [ -L "$commands_dir" ] && ${pkgs.coreutils}/bin/rm -f "$commands_dir"
+          [ -d "$commands_dir" ] && chmod -R u+rwX "$commands_dir"
+          [ -d "$commands_dir" ] && ${pkgs.coreutils}/bin/rm -rf "$commands_dir"
+          mkdir -p "$commands_dir"
+
+          skills_dir="$runtime_dir/skills"
+          [ -L "$skills_dir" ] && ${pkgs.coreutils}/bin/rm -f "$skills_dir"
+          mkdir -p "$skills_dir"
+          for src in ${lib.concatStringsSep " " opencodeCommandSources}; do
+            # Do not preserve the source directory mode: `cp -a` would restore
+            # its store-derived read-only mode on the writable destination.
+            [ -d "$src" ] && ${pkgs.coreutils}/bin/cp -r "$src"/. "$commands_dir/"
+          done
+          for src in ${lib.concatStringsSep " " config.home.ai-assets.skillSources}; do
+            [ -d "$src" ] && ${pkgs.coreutils}/bin/cp -r "$src"/. "$skills_dir/"
+          done
+          chmod -R u+w "$commands_dir" "$skills_dir"
+          ${pkgs.findutils}/bin/find "$commands_dir" "$skills_dir" -type f -exec ${pkgs.gnused}/bin/sed -i 's/subtask/subagent/g' {} +
+
+          plugins_dir="$runtime_dir/plugins"
+          [ -L "$plugins_dir" ] && ${pkgs.coreutils}/bin/rm -f "$plugins_dir"
+          mkdir -p "$plugins_dir"
+          # Native V2 replaces media handling; these V1-only plugins are an
+          # explicit drop set and stale copies must not survive activation.
+          ${pkgs.coreutils}/bin/rm -f \
+            "$plugins_dir/claude-auth.ts" \
+            "$plugins_dir/opencode-warden.ts" \
+            "$plugins_dir/opencode-subagent-statusline.ts" \
+            "$plugins_dir/opencode-sdd-engram-manage.ts" \
+            "$plugins_dir/model-variants.ts" \
+            "$plugins_dir/opencode-multimodal.ts"
+          ${lib.concatStringsSep "\n" (
+            lib.mapAttrsToList (name: src: ''
+              if [ ! -f "$plugins_dir/${name}" ] || ! ${pkgs.diffutils}/bin/cmp -s "${src}" "$plugins_dir/${name}"; then
+                ${pkgs.coreutils}/bin/cp -f "${src}" "$plugins_dir/${name}"
+                chmod 644 "$plugins_dir/${name}"
+              fi
+            '') v2ManagedPlugins
+          )}
+          mkdir -p "$runtime_dir/node_modules"
+          ${pkgs.coreutils}/bin/cp -r ${pkgs.opencode-npm-packages-v2}/lib/node_modules/. "$runtime_dir/node_modules/"
+          chmod -R u+w "$runtime_dir/node_modules"
         '';
   }
 else
@@ -209,6 +297,20 @@ else
     # Convert HM symlinks to real files so OpenCode can write config at runtime.
     # NixOS symlink farm changes store paths on every rebuild; real copies avoid
     # false "config changed" signals that cause OpenCode to re-initialize.
+    home.activation.prepareOpencodeSkillTree = config.lib.dag.entryBefore [ "linkGeneration" ] ''
+      skills_target="${runtimeDir}/skills"
+
+      # linkGeneration may need to remove a stale Home Manager link below this
+      # tree. It runs before the V1 mutable-copy activation, so restore write
+      # access here instead of relying on a later copy or on V2 staging.
+      if [ -L "$skills_target" ]; then
+        ${pkgs.coreutils}/bin/rm -f "$skills_target"
+      fi
+      if [ -d "$skills_target" ]; then
+        chmod -R u+rwX "$skills_target"
+      fi
+    '';
+
     home.activation."makeOpencodeConfigMutable-${runtimeConfig.label}" =
       config.lib.dag.entryAfter [ "linkGeneration" ]
         ''
@@ -302,10 +404,14 @@ else
             [ "$found" = "0" ] && rm -f "$skills_target/$rel"
           done || :
 
-          # Patch sdd-apply and sdd-verify: remove <!-- section:model-capable -->
-          # marker from line 1 so OpenCode v1.17+ can detect YAML frontmatter.
-          for skill in sdd-apply sdd-verify; do
-            skill_file="$runtime_dir/skills/$skill/SKILL.md"
+           # Patch sdd-apply and sdd-verify: remove <!-- section:model-capable -->
+           # marker from line 1 so OpenCode v1.17+ can detect YAML frontmatter.
+           # `sed -i` creates a temporary file beside each source. Ensure every
+           # copied skill directory remains user-writable even when its content
+           # matched the immutable source and therefore skipped a file copy.
+           chmod -R u+rwX "$skills_target"
+           for skill in sdd-apply sdd-verify; do
+             skill_file="$runtime_dir/skills/$skill/SKILL.md"
             if [ -f "$skill_file" ] && head -1 "$skill_file" | grep -q '^<!-- section:model-capable -->$'; then
               ${pkgs.gnused}/bin/sed -i '1{/^<!-- section:model-capable -->$/d}' "$skill_file"
             elif [ -f "$skill_file" ]; then
@@ -374,7 +480,8 @@ else
           data_dir="${config.home.homeDirectory}/.local/share/opencode"
           if [ -f "$data_dir/opencode-stable.db" ] && [ ! -e "$data_dir/opencode.db" ]; then
             ln -s "$data_dir/opencode-stable.db" "$data_dir/opencode.db"
-          fi
+           fi
+
         '';
 
     # Sync OpenCode skills to OpenFang (cmp-guarded copy + orphan cleanup).

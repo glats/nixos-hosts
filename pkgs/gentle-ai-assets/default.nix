@@ -30,6 +30,13 @@ stdenvNoCC.mkDerivation {
     # mode (0555) for directories, so grant u+w before replacing the file.
     chmod u+w $out/share/gentle-ai/opencode/plugins
     install -m 0644 ${./skill-registry-worktree-root.ts} $out/share/gentle-ai/opencode/plugins/skill-registry.ts
+
+    # V2 plugins use the pinned native Plugin.define contract. Keep them in a
+    # separate tree so V1 assets remain byte-identical.
+    mkdir -p $out/share/gentle-ai/opencode-v2/plugins
+    for plugin in ${./v2-plugins}/*.ts; do
+      install -m 0644 "$plugin" $out/share/gentle-ai/opencode-v2/plugins/
+    done
   '';
 
   meta = with lib; {
