@@ -114,32 +114,6 @@ let
 
   disabledProviders = lib.filter (provider: !(lib.elem provider providerAllowlist)) catalogProviders;
 
-  copilotTierPhases =
-    model:
-    lib.genAttrs [
-      "gentle-orchestrator"
-      "sdd-init"
-      "sdd-explore"
-      "sdd-propose"
-      "sdd-spec"
-      "sdd-design"
-      "sdd-tasks"
-      "sdd-apply"
-      "sdd-verify"
-      "sdd-archive"
-      "sdd-onboard"
-      "jd-judge-a"
-      "jd-judge-b"
-      "jd-fix-agent"
-      "review-readability"
-      "review-refuter"
-      "review-reliability"
-      "review-resilience"
-      "review-risk"
-      "review-validator"
-      "neutral"
-    ] (_: model);
-
   # ============================================================
   # CANONICAL: evidence-backed, manually-selected profiles.
   # Order here is a structural guarantee (canonicalProviders is
@@ -748,15 +722,81 @@ let
     # no Copilot entitlement.
     {
       name = "github-copilot-light";
-      phases = copilotTierPhases "github-copilot/gpt-5.4-mini";
+      phases = {
+        gentle-orchestrator = "github-copilot/gpt-5.4-mini";
+        sdd-init = "github-copilot/gpt-5.4-mini";
+        sdd-explore = "github-copilot/gpt-5.4-mini";
+        sdd-propose = "github-copilot/gpt-5.4-mini";
+        sdd-spec = "github-copilot/gpt-5.4-mini";
+        sdd-design = "github-copilot/gpt-5.4-mini";
+        sdd-tasks = "github-copilot/gpt-5.4-mini";
+        sdd-apply = "github-copilot/gpt-5.4-mini";
+        sdd-verify = "github-copilot/gpt-5.4-mini";
+        sdd-archive = "github-copilot/gpt-5.4-mini";
+        sdd-onboard = "github-copilot/gpt-5.4-mini";
+        jd-judge-a = "github-copilot/gpt-5.4-mini";
+        jd-judge-b = "github-copilot/gpt-5.4-mini";
+        jd-fix-agent = "github-copilot/gpt-5.4-mini";
+        review-readability = "github-copilot/gpt-5.4-mini";
+        review-refuter = "github-copilot/gpt-5.4-mini";
+        review-reliability = "github-copilot/gpt-5.4-mini";
+        review-resilience = "github-copilot/gpt-5.4-mini";
+        review-risk = "github-copilot/gpt-5.4-mini";
+        review-validator = "github-copilot/gpt-5.4-mini";
+        neutral = "github-copilot/gpt-5.4-mini";
+      };
     }
     {
       name = "github-copilot-medium";
-      phases = copilotTierPhases "github-copilot/claude-sonnet-5.5";
+      phases = {
+        gentle-orchestrator = "github-copilot/claude-sonnet-5.5";
+        sdd-init = "github-copilot/claude-sonnet-5.5";
+        sdd-explore = "github-copilot/claude-sonnet-5.5";
+        sdd-propose = "github-copilot/claude-sonnet-5.5";
+        sdd-spec = "github-copilot/claude-sonnet-5.5";
+        sdd-design = "github-copilot/claude-sonnet-5.5";
+        sdd-tasks = "github-copilot/claude-sonnet-5.5";
+        sdd-apply = "github-copilot/claude-sonnet-5.5";
+        sdd-verify = "github-copilot/claude-sonnet-5.5";
+        sdd-archive = "github-copilot/claude-sonnet-5.5";
+        sdd-onboard = "github-copilot/claude-sonnet-5.5";
+        jd-judge-a = "github-copilot/claude-sonnet-5.5";
+        jd-judge-b = "github-copilot/claude-sonnet-5.5";
+        jd-fix-agent = "github-copilot/claude-sonnet-5.5";
+        review-readability = "github-copilot/claude-sonnet-5.5";
+        review-refuter = "github-copilot/claude-sonnet-5.5";
+        review-reliability = "github-copilot/claude-sonnet-5.5";
+        review-resilience = "github-copilot/claude-sonnet-5.5";
+        review-risk = "github-copilot/claude-sonnet-5.5";
+        review-validator = "github-copilot/claude-sonnet-5.5";
+        neutral = "github-copilot/claude-sonnet-5.5";
+      };
     }
     {
       name = "github-copilot-full";
-      phases = copilotTierPhases "github-copilot/claude-opus-5.5";
+      phases = {
+        gentle-orchestrator = "github-copilot/claude-opus-5.5";
+        sdd-init = "github-copilot/claude-opus-5.5";
+        sdd-explore = "github-copilot/claude-opus-5.5";
+        sdd-propose = "github-copilot/claude-opus-5.5";
+        sdd-spec = "github-copilot/claude-opus-5.5";
+        sdd-design = "github-copilot/claude-opus-5.5";
+        sdd-tasks = "github-copilot/claude-opus-5.5";
+        sdd-apply = "github-copilot/claude-opus-5.5";
+        sdd-verify = "github-copilot/claude-opus-5.5";
+        sdd-archive = "github-copilot/claude-opus-5.5";
+        sdd-onboard = "github-copilot/claude-opus-5.5";
+        jd-judge-a = "github-copilot/claude-opus-5.5";
+        jd-judge-b = "github-copilot/claude-opus-5.5";
+        jd-fix-agent = "github-copilot/claude-opus-5.5";
+        review-readability = "github-copilot/claude-opus-5.5";
+        review-refuter = "github-copilot/claude-opus-5.5";
+        review-reliability = "github-copilot/claude-opus-5.5";
+        review-resilience = "github-copilot/claude-opus-5.5";
+        review-risk = "github-copilot/claude-opus-5.5";
+        review-validator = "github-copilot/claude-opus-5.5";
+        neutral = "github-copilot/claude-opus-5.5";
+      };
     }
   ];
 
