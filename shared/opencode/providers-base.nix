@@ -733,18 +733,18 @@ let
         sdd-design = "github-copilot/gpt-5.4-mini";
         sdd-tasks = "github-copilot/gpt-5.4-mini";
         sdd-apply = "github-copilot/gpt-5.3-codex";
-        sdd-verify = "github-copilot/claude-sonnet-5.5";
+        sdd-verify = "github-copilot/claude-sonnet-5";
         sdd-archive = "github-copilot/gpt-5.4-mini";
         sdd-onboard = "github-copilot/gpt-5.4-mini";
-        jd-judge-a = "github-copilot/claude-sonnet-5.5";
-        jd-judge-b = "github-copilot/claude-sonnet-5.5";
+        jd-judge-a = "github-copilot/claude-sonnet-5";
+        jd-judge-b = "github-copilot/claude-sonnet-5";
         jd-fix-agent = "github-copilot/gpt-5.3-codex";
-        review-readability = "github-copilot/claude-sonnet-5.5";
-        review-refuter = "github-copilot/claude-sonnet-5.5";
-        review-reliability = "github-copilot/claude-sonnet-5.5";
-        review-resilience = "github-copilot/claude-sonnet-5.5";
-        review-risk = "github-copilot/claude-sonnet-5.5";
-        review-validator = "github-copilot/claude-sonnet-5.5";
+        review-readability = "github-copilot/claude-sonnet-5";
+        review-refuter = "github-copilot/claude-sonnet-5";
+        review-reliability = "github-copilot/claude-sonnet-5";
+        review-resilience = "github-copilot/claude-sonnet-5";
+        review-risk = "github-copilot/claude-sonnet-5";
+        review-validator = "github-copilot/claude-sonnet-5";
         neutral = "github-copilot/gpt-5.4-mini";
       };
     }
@@ -753,25 +753,25 @@ let
       phases = {
         gentle-orchestrator = "github-copilot/gpt-6-sol";
         sdd-init = "github-copilot/gpt-5.4-mini";
-        sdd-explore = "github-copilot/claude-sonnet-5.5";
-        sdd-propose = "github-copilot/claude-sonnet-5.5";
-        sdd-spec = "github-copilot/claude-sonnet-5.5";
-        sdd-design = "github-copilot/claude-sonnet-5.5";
+        sdd-explore = "github-copilot/claude-sonnet-5";
+        sdd-propose = "github-copilot/claude-sonnet-5";
+        sdd-spec = "github-copilot/claude-sonnet-5";
+        sdd-design = "github-copilot/claude-sonnet-5";
         sdd-tasks = "github-copilot/gpt-5.4-mini";
         sdd-apply = "github-copilot/gpt-5.3-codex";
-        sdd-verify = "github-copilot/claude-sonnet-5.5";
+        sdd-verify = "github-copilot/claude-sonnet-5";
         sdd-archive = "github-copilot/gpt-5.4-mini";
         sdd-onboard = "github-copilot/gpt-5.4-mini";
-        jd-judge-a = "github-copilot/claude-sonnet-5.5";
-        jd-judge-b = "github-copilot/claude-sonnet-5.5";
+        jd-judge-a = "github-copilot/claude-sonnet-5";
+        jd-judge-b = "github-copilot/claude-sonnet-5";
         jd-fix-agent = "github-copilot/gpt-5.3-codex";
-        review-readability = "github-copilot/claude-sonnet-5.5";
-        review-refuter = "github-copilot/claude-sonnet-5.5";
-        review-reliability = "github-copilot/claude-sonnet-5.5";
-        review-resilience = "github-copilot/claude-sonnet-5.5";
-        review-risk = "github-copilot/claude-sonnet-5.5";
-        review-validator = "github-copilot/claude-sonnet-5.5";
-        neutral = "github-copilot/claude-sonnet-5.5";
+        review-readability = "github-copilot/claude-sonnet-5";
+        review-refuter = "github-copilot/claude-sonnet-5";
+        review-reliability = "github-copilot/claude-sonnet-5";
+        review-resilience = "github-copilot/claude-sonnet-5";
+        review-risk = "github-copilot/claude-sonnet-5";
+        review-validator = "github-copilot/claude-sonnet-5";
+        neutral = "github-copilot/claude-sonnet-5";
       };
     }
     {
