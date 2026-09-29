@@ -536,7 +536,7 @@ let
       # The Go gateway has open provider/model reliability reports, so this
       # profile is intentionally opt-in rather than a replacement default.
       phases = {
-        gentle-orchestrator = "openai/gpt-5.6-terra";
+        gentle-orchestrator = "openai/gpt-6-sol";
         # GLM-5.3-Flash is the high-headroom mechanical worker.
         sdd-init = "opencode-go/glm-5.3-flash";
         # DeepSeek V4 Pro is the larger Go worker for repository/MCP research
@@ -565,7 +565,7 @@ let
     {
       name = "openai-opencode-balanced";
       phases = {
-        gentle-orchestrator = "openai/gpt-5.6-terra";
+        gentle-orchestrator = "openai/gpt-6-sol";
         sdd-init = "opencode-go/deepseek-v4-flash";
         sdd-explore = "opencode-go/deepseek-v4-pro";
         sdd-propose = "openai/gpt-5.6-sol";
@@ -662,7 +662,7 @@ let
       # Balanced OpenAI tier: Terra for normal SDD judgment and tool work;
       # Luna for bounded helpers and mechanical apply loops.
       phases = {
-        gentle-orchestrator = "openai/gpt-5.6-terra";
+        gentle-orchestrator = "openai/gpt-6-sol";
         sdd-init = "openai/gpt-5.6-luna";
         sdd-explore = "openai/gpt-5.6-terra";
         sdd-propose = "openai/gpt-5.6-terra";
