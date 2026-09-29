@@ -208,3 +208,177 @@ re-implement audit as a minimal V2 adapter; (3) the two TUI plugins — drop vs.
 reimplement. The orchestrator should also confirm the P0 reset (proposal/spec/
 design/tasks) and re-forecast the delivery strategy now that the plugin surface
 has shrunk.
+
+---
+
+## BrowserMCP singleton transport — definitive fix (re-exploration 2026-09-28)
+
+### Current State (post-R10–R13 implementation)
+
+BrowserMCP is already pinned (`pkgs/browsermcp-v2`, `@browsermcp/mcp` 0.1.3 +
+`@modelcontextprotocol/sdk` 1.8.0), patched to stop advertising the incomplete
+`resources` capability, and emitted exactly once into the V2 **global**
+`mcp.servers` map as `type: "local"; command = [ "<pkg>/bin/mcp-server-browsermcp" ]`
+(`shared/opencode/runtime-config.nix` `v2McpsWithBrowser`, gated by
+`home.opencode.v2.browserMcp.enable`). `OPENCODE_DISABLE_PROJECT_CONFIG=1` keeps
+it out of project/workspace maps. **This does not fix the timeout.** The user
+still reports "works for one V2 location, times out for a second."
+
+### Root cause (confirmed from upstream source and issues)
+
+1. `@browsermcp/mcp` 0.1.3 has a **hard-coded, non-configurable WebSocket on
+   port 9009** for the Chromium extension, and its startup runs
+   `killProcessOnPort(9009)` = `lsof -ti:9009 | xargs kill -9` (BrowserMCP
+   issues #14, #113, #151; `@nbiish/betterbrowsermcp` README documents the same
+   behavior verbatim). There is no `PORT`/`WS_PORT` env in 0.1.3.
+2. OpenCode V2 spawns **one `type: "local"` stdio process per session/project**,
+   with no deduplication or sharing (upstream issues #29939 "1 project = 8+
+   instances, 2+ projects = crash", #31554, #26714, #30123). A maintainer note
+   in #29939 states the structural fix is "a broker owning one long-lived process
+   per server config … http+sse sidesteps it entirely because connection and
+   process are already separate."
+3. Therefore a second V2 workspace launches a second BrowserMCP process, which
+   kills the first via `killProcessOnPort(9009)` → the first location's browser
+   tools break; the race also produces the observed `Request timed out`.
+   Emitting the entry once globally is orthogonal to per-session spawning and
+   cannot prevent this.
+
+Secondary defect: on a clean first boot (port 9009 free), `lsof -ti:9009 | xargs
+kill -9` emits "kill: not enough arguments" and can crash the server before it
+binds (issue #14/#151) — so even a singleton must neutralize the kill-on-port.
+
+### Research findings (mandatory current research, 2026-09-28)
+
+Upstream source, GitHub issues, and MCP docs were re-checked this session. The
+supergateway blocker is confirmed and is **irreversible** — no supergateway flag
+produces one shared stdio child:
+
+1. **BrowserMCP has no native HTTP transport.** `@browsermcp/mcp` 0.1.3
+   (`BrowserMCP/mcp`, package.json `bin: mcp-server-browsermcp`, deps
+   `@modelcontextprotocol/sdk ^1.8.0` + `ws`) speaks **stdio** to its MCP client
+   and a **hard-coded WebSocket on 9009** to the extension. The kill-on-port
+   (`lsof -ti:9009 | xargs kill -9` / Windows `taskkill`) is still unfixed
+   upstream (issues #14, #57, #70, #113, #151, #180; #192 shows the extension
+   service worker still polls `ws://localhost:9009`). Issue #48 (SSE/Streamable
+   HTTP) closed as unsupported. The newer `browsermcp.dev` product
+   (`@agent360/browser-mcp`, ports 9876–9895, 20 concurrent sessions) is a
+   different, rebranded line — not the pinned package.
+2. **OpenCode V2 spawns one local stdio MCP child per session** and its
+   `type: "remote"` (Streamable HTTP) client opens **one MCP session per OpenCode
+   session** (docs: `_meta.sessionID` per call; each session gets its own
+   `StreamableHTTPClientTransport`). The maintainer's own diagnosis of #29939:
+   "the structural fix is a broker owning one long-lived process per server
+   config and multiplexing sessions over it with refcounted shutdown. http+sse
+   sidesteps it entirely because connection and process are already separate."
+   There is **no config-only singleton** — also confirmed by #13041, #26336,
+   #26714, #30123, #42190, #43845, #50363.
+3. **supergateway cannot be the broker.** Its stdio→Streamable HTTP is stateless
+   (child per request) or `--stateful` (child per MCP session — one `initialize`
+   per session, `stdioToStatefulStreamableHttp.ts` spawns a new child per
+   session). Two workspaces = two HTTP sessions = two BrowserMCP children = two
+   9009 owners. The v3.3 concurrency pool was rolled back (#105); single-child
+   multiplexing is still a live, unsolved upstream issue (#18, #35). So the
+   original "pinned supergateway" plan (R14/R17) cannot hold the singleton.
+4. **Off-the-shelf multiplexers exist but do not fit.** `mcp-mux`
+   (`thebtf/mcp-mux`) is purpose-built ("share one upstream across N sessions",
+   `shared` mode caches initialize/tools/list and keeps one child) but is a
+   1-star, March-2026, single-maintainer tool with a ~30-version engine and a
+   process-tree handoff protocol, is Claude-Code-centric (cwd-token handshake),
+   and — decisively — its auto-classifier puts tools whose names match
+   *browser / navigate / page / tab* into **`isolated`** mode (one child per
+   session, i.e. the exact bug). Forcing `shared` requires patching BrowserMCP's
+   initialize with `x-mux: {sharing:"shared", persistent:true}` and trusting a
+   brand-new engine. Aggregator gateways (aiMCPGate, mcplex, mcpmu, agentgateway,
+   mcp-gateway-pro) are multi-server tool-aggregators (meta-tool indirection /
+   tool namespacing) — heavier than a single-server need and they change the tool
+   surface.
+5. **"Native HTTP singleton + extension pairing" servers exist but are different
+   products.** `thezzisu/openbrowsermcp` (Streamable HTTP :3500 + WS :3500/ws),
+   `rtf6x/browser-control-mcp` (HTTP :18790 + WS :18789, "HTTP transport for
+   OpenCode"), `notoriouslab/browser-mcp-lite` (4 tools), `@iflow-mcp/
+   browsermcp-mcp-enhanced` (HTTP daemon + single WS daemon 8765) all pair with
+   their **own** extension and expose a **different** tool set. None preserves
+   BrowserMCP's exact 12 tools + the already-paired extension, so all violate
+   "preserves browser tools."
+
+### Approaches
+
+1. **Minimal custom Go stdio-multiplexing broker (recommended).** A ~300-line
+   long-lived Go binary (`browsermcp-broker`, under `pkgs/nixos-scripts/cmd/`
+   + `internal/`, built by the existing `nixos-scripts` Go derivation) that
+   spawns **one** patched BrowserMCP stdio child, performs a synthetic
+   `initialize` + `tools/list` once, and fronts it as a loopback Streamable HTTP
+   endpoint (`http://127.0.0.1:9008/mcp`). Each HTTP session gets its own
+   `StreamableHTTPServerTransport` with replayed/cached `initialize`+`tools/list`,
+   but **every `tools/call` forwards to the single child** with broker-assigned
+   JSON-RPC IDs correlated back to the right session (the exact "broker owning
+   one long-lived process per server config" the maintainer prescribes). OpenCode
+   emits the already-designed `type: "remote"` entry; the supervised systemd/
+   launchd unit runs the broker, not supergateway.
+   - Pros: preserves the exact 12 tools + already-paired extension; one port-9009
+     owner; matches the maintainer's structural fix verbatim; loopback-only,
+     auditable, ~300 lines vs. a 30-version third-party engine; reuses the repo's
+     Go operational-binary convention and the existing supervised-unit/remote-
+     emission design (only the bridge binary swaps).
+   - Cons: it is bespoke code (the one genuine cost); must implement JSON-RPC ID
+     correlation + child lifecycle/refcount, and rides OpenCode's `type: "remote"`
+     client (which has session-recovery quirks, #25137/#38891 — mitigated by a
+     stable loopback child and a long session timeout).
+   - Effort: **Medium**.
+
+2. **Off-the-shelf mcp-mux `shared` mode.** Pin `mcp-mux` as the shim command in a
+   `type: "local"` entry and force `shared` via an `x-mux` patch to BrowserMCP.
+   - Pros: zero bespoke broker code.
+   - Cons: 1-star new tool, Claude-Code-centric token/cwd handshake, ~30-version
+     engine + handoff protocol far beyond the need, and the default classifier
+     would isolate browser tools unless overridden — a larger trust/maintenance
+     surface than 300 lines of our own Go. Rejected as the primary, retained as a
+     fallback if the user forbids bespoke code.
+   - Effort: Medium (but high dependency risk).
+
+3. **Switch to a native-HTTP browser server.** Adopt openbrowsermcp /
+   browser-control-mcp / enhanced-browsermcp and pair its extension.
+   - Pros: zero bridge; OpenCode `type: "remote"` points straight at the server.
+   - Cons: **loses BrowserMCP's 12 tools and the already-paired extension** —
+     a capability regression that violates "preserves browser tools." Rejected.
+   - Effort: Medium (with a tool-surface regression).
+
+### Recommendation
+
+**Approach 1 — a minimal custom Go stdio-multiplexing broker.** It is the only
+option that simultaneously preserves the exact BrowserMCP tool + extension
+surface, holds the singleton contract, matches the OpenCode maintainer's
+prescribed structural fix, and fits the repo's Go operational-binary convention
+while staying small enough to audit. Approach 2 (mcp-mux) is "less code we
+write" but more trust surface and a wrong default; Approach 3 drops browser
+tools. The previously-rejected "custom broker" now wins because supergateway is
+disqualified and the only off-the-shelf multiplexer is immature and
+browser-hostile by default.
+
+### Risks
+
+- **Bespoke broker correctness** — JSON-RPC ID correlation across concurrent
+  `tools/call` on one child is the hard part; prove it with the R17 two-workspace
+  gate before any remote emission ships.
+- **OpenCode remote-client fragility** — `type: "remote"` session handling has
+  open bugs (#25137, #38891, #32809); mitigate with a stable loopback child,
+  long session timeout, and graceful broker-side session invalidation.
+- A second independent browser-automation tool sharing port 9009 would still
+  collide; keep BrowserMCP V2-only as it already is.
+- The broker adds a localhost HTTP endpoint; bind `127.0.0.1` only, never
+  `0.0.0.0`, and fail rather than double-bind an occupied 9008.
+- Supervisor restart must not require re-pairing the extension (the extension
+  reconnects to the same 9009 server; verify on Linux and Darwin).
+
+### Ready for Proposal
+
+**Yes.** The orchestrator should tell the user: supergateway cannot share one
+stdio child across concurrent HTTP clients (stateless = per request, stateful =
+per session), and BrowserMCP itself has no HTTP transport, so the definitive
+singleton must be a **minimal custom Go stdio-multiplexing broker** — the only
+architecture that keeps the exact 12 tools and the already-paired extension
+while collapsing all workspaces onto one process. The alternative (adopt the
+1-star, browser-hostile-by-default `mcp-mux`) trades 300 lines of our own Go for
+a much larger third-party trust surface. One non-blocking decision to confirm at
+proposal: authorize the small bespoke Go broker (recommended) versus forbid
+bespoke code and accept mcp-mux's risk.

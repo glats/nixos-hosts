@@ -51,17 +51,7 @@ let
   v2Mcps = import ./v2-mcps.nix {
     inherit lib;
     mcps = enabledMcps;
-  };
-  v2McpsWithBrowser = v2Mcps // {
-    servers =
-      v2Mcps.servers
-      // lib.optionalAttrs cfg.v2.browserMcp.enable {
-        browsermcp = {
-          type = "local";
-          command = [ "${cfg.v2.browserMcp.package}/bin/mcp-server-browsermcp" ];
-          environment = proxyScrubEnv;
-        };
-      };
+    browserMcp = cfg.v2.browserMcp;
   };
   v2AgentsMd = pkgs.writeText "opencode-v2-AGENTS.md" (
     lib.concatMapStringsSep "\n\n" builtins.readFile config.home.ai-assets.agentsMdSources
@@ -133,7 +123,7 @@ let
           update = "disable";
           agents = v2Agents;
           permissions = v2Permissions;
-          mcp = v2McpsWithBrowser;
+          mcp = v2Mcps;
           experimental.policies = [
             {
               effect = "deny";
@@ -187,9 +177,23 @@ if isV2 then
       force = true;
       source = jsonFile;
     };
-    home.file.".config/${runtimeConfig.dir}/cli.json".text = builtins.toJSON {
-      "$schema" = "https://opencode.ai/cli.json";
+    home.file.".config/${runtimeConfig.dir}/cli.json" = {
+      # This is generated V2 configuration, not user state. Force replacement
+      # so Home Manager does not create another `.backup` on later activations.
+      force = true;
+      text = builtins.toJSON {
+        "$schema" = "https://opencode.ai/cli.json";
+      };
     };
+
+    # `backupFileExtension = "backup"` may have left this from an earlier V2
+    # activation. Remove only the generated V2 collision before linkGeneration;
+    # V1 and all other V2 runtime state remain untouched.
+    home.activation."cleanupOpencodeV2CliBackup-${runtimeConfig.label}" =
+      config.lib.dag.entryBefore [ "linkGeneration" ]
+        ''
+          ${pkgs.coreutils}/bin/rm -f "${runtimeDir}/cli.json.backup"
+        '';
 
     home.activation."makeOpencodeConfigMutable-${runtimeConfig.label}" =
       config.lib.dag.entryAfter [ "linkGeneration" ]

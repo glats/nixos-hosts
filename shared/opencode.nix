@@ -70,6 +70,8 @@ let
   opencodeV2EnvironmentFile = ".local/share/opencode-v2/environment";
   opencodeV2ServiceCommand = "${pkgs.opencode-v2}/bin/opencode2 serve";
   opencodeV2LaunchdLabel = "org.nix-community.home.opencode2";
+  browserMcpServiceCommand = "${v2.browserMcp.bridgePackage}/bin/browsermcp-broker --child ${v2.browserMcp.package}/bin/mcp-server-browsermcp --port ${toString v2.browserMcp.bridgePort}";
+  browserMcpLaunchdLabel = "org.nix-community.home.browsermcp";
 in
 {
   imports = [
@@ -172,6 +174,18 @@ in
           description = "Pinned BrowserMCP package used by the V2 global MCP server.";
         };
 
+        bridgePackage = mkOption {
+          type = types.package;
+          default = pkgs.nixos-scripts;
+          description = "Package providing the loopback BrowserMCP broker.";
+        };
+
+        bridgePort = mkOption {
+          type = types.port;
+          default = 9010;
+          description = "Loopback-only port served by the BrowserMCP broker; collisions exit without restarting or replacing their owner.";
+        };
+
         location = mkOption {
           type = types.enum [ "global" ];
           default = "global";
@@ -264,6 +278,24 @@ in
             && config.launchd.agents.opencode2.config.RunAtLoad;
           message = "OpenCode V2 must run under a launchd agent with the shared V2 environment.";
         }
+        ++ lib.optional (pkgs.stdenv.isLinux && v2.browserMcp.enable) {
+          assertion =
+            lib.elem browserMcpServiceCommand config.systemd.user.services.browsermcp.Service.ExecStart
+            && config.systemd.user.services.browsermcp.Service.Restart == "on-failure";
+          message = "BrowserMCP must use the loopback broker under a restarting systemd user service.";
+        }
+        ++ lib.optional (pkgs.stdenv.isDarwin && v2.browserMcp.enable) {
+          assertion =
+            config.launchd.agents.browsermcp.config.ProgramArguments == [
+              "${v2.browserMcp.bridgePackage}/bin/browsermcp-broker"
+              "--child"
+              "${v2.browserMcp.package}/bin/mcp-server-browsermcp"
+              "--port"
+              (toString v2.browserMcp.bridgePort)
+            ]
+            && config.launchd.agents.browsermcp.config.KeepAlive.Crashed;
+          message = "BrowserMCP must use the loopback broker under a restarting launchd agent.";
+        }
         ++ [
           {
             assertion =
@@ -290,6 +322,21 @@ in
         Install.WantedBy = [ "default.target" ];
       };
 
+      systemd.user.services.browsermcp = lib.mkIf (pkgs.stdenv.isLinux && v2.browserMcp.enable) {
+        Unit = {
+          Description = "BrowserMCP singleton broker";
+          After = [ "default.target" ];
+        };
+        Service = {
+          Type = "simple";
+          ExecStart = browserMcpServiceCommand;
+          Restart = "on-failure";
+          RestartSec = "5s";
+          RestartPreventExitStatus = "78";
+        };
+        Install.WantedBy = [ "default.target" ];
+      };
+
       launchd.agents.opencode2 = lib.mkIf pkgs.stdenv.isDarwin {
         enable = true;
         config = {
@@ -298,6 +345,25 @@ in
             "serve"
           ];
           EnvironmentVariables = mkV2Environment;
+          KeepAlive = {
+            Crashed = true;
+            SuccessfulExit = false;
+          };
+          ProcessType = "Background";
+          RunAtLoad = true;
+        };
+      };
+
+      launchd.agents.browsermcp = lib.mkIf (pkgs.stdenv.isDarwin && v2.browserMcp.enable) {
+        enable = true;
+        config = {
+          ProgramArguments = [
+            "${v2.browserMcp.bridgePackage}/bin/browsermcp-broker"
+            "--child"
+            "${v2.browserMcp.package}/bin/mcp-server-browsermcp"
+            "--port"
+            (toString v2.browserMcp.bridgePort)
+          ];
           KeepAlive = {
             Crashed = true;
             SuccessfulExit = false;
@@ -318,7 +384,13 @@ in
             if pkgs.stdenv.isLinux then
               "${pkgs.systemd}/bin/systemctl --user restart opencode2"
             else
-              "/bin/launchctl kickstart -k gui/\"$(${pkgs.coreutils}/bin/id -u)\"/${opencodeV2LaunchdLabel}"
+              ''
+                service="gui/$(${pkgs.coreutils}/bin/id -u)/${opencodeV2LaunchdLabel}"
+                # The first activation can precede launchd registration. RunAtLoad
+                # starts that agent; changed later activations restart it here.
+                /bin/launchctl print "$service" >/dev/null 2>&1 \
+                  && /bin/launchctl kickstart -k "$service"
+              ''
           }; then
             echo "restartOpencodeV2: supervisor restart failed" >&2
             exit 1

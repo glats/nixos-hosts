@@ -49,6 +49,9 @@ Chain strategy: stacked-to-main
 - [x] 3.7 Declare `systemd.user.services.opencode2` (Linux): foreground server, rendered env, `Restart=on-failure`, enabled user session.
 - [x] 3.8 Declare `launchd.agents.opencode2` (macm5): same binary/env, run-at-load, keep-alive.
 - [x] 3.9 Rework activation hook: changed-cmp → restart supervisor (`systemctl --user restart opencode2` / `launchctl kickstart -k`); no `service` exec; stamp after success.
+- [x] 3.9a On Darwin, skip `kickstart` when the newly declared launchd agent
+  has not yet been registered. `RunAtLoad` starts the first activation; later
+  changed activations restart the registered agent.
 - [x] 3.10 Verify: `nix flake check --no-build` + `nix eval` rendered units; green 1.6.
 
 ## Phase 4: Verification

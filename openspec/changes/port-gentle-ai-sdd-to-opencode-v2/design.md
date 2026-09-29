@@ -2,85 +2,86 @@
 
 ## Technical Approach
 
-Keep V1 byte-identical and V2 opt-in. The V2 branch emits native agents,
-permissions, MCPs, skills, commands, and AGENTS context; it supplies exactly
-five `Plugin.define` adapters for the remaining gaps. This remediation makes
-that adapter runtime loadable by staging the full pinned `@opencode/plugin`
-production dependency closure, including `@opencode/schema`.
+Keep V1 byte-identical and V2 opt-in. V2 emits native agents, permissions,
+MCPs, skills, commands, and AGENTS context, with five minimal adapters.
 
-BrowserMCP becomes a pinned, Nix-built 0.1.3 compatibility package. Its minimal
-source patch stops advertising `resources`, because that version implements
-`resources/list` but not `resources/templates/list`. The package is emitted
-once at the canonical V2 global MCP location, avoiding its fixed port-9009
-startup conflict across V2 locations. No error is hidden or BrowserMCP tool
-removed.
+BrowserMCP 0.1.3 is stdio-only, owns fixed extension port 9009, and OpenCode V2
+spawns local MCPs per session. Therefore global `type: "local"` emission still
+creates competing children. The confirmed design replaces all residual
+supergateway assumptions with `browsermcp-broker`: one supervised Go process
+owns one patched BrowserMCP child and exposes loopback Streamable HTTP.
 
 ## Architecture Decisions
 
 | Decision | Choice | Rationale |
 |---|---|---|
-| V2 boundary | Retain `home.opencode.v2.{enable,runtimeRoot,projectConfigCommand}` and V1's independent branch. | V2 defects must not change the default fallback. |
-| Native-first port | Use V2 agents, policy rules, MCP shape, native media, copied skills/commands, and AGENTS; retain only rtk, sdd-task-result, review-transport, skill-registry, and engram adapters. | Reuses existing host/provider policy and avoids reimplementing dropped V1 plugins. |
-| Node dependency closure | Pin and stage every production dependency required by `@opencode/plugin` 2.0.14, including `@opencode/schema` 2.0.14. | Copying only the direct plugin package causes every local adapter to fail module resolution. |
-| BrowserMCP protocol | Package and patch BrowserMCP 0.1.3; retain tool handlers but remove its unsupported `resources` capability. | OpenCode asks for resource templates whenever that capability is advertised, producing the confirmed `Method not found` failure. |
-| BrowserMCP lifecycle | Add a V2-only singleton option and inject BrowserMCP once in the global V2 MCP configuration; exclude it from project/workspace locations. | A second 0.1.3 process kills the existing port-9009 listener. |
-| TUI health | Define health from successful initialization, tool discovery, and a real tool call when paired; report an unpaired browser distinctly. | A listed plugin or partial MCP connection is not evidence of a healthy runtime. |
+| V2 boundary | Preserve V1 and retain V2 opt-in. | V2 failures cannot affect the fallback. |
+| Native-first port | Use native V2 features plus five adapters only. | Avoids recreating dropped V1 plugins. |
+| BrowserMCP package | Preserve 12 tools; remove `resources` advertisement and kill-on-port startup behavior. | Avoids V2 resource-template errors and unsafe port ownership. |
+| Singleton transport | `browsermcp-broker` owns one child, caches synthetic `initialize`/`tools/list`, and correlates all `tools/call` JSON-RPC IDs across HTTP sessions. | supergateway cannot share one stdio child: stateless mode is per-request and stateful mode per-session. |
+| Service boundary | Supervise the broker as `browsermcp` through systemd or launchd. The default bridge port is 9010 because rog's code-server owns 9008. | A durable owner preserves the extension's single 9009 pairing without taking another service's port. |
 
 ## Data Flow
 
 ```
-Nix pins/hashes ──> V2 node_modules ──> five adapters load
-BrowserMCP package+patch ──> one global V2 MCP process ──> 12 browser tools
-V1 generator ──> ~/.config/opencode/ (unchanged)
+OpenCode V2 workspaces ── Streamable HTTP ──> browsermcp-broker
+                                              └── one stdio child ──> extension :9009
+V1 generator ───────────────────────────────────────────────────────> unchanged
 ```
 
-V2 maps `prompt`→`system`, `disable`→`disabled`, `maxSteps`→`steps`, V1 modes
-to primary/subagent/all, `bash`→`shell`, and `task`→`subagent`; denied tools
-remain denied. Local MCP children retain proxy scrubbing. BrowserMCP's patched
-initialize response does not trigger OpenCode's invalid template request.
+The broker binds `127.0.0.1:<bridgePort>/mcp`, replays cached discovery to each
+client session, and forwards calls only through its single child. The child does
+not inherit proxy variables. A bind collision fails; it never kills or replaces
+another owner.
 
 ## File Changes
 
 | File | Action | Description |
 |---|---|---|
-| `shared/opencode/runtime-config.nix` | Modify | Stage the complete V2 Node closure, preserving V1 activation. |
-| `shared/opencode.nix`, `shared/opencode/v2-mcps.nix` | Modify | Define the V2 BrowserMCP singleton option and canonical emission. |
-| `shared/opencode/mcps-base.nix` | Modify | Remove floating BrowserMCP from the generic V2 MCP map. |
-| `pkgs/opencode-npm-packages-v2/{default.nix,versions.json,node-modules.json}` | Modify | Fetch the complete pinned plugin runtime closure. |
-| `pkgs/browsermcp-v2/` | Create | Build pinned BrowserMCP 0.1.3 with the capability-only compatibility patch. |
-| `lib/packages.nix`, `overlays/{linux,darwin}.nix` | Modify | Expose BrowserMCP V2 on both platforms. |
-| `shared/opencode/v2-{agents,permissions,mcps}.nix` | Retain | Continue native remaps without changing their contracts. |
+| `pkgs/nixos-scripts/cmd/browsermcp-broker/`, `internal/browsermcp/` | Create | Thin command and multiplexing implementation. |
+| `pkgs/nixos-scripts/default.nix` | Modify | Build the broker in the existing Go derivation. |
+| `shared/opencode.nix` | Modify | Add bridge options and Linux/Darwin supervision. |
+| `shared/opencode/{runtime-config,v2-mcps}.nix` | Modify | Emit one remote loopback URL and no local BrowserMCP entry. |
+| `pkgs/browsermcp-v2/default.nix` | Retain/verify | Keep capability and kill-on-port patches. |
 
 ## Interfaces / Contracts
 
-`home.opencode.v2.browserMcp` provides `enable` (default true), `package`, and
-`location` (the V2 global configuration only). Its emitter MUST produce exactly
-one BrowserMCP entry when enabled and none in project/workspace maps. The
-patched package MUST preserve all existing tools, MUST NOT advertise
-`resources`, and MUST retain the local-child proxy-scrub environment.
+`home.opencode.v2.browserMcp` SHALL provide `enable`, `package`, `bridgePackage`
+(default `pkgs.nixos-scripts`), and `bridgePort` (default `9010`). The V2 global
+map MUST contain exactly one `type: "remote"` entry at
+`http://127.0.0.1:<bridgePort>/mcp`; project/workspace maps and local entries
+MUST contain none. The unit runs `browsermcp-broker --child <package>/bin/mcp-server-browsermcp --port <bridgePort>`. On Linux, an occupied bridge port exits with status 78 and `RestartPreventExitStatus=78` prevents a restart loop; it never kills or replaces the existing listener.
 
 ## Testing Strategy
 
-| Layer | What to Test | Approach |
+| Layer | What to test | Approach |
 |---|---|---|
-| Evaluation | Closure and singleton emission | Evaluate Linux and Darwin targets; assert schema staging and exactly one V2 BrowserMCP entry. |
-| Runtime | Adapters | Start `opencode2`; verify five adapters register and logs lack `@opencode/schema` resolution failures. |
-| Runtime | BrowserMCP | Verify one port-9009 listener, `/mcps` shows 12 tools with no `resources/templates/list` error, then call a non-destructive tool with a paired tab. Without pairing, report unpaired, not healthy. |
-| Regression | Existing guarantees | Run `nix flake check --no-build`, host evaluations, V1 byte-identity diff, deny/proxy smoke, and the SDD/review round-trip gate. |
+| Go RED/unit | One child, ID/session correlation, loopback-only bind, collision failure, proxy scrub. | Tests precede broker logic. |
+| Evaluation | Options, unit shape, exactly one remote URL and zero local entries. | Linux and Darwin evaluation. |
+| Runtime | Two workspaces, 12 tools, one child/9009 listener, paired real call, restart recovery. | R17/R24 gate before release. |
+| Regression | V1 identity, adapter load, policy/proxy behavior. | Flake checks and host evaluations. |
 
 ## Threat Matrix
 
-N/A — this design changes package closure, MCP negotiation, and singleton
-configuration only; it introduces no routing, shell, subprocess, VCS/PR, or
-executable-file-classification boundary.
+| Boundary | Applicability | Design response | Planned RED tests |
+|---|---|---|---|
+| Documentation-like paths | N/A — no executable-file classification. | None. | None. |
+| Git repository selection | Applicable — review transport accepts repository selectors. | Reject relative or outside-worktree selectors before subprocess creation. | Relative and outside-worktree selectors fail closed. |
+| Commit state | Applicable — review transport must not mutate Git state. | Never stage or commit. | Empty index, staged, and `commit -a` remain unchanged. |
+| Push state | Applicable — review flow may inspect push arguments. | Preserve ask/deny semantics; do not push. | Tracking, first-push, and refspec cases remain denied/asked. |
+| PR commands | Applicable — review transport composes `gentle-ai review`. | Preserve explicit `--head` and environment prefixes without ownership changes. | Composed commands forward both forms unchanged. |
+
+The broker also introduces a process/network boundary: loopback only, no proxy
+inheritance, one child, and failure on occupied bridge port. RED tests cover
+double-bind rejection and concurrent-session singleton preservation.
 
 ## Migration / Rollout
 
-No data or option migration is required. V2 activation replaces only managed
-packages and MCP configuration; `v2.enable = false` is the rollback. V2 stays
-opt-in until all runtime checks pass on rog, thinkcentre, t14, and macm5.
+No data migration is required. `v2.browserMcp.enable = false` removes the remote
+entry and unit; `v2.enable = false` restores the untouched V1 fallback. V2 stays
+opt-in until runtime gates pass on rog, thinkcentre, t14, and macm5.
 
 ## Open Questions
 
-None. The missing schema, unsupported resource-template capability, and
-fixed-port lifecycle are confirmed by the pinned package source and V2 logs.
+- [ ] Decide whether idle child shutdown is safe for extension pairing; default to retaining the supervised child until runtime evidence proves otherwise.
+- [ ] Define the user-visible diagnostic for an occupied bridge port without weakening fail-closed startup.
