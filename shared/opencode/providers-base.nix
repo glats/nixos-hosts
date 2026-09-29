@@ -713,9 +713,11 @@ let
         neutral = "openai/gpt-5.6-luna";
       };
     }
-    # Re-fit 2026-09-29: each tier applies one capability band to every SDD,
-    # judgment, and review phase: GPT-5.4 mini, Sonnet 5.5, then Opus 5.5.
-    # The live GitHub Copilot catalog marks all three active with tool calling.
+    # Re-fit 2026-09-29: balance cost and capability by phase instead of locking
+    # every tier to one vendor. GPT-5.4 mini handles mechanical work, GPT-5.3
+    # Codex edits code, Sonnet 5.5 covers balanced reasoning, and Astra/Opus
+    # are reserved for scarce full-tier judgment. The Copilot catalog marks all
+    # selected models active with tool calling.
     # Do not route Copilot Gemini models (#15315) or GPT-5.4 (#17454); keep the
     # GPT-5.6 family out until its OpenCode access failures (#36575) are resolved.
     # Live smoke tests remain deferred to macm5 because this Linux account has
@@ -730,19 +732,19 @@ let
         sdd-spec = "github-copilot/gpt-5.4-mini";
         sdd-design = "github-copilot/gpt-5.4-mini";
         sdd-tasks = "github-copilot/gpt-5.4-mini";
-        sdd-apply = "github-copilot/gpt-5.4-mini";
-        sdd-verify = "github-copilot/gpt-5.4-mini";
+        sdd-apply = "github-copilot/gpt-5.3-codex";
+        sdd-verify = "github-copilot/claude-sonnet-5.5";
         sdd-archive = "github-copilot/gpt-5.4-mini";
         sdd-onboard = "github-copilot/gpt-5.4-mini";
-        jd-judge-a = "github-copilot/gpt-5.4-mini";
-        jd-judge-b = "github-copilot/gpt-5.4-mini";
-        jd-fix-agent = "github-copilot/gpt-5.4-mini";
-        review-readability = "github-copilot/gpt-5.4-mini";
-        review-refuter = "github-copilot/gpt-5.4-mini";
-        review-reliability = "github-copilot/gpt-5.4-mini";
-        review-resilience = "github-copilot/gpt-5.4-mini";
-        review-risk = "github-copilot/gpt-5.4-mini";
-        review-validator = "github-copilot/gpt-5.4-mini";
+        jd-judge-a = "github-copilot/claude-sonnet-5.5";
+        jd-judge-b = "github-copilot/claude-sonnet-5.5";
+        jd-fix-agent = "github-copilot/gpt-5.3-codex";
+        review-readability = "github-copilot/claude-sonnet-5.5";
+        review-refuter = "github-copilot/claude-sonnet-5.5";
+        review-reliability = "github-copilot/claude-sonnet-5.5";
+        review-resilience = "github-copilot/claude-sonnet-5.5";
+        review-risk = "github-copilot/claude-sonnet-5.5";
+        review-validator = "github-copilot/claude-sonnet-5.5";
         neutral = "github-copilot/gpt-5.4-mini";
       };
     }
@@ -750,19 +752,19 @@ let
       name = "github-copilot-medium";
       phases = {
         gentle-orchestrator = "github-copilot/claude-sonnet-5.5";
-        sdd-init = "github-copilot/claude-sonnet-5.5";
+        sdd-init = "github-copilot/gpt-5.4-mini";
         sdd-explore = "github-copilot/claude-sonnet-5.5";
         sdd-propose = "github-copilot/claude-sonnet-5.5";
         sdd-spec = "github-copilot/claude-sonnet-5.5";
         sdd-design = "github-copilot/claude-sonnet-5.5";
-        sdd-tasks = "github-copilot/claude-sonnet-5.5";
-        sdd-apply = "github-copilot/claude-sonnet-5.5";
+        sdd-tasks = "github-copilot/gpt-5.4-mini";
+        sdd-apply = "github-copilot/gpt-5.3-codex";
         sdd-verify = "github-copilot/claude-sonnet-5.5";
-        sdd-archive = "github-copilot/claude-sonnet-5.5";
-        sdd-onboard = "github-copilot/claude-sonnet-5.5";
+        sdd-archive = "github-copilot/gpt-5.4-mini";
+        sdd-onboard = "github-copilot/gpt-5.4-mini";
         jd-judge-a = "github-copilot/claude-sonnet-5.5";
         jd-judge-b = "github-copilot/claude-sonnet-5.5";
-        jd-fix-agent = "github-copilot/claude-sonnet-5.5";
+        jd-fix-agent = "github-copilot/gpt-5.3-codex";
         review-readability = "github-copilot/claude-sonnet-5.5";
         review-refuter = "github-copilot/claude-sonnet-5.5";
         review-reliability = "github-copilot/claude-sonnet-5.5";
@@ -775,27 +777,27 @@ let
     {
       name = "github-copilot-full";
       phases = {
-        gentle-orchestrator = "github-copilot/claude-opus-5.5";
-        sdd-init = "github-copilot/claude-opus-5.5";
-        sdd-explore = "github-copilot/claude-opus-5.5";
-        sdd-propose = "github-copilot/claude-opus-5.5";
-        sdd-spec = "github-copilot/claude-opus-5.5";
-        sdd-design = "github-copilot/claude-opus-5.5";
-        sdd-tasks = "github-copilot/claude-opus-5.5";
-        sdd-apply = "github-copilot/claude-opus-5.5";
-        sdd-verify = "github-copilot/claude-opus-5.5";
-        sdd-archive = "github-copilot/claude-opus-5.5";
-        sdd-onboard = "github-copilot/claude-opus-5.5";
-        jd-judge-a = "github-copilot/claude-opus-5.5";
+        gentle-orchestrator = "github-copilot/gpt-6-astra";
+        sdd-init = "github-copilot/gpt-5.4-mini";
+        sdd-explore = "github-copilot/gpt-6-astra";
+        sdd-propose = "github-copilot/gpt-6-astra";
+        sdd-spec = "github-copilot/gpt-6-astra";
+        sdd-design = "github-copilot/gpt-6-astra";
+        sdd-tasks = "github-copilot/gpt-5.4-mini";
+        sdd-apply = "github-copilot/gpt-5.3-codex";
+        sdd-verify = "github-copilot/gpt-6-astra";
+        sdd-archive = "github-copilot/gpt-5.4-mini";
+        sdd-onboard = "github-copilot/gpt-5.4-mini";
+        jd-judge-a = "github-copilot/gpt-6-astra";
         jd-judge-b = "github-copilot/claude-opus-5.5";
-        jd-fix-agent = "github-copilot/claude-opus-5.5";
+        jd-fix-agent = "github-copilot/gpt-5.3-codex";
         review-readability = "github-copilot/claude-opus-5.5";
-        review-refuter = "github-copilot/claude-opus-5.5";
-        review-reliability = "github-copilot/claude-opus-5.5";
+        review-refuter = "github-copilot/gpt-6-astra";
+        review-reliability = "github-copilot/gpt-6-astra";
         review-resilience = "github-copilot/claude-opus-5.5";
-        review-risk = "github-copilot/claude-opus-5.5";
-        review-validator = "github-copilot/claude-opus-5.5";
-        neutral = "github-copilot/claude-opus-5.5";
+        review-risk = "github-copilot/gpt-6-astra";
+        review-validator = "github-copilot/gpt-6-astra";
+        neutral = "github-copilot/gpt-6-astra";
       };
     }
   ];
