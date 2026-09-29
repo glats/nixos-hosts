@@ -384,13 +384,7 @@ in
             if pkgs.stdenv.isLinux then
               "${pkgs.systemd}/bin/systemctl --user restart opencode2"
             else
-              ''
-                service="gui/$(${pkgs.coreutils}/bin/id -u)/${opencodeV2LaunchdLabel}"
-                # The first activation can precede launchd registration. RunAtLoad
-                # starts that agent; changed later activations restart it here.
-                /bin/launchctl print "$service" >/dev/null 2>&1 \
-                  && /bin/launchctl kickstart -k "$service"
-              ''
+              "if /bin/launchctl print gui/\"$(${pkgs.coreutils}/bin/id -u)\"/${opencodeV2LaunchdLabel} >/dev/null 2>&1; then /bin/launchctl kickstart -k gui/\"$(${pkgs.coreutils}/bin/id -u)\"/${opencodeV2LaunchdLabel}; fi"
           }; then
             echo "restartOpencodeV2: supervisor restart failed" >&2
             exit 1
