@@ -313,7 +313,7 @@ in
         };
       };
 
-      home.activation.restartOpencodeV2 = config.lib.dag.entryAfter [ "makeOpencodeConfigMutable-v2" ] ''
+      home.activation.restartOpencodeV2 = config.lib.dag.entryAfter [ "setupOpencodePluginRuntime-v2" ] ''
         runtime_root=${lib.escapeShellArg v2.runtimeRoot}
         config_file="${config.home.homeDirectory}/.config/opencode-v2/opencode.json"
         stamp="$runtime_root/opencode.json.activation"
