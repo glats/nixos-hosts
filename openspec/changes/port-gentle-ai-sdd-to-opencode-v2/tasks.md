@@ -212,6 +212,12 @@ Chain strategy: size-exception
      primary and `sdd-explore` as a subagent with `system` and permissions,
      without V1 fields.
 - [ ] R28 Runtime follow-up: complete a native V2 service restart and a
-     noninteractive provider query on rog. The schema deployment reached the
-     native restart activation, but the command did not return; standalone
-     native query reached the provider and was rejected for insufficient funds.
+      noninteractive provider query on rog. The schema deployment reached the
+      native restart activation, but the command did not return; standalone
+      native query reached the provider and was rejected for insufficient funds.
+- [x] R29 Repair native V2 lifecycle scoping: retire the stale default-XDG V2
+      service that held 49374, retain direct shared-service wrappers, and reload
+      the isolated V2 service after generated configuration changes (restart as
+      fallback). Gate: rog `opencode2 service status` and a query from another
+      workspace both return `http://127.0.0.1:49374`; `opencode2 reload`
+      confirms reload and `debug agents` returns the generated registry.
