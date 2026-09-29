@@ -751,7 +751,7 @@ let
     {
       name = "github-copilot-medium";
       phases = {
-        gentle-orchestrator = "github-copilot/claude-sonnet-5.5";
+        gentle-orchestrator = "github-copilot/gpt-6-sol";
         sdd-init = "github-copilot/gpt-5.4-mini";
         sdd-explore = "github-copilot/claude-sonnet-5.5";
         sdd-propose = "github-copilot/claude-sonnet-5.5";
