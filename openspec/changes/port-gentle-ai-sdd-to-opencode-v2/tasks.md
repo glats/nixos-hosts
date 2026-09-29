@@ -200,6 +200,11 @@ Chain strategy: size-exception
    V1 and V2 user state. Gate: Rog activation completes with a pre-existing V2
    `cli.json.backup` and the backup is absent afterward.
 - [x] R26 Resolve the deployed bridge ownership collision: code-server owns
-   `127.0.0.1:9008` on rog, so the declarative bridge default is `9010`; an
-   `EADDRINUSE` broker exit uses status `78`, which systemd excludes from
-   restart while leaving the foreign listener untouched.
+    `127.0.0.1:9008` on rog, so the declarative bridge default is `9010`; an
+    `EADDRINUSE` broker exit uses status `78`, which systemd excludes from
+    restart while leaving the foreign listener untouched.
+- [x] R27 Correct the pinned OpenCode 2.0.14 agent schema: emit `agent` (not
+    `agents`) and retain `prompt`, `disable`, and `permission` while mapping
+    only legacy `maxSteps` to `steps`. Gate: generated V2 configuration
+    evaluates successfully and declares `gentle-orchestrator` as primary plus
+    `sdd-explore` as a subagent.

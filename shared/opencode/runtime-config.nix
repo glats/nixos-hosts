@@ -121,7 +121,7 @@ let
       if isV2 then
         {
           update = "disable";
-          agents = v2Agents;
+          agent = v2Agents;
           permissions = v2Permissions;
           mcp = v2Mcps;
           experimental.policies = [
