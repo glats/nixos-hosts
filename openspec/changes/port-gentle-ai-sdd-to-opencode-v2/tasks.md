@@ -203,8 +203,15 @@ Chain strategy: size-exception
     `127.0.0.1:9008` on rog, so the declarative bridge default is `9010`; an
     `EADDRINUSE` broker exit uses status `78`, which systemd excludes from
     restart while leaving the foreign listener untouched.
-- [x] R27 Correct the pinned OpenCode 2.0.14 agent schema: emit `agent` (not
-    `agents`) and retain `prompt`, `disable`, and `permission` while mapping
-    only legacy `maxSteps` to `steps`. Gate: generated V2 configuration
-    evaluates successfully and declares `gentle-orchestrator` as primary plus
-    `sdd-explore` as a subagent.
+- [x] R27 Restore the pinned OpenCode 2.0.14 agent schema after the legacy
+     regression: emit top-level `agents`, per-agent `system`, `disabled`,
+     `steps`, `mode`, and ordered `permissions` arrays. Convert scalar and
+     resource-map permissions without relaxing denials; normalize disabled MCP
+     tool actions with `_`; allow only Context7 and Exa research actions for
+     `sdd-research`. Gate: generated V2 JSON declares `gentle-orchestrator` as
+     primary and `sdd-explore` as a subagent with `system` and permissions,
+     without V1 fields.
+- [ ] R28 Runtime follow-up: complete a native V2 service restart and a
+     noninteractive provider query on rog. The schema deployment reached the
+     native restart activation, but the command did not return; standalone
+     native query reached the provider and was rejected for insufficient funds.

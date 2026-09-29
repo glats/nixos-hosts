@@ -276,6 +276,25 @@
           touch $out
         '';
 
+      checks.x86_64-linux.opencode-v2-agent-schema =
+        let
+          pkgs = nixpkgs.legacyPackages.x86_64-linux;
+          config = self.homeConfigurations.rog.config.home.file.".config/opencode-v2/opencode.json".source;
+        in
+        pkgs.runCommand "opencode-v2-agent-schema" { nativeBuildInputs = [ pkgs.jq ]; } ''
+          jq -e '
+            (.agents["gentle-orchestrator"].mode == "primary") and
+            (.agents["sdd-explore"].mode == "subagent") and
+            (.agents["sdd-explore"].system | type == "string") and
+            (.agents["sdd-explore"].permissions | type == "array") and
+            ([.agents[] | (.permissions | type == "array") and all(.permissions[]; has("action") and has("resource") and has("effect"))] | all) and
+            (has("agent") | not) and
+            (has("permission") | not) and
+            ([.agents[] | has("prompt") or has("disable") or has("permission") or has("maxSteps")] | any | not)
+          ' ${config} > /dev/null
+          touch $out
+        '';
+
       # --- NixOS configurations ---
       nixosConfigurations = {
         rog = mkNixosHost { hostname = "rog"; };
