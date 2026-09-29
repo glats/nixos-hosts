@@ -58,13 +58,47 @@ The system MUST remap V1 permissions to V2 `{action, resource, effect}` rules (`
 
 ### Requirement: MCP, Engram, and AGENTS Remap
 
-The system MUST group servers under V2 `mcp.servers`, use inverse `disabled`, snake_case OAuth keys, preserve proxy-scrub, and emit AGENTS memory context. Engram SHALL stay version-agnostic.
+The system MUST group servers under V2 `mcp.servers`, use inverse `disabled`, snake_case OAuth keys, preserve proxy-scrub, and emit AGENTS memory context. Engram SHALL stay version-agnostic. BrowserMCP SHALL be emitted as a `type: "remote"` singleton (see BrowserMCP Singleton Transport), not a remapped local server.
 
 #### Scenario: Server connectivity and memory context
 
 - GIVEN the 7 servers are remapped [all]
 - WHEN `/mcps` is checked and AGENTS context loads
-- THEN all 7 connect; local children skip HTTPS_PROXY; AGENTS context native
+- THEN all 7 connect; local stdio children skip HTTPS_PROXY; BrowserMCP connects via its remote singleton URL; AGENTS context native
+
+### Requirement: BrowserMCP Singleton Streamable-HTTP Transport
+
+The system MUST emit BrowserMCP as exactly one `type: "remote"` entry (`url = "http://127.0.0.1:<bridgePort>/mcp"`) in the V2 global `mcp.servers`, and MUST NOT emit any `type: "local"` BrowserMCP entry or place it in project/workspace maps. One supervised BrowserMCP process SHALL run behind a minimal custom Go stdio-multiplexing broker (`browsermcp-broker`) that owns exactly one patched BrowserMCP stdio child, performs a single synthetic `initialize` + `tools/list`, and fronts a loopback Streamable HTTP endpoint bound to `127.0.0.1` only, never `0.0.0.0`, multiplexing every `tools/call` over that single child with broker-assigned JSON-RPC ID correlation. This SHALL apply to the V2 branch only; V1's browsermcp emission SHALL stay byte-identical.
+
+#### Scenario: Remote emission, loopback-only
+
+- GIVEN V2 config is generated [all]
+- WHEN the V2 global `mcp.servers` is inspected
+- THEN exactly one `type: "remote"` BrowserMCP entry targets `http://127.0.0.1:9010/mcp` and the broker binds loopback only
+
+#### Scenario: Cross-platform supervised lifecycle
+
+- GIVEN V2 activates on a host [rog, thinkcentre, t14, macm5]
+- WHEN the supervisor starts
+- THEN a `browsermcp` systemd user unit (Linux) or launchd agent (Darwin) runs `browsermcp-broker` as one long-lived process with restart-on-failure
+
+#### Scenario: Kill-neutralized clean startup
+
+- GIVEN port 9009 is free [all]
+- WHEN the singleton starts
+- THEN no `lsof -ti:9009 | xargs kill -9` runs; all 12 tools preserved; no `resources` capability advertised
+
+#### Scenario: Foreign bridge listener
+
+- GIVEN another service owns the configured loopback bridge port [all]
+- WHEN `browsermcp-broker` starts
+- THEN it exits with status 78 without killing or replacing the listener, and Linux systemd MUST NOT restart-loop on that status
+
+#### Scenario: Two-workspace concurrency proof
+
+- GIVEN two V2 workspaces open against two project dirs [all]
+- WHEN both list tools
+- THEN both show 12 connected BrowserMCP tools and `ps` shows exactly one BrowserMCP node process
 
 ### Requirement: Minimal Adapter Set
 

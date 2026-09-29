@@ -3,8 +3,8 @@
 ## Status
 
 Implementation is partial. Native V2 assets, remaps, adapters, and the cutover
-runbook are authored. Focused remediation R4 fixed the native V2 command-tree
-activation failure; broader validation remains deferred by user instruction.
+runbook are authored. Focused remediation R25 made the generated V2 `cli.json`
+activation idempotent; broader validation remains deferred by user instruction.
 
 ## Delivery Decision
 
@@ -78,3 +78,67 @@ the compatible pinned MCP SDK patch.
 | R6/R7 BrowserMCP compatibility package | `nix build .#packages.x86_64-linux.browsermcp-v2 --no-link --print-out-paths` — exit 0 | JSON-RPC initialize against the built binary returned `tools` and omitted `resources`; no module-resolution failure. | `pkgs/browsermcp-v2/`, `lib/packages.nix`, platform overlays |
 | R10-R12 singleton configuration | Rog V2 `opencode.json` evaluation asserted exactly one `browsermcp` server command and no `npx` — exit 0 | The generated command is the pinned package binary and remains only in the global V2 map; project config stays disabled by `OPENCODE_DISABLE_PROJECT_CONFIG=1`. | `shared/opencode.nix`, `shared/opencode/mcps-base.nix`, `shared/opencode/runtime-config.nix` |
 | R13 focused gate | `nix flake check --no-build` — exit 0; `nix eval .#homeConfigurations.rog.activationPackage.drvPath` — exit 0 | Built BrowserMCP completed the initialize handshake with tool capability only. | All R5-R12 files |
+
+### BrowserMCP singleton transport remediation
+
+- [x] R15 removed the BrowserMCP 0.1.3 startup invocation of
+  `killProcessOnPort(port)`. The package still preserves its 12 tool schemas
+  and tools-only initialize capability; a busy port is now left untouched
+  instead of terminating an unrelated process.
+- [x] R16 captured the pre-bridge RED condition. The Rog V2 evaluator still
+  produces a global `browsermcp` entry with `type = "local"`, which causes each
+  OpenCode V2 workspace to launch its own fixed-port child. This is not a valid
+  singleton transport.
+
+| Work unit | Focused test command and exact result | Runtime harness command/scenario and exact result | Rollback boundary |
+|---|---|---|---|
+| R15 kill-neutralized BrowserMCP | `nix fmt -- pkgs/browsermcp-v2/default.nix`, `nix build .#packages.x86_64-linux.browsermcp-v2 --no-link --print-out-paths`, and `nix flake check --no-build` — exit 0. The built `dist/index.js` has no `killProcessOnPort(port);` invocation, advertises `tools: {}` without `resources: {}`, and retains 12 tool union members. | Built source inspection confirms `createWebSocketServer` waits for a free port without calling the process-killer. A multi-client service runtime is blocked by R14/R17. | `pkgs/browsermcp-v2/default.nix` |
+| R16 local-emission RED | `nix eval --raw '.#homeConfigurations.rog.config.home.file.".config/opencode-v2/opencode.json".source'` and `nix build .#homeConfigurations.rog.activationPackage --no-link` — exit 0. Current V2 generator source emits `browsermcp = { type = "local"; ...; }`. | N/A — the proof deliberately captures the unsafe pre-bridge configuration; running multiple workspaces would reproduce the fixed-port conflict. | No production change; evidence targets `shared/opencode/runtime-config.nix` |
+
+### BrowserMCP broker remediation
+
+- [x] R14 introduced `browsermcp-broker`, a standard-library Go loopback HTTP
+  broker. It starts one proxy-scrubbed BrowserMCP stdio child, performs and
+  caches synthetic `initialize`/`tools/list`, and maps random child JSON-RPC
+  IDs back to each caller's ID. The final design's safe default retains that
+  child until broker shutdown rather than closing it on idle, preserving the
+  extension pairing until R24 proves idle shutdown safe.
+- [x] R17 added concurrent JSON-RPC correlation coverage, loopback bind and
+  occupied-port rejection coverage, and proxy-scrub coverage.
+- [x] R18-R20 added the `bridgePackage` and `bridgePort` options plus supervised
+  `browsermcp` systemd and launchd services with restart-on-failure policies.
+- [x] R21-R23 replaced the V2 local entry with exactly one global remote
+  `http://127.0.0.1:9008/mcp` entry and checked its generated Rog configuration.
+- [x] R14a resolved the package build blocker: the previously authored broker
+  command and internal package were untracked, so Nix's Git flake source omitted
+  them despite `default.nix` registering `cmd/browsermcp-broker`. They are now
+  registered in Git's index without a commit.
+
+| Work unit | Focused test command and exact result | Runtime harness command/scenario and exact result | Rollback boundary |
+|---|---|---|---|
+| R14/R17 broker | `go -C pkgs/nixos-scripts test ./...` — exit 0; concurrent client test preserves each caller ID, uses one child, rejects an occupied loopback port, and scrubs proxy variables. `nix build --impure path:/home/glats/.nixos#packages.x86_64-linux.nixos-scripts --no-link` — exit 0. | In-process `httptest` concurrently sends 24 `tools/call` requests after the cached discovery handshake; all responses retain their originating IDs. This is safe without a paired browser extension. | `pkgs/nixos-scripts/{cmd/browsermcp-broker,internal/browsermcp,default.nix}` |
+| R18-R23 configuration | `nix build --impure path:/home/glats/.nixos#homeConfigurations.rog.activationPackage --no-link` — exit 0; Nix assertion confirms the systemd broker service. | Rog generated config assertion confirms one global remote URL at `127.0.0.1:9008`, no local command, and one restart-on-failure service. | `shared/opencode.nix`, `shared/opencode/v2-mcps.nix`, `shared/opencode/runtime-config.nix` |
+| R14a tracked broker source | `go -C pkgs/nixos-scripts test ./...` — exit 0; `nix build .#nixos-scripts --no-link` — exit 0; `nix eval .#homeConfigurations.rog.activationPackage.drvPath` — exit 0. | N/A — this fixes flake source inclusion; the existing broker unit tests exercise the HTTP/child boundary. | Git index entries for `pkgs/nixos-scripts/{cmd/browsermcp-broker,internal/browsermcp}` |
+| R25 V2 `cli.json` activation | `nix fmt -- shared/opencode/runtime-config.nix`; `nix eval .#homeConfigurations.rog.activationPackage.drvPath` — both exit 0. | `home-manager switch --flake .#rog` — exit 0 with a pre-existing `~/.config/opencode-v2/cli.json.backup`; activation ran `cleanupOpencodeV2CliBackup-v2` before `linkGeneration`, and the backup was absent afterward. | V2 `cli.json` `home.file` and `cleanupOpencodeV2CliBackup-v2` in `shared/opencode/runtime-config.nix` |
+
+- [x] R25 declared V2 `cli.json` as a forced generated `home.file` and added a
+  pre-`linkGeneration` cleanup for only
+  `~/.config/opencode-v2/cli.json.backup`. The V1 runtime configuration and all
+   other V2 state are not touched.
+- [x] R26 diagnosed the deployed `127.0.0.1:9008` listener as rog's
+  `code-server.service` child (PID 2242), not a stale broker. The bridge now
+  defaults to `9010`; the broker maps `EADDRINUSE` to exit status `78` and the
+  Linux user unit sets `RestartPreventExitStatus=78`. A foreign listener is
+  therefore neither replaced nor retried in a restart loop.
+
+| Work unit | Focused test command and exact result | Runtime harness command/scenario and exact result | Rollback boundary |
+|---|---|---|---|
+| R26 deployed bridge ownership | `go -C pkgs/nixos-scripts test ./...`; `nix eval .#homeConfigurations.rog.activationPackage.drvPath`; `nix build .#nixos-scripts --no-link` — all exit 0. The broker occupied-port unit test now preserves `EADDRINUSE`. | `home-manager switch --flake .#rog` — exit 0. `sudo -n ss` attributes 9008 to code-server and 9010 to browsermcp-broker. A direct broker start at occupied 9008 exits 78; `systemctl --user` shows the actual broker active with `NRestarts=0`; JSON-RPC `initialize` at `http://127.0.0.1:9010/mcp` returns HTTP 200. | `shared/opencode.nix`, broker command/error classifier, and BrowserMCP V2 port contract |
+
+## Current Blocker
+
+R24 requires a paired BrowserMCP extension and activation on rog, then the
+remaining hosts. It was intentionally not started during apply: a real
+unpaired extension must report unpaired rather than be faked healthy, and the
+user deferred independent SDD verification. The broker and generated runtime
+are ready for that runtime gate.

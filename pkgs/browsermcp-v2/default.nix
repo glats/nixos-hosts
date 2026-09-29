@@ -42,7 +42,12 @@ stdenvNoCC.mkDerivation {
     substituteInPlace "$out/lib/node_modules/@modelcontextprotocol/sdk/dist/esm/server/index.js" \
       --replace-fail 'if (!this._capabilities.resources)' 'if (false)'
     substituteInPlace "$out/lib/node_modules/@browsermcp/mcp/dist/index.js" \
-      --replace-fail $'        tools: {},\n        resources: {}' $'        tools: {}'
+       --replace-fail $'        tools: {},\n        resources: {}' $'        tools: {}'
+    # BrowserMCP 0.1.3 kills whichever process owns its fixed extension port
+    # before starting. The V2 singleton owns that lifecycle, so leave a busy
+    # port to fail normally instead of killing an unrelated process.
+    substituteInPlace "$out/lib/node_modules/@browsermcp/mcp/dist/index.js" \
+      --replace-fail $'  killProcessOnPort(port);\n' ""
     mkdir -p "$out/bin"
     makeWrapper ${nodejs}/bin/node "$out/bin/mcp-server-browsermcp" \
       --add-flags "$out/lib/node_modules/@browsermcp/mcp/dist/index.js" \
@@ -52,7 +57,7 @@ stdenvNoCC.mkDerivation {
   nativeBuildInputs = [ makeWrapper ];
   installPhase = "true";
   meta = with lib; {
-    description = "Pinned BrowserMCP 0.1.3 with the incompatible resources capability removed";
+    description = "Pinned BrowserMCP 0.1.3 with compatible capabilities and safe port ownership";
     platforms = platforms.all;
   };
 }

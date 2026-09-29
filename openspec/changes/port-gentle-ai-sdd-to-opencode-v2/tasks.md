@@ -1,6 +1,10 @@
 # Tasks: Port Gentle AI SDD to OpenCode v2 (native-first reset)
 
 > Native-first V2 plan; rewrite list retired; completed 1.3/1.6 kept as 1.1/1.2.
+> R14-R24 land the confirmed singleton BrowserMCP bridge: minimal custom Go
+> stdio-multiplexing broker (`browsermcp-broker`), patched package (kill-on-port
+> neutralized), loopback supervisor systemd+launchd, remote config emission,
+> two-workspace concurrency proof. User authorizes apply.
 
 Decision needed before apply: No
 Chained PRs recommended: Yes
@@ -9,13 +13,15 @@ Chain strategy: size-exception
 
 ## Workload Forecast
 
-- Estimate: 1.4k to 1.8k lines.
+- Estimate: 1.6k to 2.0k lines (R14-R24 add the bridge closure).
 - Delivery: exception-ok; one direct-to-main commit approved; apply never commits.
 
 ### Suggested work units
 
 - Each slice independently revertible; V1 byte-identical throughout.
 - Shared slice gate: `nix flake check --no-build` plus per-host evals plus V1 diff clean.
+- R14-R24 add the Go broker closure (broker binary, patch, unit, remote
+  emission) plus the two-workspace concurrency runtime gate shared below.
 
 ## Phase 1: P0 — v2 npm
 
@@ -121,3 +127,79 @@ Chain strategy: size-exception
   contains exactly one `browsermcp` server entry whose command references
   the pinned package (not `npx`), zero in project/workspace maps
   (OPENCODE_DISABLE_PROJECT_CONFIG=1 already enforces project-map absence).
+  Superseded by R21/R23: the 0.1.3 per-session stdio spawn multiplies the
+  fixed-port process; tasks remain as the recorded pre-bridge history.
+
+### BrowserMCP singleton transport (design: transport/service rows + Runtime Test Plan)
+
+- [x] R14 Implement the `browsermcp-broker` Go command: a long-lived binary under
+  `pkgs/nixos-scripts/cmd/browsermcp-broker/` (thin entry) +
+  `pkgs/nixos-scripts/internal/browsermcp/` (multiplexing logic). It MUST:
+  (a) spawn exactly one patched BrowserMCP stdio child with `crypto/rand`
+  JSON-RPC IDs; (b) perform a synthetic `initialize` + `tools/list` once;
+  (c) front a loopback-only Streamable HTTP endpoint
+  (`http://127.0.0.1:<port>/mcp`) via `net/http` that accepts concurrent
+  POST requests; (d) replay cached `initialize`/`tools/list` for each new
+  MCP session; (e) multiplex all `tools/call` on the single child with
+  ID correlation (broker JSON-RPC ID → HTTP session); (f) refcount child
+  lifecycle (start on first session, stop when idle); (g) never inherit
+  proxy environment; (h) fail rather than double-bind an occupied port.
+  Test: `go -C pkgs/nixos-scripts test ./... && nix build`
+   `.#packages.x86_64-linux.nixos-scripts --no-link` exit 0.
+- [x] R14a Register the broker command and internal package files in Git so the
+  flake source includes the already-authored Go implementation. Gate:
+  `go -C pkgs/nixos-scripts test ./...`, `nix build .#nixos-scripts --no-link`,
+  and Rog Home Manager activation derivation evaluation all exit 0.
+- [x] R15 Extend the `pkgs/browsermcp-v2/` 0.1.3 patch beyond R7: neutralize
+  the startup `killProcessOnPort` (`lsof -ti:9009 | xargs kill -9`) so a free
+  or occupied 9009 boots cleanly; assert via grep that the patched source no
+  longer runs kill-on-port on startup while all 12 tools stay intact and
+  initialize keeps the R7 tools-only capability.
+- [x] R16 RED eval: V2 global config currently emits `type: "local"` (R12-era
+  shape) — assert the pre-bridge shape fails the singleton contract (two
+  workspaces each spawning `type:"local"` browsermcp → second kills first),
+  so remote emission tasks have a provable target. Update `apply-progress.md`
+  with the captured evidence.
+- [x] R17 RED: prove the `browsermcp-broker` keeps exactly one stdio child
+  across ≥2 concurrent Streamable HTTP clients — if two HTTP sessions ever
+  spawn two browsermcp processes, each holds 9009 and the singleton dies; this
+  gate must be green before R18-R23 proceed.
+- [x] R18 Define `home.opencode.v2.browserMcp.bridgePort` (initial default 9008;
+  superseded by R26 to 9010) and
+  `bridgePackage` (default `pkgs.nixos-scripts`, providing `browsermcp-broker`)
+  in `shared/opencode.nix`, and assert at activation that 9008 is not already
+  bound (fail/warn, never double-bind).
+- [x] R19 Create the supervised `browsermcp` user unit in `shared/opencode.nix`:
+  `systemd` on Linux, `launchd.agent` on Darwin; run
+  `browsermcp-broker --child <package>/bin/mcp-server-browsermcp
+  --port <bridgePort>` — the broker's BrowserMCP child must NOT inherit proxy
+  environment.
+- [x] R20 Unit policy: `Restart=on-failure` (systemd) / `KeepAlive.Crashed`
+  (launchd).
+- [x] R21 Replace the R12-era local emission in `shared/opencode/v2-mcps.nix`
+  with `type: "remote"; url = "http://127.0.0.1:${bridgePort}/mcp"` gated by
+  `home.opencode.v2.browserMcp.enable`.
+- [x] R22 Mirror R21 into the V2 generator branch of
+  `shared/opencode/runtime-config.nix` (global map only; zero browsermcp in
+  any project/workspace map).
+- [x] R23 Gate: `nix flake check --no-build` plus Rog evals — assert exactly
+  one `type: "remote"` browsermcp URL (absolute 127.0.0.1 URL) in V2 global
+  config, zero `type: "local"`, zero project/workspace map entries.
+- [ ] R24 Runtime gate (rog, then each Linux host; Darwin after R19):
+  (a) service active; (b) `curl -sS http://127.0.0.1:9010/mcp` handshake
+  accepts; (c) `ss -ltnp | grep 9009` shows exactly one listener; (d)
+  two-workspace concurrency: two V2 workspaces both list 12 tools, `ps` shows
+  one browsermcp, no timeout, no kill-on-port; (e) paired real tool call
+  succeeds, unpaired reports unpaired (never fake-healthy); (f)
+  `systemctl --user restart browsermcp` recovers and both workspaces
+  reconnect without extension re-pair; (g) regression: flake check, per-host
+   evals, V1 byte-identity diff, and the 5.6 SDD round-trip still green
+   (record in `apply-progress.md`).
+- [x] R25 Make generated V2 `cli.json` activation idempotent: force the managed
+   file and remove only its stale `.backup` before `linkGeneration`, preserving
+   V1 and V2 user state. Gate: Rog activation completes with a pre-existing V2
+   `cli.json.backup` and the backup is absent afterward.
+- [x] R26 Resolve the deployed bridge ownership collision: code-server owns
+   `127.0.0.1:9008` on rog, so the declarative bridge default is `9010`; an
+   `EADDRINUSE` broker exit uses status `78`, which systemd excludes from
+   restart while leaving the foreign listener untouched.

@@ -23,6 +23,9 @@
 - [x] 3.7: declared the Linux `opencode2` systemd user service with `opencode2 serve`, `Restart=on-failure`, and `default.target` enablement.
 - [x] 3.8: declared the macm5 `opencode2` launchd agent with the foreground `serve` command, V2 environment, `RunAtLoad`, and crash-only keep-alive.
 - [x] 3.9: changed the cmp-guarded activation hook to restart the applicable supervisor and copy its stamp only after that command succeeds.
+- [x] 3.9a: fixed macm5 first activation: `launchctl print` now guards the
+  restart, because the launchd label is not available until Home Manager has
+  registered its newly declared agent. `RunAtLoad` owns initial startup.
 - [x] 3.10: ran the no-build flake gate and evaluated the rendered Linux unit, Darwin agent, and Linux activation command.
 
 ## Work Unit Evidence
@@ -46,7 +49,7 @@
 | RED → GREEN assertions | Before production, `nix eval --json .#homeConfigurations.rog.config.systemd.user.services.opencode2` failed because no service existed. The module now carries Linux/Darwin assertions for foreground service definitions, shared environment, recovery policy, and the supervisor-only activation path. |
 | Focused test | `nix fmt -- shared/opencode.nix shared/shell-aliases.nix && nix flake check --no-build` exited 0. The flake gate evaluated all three Linux NixOS configurations; Darwin systems are omitted on this `x86_64-linux` executor. |
 | Rendered configuration | `nix eval --impure --json --expr 'let f = builtins.getFlake "path:/home/glats/.nixos"; in { linux = f.homeConfigurations.rog.config.systemd.user.services.opencode2; darwin = f.homeConfigurations.macm5.config.launchd.agents.opencode2; }'` exited 0. Linux renders `opencode2 serve`, all eight V2 variables, `Restart=on-failure`, and `WantedBy=default.target`; Darwin renders the same binary/environment with `RunAtLoad` and crash-only `KeepAlive`. |
-| Activation rendering | `nix eval --impure --raw --expr 'let f = builtins.getFlake "path:/home/glats/.nixos"; in f.homeConfigurations.rog.config.home.activation.restartOpencodeV2.data'` exited 0 and rendered cmp-guarded `systemctl --user restart opencode2`, a failure exit before the stamp copy, and no native `service restart`. The Darwin branch evaluates `launchctl kickstart -k gui/$(id -u)/org.nix-community.home.opencode2`. |
+| Activation rendering | `nix eval --impure --raw --expr 'let f = builtins.getFlake "path:/home/glats/.nixos"; in f.homeConfigurations.rog.config.home.activation.restartOpencodeV2.data'` exited 0 and rendered cmp-guarded `systemctl --user restart opencode2`, a failure exit before the stamp copy, and no native `service restart`. The Darwin branch checks `launchctl print gui/$(id -u)/org.nix-community.home.opencode2` first; it only kickstarts an already-registered agent, while `RunAtLoad` owns initial startup. |
 | Runtime harness | N/A: this executor has no deployed target user session, and starting/restarting either supervisor would mutate a host. Deployed discovery and crash recovery remain Phase 4.3 evidence. |
 | Rollback boundary | Revert `shared/opencode.nix` and `shared/shell-aliases.nix`; this removes only V2 environment rendering, user supervisors, activation restart behavior, and their assertions. V1 remains untouched. |
 
