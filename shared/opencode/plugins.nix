@@ -44,12 +44,15 @@ with lib;
       enable = mkEnableOption "the RTK shell-output rewriting plugin";
     };
 
+    warden = {
+      enable = mkEnableOption "the opencode-warden npm plugin";
+    };
+
     npmPlugins = mkOption {
       type = types.listOf types.str;
       default = [
         "opencode-claude-auth@latest"
         "opencode-multimodal@latest"
-        "opencode-warden@1.2.0"
       ];
       description = ''
         NPM plugins auto-installed by OpenCode at startup.
@@ -95,6 +98,14 @@ with lib;
   };
 
   # Set the actual active plugins in the config section
+  config.home.opencode.plugins.npmPlugins = mkDefault (
+    [
+      "opencode-claude-auth@latest"
+      "opencode-multimodal@latest"
+    ]
+    ++ optional config.home.opencode.plugins.warden.enable "opencode-warden@1.2.0"
+  );
+
   config.home.opencode.activePlugins = mkIf config.home.opencode.enable (
     lib.filterAttrs (name: enabled: enabled) {
       model-variants = config.home.opencode.plugins.modelVariants.enable;

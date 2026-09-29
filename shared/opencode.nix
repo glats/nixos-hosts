@@ -208,8 +208,10 @@ in
         RTK_TELEMETRY_DISABLED = "1";
       };
 
-      home.file.".config/opencode/opencode-warden.json".text = builtins.toJSON {
-        audit.filePath = "${config.home.homeDirectory}/.local/state/opencode/warden/audit.log";
+      home.file = mkIf config.home.opencode.plugins.warden.enable {
+        ".config/opencode/opencode-warden.json".text = builtins.toJSON {
+          audit.filePath = "${config.home.homeDirectory}/.local/state/opencode/warden/audit.log";
+        };
       };
 
       # Export API keys from sops secrets at shell startup
