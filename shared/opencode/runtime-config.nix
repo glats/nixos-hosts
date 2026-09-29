@@ -252,8 +252,19 @@ if isV2 then
           for src in ${lib.concatStringsSep " " config.home.ai-assets.skillSources}; do
             [ -d "$src" ] && ${pkgs.coreutils}/bin/cp -r "$src"/. "$skills_dir/"
           done
-          chmod -R u+w "$commands_dir" "$skills_dir"
-          ${pkgs.findutils}/bin/find "$commands_dir" "$skills_dir" -type f -exec ${pkgs.gnused}/bin/sed -i 's/subtask/subagent/g' {} +
+           chmod -R u+w "$commands_dir" "$skills_dir"
+           ${pkgs.findutils}/bin/find "$commands_dir" "$skills_dir" -type f -exec ${pkgs.gnused}/bin/sed -i 's/subtask/subagent/g' {} +
+
+           # Delegate-only SDD skills are portable upstream assets. OpenCode V2's
+           # Task tool requires an explicit subagent_type; without it the model
+           # falls back to the generic agent and bypasses the phase contract.
+           for skill in sdd-explore sdd-propose sdd-spec sdd-design sdd-tasks sdd-apply sdd-verify sdd-archive sdd-onboard sdd-research; do
+             skill_file="$runtime_dir/skills/$skill/SKILL.md"
+             marker='<!-- opencode-v2-phase-delegation -->'
+             if [ -f "$skill_file" ] && ! ${pkgs.gnugrep}/bin/grep -qF "$marker" "$skill_file"; then
+               ${pkgs.coreutils}/bin/printf '\n%s\n## OpenCode V2 phase delegation\nWhen this skill is loaded by another agent, it MUST call the Task tool with `subagent_type: "%s"`. It MUST NOT select `general` or omit `subagent_type`.\n' "$marker" "$skill" >> "$skill_file"
+             fi
+           done
 
           plugins_dir="$runtime_dir/plugins"
           [ -L "$plugins_dir" ] && ${pkgs.coreutils}/bin/rm -f "$plugins_dir"
@@ -436,9 +447,9 @@ else
             elif [ -f "$skill_file" ]; then
               echo "WARNING: $skill model-capable marker not found on line 1 — upstream may have changed format" >&2
             fi
-          done
+           done
 
-          # Clean Nix build artifacts (left by previous builds or manual operations)
+           # Clean Nix build artifacts (left by previous builds or manual operations)
           find "$runtime_dir" -maxdepth 1 -name '*.backup' -type f -delete 2>/dev/null || true
           find "$runtime_dir" -maxdepth 1 -name '*.bak' -type f -delete 2>/dev/null || true
         '';

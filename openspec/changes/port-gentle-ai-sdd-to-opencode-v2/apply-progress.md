@@ -14,6 +14,13 @@ restart` registered normally; generated configuration changes now run
 the shared service URL, a query from a separate workspace, and a successful
 native reload.
 
+R30 closes the generic-delegation gap: generated delegate-only SDD skills now
+name their exact OpenCode Task `subagent_type`, rather than leaving selection
+to the model. The V2 service reload is ordered after runtime skill copying, so
+the directive is live immediately. Structural deployment proof passed; a live
+Gentle Orchestrator invocation was rejected by the configured provider for
+insufficient funds before it could launch the phase agent.
+
 R27's earlier conclusion was a regression. The V2 emitter now uses the pinned
 2.0.14 shape: top-level `agents`, per-agent `system`, `disabled`, `steps`,
 `mode`, and ordered `permissions` arrays. The focused structural proof and
