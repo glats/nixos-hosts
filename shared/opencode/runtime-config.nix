@@ -258,7 +258,7 @@ if isV2 then
            # Delegate-only SDD skills are portable upstream assets. OpenCode V2's
            # Task tool requires an explicit subagent_type; without it the model
            # falls back to the generic agent and bypasses the phase contract.
-           for skill in sdd-explore sdd-propose sdd-spec sdd-design sdd-tasks sdd-apply sdd-verify sdd-archive sdd-onboard sdd-research; do
+           for skill in sdd-init sdd-explore sdd-propose sdd-spec sdd-design sdd-tasks sdd-apply sdd-verify sdd-archive sdd-research; do
              skill_file="$runtime_dir/skills/$skill/SKILL.md"
              marker='<!-- opencode-v2-phase-delegation -->'
              if [ -f "$skill_file" ] && ! ${pkgs.gnugrep}/bin/grep -qF "$marker" "$skill_file"; then

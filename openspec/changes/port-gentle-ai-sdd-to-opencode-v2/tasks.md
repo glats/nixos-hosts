@@ -222,8 +222,9 @@ Chain strategy: size-exception
       workspace both return `http://127.0.0.1:49374`; `opencode2 reload`
       confirms reload and `debug agents` returns the generated registry.
 - [x] R30 Make V2 SDD delegation exact: after V2 skill synchronization, append
-      an idempotent phase directive that requires the Task call's matching
-      `subagent_type` and prohibits `general`. Reload only after this mutation.
+      an idempotent phase directive to every ten `delegate_only` SDD skill that
+      requires the Task call's matching `subagent_type` and prohibits `general`.
+      Reload only after this mutation.
       Gate: generated `sdd-explore/SKILL.md` contains
       `subagent_type: "sdd-explore"`; live model invocation remains separately
       blocked by the provider's insufficient-funds response.
