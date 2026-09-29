@@ -6,6 +6,14 @@ Implementation is partial. Native V2 assets, remaps, adapters, and the cutover
 runbook are authored. Focused remediation R25 made the generated V2 `cli.json`
 activation idempotent; broader validation remains deferred by user instruction.
 
+R29 repaired the shared native V2 lifecycle on rog. A default-XDG server had
+claimed port 49374 while the isolated V2 wrapper searched a different state
+root. After retiring that stale process, the isolated `opencode2 service
+restart` registered normally; generated configuration changes now run
+`opencode2 reload`, falling back to `service restart`. Rog validation confirmed
+the shared service URL, a query from a separate workspace, and a successful
+native reload.
+
 R27's earlier conclusion was a regression. The V2 emitter now uses the pinned
 2.0.14 shape: top-level `agents`, per-agent `system`, `disabled`, `steps`,
 `mode`, and ordered `permissions` arrays. The focused structural proof and

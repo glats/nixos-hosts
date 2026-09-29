@@ -574,3 +574,207 @@ user: R27's "correction" was backwards — the pinned 2.0.14 schema wants `agent
 serve` supervisor must be removed in favor of native `opencode2 service restart`
 (the managed background service is client-discovered). Both are generator-level
 fixes with a low, reversible diff.
+
+---
+
+## Operational Re-exploration (2026-09-29): OpenCode v2 service lifecycle & config reload
+
+> **Scope.** This section is a separate, read-only operational exploration of the
+> reported failure: on `rog` the `opencode2` service does not respond after a Nix
+> build/reboot; on `macm5` the service runs but does not load Nix-regenerated
+> SDD/provider config after rebuild and a fresh login shell. It determines the
+> correct, supported lifecycle and config-reload behavior for the pinned
+> `@opencode/cli` v2.0.14 and the macOS/Linux differences. No files were edited,
+> no service was deployed, and no secrets were read.
+
+### Evidence
+
+**Context7 quota.** `context7_resolve-library-id` returned `Monthly quota
+exceeded. Create a free API key at https://context7.com/dashboard for more
+requests.` — no Context7 doc evidence could be retrieved this session.
+
+**Authoritative docs (Exa → `opencode.ai/v2/docs/*`).**
+
+- OpenCode v2 uses a **shared background server** per user account: "By default,
+  OpenCode discovers or starts one shared background server … Every local
+  OpenCode client connects to that server, which owns sessions, configuration,
+  integrations, permissions, and tool execution." `--standalone` runs a private
+  server; `--server` connects to a specific URL (`/v2/docs/cli/`).
+- Service commands exist for lifecycle diagnosis: `opencode service restart`,
+  `opencode service stop`, `opencode service start` (`/v2/docs/troubleshooting/`).
+- "Setting or unsetting service configuration stops the background service. Its
+  next start picks up the new configuration" (`/v2/docs/troubleshooting/`).
+- "Automatic installation does not restart a running server. Restart it manually
+  to activate the installed update" (`/v2/docs/config/`).
+- The shared server registers at `~/.local/state/opencode/service.json`; private
+  service config is stored at `~/.config/opencode/service.json`. "Do not delete
+  or edit service files … Use the service commands to manage the daemon."
+  (`/v2/docs/troubleshooting/`).
+- `opencode serve --service` is the supervised-foreground form; plain
+  `opencode serve` runs a dedicated foreground server (`/v2/docs/cli/web/`).
+- `opencode reload` = "Reload configuration"; `opencode service {start,restart,
+  status,stop,get,set,unset}` (`opencode2 --help` on rog, the pinned binary).
+
+**GitHub source (`anomalyco/opencode`, tag `v2.0.14` = commit `0846214`).**
+
+- `packages/cli/src/services/service-config.ts` — registration file is
+  `path.join(global.state, filename())` (i.e. `$XDG_STATE_HOME/opencode/service.json`
+  for the `latest` channel); private config is `path.join(global.config, ...)`.
+  `defaultPort()` for `latest` = `0xc0de` = **49374**. `service set`/`unset` call
+  `Service.stop(...)` before writing. `options()` returns the spawn command
+  `[...selfCommand(), "serve", "--service"]`.
+- `packages/cli/src/server-process.ts` — the `serve --service` process registers
+  via `ServiceRegistration.register(...)` on listen. `OPENCODE_CONFIG_DIR`
+  overrides `global.config` (config dir), but there is **no** equivalent override
+  for `global.state` (registration dir) — `XDG_STATE_HOME` alone governs it. On
+  `EADDRINUSE` it calls `recognizeIncumbent(...)`; if no incumbent matches, it
+  fails with "Managed service port … already in use by another process. Configure
+  another port with `opencode service set port <port>`".
+- `packages/opencode/src/config/config.ts` (issue trace, `#39987`) — config is
+  loaded once at startup; nothing watches `opencode.json` afterward (an
+  experimental `OPENCODE_EXPERIMENTAL_FILEWATCHER` flag exists but does **not**
+  reload config). This confirms: **no hot-reload in v2.0.14**.
+- PR `#12101` added the in-TUI `/reload` (aliases `/restart`, `/refresh`) to
+  dispose the current instance and refresh config/MCP state.
+
+**Live `rog` diagnostics (read-only).**
+
+- `opencode2 --version` → `opencode v2.0.14`; binary at
+  `/run/current-system/sw/bin/opencode2` (a `makeBinaryWrapper` passthrough over
+  `.opencode2-unwrapped`; no injected env — see `pkgs/opencode-v2/default.nix`).
+- A background server **is running**: pid `164891`
+  (`/nix/store/…-opencode-v2-2.0.14/bin/.opencode2-unwr`), PPID 1, started
+  `2026-09-29 10:37:19`, listening on `127.0.0.1:49374`.
+- Its `/proc/164891/environ` shows **no** `XDG_STATE_HOME`/`XDG_CONFIG_HOME`/
+  `OPENCODE_CONFIG_DIR`/`OPENCODE_DB`/`TMPDIR`/`OPENCODE_DISABLE_PROJECT_CONFIG` —
+  it was launched with the **default** environment, not the isolated wrapper env.
+- `~/.local/state/opencode/service.json` (default) = `{id, version:"2.0.14",
+  url:"http://127.0.0.1:49374", pid:164891, password:"IAvB…"}`.
+- `~/.config/opencode-v2/service.json` (isolated config) = `{password:"PpJW5…"}`
+  — a **different** password, i.e. a different server instance.
+- `~/.local/opencode-v2/state/opencode/service.json` = **absent**.
+- `opencode2 service status` under the isolated env → `stopped`; under the
+  default env → `http://127.0.0.1:49374`.
+- `~/.config/opencode/opencode.json` = V1 schema (`agent`/`provider`/`plugin`);
+  `~/.config/opencode-v2/opencode.json` = V2 schema (isolated, 87.9 KB).
+- `~/.local/opencode-v2/opencode.json.activation` stamp `cmp`s equal to the
+  current V2 `opencode.json` (in sync — activation would not re-trigger now).
+- `systemctl --user list-units | grep -i opencode` → only `opencode-go-proxy.service`
+  and `browsermcp.service`; there is **no** `opencode2` systemd unit. No
+  `launchd.agents.opencode2` exists either — the repo only defines `browsermcp`
+  supervision (`shared/opencode.nix`).
+
+### Root cause
+
+Two independent defects:
+
+1. **Environment-scope mismatch (rog "does not respond").** The running
+   background server was started without the isolated env, so it registered at
+   the *default* state path (`~/.local/state/opencode/service.json`) and reads
+   the *V1* config (`~/.config/opencode/opencode.json`). The `opencode2` shell
+   wrapper and the activation (`shared/opencode.nix:315-329`) both `source
+   ~/.local/share/opencode-v2/environment`, which sets
+   `XDG_STATE_HOME=~/.local/opencode-v2/state` and
+   `OPENCODE_CONFIG_DIR=~/.config/opencode-v2`. `opencode2 service stop` therefore
+   looks for the registration at the *isolated* path (absent) and is a no-op
+   (`stopped`). The stale default-env server keeps port **49374** and old config;
+   any isolated server that later tries to bind 49374 hits `EADDRINUSE` and fails
+   with the "already in use by another process" error.
+
+2. **stop-vs-restart, and no supervision (macm5 "does not reload").** The design
+   text calls for `opencode2 service restart`, but the committed activation
+   (`shared/opencode.nix:323`) runs `opencode2 service stop`. `stop` only halts
+   the managed background server; reload then depends on the next client
+   auto-starting a fresh server. On macOS there is no launchd agent for
+   `opencode2` (the cutover doc `docs/opencode-v2-final-cutover.md:16-17` still
+   references `systemctl --user stop opencode2` and `launchctl bootout
+   gui/$(id -u)/org.nix-community.home.opencode2`, neither of which exists in
+   config), so the background server is an unsupervized detached process that may
+   survive activation and keep serving stale config. Additionally, the
+   interactive wrapper (`shared/shell-aliases.nix:172-180`) launches with
+   `--standalone` (a private, per-invocation server), which the `service`
+   subcommand does not manage at all — so the activation's `service stop` never
+   applies to interactive sessions.
+
+### Correct, supported lifecycle (pinned v2.0.14)
+
+- **Three server modes**: shared background service (default, client-discovered),
+  private `--standalone`, and foreground `opencode serve [--service]`.
+- **Config is read once at server startup; there is no hot-reload.** Nix must
+  therefore trigger an explicit reload.
+- **Supported reload primitives** (in order of preference for this repo):
+  1. `opencode reload` — in-place config reload of the running server;
+  2. `opencode service restart` — restart the shared background service;
+  3. `opencode service stop` + auto-start on next client (current, partial);
+  4. in-TUI `/reload`.
+- **macOS vs Linux difference**: on both platforms the background service is a
+  detached process owned by the CLI (not by systemd/launchd) unless the operator
+  supervises it. `service stop/restart/reload` are the only portable controls;
+  the `browsermcp` systemd/launchd units are unrelated. Any supervision must
+  inherit the **same** isolated env (`XDG_STATE_HOME`, `XDG_CONFIG_HOME`,
+  `OPENCODE_CONFIG_DIR`, `OPENCODE_DB`) so the registration/config paths line up.
+
+### Approaches
+
+| # | Approach | Pros | Cons | Effort |
+|---|----------|------|------|--------|
+| A | Activation: replace `opencode2 service stop` with `opencode2 reload` (fallback `service restart`), keeping the existing env source. | Small, idempotent, session-preserving, matches the supported primitive. | Requires the background service to already be running and correctly scoped. | Low |
+| B | Activation: `opencode2 service stop` → `opencode2 service restart`. | Matches the design intent; forces a clean server with fresh config. | Still ignores `--standalone` interactive sessions; leaves the env-mismatch root cause unaddressed. | Low |
+| C | Stop using `--standalone` for the wrapper; use the shared background service and supervise it with a `systemd.user.services.opencode2` unit (Linux) + `launchd.agents.opencode2` (macOS), both sourcing the isolated env. | Durable, single source of truth, matches upstream default; `reload`/`restart` then target a real supervised service. | Larger; must fix the existing stale default-env server and cutover-doc commands; risk of port/DB collision with the default-root V2. | Medium/High |
+| D | Env-scope fix only: ensure every invocation (wrapper, activation, any future unit) derives one consistent environment, and kill/retire the stale default-env server. | Directly removes the root cause; unblocks A/B. | One-time remediation of the running rog server; doesn't by itself add supervision. | Low/Medium |
+
+### Recommendation
+
+**A + D, with C as the durable follow-up.** First fix the environment scope so
+the managed background service and the activation always operate on the isolated
+roots (D), then make the activation call `opencode2 reload` with a
+`service restart` fallback when no server is registered (A). Keep `--standalone`
+for interactive use for now (each fresh launch then reads current config
+automatically), but plan C — supervising the shared service with systemd/launchd
+under the isolated env — because the upstream model and the cutover runbook both
+assume a supervised `opencode2` service, and the current `--standalone` wrapper
+means the `service`/`reload` primitives never apply to interactive sessions. The
+immediate rog remediation is to stop the stale default-env server (or rebind it
+under the isolated env) so port 49374 is free.
+
+### Acceptance tests
+
+- [ ] `opencode2 reload` (isolated env) returns 0 and the server's provider/agent
+  list reflects a changed `opencode.json` without losing the session list.
+- [ ] After `nixos-build` + `exec zsh -l` on rog, `opencode2 service status`
+  (isolated env) reports a running server registered at
+  `~/.local/opencode-v2/state/opencode/service.json` — not the default path.
+- [ ] No stale default-env server remains: `ss -tlnp` shows no `opencode2`
+  listener bound under the default env; `~/.local/state/opencode/service.json`
+  has no live V2 registration (or is absent).
+- [ ] The activation emits `reload`/`restart` (assertion in `shared/opencode.nix`
+  updated from `hasInfix "opencode2 service stop"`), and `cmp` of the stamp vs
+  generated `opencode.json` re-triggers it correctly.
+- [ ] macOS (macm5): after rebuild + fresh shell, `opencode2` lists the new
+  SDD/provider config; `opencode2 service restart` (or `reload`) under the
+  isolated env applies changes without manual process hunting.
+- [ ] `nix flake check --no-build` + per-host evals (`rog`, `macm5`) pass.
+
+### Rollback
+
+`home.opencode.v2.enable = false` removes the V2 runtime entirely and restores
+the untouched V1 fallback. For the activation change specifically, revert the
+`restartOpencodeV2` block to the prior `opencode2 service stop` form (single-line
+diff in `shared/opencode.nix`). Re-running `opencode2 service stop` under the
+isolated env, then `opencode2 service start`, returns the managed service to a
+known state. A supervised `opencode2` unit (approach C) is removed by deleting
+the `systemd.user.services.opencode2` / `launchd.agents.opencode2` blocks and
+re-activating; the stale default-env server can be retired with `opencode2
+service stop` under the default env (one-time, read-only-safe manual step).
+
+### Affected files
+
+- `shared/opencode.nix` — `restartOpencodeV2` activation (lines 315-329, `opencode2
+  service stop` at 323) and its assertion (line 276); add V2 supervision if C.
+- `shared/shell-aliases.nix` — `opencode2` / `opencode2-project` wrappers (lines
+  170-196); the `--standalone` default drives the service-model mismatch.
+- `shared/opencode/runtime-config.nix` — V2 JSON emission (config surface whose
+  changes must be reloaded).
+- `docs/opencode-v2-final-cutover.md` — lines 16-17 reference a non-existent
+  `opencode2` systemd/launchd unit; must be corrected to `opencode2 service` or
+  the supervised unit C introduces.
