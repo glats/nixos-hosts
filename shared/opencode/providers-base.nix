@@ -713,6 +713,93 @@ let
         neutral = "openai/gpt-5.6-luna";
       };
     }
+    # Re-fit 2026-09-29: GitHub documents GPT-5 mini as its lightweight tier,
+    # GPT-5.4 mini for agentic codebase exploration, GPT-5.3-Codex for coding,
+    # and Claude Sonnet 5 for general-purpose agent work. Do not route Copilot
+    # Gemini models: OpenCode issue #15315 reports broken structured tool calls.
+    # Sources: docs.github.com/copilot/reference/ai-models/model-comparison and
+    # docs.github.com/copilot/reference/copilot-billing/models-and-pricing.
+    # Live smoke tests are deferred to macm5 because this Linux account has no
+    # Copilot entitlement; these profiles intentionally avoid GPT-5.4, for which
+    # OpenCode issue #17454 reports subagent schema-validation retry loops.
+    {
+      name = "github-copilot-light";
+      phases = {
+        gentle-orchestrator = "github-copilot/gpt-5-mini";
+        sdd-init = "github-copilot/gpt-5-mini";
+        sdd-explore = "github-copilot/gpt-5-mini";
+        sdd-propose = "github-copilot/gpt-5-mini";
+        sdd-spec = "github-copilot/gpt-5-mini";
+        sdd-design = "github-copilot/gpt-5-mini";
+        sdd-tasks = "github-copilot/gpt-5-mini";
+        sdd-apply = "github-copilot/gpt-5.3-codex";
+        sdd-verify = "github-copilot/claude-sonnet-5";
+        sdd-archive = "github-copilot/gpt-5-mini";
+        sdd-onboard = "github-copilot/gpt-5-mini";
+        jd-judge-a = "github-copilot/claude-sonnet-5";
+        jd-judge-b = "github-copilot/claude-sonnet-5";
+        jd-fix-agent = "github-copilot/gpt-5.3-codex";
+        review-readability = "github-copilot/claude-sonnet-5";
+        review-refuter = "github-copilot/claude-sonnet-5";
+        review-reliability = "github-copilot/claude-sonnet-5";
+        review-resilience = "github-copilot/claude-sonnet-5";
+        review-risk = "github-copilot/claude-sonnet-5";
+        review-validator = "github-copilot/claude-sonnet-5";
+        neutral = "github-copilot/gpt-5-mini";
+      };
+    }
+    {
+      name = "github-copilot-medium";
+      phases = {
+        gentle-orchestrator = "github-copilot/gpt-5.4-mini";
+        sdd-init = "github-copilot/gpt-5-mini";
+        sdd-explore = "github-copilot/gpt-5.4-mini";
+        sdd-propose = "github-copilot/claude-sonnet-5";
+        sdd-spec = "github-copilot/claude-sonnet-5";
+        sdd-design = "github-copilot/claude-sonnet-5";
+        sdd-tasks = "github-copilot/gpt-5.4-mini";
+        sdd-apply = "github-copilot/gpt-5.3-codex";
+        sdd-verify = "github-copilot/claude-sonnet-5";
+        sdd-archive = "github-copilot/gpt-5-mini";
+        sdd-onboard = "github-copilot/gpt-5.4-mini";
+        jd-judge-a = "github-copilot/claude-sonnet-5";
+        jd-judge-b = "github-copilot/claude-sonnet-5";
+        jd-fix-agent = "github-copilot/gpt-5.3-codex";
+        review-readability = "github-copilot/claude-sonnet-5";
+        review-refuter = "github-copilot/claude-sonnet-5";
+        review-reliability = "github-copilot/claude-sonnet-5";
+        review-resilience = "github-copilot/claude-sonnet-5";
+        review-risk = "github-copilot/claude-sonnet-5";
+        review-validator = "github-copilot/claude-sonnet-5";
+        neutral = "github-copilot/gpt-5.4-mini";
+      };
+    }
+    {
+      name = "github-copilot-full";
+      phases = {
+        gentle-orchestrator = "github-copilot/claude-sonnet-5";
+        sdd-init = "github-copilot/gpt-5-mini";
+        sdd-explore = "github-copilot/claude-sonnet-5";
+        sdd-propose = "github-copilot/claude-sonnet-5";
+        sdd-spec = "github-copilot/claude-sonnet-5";
+        sdd-design = "github-copilot/claude-sonnet-5";
+        sdd-tasks = "github-copilot/gpt-5.4-mini";
+        sdd-apply = "github-copilot/gpt-5.3-codex";
+        sdd-verify = "github-copilot/claude-sonnet-5";
+        sdd-archive = "github-copilot/gpt-5-mini";
+        sdd-onboard = "github-copilot/gpt-5.4-mini";
+        jd-judge-a = "github-copilot/claude-sonnet-5";
+        jd-judge-b = "github-copilot/claude-sonnet-5";
+        jd-fix-agent = "github-copilot/gpt-5.3-codex";
+        review-readability = "github-copilot/claude-sonnet-5";
+        review-refuter = "github-copilot/claude-sonnet-5";
+        review-reliability = "github-copilot/claude-sonnet-5";
+        review-resilience = "github-copilot/claude-sonnet-5";
+        review-risk = "github-copilot/claude-sonnet-5";
+        review-validator = "github-copilot/claude-sonnet-5";
+        neutral = "github-copilot/claude-sonnet-5";
+      };
+    }
   ];
 
   # ============================================================
