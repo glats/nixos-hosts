@@ -6,6 +6,12 @@ Implementation is partial. Native V2 assets, remaps, adapters, and the cutover
 runbook are authored. Focused remediation R25 made the generated V2 `cli.json`
 activation idempotent; broader validation remains deferred by user instruction.
 
+R27 corrects the pinned OpenCode 2.0.14 agent schema: the V2 emitter now uses
+the singular `agent` map and preserves native `prompt`, `disable`, and
+`permission` fields, mapping only legacy `maxSteps` to `steps`. `nix fmt` and
+`nix flake check --no-build` passed. macm5 must activate this revision to show
+the primary orchestrator through Tab and SDD subagents through `@` mentions.
+
 ## Delivery Decision
 
 The user accepted one direct-to-main `size:exception` for the complete port. Apply must not commit or push, and SDD verify is explicitly deferred.
