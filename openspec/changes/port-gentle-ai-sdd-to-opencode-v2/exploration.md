@@ -382,3 +382,195 @@ while collapsing all workspaces onto one process. The alternative (adopt the
 a much larger third-party trust surface. One non-blocking decision to confirm at
 proposal: authorize the small bespoke Go broker (recommended) versus forbid
 bespoke code and accept mcp-mux's risk.
+
+---
+
+## V2 runtime regressions: subagent fallback + background-service timeout (re-exploration 2026-09-29)
+
+Two live regressions are observed after the V2 runtime was activated:
+
+1. **The Gentle Orchestrator loads the delegate-only `sdd-explore` skill but
+   launches a generic "general" subagent, whose external MCP calls fail.**
+2. **The declarative OS supervisor launched `opencode2 serve`, but the normal
+   client expects native background-service semantics and timed out after
+   reboot.**
+
+Both are schema/supervision bugs in the V2 emission, not in the phase skills or
+the Go binaries. This section supersedes the R27 conclusion in
+`apply-progress.md`, which is now known to be wrong.
+
+### Current State
+
+V2 emits `opencode.json` from `shared/opencode/runtime-config.nix` (line 121-139)
+for the pinned `@opencode/cli` 2.0.14 (`pkgs/opencode-v2/default.nix`). The agent
+map is produced by `shared/opencode/v2-agents.nix` and the service lifecycle by
+`shared/opencode.nix`. Both carry a defect introduced by the last two commits.
+
+### Root cause 1 — agent schema regression (R27 reversed the V1→V2 rename)
+
+The pinned `@opencode/schema@2.0.14` config schema (staged in
+`pkgs/opencode-npm-packages-v2/`, read from the store this session) is the
+authoritative contract. From `@opencode/schema/dist/config/config.js` (and
+`config.d.ts` line 56): the top-level key is **`agents`** (`$Record<String,
+ConfigAgent.Info>`), and `dist/config/agent.js` defines the per-agent fields
+**`system`**, `description`, `mode`, `hidden`, `color`, **`steps`**,
+**`disabled`**, and **`permissions`** (an ordered `$Array<{action, resource,
+effect}>`), plus `model`/`request`. There is no `agent`, `prompt`, `disable`,
+`permission` (map), or `maxSteps` in the V2 schema — those are the **V1/legacy**
+field names that the V2 docs explicitly say not to use.
+
+R27 (commit `951dc2f` "fix(opencode): emit v2 agents correctly") reverted
+`v2-agents.nix` from the correct V2 mapping to the legacy shape and changed
+`runtime-config.nix` from `agents = v2Agents` to `agent = v2Agents`. The net
+emitted config today is:
+
+- top-level `agent` (singular) instead of `agents` (plural) → the whole map is
+  ignored;
+- per-agent `prompt` instead of `system`, `disable` instead of `disabled`,
+  `permission` (map) instead of `permissions` (array) → each field is ignored;
+- only `mode`/`steps`/`description`/`hidden`/`model` survive.
+
+Result: OpenCode 2.0.14 loads **zero custom agents**. `gentle-orchestrator`
+(primary) and all 10 SDD + 3 JD + 6 review subagents (incl. `sdd-explore`) are
+absent. The orchestrator reads `~/.config/opencode/skills/sdd-explore/SKILL.md`,
+whose frontmatter carries `metadata.delegate_only: true` + top-level
+`disable-model-invocation: true`, and is instructed to "delegate to the
+dedicated `sdd-explore` sub-agent" — but that subagent does not exist, so the
+`subagent` tool falls back to the built-in `general` subagent. The `general`
+subagent has no SDD MCP tooling, so its external MCP calls (github, context7,
+exa, nixos) fail.
+
+Note the pre-R27 state was *almost* right: `agents` + `system` + `disabled` +
+`steps` + `mode`, but it dropped `permission` instead of converting it to the
+`permissions` array, so per-agent permission overlays were never emitted in any
+committed state either.
+
+### Root cause 2 — supervising `opencode2 serve` is the wrong service model
+
+Commit `4351257` ("feat(opencode): supervise v2 runtime") added a declarative
+supervisor: systemd `opencode2.service` (`ExecStart = opencode2 serve`, env from
+`mkV2SystemdEnvironment`) on Linux and launchd `org.nix-community.home.opencode2`
+(`ProgramArguments = [opencode2 serve]`) on Darwin, and changed activation to
+`systemctl --user restart opencode2` / `launchctl kickstart`.
+
+OpenCode V2 has **two different processes**:
+
+- `opencode serve` — a *foreground headless HTTP server* (the `--server` client
+  path / supervisor-friendly process). It is NOT the managed service.
+- the **managed shared background service** — the daemon that owns sessions,
+  plugins, and permissions; the normal client "discovers or starts" it
+  automatically, and it is controlled by `opencode service status|restart|stop|start`.
+
+After reboot the supervisor only started `opencode2 serve` (foreground HTTP on
+its own port), which the normal `opencode2` client does **not** connect to. The
+client therefore tried to discover/start the managed background service itself
+and timed out — the exact upstream symptom "Timed out waiting for the background
+service to start" (`anomalyco/opencode` issue #41696).
+
+The uncommitted working-tree diff to `shared/opencode.nix` already removes the
+`opencode2 serve` supervisor (both `systemd.user.services.opencode2` and
+`launchd.agents.opencode2`) and restores `opencode2 service restart` in
+`restartOpencodeV2`, with the assertion now requiring the native form. This is
+the correct direction: the managed service is auto-discovered/started on client
+demand; `opencode service restart` is only for config-change lifecycle. The only
+remaining supervised unit is `browsermcp` (the BrowserMCP broker), which is a
+genuine always-on singleton and correctly uses `opencode2`'s sibling process, not
+`serve`.
+
+### Secondary gap — subagents lack external MCP permission (both issues)
+
+Even with root cause 1 fixed, the subagent class overlay
+(`shared/opencode/local-agent-overlays.json` →
+`permissionOverlays.class.subagent`) grants only
+`read/write/edit/bash/mem_search/mem_save/mem_get_observation` — **no external
+MCP tools** (github-personal/work, nixos, context7, exa, browsermcp). Upstream
+prior art (`anomalyco/opencode` #16491) records that MCP tools are unavailable
+in subagents by default (`mcp_in_subagents` defaults false). The V2 emission must
+therefore both (a) convert each agent's `permission` map into an ordered
+`permissions` array and (b) grant the SDD phase subagents the MCP tool actions
+they need, or external MCP calls will keep failing even for a correctly
+registered `sdd-explore`.
+
+### Affected Areas
+
+- `shared/opencode/v2-agents.nix` — wrong remap: must emit `agents` (plural),
+  `system`, `disabled`, `steps`, and convert per-agent `permission` map → ordered
+  `permissions` array (R27 regressed this).
+- `shared/opencode/runtime-config.nix` — line 124 `agent = v2Agents` must revert
+  to `agents = v2Agents`; optionally add `default_agent = "gentle-orchestrator"`.
+- `shared/opencode.nix` — uncommitted diff already reverts the `opencode2 serve`
+  supervisor to native `opencode2 service restart`; verify and commit.
+- `shared/opencode/local-agent-overlays.json` — `permissionOverlays.class.subagent`
+  and the `sdd-*`/`review-*` named overlays must add the external MCP tool
+  grants the phases need.
+- `shared/opencode/v2-permissions.nix` — emits `action = "mcp"` deny rules;
+  V2 MCP actions are the `_`-normalized tool name (e.g. `context7_*`), not
+  `mcp`. Verify and correct the deny/allow action mapping.
+- `pkgs/opencode-npm-packages-v2/` — no change; it is the source of truth for
+  the 2.0.14 schema and was used to confirm the regression.
+
+### Approaches
+
+1. **Revert R27 and complete the V2 permission mapping (recommended).** Restore
+   `agents` + `system` + `disabled` + `steps` + `mode`; add a per-agent
+   `permission`-map → `permissions`-array converter; grant external MCP actions
+   to SDD subagents; keep the already-uncommitted `opencode2 serve` removal.
+   - Pros: matches the pinned 2.0.14 schema byte-for-byte; fixes both regressions
+     at the generator, which is the single source of truth; V1 branch untouched.
+   - Cons: the permission-map→array converter is new Nix; MCP-action naming
+     (`_`-normalization) must be verified against 2.0.14 at apply.
+   - Effort: **Low** (two Nix files + overlays).
+
+2. **Keep R27's legacy fields and rely on V2 normalization.** Retain
+   `agent`/`prompt`/`disable`/`permission` and assume OpenCode warns-and-migrates.
+   - Pros: none.
+   - Cons: the pinned 2.0.14 schema has no such fields — they are ignored, which
+     is exactly the observed regression. Rejected.
+
+3. **Supervise the managed background service explicitly.** Add a systemd/launchd
+   unit that runs `opencode2 service start`-equivalent at boot instead of relying
+   on client auto-discovery.
+   - Pros: makes the managed service durable across logout.
+   - Cons: OpenCode documents the client auto-discovers/starts the service; the
+     service commands are "only needed when diagnosing its lifecycle"; a boot
+     supervisor is unnecessary and risks the same port/service duality that
+     caused #41696. Rejected unless a concrete multi-user/headless requirement
+     emerges.
+
+### Recommendation
+
+**Approach 1.** Revert `v2-agents.nix`/`runtime-config.nix` to the correct V2
+schema (the R27 commit should be treated as a regression and undone), add the
+per-agent `permissions`-array conversion plus external-MCP grants for SDD
+subagents, and land the already-prepared `opencode2 serve` supervisor removal.
+Order by risk: (P1) revert R27 + `agents`/`system`/`disabled`/`steps`;
+(P2) permission-map→array + MCP action grants; (P3) confirm the `opencode2
+service restart` activation and commit the shared/opencode.nix diff. Re-verify
+the exact V2 MCP-action normalization and whether a subagent MCP-in-subagents
+switch exists at apply, since that is the one remaining unverified behavior.
+
+### Risks
+
+- **R27 was a regression, not a fix.** Treating it as authoritative (as
+  `apply-progress.md` currently does) will preserve both failures. Re-plan the
+  `sdd-explore` subagent gate accordingly.
+- **MCP-action normalization unverified.** V2 matches MCP tools by `_`-normalized
+  names (server + tool); the current `v2-permissions.nix` emits a non-existent
+  `action = "mcp"`. Deny rules silently no-op today; allow rules must be correct.
+- **Subagent MCP availability.** Upstream #16491 (`mcp_in_subagents` defaults
+  false) may still block MCP tools in subagents even after correct permission
+  emission; must be verified against 2.0.14 at apply before declaring the
+  external-MCP path fixed.
+- **Service-model confusion recurrence.** Any future "supervisor" for the V2
+  runtime must target the managed background service (`opencode2 service`), never
+  `opencode2 serve`, or the reboot timeout returns.
+
+### Ready for Proposal
+
+**Yes**, with one verification deferred to apply (subagent MCP availability /
+action normalization against pinned 2.0.14). The orchestrator should tell the
+user: R27's "correction" was backwards — the pinned 2.0.14 schema wants `agents`
+(plural) + `system` + `disabled` + `permissions` (array), and the `opencode2
+serve` supervisor must be removed in favor of native `opencode2 service restart`
+(the managed background service is client-discovered). Both are generator-level
+fixes with a low, reversible diff.

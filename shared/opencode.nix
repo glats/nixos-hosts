@@ -66,10 +66,7 @@ let
   mkV2ShellEnvironment = lib.concatStringsSep "\n" (
     lib.mapAttrsToList (name: value: "export ${name}=${lib.escapeShellArg value}") mkV2Environment
   );
-  mkV2SystemdEnvironment = lib.mapAttrsToList (name: value: "${name}=${value}") mkV2Environment;
   opencodeV2EnvironmentFile = ".local/share/opencode-v2/environment";
-  opencodeV2ServiceCommand = "${pkgs.opencode-v2}/bin/opencode2 serve";
-  opencodeV2LaunchdLabel = "org.nix-community.home.opencode2";
   browserMcpServiceCommand = "${v2.browserMcp.bridgePackage}/bin/browsermcp-broker --child ${v2.browserMcp.package}/bin/mcp-server-browsermcp --port ${toString v2.browserMcp.bridgePort}";
   browserMcpLaunchdLabel = "org.nix-community.home.browsermcp";
 in
@@ -254,31 +251,7 @@ in
       home.file.${opencodeV2EnvironmentFile}.text = mkV2ShellEnvironment;
 
       assertions =
-        lib.optional pkgs.stdenv.isLinux {
-          assertion =
-            config.systemd.user.enable
-            && lib.all (
-              variable: lib.elem variable config.systemd.user.services.opencode2.Service.Environment
-            ) mkV2SystemdEnvironment
-            && lib.elem opencodeV2ServiceCommand config.systemd.user.services.opencode2.Service.ExecStart
-            && config.systemd.user.services.opencode2.Service.Restart == "on-failure";
-          message = "OpenCode V2 must run under a systemd user service with the shared V2 environment.";
-        }
-        ++ lib.optional pkgs.stdenv.isDarwin {
-          assertion =
-            config.launchd.agents.opencode2.enable
-            &&
-              config.launchd.agents.opencode2.config.ProgramArguments == [
-                "${pkgs.opencode-v2}/bin/opencode2"
-                "serve"
-              ]
-            && config.launchd.agents.opencode2.config.EnvironmentVariables == mkV2Environment
-            && config.launchd.agents.opencode2.config.KeepAlive.Crashed
-            && !config.launchd.agents.opencode2.config.KeepAlive.SuccessfulExit
-            && config.launchd.agents.opencode2.config.RunAtLoad;
-          message = "OpenCode V2 must run under a launchd agent with the shared V2 environment.";
-        }
-        ++ lib.optional (pkgs.stdenv.isLinux && v2.browserMcp.enable) {
+        lib.optional (pkgs.stdenv.isLinux && v2.browserMcp.enable) {
           assertion =
             lib.elem browserMcpServiceCommand config.systemd.user.services.browsermcp.Service.ExecStart
             && config.systemd.user.services.browsermcp.Service.Restart == "on-failure";
@@ -300,27 +273,10 @@ in
           {
             assertion =
               config.home.file.${opencodeV2EnvironmentFile}.text == mkV2ShellEnvironment
-              && !lib.hasInfix "opencode2 service restart" config.home.activation.restartOpencodeV2.data;
-            message = "OpenCode V2 wrappers and activation must use the shared environment and supervisor restart.";
+              && lib.hasInfix "opencode2 service stop" config.home.activation.restartOpencodeV2.data;
+            message = "OpenCode V2 wrappers and activation must use the shared environment and reset the native service.";
           }
         ];
-
-      systemd.user.enable = lib.mkIf pkgs.stdenv.isLinux true;
-
-      systemd.user.services.opencode2 = lib.mkIf pkgs.stdenv.isLinux {
-        Unit = {
-          Description = "OpenCode V2 server";
-          After = [ "default.target" ];
-        };
-        Service = {
-          Type = "simple";
-          Environment = mkV2SystemdEnvironment;
-          ExecStart = opencodeV2ServiceCommand;
-          Restart = "on-failure";
-          RestartSec = "5s";
-        };
-        Install.WantedBy = [ "default.target" ];
-      };
 
       systemd.user.services.browsermcp = lib.mkIf (pkgs.stdenv.isLinux && v2.browserMcp.enable) {
         Unit = {
@@ -335,23 +291,6 @@ in
           RestartPreventExitStatus = "78";
         };
         Install.WantedBy = [ "default.target" ];
-      };
-
-      launchd.agents.opencode2 = lib.mkIf pkgs.stdenv.isDarwin {
-        enable = true;
-        config = {
-          ProgramArguments = [
-            "${pkgs.opencode-v2}/bin/opencode2"
-            "serve"
-          ];
-          EnvironmentVariables = mkV2Environment;
-          KeepAlive = {
-            Crashed = true;
-            SuccessfulExit = false;
-          };
-          ProcessType = "Background";
-          RunAtLoad = true;
-        };
       };
 
       launchd.agents.browsermcp = lib.mkIf (pkgs.stdenv.isDarwin && v2.browserMcp.enable) {
@@ -380,13 +319,9 @@ in
 
         mkdir -p "$runtime_root"
         if [ ! -f "$stamp" ] || ! ${pkgs.diffutils}/bin/cmp -s "$config_file" "$stamp"; then
-          if ! ${
-            if pkgs.stdenv.isLinux then
-              "${pkgs.systemd}/bin/systemctl --user restart opencode2"
-            else
-              "if /bin/launchctl print gui/\"$(${pkgs.coreutils}/bin/id -u)\"/${opencodeV2LaunchdLabel} >/dev/null 2>&1; then /bin/launchctl kickstart -k gui/\"$(${pkgs.coreutils}/bin/id -u)\"/${opencodeV2LaunchdLabel}; fi"
-          }; then
-            echo "restartOpencodeV2: supervisor restart failed" >&2
+          source "${config.home.homeDirectory}/.local/share/opencode-v2/environment"
+          if ! ${pkgs.opencode-v2}/bin/opencode2 service stop; then
+            echo "restartOpencodeV2: native service reset failed" >&2
             exit 1
           fi
           ${pkgs.coreutils}/bin/cp "$config_file" "$stamp"

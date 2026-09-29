@@ -6,11 +6,12 @@ Implementation is partial. Native V2 assets, remaps, adapters, and the cutover
 runbook are authored. Focused remediation R25 made the generated V2 `cli.json`
 activation idempotent; broader validation remains deferred by user instruction.
 
-R27 corrects the pinned OpenCode 2.0.14 agent schema: the V2 emitter now uses
-the singular `agent` map and preserves native `prompt`, `disable`, and
-`permission` fields, mapping only legacy `maxSteps` to `steps`. `nix fmt` and
-`nix flake check --no-build` passed. macm5 must activate this revision to show
-the primary orchestrator through Tab and SDD subagents through `@` mentions.
+R27's earlier conclusion was a regression. The V2 emitter now uses the pinned
+2.0.14 shape: top-level `agents`, per-agent `system`, `disabled`, `steps`,
+`mode`, and ordered `permissions` arrays. The focused structural proof and
+`nix flake check --no-build` pass. Rog's Home Manager activation reached the
+native service restart but did not return; the standalone native query reached
+the provider and was rejected with insufficient funds, so R28 remains pending.
 
 ## Delivery Decision
 
@@ -148,3 +149,23 @@ remaining hosts. It was intentionally not started during apply: a real
 unpaired extension must report unpaired rather than be faked healthy, and the
 user deferred independent SDD verification. The broker and generated runtime
 are ready for that runtime gate.
+
+### R27 schema remediation
+
+- [x] Restored the V2 `agents` map and remapped all V1 agent fields to the
+  pinned 2.0.14 schema: `prompt` → `system`, `disable` → `disabled`,
+  `maxSteps` → `steps`, and `permission` maps → ordered `permissions` rules.
+- [x] Preserved global deny-first behavior by emitting each disabled MCP tool as
+  its underscore-normalized action with resource `"*"` and effect `"deny"`.
+- [x] Granted `sdd-research` only the external Context7 and Exa tool actions it
+  needs for documentation and open-web evidence.
+- [x] Retained the existing removal of the `opencode2 serve` systemd/launchd
+  supervisor and native `opencode2 service restart` activation path.
+
+| Work unit | Focused test command and exact result | Runtime harness command/scenario and exact result | Rollback boundary |
+|---|---|---|---|
+| R27 V2 agent schema | `nix fmt -- shared/opencode/v2-permissions.nix shared/opencode/v2-agents.nix shared/opencode/runtime-config.nix flake.nix`; `nix build .#checks.x86_64-linux.opencode-v2-agent-schema --no-link`; `nix flake check --no-build` — all exit 0. The check asserts `agents.gentle-orchestrator` is primary, `agents.sdd-explore` is a subagent with `system` and array permissions, and rejects V1 agent fields. | `home-manager switch --flake .#rog` completed file deployment but timed out while `restartOpencodeV2` waited on native `opencode2 service restart`. `opencode2 service status` outside the V2 wrapper returned a service URL; inside the V2 wrapper it returned `stopped`. A standalone native query reached the provider and received `provider.quota` HTTP 402. | `shared/opencode/{v2-agents,v2-permissions,runtime-config}.nix`, `shared/opencode/local-agent-overlays.json`, `flake.nix` |
+
+R28 remains pending: resolve the native V2 service-start wait and restore an
+available provider entitlement before treating the requested noninteractive
+native-client query as passing. No independent SDD verification was run.

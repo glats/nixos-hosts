@@ -43,10 +43,13 @@ let
       mcp
   ) (lib.filterAttrs (_: mcp: mcp.enabled or false) allMcps);
 
-  v2Agents = import ./v2-agents.nix { inherit lib cfg; };
   v2Permissions = import ./v2-permissions.nix {
     inherit lib cfg;
     disabledTools = cfg.disabledTools;
+  };
+  v2Agents = import ./v2-agents.nix {
+    inherit lib cfg;
+    permissionRules = v2Permissions.rules;
   };
   v2Mcps = import ./v2-mcps.nix {
     inherit lib;
@@ -121,8 +124,9 @@ let
       if isV2 then
         {
           update = "disable";
-          agent = v2Agents;
-          permissions = v2Permissions;
+          default_agent = "gentle-orchestrator";
+          agents = v2Agents;
+          permissions = v2Permissions.global;
           mcp = v2Mcps;
           experimental.policies = [
             {
