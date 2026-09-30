@@ -73,7 +73,7 @@ in
         ../../darwin/home
       ];
       home.stateVersion = "25.05";
-      home.opencode.activeProviderName = "github-copilot-full";
+      home.opencode.activeProviderName = "github-copilot-medium";
     };
     extraSpecialArgs = {
       inherit
