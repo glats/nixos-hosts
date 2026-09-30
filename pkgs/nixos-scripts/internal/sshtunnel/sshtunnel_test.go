@@ -68,11 +68,9 @@ func TestPickFreePortRequestedFree(t *testing.T) {
 func TestPickFreePortBusy(t *testing.T) {
 	// Occupy an explicit genuine port, then the helper must fall back to
 	// requested+FallbackPortStep and say so.
-	l, err := net.Listen("tcp4", "127.0.0.1:0")
-	if err != nil {
-		t.Fatalf("seed listener: %v", err)
-	}
+	l, fb := reservePortPair(t)
 	defer l.Close()
+	fb.Close()
 	busy := l.Addr().(*net.TCPAddr).Port
 
 	got, fellBack, err := PickFreePort(busy)
@@ -89,30 +87,36 @@ func TestPickFreePortBusy(t *testing.T) {
 
 func TestPickFreePortBothBusy(t *testing.T) {
 	// Occupy an explicit genuine port AND its fallback slot
-	// (requested+FallbackPortStep), then the helper must refuse with a
-	// clear error. The fallback slot is normally free; skip if not.
-	l, err := net.Listen("tcp4", "127.0.0.1:0")
-	if err != nil {
-		t.Fatalf("seed listener: %v", err)
-	}
+	// (requested+FallbackPortStep), then the helper must refuse with a clear error.
+	l, fb := reservePortPair(t)
 	busy := l.Addr().(*net.TCPAddr).Port
-	fallback := busy + FallbackPortStep
-
-	fb, err := net.Listen("tcp4", "127.0.0.1:"+fmt.Sprint(fallback))
-	if err != nil {
-		l.Close()
-		t.Skipf("fallback slot %d unexpectedly busy: %v", fallback, err)
-	}
 	defer l.Close()
 	defer fb.Close()
 
-	_, _, err = PickFreePort(busy)
+	_, _, err := PickFreePort(busy)
 	if err == nil {
 		t.Fatalf("PickFreePort(%d) with fallback also busy should error", busy)
 	}
 	if !strings.Contains(err.Error(), "unavailable") {
 		t.Fatalf("error should mention unavailability, got: %v", err)
 	}
+}
+
+func reservePortPair(t *testing.T) (net.Listener, net.Listener) {
+	t.Helper()
+	for port := 20000; port < 20100; port++ {
+		busy, err := net.Listen("tcp4", fmt.Sprintf("127.0.0.1:%d", port))
+		if err != nil {
+			continue
+		}
+		fallback, err := net.Listen("tcp4", fmt.Sprintf("127.0.0.1:%d", port+FallbackPortStep))
+		if err == nil {
+			return busy, fallback
+		}
+		busy.Close()
+	}
+	t.Skip("no free loopback port pair below the fallback overflow boundary")
+	return nil, nil
 }
 
 func TestLocalURL(t *testing.T) {

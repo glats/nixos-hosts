@@ -108,7 +108,11 @@ func TestInitDetectsGitDirectoryFromRelativeTarget(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !result.Git || result.Path != target {
+	canonicalTarget, err := filepath.EvalSymlinks(target)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Git || result.Path != canonicalTarget {
 		t.Fatalf("unexpected result: %+v", result)
 	}
 }
