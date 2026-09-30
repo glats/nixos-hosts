@@ -35,19 +35,25 @@ in
     };
 
     includes = [
-      # Default identity from activation-written file
-      { path = "~/.config/git/identity-personal"; }
+      # Default identity from activation-written file + forced personal
+      # account so pushes work regardless of gh's active-account state
+      {
+        path = "~/.config/git/identity-personal";
+        contents.credential.helper = identities.mkCredentialHelper pkgs.gh "glats";
+      }
       # Work identity from activation-written file
       {
         condition = "gitdir:~/Work/**";
         path = "~/.config/git/identity-work";
       }
-      # Work signing config (GPG keys are public, stay in Nix)
+      # Work signing config (GPG keys are public, stay in Nix) + forced work
+      # account for GitHub auth
       {
         condition = "gitdir:~/Work/**";
         contents = {
           user.signingKey = identities.work.signingKey;
           commit.gpgsign = true;
+          credential.helper = identities.mkCredentialHelper pkgs.gh "jcuzmar-Falabella_FTC";
         };
       }
     ];
