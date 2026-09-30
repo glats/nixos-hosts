@@ -317,11 +317,22 @@ in
 
       home.activation.restartOpencodeV2 = config.lib.dag.entryAfter [ "setupOpencodePluginRuntime-v2" ] ''
         runtime_root=${lib.escapeShellArg v2.runtimeRoot}
-        config_file="${config.home.homeDirectory}/.config/opencode-v2/opencode.json"
-        stamp="$runtime_root/opencode.json.activation"
+        stamp="$runtime_root/managed-runtime.activation"
+        fingerprint=${
+          pkgs.writeText "opencode-v2-managed-runtime-fingerprint" (
+            builtins.hashString "sha256" (
+              lib.concatStringsSep "\n" [
+                config.home.activation."setupOpencodePluginRuntime-v2".data
+                (toString config.home.file.".config/opencode-v2/opencode.json".source)
+                config.home.file.${opencodeV2EnvironmentFile}.text
+                (toString pkgs.opencode-v2)
+              ]
+            )
+          )
+        }
 
         mkdir -p "$runtime_root"
-        if [ ! -f "$stamp" ] || ! ${pkgs.diffutils}/bin/cmp -s "$config_file" "$stamp"; then
+        if [ ! -f "$stamp" ] || ! ${pkgs.diffutils}/bin/cmp -s "$fingerprint" "$stamp"; then
           source "${config.home.homeDirectory}/.local/share/opencode-v2/environment"
           if ! ${pkgs.opencode-v2}/bin/opencode2 reload; then
             ${pkgs.opencode-v2}/bin/opencode2 service restart || {
@@ -329,7 +340,7 @@ in
               exit 1
             }
           fi
-          if ! ${pkgs.coreutils}/bin/cp "$config_file" "$stamp"; then
+          if ! ${pkgs.coreutils}/bin/cp "$fingerprint" "$stamp"; then
             echo "restartOpencodeV2: failed to record the active configuration" >&2
             exit 1
           fi
