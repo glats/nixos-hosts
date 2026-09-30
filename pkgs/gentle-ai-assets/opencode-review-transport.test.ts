@@ -15,8 +15,9 @@ async function fakeCommand(mode = "normal") {
   const bin = join(directory, "gentle-ai")
   const log = join(directory, "calls")
   await writeFile(bin, `#!/usr/bin/env bun
-import { appendFile } from "node:fs/promises"
+import { appendFile, writeFile } from "node:fs/promises"
 import { createInterface } from "node:readline"
+await writeFile(${JSON.stringify(join(directory, "cwd"))}, process.cwd())
 const input = createInterface({ input: process.stdin })
 let first = true
 for await (const line of input) {
@@ -25,6 +26,7 @@ for await (const line of input) {
   if (first) {
     first = false
     if (${JSON.stringify(mode)} === "incomplete") process.exit(0)
+    if (${JSON.stringify(mode)} === "go-fail") process.exit(1)
     process.stdout.write(JSON.stringify({ schema: "gentle-ai.provider-transport/v1", operation: "prompt", nonce: "test-nonce", prompt: "Go materialized review prompt" }) + "\\n")
   } else {
     if (value.error) process.exit(1)
@@ -47,10 +49,11 @@ afterEach(async () => {
   if (directory) await rm(directory, { recursive: true, force: true })
 })
 
-function harness() {
+function harness(get = async () => ({ location: { directory } })) {
   const hooks = new Map<string, (input: any) => Promise<void> | void>()
   const ctx = {
     location: { directory: "/tmp" },
+    session: { get },
     tool: { hook: async (name: string, callback: any) => { hooks.set(name, callback); return { dispose: async () => {} } } },
   }
   return { hooks, setup: () => (plugin as any).setup(ctx) }
@@ -76,6 +79,7 @@ describe("OpenCode V2 review relay", () => {
     const event = { tool: "subagent", agent: "general", sessionID: "s", id: "1", input: { agent: "review-risk", prompt: "bound review" }, status: "completed", result: { output: { status: "completed", sessionID: "child", output: "raw reviewer result" }, content: "raw reviewer result" } }
     await hooks.get("execute.before")?.(event)
     expect(event.input.prompt).toBe("Go materialized review prompt")
+    expect(await Bun.file(join(directory, "cwd")).text()).toBe(directory)
     await hooks.get("execute.after")?.(event)
     expect(event.result).toMatchObject({ output: { status: "completed", sessionID: "child", output: "captured reviewer result" }, content: "captured reviewer result" })
     const ordinary = { ...event, id: "2", input: { agent: "general", prompt: "ordinary" } }
@@ -93,6 +97,34 @@ describe("OpenCode V2 review relay", () => {
     await expect(hooks.get("execute.after")?.(event)).rejects.toThrow()
     expect(event.result.content).toContain("opencode_review_transport_relay_refused")
     expect(event.result.content).not.toContain("raw reviewer output")
+  })
+
+  test("refuses when the Go executable is unavailable", async () => {
+    const { bin } = await fakeCommand()
+    await rm(bin)
+    process.env.PATH = directory
+    const missing = harness()
+    await missing.setup()
+    const event = { tool: "subagent", sessionID: "s", id: "missing", input: { agent: "review-risk", prompt: "bound review" } }
+    await expect(missing.hooks.get("execute.before")?.(event)).rejects.toThrow("opencode_review_transport_relay_refused: executable_unavailable")
+    expect(event.input.prompt).not.toContain("bound review")
+  })
+
+  test("distinguishes Go refusal without leaking its diagnostic output", async () => {
+    await fakeCommand("go-fail")
+    const rejected = harness()
+    await rejected.setup()
+    const goEvent = { tool: "subagent", sessionID: "s", id: "rejected", input: { agent: "review-risk", prompt: "bound review" } }
+    await expect(rejected.hooks.get("execute.before")?.(goEvent)).rejects.toThrow("opencode_review_transport_relay_refused: go_refused")
+  })
+
+  test("does not spawn if the session directory cannot be resolved", async () => {
+    const { log } = await fakeCommand()
+    const { hooks, setup } = harness(async () => { throw new Error("private session error") })
+    await setup()
+    const event = { tool: "subagent", sessionID: "s", id: "unavailable", input: { agent: "review-risk", prompt: "bound review" } }
+    await expect(hooks.get("execute.before")?.(event)).rejects.toThrow("opencode_review_transport_relay_refused: relay_unavailable")
+    expect(await Bun.file(log).exists()).toBe(false)
   })
 
   test("rejects incomplete child completion without admitting raw output", async () => {

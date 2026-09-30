@@ -123,8 +123,13 @@ export function createReviewRelay(cwd: string, prompt: string, command = "gentle
   }
 }
 
-function refusal(): string {
-  return `${REFUSED}: relay_unavailable`
+function refusal(cause?: unknown): string {
+  const reason = cause instanceof Error && cause.message.startsWith("Go review relay exited before completion")
+    ? "go_refused"
+    : cause && typeof cause === "object" && "code" in cause && cause.code === "ENOENT"
+      ? "executable_unavailable"
+      : "relay_unavailable"
+  return `${REFUSED}: ${reason}`
 }
 
 function isReview(input: HookInput): boolean {
@@ -150,8 +155,6 @@ export default Plugin.define({
   async setup(ctx) {
     const relays = new Map<string, Relay>()
     const refused = new Map<string, string>()
-    const cwd = ctx.location.directory
-
     const before = await ctx.tool.hook("execute.before", async (raw) => {
       const input = raw as HookInput
       if (!isReview(input)) return
@@ -160,23 +163,29 @@ export default Plugin.define({
         : undefined
       const relayKey = key(input)
       const args = input.input as Record<string, unknown>
-      const deny = () => {
-        const message = refusal()
+      const deny = (cause?: unknown) => {
+        const message = refusal(cause)
         refused.set(relayKey, message)
         args.prompt = message
         throw new Error(message)
       }
       if (relays.has(relayKey)) return deny()
       if (typeof taskPrompt !== "string" || taskPrompt.length === 0 || args.background === true || args.sessionID !== undefined) return deny()
+      if (typeof input.sessionID !== "string" || input.sessionID === "") return deny()
+      let cwd: string
+      try {
+        cwd = (await ctx.session.get({ sessionID: input.sessionID })).location.directory
+      } catch { return deny() }
+      if (typeof cwd !== "string" || cwd === "") return deny()
       let relay: Relay
-      try { relay = createReviewRelay(cwd, taskPrompt) } catch { return deny() }
+      try { relay = createReviewRelay(cwd, taskPrompt) } catch (cause) { return deny(cause) }
       relays.set(relayKey, relay)
       try {
         args.prompt = (await relay.prompt).prompt
       } catch (cause) {
         relay.close()
         relays.delete(relayKey)
-        return deny()
+        return deny(cause)
       }
     })
     const after = await ctx.tool.hook("execute.after", async (raw) => {
