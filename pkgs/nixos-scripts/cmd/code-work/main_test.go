@@ -420,7 +420,11 @@ func TestLegacyDoneDoesNotDeleteAndAbortDiscards(t *testing.T) {
 		if result.err != nil {
 			t.Fatalf("done failed: %v\n%s", result.err, result.output)
 		}
-		for _, message := range []string{"uncommitted changes", "Integrate your branch", "git worktree remove " + path, "git branch -d " + branch, "code-work --abort " + branch, "code-work --list", "code-work --prune"} {
+		canonicalPath, err := filepath.EvalSymlinks(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, message := range []string{"uncommitted changes", "Integrate your branch", "git worktree remove " + canonicalPath, "git branch -d " + branch, "code-work --abort " + branch, "code-work --list", "code-work --prune"} {
 			if !strings.Contains(result.output, message) {
 				t.Errorf("done output missing %q:\n%s", message, result.output)
 			}

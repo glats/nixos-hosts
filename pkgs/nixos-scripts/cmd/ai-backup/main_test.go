@@ -486,7 +486,11 @@ func TestRestorePayloadSymlinkSnapshotRelocation(t *testing.T) {
 	// Symlink still resolves to the same real db (target text may be
 	// absolute or relative — assert on resolution, not on its bytes).
 	resolved, err := filepath.EvalSymlinks(link)
-	if err != nil || resolved != filepath.Join(opencode, "opencode-stable-real.db") {
+	if err != nil {
+		t.Fatal(err)
+	}
+	want, err := filepath.EvalSymlinks(filepath.Join(opencode, "opencode-stable-real.db"))
+	if err != nil || resolved != want {
 		t.Fatalf("symlink resolution changed: resolved=%q err=%v", resolved, err)
 	}
 	// Old db kept as .pre-restore-<ts> (timestamp unknown: glob).

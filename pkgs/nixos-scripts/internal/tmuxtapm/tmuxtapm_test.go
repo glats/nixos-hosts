@@ -95,13 +95,8 @@ func TestTPMRuntimePathIsGuardedAndInherited(t *testing.T) {
 	if strings.Count(shared, "TMUX_NIX_RUNTIME_PATH") != 2 {
 		t.Fatal("TPM runtime PATH marker must be tested and set exactly once")
 	}
-	if !strings.Contains(shared, "${\n          lib.makeBinPath") || !strings.Contains(shared, ":$PATH") {
-		t.Fatal("TPM runtime PATH must use a bounded Nix prefix and preserve inherited PATH")
-	}
-	for _, packageName := range []string{"pkgs.bash", "pkgs.coreutils", "pkgs.gawk", "pkgs.git", "pkgs.tmux"} {
-		if !strings.Contains(shared, packageName) {
-			t.Errorf("TPM runtime PATH is missing %s", packageName)
-		}
+	if !strings.Contains(shared, `set-environment -g PATH "${lib.makeBinPath [ pkgs.bash ]}:$PATH"`) {
+		t.Fatal("TPM runtime PATH must prepend only Nix bash and preserve inherited PATH")
 	}
 }
 
