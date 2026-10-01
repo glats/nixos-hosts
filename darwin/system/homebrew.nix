@@ -6,23 +6,12 @@
     onActivation = {
       autoUpdate = true;
       upgrade = true;
-      # "uninstall" removes the app but keeps ~/Library user data (bookmarks,
-      # passwords, profiles). "zap" also deletes user data — never use for browsers.
       cleanup = "uninstall";
     };
 
-    # no_quarantine removed in Homebrew post-5.1.10 (flag is now disabled);
-    # quarantine removal handled by unquarantineTrustedApps in settings.nix
     caskArgs.appdir = "/Applications";
     global.brewfile = true;
 
-    # homebrew is best for GUI apps
-    # nixpkgs is best for CLI tools
-    # gentle-ai, engram: managed by nix flake (pkgs/gentle-ai, pkgs/engram)
-    # mole: migrated to homebrew/core with arm64-only bottles; Intel+Tahoe is
-    # Homebrew Tier 3 (no bottles, go :build dep) -> installed via official
-    # install.sh (prebuilt binary) instead, not managed by the Brewfile.
-    # tw93/tap dropped: nothing else in this Brewfile uses it.
     brews = [
       "llmfit"
       "glow"
@@ -42,7 +31,6 @@
       "ghostty"
       "xquartz"
       "stats"
-      "postman"
       "caffeine"
       "meld"
       "macfuse"
