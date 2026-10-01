@@ -34,12 +34,17 @@ in
     };
 
     includes = [
-      # Default: work identity via activation-written file
-      { path = "~/.config/git/identity-work"; }
-      # Personal identity in Personal directory
+      # Default: work identity via activation-written file + forced work
+      # account so pushes work regardless of gh's active-account state
+      {
+        path = "~/.config/git/identity-work";
+        contents.credential.helper = identities.mkCredentialHelper pkgs.gh "jcuzmar-Falabella_FTC";
+      }
+      # Personal identity in Personal directory + forced glats account
       {
         condition = "gitdir:~/Projects/**";
         path = "~/.config/git/identity-personal";
+        contents.credential.helper = identities.mkCredentialHelper pkgs.gh "glats";
       }
       # nixos-hosts uses personal (glats) identity + auth
       {
@@ -47,7 +52,7 @@ in
         path = "~/.config/git/identity-personal";
         contents = {
           # Force glats account for GitHub operations in this repo
-          credential.helper = "!f() { ${pkgs.gh}/bin/gh auth switch -h github.com -u glats 2>/dev/null; exec ${pkgs.gh}/bin/gh auth git-credential \"$@\"; }; f";
+          credential.helper = identities.mkCredentialHelper pkgs.gh "glats";
         };
       }
     ]

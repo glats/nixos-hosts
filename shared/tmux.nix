@@ -123,16 +123,18 @@
       # TPM's loader and its later run-shell bindings do not source shell
       # startup files. Add the Nix tools they need to the tmux server once,
       # while retaining the inherited PATH for user and platform tools.
+      #
+      # Only bash is load-bearing: tmux-resurrect/yank/open use bash 4+
+      # syntax ([[ ]], arrays, regex match) that macOS's /bin/bash (3.2)
+      # can't run. coreutils/gawk/git/tmux were previously injected too, but
+      # no plugin script actually needs them (date/awk usage is plain POSIX;
+      # git and tmux itself are never invoked from run-shell hooks) — and on
+      # Darwin, injecting coreutils put GNU `ls`/`date` ahead of the system
+      # ones in every pane's PATH, racing prezto's `ls --version` GNU/BSD
+      # auto-detection (modules/utility/init.zsh) and sometimes handing
+      # `--group-directories-first` to the real BSD /bin/ls, which errors.
       if-shell -F '#{!=:#{environ:TMUX_NIX_RUNTIME_PATH},1}' {
-        set-environment -g PATH "${
-          lib.makeBinPath [
-            pkgs.bash
-            pkgs.coreutils
-            pkgs.gawk
-            pkgs.git
-            pkgs.tmux
-          ]
-        }:$PATH"
+        set-environment -g PATH "${lib.makeBinPath [ pkgs.bash ]}:$PATH"
         set-environment -g TMUX_NIX_RUNTIME_PATH 1
       }
 

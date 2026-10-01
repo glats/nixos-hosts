@@ -60,6 +60,7 @@
       "visual-studio-code"
       "claude"
       "betterdisplay"
+      "bruno"
     ];
   };
 }
