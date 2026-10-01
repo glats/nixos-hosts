@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, mock, test } from "bun:test"
+import { afterEach, describe, expect, mock, spyOn, test } from "bun:test"
 
 mock.module("@opencode/plugin", () => ({ Plugin: { define: (definition: unknown) => definition } }))
 const { default: plugin } = await import("./engram-v2")
@@ -9,9 +9,10 @@ const originalFetch = globalThis.fetch
 
 afterEach(() => {
   globalThis.fetch = originalFetch
+  mock.restore()
 })
 
-function harness() {
+function harness(directory = "/work/repo") {
   const hooks = new Map<string, Hook>()
   const requests: Array<{ path: string; body?: any }> = []
 
@@ -29,8 +30,8 @@ function harness() {
 
   const ctx = {
     location: {
-      directory: "/work/repo",
-      project: { id: "project-id", directory: "/work/repo", canonical: "/work/repo" },
+      directory,
+      project: { id: "project-id", directory, canonical: "/work/repo" },
     },
     session: {
       hook(name: string, callback: Hook) {
@@ -54,6 +55,48 @@ function harness() {
 }
 
 describe("Engram V2 lifecycle adapter", () => {
+  test("injects the remote project rather than the checkout name on every context call", async () => {
+    spyOn(Bun, "spawnSync").mockReturnValue({
+      exitCode: 0,
+      stdout: Buffer.from("git@github.com:owner/canonical-project.git\n"),
+    } as any)
+
+    for (const directory of ["/work/.checkout", "/worktrees/feature-checkout"]) {
+      const { hooks, requests, setup } = harness(directory)
+      await setup()
+
+      for (let turn = 0; turn < 2; turn++) {
+        const context = { sessionID: "root", system: [], messages: [], options: {}, tools: {} }
+        await hooks.get("context")?.(context)
+        const instructions = context.system.map((part: any) => part.text).join("\n")
+        expect(instructions).toContain('Current Engram project: "canonical-project"')
+        expect(instructions).toContain("Use this exact project name for current-project memory calls")
+        expect(instructions).toContain("Preserve intentional cross-project queries")
+      }
+
+      const compaction = { sessionID: "root", system: [], messages: [] }
+      await hooks.get("compaction")?.(compaction)
+      expect(compaction.system.map((part: any) => part.text).join("\n")).toContain("Use project: 'canonical-project'")
+      expect(requests.find((request) => request.path === "/sessions")?.body.project).toBe("canonical-project")
+    }
+  })
+
+  test("requires project discovery before project-scoped memory context", async () => {
+    const { hooks, setup } = harness()
+    await setup()
+
+    const context = { sessionID: "root", system: [], messages: [], options: {}, tools: {} }
+    await hooks.get("context")?.(context)
+    const instructions = context.system.map((part: any) => part.text).join("\n")
+
+    expect(instructions).toContain("Before the first project-scoped memory call, call mem_current_project")
+    expect(instructions).toContain("Use the exact returned project for mem_context, mem_search, mem_save, and mem_session_summary")
+    expect(instructions).toContain("Never infer the project from the directory basename or OpenCode project ID")
+    expect(instructions).toContain("On unknown_project, call mem_current_project again")
+    expect(instructions).toContain("Preserve intentional cross-project queries")
+    expect(instructions).toContain("After project discovery, call mem_context first")
+  })
+
   test("attributes child sessions to one registered root and injects all write tools", async () => {
     const { hooks, requests, setup } = harness()
     await setup()
