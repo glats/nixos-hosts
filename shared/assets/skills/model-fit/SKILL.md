@@ -9,7 +9,7 @@ description: >
   providers base, check models, model audit, actualiza modelos, moldear listas,
   swap model, routing fit.
 metadata:
-  version: "4.0"
+  version: "4.1"
 ---
 
 ## Activation Contract
@@ -32,7 +32,11 @@ tool-call behavior.
   retention, issue). No citation, no change.
 - Never search engram for stale model decisions; DO read engram for fresh
   phase-misbehavior observations (see Feedback Loop).
-- A model never enters a routing list without passing **all three Hard Gates**.
+- A model never enters a routing list without passing **both evidence gates**.
+- Do not run or request live model smoke tests, connectivity prompts, or paid
+  tool-call probes as part of model-fit. Use read-only catalogs, documentation,
+  current issues, and existing observations; never claim runtime validation
+  from those sources.
 - Edit Nix files directly; run `format-nix && nix flake check --no-build` after
   (unless the user explicitly waives it for the session — record the waiver).
 - One re-fit changes one phase at a time. Lists evolve; they are not redesigned
@@ -75,12 +79,13 @@ editing. Examples: anthropic, openai (ChatGPT OAuth), github-copilot, google.
 Cross-reference sops.nix keys, opencode.nix env exports, and provider
 definitions. Flag any gap: "Provider X has no API key configured."
 
-## Hard Gates — non-negotiable, checked in order
+## Evidence Gates — non-negotiable, checked in order
 
 ### Gate 1: Tool-call completeness
 
-The model must execute ALL tool calls reliably in OpenCode. Assign NOTHING —
-not even to a light phase — to a model with an OPEN issue showing any of:
+Assess tool-call completeness from current documentation, issues, and existing
+observations, without live probes. Assign NOTHING — not even to a light phase —
+to a model with an OPEN issue showing any of:
 
 - Stream ends without `finish_reason` (truncation).
 - Silent truncation persisted as a complete answer.
@@ -110,14 +115,6 @@ Cost-instability signals also mark ⚠️: cache-behavior cost spikes (e.g.
 deepseek-v4-flash cache drop ≈27x, #42935), usage multipliers not shown in
 sticker price (e.g. gpt-5.6-luna 2x on Go), 403-for-some-accounts patterns
 (#40343). A provider that silently burns quota is not stable.
-
-### Gate 3: Live smoke test — before any NEW model enters a list
-
-1. Connectivity minimum: `opencode run -m <provider>/<model> "hi"`.
-2. The real gate: one real tool-call exchange (e.g. ask it to run a trivial
-   command via tool) that COMPLETES with clean finish_reason. A "hi" that
-   answers text is not proof of tool-call fitness.
-3. Record the test date next to the assignment comment.
 
 ## SDD Phase Fit — Research Framework
 
@@ -166,10 +163,9 @@ thrashing signals (a cheap tier that burns 2-3x tokens to fail is not cheap).
    provider deprecations. Apply Gates 1-2.
 5. Fit evaluation per profile following the Research Framework; document the
    `Phase | Model | Evidence | Why` table.
-6. Gate 3 smoke test for every model that is new to a list.
-7. Update `shared/opencode/providers-base.nix` named profiles with dated
+6. Update `shared/opencode/providers-base.nix` named profiles with dated
    evidence comments; update sops.nix/opencode.nix if a Method-A key is missing.
-8. Validate: `format-nix && nix flake check --no-build` (honor user waiver if
+7. Validate: `format-nix && nix flake check --no-build` (honor user waiver if
    given, and say so in the report).
 
 ## Execution Steps — mode `re-fit`
@@ -178,7 +174,7 @@ thrashing signals (a cheap tier that burns 2-3x tokens to fail is not cheap).
    host (user report, engram observation, or session log).
 2. Re-verify ONLY that phase: current status of the incumbent + research 2-4
    candidate replacements against the Step-B metrics for that phase. Gates 1-2
-   apply; Gate 3 smoke test for any candidate not already in a list.
+    apply; no live model calls are required or requested.
 3. Swap one phase assignment; write the dated evidence comment (what failed,
    why the replacement).
 4. Update the profile header comment if the strategy line changed.
@@ -209,8 +205,9 @@ This skill biases the agent's decisions as follows:
    Moving a volume phase onto scarce quota needs explicit cost justification.
 4. **Minimal, reversible changes.** One phase per re-fit; dated comments;
    never delete a working annotation without replacing it with fresh evidence.
-5. **Verify before trusting.** Smoke test in vivo before trusting any model —
-   including the current favorite.
+5. **Evidence before trusting.** Re-check catalog IDs, current issues, and
+   provider documentation, including for the current favorite. Distinguish
+   source-backed assessment from untested runtime behavior.
 
 ## Output Contract
 
@@ -223,6 +220,8 @@ This skill biases the agent's decisions as follows:
 - Fresh status annotations (✅/⚠️/🔴) with current issue references; expired
   annotations explicitly marked as re-verified or removed.
 - Feedback-loop record saved to engram (mode, swaps, rationale).
+- Evidence limitations: state that live model tests were not run; do not
+  present source-backed tool-call assessment as a completed runtime test.
 - Validation status: `format-nix` + `nix flake check --no-build` result, or
   the user's explicit waiver noted.
 - Registry note: after a rename/add, remind that `.atl/skill-registry.md` is
