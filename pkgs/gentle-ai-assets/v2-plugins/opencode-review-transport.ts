@@ -59,6 +59,7 @@ export function createReviewRelay(cwd: string, prompt: string, command = GO_COMM
   let buffered = ""
   let closed = false
   let prompted = false
+  let goFailure = ""
   let resolvePrompt!: (value: { nonce: string; prompt: string }) => void
   let rejectPrompt!: (reason: unknown) => void
   let resolveResult!: (value: string) => void
@@ -106,8 +107,12 @@ export function createReviewRelay(cwd: string, prompt: string, command = GO_COMM
   })
   child.stdin.on("error", fail)
   child.on("error", fail)
+  child.stderr.on("data", (chunk: Buffer) => {
+    const code = chunk.toString("utf8").match(/\bopencode_review_transport_(binding_invalid|materialization_unavailable|authority_unavailable|envelope_invalid)\b/)
+    if (code) goFailure = code[1]
+  })
   child.on("close", (code) => {
-    if (!closed) fail(new Error(`Go review relay exited before completion (${code ?? "signal"})`))
+    if (!closed) fail(new Error(`Go review relay exited before completion (${code ?? "signal"})${goFailure ? `:${goFailure}` : ""}`))
   })
   child.stdin.write(JSON.stringify({ schema: SCHEMA, operation: "start", prompt }) + "\n", (cause) => {
     if (cause) fail(cause)
@@ -131,8 +136,9 @@ export function createReviewRelay(cwd: string, prompt: string, command = GO_COMM
 }
 
 function refusal(cause?: unknown): string {
-  const reason = cause instanceof Error && cause.message.startsWith("Go review relay exited before completion")
-    ? "go_refused"
+  const goExit = cause instanceof Error && cause.message.startsWith("Go review relay exited before completion")
+  const reason = goExit
+    ? `go_refused${cause.message.match(/:(binding_invalid|materialization_unavailable|authority_unavailable|envelope_invalid)$/)?.[0] ?? ""}`
     : cause && typeof cause === "object" && "code" in cause && cause.code === "ENOENT"
       ? "executable_unavailable"
       : "relay_unavailable"
