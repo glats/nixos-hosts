@@ -214,7 +214,7 @@ let
     {
       name = "work-copilot-anthropic";
       phases = {
-        gentle-orchestrator = "github-copilot/gpt-5.6-terra";
+        gentle-orchestrator = "github-copilot/gpt-6.1-sol";
         sdd-init = "github-copilot/gpt-5.4-mini";
         sdd-explore = "anthropic/claude-sonnet-4-6";
         sdd-propose = "anthropic/claude-sonnet-4-6";
@@ -257,7 +257,7 @@ let
       # and docs.github.com/copilot/reference/ai-models/model-comparison.
       phases = {
         # Terra is GitHub's balanced agentic model and supports the 1M context tier.
-        gentle-orchestrator = "github-copilot/gpt-5.6-terra";
+        gentle-orchestrator = "github-copilot/gpt-6.1-sol";
         # Mechanical and guided phases use the inexpensive native tier.
         sdd-init = "anthropic/claude-haiku-4-5";
         sdd-explore = "anthropic/claude-sonnet-5";
@@ -497,7 +497,7 @@ let
       phases = {
         # GPT 5.6 Terra: quality anchor for the coordinating agent; the
         # worker phases below keep the OpenCode Go request headroom.
-        gentle-orchestrator = "openai/gpt-5.6-terra";
+        gentle-orchestrator = "openai/gpt-6.1-sol";
         sdd-init = "opencode-go/deepseek-v4-flash";
         # DeepSeek V4 Pro: the larger Go worker for repository/MCP research.
         sdd-explore = "opencode-go/deepseek-v4-pro";
@@ -508,46 +508,34 @@ let
         sdd-tasks = "opencode-go/deepseek-v4-flash";
         # GPT 5.6 Terra: implementation and acceptance are the costly failure
         # boundaries, so reserve the premium OpenAI path for them.
-        sdd-apply = "openai/gpt-5.6-terra";
-        sdd-verify = "openai/gpt-5.6-terra";
+        sdd-apply = "openai/gpt-6.1-sol";
+        sdd-verify = "openai/gpt-6.1-sol";
         sdd-archive = "opencode-go/deepseek-v4-flash";
         sdd-onboard = "opencode-go/deepseek-v4-flash";
-        jd-judge-a = "openai/gpt-5.6-terra";
-        jd-judge-b = "openai/gpt-5.6-terra";
+        jd-judge-a = "openai/gpt-6.1-sol";
+        jd-judge-b = "openai/gpt-6.1-sol";
         jd-fix-agent = "openai/gpt-5.6-luna";
-        review-readability = "openai/gpt-5.6-terra";
-        review-refuter = "openai/gpt-5.6-terra";
-        review-reliability = "openai/gpt-5.6-terra";
-        review-resilience = "openai/gpt-5.6-terra";
-        review-risk = "openai/gpt-5.6-terra";
-        review-validator = "openai/gpt-5.6-terra";
+        review-readability = "openai/gpt-6.1-sol";
+        review-refuter = "openai/gpt-6.1-sol";
+        review-reliability = "openai/gpt-6.1-sol";
+        review-resilience = "openai/gpt-6.1-sol";
+        review-risk = "openai/gpt-6.1-sol";
+        review-validator = "openai/gpt-6.1-sol";
         neutral = "opencode-go/deepseek-v4-flash";
       };
     }
     {
-      name = "openai-opencode-go-heavy";
-      # Audit 2026-09-22: opt-in Go-heavy clone of `openai-opencode`.
-      # OpenCode Go documents GLM-5.3-Flash and DeepSeek V4 Pro as supported
-      # models with 0-day retention, plus materially higher included request
-      # headroom than the premium OpenAI path:
-      # https://opencode.ai/docs/go/.
-      # Keep OpenAI only for coordination and the design/apply/verify failure
-      # boundaries; route judges, reviews, and all non-critical SDD work to Go.
-      # The Go gateway has open provider/model reliability reports, so this
-      # profile is intentionally opt-in rather than a replacement default.
+      name = "openai-opencode-heavy";
       phases = {
-        gentle-orchestrator = "openai/gpt-6-sol";
-        # GLM-5.3-Flash is the high-headroom mechanical worker.
+        gentle-orchestrator = "openai/gpt-6.1-sol";
         sdd-init = "opencode-go/glm-5.3-flash";
-        # DeepSeek V4 Pro is the larger Go worker for repository/MCP research
-        # and structured planning.
         sdd-explore = "opencode-go/deepseek-v4-pro";
         sdd-propose = "opencode-go/deepseek-v4-pro";
         sdd-spec = "opencode-go/deepseek-v4-pro";
-        sdd-design = "openai/gpt-5.6-terra";
+        sdd-design = "openai/gpt-6.1-sol";
         sdd-tasks = "opencode-go/glm-5.3-flash";
-        sdd-apply = "openai/gpt-5.6-terra";
-        sdd-verify = "openai/gpt-5.6-terra";
+        sdd-apply = "openai/gpt-6.1-sol";
+        sdd-verify = "openai/gpt-6.1-sol";
         sdd-archive = "opencode-go/glm-5.3-flash";
         sdd-onboard = "opencode-go/glm-5.3-flash";
         jd-judge-a = "opencode-go/deepseek-v4-pro";
@@ -565,27 +553,27 @@ let
     {
       name = "openai-opencode-balanced";
       phases = {
-        gentle-orchestrator = "openai/gpt-6-sol";
+        gentle-orchestrator = "openai/gpt-6.1-sol";
         sdd-init = "opencode-go/deepseek-v4-flash";
         sdd-explore = "opencode-go/deepseek-v4-pro";
-        sdd-propose = "openai/gpt-5.6-sol";
-        sdd-spec = "openai/gpt-5.6-sol";
-        sdd-design = "openai/gpt-5.6-sol";
+        sdd-propose = "openai/gpt-6.1-sol";
+        sdd-spec = "openai/gpt-6.1-sol";
+        sdd-design = "openai/gpt-6.1-sol";
         sdd-tasks = "opencode-go/deepseek-v4-flash";
-        sdd-apply = "openai/gpt-5.6-luna";
-        sdd-verify = "openai/gpt-5.6-terra";
+        sdd-apply = "openai/gpt-6-luna";
+        sdd-verify = "openai/gpt-6.1-sol";
         sdd-archive = "opencode-go/deepseek-v4-flash";
         sdd-onboard = "opencode-go/deepseek-v4-flash";
-        jd-judge-a = "openai/gpt-5.6-terra";
-        jd-judge-b = "openai/gpt-5.6-terra";
-        jd-fix-agent = "openai/gpt-5.6-luna";
-        review-readability = "openai/gpt-5.6-terra";
-        review-refuter = "openai/gpt-5.6-terra";
-        review-reliability = "openai/gpt-5.6-terra";
-        review-resilience = "openai/gpt-5.6-terra";
-        review-risk = "openai/gpt-5.6-terra";
-        review-validator = "openai/gpt-5.6-terra";
-        neutral = "openai/gpt-5.6-terra";
+        jd-judge-a = "openai/gpt-6.1-sol";
+        jd-judge-b = "openai/gpt-6.1-sol";
+        jd-fix-agent = "openai/gpt-6-luna";
+        review-readability = "openai/gpt-6.1-sol";
+        review-refuter = "openai/gpt-6.1-sol";
+        review-reliability = "openai/gpt-6.1-sol";
+        review-resilience = "openai/gpt-6.1-sol";
+        review-risk = "openai/gpt-6.1-sol";
+        review-validator = "openai/gpt-6.1-sol";
+        neutral = "openai/gpt-6.1-sol";
       };
     }
     {
@@ -593,25 +581,25 @@ let
       phases = {
         gentle-orchestrator = "opencode-go/kimi-k3";
         sdd-init = "openai/gpt-5.6-luna";
-        sdd-explore = "openai/gpt-5.6-terra";
+        sdd-explore = "openai/gpt-6.1-sol";
         sdd-propose = "openai/gpt-5.6-sol";
         sdd-spec = "openai/gpt-5.6-sol";
         sdd-design = "openai/gpt-5.6-sol";
         sdd-tasks = "openai/gpt-5.6-luna";
         sdd-apply = "openai/gpt-5.6-luna";
-        sdd-verify = "openai/gpt-5.6-terra";
+        sdd-verify = "openai/gpt-6.1-sol";
         sdd-archive = "openai/gpt-5.6-luna";
         sdd-onboard = "openai/gpt-5.6-luna";
-        jd-judge-a = "openai/gpt-5.6-terra";
-        jd-judge-b = "openai/gpt-5.6-terra";
+        jd-judge-a = "openai/gpt-6.1-sol";
+        jd-judge-b = "openai/gpt-6.1-sol";
         jd-fix-agent = "openai/gpt-5.6-luna";
-        review-readability = "openai/gpt-5.6-terra";
-        review-refuter = "openai/gpt-5.6-terra";
-        review-reliability = "openai/gpt-5.6-terra";
-        review-resilience = "openai/gpt-5.6-terra";
-        review-risk = "openai/gpt-5.6-terra";
-        review-validator = "openai/gpt-5.6-terra";
-        neutral = "openai/gpt-5.6-terra";
+        review-readability = "openai/gpt-6.1-sol";
+        review-refuter = "openai/gpt-6.1-sol";
+        review-reliability = "openai/gpt-6.1-sol";
+        review-resilience = "openai/gpt-6.1-sol";
+        review-risk = "openai/gpt-6.1-sol";
+        review-validator = "openai/gpt-6.1-sol";
+        neutral = "openai/gpt-6.1-sol";
       };
     }
     {
@@ -638,7 +626,7 @@ let
         sdd-init = "openai/gpt-5.6-luna";
         sdd-explore = "openai/gpt-5.6-sol";
         sdd-propose = "openai/gpt-5.6-sol";
-        sdd-spec = "openai/gpt-5.6-terra";
+        sdd-spec = "openai/gpt-6.1-sol";
         sdd-design = "openai/gpt-5.6-sol";
         sdd-tasks = "openai/gpt-5.6-luna";
         sdd-apply = "openai/gpt-5.6-luna";
@@ -647,7 +635,7 @@ let
         sdd-onboard = "openai/gpt-5.6-luna";
         jd-judge-a = "openai/gpt-5.6-sol";
         jd-judge-b = "openai/gpt-5.6-sol";
-        jd-fix-agent = "openai/gpt-5.6-terra";
+        jd-fix-agent = "openai/gpt-6.1-sol";
         review-readability = "openai/gpt-5.6-sol";
         review-refuter = "openai/gpt-5.6-sol";
         review-reliability = "openai/gpt-5.6-sol";
@@ -664,25 +652,25 @@ let
       phases = {
         gentle-orchestrator = "openai/gpt-6-sol";
         sdd-init = "openai/gpt-5.6-luna";
-        sdd-explore = "openai/gpt-5.6-terra";
-        sdd-propose = "openai/gpt-5.6-terra";
-        sdd-spec = "openai/gpt-5.6-terra";
-        sdd-design = "openai/gpt-5.6-terra";
+        sdd-explore = "openai/gpt-6.1-sol";
+        sdd-propose = "openai/gpt-6.1-sol";
+        sdd-spec = "openai/gpt-6.1-sol";
+        sdd-design = "openai/gpt-6.1-sol";
         sdd-tasks = "openai/gpt-5.6-luna";
         sdd-apply = "openai/gpt-5.6-luna";
-        sdd-verify = "openai/gpt-5.6-terra";
+        sdd-verify = "openai/gpt-6.1-sol";
         sdd-archive = "openai/gpt-5.6-luna";
         sdd-onboard = "openai/gpt-5.6-luna";
-        jd-judge-a = "openai/gpt-5.6-terra";
-        jd-judge-b = "openai/gpt-5.6-terra";
+        jd-judge-a = "openai/gpt-6.1-sol";
+        jd-judge-b = "openai/gpt-6.1-sol";
         jd-fix-agent = "openai/gpt-5.6-luna";
-        review-readability = "openai/gpt-5.6-terra";
-        review-refuter = "openai/gpt-5.6-terra";
-        review-reliability = "openai/gpt-5.6-terra";
-        review-resilience = "openai/gpt-5.6-terra";
-        review-risk = "openai/gpt-5.6-terra";
+        review-readability = "openai/gpt-6.1-sol";
+        review-refuter = "openai/gpt-6.1-sol";
+        review-reliability = "openai/gpt-6.1-sol";
+        review-resilience = "openai/gpt-6.1-sol";
+        review-risk = "openai/gpt-6.1-sol";
         review-validator = "openai/gpt-5.6-luna";
-        neutral = "openai/gpt-5.6-terra";
+        neutral = "openai/gpt-6.1-sol";
       };
     }
     {
@@ -692,23 +680,23 @@ let
       phases = {
         gentle-orchestrator = "openai/gpt-5.6-luna";
         sdd-init = "openai/gpt-5.6-luna";
-        sdd-explore = "openai/gpt-5.6-terra";
-        sdd-propose = "openai/gpt-5.6-terra";
-        sdd-spec = "openai/gpt-5.6-terra";
-        sdd-design = "openai/gpt-5.6-terra";
+        sdd-explore = "openai/gpt-6.1-sol";
+        sdd-propose = "openai/gpt-6.1-sol";
+        sdd-spec = "openai/gpt-6.1-sol";
+        sdd-design = "openai/gpt-6.1-sol";
         sdd-tasks = "openai/gpt-5.6-luna";
         sdd-apply = "openai/gpt-5.6-luna";
-        sdd-verify = "openai/gpt-5.6-terra";
+        sdd-verify = "openai/gpt-6.1-sol";
         sdd-archive = "openai/gpt-5.6-luna";
         sdd-onboard = "openai/gpt-5.6-luna";
-        jd-judge-a = "openai/gpt-5.6-terra";
-        jd-judge-b = "openai/gpt-5.6-terra";
+        jd-judge-a = "openai/gpt-6.1-sol";
+        jd-judge-b = "openai/gpt-6.1-sol";
         jd-fix-agent = "openai/gpt-5.6-luna";
-        review-readability = "openai/gpt-5.6-terra";
-        review-refuter = "openai/gpt-5.6-terra";
-        review-reliability = "openai/gpt-5.6-terra";
-        review-resilience = "openai/gpt-5.6-terra";
-        review-risk = "openai/gpt-5.6-terra";
+        review-readability = "openai/gpt-6.1-sol";
+        review-refuter = "openai/gpt-6.1-sol";
+        review-reliability = "openai/gpt-6.1-sol";
+        review-resilience = "openai/gpt-6.1-sol";
+        review-risk = "openai/gpt-6.1-sol";
         review-validator = "openai/gpt-5.6-luna";
         neutral = "openai/gpt-5.6-luna";
       };
@@ -811,8 +799,8 @@ let
       phases = {
         gentle-orchestrator = "github-copilot/gpt-5.6-luna";
         sdd-init = "github-copilot/gpt-5.4-mini";
-        sdd-explore = "github-copilot/gpt-5.6-terra";
-        sdd-propose = "github-copilot/gpt-5.6-terra";
+        sdd-explore = "github-copilot/gpt-6.1-sol";
+        sdd-propose = "github-copilot/gpt-6.1-sol";
         sdd-spec = "github-copilot/claude-sonnet-5.5";
         sdd-design = "github-copilot/claude-sonnet-5.5";
         sdd-tasks = "github-copilot/gpt-5.4-mini";
