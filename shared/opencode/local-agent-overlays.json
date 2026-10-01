@@ -43,7 +43,9 @@
         "task": {
           "*": "deny",
           "sdd-*": "allow",
-          "jd-*": "allow"
+          "jd-*": "allow",
+          "explore": "allow",
+          "general": "allow"
         }
       },
       "general": {
