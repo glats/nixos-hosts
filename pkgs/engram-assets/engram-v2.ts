@@ -9,9 +9,11 @@ const MEMORY_INSTRUCTIONS = `## Engram Persistent Memory — Protocol
 
 You have access to Engram, a persistent memory system that survives across sessions and compactions.
 
+Before the first project-scoped memory call, call mem_current_project to discover the current project. Use the exact returned project for mem_context, mem_search, mem_save, and mem_session_summary. Never infer the project from the directory basename or OpenCode project ID. On unknown_project, call mem_current_project again and use its returned project instead of retrying an invented name. Preserve intentional cross-project queries; discovery identifies the current project, not every query's target.
+
 Call mem_save immediately after bug fixes, decisions, discoveries, configuration changes, established patterns, or learned preferences. Include What, Why, Where, and Learned in the content. Use project scope by default and a stable topic_key for evolving topics.
 
-When asked to recall prior work, call mem_context first, then mem_search if needed. Use mem_session_summary before ending a session and after compaction. Save important observations immediately; this memory survives future sessions.`
+When asked to recall prior work, discover the project first. After project discovery, call mem_context first, then mem_search if needed. Use mem_session_summary before ending a session and after compaction. Save important observations immediately; this memory survives future sessions.`
 
 function stripPrivateTags(value: string): string {
   return value.replace(/<private>[\s\S]*?<\/private>/gi, "[REDACTED]").trim()
@@ -153,7 +155,7 @@ export default Plugin.define({
     }
 
     await ctx.session.hook("context", async (event) => {
-      addSystem(event.system, MEMORY_INSTRUCTIONS)
+      addSystem(event.system, `${MEMORY_INSTRUCTIONS}\n\nCurrent Engram project: ${JSON.stringify(project)}. Use this exact project name for current-project memory calls, not the directory name. If mem_current_project reports a different name, use its returned project.`)
       await addNudge(event.sessionID, event.system)
     })
 
