@@ -64,7 +64,15 @@ let
     OPENCODE_DISABLE_PROJECT_CONFIG = "1";
   };
   mkV2ShellEnvironment = lib.concatStringsSep "\n" (
-    lib.mapAttrsToList (name: value: "export ${name}=${lib.escapeShellArg value}") mkV2Environment
+    (lib.mapAttrsToList (name: value: "export ${name}=${lib.escapeShellArg value}") mkV2Environment)
+    ++ [
+      ''
+        case ":$PATH:" in
+          *":${lib.makeBinPath [ pkgs.gentle-ai ]}:"*) ;;
+          *) export PATH="${lib.makeBinPath [ pkgs.gentle-ai ]}:$PATH" ;;
+        esac
+      ''
+    ]
   );
   opencodeV2EnvironmentFile = ".local/share/opencode-v2/environment";
   browserMcpServiceCommand = "${v2.browserMcp.bridgePackage}/bin/browsermcp-broker --child ${v2.browserMcp.package}/bin/mcp-server-browsermcp --port ${toString v2.browserMcp.bridgePort}";
