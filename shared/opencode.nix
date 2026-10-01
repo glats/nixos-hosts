@@ -275,9 +275,10 @@ in
           {
             assertion =
               config.home.file.${opencodeV2EnvironmentFile}.text == mkV2ShellEnvironment
-              && lib.hasInfix "opencode2 reload" config.home.activation.restartOpencodeV2.data
-              && lib.hasInfix "opencode2 service restart" config.home.activation.restartOpencodeV2.data;
-            message = "OpenCode V2 wrappers and activation must use the shared environment and reload the native service.";
+              && lib.hasInfix "managed-runtime.activation" config.home.activation.restartOpencodeV2.data
+              && lib.hasInfix "opencode2 service restart" config.home.activation.restartOpencodeV2.data
+              && !(lib.hasInfix "opencode2 reload" config.home.activation.restartOpencodeV2.data);
+            message = "OpenCode V2 activation must use the shared environment and restart after managed runtime changes.";
           }
         ];
 
@@ -334,11 +335,9 @@ in
         mkdir -p "$runtime_root"
         if [ ! -f "$stamp" ] || ! ${pkgs.diffutils}/bin/cmp -s "$fingerprint" "$stamp"; then
           source "${config.home.homeDirectory}/.local/share/opencode-v2/environment"
-          if ! ${pkgs.opencode-v2}/bin/opencode2 reload; then
-            ${pkgs.opencode-v2}/bin/opencode2 service restart || {
-              echo "restartOpencodeV2: native service reload failed" >&2
-              exit 1
-            }
+          if ! ${pkgs.opencode-v2}/bin/opencode2 service restart; then
+            echo "restartOpencodeV2: native service restart failed" >&2
+            exit 1
           fi
           if ! ${pkgs.coreutils}/bin/cp "$fingerprint" "$stamp"; then
             echo "restartOpencodeV2: failed to record the active configuration" >&2
