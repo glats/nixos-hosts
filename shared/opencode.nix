@@ -68,8 +68,18 @@ let
     ++ [
       ''
         case ":$PATH:" in
-          *":${lib.makeBinPath [ pkgs.gentle-ai ]}:"*) ;;
-          *) export PATH="${lib.makeBinPath [ pkgs.gentle-ai ]}:$PATH" ;;
+          *":${
+            lib.makeBinPath [
+              pkgs.gentle-ai
+              pkgs.git
+            ]
+          }:"*) ;;
+          *) export PATH="${
+            lib.makeBinPath [
+              pkgs.gentle-ai
+              pkgs.git
+            ]
+          }:$PATH" ;;
         esac
       ''
     ]
