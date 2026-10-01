@@ -277,8 +277,9 @@ in
               config.home.file.${opencodeV2EnvironmentFile}.text == mkV2ShellEnvironment
               && lib.hasInfix "managed-runtime.activation" config.home.activation.restartOpencodeV2.data
               && lib.hasInfix "opencode2 service restart" config.home.activation.restartOpencodeV2.data
+              && lib.hasInfix "/bin/cp --remove-destination" config.home.activation.restartOpencodeV2.data
               && !(lib.hasInfix "opencode2 reload" config.home.activation.restartOpencodeV2.data);
-            message = "OpenCode V2 activation must use the shared environment and restart after managed runtime changes.";
+            message = "OpenCode V2 activation must restart after managed runtime changes and replace its read-only stamp.";
           }
         ];
 
@@ -339,7 +340,7 @@ in
             echo "restartOpencodeV2: native service restart failed" >&2
             exit 1
           fi
-          if ! ${pkgs.coreutils}/bin/cp "$fingerprint" "$stamp"; then
+          if ! ${pkgs.coreutils}/bin/cp --remove-destination "$fingerprint" "$stamp"; then
             echo "restartOpencodeV2: failed to record the active configuration" >&2
             exit 1
           fi
