@@ -48,7 +48,7 @@ let
     disabledTools = cfg.disabledTools;
   };
   v2Agents = import ./v2-agents.nix {
-    inherit lib cfg;
+    inherit lib cfg runtimeDir;
     permissionRules = v2Permissions.rules;
   };
   v2Mcps = import ./v2-mcps.nix {
