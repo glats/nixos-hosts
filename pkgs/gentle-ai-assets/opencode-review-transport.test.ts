@@ -27,6 +27,10 @@ for await (const line of input) {
     first = false
     if (${JSON.stringify(mode)} === "incomplete") process.exit(0)
     if (${JSON.stringify(mode)} === "go-fail") process.exit(1)
+    if (${JSON.stringify(mode)} === "go-fail-bound") {
+      console.error("Error: opencode_review_transport_binding_invalid: private path must not leak")
+      process.exit(1)
+    }
     process.stdout.write(JSON.stringify({ schema: "gentle-ai.provider-transport/v1", operation: "prompt", nonce: "test-nonce", prompt: "Go materialized review prompt" }) + "\\n")
   } else {
     if (value.error) process.exit(1)
@@ -116,6 +120,20 @@ describe("OpenCode V2 review relay", () => {
     await rejected.setup()
     const goEvent = { tool: "subagent", sessionID: "s", id: "rejected", input: { agent: "review-risk", prompt: "bound review" } }
     await expect(rejected.hooks.get("execute.before")?.(goEvent)).rejects.toThrow("opencode_review_transport_relay_refused: go_refused")
+  })
+
+  test("reports only a known Go refusal code, never its diagnostic text", async () => {
+    await fakeCommand("go-fail-bound")
+    const { hooks, setup } = harness()
+    await setup()
+    const event = { tool: "subagent", sessionID: "s", id: "bound", input: { agent: "review-risk", prompt: "bound review" } }
+    try {
+      await hooks.get("execute.before")?.(event)
+      throw new Error("review hook did not refuse")
+    } catch (cause) {
+      expect((cause as Error).message).toBe("opencode_review_transport_relay_refused: go_refused:binding_invalid")
+    }
+    expect(event.input.prompt).not.toContain("private path")
   })
 
   test("does not spawn if the session directory cannot be resolved", async () => {

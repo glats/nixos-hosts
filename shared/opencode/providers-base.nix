@@ -218,7 +218,7 @@ let
         sdd-init = "github-copilot/gpt-5.4-mini";
         sdd-explore = "anthropic/claude-sonnet-4-6";
         sdd-propose = "anthropic/claude-sonnet-4-6";
-        sdd-spec = "github-copilot/claude-sonnet-5";
+        sdd-spec = "github-copilot/claude-sonnet-5.5";
         sdd-design = "anthropic/claude-sonnet-4-6";
         sdd-tasks = "github-copilot/gpt-5.4-mini";
         # Re-fit 2026-09-23: apply is the only may-loop phase in this profile,
@@ -227,7 +227,7 @@ let
         # Sonnet 4.6 for the one-shot acceptance and review judgment gates.
         # Sources: docs.github.com/copilot/reference/copilot-billing/models-and-pricing
         # and docs.anthropic.com/en/docs/about-claude/pricing.
-        sdd-apply = "github-copilot/claude-sonnet-5";
+        sdd-apply = "github-copilot/claude-sonnet-5.5";
         sdd-verify = "anthropic/claude-sonnet-4-6";
         sdd-archive = "anthropic/claude-haiku-4-5";
         sdd-onboard = "github-copilot/gpt-5.4-mini";
@@ -236,7 +236,7 @@ let
         # Re-fit 2026-09-23: corrections may loop, so use the already-routed
         # Copilot Sonnet 5 ($2/$10 per MTok) instead of native Sonnet 4.6
         # ($3/$15); reserve the native model for independent judgments.
-        jd-fix-agent = "github-copilot/claude-sonnet-5";
+        jd-fix-agent = "github-copilot/claude-sonnet-5.5";
         review-readability = "anthropic/claude-sonnet-4-6";
         review-refuter = "anthropic/claude-sonnet-4-6";
         review-reliability = "anthropic/claude-sonnet-4-6";
@@ -262,24 +262,24 @@ let
         sdd-init = "anthropic/claude-haiku-4-5";
         sdd-explore = "anthropic/claude-sonnet-5";
         sdd-propose = "anthropic/claude-sonnet-5";
-        sdd-spec = "github-copilot/claude-sonnet-5";
+        sdd-spec = "github-copilot/claude-sonnet-5.5";
         sdd-design = "anthropic/claude-sonnet-5";
         sdd-tasks = "anthropic/claude-haiku-4-5";
-        sdd-apply = "github-copilot/claude-sonnet-5";
+        sdd-apply = "github-copilot/claude-sonnet-5.5";
         # Preserve the native quality gate where a missed defect causes a re-loop.
         sdd-verify = "anthropic/claude-sonnet-4-6";
         sdd-archive = "anthropic/claude-haiku-4-5";
         sdd-onboard = "anthropic/claude-haiku-4-5";
         jd-judge-a = "anthropic/claude-sonnet-4-6";
         jd-judge-b = "anthropic/claude-sonnet-4-6";
-        jd-fix-agent = "github-copilot/claude-sonnet-5";
+        jd-fix-agent = "github-copilot/claude-sonnet-5.5";
         review-readability = "anthropic/claude-sonnet-4-6";
         review-refuter = "anthropic/claude-sonnet-4-6";
         review-reliability = "anthropic/claude-sonnet-4-6";
         review-resilience = "anthropic/claude-sonnet-4-6";
         review-risk = "anthropic/claude-sonnet-4-6";
         review-validator = "anthropic/claude-sonnet-4-6";
-        neutral = "github-copilot/claude-sonnet-5";
+        neutral = "github-copilot/claude-sonnet-5.5";
       };
     }
     {
@@ -320,7 +320,7 @@ let
       # and architecture judgment. Fable 5.1 ($10/$50) is not cost-justified.
       phases = {
         # A looping router benefits more from Sonnet's speed and cost than Opus.
-        gentle-orchestrator = "anthropic/claude-sonnet-5";
+        gentle-orchestrator = "anthropic/claude-sonnet-5-5";
         sdd-init = "anthropic/claude-haiku-4-5";
         sdd-explore = "anthropic/claude-sonnet-5";
         sdd-propose = "anthropic/claude-opus-5";
@@ -733,45 +733,45 @@ let
         sdd-design = "github-copilot/gpt-5.4-mini";
         sdd-tasks = "github-copilot/gpt-5.4-mini";
         sdd-apply = "github-copilot/gpt-5.3-codex";
-        sdd-verify = "github-copilot/claude-sonnet-5";
+        sdd-verify = "github-copilot/claude-sonnet-5.5";
         sdd-archive = "github-copilot/gpt-5.4-mini";
         sdd-onboard = "github-copilot/gpt-5.4-mini";
-        jd-judge-a = "github-copilot/claude-sonnet-5";
-        jd-judge-b = "github-copilot/claude-sonnet-5";
+        jd-judge-a = "github-copilot/claude-sonnet-5.5";
+        jd-judge-b = "github-copilot/claude-sonnet-5.5";
         jd-fix-agent = "github-copilot/gpt-5.3-codex";
-        review-readability = "github-copilot/claude-sonnet-5";
-        review-refuter = "github-copilot/claude-sonnet-5";
-        review-reliability = "github-copilot/claude-sonnet-5";
-        review-resilience = "github-copilot/claude-sonnet-5";
-        review-risk = "github-copilot/claude-sonnet-5";
-        review-validator = "github-copilot/claude-sonnet-5";
+        review-readability = "github-copilot/claude-sonnet-5.5";
+        review-refuter = "github-copilot/claude-sonnet-5.5";
+        review-reliability = "github-copilot/claude-sonnet-5.5";
+        review-resilience = "github-copilot/claude-sonnet-5.5";
+        review-risk = "github-copilot/claude-sonnet-5.5";
+        review-validator = "github-copilot/claude-sonnet-5.5";
         neutral = "github-copilot/gpt-5.4-mini";
       };
     }
     {
       name = "github-copilot-medium";
       phases = {
-        gentle-orchestrator = "github-copilot/gpt-6-sol";
+        gentle-orchestrator = "github-copilot/gpt-6.1-sol";
         sdd-init = "github-copilot/gpt-5.4-mini";
-        sdd-explore = "github-copilot/claude-sonnet-5";
-        sdd-propose = "github-copilot/claude-sonnet-5";
-        sdd-spec = "github-copilot/claude-sonnet-5";
-        sdd-design = "github-copilot/claude-sonnet-5";
+        sdd-explore = "github-copilot/claude-sonnet-5.5";
+        sdd-propose = "github-copilot/claude-sonnet-5.5";
+        sdd-spec = "github-copilot/claude-sonnet-5.5";
+        sdd-design = "github-copilot/claude-sonnet-5.5";
         sdd-tasks = "github-copilot/gpt-5.4-mini";
         sdd-apply = "github-copilot/gpt-5.3-codex";
-        sdd-verify = "github-copilot/claude-sonnet-5";
+        sdd-verify = "github-copilot/claude-sonnet-5.5";
         sdd-archive = "github-copilot/gpt-5.4-mini";
         sdd-onboard = "github-copilot/gpt-5.4-mini";
-        jd-judge-a = "github-copilot/claude-sonnet-5";
-        jd-judge-b = "github-copilot/claude-sonnet-5";
+        jd-judge-a = "github-copilot/claude-sonnet-5.5";
+        jd-judge-b = "github-copilot/claude-sonnet-5.5";
         jd-fix-agent = "github-copilot/gpt-5.3-codex";
-        review-readability = "github-copilot/claude-sonnet-5";
-        review-refuter = "github-copilot/claude-sonnet-5";
-        review-reliability = "github-copilot/claude-sonnet-5";
-        review-resilience = "github-copilot/claude-sonnet-5";
-        review-risk = "github-copilot/claude-sonnet-5";
-        review-validator = "github-copilot/claude-sonnet-5";
-        neutral = "github-copilot/claude-sonnet-5";
+        review-readability = "github-copilot/claude-sonnet-5.5";
+        review-refuter = "github-copilot/claude-sonnet-5.5";
+        review-reliability = "github-copilot/claude-sonnet-5.5";
+        review-resilience = "github-copilot/claude-sonnet-5.5";
+        review-risk = "github-copilot/claude-sonnet-5.5";
+        review-validator = "github-copilot/claude-sonnet-5.5";
+        neutral = "github-copilot/claude-sonnet-5.5";
       };
     }
     {
@@ -813,11 +813,11 @@ let
         sdd-init = "github-copilot/gpt-5.4-mini";
         sdd-explore = "github-copilot/gpt-5.6-terra";
         sdd-propose = "github-copilot/gpt-5.6-terra";
-        sdd-spec = "github-copilot/claude-sonnet-5";
-        sdd-design = "github-copilot/claude-sonnet-5";
+        sdd-spec = "github-copilot/claude-sonnet-5.5";
+        sdd-design = "github-copilot/claude-sonnet-5.5";
         sdd-tasks = "github-copilot/gpt-5.4-mini";
-        sdd-apply = "github-copilot/claude-sonnet-5";
-        sdd-verify = "github-copilot/claude-sonnet-5";
+        sdd-apply = "github-copilot/claude-sonnet-5.5";
+        sdd-verify = "github-copilot/claude-sonnet-5.5";
         sdd-archive = "github-copilot/claude-haiku-4.5";
         sdd-onboard = "github-copilot/gpt-5.4-mini";
         jd-judge-a = "anthropic/claude-sonnet-5";
@@ -910,31 +910,31 @@ let
         # gpt-5.4-mini: proven cheap helper model already working in current tier.
         sdd-init = "github-copilot/gpt-5.4-mini";
         # claude-sonnet-5: 1M context + agent-task positioning makes it a good explore/default upgrade.
-        sdd-explore = "github-copilot/claude-sonnet-5";
+        sdd-explore = "github-copilot/claude-sonnet-5.5";
         # claude-sonnet-5: balanced upgrade for architecture and structured writing.
-        sdd-propose = "github-copilot/claude-sonnet-5";
-        sdd-spec = "github-copilot/claude-sonnet-5";
-        sdd-design = "github-copilot/claude-sonnet-5";
+        sdd-propose = "github-copilot/claude-sonnet-5.5";
+        sdd-spec = "github-copilot/claude-sonnet-5.5";
+        sdd-design = "github-copilot/claude-sonnet-5.5";
         # gpt-5.4-mini: still the cheapest reliable decomposition worker in this provider.
         sdd-tasks = "github-copilot/gpt-5.4-mini";
         # gpt-5.3-codex: coding-specialized and already stable in the current tier.
         sdd-apply = "github-copilot/gpt-5.3-codex";
         # claude-sonnet-5: strong review/reasoning default without jumping to risky 5.6.
-        sdd-verify = "github-copilot/claude-sonnet-5";
+        sdd-verify = "github-copilot/claude-sonnet-5.5";
         # claude-haiku-4.5: fastest low-cost housekeeping model.
         sdd-archive = "github-copilot/claude-haiku-4.5";
         # gpt-5.4-mini: good enough for guided walkthroughs while staying cheap.
         sdd-onboard = "github-copilot/gpt-5.4-mini";
-        jd-judge-a = "github-copilot/claude-sonnet-5";
-        jd-judge-b = "github-copilot/claude-sonnet-5";
+        jd-judge-a = "github-copilot/claude-sonnet-5.5";
+        jd-judge-b = "github-copilot/claude-sonnet-5.5";
         jd-fix-agent = "github-copilot/gpt-5.3-codex";
-        review-readability = "github-copilot/claude-sonnet-5";
-        review-refuter = "github-copilot/claude-sonnet-5";
-        review-reliability = "github-copilot/claude-sonnet-5";
-        review-resilience = "github-copilot/claude-sonnet-5";
-        review-risk = "github-copilot/claude-sonnet-5";
-        review-validator = "github-copilot/claude-sonnet-5";
-        neutral = "github-copilot/claude-sonnet-5";
+        review-readability = "github-copilot/claude-sonnet-5.5";
+        review-refuter = "github-copilot/claude-sonnet-5.5";
+        review-reliability = "github-copilot/claude-sonnet-5.5";
+        review-resilience = "github-copilot/claude-sonnet-5.5";
+        review-risk = "github-copilot/claude-sonnet-5.5";
+        review-validator = "github-copilot/claude-sonnet-5.5";
+        neutral = "github-copilot/claude-sonnet-5.5";
       };
     }
     {
@@ -947,31 +947,31 @@ let
         # gpt-5.4-mini: proven cheap helper model already working in current tier.
         sdd-init = "github-copilot/gpt-5.4-mini";
         # claude-sonnet-5: 1M context + agent-task positioning makes it a good explore/default upgrade.
-        sdd-explore = "github-copilot/claude-sonnet-5";
+        sdd-explore = "github-copilot/claude-sonnet-5.5";
         # claude-sonnet-5: balanced upgrade for architecture and structured writing.
-        sdd-propose = "github-copilot/claude-sonnet-5";
-        sdd-spec = "github-copilot/claude-sonnet-5";
-        sdd-design = "github-copilot/claude-sonnet-5";
+        sdd-propose = "github-copilot/claude-sonnet-5.5";
+        sdd-spec = "github-copilot/claude-sonnet-5.5";
+        sdd-design = "github-copilot/claude-sonnet-5.5";
         # gpt-5.4-mini: still the cheapest reliable decomposition worker in this provider.
         sdd-tasks = "github-copilot/gpt-5.4-mini";
         # gpt-5.3-codex: coding-specialized and already stable in the current tier.
         sdd-apply = "github-copilot/gpt-5.3-codex";
         # claude-sonnet-5: strong review/reasoning default without jumping to risky 5.6.
-        sdd-verify = "github-copilot/claude-sonnet-5";
+        sdd-verify = "github-copilot/claude-sonnet-5.5";
         # claude-haiku-4.5: fastest low-cost housekeeping model.
         sdd-archive = "github-copilot/claude-haiku-4.5";
         # gpt-5.4-mini: good enough for guided walkthroughs while staying cheap.
         sdd-onboard = "github-copilot/gpt-5.4-mini";
-        jd-judge-a = "github-copilot/claude-sonnet-5";
-        jd-judge-b = "github-copilot/claude-sonnet-5";
+        jd-judge-a = "github-copilot/claude-sonnet-5.5";
+        jd-judge-b = "github-copilot/claude-sonnet-5.5";
         jd-fix-agent = "github-copilot/gpt-5.3-codex";
-        review-readability = "github-copilot/claude-sonnet-5";
-        review-refuter = "github-copilot/claude-sonnet-5";
-        review-reliability = "github-copilot/claude-sonnet-5";
-        review-resilience = "github-copilot/claude-sonnet-5";
-        review-risk = "github-copilot/claude-sonnet-5";
-        review-validator = "github-copilot/claude-sonnet-5";
-        neutral = "github-copilot/claude-sonnet-5";
+        review-readability = "github-copilot/claude-sonnet-5.5";
+        review-refuter = "github-copilot/claude-sonnet-5.5";
+        review-reliability = "github-copilot/claude-sonnet-5.5";
+        review-resilience = "github-copilot/claude-sonnet-5.5";
+        review-risk = "github-copilot/claude-sonnet-5.5";
+        review-validator = "github-copilot/claude-sonnet-5.5";
+        neutral = "github-copilot/claude-sonnet-5.5";
       };
     }
     {

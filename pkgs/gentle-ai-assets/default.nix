@@ -2,6 +2,8 @@
   lib,
   stdenvNoCC,
   gentle-ai-src,
+  gentle-ai,
+  git,
 }:
 
 stdenvNoCC.mkDerivation {
@@ -37,6 +39,9 @@ stdenvNoCC.mkDerivation {
     for plugin in ${./v2-plugins}/*.ts; do
       install -m 0644 "$plugin" $out/share/gentle-ai/opencode-v2/plugins/
     done
+    substituteInPlace $out/share/gentle-ai/opencode-v2/plugins/opencode-review-transport.ts \
+      --replace-fail 'const GO_COMMAND = "gentle-ai"' 'const GO_COMMAND = "${gentle-ai}/bin/gentle-ai"' \
+      --replace-fail 'const GIT_BIN = ""' 'const GIT_BIN = "${git}/bin"'
   '';
 
   meta = with lib; {

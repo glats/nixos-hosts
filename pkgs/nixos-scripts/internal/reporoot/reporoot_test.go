@@ -106,9 +106,19 @@ func TestFlakePathWorktree(t *testing.T) {
 	if got := FlakePath(root); got != "." {
 		t.Fatalf("FlakePath inside worktree = %q, want %q", got, ".")
 	}
+	alias := filepath.Join(t.TempDir(), "repo-alias")
+	if err := os.Symlink(root, alias); err != nil {
+		t.Skipf("symlinks unavailable: %v", err)
+	}
+	if got := FlakePath(alias); got != "." {
+		t.Fatalf("FlakePath inside worktree via aliased root = %q, want %q", got, ".")
+	}
 
 	os.Chdir(root)
 	if got := FlakePath(root); got != root {
 		t.Fatalf("FlakePath at root = %q, want %q", got, root)
+	}
+	if got := FlakePath(alias); got != alias {
+		t.Fatalf("FlakePath at root with alias = %q, want %q", got, alias)
 	}
 }

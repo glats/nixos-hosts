@@ -53,7 +53,11 @@ func FlakePath(root string) string {
 	if err != nil {
 		return root
 	}
-	wt := filepath.Join(root, ".worktrees") + string(filepath.Separator)
+	canonicalRoot, err := filepath.EvalSymlinks(root)
+	if err != nil {
+		return root
+	}
+	wt := filepath.Join(canonicalRoot, ".worktrees") + string(filepath.Separator)
 	if strings.HasPrefix(cwd, wt) {
 		return "."
 	}
