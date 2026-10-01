@@ -33,6 +33,7 @@ let
         };
         gentle-ai-assets = pkgs.callPackage ../pkgs/gentle-ai-assets/default.nix {
           gentle-ai-src = inputs.gentle-ai-src;
+          gentle-ai = self.gentle-ai;
         };
         caveman-assets = pkgs.callPackage ../pkgs/caveman-assets/default.nix {
           caveman-src = inputs.caveman-src;

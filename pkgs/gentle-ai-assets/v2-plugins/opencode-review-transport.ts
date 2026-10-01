@@ -11,6 +11,9 @@ const REVIEW_AGENTS = new Set([
 ])
 const SCHEMA = "gentle-ai.provider-transport/v1"
 const REFUSED = "opencode_review_transport_relay_refused"
+// The Nix asset replaces these invocation paths without changing Go-owned review semantics.
+const GO_COMMAND = "gentle-ai"
+const GIT_BIN = ""
 
 type HookInput = {
   tool?: unknown
@@ -47,8 +50,12 @@ function frame(line: string): Frame {
 
 // The command is injectable only for the fake-child tests; production uses the
 // pinned gentle-ai CLI and keeps all binding, admission, and capture in Go.
-export function createReviewRelay(cwd: string, prompt: string, command = "gentle-ai"): Relay {
-  const child = spawn(command, ["review", "opencode-transport"], { cwd, stdio: ["pipe", "pipe", "pipe"] })
+export function createReviewRelay(cwd: string, prompt: string, command = GO_COMMAND): Relay {
+  const child = spawn(command, ["review", "opencode-transport"], {
+    cwd,
+    stdio: ["pipe", "pipe", "pipe"],
+    env: GIT_BIN ? { ...process.env, PATH: `${GIT_BIN}:${process.env.PATH ?? ""}` } : process.env,
+  })
   let buffered = ""
   let closed = false
   let prompted = false
