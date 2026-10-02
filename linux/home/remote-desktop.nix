@@ -228,7 +228,7 @@ in
       force = true;
       text = mkRemminaProfile rdpDefaults {
         name = "rog";
-        server = "172.16.0.5";
+        server = "rog.local";
       };
     };
     ".local/share/remmina/rdp-oneplus5.remmina" = {
@@ -243,7 +243,7 @@ in
       force = true;
       text = mkRemminaProfile rdpDefaults {
         name = "thinkcentre";
-        server = "172.16.0.11";
+        server = "thinkcentre.local";
       };
     };
 
@@ -252,13 +252,13 @@ in
       force = true;
       text = mkRemminaProfile vncDefaults {
         name = "t14";
-        server = "172.16.0.109:5900";
+        server = "t14.local:5900";
       };
     };
     ".local/share/remmina/vnc-macm5.remmina" = {
       force = true;
       text = mkRemminaProfile vncDefaults {
-        name = "Remote MacM5";
+        name = "macm5";
         server = "CLFTCLGV2FHWW0W.local:5900";
       };
     };
@@ -267,7 +267,7 @@ in
       force = true;
       text = mkDesktop {
         name = "rog";
-        comment = "RDP connection to 172.16.0.5";
+        comment = "RDP connection to rog";
         exec = "${pkgs.remmina}/bin/remmina -c /home/glats/.local/share/remmina/rdp-rog.remmina";
       };
     };
@@ -275,7 +275,7 @@ in
       force = true;
       text = mkDesktop {
         name = "oneplus5";
-        comment = "RDP connection to 172.16.0.12";
+        comment = "RDP connection to oneplus5";
         exec = "${pkgs.remmina}/bin/remmina -c /home/glats/.local/share/remmina/rdp-oneplus5.remmina";
       };
     };
@@ -283,7 +283,7 @@ in
       force = true;
       text = mkDesktop {
         name = "thinkcentre";
-        comment = "RDP connection to 172.16.0.11";
+        comment = "RDP connection to thinkcentre";
         exec = "${pkgs.remmina}/bin/remmina -c /home/glats/.local/share/remmina/rdp-thinkcentre.remmina";
       };
     };
@@ -291,15 +291,15 @@ in
       force = true;
       text = mkDesktop {
         name = "t14";
-        comment = "VNC connection to 172.16.0.109:5900";
+        comment = "VNC connection to t14";
         exec = "${pkgs.remmina}/bin/remmina -c /home/glats/.local/share/remmina/vnc-t14.remmina";
       };
     };
     ".local/share/applications/remote-macm5.desktop" = {
       force = true;
       text = mkDesktop {
-        name = "Remote MacM5";
-        comment = "VNC connection to CLFTCLGV2FHWW0W.local:5900";
+        name = "macm5";
+        comment = "VNC connection to macm5";
         exec = "${pkgs.remmina}/bin/remmina -c /home/glats/.local/share/remmina/vnc-macm5.remmina";
       };
     };
