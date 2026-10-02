@@ -42,7 +42,7 @@ Chain strategy: pending
 
 - [x] 3.1 `nix fmt --` all touched Nix; `nix flake check --no-build`.
 - [ ] 3.2 Eval `.#homeConfigurations.macm5.activationPackage.drvPath`, `.#darwinConfigurations.macm5.config.system.build.toplevel.drvPath`, and Linux `.#homeConfigurations.{rog,thinkcentre,t14}.activationPackage.drvPath`. (Linux evaluations pass; macOS evaluation is blocked by cross-system store realization.)
-- [x] 3.3 `go -C pkgs/nixos-scripts test ./...` and both Python regressions pass.
+- [x] 3.3 `go -C pkgs/nixos-scripts test ./...` and both Python regressions pass. Actual package build passed as `/nix/store/yddpx28bv8snls8zl04wxr97rj2avs9m-nixos-scripts-1.0.0.drv` → `/nix/store/r2s06k426f58ppvswwjm4aifjgh9101r-nixos-scripts-1.0.0`. The reported failed derivation (`xdlrf3gypf2k8rm1diyydg51jmnas4yn`) used source archive `p5da7mrq33vlqxwmbr3mh35b14f43wv9-nixos-scripts`, which did not contain the then-untracked `internal/opencodehome` directory; direct Go tests used the working tree.
 
 ## Phase 4: Documentation + Cleanup
 
