@@ -187,6 +187,32 @@
           exec ${pkgs.opencode-v2}/bin/opencode2 "$@"
         )
       }
+    ''
+    + lib.optionalString (pkgs.stdenv.isDarwin && config.home.opencode.v2.enable) ''
+      opencode2-home() (
+        local environment="${config.home.homeDirectory}/.local/share/opencode-v2/environment"
+        local arg standalone=0 server=0
+        if [[ ! -r "$environment" ]]; then
+          echo "opencode2-home: missing V2 environment: $environment" >&2
+          return 1
+        fi
+        source "$environment" || {
+          echo "opencode2-home: failed to load V2 environment: $environment" >&2
+          return 1
+        }
+        for arg in "$@"; do
+          [[ "$arg" == --standalone ]] && standalone=1
+          [[ "$arg" == --server || "$arg" == --server=* ]] && server=1
+        done
+        if (( !standalone && !server )); then
+          case "$1" in
+            run|mini) set -- "$1" --standalone "''${@:2}" ;;
+            acp|api|auth|debug|mcp|models|pair|plugin|reload|serve|service|session|stats|uninstall|update|upgrade) ;;
+            *) set -- --standalone "$@" ;;
+          esac
+        fi
+        OPENCODE_HOME_BINARY="${pkgs.opencode-v2}/bin/opencode2" exec ${pkgs.nixos-scripts}/bin/opencode-home "$@"
+      )
     '';
 
     # Syntax highlighting styles via prezto's declarative option instead of

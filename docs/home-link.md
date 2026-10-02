@@ -123,10 +123,25 @@ sudo launchctl kickstart -k system/org.nixos.sing-box
 ### OpenCode with native OpenAI
 
 ```bash
-opencode-home          # do NOT use plain `opencode`: the wrapper scopes the proxy
-                       # to the process and keeps child MCPs clean.
-                       # If the link is down, it still starts (without proxy).
+opencode-home          # V1: scopes proxy env to the launched process
+opencode2-home         # V2: loads its isolated environment and scopes proxy env
+opencode2-home run "prompt"
 ```
+
+Both wrappers probe only whether `127.0.0.1:2080` accepts a TCP connection;
+this is not a tunnel or provider-health check. When the listener is unavailable,
+the launcher prints a stderr notice and continues without adding proxy variables.
+V2 uses the packaged V2 executable and existing isolated environment; it does
+not change the parent shell. Generated local MCP environments remain scrubbed.
+
+The V2 home alias starts a private server by default for the interactive TUI,
+`mini`, and `run`. It places `--standalone` at the documented position for each
+command, preserving user arguments. It leaves unrelated subcommands untouched;
+an explicit `--server` selects that server instead. Ordinary `opencode2` usage
+continues to use the shared-server behavior. Consult the official
+[V2 CLI command docs](https://opencode.ai/v2/docs/cli/commands/) and
+[network docs](https://opencode.ai/v2/docs/network/) for server ownership and
+proxy behavior.
 
 ### Browser with the link (for OpenAI and whatever comes up)
 
