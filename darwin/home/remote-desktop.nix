@@ -216,9 +216,9 @@ let
 
   apps = [
     {
-      id = "t14-tigervnc";
+      id = "t14";
       bundleName = "Remote T14";
-      legacyBundleName = "remote-t14-tigervnc.app";
+      legacyBundleName = "remote-t14.app";
       protocol = "vnc";
       viewer = "tigervnc";
       host = "172.16.0.10";
@@ -226,14 +226,14 @@ let
     }
     {
       id = "oneplus5";
-      bundleName = "Remote oneplus";
+      bundleName = "Remote OnePlus5";
       legacyBundleName = "remote-oneplus5.app";
       protocol = "rdp";
       host = "172.16.0.12";
     }
     {
       id = "rog";
-      bundleName = "Remote Rog";
+      bundleName = "Remote ROG";
       legacyBundleName = "remote-rog.app";
       protocol = "rdp";
       host = "172.16.0.5";
