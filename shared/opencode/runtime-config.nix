@@ -60,6 +60,7 @@ let
     lib.concatMapStringsSep "\n\n" builtins.readFile config.home.ai-assets.agentsMdSources
   );
   v2ManagedPlugins = {
+    "host-config.ts" = ./host-config-v2.ts;
     "rtk.ts" = ./rtk-v2.ts;
     "sdd-task-result.ts" =
       "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode-v2/plugins/sdd-task-result.ts";
