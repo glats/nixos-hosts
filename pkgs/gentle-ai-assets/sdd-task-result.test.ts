@@ -53,6 +53,7 @@ describe("pinned V2 SDD terminal results", () => {
       ['<task id="x" state="completed">\n<task_result>\n \n</task_result>\n</task>', "empty"],
       ['<task id="x" state="completed">broken', "malformed"],
       ['<task id="x" state="completed">\n<task_result>\n<task_result>nested</task_result>\n</task_result>\n</task>', "malformed"],
+      ['<task id="x" state="completed">\n<task_result>\n  <task_result>nested</task_result>\n</task_result>\n</task>', "malformed"],
       ['<task id="x" state="running">\n<task_result>\ntext\n</task_result>\n</task>', "malformed"],
     ]
     for (const [output, classification] of cases) {
@@ -85,6 +86,25 @@ describe("pinned V2 SDD terminal results", () => {
         expect(event).toEqual(previous)
       }
       await h.call("execute.before", { tool: "subagent", sessionID: "parent", input: { agent: "sdd-apply" } })
+    } finally { await h.close() }
+  })
+
+  test("passes Markdown describing transport tags without latching dispatch", async () => {
+    const h = await harness()
+    const report = "## Findings\n\nThe guard validates `<task_result>` envelopes, not report prose."
+    try {
+      for (const output of [
+        report,
+        "Mention <task_result> as literal text, not a transport envelope.",
+        "Example:\n```xml\n<task_result>example</task_result>\n```",
+        `<task id="x" state="completed">\n<task_result>\n${report}\n</task_result>\n</task>`,
+      ]) {
+        const event = completion(output)
+        const previous = structuredClone(event)
+        await h.call("execute.after", event)
+        expect(event).toEqual(previous)
+        await h.call("execute.before", { tool: "subagent", sessionID: "parent", input: { agent: "sdd-explore" } })
+      }
     } finally { await h.close() }
   })
 

@@ -3,7 +3,8 @@ import { Tool } from "@opencode/schema/tool"
 import { Effect, Stream } from "effect"
 
 const TASK_RESULT = /^<task id="[^"\r\n]+" state="completed">\n(?:<summary>[^<>\r\n]+<\/summary>\n)?<task_result>\n([\s\S]*?)\n<\/task_result>\n<\/task>$/
-const TASK_TAG = /<\/?(?:task|task_result|summary)(?:\s|>)/
+const TASK_START = /^<\/?(?:task|task_result|summary)(?:\s|>)/
+const TASK_TAG = /^[\t ]*<\/?(?:task|task_result|summary)(?:\s|>)/m
 const PHASES = ["sdd-init", "sdd-explore", "sdd-propose", "sdd-spec", "sdd-design", "sdd-tasks", "sdd-apply", "sdd-verify", "sdd-archive", "sdd-onboard"]
 const PREFIX = "GENTLE_AI_SDD_FAILURE "
 type Failure = { phase: string; code: string }
@@ -22,7 +23,8 @@ function invalidOutput(value: unknown): string | undefined {
   if (typeof value !== "string" || value.trim() === "" || value.trim() === "Subagent completed without a text response.") return "sdd_task_result_empty"
   const text = value.trim()
   const envelope = TASK_RESULT.exec(text)
-  if (!envelope) return TASK_TAG.test(text) ? "sdd_task_result_malformed" : undefined
+  // Plain Markdown may describe protocol tags; only a leading tag claims framing.
+  if (!envelope) return TASK_START.test(text) ? "sdd_task_result_malformed" : undefined
   if (envelope[1].trim() === "") return "sdd_task_result_empty"
   return TASK_TAG.test(envelope[1]) ? "sdd_task_result_malformed" : undefined
 }

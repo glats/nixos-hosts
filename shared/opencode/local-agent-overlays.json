@@ -76,8 +76,8 @@
         "webfetch": "deny",
         "websearch": "deny",
         "task": "deny",
-        "context7_resolve_library_id": "allow",
-        "context7_query_docs": "allow",
+        "context7_resolve-library-id": "allow",
+        "context7_query-docs": "allow",
         "exa_web_search_exa": "allow",
         "exa_web_fetch_exa": "allow"
       },

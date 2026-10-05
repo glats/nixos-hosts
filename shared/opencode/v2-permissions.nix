@@ -36,7 +36,7 @@ let
         ]
     ) (lib.attrNames permissions);
   mcpDenies = map (resource: {
-    action = builtins.replaceStrings [ "-" ] [ "_" ] resource;
+    action = resource;
     resource = "*";
     effect = "deny";
   }) disabledTools;
