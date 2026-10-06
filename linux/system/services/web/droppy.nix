@@ -11,6 +11,7 @@
     volumes = [
       "/srv/glats/droppy/config:/config"
       "/run/media/stuff/droppy:/files"
+      "/run/media/library/music:/files/music:ro"
     ];
     extraOptions = [ "--memory=768m" ];
   };
