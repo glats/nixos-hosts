@@ -1507,6 +1507,28 @@
         "type": "github"
       }
     },
+    "openlogi": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "rust-overlay": "rust-overlay"
+      },
+      "locked": {
+        "lastModified": 1790940797,
+        "narHash": "sha256-zoG0a28Z+bxAipK/auAEmGWje8Zwbryyy3lSj6agNiQ=",
+        "owner": "AprilNEA",
+        "repo": "OpenLogi",
+        "rev": "7a9d092a7dda0cb3b7ec18ada4424d681fca65ca",
+        "type": "github"
+      },
+      "original": {
+        "owner": "AprilNEA",
+        "repo": "OpenLogi",
+        "rev": "7a9d092a7dda0cb3b7ec18ada4424d681fca65ca",
+        "type": "github"
+      }
+    },
     "pipewire-module-xrdp-src": {
       "flake": false,
       "locked": {
@@ -1603,6 +1625,7 @@
         "nixos-hardware": "nixos-hardware",
         "nixpkgs": "nixpkgs_2",
         "omarchy-nix": "omarchy-nix",
+        "openlogi": "openlogi",
         "pipewire-module-xrdp-src": "pipewire-module-xrdp-src",
         "ponytail-src": "ponytail-src",
         "sops-nix": "sops-nix",
@@ -1611,6 +1634,27 @@
         "t14-nixpkgs": "t14-nixpkgs",
         "t14-quickshell": "t14-quickshell",
         "thinkfan-ui-src": "thinkfan-ui-src"
+      }
+    },
+    "rust-overlay": {
+      "inputs": {
+        "nixpkgs": [
+          "openlogi",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1790756160,
+        "narHash": "sha256-NPs4nNLxCpho3Ctj8O7t/bzmX0zR8r0zndKghAFEz5U=",
+        "owner": "oxalica",
+        "repo": "rust-overlay",
+        "rev": "ed3a19fd0439ed618ec5fe1e12f0ba69a8be38b5",
+        "type": "github"
+      },
+      "original": {
+        "owner": "oxalica",
+        "repo": "rust-overlay",
+        "type": "github"
       }
     },
     "sops-nix": {

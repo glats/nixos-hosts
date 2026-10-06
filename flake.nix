@@ -58,6 +58,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # OpenLogi Linux integration, pinned to the v0.8.11 release commit.
+    openlogi = {
+      url = "github:AprilNEA/OpenLogi/7a9d092a7dda0cb3b7ec18ada4424d681fca65ca";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # HyprDynamicMonitors — Hyprland monitor profile daemon with
     # UPower lid-event support and EDID-based description matching.
     hyprdynamicmonitors = {

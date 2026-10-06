@@ -49,6 +49,7 @@
       "claude"
       "betterdisplay"
       "bruno"
+      "openlogi"
     ];
   };
 }

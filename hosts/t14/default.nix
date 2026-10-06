@@ -44,6 +44,7 @@
     # === HARDWARE ===
     ../../linux/system/hardware/amd-laptop.nix
     ../../linux/system/hardware/keyring.nix
+    ../../linux/system/hardware/openlogi.nix
 
     # === NETWORKING ===
     ../../linux/system/networking/openssh.nix
