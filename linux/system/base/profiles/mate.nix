@@ -31,4 +31,5 @@
   gtk-engine-murrine
   hexchat
   networkmanagerapplet
+  gdk-pixbuf
 ])
