@@ -71,21 +71,8 @@ let
     };
   };
 
-  opencodeProvider = {
-    opencode = {
-      options = {
-        timeout = 3600000;
-        chunkTimeout = 3600000;
-      };
-    };
-  };
-
-  allProviders = nvidiaProvider // opencodeProvider;
-
-  # The OpenCode provider surface is defined here for both runtimes. V1
-  # disables catalog providers outside this allowlist; V2 emits a deny-first
-  # policy with these IDs as its ordered exceptions. NVIDIA remains allowed
-  # without entering the catalog-derived V1 disabled list.
+  # V2 provider policy uses this ordered allowlist. Keep NVIDIA as a named
+  # native provider declaration for the shared agent profile data.
   providerAllowlist = [
     "opencode"
     "opencode-go"
@@ -94,25 +81,6 @@ let
     "github-copilot"
     "nvidia"
   ];
-
-  catalogProviders = [
-    "opencode"
-    "opencode-go"
-    "anthropic"
-    "openai"
-    "github-copilot"
-    "cerebras"
-    "cloudflare-ai-gateway"
-    "cloudflare-workers-ai"
-    "cohere"
-    "groq"
-    "kilo"
-    "mistral"
-    "openrouter"
-    "google"
-  ];
-
-  disabledProviders = lib.filter (provider: !(lib.elem provider providerAllowlist)) catalogProviders;
 
   # ============================================================
   # CANONICAL: evidence-backed, manually-selected profiles.
@@ -1062,9 +1030,7 @@ in
 {
   inherit
     nvidiaProvider
-    allProviders
     providerAllowlist
-    disabledProviders
     providers
     activeProviderName
     activeProvider

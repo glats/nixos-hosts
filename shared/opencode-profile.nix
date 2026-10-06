@@ -15,19 +15,5 @@
     # mkDefault so per-host plain assignments win without mkForce.
     activeProviderName = lib.mkDefault "opencode-go-full";
 
-    # v2.5.0 managed plugins: sdd-task-result-artifacts and skill-registry
-    # enabled; model-variants and opencode-review-transport stay off (opt-in).
-    plugins = {
-      sddTaskResultArtifacts.enable = true;
-      skillRegistry.enable = true;
-      engram.enable = true;
-      rtk.enable = true;
-    };
-
-    # TUI plugins
-    tuiPlugins = {
-      subAgentStatusline.enable = true;
-      sddEngramManage.enable = false;
-    };
   };
 }

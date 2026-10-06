@@ -1,0 +1,33 @@
+{
+  "schemaName": "gentle-ai.sdd-preproposal/v1",
+  "revision": 1,
+  "change": "retire-opencode-v1",
+  "artifact_store": {"mode": "hybrid"},
+  "exploration": {
+    "outcome": "done",
+    "references": {"openspec": "openspec/changes/retire-opencode-v1/exploration.md", "engram": "observation:3603"}
+  },
+  "research": {
+    "selected": false,
+    "request": "User directed sdd-explore rather than sdd-research; continue retirement from existing exploration.",
+    "requested_source_classes": [],
+    "admission": "not_requested",
+    "outcome": "not_requested",
+    "evidence_references": {}
+  },
+  "product_decisions": {
+    "status": "confirmed",
+    "confirmed": [
+      "Retire active OpenCode V1 across rog, thinkcentre, t14 and macm5; operator accepts existing V2 stability.",
+      "Keep opencode2 and opencode2-home names, isolation and launcher behavior; do not introduce a bare opencode V2 alias or default-namespace cutover.",
+      "Keep current Gentle AI and OpenCode V2 pins; no v3/v4 or ODD migration.",
+      "Preserve V2 shared modules, MCP, Engram, providers, credentials and sessions; retain old V1 data without destructive migration.",
+      "Preserve existing OpenFang skill-sync capability by sourcing V2 assets instead of silently dropping it.",
+      "Retarget or retire V1-coupled helpers without leaving broken defaults; preserve scoped V2 proxy and standalone launch behavior.",
+      "Require focused regression and all-host evaluation; distinguish unavailable remote runtime proof from passing checks."
+    ],
+    "pending": [],
+    "owner": "orchestrator"
+  },
+  "proposal_ready": true
+}

@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import tempfile
 
@@ -13,12 +14,17 @@ expression = f'''
 let
   flake = builtins.getFlake {json.dumps(str(ROOT))};
   home = flake.homeConfigurations.rog.config;
-  file = config: builtins.fromJSON (builtins.readFile (builtins.getAttr {json.dumps(".config/opencode/opencode.json")} config.home.file).source);
   fileV2 = config: builtins.fromJSON (builtins.readFile (builtins.getAttr {json.dumps(".config/opencode-v2/opencode.json")} config.home.file).source);
 in {{
   inherit (home.programs.zsh) initContent;
-  v1 = file home;
   v2 = fileV2 home;
+  activation = home.home.activationPackage.drvPath;
+  hasAutomaticRestart = home.home.activation ? restartOpencodeV2;
+  openfangAfter = home.home.activation."syncOpencodeSkillsToOpenfang-v2".after;
+  openfangData = home.home.activation."syncOpencodeSkillsToOpenfang-v2".data;
+  setupData = home.home.activation."setupOpencodePluginRuntime-v2".data;
+  profileDirectory = home.home.profileDirectory;
+  username = home.home.username;
 }}
 '''
 result = json.loads(subprocess.check_output(
@@ -26,6 +32,12 @@ result = json.loads(subprocess.check_output(
     cwd=ROOT, text=True,
 ))
 source = (ROOT / "shared/shell-aliases.nix").read_text()
+assert not result["hasAutomaticRestart"], "activation must not restart active V2 sessions"
+assert "agents" in result["v2"] and "permissions" in result["v2"]
+assert "setupOpencodePluginRuntime-v2" in result["openfangAfter"]
+assert ".config/opencode-v2/skills" in result["openfangData"]
+assert ".config/opencode/skills" not in result["openfangData"]
+assert "opencode-v2/plugins" in result["setupData"]
 assert "optionalString (pkgs.stdenv.isDarwin && config.home.opencode.v2.enable)" in source
 assert "opencode2-project()" in source and "opencode2()" in source
 match = re.search(r"opencode2-home\(\) \(\n(.*?)\n      \)", source, re.S)
@@ -66,12 +78,18 @@ with tempfile.TemporaryDirectory() as tmp:
         expected_prefix, b"run", b"--server", b"http://localhost:4096", b"prompt"
     ]
 
-for version, mcps in (("v1", result["v1"]["mcp"]), ("v2", result["v2"]["mcp"]["servers"])):
-    for name, mcp in mcps.items():
-        if mcp.get("type", "local") == "local":
-            env = mcp.get("environment", {})
-            assert env["HTTP_PROXY"] == env["HTTPS_PROXY"] == env["ALL_PROXY"] == "", name
-            assert env["NO_PROXY"] == "*", name
-        else:
-            assert "environment" not in mcp, f"{version} remote MCP changed: {name}"
-print("PASS: macOS-only V2 launcher wiring and generated V1/V2 local MCP scrub")
+for name, mcp in result["v2"]["mcp"]["servers"].items():
+    if mcp.get("type", "local") == "local":
+        env = mcp.get("environment", {})
+        assert env["HTTP_PROXY"] == env["HTTPS_PROXY"] == env["ALL_PROXY"] == "", name
+        assert env["NO_PROXY"] == "*", name
+        paths = env["PATH"].split(":")
+        assert result["profileDirectory"] + "/bin" in paths, name
+        assert f'/etc/profiles/per-user/{result["username"]}/bin' in paths, name
+        assert "/run/current-system/sw/bin" in paths, name
+        assert shutil.which(mcp["command"][0], path=env["PATH"]), (
+            f"{name}: executable missing from the generated MCP PATH"
+        )
+    else:
+        assert "environment" not in mcp, f"V2 remote MCP changed: {name}"
+print("PASS: V2 activation preserves sessions; local MCP PATH and proxy hygiene; scoped launcher")

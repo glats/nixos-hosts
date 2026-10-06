@@ -34,7 +34,6 @@ with pkgs;
 
   # AI tooling
   codex
-  opencode
   opencode-v2
   openfang
 

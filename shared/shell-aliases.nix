@@ -178,7 +178,7 @@
 
       opencode2-project() {
         if [ -f "$PWD/.opencode/package.json" ] && ${pkgs.gnugrep}/bin/grep -Eq '"@opencode-ai/plugin"' "$PWD/.opencode/package.json"; then
-          echo "${config.home.opencode.v2.projectConfigCommand}: V1 OpenCode SDK project configuration is not compatible with OpenCode V2" >&2
+           echo "${config.home.opencode.v2.projectConfigCommand}: legacy OpenCode SDK project configuration is not compatible with OpenCode V2" >&2
           return 1
         fi
         (

@@ -123,12 +123,11 @@ sudo launchctl kickstart -k system/org.nixos.sing-box
 ### OpenCode with native OpenAI
 
 ```bash
-opencode-home          # V1: scopes proxy env to the launched process
 opencode2-home         # V2: loads its isolated environment and scopes proxy env
 opencode2-home run "prompt"
 ```
 
-Both wrappers probe only whether `127.0.0.1:2080` accepts a TCP connection;
+The wrapper probes only whether `127.0.0.1:2080` accepts a TCP connection;
 this is not a tunnel or provider-health check. When the listener is unavailable,
 the launcher prints a stderr notice and continues without adding proxy variables.
 V2 uses the packaged V2 executable and existing isolated environment; it does
@@ -167,27 +166,27 @@ The system proxy is ruled out (the security agent shadows it). For any blocked a
 | **Chromium** (Edge, Chrome, Brave, Arc) | Launch flag `--proxy-server=http://127.0.0.1:2080`, or config file: `defaults write com.microsoft.Edge ProxyMode -string fixed_servers` + `defaults write com.microsoft.Edge ProxyServer -string 127.0.0.1:2080` | Flag: every launch · defaults: permanent (⚠️ if IT pushes Edge policies via MDM, managed wins) · localhost is excluded from the proxy automatically (OAuth callback OK). `Edge Home.app` is deployed by this config as a double-clickable Edge launcher. **Clean Start**: quit every normal Edge instance first; Chromium ignores launch flags when it reuses an already-running instance. |
 | **Firefox / Gecko** | Profile → Manual proxy `127.0.0.1:2080` | Permanent in the profile |
 | **CLI** (curl, git, npm, pip…) | Env at invocation or wrapper: `HTTPS_PROXY=http://127.0.0.1:2080 curl …`, `git -c http.proxy=http://127.0.0.1:2080 clone …` | Per-invocation |
-| **OpenCode** | `opencode-home` (repo wrapper — scoped env + clean MCPs) | Zero (auto-detects) |
+| **OpenCode** | `opencode2-home` (isolated V2 wrapper — scoped env + clean MCPs) | Zero (auto-detects) |
 | **Native CFNetwork apps** (Mail, App Store…) | No reliable per-app door — the proxy dict is stomped by the agent | — |
 
 **General rule**: if the app has its own proxy config, point it at `127.0.0.1:2080` and all its traffic (blocked domains included) rides the link. If it only reads the system proxy, there is nothing to do without a wrapper. Never export `HTTP(S)_PROXY` in shell profiles — wrappers only (child MCPs inherit the env and must stay clean).
 
 ### Device OAuth bootstrap (the full flow)
 
-Each device does its **own** OAuth login — auth.json is not copied between hosts (the seed script is obsolete as a mechanism; it is a dormant fallback).
+Each device does its **own** OAuth login — auth.json is not copied between hosts. The legacy seed helper is retired and refuses to read, decrypt, or write auth data.
 
 ```bash
 # on the device, WITH the link up:
-opencode-home auth login       # wrapper: the token exchange rides the link
+opencode2-home auth login openai # isolated V2 native login; the token exchange rides the link
 ```
 
 1. Copy the URL opencode prints
 2. Open it in a browser **with the proxy configured** (Edge flag/policy or Firefox profile)
 3. Log in at auth.openai.com (the agent does not see that flow — it rides the link)
 4. Redirect to `localhost:1455` → Chromium excludes localhost from the proxy → opencode captures the code
-5. The token exchange is done by opencode itself **over the link** (hence the wrapper)
+5. The token exchange is done by OpenCode V2 itself **over the link** (hence the wrapper)
 
-⚠️ Do not run bare `opencode auth login`: the token exchange is an OpenAI-bound flow the agent would intercept without the wrapper's proxy env.
+⚠️ Use `opencode2-home auth login openai`: it preserves the isolated V2 home and scopes proxy variables to the launched process.
 
 ### Health check (30 seconds)
 

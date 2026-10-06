@@ -39,12 +39,6 @@ let
     "sub_issue_write"
   ];
 
-  v1RuntimeConfig = {
-    dir = "opencode";
-    label = "default";
-    version = "v1";
-  };
-
   v2RuntimeConfig = {
     dir = "opencode-v2";
     label = "v2";
@@ -93,11 +87,10 @@ in
     ./opencode/agents.nix
     ./ai-assets.nix
     ./opencode/permissions.nix
-    ./opencode/plugins.nix
   ];
 
   options.home.opencode = {
-    enable = mkEnableOption "OpenCode configuration with declarative JSON generation";
+    enable = mkEnableOption "OpenCode V2 configuration with declarative JSON generation";
 
     extraInitContent = mkOption {
       type = types.lines;
@@ -128,34 +121,6 @@ in
         on every turn. Default prunes rarely-used GitHub tool families
         (releases, tags, teams, collaborators, repo creation/fork,
         Copilot, sub-issues) from both GitHub MCP servers.
-      '';
-    };
-
-    compaction = mkOption {
-      type = types.submodule {
-        options = {
-          auto = mkOption {
-            type = types.bool;
-            default = true;
-            description = "Automatically compact the session when context is full.";
-          };
-          prune = mkOption {
-            type = types.bool;
-            default = true;
-            description = "Remove old tool outputs to save tokens (upstream default: false).";
-          };
-          reserved = mkOption {
-            type = types.int;
-            default = 10000;
-            description = "Token buffer kept free so compaction never overflows the window.";
-          };
-        };
-      };
-      description = ''
-        Session compaction settings, serialized as the top-level
-        `compaction` key. Key set verified against the pinned OpenCode
-        1.18.18: `keep.tokens`/`buffer` are unshipped v2 draft keys and
-        must NOT be emitted.
       '';
     };
 
@@ -226,12 +191,6 @@ in
         RTK_TELEMETRY_DISABLED = "1";
       };
 
-      home.file = mkIf config.home.opencode.plugins.warden.enable {
-        ".config/opencode/opencode-warden.json".text = builtins.toJSON {
-          audit.filePath = "${config.home.homeDirectory}/.local/state/opencode/warden/audit.log";
-        };
-      };
-
       # Export API keys from sops secrets at shell startup
       programs.zsh.initContent = lib.mkAfter ''
               if [ -f "${config.sops.secrets."opencode/nvidia_api_key".path}" ]; then
@@ -243,18 +202,6 @@ in
         ${config.home.opencode.extraInitContent}
       '';
     })
-
-    # Single runtime configuration
-    (mkIf config.home.opencode.enable (mkRuntimeConfig {
-      inherit
-        config
-        lib
-        pkgs
-        providers
-        ;
-      cfg = config.home.opencode;
-      runtimeConfig = v1RuntimeConfig;
-    }))
 
     (mkIf config.home.opencode.v2.enable (mkRuntimeConfig {
       inherit
@@ -293,11 +240,8 @@ in
           {
             assertion =
               config.home.file.${opencodeV2EnvironmentFile}.text == mkV2ShellEnvironment
-              && lib.hasInfix "managed-runtime.activation" config.home.activation.restartOpencodeV2.data
-              && lib.hasInfix "opencode2 service restart" config.home.activation.restartOpencodeV2.data
-              && lib.hasInfix "/bin/cp --remove-destination" config.home.activation.restartOpencodeV2.data
-              && !(lib.hasInfix "opencode2 reload" config.home.activation.restartOpencodeV2.data);
-            message = "OpenCode V2 activation must restart after managed runtime changes and replace its read-only stamp.";
+              && !(config.home.activation ? restartOpencodeV2);
+            message = "OpenCode V2 activation must preserve the environment file without restarting active sessions.";
           }
         ];
 
@@ -334,36 +278,6 @@ in
           RunAtLoad = true;
         };
       };
-
-      home.activation.restartOpencodeV2 = config.lib.dag.entryAfter [ "setupOpencodePluginRuntime-v2" ] ''
-        runtime_root=${lib.escapeShellArg v2.runtimeRoot}
-        stamp="$runtime_root/managed-runtime.activation"
-        fingerprint=${
-          pkgs.writeText "opencode-v2-managed-runtime-fingerprint" (
-            builtins.hashString "sha256" (
-              lib.concatStringsSep "\n" [
-                config.home.activation."setupOpencodePluginRuntime-v2".data
-                (toString config.home.file.".config/opencode-v2/opencode.json".source)
-                config.home.file.${opencodeV2EnvironmentFile}.text
-                (toString pkgs.opencode-v2)
-              ]
-            )
-          )
-        }
-
-        mkdir -p "$runtime_root"
-        if [ ! -f "$stamp" ] || ! ${pkgs.diffutils}/bin/cmp -s "$fingerprint" "$stamp"; then
-          source "${config.home.homeDirectory}/.local/share/opencode-v2/environment"
-          if ! ${pkgs.opencode-v2}/bin/opencode2 service restart; then
-            echo "restartOpencodeV2: native service restart failed" >&2
-            exit 1
-          fi
-          if ! ${pkgs.coreutils}/bin/cp --remove-destination "$fingerprint" "$stamp"; then
-            echo "restartOpencodeV2: failed to record the active configuration" >&2
-            exit 1
-          fi
-        fi
-      '';
 
     })
   ];

@@ -2,7 +2,9 @@
 
 OpenCode V2 remains opt-in as `opencode2` until the SDD and reviewer round-trip
 has passed on `rog`, `thinkcentre`, `t14`, and `macm5`. Do not run this migration
-until that gate is recorded and the V1 fallback is no longer needed.
+until every mandatory gate passes and cutover is explicitly authorized. The
+separate V1 retirement removes active V1 delivery; it does not authorize an XDG
+namespace migration or change the explicit `opencode2` launch command.
 
 ## Preconditions
 
@@ -33,5 +35,5 @@ preserved credentials, and all seven MCPs reconnect.
 
 Stop the default-root V2 native service, restore the backed-up default roots, and
 put the saved V2 roots back at `~/.config/opencode-v2` and `~/.local/opencode-v2`.
-Re-activate the previous generation. V1 remains a separate fallback throughout
-the migration and is not modified by this procedure.
+Re-activate the previous generation. V1 configuration, authentication, and
+sessions remain archived and untouched; they are not a runnable fallback.

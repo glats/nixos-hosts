@@ -1,6 +1,7 @@
 {
   buildGoModule,
   git,
+  jq,
   lib,
   makeWrapper,
   openspec,
@@ -51,6 +52,8 @@ buildGoModule {
     git
     makeWrapper
   ];
+
+  nativeCheckInputs = [ jq ];
 
   postFixup = ''
     # qrencode is a runtime dep of device-link (terminal QR output).

@@ -1,280 +1,297 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"testing"
 )
 
-func TestBuildMcpList(t *testing.T) {
-	cases := []struct {
-		name string
-		in   []string
-		want string
-	}{
-		{"single", []string{"nixos"}, `"nixos"`},
-		{"multiple", []string{"nixos", "github"}, `"nixos","github"`},
-		{"empty", nil, ""},
-	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			if got := buildMcpList(tc.in); got != tc.want {
-				t.Fatalf("buildMcpList(%q) = %q, want %q", tc.in, got, tc.want)
-			}
-		})
-	}
-}
-
-func TestShellQuoteEscape(t *testing.T) {
-	// bash ${script//\'/\'\\\'\'}: every single quote becomes '\''
-	cases := []struct {
-		in, want string
-	}{
-		{"", ""},
-		{"no quotes", "no quotes"},
-		{"cfg.get('mcp', {})", `cfg.get('\''mcp'\'', {})`},
-	}
-	for _, tc := range cases {
-		if got := shellQuoteEscape(tc.in); got != tc.want {
-			t.Errorf("shellQuoteEscape(%q) = %q, want %q", tc.in, got, tc.want)
+func TestRemoteV2PreflightRejectsUnavailableRuntime(t *testing.T) {
+	root := t.TempDir()
+	for _, content := range []string{"", `{"agent":{}}`, `{"agents":{}}`} {
+		config := filepath.Join(root, "opencode.json")
+		if content == "" {
+			_ = os.Remove(config)
+		} else if err := os.WriteFile(config, []byte(content), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if err := validateV2Runtime(root); err == nil {
+			t.Fatalf("accepted incomplete V2 root with %q", content)
+		}
+		if _, err := os.Stat(filepath.Join(root, ".bak")); !os.IsNotExist(err) {
+			t.Fatalf("preflight wrote backup: %v", err)
 		}
 	}
 }
 
-func TestRemotePythonCmd(t *testing.T) {
-	cmd := remotePythonCmd(`print('hi')`)
-	if cmd != `python3 -c 'print('\''hi'\'')'` {
-		t.Fatalf("remotePythonCmd = %q", cmd)
+func TestValidateV2RuntimeRejectsNonV2NamespaceBeforeReading(t *testing.T) {
+	if err := validateV2Runtime(filepath.Join(t.TempDir(), "opencode")); err == nil || !strings.Contains(err.Error(), "opencode-v2 namespace") {
+		t.Fatalf("legacy namespace error = %v", err)
 	}
 }
 
-func TestMcpDisableScript(t *testing.T) {
-	got := mcpDisableScript("/home/u/.config/opencode", `"nixos"`)
-	// Expansion points: path line and disabled list line; everything
-	// else must be the bash heredoc verbatim.
-	want := `import json, sys
-path = "/home/u/.config/opencode/opencode.json"
-try:
-    with open(path) as f:
-        cfg = json.load(f)
-    mcps = cfg.get('mcp', {})
-    disabled = ["nixos"]
-    for name in disabled:
-        if name in mcps:
-            mcps[name]['enabled'] = False
-            print(f'  Disabled MCP: {name}')
-    with open(path, 'w') as f:
-        json.dump(cfg, f, indent=2)
-except Exception as e:
-    print(f'WARNING: Failed to patch MCPs: {e}', file=sys.stderr)
-    sys.exit(0)  # non-fatal
-`
-	if got != want {
-		t.Fatalf("mcpDisableScript mismatch:\n got: %q\nwant: %q", got, want)
-	}
-}
-
-func TestProviderRenameScript(t *testing.T) {
-	got := providerRenameScript("/cfg")
-	want := `import json, sys
-path = "/cfg/opencode.json"
-try:
-    with open(path) as f:
-        cfg = json.load(f)
-    prov = cfg.get('provider', {})
-    if 'opencode' in prov and 'opencode-go' not in prov:
-        prov['opencode-go'] = prov.pop('opencode')
-        print('  Renamed provider: opencode -> opencode-go')
-        with open(path, 'w') as f:
-            json.dump(cfg, f, indent=2)
-except Exception as e:
-    print(f'WARNING: Failed to fix provider name: {e}', file=sys.stderr)
-`
-	if got != want {
-		t.Fatalf("providerRenameScript mismatch:\n got: %q\nwant: %q", got, want)
-	}
-}
-
-func TestInstallCmdShape(t *testing.T) {
-	// The remote install command mirrors the bash double-quoted string
-	// after backslash-newline continuations were removed (the 6-space
-	// indentation of the source lines stays) and \$ became a literal $.
-	dl := "curl -sL https://example.com/x.tar.gz"
-	got := "mkdir -p ~/bin &&       (" + dl + ") | tar -xzf - -C /tmp/ github-mcp-server &&" +
-		"       cp /tmp/github-mcp-server ~/bin/ &&" +
-		"       rm -f /tmp/github-mcp-server &&" +
-		"       chmod +x ~/bin/github-mcp-server &&" +
-		"       echo 'Installed: $(~/bin/github-mcp-server --version 2>&1)'"
-	want := "mkdir -p ~/bin &&       (curl -sL https://example.com/x.tar.gz) | tar -xzf - -C /tmp/ github-mcp-server &&       cp /tmp/github-mcp-server ~/bin/ &&       rm -f /tmp/github-mcp-server &&       chmod +x ~/bin/github-mcp-server &&       echo 'Installed: $(~/bin/github-mcp-server --version 2>&1)'"
-	if got != want {
-		t.Fatalf("install command mismatch:\n got: %q\nwant: %q", got, want)
-	}
-	if !strings.Contains(got, `echo 'Installed: $(~/bin/github-mcp-server --version 2>&1)'`) {
-		t.Fatalf("literal $(...) echo lost: %q", got)
-	}
-}
-
-func TestCompatibilityPluginsOnlyNamedPaths(t *testing.T) {
-	paths, actions := compatibilityPlugins()
-	if strings.Join(paths, ",") != "plugins/rtk.ts,plugins/skill-registry.ts" {
-		t.Fatalf("paths = %#v", paths)
-	}
-	if strings.Join(actions, ",") != "Remove remote asset: plugins/rtk.ts,Remove remote asset: plugins/skill-registry.ts" {
-		t.Fatalf("actions = %#v", actions)
-	}
-}
-
-func TestSnapshotTransferFailureSuppressesCompatibility(t *testing.T) {
-	compatibilityCalled := false
-	transferErr := fmt.Errorf("rsync failed")
-
-	if err := runTransferAndCompatibility(func() error { return transferErr }, func() {
-		compatibilityCalled = true
-	}); err != transferErr {
-		t.Fatalf("transfer error = %v, want %v", err, transferErr)
-	}
-	if compatibilityCalled {
-		t.Fatal("compatibility stage ran after failed transfer")
-	}
-}
-
-func TestAdaptOpencodeJSONPreservesAgentsAndDisablesBrowserMCP(t *testing.T) {
-	input := []byte(`{"agent":{"alpha":{"model":"openai/gpt-5.6-terra"},"beta":{"prompt":"none"}},"mcp":{"browsermcp":{"enabled":true,"url":"keep"},"other":{"enabled":true}}}`)
-	got, actions, err := adaptOpencodeJSON(input)
-	if err != nil {
+func TestValidateV2RuntimeRequiresIsolatedEnvironment(t *testing.T) {
+	home := t.TempDir()
+	root := filepath.Join(home, ".config", "opencode-v2")
+	if err := os.MkdirAll(root, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	var value map[string]json.RawMessage
-	if err := json.Unmarshal(got, &value); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "opencode.json"), []byte(`{"default_agent":"default","agents":{"default":{"mode":"primary"}}}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	var agents map[string]json.RawMessage
-	if err := json.Unmarshal(value["agent"], &agents); err != nil {
+	if err := validateV2Runtime(root); err == nil {
+		t.Fatal("accepted missing isolated environment")
+	}
+	envDir := filepath.Join(home, ".local", "share", "opencode-v2")
+	if err := os.MkdirAll(envDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	var alpha, beta map[string]json.RawMessage
-	if err := json.Unmarshal(agents["alpha"], &alpha); err != nil {
+	if err := os.WriteFile(filepath.Join(envDir, "environment"), []byte(validEnvironment(home, root)), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if string(alpha["model"]) != `"openai/gpt-5.6-terra"` {
-		t.Fatalf("OpenAI model changed: %s", alpha["model"])
-	}
-	if err := json.Unmarshal(agents["beta"], &beta); err != nil {
-		t.Fatal(err)
-	}
-	if _, ok := beta["model"]; ok {
-		t.Fatalf("model-less agent gained a model: %#v", beta)
-	}
-	if !strings.Contains(string(got), "openai/gpt-5.6-terra") || strings.Contains(string(got), "opencode-go/glm") {
-		t.Fatalf("model graph was changed: %s", got)
-	}
-	if len(actions) != 1 || actions[0] != "Disable MCP: browsermcp" {
-		t.Fatalf("actions = %#v", actions)
-	}
-	repeated, repeatedActions, err := adaptOpencodeJSON(got)
-	if err != nil || !reflect.DeepEqual(repeatedActions, actions) || string(repeated) != string(got) {
-		t.Fatalf("repeat changed compatible state: %q %#v", repeated, repeatedActions)
+	if err := validateV2Runtime(root); err != nil {
+		t.Fatalf("rejected valid isolated runtime: %v", err)
 	}
 }
 
-func TestAdaptOpencodeJSONBrowserMCPValidation(t *testing.T) {
-	for _, input := range []string{"{", `{"mcp":{"browsermcp":[]}}`} {
-		if _, _, err := adaptOpencodeJSON([]byte(input)); err == nil {
-			t.Fatalf("adaptOpencodeJSON(%s) unexpectedly succeeded", input)
+func TestEnvironmentRejectsCommentOnlyStaleAndLegacyContracts(t *testing.T) {
+	home := t.TempDir()
+	root := filepath.Join(home, ".config", "opencode-v2")
+	if err := os.MkdirAll(root, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "opencode.json"), []byte(`{"agents":{"default":{"mode":"primary"}},"default_agent":"default"}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	envPath := filepath.Join(home, ".local", "share", "opencode-v2", "environment")
+	if err := os.MkdirAll(filepath.Dir(envPath), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	for _, contents := range []string{"# OPENCODE_CONFIG_DIR=opencode-v2\n", strings.Replace(validEnvironment(home, root), "export OPENCODE_DB=", "export XDG_DATA_HOME=", 1), strings.Replace(validEnvironment(home, root), ".local/share/opencode-v2", ".local/share/opencode", 1)} {
+		if err := os.WriteFile(envPath, []byte(contents), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if err := validateV2Runtime(root); err == nil {
+			t.Fatalf("accepted stale/legacy environment %q", contents)
 		}
 	}
-	got, actions, err := adaptOpencodeJSON([]byte(`{"agent":{"x":{"model":"openai/x"}},"mcp":{"other":{"enabled":true}}}`))
-	if err != nil || len(actions) != 0 || strings.Contains(string(got), "browsermcp") {
-		t.Fatalf("absent BrowserMCP was not a no-op: %q %#v %v", got, actions, err)
+}
+
+func TestEnvironmentAcceptsCoherentCustomRuntimeRoot(t *testing.T) {
+	home := filepath.Join(t.TempDir(), "home with ' quote")
+	root := filepath.Join(home, ".config", "opencode-v2")
+	runtimeRoot := filepath.Join(t.TempDir(), "custom runtime ' root")
+	contents := validEnvironmentAt(home, root, runtimeRoot)
+	if err := validateEnvironmentFile(contents, root, home); err != nil {
+		t.Fatalf("custom runtime root rejected: %v", err)
 	}
 }
 
-func TestApplyCompatibilityDryRunDoesNotUseSSH(t *testing.T) {
-	root := t.TempDir()
-	config := []byte(`{"agent":{"x":{"model":"openai/gpt-5.6-terra"}},"mcp":{"browsermcp":{"enabled":true}}}`)
-	if err := os.WriteFile(filepath.Join(root, "opencode.json"), config, 0o644); err != nil {
-		t.Fatal(err)
+func TestEnvironmentAcceptsNixEscapeShellArgGeneratedLiteralForms(t *testing.T) {
+	home := t.TempDir()
+	root := filepath.Join(home, ".config", "opencode-v2")
+	plain := validEnvironmentAt(home, root, filepath.Join(home, ".local", "opencode-v2"))
+	if !strings.Contains(plain, "export OPENCODE_CONFIG_DIR="+root+"\n") || !strings.Contains(plain, "export OPENCODE_DISABLE_PROJECT_CONFIG=1\n") {
+		t.Fatalf("fixture does not match lib.escapeShellArg safe literals:\n%s", plain)
 	}
-	called := false
-	actions, err := applyCompatibility(true, root, "/remote", "host", func(string, string) ([]byte, error) {
-		called = true
-		return nil, nil
-	}, func(string, string, []byte) error {
-		called = true
-		return nil
-	}, func(string, string) error {
-		called = true
-		return nil
-	})
-	if err != nil || called {
-		t.Fatalf("dry run called SSH=%v actions=%#v err=%v", called, actions, err)
+	if err := validateEnvironmentFile(plain, root, home); err != nil {
+		t.Fatalf("Nix-generated safe literal rejected: %v", err)
 	}
-	want := []string{"Disable MCP: browsermcp", "Remove remote asset: plugins/rtk.ts", "Remove remote asset: plugins/skill-registry.ts"}
-	if !reflect.DeepEqual(actions, want) {
-		t.Fatalf("dry-run actions = %#v, want %#v", actions, want)
+	quotedHome := filepath.Join(t.TempDir(), "home with ' apostrophe")
+	quotedRoot := filepath.Join(quotedHome, ".config", "opencode-v2")
+	quoted := validEnvironmentAt(quotedHome, quotedRoot, filepath.Join(t.TempDir(), "runtime with ' apostrophe"))
+	if err := validateEnvironmentFile(quoted, quotedRoot, quotedHome); err != nil {
+		t.Fatalf("Nix-generated quoted literal rejected: %v", err)
 	}
 }
 
-func TestApplyCompatibilityReadsTargetAndRemovesOnlyFixedAssets(t *testing.T) {
-	root := t.TempDir()
-	config := []byte(`{"agent":{"x":{"model":"openai/gpt-5.6-terra"}},"mcp":{"browsermcp":{"enabled":true}}}`)
-	if err := os.WriteFile(filepath.Join(root, "opencode.json"), config, 0o644); err != nil {
-		t.Fatal(err)
-	}
-	var state []byte
-	var calls []string
-	read := func(_, command string) ([]byte, error) { calls = append(calls, "read "+command); return config, nil }
-	write := func(_ string, _ string, input []byte) error {
-		state = append([]byte(nil), input...)
-		calls = append(calls, "write")
-		return nil
-	}
-	remove := func(_, command string) error {
-		calls = append(calls, "remove "+command)
-		return nil
-	}
-	if _, err := applyCompatibility(false, root, "/remote", "host", read, write, remove); err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(string(state), "openai/gpt-5.6-terra") || strings.Contains(string(state), "opencode-go/glm") {
-		t.Fatalf("target model changed: %s", state)
-	}
-	want := []string{"read cat '/remote/opencode.json'", "write", "remove rm -f '/remote/plugins/rtk.ts' '/remote/plugins/skill-registry.ts'"}
-	if !reflect.DeepEqual(calls, want) {
-		t.Fatalf("calls = %#v, want %#v", calls, want)
+func TestEnvironmentRejectsUnquotedShellInjection(t *testing.T) {
+	home := t.TempDir()
+	root := filepath.Join(home, ".config", "opencode-v2")
+	contents := strings.Replace(validEnvironment(home, root), "export XDG_CACHE_HOME=", "export XDG_CACHE_HOME=$(touch /tmp/opencode-sync-pwn); ", 1)
+	if err := validateEnvironmentFile(contents, root, home); err == nil {
+		t.Fatal("accepted active shell syntax")
 	}
 }
 
-func TestApplyCompatibilityWritesThenRemoves(t *testing.T) {
-	root := t.TempDir()
-	plugin := filepath.Join(root, "plugins", "rtk.ts")
-	if err := os.MkdirAll(filepath.Dir(plugin), 0o755); err != nil {
+func TestTransferSensitiveExclusionsWinBeforeRecursiveIncludes(t *testing.T) {
+	args := transferArgs("/local", "/home/user/.config/opencode-v2", "user@host", false)
+	cases := []struct {
+		path         string
+		wantExcluded bool
+	}{
+		{"plugins/auth.json", true}, {"plugins/cache.db", true}, {"plugins/session.sqlite", true},
+		{"plugins/session.db-wal", true}, {"plugins/credentials.json", true}, {"plugins/nested/token.json", true},
+		{"plugins/.env", true}, {"plugins/.env.production", true}, {"plugins/provider.key", true}, {"plugins/managed.ts", false},
+		{"skills/tool/SKILL.md", false}, {"commands/run.md", false},
+	}
+	for _, tc := range cases {
+		if got := firstMatchExcluded(args, tc.path); got != tc.wantExcluded {
+			t.Errorf("%s excluded=%v want %v; args=%v", tc.path, got, tc.wantExcluded, args)
+		}
+	}
+}
+
+func validEnvironment(home, configRoot string) string {
+	runtime := filepath.Join(home, ".local", "share", "opencode-v2")
+	return validEnvironmentAt(home, configRoot, runtime)
+}
+
+func validEnvironmentAt(home, configRoot, runtime string) string {
+	values := map[string]string{
+		"XDG_CONFIG_HOME": configRoot, "XDG_DATA_HOME": filepath.Join(runtime, "data"),
+		"XDG_CACHE_HOME": filepath.Join(runtime, "cache"), "XDG_STATE_HOME": filepath.Join(runtime, "state"),
+		"OPENCODE_CONFIG_DIR": configRoot, "OPENCODE_DB": filepath.Join(runtime, "data", "opencode.db"),
+		"TMPDIR": filepath.Join(runtime, "tmp"), "OPENCODE_DISABLE_PROJECT_CONFIG": "1",
+	}
+	var lines []string
+	for _, key := range []string{"XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_CACHE_HOME", "XDG_STATE_HOME", "OPENCODE_CONFIG_DIR", "OPENCODE_DB", "TMPDIR", "OPENCODE_DISABLE_PROJECT_CONFIG"} {
+		lines = append(lines, "export "+key+"="+nixEscapeShellArgFixture(values[key]))
+	}
+	lines = append(lines, "export PATH='/nix/profile/bin:/run/current-system/sw/bin'")
+	return strings.Join(lines, "\n") + "\n"
+}
+
+func nixEscapeShellArgFixture(value string) string {
+	for _, r := range value {
+		if !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || strings.ContainsRune("_./:-", r)) {
+			return shellQuote(value)
+		}
+	}
+	return value
+}
+
+func firstMatchExcluded(args []string, path string) bool {
+	for _, arg := range args {
+		var pattern string
+		switch {
+		case strings.HasPrefix(arg, "--exclude="):
+			pattern = strings.TrimPrefix(arg, "--exclude=")
+		case strings.HasPrefix(arg, "--include="):
+			pattern = strings.TrimPrefix(arg, "--include=")
+		default:
+			continue
+		}
+		matched, _ := filepath.Match(pattern, path)
+		if strings.HasPrefix(pattern, "**/") {
+			matched, _ = filepath.Match(strings.TrimPrefix(pattern, "**/"), filepath.Base(path))
+		} else if !strings.Contains(pattern, "/") {
+			matched, _ = filepath.Match(pattern, filepath.Base(path))
+		}
+		if matched {
+			return strings.HasPrefix(arg, "--exclude=")
+		}
+	}
+	return false
+}
+
+func TestPreflightFailurePreventsBackupAndTransfer(t *testing.T) {
+	backupCalls, transferCalls := 0, 0
+	err := runAfterPreflight(func() error { return os.ErrNotExist }, func() error { backupCalls++; return nil }, func() error { transferCalls++; return nil })
+	if err == nil || backupCalls != 0 || transferCalls != 0 {
+		t.Fatalf("err=%v backup=%d transfer=%d", err, backupCalls, transferCalls)
+	}
+}
+
+func TestRemotePreflightRequiresUsableTargetAndDestinationEnvironment(t *testing.T) {
+	home := filepath.Join(t.TempDir(), "remote home ' quote")
+	if err := os.MkdirAll(home, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(root, "opencode.json"), []byte("{\"agent\":{\"x\":{\"model\":\"openai/x\"}}}"), 0o644); err != nil {
+	root := filepath.Join(home, ".config", "opencode-v2")
+	if err := os.MkdirAll(root, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(plugin, []byte("asset"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "opencode.json"), []byte(`{"default_agent":"default","agents":{"default":{}}}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	var calls []string
-	_, err := applyCompatibility(false, root, "/remote", "host", func(string, string) ([]byte, error) {
-		return []byte(`{"mcp":{"browsermcp":{"enabled":true}}}`), nil
-	}, func(_, command string, input []byte) error {
-		calls = append(calls, "write "+command+" "+string(input))
-		return nil
-	}, func(_, command string) error {
-		calls = append(calls, "remove "+command)
-		return nil
-	})
+	envDir := filepath.Join(home, ".local", "share", "opencode-v2")
+	if err := os.MkdirAll(envDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	envFile := filepath.Join(envDir, "environment")
+	if err := os.WriteFile(envFile, []byte(validEnvironment(home, root)), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	bin := filepath.Join(home, "bin")
+	if err := os.MkdirAll(bin, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	jq, err := exec.LookPath("jq")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(calls) != 2 || !strings.HasPrefix(calls[0], "write cat > '/remote/.opencode.json.compat.tmp'") || calls[1] != "remove rm -f '/remote/plugins/rtk.ts' '/remote/plugins/skill-registry.ts'" {
-		t.Fatalf("calls = %#v", calls)
+	if err := os.Symlink(jq, filepath.Join(bin, "jq")); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"awk", "sed", "bash"} {
+		target, err := exec.LookPath(name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Symlink(target, filepath.Join(bin, name)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	command := remotePreflightCommand(root)
+	run := func() error {
+		cmd := exec.Command("bash", "-c", command)
+		cmd.Env = append(os.Environ(), "HOME="+home, "PATH="+bin)
+		cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
+		return cmd.Run()
+	}
+	if err := run(); err == nil {
+		t.Fatal("preflight accepted missing opencode2")
+	}
+	if err := os.WriteFile(filepath.Join(bin, "opencode2"), []byte("#!/bin/sh\necho 'opencode v2.0.14'\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := run(); err != nil {
+		t.Fatalf("valid destination runtime rejected: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(bin, "opencode2"), []byte("#!/bin/sh\necho 'opencode v1.18.18'\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := run(); err == nil {
+		t.Fatal("preflight accepted stale V1 executable")
+	}
+	if err := os.WriteFile(filepath.Join(bin, "opencode2"), []byte("#!/bin/sh\necho 'opencode v2.0.14'\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(envFile, []byte(strings.Replace(validEnvironment(home, root), "XDG_CACHE_HOME", "XDG_DATA_HOME", 1)), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := run(); err == nil {
+		t.Fatal("preflight accepted mismatched destination environment")
+	}
+	if err := os.WriteFile(envFile, []byte("# OPENCODE_CONFIG_DIR=opencode-v2\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := run(); err == nil {
+		t.Fatal("preflight accepted comment-only environment")
+	}
+}
+
+func TestRemotePathsAreQuotedAndTransferIsAssetsOnly(t *testing.T) {
+	root := resolveRemoteRoot("/home/user with spaces/.config/opencode-v2")
+	if root != "/home/user with spaces/.config/opencode-v2" {
+		t.Fatalf("root = %q", root)
+	}
+	command := remotePreflightScript("/home/u/$(touch pwn)'x")
+	if !strings.Contains(command, "root="+shellQuote("/home/u/$(touch pwn)'x")) {
+		t.Fatalf("unsafe remote preflight root: %s", command)
+	}
+	args := strings.Join(transferArgs("/local", root, "user@host", false), "\n")
+	for _, want := range []string{"skills/**", "commands/**", "plugins/**", "--exclude=auth.json", "--exclude=*.db", "--exclude=*.sqlite*"} {
+		if !strings.Contains(args, want) {
+			t.Fatalf("transfer args omit %q: %s", want, args)
+		}
+	}
+	for _, forbidden := range []string{"--delete", "npm install", "providerRename", "--include=package.json"} {
+		if strings.Contains(args, forbidden) {
+			t.Fatalf("transfer includes forbidden operation %q", forbidden)
+		}
 	}
 }
