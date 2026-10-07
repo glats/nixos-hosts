@@ -34,6 +34,7 @@ result = json.loads(subprocess.check_output(
 source = (ROOT / "shared/shell-aliases.nix").read_text()
 assert not result["hasAutomaticRestart"], "activation must not restart active V2 sessions"
 assert "agents" in result["v2"] and "permissions" in result["v2"]
+assert result["v2"]["plugins"] == ["opencode-claude-subscription@0.1.4"]
 assert "setupOpencodePluginRuntime-v2" in result["openfangAfter"]
 assert ".config/opencode-v2/skills" in result["openfangData"]
 assert ".config/opencode/skills" not in result["openfangData"]

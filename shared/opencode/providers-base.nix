@@ -618,7 +618,7 @@ let
       # Balanced OpenAI tier: Terra for normal SDD judgment and tool work;
       # Luna for bounded helpers and mechanical apply loops.
       phases = {
-        gentle-orchestrator = "openai/gpt-6-sol";
+        gentle-orchestrator = "openai/gpt-6.1-sol";
         sdd-init = "openai/gpt-5.6-luna";
         sdd-explore = "openai/gpt-6.1-sol";
         sdd-propose = "openai/gpt-6.1-sol";

@@ -92,6 +92,7 @@ let
   jsonFile = pkgs.writeText "opencode.json" (
     builtins.toJSON ({
       update = "disable";
+      plugins = [ "opencode-claude-subscription@0.1.4" ];
       default_agent = "gentle-orchestrator";
       agents = v2Agents;
       permissions = v2Permissions.global;
