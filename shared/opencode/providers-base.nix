@@ -258,7 +258,7 @@ let
       # docs.anthropic.com/en/docs/about-claude/pricing.
       phases = {
         # Sonnet 5 is the fast, capable default for day-to-day agent work.
-        gentle-orchestrator = "anthropic/claude-sonnet-5";
+        gentle-orchestrator = "anthropic/claude-opus-5-5";
         sdd-init = "anthropic/claude-haiku-4-5";
         sdd-explore = "anthropic/claude-sonnet-5";
         sdd-propose = "anthropic/claude-sonnet-5";
@@ -288,7 +288,7 @@ let
       # and architecture judgment. Fable 5.1 ($10/$50) is not cost-justified.
       phases = {
         # A looping router benefits more from Sonnet's speed and cost than Opus.
-        gentle-orchestrator = "anthropic/claude-sonnet-5-5";
+        gentle-orchestrator = "anthropic/claude-opus-5-5";
         sdd-init = "anthropic/claude-haiku-4-5";
         sdd-explore = "anthropic/claude-sonnet-5";
         sdd-propose = "anthropic/claude-opus-5";
