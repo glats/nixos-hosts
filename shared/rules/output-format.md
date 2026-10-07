@@ -15,11 +15,16 @@ command output, and file content are exempt from these rules.
 
 ## Code Language
 
-Everything that ships with the code is always in English, regardless of
-the language the user writes in: identifiers, code comments, commit
-messages, PR/issue text, documentation and runbooks, and user-facing CLI
-messages. The same applies to persistent artifacts: memory notes (engram)
-and SDD artifacts (openspec) are always written in English.
+Repository code and engineering artifacts default to English: identifiers,
+code comments, commit messages, PR/issue text, repository documentation and
+runbooks, and user-facing CLI messages.
+
+This default does not restrict user-requested translations, localized content,
+or bilingual documents. Create and publish those in the language requested by
+the user, including in Confluence, Jira, and other external documentation
+systems. Do not refuse a translation or publication because of this default.
+Memory (engram), SDD (openspec), and internal agent-to-agent outputs remain in
+English as specified below.
 
 ## Inter-Agent Language
 
