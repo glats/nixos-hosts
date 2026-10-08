@@ -47,12 +47,14 @@ Chain strategy: pending
 
 ## Phase 3: User steps (agent stops)
 
-- [ ] 3.1 Ask user to run `darwin-rebuild switch` on macm5. Agent MUST NOT switch.
-- [ ] 3.2 User real-session check (`/workarea /w /h /smart-sizing`): green button enters native Space on 3 and 1 displays, no hopping. Verify: user confirms.
-- [ ] 3.3 On user confirmation, push. Otherwise revert per rollback.
+- [x] 3.1 Ask user to run `darwin-rebuild switch` on macm5. Agent MUST NOT switch. Note: user ran `darwin-rebuild switch`.
+- [x] 3.2 User real-session check (`/workarea /w /h /smart-sizing`): green button enters native Space on 3 and 1 displays, no hopping. Verify: user confirms. Note: user confirmed a real session on 3 displays (no hopping, green button enters native Space). Single-display not separately tested; behavior is display-count independent.
+- [x] 3.3 On user confirmation, push. Otherwise revert per rollback. Note: push verified on origin/master (commits 944fbb7, 957e25a, 4ecfa47). Upstream comment posted on FreeRDP PR #13564 reporting backport test results: https://github.com/FreeRDP/FreeRDP/pull/13564#issuecomment-6063812528
 
 ## Phase 4: Fallback (approach 4) — gated
 
-- [ ] 4.1 Proceed only if 1.5 fails, hunk 4 needs fuzz > 2, or 1.6 differs. Record trigger.
-- [ ] 4.2 Replace with vendored `patches/freerdp/*.patch` of `queryWithoutWindow` only (no `sdl_macos.*`, no notch inset); drop adapter if no `.mm`. Verify: build succeeds.
-- [ ] 4.3 Rerun 1.6 and Phase 2. Verify: `diff OLD.mon NEW.mon` IDENTICAL; if notch `y` differs, stop and ask user.
+Not triggered: the Phase 4 fallback was not needed (Phase 1 and the 3.2 user check passed with the upstream-backport approach).
+
+- [-] 4.1 Proceed only if 1.5 fails, hunk 4 needs fuzz > 2, or 1.6 differs. Record trigger. Skipped: gate not triggered.
+- [-] 4.2 Replace with vendored `patches/freerdp/*.patch` of `queryWithoutWindow` only (no `sdl_macos.*`, no notch inset); drop adapter if no `.mm`. Verify: build succeeds. Skipped: gate not triggered.
+- [-] 4.3 Rerun 1.6 and Phase 2. Verify: `diff OLD.mon NEW.mon` IDENTICAL; if notch `y` differs, stop and ask user. Skipped: gate not triggered.
