@@ -45,6 +45,8 @@ in
     dependencies = builtins.filter (d: d.pname != "litellm") old.dependencies;
   });
 
+  wstunnel-relay = final.callPackage ../pkgs/wstunnel-relay { };
+
   # Cross-platform packages from flake outputs
   inherit (self.packages.${system})
     nixos-scripts

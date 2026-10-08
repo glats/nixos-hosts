@@ -37,6 +37,7 @@ final: prev: {
     qtbase = final.qt6.qtbase;
     qtsvg = final.qt6.qtsvg;
   };
+  wstunnel-relay = final.callPackage ../pkgs/wstunnel-relay { };
 
   # linuxPackages_zen is used as-is from nixpkgs (pinned via flake.lock).
   # Previous versions of zen (early 7.x) produced vmlinuz instead of bzImage

@@ -32,6 +32,16 @@ creation_rules:
           - *host_rog
           - *host_macm5
 
+  # Relay credentials are intentionally not present yet. When provisioned,
+  # keep this rule before the shared catch-all and limit access to the two
+  # hosts that consume the client/server halves.
+  - path_regex: secrets/shared/ssh-relay\.yaml
+    key_groups:
+      - age:
+          - *admin_glats
+          - *host_rog
+          - *host_macm5
+
   # macm5 Home Manager needs only the shared GitHub/GPG password records.
   - path_regex: secrets/shared/passwords\.yaml
     key_groups:

@@ -89,7 +89,7 @@ assert lib.assertMsg (lib.all validRecord records)
   sshSettingsFor =
     { source, sshDir }:
     lib.listToAttrs (
-      lib.concatMap (
+      (lib.concatMap (
         target:
         let
           member = members.${target};
@@ -110,6 +110,22 @@ assert lib.assertMsg (lib.all validRecord records)
             inherit value;
           }
         ]
-      ) (builtins.filter (name: name != source) names)
+      ) (builtins.filter (name: name != source) names))
+      ++ lib.optional (source == "rog") {
+        name = "macm5-relay";
+        value = {
+          HostName = "127.0.0.1";
+          Port = 22220;
+          User = members.macm5.user;
+          IdentityFile = "${sshDir}/${members.${source}.identityFile}";
+          IdentitiesOnly = true;
+          HostKeyAlias = "macm5";
+          StrictHostKeyChecking = "yes";
+          PreferredAuthentications = "publickey";
+          PasswordAuthentication = false;
+          KbdInteractiveAuthentication = false;
+          BatchMode = true;
+        };
+      }
     );
 }
