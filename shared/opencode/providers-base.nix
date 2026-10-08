@@ -82,6 +82,48 @@ let
     "nvidia"
   ];
 
+  # Fit 2026-10-08: Opus owns judgment; OpenAI supplies the bounded workforce.
+  # User observation: Sol is insufficient as the primary quality anchor.
+  # Sources: platform.claude.com/docs/en/models/opus-5-5/overview (agentic
+  # work, $4/$20 per MTok) and learn.chatgpt.com/docs/models (Sol for complex
+  # engineering, Luna for focused/repeatable work; both included in Plus).
+  # RISKY, not runtime-certified: subscription auth is not officially
+  # supported by Anthropic; keep the existing login/plugin, never add paid
+  # API fallback. See code.claude.com/docs/en/legal-and-compliance.
+  # Native Messages with normal tool choice only: Opus rejects forced tools
+  # (opencode#46735). Copilot hangs (#53747) are not this provider route.
+  # OpenAI uses native HTTP Responses below, avoiding the WebSocket route
+  # implicated in #53762/#53896; long-run HTTP reliability remains unmeasured.
+  # Cache/compaction cost risk remains (#51109/#52761); no invented TTL option.
+  anthropicOpenaiPhases = {
+    gentle-orchestrator = "anthropic/claude-opus-5-5";
+    # Luna's focused-work fit saves scarce Opus turns on mechanical phases.
+    sdd-init = "openai/gpt-6-luna";
+    sdd-tasks = "openai/gpt-6-luna";
+    sdd-archive = "openai/gpt-6-luna";
+    sdd-onboard = "openai/gpt-6-luna";
+    # Sol is a worker, not the final authority on architecture or acceptance.
+    sdd-explore = "openai/gpt-6.1-sol";
+    sdd-apply = "openai/gpt-6.1-sol";
+    jd-fix-agent = "openai/gpt-6.1-sol";
+    # Opus's documented long-horizon fit and the user's quality requirement
+    # outweigh quota savings at these once-shot judgment boundaries.
+    sdd-propose = "anthropic/claude-opus-5-5";
+    sdd-spec = "anthropic/claude-opus-5-5";
+    sdd-design = "anthropic/claude-opus-5-5";
+    sdd-verify = "anthropic/claude-opus-5-5";
+    jd-judge-a = "anthropic/claude-opus-5-5";
+    # Cross-family reviews counter vendor blind spots; sdd-verify stays Opus.
+    jd-judge-b = "openai/gpt-6.1-sol";
+    review-readability = "openai/gpt-6.1-sol";
+    review-reliability = "openai/gpt-6.1-sol";
+    review-resilience = "openai/gpt-6.1-sol";
+    review-validator = "openai/gpt-6.1-sol";
+    review-refuter = "anthropic/claude-opus-5-5";
+    review-risk = "anthropic/claude-opus-5-5";
+    neutral = "anthropic/claude-opus-5-5";
+  };
+
   # ============================================================
   # CANONICAL: evidence-backed, manually-selected profiles.
   # Order here is a structural guarantee (canonicalProviders is
@@ -89,6 +131,30 @@ let
   # convention — see openspec/changes/evidence-based-opencode-routing.
   # ============================================================
   canonicalProviders = [
+    {
+      name = "openai-anthropic-light";
+      # Same Opus judgment as medium; use only for bounded implementation.
+      # Luna is recommended for focused edits: learn.chatgpt.com/docs/models.
+      phases = anthropicOpenaiPhases // {
+        sdd-apply = "openai/gpt-6-luna";
+        jd-fix-agent = "openai/gpt-6-luna";
+      };
+    }
+    {
+      name = "openai-anthropic-medium";
+      # Default balance: OpenAI tool loops, Opus decisions and final gate.
+      phases = anthropicOpenaiPhases;
+    }
+    {
+      name = "openai-anthropic-full";
+      # Explicit high-consumption option, not the default: move the hardest
+      # workers to Opus's documented long-running agentic path.
+      phases = anthropicOpenaiPhases // {
+        sdd-explore = "anthropic/claude-opus-5-5";
+        sdd-apply = "anthropic/claude-opus-5-5";
+        jd-fix-agent = "anthropic/claude-opus-5-5";
+      };
+    }
     {
       name = "opencode-free";
       # Audit 2026-09-09 (`opencode models --refresh`): catálogo free actual =
