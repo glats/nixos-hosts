@@ -76,8 +76,9 @@ in
           ExecStartPre = [
             "${pkgs.coreutils}/bin/test ! -L ${cfg.restrictionsFile}"
             "${pkgs.coreutils}/bin/test -O ${cfg.restrictionsFile}"
-            "${pkgs.bash}/bin/bash -eu -c 'test \"$(stat -c %a \"$1\")\" = 600' -- ${cfg.restrictionsFile}"
-            "${pkgs.bash}/bin/bash -eu -c 'resolved=$(readlink -f -- \"$1\"); case \"$resolved\" in /nix/store|/nix/store/*) exit 1;; esac; parent=$(dirname \"$resolved\"); mode=$(stat -c %a \"$parent\"); group=$${mode: -2:1}; other=$${mode: -1}; case \"$group$other\" in *[2367]*) exit 1;; esac; owner=$(stat -c %u \"$parent\"); test \"$owner\" = 0 -o \"$owner\" = \"$(id -u)\"' -- ${cfg.restrictionsFile}"
+            # systemd expands specifiers before Bash: %% preserves stat's formats.
+            "${pkgs.bash}/bin/bash -eu -c 'test \"$(stat -c %%a \"$1\")\" = 600' -- ${cfg.restrictionsFile}"
+            "${pkgs.bash}/bin/bash -eu -c 'resolved=$(readlink -f -- \"$1\"); case \"$resolved\" in /nix/store|/nix/store/*) exit 1;; esac; parent=$(dirname \"$resolved\"); mode=$(stat -c %%a \"$parent\"); test \"$((8#$mode & 0022))\" = 0; owner=$(stat -c %%u \"$parent\"); test \"$owner\" = 0 -o \"$owner\" = \"$(id -u)\"' -- ${cfg.restrictionsFile}"
           ];
           Restart = "on-failure";
           RestartSec = 5;
