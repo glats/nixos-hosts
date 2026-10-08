@@ -56,15 +56,40 @@ source and atomically writes the regular root-owned stage at
 `/run/ssh-relay-staging/authorization`; it performs no systemd or live-policy
 operation. Then run `relay-policy apply`, which performs the existing
 stop-before-policy-replacement transaction and reads only that fixed stage.
-The live policy remains `/run/ssh-relay/restrictions.yaml`; the sops-managed
+The live policy remains `/var/lib/ssh-relay/restrictions.yaml`; the sops-managed
 source is never used as the live policy file. `relay-policy revoke` installs
 the explicit deny-all policy after the same stop proof.
+Revocation retains both the durable inhibition marker and deny-all policy, so
+reboot cannot restart publication after its runtime mask disappears. Only a
+subsequent successful explicit apply can clear the inhibition; reboot does not
+restore an old credential.
 
 After authorized provisioning, set `services.ssh-relay.enable = true` and the
 runtime-only `restrictionsFile`/`headersFile` options in the corresponding host modules,
 then independently verify the native macOS client, TCP443 endpoint, DNS, TLS
 pin, SSH host key, outage recovery, cancellation, and listener isolation.
 Those runtime gates have not been run by this configuration-only work unit.
+
+The live policy persists across rog reboot in a root-owned `0755` directory;
+only the ssh-relay-owned `0600` file contains the credential. Runtime staging
+and transaction locks remain under `/run`. After successful initial promotion,
+the enabled service reads the existing policy at boot, allowing an already-on
+Mac to reconnect through native retries without another rog stage/apply or Mac
+`on`. A missing/bad policy still fails closed. No automatic live-policy updater
+or credential rotation hook is needed for reboot recovery.
+
+Before stopping or changing policy, the transaction durably creates a
+root-owned `0600` non-secret marker at
+`/var/lib/ssh-relay/promotion-pending`. The unit's negated path condition
+inhibits boot/manual startup while this marker exists, even after a runtime
+mask disappears. Failed/interrupted promotion keeps the marker; a successful
+validated policy commit removes it before unmask/start. Unmask/start failures
+restore it before compensating stop. Do not remove the marker manually.
+
+To recover a failed/interrupted transaction, correct the input and rerun stage
+and apply. Only after apply succeeds, if prior masked intent kept the unit
+inactive and you explicitly want publication, run `sudo systemctl start
+ssh-relay.service`. Never manually start or unmask after a failed apply.
 
 ## Package provenance
 

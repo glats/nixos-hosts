@@ -81,6 +81,147 @@ func testPolicyTransaction(t *testing.T, command *fakePolicyCommand) (*policyTra
 	}, stage, live
 }
 
+func TestPolicyLivePolicySurvivesVolatileStateRemoval(t *testing.T) {
+	if PolicyLivePath != "/var/lib/ssh-relay/restrictions.yaml" {
+		t.Fatalf("live policy must survive server reboot, got %s", PolicyLivePath)
+	}
+	if !strings.HasPrefix(PolicyStagePath, "/run/") || !strings.HasPrefix(PolicyStateDir, "/run/") {
+		t.Fatal("credential staging and transaction locks must remain volatile")
+	}
+	command := &fakePolicyCommand{state: "enabled"}
+	tx, stage, live := testPolicyTransaction(t, command)
+	if err := tx.Apply(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	before, err := os.ReadFile(live)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.RemoveAll(tx.runtimeDir); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Remove(stage); err != nil {
+		t.Fatal(err)
+	}
+	after, err := os.ReadFile(live)
+	if err != nil || string(after) != string(before) || contentsMode(t, live) != 0o600 {
+		t.Fatal("live policy changed or disappeared with volatile stage/lock state")
+	}
+}
+
+func TestPolicyDurableInhibition(t *testing.T) {
+	for _, failure := range []string{"stop", "invalid-token", "unmask", "start", "revoke"} {
+		t.Run(failure, func(t *testing.T) {
+			command := &fakePolicyCommand{state: "enabled"}
+			tx, stage, live := testPolicyTransaction(t, command)
+			marker := filepath.Join(filepath.Dir(live), "promotion-pending")
+			tx.command = reviewCommand{run: func(ctx context.Context, args ...string) (string, error) {
+				if args[0] == "mask" {
+					if _, err := os.Stat(marker); err != nil {
+						t.Fatal("durable inhibition must precede stop, including cleanup")
+					}
+					if failure == "stop" {
+						return "", context.Canceled
+					}
+				}
+				if args[0] == "unmask" {
+					if _, err := os.Stat(marker); !errors.Is(err, os.ErrNotExist) {
+						t.Fatal("successful policy commit must clear inhibition before unmask")
+					}
+					if failure == "unmask" {
+						return "", errors.New("synthetic unmask failure")
+					}
+				}
+				return command.Run(ctx, args...)
+			}}
+			if err := tx.Apply(context.Background()); err != nil && failure != "unmask" && failure != "stop" {
+				t.Fatal(err)
+			}
+			if failure == "invalid-token" {
+				if err := os.WriteFile(stage, []byte("invalid\n"), 0o600); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if failure == "start" {
+				command.startErr = errors.New("synthetic start failure")
+			}
+			var err error
+			if failure == "revoke" {
+				err = tx.Revoke(context.Background())
+			} else {
+				err = tx.Apply(context.Background())
+				if err == nil {
+					t.Fatal("expected transaction failure")
+				}
+			}
+			if failure == "revoke" && err != nil {
+				t.Fatal(err)
+			}
+			if err := os.RemoveAll(tx.runtimeDir); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := os.Stat(marker); err != nil || contentsMode(t, marker) != 0o600 {
+				t.Fatal("boot inhibition disappeared with runtime mask/lock state")
+			}
+		})
+	}
+}
+
+func TestPolicyRejectsUnsafeInhibition(t *testing.T) {
+	for _, link := range []string{"symlink", "hardlink"} {
+		t.Run(link, func(t *testing.T) {
+			command := &fakePolicyCommand{state: "enabled"}
+			tx, _, live := testPolicyTransaction(t, command)
+			if err := os.Mkdir(filepath.Dir(live), 0o755); err != nil {
+				t.Fatal(err)
+			}
+			victim := filepath.Join(filepath.Dir(live), "unrelated")
+			if err := os.WriteFile(victim, []byte("preserve"), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			marker := filepath.Join(filepath.Dir(live), PolicyInhibitName)
+			linkFile := os.Symlink
+			if link == "hardlink" {
+				linkFile = os.Link
+			}
+			if err := linkFile(victim, marker); err != nil {
+				t.Fatal(err)
+			}
+			if err := tx.Apply(context.Background()); err == nil {
+				t.Fatal("accepted unsafe inhibition")
+			}
+			if len(command.commands) != 0 {
+				t.Fatal("unsafe inhibition allowed service operations")
+			}
+			contents, err := os.ReadFile(victim)
+			if err != nil || string(contents) != "preserve" {
+				t.Fatal("unsafe marker changed unrelated file")
+			}
+		})
+	}
+}
+
+func TestPolicyReportsInhibitionRestorationFailure(t *testing.T) {
+	command := &fakePolicyCommand{state: "enabled"}
+	tx, _, live := testPolicyTransaction(t, command)
+	tx.command = reviewCommand{run: func(ctx context.Context, args ...string) (string, error) {
+		if args[0] == "unmask" {
+			if err := os.Symlink(live, filepath.Join(filepath.Dir(live), PolicyInhibitName)); err != nil {
+				t.Fatal(err)
+			}
+			return "", errors.New("synthetic unmask failure")
+		}
+		return command.Run(ctx, args...)
+	}}
+	err := tx.Apply(context.Background())
+	if err == nil || !strings.Contains(err.Error(), "unmask") || !strings.Contains(err.Error(), "restore durable inhibition") {
+		t.Fatalf("missing joined restoration error: %v", err)
+	}
+	if countCommand(command.commands, "mask --runtime --now ") != 2 {
+		t.Fatal("restoration failure bypassed compensating stop")
+	}
+}
+
 func TestPolicyApplyStopsBeforePromotionAndRestartsOnlyEnabledService(t *testing.T) {
 	command := &fakePolicyCommand{state: "enabled"}
 	tx, _, live := testPolicyTransaction(t, command)

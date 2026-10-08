@@ -18,7 +18,8 @@ import (
 const (
 	PolicyService       = "ssh-relay.service"
 	PolicyStagePath     = "/run/ssh-relay-staging/authorization"
-	PolicyLivePath      = "/run/ssh-relay/restrictions.yaml"
+	PolicyLivePath      = "/var/lib/ssh-relay/restrictions.yaml"
+	PolicyInhibitName   = "promotion-pending"
 	PolicyRuntimeDir    = "/run/ssh-relay"
 	PolicyStateDir      = "/run/ssh-relay/state"
 	PolicySystemctlPath = "/run/current-system/sw/bin/systemctl"
@@ -145,6 +146,9 @@ func (t *policyTransaction) Apply(ctx context.Context) error {
 		if err := t.installPolicy([]byte(policyForToken(token))); err != nil {
 			return err
 		}
+		if err := t.clearInhibition(); err != nil {
+			return t.failStop(err)
+		}
 		if err := t.unmask(ctx); err != nil {
 			return t.failStop(err)
 		}
@@ -191,7 +195,63 @@ func (t *policyTransaction) withLock(ctx context.Context, fn func(context.Contex
 		return err
 	}
 	defer syscall.Flock(int(lock.Fd()), syscall.LOCK_UN)
+	if err := t.inhibit(); err != nil {
+		return err
+	}
 	return fn(ctx)
+}
+
+// Inhibition persists independently of the runtime systemd mask and lock.
+func (t *policyTransaction) inhibit() error {
+	dir := filepath.Dir(t.livePath)
+	if err := ensureTrustedDirectory(dir, t.directoryOwner, 0o755); err != nil {
+		return fmt.Errorf("relay-policy: inhibition parent: %w", err)
+	}
+	path := filepath.Join(dir, PolicyInhibitName)
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_RDWR|syscall.O_NOFOLLOW, 0o600)
+	if os.IsExist(err) {
+		file, err = os.OpenFile(path, os.O_RDWR|syscall.O_NOFOLLOW, 0)
+	}
+	if err != nil {
+		return fmt.Errorf("relay-policy: create inhibition: %w", err)
+	}
+	defer file.Close()
+	if !trustedOpenPath(path, file, t.directoryOwner, 0o600) {
+		return errors.New("relay-policy: inhibition is not a unique trusted 0600 regular file")
+	}
+	if err := file.Sync(); err != nil {
+		return err
+	}
+	return syncPolicyDirectory(dir)
+}
+
+func (t *policyTransaction) clearInhibition() error {
+	dir := filepath.Dir(t.livePath)
+	if err := ensureTrustedDirectory(dir, t.directoryOwner, 0o755); err != nil {
+		return err
+	}
+	path := filepath.Join(dir, PolicyInhibitName)
+	file, err := os.OpenFile(path, os.O_RDONLY|syscall.O_NOFOLLOW, 0)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	if !trustedOpenPath(path, file, t.directoryOwner, 0o600) {
+		return errors.New("relay-policy: inhibition changed before commit")
+	}
+	if err := os.Remove(path); err != nil {
+		return err
+	}
+	return syncPolicyDirectory(dir)
+}
+
+func syncPolicyDirectory(path string) error {
+	dir, err := os.OpenFile(path, os.O_RDONLY|syscall.O_DIRECTORY|syscall.O_NOFOLLOW, 0)
+	if err != nil {
+		return err
+	}
+	defer dir.Close()
+	return dir.Sync()
 }
 
 func (t *policyTransaction) wasEnabled(ctx context.Context) (bool, error) {
@@ -234,6 +294,9 @@ func (t *policyTransaction) maskAndWait(ctx context.Context) error {
 func (t *policyTransaction) failStop(cause error) error {
 	ctx, cancel := context.WithTimeout(context.Background(), t.cleanupLimit)
 	defer cancel()
+	if err := t.inhibit(); err != nil {
+		cause = errors.Join(cause, fmt.Errorf("relay-policy: restore durable inhibition: %w", err))
+	}
 	if err := t.maskAndWait(ctx); err != nil {
 		return errors.Join(cause, fmt.Errorf("relay-policy: fail-stop verification: %w", err))
 	}
@@ -327,7 +390,7 @@ func (t *policyTransaction) installPolicy(policy []byte) error {
 	if err := os.Rename(tmpPath, t.livePath); err != nil {
 		return err
 	}
-	return nil
+	return syncPolicyDirectory(dir)
 }
 
 func policyForToken(token string) string {

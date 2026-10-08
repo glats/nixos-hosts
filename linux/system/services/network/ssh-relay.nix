@@ -59,11 +59,16 @@ in
         group = "ssh-relay";
       };
 
+      # Root controls replacement; the service reads only its own 0600 file.
+      # Unlike /run, this policy survives nightly server shutdowns.
+      systemd.tmpfiles.rules = [ "d /var/lib/ssh-relay 0755 root root -" ];
+
       systemd.services.ssh-relay = {
         description = "Loopback-only wstunnel SSH relay";
         wantedBy = [ "multi-user.target" ];
         after = [ "network-online.target" ];
         wants = [ "network-online.target" ];
+        unitConfig.ConditionPathExists = "!/var/lib/ssh-relay/promotion-pending";
         serviceConfig = {
           User = "ssh-relay";
           Group = "ssh-relay";

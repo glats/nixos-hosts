@@ -1,5 +1,62 @@
 # Apply Progress: On-Demand SSH Through rog
 
+### Nightly reboot persistence correction — 2026-10-08
+
+The original automatic recovery requirement rules out an ephemeral live policy.
+Corrected the fixed Go `PolicyLivePath`, rog host option, and runbook to use
+`/var/lib/ssh-relay/restrictions.yaml`. The Linux module declares a root-owned
+`0755` persistent parent via tmpfiles; service read is through its own `0600`
+policy, and root controls replacement. No service-owned StateDirectory is used,
+and no automatic sops-to-live updater or rotation hook was introduced. Existing
+STOP/promotion/conditional-START ordering and volatile stage/lock paths remain
+unchanged. Revoke persists deny-all even when its runtime mask clears at reboot.
+
+| Evidence | Result |
+|---|---|
+| Focused RED | `go -C pkgs/nixos-scripts test ./internal/sshrelay -run '^TestPolicyLivePolicySurvivesVolatileStateRemoval$' -count=1` — exit 1; reproduced the old `/run` default before production change. |
+| Focused GREEN | `go -C pkgs/nixos-scripts test ./internal/sshrelay ./cmd/relay-policy -count=1` — exit 0; persistent-default regression and temporary-directory policy survival after stage/lock deletion passed with existing transaction regressions. |
+| Race gate | Same two packages with `-race -count=1` — exit 0. |
+| Static gate | `go -C pkgs/nixos-scripts vet ./internal/sshrelay ./cmd/relay-policy` — exit 0. |
+| Nix source assertions | Public rog option evaluation — exit 0; enabled, persistent live path, root `0755` tmpfiles rule, `multi-user.target` intent, ssh-relay service owner, and empty secret restart/reload lists confirmed. |
+| Linux package build | `nix build --impure path:.#packages.x86_64-linux.nixos-scripts --no-link` — exit 0, explicit pass marker. |
+| Host/shared evaluation | rog system derivation eval and `nix flake check --no-build path:.` — exit 0. First combined 120-second command timed out during host evaluation; bounded 300-second rerun passed all gates. |
+| Credential preservation | `sha256sum secrets/shared/ssh-relay.yaml` — unchanged `1264ceae06165e9714905bcb9beb845a816fe9110917ae0bddbe5fd581f934b0`; no new generation/decryption. |
+| Runtime boundary | No actual `/var` or `/run` state was edited; no boot, activation, policy promotion, native systemd/launchd, deployment, DNS, or remote operation. Synthetic tests cannot prove production reboot/reconnect. |
+| Rollback boundary | Revert the Go fixed-path correction/regression, Linux tmpfiles rule, host live path, and corresponding runbook/evidence changes only. |
+
+The initially identified runtime-mask durability risk is resolved by the
+source correction below; real reboot/reconnect and failure recovery still
+require independent/native verification.
+
+### Durable fail-stop correction — 2026-10-08
+
+Under the existing transaction lock, apply/revoke now durably create a
+root-owned `0600` non-secret `promotion-pending` marker beside the live policy
+before service operations. A negated unit path condition blocks boot/manual
+startup while pending. Failure or process interruption retains the marker;
+revoke retains it alongside deny-all. Successful apply fsyncs the policy file
+and renamed directory entry, validates/removes/fsyncs the marker at the commit
+boundary, then unmask/conditionally starts. Unmask/start errors restore/sync
+inhibition before independent bounded cleanup; restoration failures are joined
+with the original error, never silently claimed as durable fail-stop. Unsafe
+marker symlinks/hardlinks are rejected without changing unrelated files.
+
+The runbook requires explicit successful retry instead of manual marker
+removal. After a successful retry, prior masked intent can keep the unit
+inactive; an explicit operator start is allowed only after successful apply.
+Normal successful-policy reboot recovery remains automatic, not re-provisioned.
+
+| Evidence | Result |
+|---|---|
+| Focused RED | `go -C pkgs/nixos-scripts test ./internal/sshrelay -run '^TestPolicyDurableInhibition$' -count=1` — exit 1; all four invalid-token/unmask/start/revoke cases reproduced missing durable inhibition before stop. |
+| Focused GREEN/race | `go -C pkgs/nixos-scripts test ./internal/sshrelay ./cmd/relay-policy -count=1` and same with `-race` — exit 0; failure markers survive synthetic volatile-state deletion, successful commit clears before unmask, revoke retains marker, unsafe markers preserve victims, restoration errors are joined and compensating stop runs. |
+| Static/format | Focused Go vet and `nix fmt -- linux/system/services/network/ssh-relay.nix` — exit 0. |
+| Public unit assertions | Nix eval — exit 0; enabled persistent-policy host, root tmpfiles parent, boot intent, and exact negated marker condition confirmed. |
+| Final build/evaluation | Linux `nixos-scripts` package build, rog toplevel derivation eval, and `nix flake check --no-build path:.` — exit 0 after the final marker tests; unchanged ciphertext SHA256 confirmed. |
+| Runtime boundary | Synthetic temporary files/fake systemctl only; no actual service/boot/activation, `/var`/`/run` state, deployment, DNS, remote operation or existing credential access. Native reboot inhibition is not claimed as tested. |
+| Rollback boundary | Marker lifecycle helpers/commit/cleanup calls and directory sync in policy.go, marker regressions, unit condition, and correction docs/evidence; preserve initial ciphertext and unrelated work. |
+
+
 ## Integrated source delivery approval — 2026-10-08
 
 The user explicitly approved one coherent relay-only source-delivery commit for

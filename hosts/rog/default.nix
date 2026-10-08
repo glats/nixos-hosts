@@ -213,7 +213,10 @@
   services.sing-box-link.enable = true;
 
   # Restriction policy provisioning is intentionally pending.
-  services.ssh-relay.enable = false;
+  services.ssh-relay = {
+    enable = false;
+    restrictionsFile = "/var/lib/ssh-relay/restrictions.yaml";
+  };
 
   # Fix 1: Extend timeouts to prevent exit status 4 in nixos-rebuild switch
   # See: investigation of intermittent systemd-run switch-to-configuration failures
