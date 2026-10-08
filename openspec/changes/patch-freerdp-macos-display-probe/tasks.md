@@ -40,10 +40,10 @@ Chain strategy: pending
 
 ## Phase 2: Unit 2 — Launcher (only after 1.6 green)
 
-- [ ] 2.1 `darwin/home/remote-desktop.nix`: remove whole comment and `displayCount`/`setenv` block; keep `<Carbon/Carbon.h>`. Verify: `nix fmt -- darwin/home/remote-desktop.nix`; grep for `SDL_VIDEO_MAC_FULLSCREEN_SPACES|CGGetActiveDisplayList` empty.
-- [ ] 2.2 Re-evaluate macm5 toplevel. Verify: `drvPath` evaluates.
-- [ ] 2.3 `strings` on built launcher. Verify: no `SDL_VIDEO_MAC_FULLSCREEN_SPACES`.
-- [ ] 2.4 Commit unit 2 in English. Do not push.
+- [x] 2.1 `darwin/home/remote-desktop.nix`: remove whole comment and `displayCount`/`setenv` block; keep `<Carbon/Carbon.h>`. Verify: `nix fmt -- darwin/home/remote-desktop.nix`; grep for `SDL_VIDEO_MAC_FULLSCREEN_SPACES|CGGetActiveDisplayList` empty.
+- [x] 2.2 Re-evaluate macm5 toplevel. Verify: `drvPath` evaluates.
+- [x] 2.3 `strings` on built launcher. Verify: no `SDL_VIDEO_MAC_FULLSCREEN_SPACES`.
+- [x] 2.4 Commit unit 2 in English. Do not push.
 
 ## Phase 3: User steps (agent stops)
 
