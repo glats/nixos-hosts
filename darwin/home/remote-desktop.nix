@@ -81,6 +81,13 @@ let
           ''
         else
           ''
+            /*
+             * sdl-freerdp probes every display before connecting (createDummy ->
+             * SDL_SetWindowFullscreen), which would otherwise open a native macOS
+             * fullscreen Space on each monitor. Disabling Spaces makes fullscreen
+             * transitions borderless/instant and turns the green button into zoom.
+             */
+            setenv("SDL_VIDEO_MAC_FULLSCREEN_SPACES", "0", 1);
             const char *rdpbin = "${pkgs.freerdp}/bin/sdl-freerdp";
             char kbdArg[sizeof("/kbd:layout:0x0000040A,lang:0x040A")];
             snprintf(kbdArg, sizeof(kbdArg), "/kbd:layout:%s,lang:0x040A", rdpKeyboardLayout());
