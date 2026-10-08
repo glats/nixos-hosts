@@ -132,6 +132,26 @@ let
   # ============================================================
   canonicalProviders = [
     {
+      name = "openai-anthropic-go";
+      # Fit 2026-10-08: preserve medium's Opus judgment and OpenAI workers;
+      # move only init/tasks/archive onto a separate Go allowance.
+      # Sources: opencode.ai/v2/docs/console/go (GPT 6 Luna, native Responses,
+      # $15 monthly model allowance on Go, $60 on Go Plus) and
+      # learn.chatgpt.com/docs/models (Luna for focused/repeatable work).
+      # models.dev/api.json confirms tools and the model's @ai-sdk/openai
+      # override: do not send it through Go's default Chat Completions route.
+      # RISKY: account-specific Go entitlement/403 reports (#52267), provider
+      # discovery (#52363), and quota accounting (#41206) remain open.
+      # Catalog availability is not an entitlement or runtime reliability test.
+      # Keep existing credentials and two-provider rollback profiles; do not
+      # enable Console "Use balance" or add an automatic paid fallback.
+      phases = anthropicOpenaiPhases // {
+        sdd-init = "opencode-go/gpt-6-luna";
+        sdd-tasks = "opencode-go/gpt-6-luna";
+        sdd-archive = "opencode-go/gpt-6-luna";
+      };
+    }
+    {
       name = "openai-anthropic-light";
       # Same Opus judgment as medium; use only for bounded implementation.
       # Luna is recommended for focused edits: learn.chatgpt.com/docs/models.
