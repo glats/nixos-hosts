@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
@@ -129,7 +130,7 @@ func sourceComponents(path string) []string {
 
 func trustedDirectoryAt(path string, owner uint32) bool {
 	info, err := os.Lstat(path)
-	return err == nil && trustedDirectoryPath(info, owner)
+	return err == nil && trustedDirectoryForPlatform(path, info, owner, runtime.GOOS)
 }
 
 func installHeaders(path, token string) error {

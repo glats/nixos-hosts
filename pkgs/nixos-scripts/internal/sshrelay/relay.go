@@ -56,8 +56,37 @@ func (c *Controller) StageCredentials(ctx context.Context, sourcePath string) er
 		if err != nil {
 			return err
 		}
+		if err := prepareCredentialDirectory(filepath.Dir(c.config.CredentialStagePath), uint32(os.Getuid())); err != nil {
+			return err
+		}
 		return installAuthorizationStage(c.config.CredentialStagePath, token)
 	})
+}
+
+func prepareCredentialDirectory(path string, owner uint32) error {
+	if !filepath.IsAbs(path) || filepath.Clean(path) != path || pathWithin(builtinsStoreDir, path) {
+		return errors.New("sshrelay: credential directory must be an absolute clean non-store path")
+	}
+	missing := []string{}
+	for current := path; ; current = filepath.Dir(current) {
+		_, err := os.Lstat(current)
+		if err == nil {
+			if !trustedChain(current, owner) {
+				return errors.New("sshrelay: credential directory ancestor is not trusted")
+			}
+			break
+		}
+		if !os.IsNotExist(err) || current == string(filepath.Separator) {
+			return errors.New("sshrelay: credential directory ancestor cannot be inspected")
+		}
+		missing = append(missing, current)
+	}
+	for i := len(missing) - 1; i >= 0; i-- {
+		if err := ensureTrustedDirectory(missing[i], owner, 0o700); err != nil {
+			return err
+		}
+	}
+	return ensureTrustedDirectory(path, owner, 0o700)
 }
 
 func (c *Controller) credentials(ctx context.Context, revoke bool) error {

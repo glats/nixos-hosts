@@ -441,8 +441,7 @@ func trustedChain(path string, owner uint32) bool {
 			continue
 		}
 		current = filepath.Join(current, part)
-		info, err := os.Lstat(current)
-		if err != nil || !trustedDirectoryPath(info, owner) {
+		if !trustedDirectoryAt(current, owner) {
 			return false
 		}
 	}
@@ -455,6 +454,17 @@ func trustedDirectoryPath(info os.FileInfo, owner uint32) bool {
 	}
 	permittedStickyTemp := rootOwner(ownerUID(info)) && info.Mode()&os.ModeSticky != 0 && info.Mode().Perm()&0o022 == 0o022
 	return (info.Mode().Perm()&0o022 == 0 || permittedStickyTemp) && (rootOwner(ownerUID(info)) || ownerUID(info) == owner)
+}
+
+func trustedDirectoryForPlatform(path string, info os.FileInfo, owner uint32, platform string) bool {
+	if trustedDirectoryPath(info, owner) {
+		return true
+	}
+	// macOS's system run directory is root:daemon 0775. Only this canonical
+	// OS directory is authorized; group-writable directories remain denied.
+	stat, ok := info.Sys().(*syscall.Stat_t)
+	return platform == "darwin" && path == "/private/var/run" &&
+		info.Mode() == os.ModeDir|0o775 && ok && stat.Uid == 0 && stat.Gid == 1
 }
 
 func rootOwner(uid uint32) bool {

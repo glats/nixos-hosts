@@ -86,7 +86,12 @@ relayctl status
 
 The source secret is root-owned `0600` on rog and juan-owned `0600` on macm5.
 Both use the default system-sops path; no automatic secret restart/reload or
-live-file activation hook is configured. macOS installs a manual agent with
+live-file activation hook is configured. Staging creates missing credential
+directories as private user-owned `0700` directories; it never repairs unsafe
+existing parents. On Darwin only, source traversal accepts the canonical OS
+directory `/private/var/run` with exactly root UID `0`, daemon GID `1`, and mode
+`0775`. This exception does not apply to other directories or Linux.
+macOS installs a manual agent with
 `RunAtLoad = false` and `KeepAlive = false`; installing it is not an `on`.
 Applying credentials while initially off keeps it off until the explicit `on`.
 
