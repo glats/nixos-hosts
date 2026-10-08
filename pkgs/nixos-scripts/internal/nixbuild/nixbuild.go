@@ -244,13 +244,13 @@ func Steps(env Env, command string) []Step {
 		if env.Darwin {
 			s = append(s, execStep([]string{"nix", "build", refDarwin}, useNom))
 		} else if useNH {
-			s = append(s, execStep([]string{"nh", "build", refTop}, false))
+			s = append(s, execStep([]string{"nh", "os", "build", "--hostname", env.Hostname, env.FlakePath}, false))
 		} else {
 			s = append(s, execStep([]string{"nix", "build", refTop}, useNom))
 		}
 
 	case "safe":
-		buildStep := execStep([]string{"nh", "build", refTop}, false)
+		buildStep := execStep([]string{"nh", "os", "build", "--hostname", env.Hostname, env.FlakePath}, false)
 		dryStep := execStep([]string{"nh", "os", "switch", "--dry"}, false)
 		switchStep := execStep([]string{"nh", "os", "switch"}, false)
 		if env.Darwin {

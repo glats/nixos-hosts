@@ -301,6 +301,67 @@
           touch $out
         '';
 
+      checks.x86_64-linux.ssh-relay-preflight =
+        let
+          pkgs = nixpkgs.legacyPackages.x86_64-linux;
+          unit =
+            pkgs.writeText "ssh-relay.service"
+              self.nixosConfigurations.rog.config.systemd.units."ssh-relay.service".text;
+        in
+        pkgs.runCommand "ssh-relay-preflight" { nativeBuildInputs = [ pkgs.python3 ]; } ''
+          python3 - ${unit} <<'PY'
+          import pathlib
+          import re
+          import shlex
+          import subprocess
+          import sys
+          import tempfile
+
+          unit = pathlib.Path(sys.argv[1]).read_text()
+          commands = [line.removeprefix("ExecStartPre=") for line in unit.splitlines()
+                      if line.startswith("ExecStartPre=")]
+          assert len(commands) == 4, commands
+          assert "stat -c %%a" in unit and "stat -c %%u" in unit
+          assert all(not re.search(r"(?<!%)%(?!%)", command) for command in commands)
+
+          with tempfile.TemporaryDirectory(dir=".") as directory:
+              parent = pathlib.Path(directory).resolve()
+              policy = parent / "restrictions.yaml"
+              policy.write_text("synthetic test policy\n")
+              policy.chmod(0o600)
+              commands = [shlex.split(command.replace("%%", "%").replace("$$", "$"))
+                          for command in commands]
+              for command in commands:
+                  command[-1] = str(policy)
+
+              def accepted():
+                  return all(subprocess.run(command, stdout=subprocess.DEVNULL,
+                                            stderr=subprocess.DEVNULL).returncode == 0
+                             for command in commands)
+
+              # Execute the rendered guards after documented systemd literal escapes,
+              # without starting a service or reading any deployed policy.
+              for mode in (0o700, 0o750, 0o755):
+                  parent.chmod(mode)
+                  assert accepted(), oct(mode)
+              for mode in (0o720, 0o775, 0o757, 0o777):
+                  parent.chmod(mode)
+                  assert not accepted(), oct(mode)
+              parent.chmod(0o755)
+              for mode in (0o400, 0o640, 0o644, 0o666):
+                  policy.chmod(mode)
+                  assert not accepted(), oct(mode)
+              policy.chmod(0o600)
+              target = parent / "target.yaml"
+              policy.rename(target)
+              policy.symlink_to(target)
+              assert not accepted(), "symlink policy"
+              policy.unlink()
+              assert not accepted(), "missing policy"
+          PY
+          touch $out
+        '';
+
       # --- NixOS configurations ---
       nixosConfigurations = {
         rog = mkNixosHost { hostname = "rog"; };

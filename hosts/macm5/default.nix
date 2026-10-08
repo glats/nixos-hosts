@@ -49,6 +49,7 @@ in
     ../../darwin/system/zsh.nix
     ../../darwin/services/wsdd.nix
     ../../darwin/system/sing-box-link.nix
+    ../../darwin/system/ssh-relay.nix
 
     inputs.home-manager.darwinModules.home-manager
     inputs.nix-homebrew.darwinModules.nix-homebrew
@@ -114,4 +115,6 @@ in
   };
 
   services.wsdd.enable = true;
+  # Install the manual agent; credentials stage/apply precedes relayctl on.
+  services.ssh-relay.enable = true;
 }

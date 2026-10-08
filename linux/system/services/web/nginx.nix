@@ -642,7 +642,22 @@ in
         extraConfig = secHeaders "SAMEORIGIN";
       };
     }
-    // arrVhosts;
+    // arrVhosts
+    // lib.optionalAttrs config.services.ssh-relay.enable {
+      # Isolated wstunnel WebSocket endpoint. The relay service itself binds
+      # only to 127.0.0.1:4012; this vhost does not share the tun.glats.org
+      # path or backend.
+      "relay.${domain}" = mkProxyVhost {
+        port = config.services.ssh-relay.listenPort;
+        frame = "DENY";
+        locExtra = ''
+          proxy_set_header Authorization $http_authorization;
+          proxy_set_header Host $host;
+          proxy_read_timeout 3600s;
+          proxy_send_timeout 3600s;
+        '';
+      };
+    };
   };
 
   systemd.services.nginx = {

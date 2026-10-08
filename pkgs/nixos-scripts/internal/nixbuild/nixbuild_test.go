@@ -109,7 +109,7 @@ func linuxNHCases(prefix string) []seqCase {
 		}},
 		{prefix + "build", linuxNH, "build", []Step{
 			echo("> Dry-building..."),
-			ex("nh", "build", refTop),
+			ex("nh", "os", "build", "--hostname", hostname, root),
 		}},
 		{prefix + "safe", linuxNH, "safe", []Step{
 			echo(""), echo("> Running safe build workflow..."), echo(""),
@@ -117,7 +117,7 @@ func linuxNHCases(prefix string) []seqCase {
 			guard("nix", "flake", "check", "> ERROR: Flake check failed. Stopping."),
 			echo(""),
 			echo("> [2/4] Building..."),
-			guard("nh", "build", refTop, "> ERROR: Build failed. Stopping."),
+			guard("nh", "os", "build", "--hostname", hostname, root, "> ERROR: Build failed. Stopping."),
 			echo(""),
 			echo("> [3/4] Dry-activating..."),
 			guard("nh", "os", "switch", "--dry", "> ERROR: Dry-activate failed. Stopping."),
@@ -193,6 +193,33 @@ func linuxRawCases(prefix string) []seqCase {
 
 func TestStepsLinuxNH(t *testing.T) {
 	runSeqCases(t, linuxNHCases("LinuxNH/"))
+}
+
+func TestStepsLinuxNHBuildSelection(t *testing.T) {
+	t.Setenv("NH_FLAKE", "/unrelated")
+	for _, command := range []string{"build", "safe"} {
+		for _, path := range []string{".", "/worktree with spaces"} {
+			t.Run(command+"/"+path, func(t *testing.T) {
+				env := mkEnv(false, true, true, false, true)
+				env.Hostname, env.FlakePath = "rog", path
+				index := 1
+				if command == "safe" {
+					index = 7
+				}
+				step := Steps(env, command)[index]
+				want := ex("nh", "os", "build", "--hostname", "rog", path)
+				assertSequence(t, []Step{step}, []Step{want})
+				if command == "safe" && (len(step.FailLines) != 2 || step.FailLines[1] != "> ERROR: Build failed. Stopping.") {
+					t.Fatalf("build guard = %q", step.FailLines)
+				}
+				for i, arg := range want.Args {
+					if step.Args[i] != arg {
+						t.Fatalf("argv[%d] = %q, want %q", i, step.Args[i], arg)
+					}
+				}
+			})
+		}
+	}
 }
 
 func TestStepsLinuxRaw(t *testing.T) {
@@ -271,7 +298,7 @@ func TestStepsLinuxNHNomAvailableBare(t *testing.T) {
 	got := Steps(env, "build")
 	want := []Step{
 		echo("> Dry-building..."),
-		ex("nh", "build", refTop),
+		ex("nh", "os", "build", "--hostname", hostname, root),
 	}
 	assertSequence(t, got, want)
 }

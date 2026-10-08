@@ -82,6 +82,7 @@
     ../../linux/system/services/network/guacamole.nix
     ../../linux/system/services/network/gonic.nix
     ../../linux/system/services/network/ollama.nix
+    ../../linux/system/services/network/ssh-relay.nix
 
     # Virtualisation
     ../../linux/system/virtualisation/libvirt.nix
@@ -210,6 +211,12 @@
   # import alone does not enable it). See
   # linux/system/services/network/sing-box-link.nix.
   services.sing-box-link.enable = true;
+
+  # Missing live policy fails closed until explicit relay-policy stage/apply.
+  services.ssh-relay = {
+    enable = true;
+    restrictionsFile = "/var/lib/ssh-relay/restrictions.yaml";
+  };
 
   # Fix 1: Extend timeouts to prevent exit status 4 in nixos-rebuild switch
   # See: investigation of intermittent systemd-run switch-to-configuration failures
