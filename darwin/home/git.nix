@@ -33,27 +33,30 @@ in
       signByDefault = true;
     };
 
+    # Home Manager ignores `contents` when `path` is set, so identity files
+    # and credential pins must be separate includes.
     includes = [
       # Default: work identity via activation-written file + forced work
       # account so pushes work regardless of gh's active-account state
-      {
-        path = "~/.config/git/identity-work";
-        contents.credential.helper = identities.mkCredentialHelper pkgs.gh "jcuzmar-Falabella_FTC";
-      }
+      { path = "~/.config/git/identity-work"; }
+      { contents.credential = identities.mkCredential pkgs.gh "jcuzmar-Falabella_FTC"; }
       # Personal identity in Personal directory + forced glats account
       {
         condition = "gitdir:~/Projects/**";
         path = "~/.config/git/identity-personal";
-        contents.credential.helper = identities.mkCredentialHelper pkgs.gh "glats";
+      }
+      {
+        condition = "gitdir:~/Projects/**";
+        contents.credential = identities.mkCredential pkgs.gh "glats";
       }
       # nixos-hosts uses personal (glats) identity + auth
       {
         condition = "gitdir:~/.config/nix/**";
         path = "~/.config/git/identity-personal";
-        contents = {
-          # Force glats account for GitHub operations in this repo
-          credential.helper = identities.mkCredentialHelper pkgs.gh "glats";
-        };
+      }
+      {
+        condition = "gitdir:~/.config/nix/**";
+        contents.credential = identities.mkCredential pkgs.gh "glats";
       }
     ]
     # Personal repos sign with personal key if set

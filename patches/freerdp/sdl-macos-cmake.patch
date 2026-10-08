@@ -1,0 +1,30 @@
+--- a/client/SDL/SDL3/CMakeLists.txt
++++ b/client/SDL/SDL3/CMakeLists.txt
+@@ -49,6 +49,14 @@
+     sdl_context.cpp
+ )
+ 
++# Native macOS display helpers (AppKit screen geometry for window-free monitor queries).
++# Compile the Objective-C++ file with the CXX toolchain: enable_language(OBJCXX)
++# from this subdirectory leaves CMAKE_OBJCXX_COMPILE_OBJECT unset at generate time.
++if(APPLE)
++  list(APPEND SRCS sdl_macos.hpp sdl_macos.mm)
++  set_source_files_properties(sdl_macos.mm PROPERTIES LANGUAGE CXX COMPILE_OPTIONS "-x;objective-c++")
++endif()
++
+ add_win_console_manifest(SRCS)
+ 
+ list(
+@@ -64,6 +72,12 @@
+   sdl-common-prefs
+ )
+ 
++if(APPLE)
++  find_library(APPKIT_FRAMEWORK AppKit REQUIRED)
++  find_library(COREGRAPHICS_FRAMEWORK CoreGraphics REQUIRED)
++  list(APPEND LIBS ${APPKIT_FRAMEWORK} ${COREGRAPHICS_FRAMEWORK})
++endif()
++
+ if(NOT WITH_SDL_LINK_SHARED)
+   list(APPEND LIBS SDL3::SDL3-static)
+ else()
