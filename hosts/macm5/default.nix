@@ -115,7 +115,6 @@ in
   };
 
   services.wsdd.enable = true;
-  # Manual relay remains disabled until runtime headers are provisioned
-  # out of band.
-  services.ssh-relay.enable = false;
+  # Install the manual agent; credentials stage/apply precedes relayctl on.
+  services.ssh-relay.enable = true;
 }

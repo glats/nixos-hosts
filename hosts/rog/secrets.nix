@@ -1,8 +1,17 @@
-{ lib, ... }:
+{ config, lib, ... }:
 
 {
   # Rog-specific secret declarations via sops
   # These reference encrypted files in ../../secrets/host/rog/ and ../../secrets/shared/
+
+  # Input only: relay-policy stage/apply explicitly promotes the live policy.
+  sops.secrets."ssh-relay/authorization" = lib.mkIf config.services.ssh-relay.enable {
+    sopsFile = ../../secrets/shared/ssh-relay.yaml;
+    key = "ssh-relay/authorization";
+    owner = "root";
+    group = "root";
+    mode = "0600";
+  };
 
   # WireGuard secrets (server private key + peer preshared keys)
   sops.secrets."wireguard/server_private_key" = {

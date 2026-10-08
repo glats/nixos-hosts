@@ -57,6 +57,7 @@ in
 
     sops.secrets."ssh-relay/authorization" = {
       sopsFile = ../../secrets/shared/ssh-relay.yaml;
+      key = "ssh-relay/authorization";
       owner = primaryUser;
       mode = "0600";
     };

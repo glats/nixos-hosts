@@ -212,9 +212,9 @@
   # linux/system/services/network/sing-box-link.nix.
   services.sing-box-link.enable = true;
 
-  # Restriction policy provisioning is intentionally pending.
+  # Missing live policy fails closed until explicit relay-policy stage/apply.
   services.ssh-relay = {
-    enable = false;
+    enable = true;
     restrictionsFile = "/var/lib/ssh-relay/restrictions.yaml";
   };
 

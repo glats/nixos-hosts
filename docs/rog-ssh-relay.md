@@ -1,7 +1,8 @@
 # On-Demand rog-to-macm5 SSH Relay
 
-This integration is source-configured but disabled until the runtime headers
-and restriction policy are provisioned. It does not change routes, TUN,
+Both hosts now opt in at source level, with one encrypted macm5 publication
+credential. Deployment and explicit runtime promotion are still required;
+source preparation is not end-to-end readiness. It does not change routes, TUN,
 `linkctl`, or the existing `tun.glats.org` backend.
 
 ## Intended path
@@ -15,16 +16,99 @@ proxies the isolated `relay.glats.org` WebSocket to rog's loopback port 4012.
 The rog-only SSH alias is `macm5-relay` and uses the existing `macm5` host-key
 record through `HostKeyAlias`; it does not disable host-key checking.
 
-## Provisioning gate
+## Initial deployment and promotion
 
 Do not put plaintext credentials in this repository, a Nix expression, a
-launchd plist, process arguments, or logs. Before enabling either module,
-provision the planned `secrets/shared/ssh-relay.yaml` through the existing
-sops workflow, with separate per-host credentials. The server restriction file
+launchd plist, process arguments, environment, or logs. The new
+`secrets/shared/ssh-relay.yaml` holds one encrypted, independently revocable
+macm5 publication credential under `ssh-relay/authorization`, encrypted only
+for the existing admin, rog, and macm5 public age recipients. No existing
+credential was decrypted or rotated. Normal host system-sops activation
+materializes this input; do not manually decrypt it or copy token values.
+
+After the reviewed source is committed and pushed, update each host's checkout
+to that exact feature revision without discarding local changes. Deploy from
+that checkout using the existing `nixos-build safe` command (it selects NixOS
+or nix-darwin). Do rog first, then macm5. Do not deploy an older master revision
+that still disables these endpoints. This runbook does not authorize an agent
+to execute deployment or promotion.
+
+On rog, the first deployment can report a failed `ssh-relay.service` start:
+the enabled unit intentionally rejects the absent live restriction file. It
+must never fall back to a permissive policy. If the safe workflow reports this
+failure, confirm the new generation/unit and system-sops input were installed
+before continuing; unrelated deployment failures require diagnosis first.
+Only after that deployment, run:
+
+```sh
+sudo relay-policy stage /run/secrets/ssh-relay/authorization
+sudo relay-policy apply
+systemctl status ssh-relay.service --no-pager
+```
+
+Stage only creates the root-owned regular `0600` input at
+`/run/ssh-relay-staging/authorization`; it does not operate systemd. Apply
+masks/stops the dedicated unit, proves termination, installs the service-owned
+`0600` policy at `/var/lib/ssh-relay/restrictions.yaml`, and restarts only when
+prior unit intent was enabled. On any error, stop here: do not manually unmask
+or bypass validation. A previously masked/revoked unit is not automatically
+re-enabled by apply; that state requires a separate operator decision.
+The live policy persists across rog reboot in a root-owned `0755` directory;
+only the ssh-relay-owned `0600` file contains the credential. Runtime staging
+and transaction locks remain under `/run`. After successful initial promotion,
+the enabled service reads the existing policy at boot, allowing an already-on
+Mac to reconnect through native retries without another rog stage/apply or Mac
+`on`. A missing/bad policy still fails closed. No automatic live-policy updater
+or credential rotation hook is needed for reboot recovery.
+
+Before stopping or changing policy, the transaction durably creates a
+root-owned `0600` non-secret marker at
+`/var/lib/ssh-relay/promotion-pending`. The unit's negated path condition
+inhibits boot/manual startup while this marker exists, even after a runtime
+mask disappears. Failed/interrupted promotion keeps the marker; a successful
+validated policy commit removes it before unmask/start. Unmask/start failures
+restore it before compensating stop. Do not remove the marker manually.
+
+To recover a failed/interrupted transaction, correct the input and rerun stage
+and apply. Only after apply succeeds, if prior masked intent kept the unit
+inactive and you explicitly want publication, run `sudo systemctl start
+ssh-relay.service`. Never manually start or unmask after a failed apply.
+
+On macm5, after deploying, run these commands as `juan` in the GUI user session
+(not through sudo):
+
+```sh
+relayctl credentials stage /run/secrets/ssh-relay/authorization
+relayctl credentials apply
+relayctl on
+relayctl status
+```
+
+The source secret is root-owned `0600` on rog and juan-owned `0600` on macm5.
+Both use the default system-sops path; no automatic secret restart/reload or
+live-file activation hook is configured. macOS installs a manual agent with
+`RunAtLoad = false` and `KeepAlive = false`; installing it is not an `on`.
+Applying credentials while initially off keeps it off until the explicit `on`.
+
+From rog, independently verify the final SSH hop:
+
+```sh
+ssh -n -T macm5-relay true
+```
+
+This probe must use the existing verified Mac host key and SSH identity; do not
+accept a new key blindly or disable strict host-key checking. A running job or
+successful status command alone does not prove end-to-end SSH. Native TLS,
+revocation, long outage/sleep recovery, cancellation, and isolation still need
+authorized runtime verification.
+
+## Runtime credential boundary
+
+The server restriction file
 must contain the native wstunnel YAML `restrictions` list and exactly one
 anchored `!ReverseTunnel` Authorization rule permitting protocol `Tcp`, port
 `22220`, and CIDR `127.0.0.1/32`. The client header file must contain the
-native `Authorization: ...` header line. The default system-sops secret remains
+native `Authorization: ...` header line. On macm5, the default system-sops secret remains
 at `/run/secrets/ssh-relay/authorization` with owner `juan` and mode `0600`;
 it is not assigned a custom `path` symlink. Run the explicit user operation
 `relayctl credentials stage /run/secrets/ssh-relay/authorization` to validate
@@ -35,8 +119,7 @@ the opened file must remain trusted; user-owned symlinks, writable ancestors,
 hardlinks, Nix-store paths, and invalid tokens are rejected. Staging changes no
 live header and invokes no launchd operation. Then run
 `relayctl credentials apply`, which performs the existing stop-before-live
-promotion transaction. The encrypted file and its values are intentionally
-absent.
+promotion transaction. Neither live file is managed directly by sops.
 
 Missing, malformed, or empty restriction policy must prevent server startup;
 `restrictions: []` is the explicit deny-all policy. Do not use permissive
@@ -64,32 +147,10 @@ reboot cannot restart publication after its runtime mask disappears. Only a
 subsequent successful explicit apply can clear the inhibition; reboot does not
 restore an old credential.
 
-After authorized provisioning, set `services.ssh-relay.enable = true` and the
-runtime-only `restrictionsFile`/`headersFile` options in the corresponding host modules,
-then independently verify the native macOS client, TCP443 endpoint, DNS, TLS
-pin, SSH host key, outage recovery, cancellation, and listener isolation.
-Those runtime gates have not been run by this configuration-only work unit.
-
-The live policy persists across rog reboot in a root-owned `0755` directory;
-only the ssh-relay-owned `0600` file contains the credential. Runtime staging
-and transaction locks remain under `/run`. After successful initial promotion,
-the enabled service reads the existing policy at boot, allowing an already-on
-Mac to reconnect through native retries without another rog stage/apply or Mac
-`on`. A missing/bad policy still fails closed. No automatic live-policy updater
-or credential rotation hook is needed for reboot recovery.
-
-Before stopping or changing policy, the transaction durably creates a
-root-owned `0600` non-secret marker at
-`/var/lib/ssh-relay/promotion-pending`. The unit's negated path condition
-inhibits boot/manual startup while this marker exists, even after a runtime
-mask disappears. Failed/interrupted promotion keeps the marker; a successful
-validated policy commit removes it before unmask/start. Unmask/start failures
-restore it before compensating stop. Do not remove the marker manually.
-
-To recover a failed/interrupted transaction, correct the input and rerun stage
-and apply. Only after apply succeeds, if prior masked intent kept the unit
-inactive and you explicitly want publication, run `sudo systemctl start
-ssh-relay.service`. Never manually start or unmask after a failed apply.
+For subsequent input updates, deploy only the encrypted sops input and use the
+same explicit stage/apply transactions; do not point the server at a watched
+sops file. TLS uses hostname/system-CA verification, not a separate relay pin.
+These runtime gates have not been run by this source-preparation work unit.
 
 ## Package provenance
 
@@ -100,7 +161,9 @@ not compile Rust or fall back to a source build. Supported assets are
 `wstunnel_11.0.0_darwin_arm64.tar.gz` (SHA256
 `150e439c8b94859154903d71313b4c0b313ac9ccf99437af42573134e5051dc4`). The
 Linux derivation checks `--version` and `--help`; Darwin asset inspection and
-derivation evaluation pass, but native execution remains pending.
+derivation evaluation pass. Bounded native Darwin execution and quiet retries
+against an unavailable disposable endpoint passed; production connectivity,
+installed launchd lifecycle, and long outage/sleep recovery remain pending.
 
 ## Operational controls
 
@@ -111,6 +174,9 @@ not an automatic recovery guarantee. `status` reports relay and SSH evidence as
 unknown until a separate authorized end-to-end probe exists.
 
 Rollback is the removal of the two host imports/configuration blocks, the
-optional nginx vhost, the SSH alias, and the pinned package/helper. No secret
-file was created by this change, so credential revocation remains a later
-provisioning operation.
+optional nginx vhost, the SSH alias, and the pinned package/helper. If deployed,
+first use `relayctl credentials revoke` as juan and `sudo relay-policy revoke`
+on rog to stop and revoke live publication. Removing ciphertext or reverting
+source alone does not revoke a live policy. This initial source unit can be
+reverted independently by disabling the two host options and removing only its
+relay secret declarations/ciphertext; preserve unrelated service credentials.

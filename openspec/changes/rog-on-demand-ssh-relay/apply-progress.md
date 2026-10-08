@@ -1,5 +1,55 @@
 # Apply Progress: On-Demand SSH Through rog
 
+## Initial encrypted credential input preparation — task 6.1, 2026-10-08
+
+Current authorization supersedes historical statements below only for this
+source-preparation unit. Native `gentle-ai sdd-status rog-on-demand-ssh-relay
+--json --instructions` reported `applyState: ready` after the orchestrator
+corrected the repository-only planning inventory, without granting runtime
+edit authority. Task 6.1 explicitly authorized a new encrypted credential.
+
+- [x] 6.1 Prepared one new 64-hex cryptorandom macm5 publication token using
+  OS randomness in process memory. SOPS 3.12.1 encrypted YAML from stdin using
+  `--filename-override secrets/shared/ssh-relay.yaml` and the existing public
+  creation rule. Only ciphertext was persisted. No token entered disk in
+  plaintext, argv, environment, logs, or memory artifacts; no existing secret,
+  private key, or authentication database was read or decrypted.
+- The encrypted nested key is `ssh-relay/authorization`, with exactly the
+  existing admin_glats, host_rog, and host_macm5 public age recipients. Its
+  ciphertext SHA256 is
+  `1264ceae06165e9714905bcb9beb845a816fe9110917ae0bddbe5fd581f934b0`.
+- Both host source options now enable the relay. rog declares a root/root
+  `0600` system-sops input; macm5 declares a juan/staff `0600` input. Both retain
+  the default `/run/secrets/ssh-relay/authorization` path and explicit YAML key.
+  No secret-triggered restart/reload, template, watcher, or live activation
+  hook was added. The server consumes only the controller-promoted live policy;
+  the manual Mac agent consumes only controller-promoted headers.
+- The runbook documents feature-revision deployment, initial missing-policy
+  fail-closed startup, explicit initial per-host stage/apply, manual Mac `on`,
+  and strict final SSH probe. The corrected live policy persists under
+  `/var/lib/ssh-relay`, permitting boot recovery without repeat promotion;
+  staging/transaction locks alone remain ephemeral. No runtime readiness is claimed.
+
+### Work Unit Evidence
+
+| Evidence | Result |
+|---|---|
+| Pre-change public configuration baseline | `nix eval --impure --json --expr ...` — exit 0; rogEnabled=false, macEnabled=false, rogSecretPresent=false. |
+| Focused source acceptance | `nix eval --impure --json --expr ...` with assertions over enabled flags, matching keys, owner/mode/default input paths, empty rog restart/reload lists, fixed live policy, conditional nginx vhost, and manual Mac agent — exit 0; all assertions passed. No secret values evaluated/output. |
+| Ciphertext validation | Python + `yq` parse of the new encrypted artifact and public creation rule — exit 0; exactly one ENC authorization scalar, encrypted MAC, exact three recipients, no raw 64-hex authorization scalar, byte-identical SOPS output. No decryption attempted. |
+| Formatting | `nix fmt -- hosts/rog/secrets.nix hosts/rog/default.nix hosts/macm5/default.nix darwin/system/ssh-relay.nix` — exit 0; four files, zero formatter changes. |
+| rog host evaluation | `nix eval --impure --raw path:.#nixosConfigurations.rog.config.system.build.toplevel.drvPath` — exit 0. |
+| Darwin source evaluation | `nix eval --impure --raw path:.#darwinConfigurations.macm5.pkgs.wstunnel-relay.drvPath` — exit 0; public launchagent and system-sops attributes also evaluated. Not a full Darwin system build or native runtime proof. |
+| Shared evaluation gate | `nix flake check --no-build path:.` — exit 0; all checks passed, Darwin systems omitted by this Linux runner. |
+| Runtime harness | N/A for this repository-only input preparation: no live runtime boundary is exercised; decryption, host deployment, system-sops activation, policy/header promotion, systemd/launchd operations, DNS changes, remote operations, and production connections were explicitly excluded. Native/E2E tasks remain unchecked. |
+| Rollback boundary | Revert only the new ciphertext, rog conditional secret declaration, explicit Darwin key, two host opt-ins, and this unit's docs/task/progress entries. If later deployed, stop/revoke live publication before source rollback; source removal alone cannot revoke live policy. |
+| Delivery boundary | Separate initial encrypted-input/source unit under 400 changed lines, including ciphertext/docs and planning correction. No new size exception, commit, staging, or push. `.gentle-ai-instance` remains untouched. |
+
+Standard mode (`strict_tdd: false`); initial input wiring did not edit Go;
+the subsequent fixed-path correction and regression are recorded below.
+Prior completed tasks and evidence below are retained. Tasks 1.2, 1.3, 2.3,
+3.4, and 4.1 remain pending; source input completion is not production acceptance.
+
 ### Nightly reboot persistence correction — 2026-10-08
 
 The original automatic recovery requirement rules out an ephemeral live policy.
@@ -56,6 +106,15 @@ Normal successful-policy reboot recovery remains automatic, not re-provisioned.
 | Runtime boundary | Synthetic temporary files/fake systemctl only; no actual service/boot/activation, `/var`/`/run` state, deployment, DNS, remote operation or existing credential access. Native reboot inhibition is not claimed as tested. |
 | Rollback boundary | Marker lifecycle helpers/commit/cleanup calls and directory sync in policy.go, marker regressions, unit condition, and correction docs/evidence; preserve initial ciphertext and unrelated work. |
 
+Delivery slicing remains honest: the aggregate current source delta exceeds
+400 lines after these correctness fixes. Initial encrypted input/host wiring
+is a separate under-budget unit. Deliver the ROG correctness slice first
+(Go default/marker/tests and Linux unit guard, with correction docs/evidence),
+then the encrypted input/host opt-in slice (ciphertext, host declarations,
+Darwin key, provisioning runbook/task evidence). The disabled-host baseline
+supports the correctness slice independently; later opt-in uses its new path
+and guard. Each slice remains under 400 lines; no new broad size exception.
+No commit or push has been performed.
 
 ## Integrated source delivery approval — 2026-10-08
 
