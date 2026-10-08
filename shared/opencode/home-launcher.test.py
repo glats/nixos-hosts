@@ -28,6 +28,13 @@ in {{
   profiles = (import (flake.outPath + "/shared/opencode/providers-base.nix") {{
     lib = flake.inputs.nixpkgs.lib;
   }}).providers;
+  selectedProfiles = {{
+    rog = home.home.opencode.activeProviderName;
+    thinkcentre = flake.homeConfigurations.thinkcentre.config.home.opencode.activeProviderName;
+    t14 = flake.homeConfigurations.t14.config.home.opencode.activeProviderName;
+    macm5Home = flake.homeConfigurations.macm5.config.home.opencode.activeProviderName;
+    macm5Darwin = flake.darwinConfigurations.macm5.config.home-manager.users.juan.home.opencode.activeProviderName;
+  }};
 }}
 '''
 result = json.loads(subprocess.check_output(
@@ -54,6 +61,14 @@ for tier in ("light", "medium", "full"):
 assert profiles["openai-anthropic-light"]["sdd-apply"] == "openai/gpt-6-luna"
 assert medium["sdd-apply"] == "openai/gpt-6.1-sol"
 assert profiles["openai-anthropic-full"]["sdd-apply"] == "anthropic/claude-opus-5-5"
+triple = profiles["openai-anthropic-go"]
+assert triple.keys() == medium.keys()
+assert set(model.split("/")[0] for model in triple.values()) == {"anthropic", "openai", "opencode-go"}
+for phase, model in medium.items():
+    expected = "opencode-go/gpt-6-luna" if phase in ("sdd-init", "sdd-tasks", "sdd-archive") else model
+    assert triple[phase] == expected, phase
+    assert result["v2"]["agents"][phase]["model"] == expected, phase
+assert set(result["selectedProfiles"].values()) == {"openai-anthropic-go"}
 assert "setupOpencodePluginRuntime-v2" in result["openfangAfter"]
 assert ".config/opencode-v2/skills" in result["openfangData"]
 assert ".config/opencode/skills" not in result["openfangData"]

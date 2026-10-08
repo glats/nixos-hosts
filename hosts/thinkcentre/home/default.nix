@@ -9,5 +9,5 @@ baseModules
 
   ../../../linux/home/suites/mate/default.nix
   ../../../linux/home/conky-thinkcentre.nix
-  { home.opencode.activeProviderName = "openai-anthropic-medium"; }
+  { home.opencode.activeProviderName = "openai-anthropic-go"; }
 ]
