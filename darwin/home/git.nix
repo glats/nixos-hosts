@@ -38,13 +38,13 @@ in
       # account so pushes work regardless of gh's active-account state
       {
         path = "~/.config/git/identity-work";
-        contents.credential.helper = identities.mkCredentialHelper pkgs.gh "jcuzmar-Falabella_FTC";
+        contents.credential = identities.mkCredential pkgs.gh "jcuzmar-Falabella_FTC";
       }
       # Personal identity in Personal directory + forced glats account
       {
         condition = "gitdir:~/Projects/**";
         path = "~/.config/git/identity-personal";
-        contents.credential.helper = identities.mkCredentialHelper pkgs.gh "glats";
+        contents.credential = identities.mkCredential pkgs.gh "glats";
       }
       # nixos-hosts uses personal (glats) identity + auth
       {
@@ -52,7 +52,7 @@ in
         path = "~/.config/git/identity-personal";
         contents = {
           # Force glats account for GitHub operations in this repo
-          credential.helper = identities.mkCredentialHelper pkgs.gh "glats";
+          credential = identities.mkCredential pkgs.gh "glats";
         };
       }
     ]
