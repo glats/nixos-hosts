@@ -25,6 +25,9 @@ in {{
   setupData = home.home.activation."setupOpencodePluginRuntime-v2".data;
   profileDirectory = home.home.profileDirectory;
   username = home.home.username;
+  profiles = (import (flake.outPath + "/shared/opencode/providers-base.nix") {{
+    lib = flake.inputs.nixpkgs.lib;
+  }}).providers;
 }}
 '''
 result = json.loads(subprocess.check_output(
@@ -35,6 +38,22 @@ source = (ROOT / "shared/shell-aliases.nix").read_text()
 assert not result["hasAutomaticRestart"], "activation must not restart active V2 sessions"
 assert "agents" in result["v2"] and "permissions" in result["v2"]
 assert result["v2"]["plugins"] == ["opencode-claude-subscription@0.1.4"]
+assert result["v2"]["providers"]["openai"]["settings"]["transport"] == "http"
+assert result["v2"]["agents"]["gentle-orchestrator"]["model"] == "anthropic/claude-opus-5-5"
+assert result["v2"]["agents"]["sdd-apply"]["model"] == "openai/gpt-6.1-sol"
+assert result["v2"]["agents"]["sdd-verify"]["model"] == "anthropic/claude-opus-5-5"
+profiles = {profile["name"]: profile["phases"] for profile in result["profiles"]}
+medium = profiles["openai-anthropic-medium"]
+for tier in ("light", "medium", "full"):
+    phases = profiles[f"openai-anthropic-{tier}"]
+    assert phases.keys() == medium.keys(), f"{tier}: missing phase assignment"
+    assert set(model.split("/")[0] for model in phases.values()) == {"anthropic", "openai"}
+    for phase in ("gentle-orchestrator", "sdd-propose", "sdd-spec", "sdd-design", "sdd-verify"):
+        assert phases[phase] == "anthropic/claude-opus-5-5", (tier, phase)
+    assert phases["sdd-init"] == phases["sdd-archive"] == "openai/gpt-6-luna"
+assert profiles["openai-anthropic-light"]["sdd-apply"] == "openai/gpt-6-luna"
+assert medium["sdd-apply"] == "openai/gpt-6.1-sol"
+assert profiles["openai-anthropic-full"]["sdd-apply"] == "anthropic/claude-opus-5-5"
 assert "setupOpencodePluginRuntime-v2" in result["openfangAfter"]
 assert ".config/opencode-v2/skills" in result["openfangData"]
 assert ".config/opencode/skills" not in result["openfangData"]

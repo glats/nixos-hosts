@@ -404,7 +404,7 @@
             extraModules = [
               ./darwin/home
               {
-                home.opencode.activeProviderName = "anthropic-opencode-free";
+                home.opencode.activeProviderName = "openai-anthropic-medium";
               }
             ];
           };

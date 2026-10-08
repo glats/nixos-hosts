@@ -95,6 +95,10 @@ let
       plugins = [ "opencode-claude-subscription@0.1.4" ];
       default_agent = "gentle-orchestrator";
       agents = v2Agents;
+      # Fit 2026-10-08: avoid the OpenAI WebSocket interruption route
+      # (opencode#53762). This is a mitigation, not a reliability guarantee.
+      # Source: opencode.ai/v2/docs/providers#websockets.
+      providers.openai.settings.transport = "http";
       permissions = v2Permissions.global;
       mcp = v2Mcps;
       experimental.policies = [
