@@ -69,6 +69,16 @@ mask disappears. Failed/interrupted promotion keeps the marker; a successful
 validated policy commit removes it before unmask/start. Unmask/start failures
 restore it before compensating stop. Do not remove the marker manually.
 
+On NixOS, the installed `/etc/systemd/system` unit takes precedence over a
+runtime mask in `/run/systemd/system`, so a stopped unit may remain `loaded`
+rather than `masked`. Promotion still requires `inactive` and an explicit
+`MainPID=0`. The loaded-unit fallback additionally verifies the unique trusted
+`0600` marker, the exact non-trigger negated marker condition in the installed
+unit/drop-ins, and `NeedDaemonReload=no`. Missing/reset/trigger-only conditions,
+changed configuration, or an unsafe/missing marker fail closed before reading
+the staged token or replacing policy. Do not remove the marker or runtime mask
+to work around an apply failure; deploy the corrected helper and retry apply.
+
 To recover a failed/interrupted transaction, correct the input and rerun stage
 and apply. Only after apply succeeds, if prior masked intent kept the unit
 inactive and you explicitly want publication, run `sudo systemctl start

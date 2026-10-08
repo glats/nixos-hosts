@@ -277,8 +277,15 @@ func (t *policyTransaction) maskAndWait(ctx context.Context) error {
 	for {
 		status, statusErr := t.run(ctx, "show", "-p", "LoadState", "-p", "ActiveState", "-p", "MainPID", "--value", t.service)
 		lines := strings.Split(strings.TrimSuffix(status, "\n"), "\n")
-		if statusErr == nil && len(lines) == 3 && lines[0] == "masked" && lines[1] == "inactive" && lines[2] == "0" {
-			return nil
+		if statusErr == nil && len(lines) == 3 && lines[1] == "inactive" && lines[2] == "0" {
+			if lines[0] == "masked" {
+				return nil
+			}
+			// NixOS's /etc unit takes precedence over the /run runtime mask.
+			// Accept loaded only with independently verified startup inhibition.
+			if lines[0] == "loaded" {
+				return t.verifyDurableInhibition(ctx)
+			}
 		}
 		if time.Now().After(deadline) {
 			return errors.New("relay-policy: service did not stop with MainPID=0")
@@ -289,6 +296,68 @@ func (t *policyTransaction) maskAndWait(ctx context.Context) error {
 		case <-time.After(25 * time.Millisecond):
 		}
 	}
+}
+
+func (t *policyTransaction) verifyDurableInhibition(ctx context.Context) error {
+	marker := filepath.Join(filepath.Dir(t.livePath), PolicyInhibitName)
+	unit, err := t.run(ctx, "cat", "--no-pager", t.service)
+	if err != nil || !unitInhibitsPromotion(unit, marker) {
+		return errors.New("relay-policy: loaded service lacks verified startup inhibition")
+	}
+	// cat reads disk files, not the manager's cached configuration. Reject
+	// changed unit files rather than assuming their conditions are effective.
+	reload, err := t.run(ctx, "show", "-p", "NeedDaemonReload", "--value", t.service)
+	if err != nil || strings.TrimSpace(reload) != "no" {
+		return errors.New("relay-policy: cannot verify loaded service configuration")
+	}
+	dir := filepath.Dir(marker)
+	info, err := os.Lstat(dir)
+	if err != nil || !trustedDirectoryInfo(info, t.directoryOwner, 0o755) || !trustedChain(filepath.Dir(dir), t.directoryOwner) {
+		return errors.New("relay-policy: inhibition parent is not trusted")
+	}
+	file, err := os.OpenFile(marker, os.O_RDONLY|syscall.O_NOFOLLOW|syscall.O_NONBLOCK, 0)
+	if err != nil {
+		return errors.New("relay-policy: durable inhibition cannot be opened safely")
+	}
+	defer file.Close()
+	if !trustedOpenPath(marker, file, t.directoryOwner, 0o600) {
+		return errors.New("relay-policy: durable inhibition is not a unique trusted 0600 regular file")
+	}
+	return nil
+}
+
+// Only an exact non-trigger negated path condition proves inhibition. Empty
+// Condition assignments reset the entire condition list, including in drop-ins.
+// Unsupported continuation syntax is rejected rather than guessed at.
+func unitInhibitsPromotion(unit, marker string) bool {
+	section, inhibited := "", false
+	for _, raw := range strings.Split(unit, "\n") {
+		line := strings.TrimSpace(raw)
+		if strings.HasSuffix(line, "\\") {
+			return false
+		}
+		if strings.HasPrefix(line, "# /") {
+			section = "" // systemctl cat starts another fragment or drop-in.
+		}
+		if line == "" || strings.HasPrefix(line, "#") || strings.HasPrefix(line, ";") {
+			continue
+		}
+		if strings.HasPrefix(line, "[") {
+			section = line
+			continue
+		}
+		key, value, ok := strings.Cut(line, "=")
+		key, value = strings.TrimSpace(key), strings.TrimSpace(value)
+		if section != "[Unit]" || !ok || !strings.HasPrefix(key, "Condition") {
+			continue
+		}
+		if value == "" {
+			inhibited = false
+		} else if key == "ConditionPathExists" && value == "!"+marker {
+			inhibited = true
+		}
+	}
+	return inhibited
 }
 
 func (t *policyTransaction) failStop(cause error) error {

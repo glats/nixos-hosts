@@ -467,6 +467,177 @@ func TestPolicyRequiresMaskedInactiveUnitAndExplicitZeroPID(t *testing.T) {
 	}
 }
 
+func TestPolicyLoadedUnitRequiresEffectiveDurableInhibition(t *testing.T) {
+	for _, scenario := range []string{"apply", "revoke", "start-failure", "missing-condition", "missing-marker", "unsafe-marker", "hardlinked-marker", "symlinked-marker", "reload", "cat-error", "reload-error", "active", "nonzero-pid", "empty-pid", "show-error", "extra-line", "unknown-load"} {
+		t.Run(scenario, func(t *testing.T) {
+			command := &fakePolicyCommand{state: "enabled"}
+			if scenario == "start-failure" {
+				command.startErr = errors.New("synthetic start failure")
+			}
+			tx, stage, live := testPolicyTransaction(t, command)
+			tx.stopWaitLimit = time.Millisecond
+			marker := filepath.Join(filepath.Dir(live), PolicyInhibitName)
+			// An invalid staged token must not be read before cessation is proven.
+			if scenario != "apply" && scenario != "revoke" && scenario != "start-failure" {
+				if err := os.WriteFile(stage, []byte("invalid\n"), 0o600); err != nil {
+					t.Fatal(err)
+				}
+			}
+			tx.command = reviewCommand{run: func(ctx context.Context, args ...string) (string, error) {
+				switch args[0] {
+				case "mask":
+					if scenario == "missing-marker" {
+						if err := os.Remove(marker); err != nil {
+							t.Fatal(err)
+						}
+					}
+					if scenario == "unsafe-marker" {
+						if err := os.Chmod(marker, 0o644); err != nil {
+							t.Fatal(err)
+						}
+					}
+					if scenario == "hardlinked-marker" {
+						if err := os.Link(marker, marker+".link"); err != nil {
+							t.Fatal(err)
+						}
+					}
+					if scenario == "symlinked-marker" {
+						if err := os.Remove(marker); err != nil {
+							t.Fatal(err)
+						}
+						if err := os.Symlink(stage, marker); err != nil {
+							t.Fatal(err)
+						}
+					}
+				case "cat":
+					if strings.Join(args, " ") != "cat --no-pager "+PolicyService {
+						t.Fatalf("unexpected cat argv: %v", args)
+					}
+					if scenario == "cat-error" {
+						return "", errors.New("synthetic cat failure")
+					}
+					if scenario == "missing-condition" {
+						return "[Unit]\nDescription=unprotected\n", nil
+					}
+					return "[Unit]\nConditionPathExists=!" + marker + "\n", nil
+				case "show":
+					if strings.Contains(strings.Join(args, " "), "NeedDaemonReload") {
+						if scenario == "reload-error" {
+							return "no\n", errors.New("synthetic reload query failure")
+						}
+						if scenario == "reload" {
+							return "yes\n", nil
+						}
+						return "no\n", nil
+					}
+					status := "loaded\ninactive\n0\n"
+					switch scenario {
+					case "active":
+						status = "loaded\nactive\n0\n"
+					case "nonzero-pid":
+						status = "loaded\ninactive\n123\n"
+					case "empty-pid":
+						status = "loaded\ninactive\n\n"
+					case "show-error":
+						return status, errors.New("synthetic show failure")
+					case "extra-line":
+						status += "unexpected\n"
+					case "unknown-load":
+						status = "not-found\ninactive\n0\n"
+					}
+					return status, nil
+				}
+				return command.Run(ctx, args...)
+			}}
+			var err error
+			if scenario == "revoke" {
+				err = tx.Revoke(context.Background())
+			} else {
+				err = tx.Apply(context.Background())
+			}
+			if scenario == "apply" || scenario == "revoke" {
+				if err != nil {
+					t.Fatal(err)
+				}
+				if _, err := os.Stat(live); err != nil {
+					t.Fatal("verified cessation did not permit promotion")
+				}
+				if scenario == "apply" && countCommand(command.commands, "start ") != 1 {
+					t.Fatal("enabled service was not restarted after promotion")
+				}
+				return
+			}
+			if scenario == "start-failure" {
+				if err == nil || !strings.Contains(err.Error(), "start service") || strings.Contains(err.Error(), "fail-stop verification") {
+					t.Fatalf("loaded-unit cleanup failed: %v", err)
+				}
+				if _, err := os.Stat(marker); err != nil || countCommand(command.commands, "mask --runtime --now ") != 2 {
+					t.Fatal("start failure did not restore inhibition and verify compensating stop")
+				}
+				return
+			}
+			if err == nil || strings.Contains(err.Error(), "invalid length") {
+				t.Fatalf("unsafe cessation reached token validation: %v", err)
+			}
+			if _, err := os.Stat(live); !errors.Is(err, os.ErrNotExist) {
+				t.Fatal("unsafe cessation promoted policy")
+			}
+			if countCommand(command.commands, "unmask ")+countCommand(command.commands, "start ") != 0 {
+				t.Fatal("unsafe cessation resumed service")
+			}
+		})
+	}
+}
+
+func TestUnitInhibitsPromotion(t *testing.T) {
+	marker := "/var/lib/ssh-relay/promotion-pending"
+	condition := "ConditionPathExists=!" + marker + "\n"
+	for _, tc := range []struct {
+		name string
+		unit string
+		want bool
+	}{
+		{"native-unit", "# /etc/systemd/system/ssh-relay.service -> /nix/store/unit\n[Unit]\nAfter=network-online.target\n" + condition + "[Service]\nRestart=on-failure\n", true},
+		{"additional-and-condition", "[Unit]\n" + condition + "ConditionPathExists=/other\n", true},
+		{"additional-trigger", "[Unit]\n" + condition + "ConditionPathExists=|/other\n", true},
+		{"absent", "[Unit]\nDescription=relay\n", false},
+		{"comment", "[Unit]\n# " + condition, false},
+		{"service-section", "[Service]\n" + condition, false},
+		{"wrong-path", "[Unit]\nConditionPathExists=!/other\n", false},
+		{"positive-path", "[Unit]\nConditionPathExists=" + marker + "\n", false},
+		{"trigger-or", "[Unit]\nConditionPathExists=|!" + marker + "\nConditionPathExists=|/other\n", false},
+		{"reset-path", "[Unit]\n" + condition + "ConditionPathExists=\n", false},
+		{"reset-other-condition", "[Unit]\n" + condition + "ConditionArchitecture=\n", false},
+		{"dropin-reset", "[Unit]\n" + condition + "# /etc/systemd/system/ssh-relay.service.d/reset.conf\n[Unit]\nConditionPathExists=\n", false},
+		{"dropin-restores", "[Unit]\nConditionPathExists=\n# /etc/systemd/system/ssh-relay.service.d/inhibit.conf\n[Unit]\n" + condition, true},
+		{"dropin-without-section", "[Unit]\n# /etc/systemd/system/ssh-relay.service.d/invalid.conf\n" + condition, false},
+		{"continuation", "[Unit]\nDescription=continued\\\n" + condition, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := unitInhibitsPromotion(tc.unit, marker); got != tc.want {
+				t.Fatalf("inhibition=%v, want %v", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestPolicyNativeUnitConditionReadOnly(t *testing.T) {
+	if testing.Short() || os.Getenv("SSHRELAY_NATIVE_UNIT_CHECK") != "1" {
+		t.Skip("opt-in read-only check of the installed ROG unit")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	command := systemctlCommand{path: PolicySystemctlPath}
+	unit, err := command.Run(ctx, "cat", "--no-pager", PolicyService)
+	if err != nil || !unitInhibitsPromotion(unit, filepath.Join(filepath.Dir(PolicyLivePath), PolicyInhibitName)) {
+		t.Fatalf("installed unit lacks startup inhibition (cat error: %v)", err)
+	}
+	reload, err := command.Run(ctx, "show", "-p", "NeedDaemonReload", "--value", PolicyService)
+	if err != nil || strings.TrimSpace(reload) != "no" {
+		t.Fatalf("installed configuration is not effective: reload=%q error=%v", reload, err)
+	}
+}
+
 func TestPolicyRejectsSymlinkedTransactionLock(t *testing.T) {
 	tx, _, _ := testPolicyTransaction(t, &fakePolicyCommand{state: "disabled"})
 	if err := os.MkdirAll(tx.stateDir, 0o700); err != nil {
