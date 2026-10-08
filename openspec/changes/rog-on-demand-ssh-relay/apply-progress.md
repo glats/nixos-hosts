@@ -1,5 +1,39 @@
 # Apply Progress: On-Demand SSH Through rog
 
+## Closure evidence reconciliation — 2026-10-08
+
+Bounded independent evidence at commit
+`c00e35e3b32371fe815bdb3be189682a60ca129a` is in `verify-report.md`.
+Go suite, Linux package realization and flake check pass. Opt-in read-only
+installed-unit condition test passes; ROG is active/running with reload no
+and exact loopback listener `127.0.0.1:22220`.
+
+Earlier parent strict relay SSH succeeded (`CLFTCLGV2FHWW0W.local`, `arm64`,
+exit 0); user confirmed policy apply/service active, Mac stage/apply/on and
+off failure/on restoration. This verifier's two historical pinned SSH
+observations time out during banner exchange (255), last at
+`2026-10-08T17:51:14Z`. Cause is unclassified; listener alone is not SSH health.
+Later parent strict LAN SSH confirmed Mac arm64 and `intent=disabled registered=no
+pidunknown relayunknownsshunknown`; parallel relay SSH was refused at
+`127.0.0.1:22220`. Intentional OFF explains expected current unavailability, not
+necessarily the historical banner timeout. Correction recorded at
+`2026-10-08T17:58:15Z`; later parent snapshot acquisition time was not supplied.
+No production mutation, new runtime attempt/reset or recovery was performed.
+
+Native status: 10/15 complete, verify/archive blocked, next apply. Apply owns
+checkbox reconciliation: 4.1 has newer user completion evidence; 6.1 is already
+checked/shipped. Preserve pending 1.2, 1.3, 2.3, 3.4 wherever full native negative,
+revocation/outage/sleep/isolation scope lacks proof. Off/on does not complete
+3.4. No checkbox or scope was changed by this general handoff.
+
+User explicitly accepts basic observed SSH and off/on, authorizes master merge
+and delivery closure. Bounded verdict is PASS with warnings; current on-state
+SSH is not claimed or required while client is intentionally OFF. Formal archive
+remains blocked by 1.2/1.3/2.3/3.4/4.1; task ownership is unchanged. Outstanding
+nightly reboot, outage, sleep/wake, active-stream revocation, native negative and
+isolation gates are not waived. Git delivery is separate from archive/spec sync
+and deployment; primary dirty work and the tool instance file remain preserved.
+
 ## Initial encrypted credential input preparation — task 6.1, 2026-10-08
 
 Current authorization supersedes historical statements below only for this
