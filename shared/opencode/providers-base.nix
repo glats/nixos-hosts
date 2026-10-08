@@ -140,42 +140,44 @@ let
       # ling-3.0-flash-fin-free, muse-spark-1.2/1.3-contributor-free. hy3-free y
       # x-preview-f-free rotaron fuera del catálogo. muse-spark-1.2 sigue BROKEN
       # (#43882, #44659, #45744). Estrategia: cuota Anthropic reservada para juicio —
-      # orchestrator en Sonnet 5, spec y verify en Sonnet 4.6; el resto en free de Zen.
+      # orchestrator, spec, verify y reviews en Sonnet 5.5; el resto en free de Zen.
+      # Re-fit 2026-10-07: Sonnet 4.6 ($3/$15) → Sonnet 5.5 ($2/$10, 1M ctx).
       phases = {
-        # anthropic/claude-sonnet-5: orquestador en cuota Anthropic (petición explícita).
-        gentle-orchestrator = "anthropic/claude-sonnet-5";
+        # anthropic/claude-opus-5-5: orquestador unificado en Opus 5.5 (2026-10-07, petición explícita;
+        # $4/$20 vs Fable 5.1 $10/$50 — el router hace loops, Fable no se justifica).
+        gentle-orchestrator = "anthropic/claude-opus-5-5";
         # nemotron-3.5-lightning-free: construido para ejecución ligera de alto volumen.
         sdd-init = "opencode/nemotron-3.5-lightning-free";
         # nemotron-3-ultra-free: 1M ctx + RULER@1M 94.7 — mejor para explorar repos grandes.
         sdd-explore = "opencode-go/glm-5.3-flash";
         # nemotron-3-ultra-free: GPQA 87 — mejor razonamiento/planning free.
         sdd-propose = "opencode/nemotron-3-ultra-free";
-        # anthropic/claude-sonnet-4-6: hy3-free rotó fuera del catálogo free (audit 2026-09-09);
+        # anthropic/claude-sonnet-5-5: hy3-free rotó fuera del catálogo free (audit 2026-09-09);
         # un spec malo propaga defectos a todo el chain (design→tasks→apply→verify).
-        sdd-spec = "anthropic/claude-sonnet-4-6";
+        sdd-spec = "anthropic/claude-sonnet-5-5";
         # nemotron-3-ultra-free: decisiones de arquitectura (GPQA 87, 1M ctx).
         sdd-design = "opencode/nemotron-3-ultra-free";
         # nemotron-3.5-lightning-free: descomposición mecánica a alto volumen.
         sdd-tasks = "opencode/nemotron-3.5-lightning-free";
         # mimo-v2.5-free: 70 tok/s para edits de código, worker de apply probado en audits previos.
         sdd-apply = "opencode/mimo-v2.5-free";
-        # anthropic/claude-sonnet-4-6: puerta de aceptación — un defecto no detectado cuesta
+        # anthropic/claude-sonnet-5-5: puerta de aceptación — un defecto no detectado cuesta
         # un re-loop completo apply→verify; nemotron-free (~70% SWE-bench) queda corto aquí.
-        sdd-verify = "anthropic/claude-sonnet-4-6";
+        sdd-verify = "anthropic/claude-sonnet-5-5";
         # nemotron-3.5-lightning-free: la clase más rápida/barata para copy-and-close.
         sdd-archive = "opencode/nemotron-3.5-lightning-free";
         # mimo-v2.5-free: walkthrough guiado barato.
         sdd-onboard = "opencode/mimo-v2.5-free";
         # nemotron-3-ultra-free: default balanceado.
-        jd-judge-a = "anthropic/claude-sonnet-4-6";
-        jd-judge-b = "anthropic/claude-sonnet-4-6";
+        jd-judge-a = "anthropic/claude-sonnet-5-5";
+        jd-judge-b = "anthropic/claude-sonnet-5-5";
         jd-fix-agent = "opencode/mimo-v2.5-free";
-        review-readability = "anthropic/claude-sonnet-4-6";
-        review-refuter = "anthropic/claude-sonnet-4-6";
-        review-reliability = "anthropic/claude-sonnet-4-6";
-        review-resilience = "anthropic/claude-sonnet-4-6";
-        review-risk = "anthropic/claude-sonnet-4-6";
-        review-validator = "anthropic/claude-sonnet-4-6";
+        review-readability = "anthropic/claude-sonnet-5-5";
+        review-refuter = "anthropic/claude-sonnet-5-5";
+        review-reliability = "anthropic/claude-sonnet-5-5";
+        review-resilience = "anthropic/claude-sonnet-5-5";
+        review-risk = "anthropic/claude-sonnet-5-5";
+        review-validator = "anthropic/claude-sonnet-5-5";
         neutral = "opencode/nemotron-3-ultra-free";
       };
     }
@@ -184,191 +186,204 @@ let
       phases = {
         gentle-orchestrator = "github-copilot/gpt-6.1-sol";
         sdd-init = "github-copilot/gpt-5.4-mini";
-        sdd-explore = "anthropic/claude-sonnet-4-6";
-        sdd-propose = "anthropic/claude-sonnet-4-6";
+        sdd-explore = "anthropic/claude-sonnet-5-5";
+        sdd-propose = "anthropic/claude-sonnet-5-5";
         sdd-spec = "github-copilot/claude-sonnet-5.5";
-        sdd-design = "anthropic/claude-sonnet-4-6";
+        sdd-design = "anthropic/claude-sonnet-5-5";
         sdd-tasks = "github-copilot/gpt-5.4-mini";
         # Re-fit 2026-09-23: apply is the only may-loop phase in this profile,
-        # so it moves to the already-routed Copilot Sonnet 5. GitHub lists it
-        # at $2/$10 per MTok versus native Sonnet 4.6 at $3/$15; keep native
-        # Sonnet 4.6 for the one-shot acceptance and review judgment gates.
+        # so it stays on the already-routed Copilot Sonnet 5.5 workforce.
+        # Re-fit 2026-10-07: native judgment gates move from Sonnet 4.6 ($3/$15)
+        # to Sonnet 5.5 ($2/$10); native archive moves to Haiku 5.5 (day-0).
         # Sources: docs.github.com/copilot/reference/copilot-billing/models-and-pricing
         # and docs.anthropic.com/en/docs/about-claude/pricing.
         sdd-apply = "github-copilot/claude-sonnet-5.5";
-        sdd-verify = "anthropic/claude-sonnet-4-6";
-        sdd-archive = "anthropic/claude-haiku-4-5";
+        sdd-verify = "anthropic/claude-sonnet-5-5";
+        sdd-archive = "anthropic/claude-haiku-5-5";
         sdd-onboard = "github-copilot/gpt-5.4-mini";
-        jd-judge-a = "anthropic/claude-sonnet-4-6";
-        jd-judge-b = "anthropic/claude-sonnet-4-6";
+        jd-judge-a = "anthropic/claude-sonnet-5-5";
+        jd-judge-b = "anthropic/claude-sonnet-5-5";
         # Re-fit 2026-09-23: corrections may loop, so use the already-routed
-        # Copilot Sonnet 5 ($2/$10 per MTok) instead of native Sonnet 4.6
-        # ($3/$15); reserve the native model for independent judgments.
+        # Copilot workforce; reserve native quota for independent judgments.
         jd-fix-agent = "github-copilot/claude-sonnet-5.5";
-        review-readability = "anthropic/claude-sonnet-4-6";
-        review-refuter = "anthropic/claude-sonnet-4-6";
-        review-reliability = "anthropic/claude-sonnet-4-6";
-        review-resilience = "anthropic/claude-sonnet-4-6";
-        review-risk = "anthropic/claude-sonnet-4-6";
-        review-validator = "anthropic/claude-sonnet-4-6";
+        review-readability = "anthropic/claude-sonnet-5-5";
+        review-refuter = "anthropic/claude-sonnet-5-5";
+        review-reliability = "anthropic/claude-sonnet-5-5";
+        review-resilience = "anthropic/claude-sonnet-5-5";
+        review-risk = "anthropic/claude-sonnet-5-5";
+        review-validator = "anthropic/claude-sonnet-5-5";
         neutral = "github-copilot/gpt-5.6-luna";
       };
     }
     {
       name = "work-copilot-anthropic-light";
       # Audit 2026-09-23: use Copilot Terra ($2/$12 per MTok) for capable
-      # orchestration and native Sonnet 5 ($2/$10) for planning work; retain
-      # Copilot Sonnet 5 for the implementation path to preserve its workforce.
-      # retain native Sonnet 4.6 ($3/$15) only for acceptance and adversarial
-      # judgment.
+      # orchestration and native Sonnet 5.5 ($2/$10) for planning work; retain
+      # Copilot Sonnet 5.5 for the implementation path to preserve its workforce.
+      # Re-fit 2026-10-07: native acceptance and adversarial judgment move from
+      # Sonnet 4.6 ($3/$15) to Sonnet 5.5; mechanical phases to Haiku 5.5 (day-0).
       # Sources: docs.github.com/copilot/reference/copilot-billing/models-and-pricing
       # and docs.github.com/copilot/reference/ai-models/model-comparison.
       phases = {
         # Terra is GitHub's balanced agentic model and supports the 1M context tier.
         gentle-orchestrator = "github-copilot/gpt-6.1-sol";
         # Mechanical and guided phases use the inexpensive native tier.
-        sdd-init = "anthropic/claude-haiku-4-5";
-        sdd-explore = "anthropic/claude-sonnet-5";
-        sdd-propose = "anthropic/claude-sonnet-5";
+        sdd-init = "anthropic/claude-haiku-5-5";
+        sdd-explore = "anthropic/claude-sonnet-5-5";
+        sdd-propose = "anthropic/claude-sonnet-5-5";
         sdd-spec = "github-copilot/claude-sonnet-5.5";
-        sdd-design = "anthropic/claude-sonnet-5";
-        sdd-tasks = "anthropic/claude-haiku-4-5";
+        sdd-design = "anthropic/claude-sonnet-5-5";
+        sdd-tasks = "anthropic/claude-haiku-5-5";
         sdd-apply = "github-copilot/claude-sonnet-5.5";
         # Preserve the native quality gate where a missed defect causes a re-loop.
-        sdd-verify = "anthropic/claude-sonnet-4-6";
-        sdd-archive = "anthropic/claude-haiku-4-5";
-        sdd-onboard = "anthropic/claude-haiku-4-5";
-        jd-judge-a = "anthropic/claude-sonnet-4-6";
-        jd-judge-b = "anthropic/claude-sonnet-4-6";
+        sdd-verify = "anthropic/claude-sonnet-5-5";
+        sdd-archive = "anthropic/claude-haiku-5-5";
+        sdd-onboard = "anthropic/claude-haiku-5-5";
+        jd-judge-a = "anthropic/claude-sonnet-5-5";
+        jd-judge-b = "anthropic/claude-sonnet-5-5";
         jd-fix-agent = "github-copilot/claude-sonnet-5.5";
-        review-readability = "anthropic/claude-sonnet-4-6";
-        review-refuter = "anthropic/claude-sonnet-4-6";
-        review-reliability = "anthropic/claude-sonnet-4-6";
-        review-resilience = "anthropic/claude-sonnet-4-6";
-        review-risk = "anthropic/claude-sonnet-4-6";
-        review-validator = "anthropic/claude-sonnet-4-6";
+        review-readability = "anthropic/claude-sonnet-5-5";
+        review-refuter = "anthropic/claude-sonnet-5-5";
+        review-reliability = "anthropic/claude-sonnet-5-5";
+        review-resilience = "anthropic/claude-sonnet-5-5";
+        review-risk = "anthropic/claude-sonnet-5-5";
+        review-validator = "anthropic/claude-sonnet-5-5";
         neutral = "github-copilot/claude-sonnet-5.5";
       };
     }
     {
       name = "anthropic-light";
-      # Re-fit 2026-09-28: native current-model tier. Sonnet 5 is $2/$10 per
-      # MTok versus legacy Sonnet 4.6 at $3/$15, with the same 1M context and
-      # tool use. Source: docs.anthropic.com/en/docs/about-claude/models and
-      # docs.anthropic.com/en/docs/about-claude/pricing.
+      # Re-fit 2026-10-07: Claude 5.5 family. Sonnet 5.5 keeps Sonnet 5 pricing
+      # ($2/$10 per MTok) with 30%+ faster output and up to 30% less per task.
+      # Haiku 5.5 ($0.10/$0.50 for prompts under 100K tokens, 1M ctx, 128K out)
+      # takes the mechanical phases. Haiku 5.5 is day-0 (released 2026-10-07):
+      # if init/tasks/archive/onboard regress, roll back to claude-haiku-4-5.
+      # Sources: anthropic.com/claude-sonnet-5-5, anthropic.com/claude-haiku-5-5,
+      # platform.claude.com/docs/en/models/haiku-5-5/overview.
       phases = {
-        # Sonnet 5 is the fast, capable default for day-to-day agent work.
+        # Opus 5.5 orchestrator is a deliberate choice for this tier. Known issue:
+        # opencode#52735 (native Opus 5.5 may store pre-tool-call user text as a
+        # collapsed reasoning part). Rollback: claude-sonnet-5-5.
         gentle-orchestrator = "anthropic/claude-opus-5-5";
-        sdd-init = "anthropic/claude-haiku-4-5";
-        sdd-explore = "anthropic/claude-sonnet-5";
-        sdd-propose = "anthropic/claude-sonnet-5";
-        sdd-spec = "anthropic/claude-sonnet-5";
-        sdd-design = "anthropic/claude-sonnet-5";
-        sdd-tasks = "anthropic/claude-haiku-4-5";
-        sdd-apply = "anthropic/claude-sonnet-5";
-        sdd-verify = "anthropic/claude-sonnet-5";
-        sdd-archive = "anthropic/claude-haiku-4-5";
-        sdd-onboard = "anthropic/claude-haiku-4-5";
-        jd-judge-a = "anthropic/claude-sonnet-5";
-        jd-judge-b = "anthropic/claude-sonnet-5";
-        jd-fix-agent = "anthropic/claude-sonnet-5";
-        review-readability = "anthropic/claude-sonnet-5";
-        review-refuter = "anthropic/claude-sonnet-5";
-        review-reliability = "anthropic/claude-sonnet-5";
-        review-resilience = "anthropic/claude-sonnet-5";
-        review-risk = "anthropic/claude-sonnet-5";
-        review-validator = "anthropic/claude-sonnet-5";
-        neutral = "anthropic/claude-sonnet-5";
+        sdd-init = "anthropic/claude-haiku-5-5";
+        sdd-explore = "anthropic/claude-sonnet-5-5";
+        sdd-propose = "anthropic/claude-sonnet-5-5";
+        sdd-spec = "anthropic/claude-sonnet-5-5";
+        sdd-design = "anthropic/claude-sonnet-5-5";
+        sdd-tasks = "anthropic/claude-haiku-5-5";
+        sdd-apply = "anthropic/claude-sonnet-5-5";
+        sdd-verify = "anthropic/claude-sonnet-5-5";
+        sdd-archive = "anthropic/claude-haiku-5-5";
+        sdd-onboard = "anthropic/claude-haiku-5-5";
+        jd-judge-a = "anthropic/claude-sonnet-5-5";
+        jd-judge-b = "anthropic/claude-sonnet-5-5";
+        jd-fix-agent = "anthropic/claude-sonnet-5-5";
+        review-readability = "anthropic/claude-sonnet-5-5";
+        review-refuter = "anthropic/claude-sonnet-5-5";
+        review-reliability = "anthropic/claude-sonnet-5-5";
+        review-resilience = "anthropic/claude-sonnet-5-5";
+        review-risk = "anthropic/claude-sonnet-5-5";
+        review-validator = "anthropic/claude-sonnet-5-5";
+        neutral = "anthropic/claude-sonnet-5-5";
       };
     }
     {
       name = "anthropic-medium";
-      # Re-fit 2026-09-28: Sonnet 5 supplies the low-latency orchestration
-      # path; reserve current Opus 5 ($5/$25 per MTok) for once-shot proposal
-      # and architecture judgment. Fable 5.1 ($10/$50) is not cost-justified.
+      # Re-fit 2026-10-07: Opus 5.5 ($4/$20 per MTok, cheaper than Opus 5 at
+      # $5/$25) handles orchestration and once-shot proposal/architecture judgment.
+      # Sonnet 5.5 covers work and review phases, and Haiku 5.5 (day-0) covers
+      # init and archive. Fable 5.1 ($10/$50) is still not cost-justified.
+      # Source: platform.claude.com/docs/en/models/sonnet-5-5/overview (model table).
       phases = {
-        # A looping router benefits more from Sonnet's speed and cost than Opus.
+        # Opus 5.5: see opencode#52735 (pre-tool-call text lands in reasoning).
         gentle-orchestrator = "anthropic/claude-opus-5-5";
-        sdd-init = "anthropic/claude-haiku-4-5";
-        sdd-explore = "anthropic/claude-sonnet-5";
-        sdd-propose = "anthropic/claude-opus-5";
-        sdd-spec = "anthropic/claude-sonnet-5";
-        sdd-design = "anthropic/claude-opus-5";
-        sdd-tasks = "anthropic/claude-sonnet-5";
-        sdd-apply = "anthropic/claude-sonnet-5";
-        sdd-verify = "anthropic/claude-sonnet-5";
-        sdd-archive = "anthropic/claude-haiku-4-5";
-        sdd-onboard = "anthropic/claude-sonnet-5";
-        jd-judge-a = "anthropic/claude-sonnet-5";
-        jd-judge-b = "anthropic/claude-sonnet-5";
-        jd-fix-agent = "anthropic/claude-sonnet-5";
-        review-readability = "anthropic/claude-sonnet-5";
-        review-refuter = "anthropic/claude-sonnet-5";
-        review-reliability = "anthropic/claude-sonnet-5";
-        review-resilience = "anthropic/claude-sonnet-5";
-        review-risk = "anthropic/claude-sonnet-5";
-        review-validator = "anthropic/claude-sonnet-5";
-        neutral = "anthropic/claude-sonnet-5";
+        sdd-init = "anthropic/claude-haiku-5-5";
+        sdd-explore = "anthropic/claude-sonnet-5-5";
+        sdd-propose = "anthropic/claude-opus-5-5";
+        sdd-spec = "anthropic/claude-sonnet-5-5";
+        sdd-design = "anthropic/claude-opus-5-5";
+        sdd-tasks = "anthropic/claude-sonnet-5-5";
+        sdd-apply = "anthropic/claude-sonnet-5-5";
+        sdd-verify = "anthropic/claude-sonnet-5-5";
+        sdd-archive = "anthropic/claude-haiku-5-5";
+        sdd-onboard = "anthropic/claude-sonnet-5-5";
+        jd-judge-a = "anthropic/claude-sonnet-5-5";
+        jd-judge-b = "anthropic/claude-sonnet-5-5";
+        jd-fix-agent = "anthropic/claude-sonnet-5-5";
+        review-readability = "anthropic/claude-sonnet-5-5";
+        review-refuter = "anthropic/claude-sonnet-5-5";
+        review-reliability = "anthropic/claude-sonnet-5-5";
+        review-resilience = "anthropic/claude-sonnet-5-5";
+        review-risk = "anthropic/claude-sonnet-5-5";
+        review-validator = "anthropic/claude-sonnet-5-5";
+        neutral = "anthropic/claude-sonnet-5-5";
       };
     }
     {
       name = "anthropic-full";
-      # Re-fit 2026-09-28: keep the established light/medium/full naming.
-      # Opus 5 replaces legacy Opus 4.8 at the same $5/$25 per MTok; Fable 5.1
-      # costs 2x more and is reserved for demonstrated Opus capability gaps.
+      # Re-fit 2026-10-07: anthropic-medium plus Opus 5.5 on every once-shot
+      # judgment gate (verify, judgment-day judges, review lenses), where a missed
+      # defect costs a full apply/verify re-loop. Looping phases (apply,
+      # jd-fix-agent) stay on Sonnet 5.5 for cost per loop. Fable 5.1 costs 2.5x
+      # Opus 5.5 and is reserved for demonstrated Opus capability gaps.
+      # Sources: anthropic.com/claude-opus-5-5, platform.claude.com/docs/en/models/sonnet-5-5/overview.
       phases = {
-        # Full tier pays for Opus only at the highest-value judgment boundaries.
-        gentle-orchestrator = "anthropic/claude-opus-5";
-        sdd-init = "anthropic/claude-haiku-4-5";
-        sdd-explore = "anthropic/claude-sonnet-5";
-        sdd-propose = "anthropic/claude-opus-5";
-        sdd-spec = "anthropic/claude-sonnet-5";
-        sdd-design = "anthropic/claude-opus-5";
-        sdd-tasks = "anthropic/claude-sonnet-5";
-        sdd-apply = "anthropic/claude-sonnet-5";
-        sdd-verify = "anthropic/claude-sonnet-5";
-        sdd-archive = "anthropic/claude-haiku-4-5";
-        sdd-onboard = "anthropic/claude-sonnet-5";
-        jd-judge-a = "anthropic/claude-sonnet-5";
-        jd-judge-b = "anthropic/claude-sonnet-5";
-        jd-fix-agent = "anthropic/claude-sonnet-5";
-        review-readability = "anthropic/claude-sonnet-5";
-        review-refuter = "anthropic/claude-sonnet-5";
-        review-reliability = "anthropic/claude-sonnet-5";
-        review-resilience = "anthropic/claude-sonnet-5";
-        review-risk = "anthropic/claude-sonnet-5";
-        review-validator = "anthropic/claude-sonnet-5";
-        neutral = "anthropic/claude-sonnet-5";
+        # Opus 5.5: see opencode#52735 (pre-tool-call text lands in reasoning).
+        gentle-orchestrator = "anthropic/claude-opus-5-5";
+        sdd-init = "anthropic/claude-haiku-5-5";
+        sdd-explore = "anthropic/claude-sonnet-5-5";
+        sdd-propose = "anthropic/claude-opus-5-5";
+        sdd-spec = "anthropic/claude-sonnet-5-5";
+        sdd-design = "anthropic/claude-opus-5-5";
+        sdd-tasks = "anthropic/claude-sonnet-5-5";
+        sdd-apply = "anthropic/claude-sonnet-5-5";
+        sdd-verify = "anthropic/claude-opus-5-5";
+        sdd-archive = "anthropic/claude-haiku-5-5";
+        sdd-onboard = "anthropic/claude-sonnet-5-5";
+        jd-judge-a = "anthropic/claude-opus-5-5";
+        jd-judge-b = "anthropic/claude-opus-5-5";
+        jd-fix-agent = "anthropic/claude-sonnet-5-5";
+        review-readability = "anthropic/claude-opus-5-5";
+        review-refuter = "anthropic/claude-opus-5-5";
+        review-reliability = "anthropic/claude-opus-5-5";
+        review-resilience = "anthropic/claude-opus-5-5";
+        review-risk = "anthropic/claude-opus-5-5";
+        review-validator = "anthropic/claude-opus-5-5";
+        neutral = "anthropic/claude-sonnet-5-5";
       };
     }
     {
       name = "reliable";
       # Evidence: Anthropic native OAuth transport only, zero BROKEN-annotated models,
+      # Re-fit 2026-10-07: Sonnet 4.6 -> Sonnet 5.5 and Opus 4.8 -> Opus 5.5 (both
+      # cheaper, 1M ctx). Haiku stays on 4.5 here: Haiku 5.5 is day-0 and this
+      # profile is defined by proven stability; promote it after a clean run elsewhere.
       # no cross-provider indirection — Opus reserved for the heaviest judgment phase.
       phases = {
-        # claude-sonnet-4-6: no BROKEN annotation, stable native OAuth transport.
-        gentle-orchestrator = "anthropic/claude-sonnet-4-6";
+        # claude-opus-5-5: unified orchestrator across Anthropic profiles (2026-10-07, user request);
+        # no open tool-call issue on native OAuth. Known: opencode#52735 (display only).
+        gentle-orchestrator = "anthropic/claude-opus-5-5";
         sdd-init = "anthropic/claude-haiku-4-5";
-        sdd-explore = "anthropic/claude-sonnet-4-6";
-        # claude-opus-4-8: heaviest architecture phase, strongest reliable reasoning.
-        sdd-propose = "anthropic/claude-opus-4-8";
-        sdd-spec = "anthropic/claude-sonnet-4-6";
-        sdd-design = "anthropic/claude-opus-4-8";
-        sdd-tasks = "anthropic/claude-sonnet-4-6";
-        sdd-apply = "anthropic/claude-sonnet-4-6";
-        sdd-verify = "anthropic/claude-sonnet-4-6";
+        sdd-explore = "anthropic/claude-sonnet-5-5";
+        # claude-opus-5-5: heaviest architecture phase, strongest reliable reasoning.
+        sdd-propose = "anthropic/claude-opus-5-5";
+        sdd-spec = "anthropic/claude-sonnet-5-5";
+        sdd-design = "anthropic/claude-opus-5-5";
+        sdd-tasks = "anthropic/claude-sonnet-5-5";
+        sdd-apply = "anthropic/claude-sonnet-5-5";
+        sdd-verify = "anthropic/claude-sonnet-5-5";
         sdd-archive = "anthropic/claude-haiku-4-5";
-        sdd-onboard = "anthropic/claude-sonnet-4-6";
-        jd-judge-a = "anthropic/claude-sonnet-4-6";
-        jd-judge-b = "anthropic/claude-sonnet-4-6";
-        jd-fix-agent = "anthropic/claude-sonnet-4-6";
-        review-readability = "anthropic/claude-sonnet-4-6";
-        review-refuter = "anthropic/claude-sonnet-4-6";
-        review-reliability = "anthropic/claude-sonnet-4-6";
-        review-resilience = "anthropic/claude-sonnet-4-6";
-        review-risk = "anthropic/claude-sonnet-4-6";
-        review-validator = "anthropic/claude-sonnet-4-6";
-        neutral = "anthropic/claude-sonnet-4-6";
+        sdd-onboard = "anthropic/claude-sonnet-5-5";
+        jd-judge-a = "anthropic/claude-sonnet-5-5";
+        jd-judge-b = "anthropic/claude-sonnet-5-5";
+        jd-fix-agent = "anthropic/claude-sonnet-5-5";
+        review-readability = "anthropic/claude-sonnet-5-5";
+        review-refuter = "anthropic/claude-sonnet-5-5";
+        review-reliability = "anthropic/claude-sonnet-5-5";
+        review-resilience = "anthropic/claude-sonnet-5-5";
+        review-risk = "anthropic/claude-sonnet-5-5";
+        review-validator = "anthropic/claude-sonnet-5-5";
+        neutral = "anthropic/claude-sonnet-5-5";
       };
     }
     {
@@ -400,29 +415,29 @@ let
       # Evidence: Opus-heavy Anthropic tier for maximum judgment quality; only
       # mechanical phases (init/tasks/archive/onboard) step down to Sonnet.
       phases = {
-        # claude-opus-4-8: strongest available reasoning for orchestration judgment.
-        gentle-orchestrator = "anthropic/claude-opus-4-8";
-        sdd-init = "anthropic/claude-sonnet-4-6";
-        sdd-explore = "anthropic/claude-opus-4-8";
-        # claude-opus-4-8: heaviest architecture phase.
-        sdd-propose = "anthropic/claude-opus-4-8";
-        sdd-spec = "anthropic/claude-opus-4-8";
-        sdd-design = "anthropic/claude-opus-4-8";
-        sdd-tasks = "anthropic/claude-sonnet-4-6";
-        sdd-apply = "anthropic/claude-opus-4-8";
-        sdd-verify = "anthropic/claude-opus-4-8";
-        sdd-archive = "anthropic/claude-sonnet-4-6";
-        sdd-onboard = "anthropic/claude-sonnet-4-6";
-        jd-judge-a = "anthropic/claude-opus-4-8";
-        jd-judge-b = "anthropic/claude-opus-4-8";
-        jd-fix-agent = "anthropic/claude-opus-4-8";
-        review-readability = "anthropic/claude-opus-4-8";
-        review-refuter = "anthropic/claude-opus-4-8";
-        review-reliability = "anthropic/claude-opus-4-8";
-        review-resilience = "anthropic/claude-opus-4-8";
-        review-risk = "anthropic/claude-opus-4-8";
-        review-validator = "anthropic/claude-opus-4-8";
-        neutral = "anthropic/claude-opus-4-8";
+        # claude-opus-5-5: strongest non-Fable reasoning for orchestration judgment.
+        gentle-orchestrator = "anthropic/claude-opus-5-5";
+        sdd-init = "anthropic/claude-sonnet-5-5";
+        sdd-explore = "anthropic/claude-opus-5-5";
+        # claude-opus-5-5: heaviest architecture phase.
+        sdd-propose = "anthropic/claude-opus-5-5";
+        sdd-spec = "anthropic/claude-opus-5-5";
+        sdd-design = "anthropic/claude-opus-5-5";
+        sdd-tasks = "anthropic/claude-sonnet-5-5";
+        sdd-apply = "anthropic/claude-opus-5-5";
+        sdd-verify = "anthropic/claude-opus-5-5";
+        sdd-archive = "anthropic/claude-sonnet-5-5";
+        sdd-onboard = "anthropic/claude-sonnet-5-5";
+        jd-judge-a = "anthropic/claude-opus-5-5";
+        jd-judge-b = "anthropic/claude-opus-5-5";
+        jd-fix-agent = "anthropic/claude-opus-5-5";
+        review-readability = "anthropic/claude-opus-5-5";
+        review-refuter = "anthropic/claude-opus-5-5";
+        review-reliability = "anthropic/claude-opus-5-5";
+        review-resilience = "anthropic/claude-opus-5-5";
+        review-risk = "anthropic/claude-opus-5-5";
+        review-validator = "anthropic/claude-opus-5-5";
+        neutral = "anthropic/claude-opus-5-5";
       };
     }
     {
@@ -431,29 +446,29 @@ let
       # opencode-go, openai) so review/verification isn't anchored to one vendor's
       # blind spots — no BROKEN-annotated models used.
       phases = {
-        # anthropic/claude-sonnet-4-6: cross-family review anchor, native OAuth.
-        gentle-orchestrator = "anthropic/claude-sonnet-4-6";
+        # anthropic/claude-opus-5-5: unified orchestrator across Anthropic profiles (2026-10-07).
+        gentle-orchestrator = "anthropic/claude-opus-5-5";
         sdd-init = "github-copilot/gpt-5.4-mini";
         sdd-explore = "opencode-go/deepseek-v4-pro";
-        # anthropic/claude-opus-4-8: heaviest phase gets the strongest cross-checked model.
-        sdd-propose = "anthropic/claude-opus-4-8";
+        # anthropic/claude-opus-5-5: heaviest phase gets the strongest cross-checked model.
+        sdd-propose = "anthropic/claude-opus-5-5";
         sdd-spec = "openai/gpt-5.4";
-        sdd-design = "anthropic/claude-opus-4-8";
+        sdd-design = "anthropic/claude-opus-5-5";
         sdd-tasks = "github-copilot/gpt-5.4-mini";
         sdd-apply = "opencode-go/glm-5.3-flash";
-        sdd-verify = "anthropic/claude-sonnet-4-6";
+        sdd-verify = "anthropic/claude-sonnet-5-5";
         sdd-archive = "github-copilot/claude-haiku-4.5";
         sdd-onboard = "openai/gpt-5.4-mini";
-        jd-judge-a = "anthropic/claude-sonnet-4-6";
-        jd-judge-b = "anthropic/claude-sonnet-4-6";
+        jd-judge-a = "anthropic/claude-sonnet-5-5";
+        jd-judge-b = "anthropic/claude-sonnet-5-5";
         jd-fix-agent = "opencode-go/glm-5.3-flash";
-        review-readability = "anthropic/claude-sonnet-4-6";
-        review-refuter = "anthropic/claude-sonnet-4-6";
-        review-reliability = "anthropic/claude-sonnet-4-6";
-        review-resilience = "anthropic/claude-sonnet-4-6";
-        review-risk = "anthropic/claude-sonnet-4-6";
-        review-validator = "anthropic/claude-sonnet-4-6";
-        neutral = "anthropic/claude-sonnet-4-6";
+        review-readability = "anthropic/claude-sonnet-5-5";
+        review-refuter = "anthropic/claude-sonnet-5-5";
+        review-reliability = "anthropic/claude-sonnet-5-5";
+        review-resilience = "anthropic/claude-sonnet-5-5";
+        review-risk = "anthropic/claude-sonnet-5-5";
+        review-validator = "anthropic/claude-sonnet-5-5";
+        neutral = "anthropic/claude-sonnet-5-5";
       };
     }
     {
@@ -573,7 +588,7 @@ let
     {
       name = "anthropic-opencode-go";
       phases = {
-        gentle-orchestrator = "anthropic/claude-sonnet-5";
+        gentle-orchestrator = "anthropic/claude-opus-5-5";
         sdd-init = "opencode/nemotron-3.5-lightning-free";
         sdd-explore = "opencode/nemotron-3-ultra-free";
         sdd-propose = "opencode/nemotron-3-ultra-free";
@@ -776,15 +791,15 @@ let
         sdd-verify = "github-copilot/claude-sonnet-5.5";
         sdd-archive = "github-copilot/claude-haiku-4.5";
         sdd-onboard = "github-copilot/gpt-5.4-mini";
-        jd-judge-a = "anthropic/claude-sonnet-5";
-        jd-judge-b = "anthropic/claude-sonnet-5";
-        jd-fix-agent = "anthropic/claude-sonnet-5";
-        review-readability = "anthropic/claude-sonnet-5";
-        review-refuter = "anthropic/claude-sonnet-5";
-        review-reliability = "anthropic/claude-sonnet-5";
-        review-resilience = "anthropic/claude-sonnet-5";
-        review-risk = "anthropic/claude-sonnet-5";
-        review-validator = "anthropic/claude-sonnet-5";
+        jd-judge-a = "anthropic/claude-sonnet-5-5";
+        jd-judge-b = "anthropic/claude-sonnet-5-5";
+        jd-fix-agent = "anthropic/claude-sonnet-5-5";
+        review-readability = "anthropic/claude-sonnet-5-5";
+        review-refuter = "anthropic/claude-sonnet-5-5";
+        review-reliability = "anthropic/claude-sonnet-5-5";
+        review-resilience = "anthropic/claude-sonnet-5-5";
+        review-risk = "anthropic/claude-sonnet-5-5";
+        review-validator = "anthropic/claude-sonnet-5-5";
         neutral = "github-copilot/gpt-5.6-luna";
       };
     }

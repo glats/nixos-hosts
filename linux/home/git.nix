@@ -37,10 +37,9 @@ in
     includes = [
       # Default identity from activation-written file + forced personal
       # account so pushes work regardless of gh's active-account state
-      {
-        path = "~/.config/git/identity-personal";
-        contents.credential.helper = identities.mkCredentialHelper pkgs.gh "glats";
-      }
+      # (Home Manager ignores `contents` when `path` is set, so they are split.)
+      { path = "~/.config/git/identity-personal"; }
+      { contents.credential = identities.mkCredential pkgs.gh "glats"; }
       # Work identity from activation-written file
       {
         condition = "gitdir:~/Work/**";
@@ -53,7 +52,7 @@ in
         contents = {
           user.signingKey = identities.work.signingKey;
           commit.gpgsign = true;
-          credential.helper = identities.mkCredentialHelper pkgs.gh "jcuzmar-Falabella_FTC";
+          credential = identities.mkCredential pkgs.gh "jcuzmar-Falabella_FTC";
         };
       }
     ];

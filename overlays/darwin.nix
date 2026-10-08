@@ -35,6 +35,21 @@ in
     cmakeFlags = old.cmakeFlags ++ [
       "-DWITH_VIDEOTOOLBOX=ON"
     ];
+    # Backport FreeRDP PR #13564: query SDL displays without creating a probe
+    # window per monitor. On macOS each probe window enters a native fullscreen
+    # Space (~650 ms per display), which made the session window hop across
+    # displays. The CMake hunk is excluded upstream-side and replaced by a local
+    # adapter for 3.30.0. Drop both once nixpkgs freerdp includes PR #13564;
+    # re-check at each nixpkgs bump.
+    patches = (old.patches or [ ]) ++ [
+      (prev.fetchpatch {
+        name = "freerdp-sdl-macos-window-free-display-query.patch";
+        url = "https://github.com/FreeRDP/FreeRDP/commit/dc5c7eeef2bb92f1b8cd767d278ec1c99a6534d2.patch?full_index=1";
+        excludes = [ "client/SDL/SDL3/CMakeLists.txt" ];
+        hash = "sha256-DQtyqMWp9LqPX3ZamArPHCxRBdXdk9zBwyIUxTNwgNE=";
+      })
+      ../patches/freerdp/sdl-macos-cmake.patch
+    ];
   });
 
   # shell-gpt 1.5.x hard-depends on litellm → tokenizers → datasets → pyarrow →
