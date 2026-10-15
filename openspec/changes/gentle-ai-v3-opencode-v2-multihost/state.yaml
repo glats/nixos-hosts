@@ -1,0 +1,35 @@
+{
+  "schemaName": "gentle-ai.sdd-preproposal/v1",
+  "revision": 2,
+  "change": "gentle-ai-v3-opencode-v2-multihost",
+  "artifact_store": {"mode": "hybrid"},
+  "exploration": {
+    "outcome": "done",
+    "references": {"openspec": "openspec/changes/gentle-ai-v3-opencode-v2-multihost/exploration.md", "engram": "observation:3579"},
+    "authority": "Updated sdd-explore source analysis; static compatibility evidence, not runtime proof"
+  },
+  "research": {
+    "selected": false,
+    "request": "User explicitly directed sdd-explore instead: tienes que hacer un sdd explore el research no aplica",
+    "questions_reference": "openspec/changes/gentle-ai-v3-opencode-v2-multihost/research.md",
+    "requested_source_classes": ["documentation", "open-web"],
+    "admission": "denied",
+    "observed_exact_grants": {"documentation": [], "open-web": []},
+    "outcome": "blocked",
+    "revision": 1,
+    "evidence_references": {"openspec": "openspec/changes/gentle-ai-v3-opencode-v2-multihost/research.md", "engram": "sdd/gentle-ai-v3-opencode-v2-multihost/research"},
+    "retained_intent_reference": "observation:3586"
+  },
+  "product_decisions": {
+    "status": "pending",
+    "confirmed_from_handoff": ["Target v3.7.0", "Single OpenCode V2 stack on all hosts", "Preserve SDD", "Retire V1 only after proof"],
+    "pending": ["Resolve source-verified v3.7.0 review refusal on a V2-only fleet without bypassing capability checks"],
+    "owner": "orchestrator"
+  },
+  "proposal_ready": false,
+  "recovery": {
+    "reason": "Formal research deselected by explicit user direction; its blocked revision is retained as historical context only. Updated exploration proves the v3.7.0 relay admission gate rejects V2.",
+    "next": "Ask the user to resolve the v3/V2 review capability limitation before proposal. Do not relaunch sdd-research or bypass transport admission.",
+    "schema_validation": "Not executable in this executor; only the loaded phase field contract was available. Parent must validate native shape before treating this recovery record as an admitted preproposal handoff."
+  }
+}

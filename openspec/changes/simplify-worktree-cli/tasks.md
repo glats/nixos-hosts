@@ -51,6 +51,24 @@ Single commit required: allowlist + prompt + wrapper + CLI must ship atomically 
 
 - [x] 4.1 eval `nix eval .#nixosConfigurations.rog.config.system.build.toplevel.drvPath` (allowlist/prompt/wrapper eval).
 - [x] 4.2 eval `nix eval .#homeConfigurations.rog.activationPackage.drvPath` (agents.nix HM wiring).
-- [ ] 4.3 eval `nix eval .#darwinConfigurations.macm5.config.system.build.toplevel.drvPath` (Darwin Home Manager wiring).
-- [ ] 4.4 `nix flake check --no-build`.
-- [ ] 4.5 Commit all files atomically direct to master in one commit (CLI + tests + allowlist + prompt + wrapper + docs); no PR chain.
+- [x] 4.3 eval `nix eval .#darwinConfigurations.macm5.config.system.build.toplevel.drvPath` (Darwin Home Manager wiring).
+- [x] 4.4 `nix flake check --no-build`.
+- [x] 4.5 Commit all files atomically direct to master in one commit (CLI + tests + allowlist + prompt + wrapper + docs); no PR chain.
+
+## Apply Progress
+
+The macm5 aarch64-darwin validation completed after `git pull --ff-only origin master`:
+
+- `nix eval /Users/juan/.config/nix#darwinConfigurations.macm5.config.system.build.toplevel.drvPath` returned a derivation path.
+- `nix eval /Users/juan/.config/nix#homeConfigurations.macm5.activationPackage.drvPath` returned a derivation path.
+- Local `nix flake check --no-build` passed.
+- Commit `807e5ed refactor(worktree): simplify task commands` is pushed to `origin/master`.
+
+### Work Unit Evidence
+
+| Evidence | Result |
+|---|---|
+| Focused test command and exact result | `go -C pkgs/nixos-scripts test ./...` and `go -C pkgs/nixos-scripts build ./cmd/code-work` exited zero. |
+| Runtime harness command/scenario and exact result | Temporary Git repositories with fake `nix` and `opencode` exercised canonical CLI commands, exact cwd resolution, legacy shim forwarding, locks, and state transitions; tests passed. |
+| Declarative validation | rog system and Home Manager evaluations passed locally; macm5 system and Home Manager evaluations returned drv paths on aarch64-darwin; local `nix flake check --no-build` passed. |
+| Rollback boundary | Revert commit `807e5ed`; managed records, worktrees, branches, locks, and safety gates remain intact. |

@@ -28,7 +28,7 @@ All assigned tasks 1.1–4.1 are complete.
 
 - 3.1 `nix fmt -- flake.nix linux/system/hardware/openlogi.nix hosts/t14/default.nix darwin/system/homebrew.nix`: passed, no formatting changes. `nix flake check --no-build` from a non-Git temporary copy containing the untracked module: passed; direct checkout check was blocked only because Git flakes exclude untracked source.
 - 3.2 t14 evaluation passed. Package membership and udev membership both contain OpenLogi. Agent assertions passed: `wantedBy`, `after`, and `partOf` are `["graphical-session.target"]`; `ExecStart` is the package-qualified `/bin/openlogi-agent`. macm5 cask evaluation contains `openlogi` and preserves `autoUpdate = true`, `upgrade = true`, `cleanup = "uninstall"`. rog and thinkcentre toplevel evaluations passed and have no OpenLogi import.
-- 3.3 Exact package derivation evaluation passed at `/nix/store/aizw4cs34a1jm7l6bl86fkpjwhyhj6yq-openlogi-0.8.11.drv`. The exact build was started as a read-only `nix build` in the temporary copy and remains pending until its completion event; no native Darwin build was attempted on Linux and no native evidence is claimed.
+- 3.3 Exact package derivation evaluation passed at `/nix/store/aizw4cs34a1jm7l6bl86fkpjwhyhj6yq-openlogi-0.8.11.drv`. The exact read-only build completed successfully and produced `/nix/store/zdr2lnnz3v49vw20nbmbj2ivhs8dx5i0-openlogi-0.8.11`. No native Darwin build was attempted on Linux and no native evidence is claimed.
 - 3.4 Deployment, activation, service lifecycle, permissions, Hyprland foreground behavior, macOS privacy grants, persistence/backups, and hardware probes remain deferred. K780 and G305 controls are unproven; the probable G502 LIGHTSPEED identity and remapping/profile support remain unconfirmed.
 - 4.1 Recovery remains declarative-only: retain known-good generations, the signed macOS artifact, and matching config backups before deployment; stop the owned agent before restoring another manager; separately restore mutable config/device state and remove unwanted Login Item/TCC grants. Nix rollback does not restore Homebrew versions.
 
@@ -44,4 +44,4 @@ All assigned tasks 1.1–4.1 are complete.
 
 - No implementation deviation from design.
 - Native Darwin build/install and all postdeployment lifecycle, privacy, persistence, and hardware gates are intentionally deferred and must not be reported as passed.
-- The exact Linux build was launched but its completion result is pending; independent verification should consume the shell completion event before treating compilation as proven.
+- The exact Linux package build is proven separately from evaluation; native Darwin build/install and runtime gates remain deferred.

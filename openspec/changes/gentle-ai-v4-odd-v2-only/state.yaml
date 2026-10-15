@@ -1,0 +1,35 @@
+{
+  "schemaName": "gentle-ai.sdd-preproposal/v1",
+  "revision": 1,
+  "change": "gentle-ai-v4-odd-v2-only",
+  "artifact_store": {"mode": "hybrid"},
+  "exploration": {
+    "outcome": "done",
+    "references": {"openspec": "openspec/changes/gentle-ai-v4-odd-v2-only/exploration.md", "engram": "observation:3769"}
+  },
+  "research": {
+    "selected": false,
+    "request": "User selected sdd-explore, not formal sdd-research, and authorized automatic planning through sdd-tasks.",
+    "requested_source_classes": [],
+    "admission": "not_requested",
+    "outcome": "not_requested",
+    "evidence_references": {}
+  },
+  "product_decisions": {
+    "status": "confirmed",
+    "confirmed": [
+      "Prepare one canonical Gentle AI v4.0.0 and ODD stack on OpenCode V2; no v3 intermediate upgrade or permanent parallel production stack.",
+      "Preserve opencode2 and Darwin opencode2-home naming, isolation roots, sessions, credentials, MCP, Engram, providers and user model overrides.",
+      "Initially preserve OpenCode CLI and SDK 2.0.14; require explicit compatibility evidence and approval before a coupled runtime upgrade.",
+      "Replace executable SDD workflow only after candidate validation; preserve OpenSpec history and reconcile selected unfinished work without automatic deletion or conversion.",
+      "Use local odd/tasks feature documents plus full project-scoped Engram mirrors for substantial ODD work.",
+      "Require real review receipt and delegation proof without capability bypass; evaluate Linux and Darwin plus integrated and standalone Home Manager targets.",
+      "Keep runtime discovery wiring private to Gentle AI; no global bare opencode alias or V1 reintroduction.",
+      "Plan rog-first staging and all four hosts; unavailable remote proof remains unverified, not passed.",
+      "Advance automatically through proposal, specifications, design and tasks only; no implementation, pin changes, live model calls, activation, commits or push."
+    ],
+    "pending": [],
+    "owner": "orchestrator"
+  },
+  "proposal_ready": true
+}
