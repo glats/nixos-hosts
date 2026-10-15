@@ -773,7 +773,7 @@ let
       roles = {
         gentle-orchestrator = "opencode-go/deepseek-v4-pro";
         gentle-ai-explore = "opencode-go/deepseek-v4-pro";
-        # minimax-m3: 1M ctx (kimi-k2.7-code solo 262K) — apply grandes no explotan. Messages transport, sin issues frescos.
+        # minimax-m3: 1M ctx (kimi-k2.7-code solo 262K) — large worker edits stay within context. Messages transport, no fresh issues.
         gentle-ai-worker = "opencode-go/minimax-m3";
         gentle-ai-verify = "opencode-go/deepseek-v4-pro";
         neutral = "opencode-go/deepseek-v4-flash";

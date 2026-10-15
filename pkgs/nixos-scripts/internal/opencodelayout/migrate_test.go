@@ -188,3 +188,48 @@ func read(t *testing.T, root, name string) string {
 	return string(b)
 }
 func itoa(n int) string { return strconv.Itoa(n) }
+
+func TestResumeAfterPartialRunKeepsMigratedDataNative(t *testing.T) {
+	for _, withV1 := range []bool{false, true} {
+		t.Run(strconv.FormatBool(withV1), func(t *testing.T) {
+			if os.Geteuid() == 0 {
+				t.Skip("permission-based interruption needs a non-root user")
+			}
+			home := t.TempDir()
+			write(t, home, ".local/"+legacyName+"/data/opencode.db", "db")
+			write(t, home, ".local/"+legacyName+"/data/opencode/session", "session")
+			write(t, home, ".local/"+legacyName+"/state/opencode/state", "state")
+			if withV1 {
+				write(t, home, ".local/share/opencode/v1", "v1")
+			}
+			state := filepath.Join(home, ".local/state")
+			if err := os.MkdirAll(state, 0o755); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.Chmod(state, 0o555); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := Migrate(home, false); err == nil {
+				t.Fatal("expected interrupted run to fail")
+			}
+			if err := os.Chmod(state, 0o755); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := Migrate(home, false); err != nil {
+				t.Fatalf("resume failed: %v", err)
+			}
+			for path, want := range map[string]string{
+				".local/share/opencode/opencode.db": "db",
+				".local/share/opencode/session":     "session",
+				".local/state/opencode/state":       "state",
+			} {
+				if got := read(t, home, path); got != want {
+					t.Errorf("%s = %q, want %q", path, got, want)
+				}
+			}
+			if _, err := Migrate(home, false); err != nil {
+				t.Fatalf("third run: %v", err)
+			}
+		})
+	}
+}

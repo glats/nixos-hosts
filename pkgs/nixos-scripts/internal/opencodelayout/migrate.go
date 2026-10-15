@@ -58,8 +58,16 @@ func Migrate(home string, retireOpenfang bool) (string, error) {
 		}
 		return err
 	}
-	for _, rel := range []string{".config/opencode", ".local/share/opencode", ".local/state/opencode", ".cache/opencode", ".config/opencode-back"} {
-		if err := move(filepath.Join(home, rel), filepath.Join(archive, "previous", rel)); err != nil {
+	// Archive what occupies the native paths exactly once: on resume they may
+	// already hold data this migration moved there.
+	archived := filepath.Join(archive, ".previous-archived")
+	if !exists(archived) {
+		for _, rel := range []string{".config/opencode", ".local/share/opencode", ".local/state/opencode", ".cache/opencode", ".config/opencode-back"} {
+			if err := move(filepath.Join(home, rel), filepath.Join(archive, "previous", rel)); err != nil {
+				return "", err
+			}
+		}
+		if err := os.WriteFile(archived, nil, 0600); err != nil {
 			return "", err
 		}
 	}
