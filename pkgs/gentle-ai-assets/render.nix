@@ -3,7 +3,7 @@
 {
   lib,
   buildGoModule,
-  opencode-v2,
+  opencode,
   gentle-ai-src,
   vendorHash ? "sha256-YL4Slz/UuY+HEcJTW+pMphcdB6xtpam+E4uTDWifEcY=",
 }:
@@ -25,7 +25,7 @@ buildGoModule {
   buildPhase = ''
     runHook preBuild
     mkdir -p "$TMPDIR/native-v2"
-    ln -s ${opencode-v2}/bin/.opencode2-unwrapped "$TMPDIR/native-v2/opencode"
+    ln -s ${opencode}/bin/opencode "$TMPDIR/native-v2/opencode"
     export PATH="$TMPDIR/native-v2:$PATH"
     export HOME="$TMPDIR/renderer-home"
     export XDG_CONFIG_HOME="$HOME/.config"

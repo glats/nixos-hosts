@@ -14,8 +14,8 @@ stdenv.mkDerivation {
   dontBuild = true;
 
   installPhase = ''
-    mkdir -p $out/share/engram/opencode-v2/plugins
-    install -m 0644 ${./engram-v2.ts} $out/share/engram/opencode-v2/plugins/engram.ts
+    mkdir -p $out/share/engram/opencode/plugins
+    install -m 0644 ${./engram-v2.ts} $out/share/engram/opencode/plugins/engram.ts
   '';
 
   meta = with lib; {

@@ -3,7 +3,6 @@
   stdenvNoCC,
   fetchurl,
   autoPatchelfHook,
-  makeBinaryWrapper,
   stdenv,
 }:
 
@@ -34,7 +33,7 @@ let
     .${system} or (throw "Unsupported system: ${system}");
 in
 stdenvNoCC.mkDerivation {
-  pname = "opencode-v2";
+  pname = "opencode";
   inherit version;
 
   src = fetchurl {
@@ -43,19 +42,17 @@ stdenvNoCC.mkDerivation {
 
   sourceRoot = "package";
 
-  nativeBuildInputs = [ makeBinaryWrapper ] ++ lib.optionals isLinux [ autoPatchelfHook ];
+  nativeBuildInputs = lib.optionals isLinux [ autoPatchelfHook ];
   buildInputs = lib.optionals isLinux [ stdenv.cc.cc.lib ];
-
   dontStrip = true;
 
   installPhase = ''
     mkdir -p $out/bin
-    install -m755 bin/opencode $out/bin/.opencode2-unwrapped
-    makeBinaryWrapper $out/bin/.opencode2-unwrapped $out/bin/opencode2
+    install -m755 bin/opencode $out/bin/opencode
   '';
 
   meta = with lib; {
-    description = "OpenCode v2 native CLI";
+    description = "OpenCode native CLI";
     homepage = "https://opencode.ai";
     license = licenses.mit;
     sourceProvenance = [ binaryNativeCode ];
@@ -65,6 +62,6 @@ stdenvNoCC.mkDerivation {
       "x86_64-darwin"
       "aarch64-darwin"
     ];
-    mainProgram = "opencode2";
+    mainProgram = "opencode";
   };
 }

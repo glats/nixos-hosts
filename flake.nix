@@ -282,12 +282,12 @@
           touch $out
         '';
 
-      checks.x86_64-linux.opencode-v2-agent-schema =
+      checks.x86_64-linux.opencode-agent-schema =
         let
           pkgs = nixpkgs.legacyPackages.x86_64-linux;
-          config = self.homeConfigurations.rog.config.home.file.".config/opencode-v2/opencode.json".source;
+          config = self.homeConfigurations.rog.config.home.file.".config/opencode/opencode.json".source;
         in
-        pkgs.runCommand "opencode-v2-agent-schema" { nativeBuildInputs = [ pkgs.jq ]; } ''
+        pkgs.runCommand "opencode-agent-schema" { nativeBuildInputs = [ pkgs.jq ]; } ''
           jq -e '
             (.agents["gentle-orchestrator"].mode == "primary") and
             (.agents["gentle-ai-explore"].mode == "subagent") and

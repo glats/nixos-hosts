@@ -1,4 +1,4 @@
-# Gentle AI v4 updates on the V2-only fleet
+# Gentle AI v4 updates on the OpenCode fleet
 
 Update the binary, rendered prompts, native relay, managed graph and ownership
 inventory as one candidate. Home Manager is the deployment authority; do not
@@ -19,12 +19,12 @@ to activate, call models, stage, commit, push or publish.
 `pkgs/gentle-ai-assets/render.nix` runs a build-only Go test inside the vendored
 tagged `/v4` module. Its actual upstream renderers produce OpenCode and Claude
 prompts plus the ODD/review graph; no exporter CLI is installed. Rendering uses
-the real native `.opencode2-unwrapped`, never a fabricated version executable.
+the real native `opencode` executable.
 
-The HM-scoped compiled `gentle-ai` wrapper restores the full V2 environment for
-its children and privately prefixes truthful bare `opencode` discovery plus Git.
-Host-config shell scrubbing cannot remove those child settings. Public commands
-stay `opencode2` and Darwin-only `opencode2-home`; no global bare alias is added.
+The HM-scoped compiled `gentle-ai` wrapper privately prefixes managed `opencode`
+discovery plus Git. Host-config shell scrubbing cannot remove those child
+settings. Public commands are `opencode`, `opencode-project`, and Darwin-only
+`opencode-home`.
 The managed relay and registry use the absolute wrapper path. Go alone owns
 review role binding, materialization, budgets, admission and receipts.
 
@@ -111,21 +111,18 @@ not a full TOCTOU guarantee, cross-root transaction or power-loss durability
 guarantee. Consumer activations still preflight independently; an already
 completed consumer/file is not rolled back when a later conflict refuses.
 
-Bootstrap evidence comes from the exact prior repository generation
+Historical inventory comes from the exact prior repository generation
 `4750736cd68f517a871ac7448639c94546472390` and its complete lock/pinned 2.5 asset
-sources. V2 bootstrap reproduces the actual prior command/skill remaps and phase
-marker bytes; Claude uses its distinct prior assets. This historical inventory
-is not a second active production stack. Modified or unproven old assets require
+sources. It records the prior command/skill remaps and phase marker bytes; Claude
+used its distinct prior assets. This historical inventory is not a second active
+production stack. Modified or unproven old assets require
 explicit reconciliation before activation; do not force around the refusal.
 
-The current migration remains tracked in
-`openspec/changes/gentle-ai-v4-odd-v2-only/`; history is not converted. Before
-retiring another unfinished workflow, the user must select the work and approve
-a handoff linking its original artifacts, stable task IDs, actual code/evidence
-and remaining gates. Never bulk-convert OpenSpec or create ODD feature documents
-for unselected work. Future substantial ODD work uses `odd/tasks/<feature>.md`
-and a full project Engram `odd/<feature>/tasks` mirror, with readback and explicit
-pending-mirror/conflict handling. Prompt text alone does not prove that behavior.
+The historical change record remains in `openspec/`; historical artifacts are
+retained rather than converted. Future substantial ODD work uses
+`odd/tasks/<feature>.md` and a full project Engram `odd/<feature>/tasks` mirror,
+with readback and explicit pending-mirror/conflict handling. Prompt text alone
+does not prove that behavior.
 
 ## Authorized rollout and rollback
 

@@ -10,7 +10,7 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parents[2]
 cli = [
-    "TestOpenCode.*Transport", "TestOpenCodeV2Relay", "TestImmutableReviewRuntime",
+    "TestOpenCode.*Transport", "TestOpenCodeV.Relay", "TestImmutableReviewRuntime",
     "TestUnsupportedImmutableReviewTransport", "TestSupportedImmutableReviewTransport",
     "TestRegisteredRuntimeIdentities", "TestGlobalReviewMode.*V2Consent",
     "TestCandidateDeclineNeverAuthorizesPrePushOrPrePRDelivery",

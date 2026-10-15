@@ -165,39 +165,19 @@
           return 1
       }
     ''
-    + lib.optionalString config.home.opencode.v2.enable ''
-      # Native V2 replaces the Docker launcher removed in Phase 2; V1 remains the default command.
-      opencode2() {
-        (
-          source "${config.home.homeDirectory}/.local/share/opencode-v2/environment"
-          exec ${pkgs.opencode-v2}/bin/opencode2 "$@"
-        )
-      }
-
-      opencode2-project() {
+    + lib.optionalString config.home.opencode.enable ''
+      # `opencode` disables project configuration by default; this enables it.
+      opencode-project() {
         if [ -f "$PWD/.opencode/package.json" ] && ${pkgs.gnugrep}/bin/grep -Eq '"@opencode-ai/plugin"' "$PWD/.opencode/package.json"; then
-           echo "${config.home.opencode.v2.projectConfigCommand}: legacy OpenCode SDK project configuration is not compatible with OpenCode V2" >&2
+          echo "opencode-project: legacy OpenCode SDK project configuration is not compatible with OpenCode" >&2
           return 1
         fi
-        (
-          source "${config.home.homeDirectory}/.local/share/opencode-v2/environment"
-          unset OPENCODE_DISABLE_PROJECT_CONFIG
-          exec ${pkgs.opencode-v2}/bin/opencode2 "$@"
-        )
+        OPENCODE_DISABLE_PROJECT_CONFIG= command opencode "$@"
       }
     ''
-    + lib.optionalString (pkgs.stdenv.isDarwin && config.home.opencode.v2.enable) ''
-      opencode2-home() (
-        local environment="${config.home.homeDirectory}/.local/share/opencode-v2/environment"
+    + lib.optionalString (pkgs.stdenv.isDarwin && config.home.opencode.enable) ''
+      opencode-home() (
         local arg standalone=0 server=0
-        if [[ ! -r "$environment" ]]; then
-          echo "opencode2-home: missing V2 environment: $environment" >&2
-          return 1
-        fi
-        source "$environment" || {
-          echo "opencode2-home: failed to load V2 environment: $environment" >&2
-          return 1
-        }
         for arg in "$@"; do
           [[ "$arg" == --standalone ]] && standalone=1
           [[ "$arg" == --server || "$arg" == --server=* ]] && server=1
@@ -209,7 +189,7 @@
             *) set -- --standalone "$@" ;;
           esac
         fi
-        OPENCODE_HOME_BINARY="${pkgs.opencode-v2}/bin/opencode2" exec ${pkgs.nixos-scripts}/bin/opencode-home "$@"
+        OPENCODE_HOME_BINARY="${config.home.profileDirectory}/bin/opencode" exec ${pkgs.nixos-scripts}/bin/opencode-home "$@"
       )
     '';
 

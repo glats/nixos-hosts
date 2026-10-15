@@ -28,9 +28,9 @@ stdenvNoCC.mkDerivation {
       chmod -R u+w "$TEMP_DIR/$(basename "$item")"
     done
 
-    # Substitute ENGRAM_BIN default with nix store path in V2 only.
-    if [ -f "$TEMP_DIR/opencode-v2/plugins/engram.ts" ]; then
-      substituteInPlace "$TEMP_DIR/opencode-v2/plugins/engram.ts" \
+    # Substitute ENGRAM_BIN default with nix store path in the OpenCode plugin.
+    if [ -f "$TEMP_DIR/opencode/plugins/engram.ts" ]; then
+      substituteInPlace "$TEMP_DIR/opencode/plugins/engram.ts" \
         --replace "ENGRAM_BIN ?? \"engram\"" \
                   "ENGRAM_BIN ?? \"${engram}/bin/engram\""
     fi

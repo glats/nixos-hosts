@@ -44,11 +44,11 @@ stdenvNoCC.mkDerivation {
     chmod -R u+w $out/share/gentle-ai
     cp -r ${rendered}/share/gentle-ai/. $out/share/gentle-ai/
     # The exact tagged V2 relay owns role binding/lifetime/refusal hooks.
-    mkdir -p $out/share/gentle-ai/opencode-v2/plugins
+    mkdir -p $out/share/gentle-ai/opencode/plugins
     install -m 0644 $src/internal/assets/opencode/plugins-v2/opencode-review-transport.ts \
-      $out/share/gentle-ai/opencode-v2/plugins/opencode-review-transport.ts
-    install -m 0644 ${./v2-plugins/skill-registry.ts} $out/share/gentle-ai/opencode-v2/plugins/skill-registry.ts
-    substituteInPlace $out/share/gentle-ai/opencode-v2/plugins/opencode-review-transport.ts \
+      $out/share/gentle-ai/opencode/plugins/opencode-review-transport.ts
+    install -m 0644 ${./v2-plugins/skill-registry.ts} $out/share/gentle-ai/opencode/plugins/skill-registry.ts
+    substituteInPlace $out/share/gentle-ai/opencode/plugins/opencode-review-transport.ts \
       --replace-fail 'Command: "gentle-ai"' 'Command: "${gentle-ai}/bin/gentle-ai"'
   '';
 

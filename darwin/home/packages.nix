@@ -63,7 +63,6 @@ in
         yarn
         kubectl
         nodejs
-        opencode-v2
         uv
         ripgrep
         sops

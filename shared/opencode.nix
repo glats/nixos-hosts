@@ -39,74 +39,47 @@ let
     "sub_issue_write"
   ];
 
-  v2RuntimeConfig = {
-    dir = "opencode-v2";
-    label = "v2";
-    version = "v2";
-  };
-
   mkRuntimeConfig = import ./opencode/runtime-config.nix;
-  v2 = config.home.opencode.v2;
-  mkV2Environment = {
-    XDG_CONFIG_HOME = "${config.home.homeDirectory}/.config/opencode-v2";
-    XDG_DATA_HOME = "${v2.runtimeRoot}/data";
-    XDG_CACHE_HOME = "${v2.runtimeRoot}/cache";
-    XDG_STATE_HOME = "${v2.runtimeRoot}/state";
-    OPENCODE_CONFIG_DIR = "${config.home.homeDirectory}/.config/opencode-v2";
-    OPENCODE_DB = "${v2.runtimeRoot}/data/opencode.db";
-    TMPDIR = "${v2.runtimeRoot}/tmp";
-    OPENCODE_DISABLE_PROJECT_CONFIG = "1";
-  };
-  # Native compiled wrapper is private to this HM configuration. Host shell
-  # scrubbing cannot erase its children's runtime roots or truthful discovery.
-  nativeV2Discovery = pkgs.runCommand "gentle-ai-native-v2-discovery" { } ''
+  cfg = config.home.opencode;
+  openfangEnabled = config.home ? openfang && config.home.openfang.enable;
+  # gentle-ai discovers the native binary as `opencode` on its own PATH.
+  nativeDiscovery = pkgs.runCommand "gentle-ai-native-discovery" { } ''
     mkdir -p "$out/bin"
-    ln -s ${pkgs.opencode-v2}/bin/.opencode2-unwrapped "$out/bin/opencode"
+    ln -s ${pkgs.opencode}/bin/opencode "$out/bin/opencode"
   '';
-  gentleV2 =
-    pkgs.runCommand "gentle-ai-v2-managed"
+  gentleManaged =
+    pkgs.runCommand "gentle-ai-managed"
       {
         nativeBuildInputs = [ pkgs.makeBinaryWrapper ];
       }
       ''
         mkdir -p "$out/bin"
         makeBinaryWrapper ${pkgs.gentle-ai}/bin/gentle-ai "$out/bin/gentle-ai" \
-          ${
-            lib.concatStringsSep " " (
-              lib.mapAttrsToList (name: value: "--set ${name} ${lib.escapeShellArg value}") mkV2Environment
-            )
-          } \
           --set GENTLE_AI_OPENCODE_RELAY_CONTRACT gentle-ai.opencode-relay/v2-staged \
           --prefix PATH : ${
             lib.makeBinPath [
-              nativeV2Discovery
+              nativeDiscovery
               pkgs.git
             ]
           }
       '';
-  mkV2ShellEnvironment = lib.concatStringsSep "\n" (
-    (lib.mapAttrsToList (name: value: "export ${name}=${lib.escapeShellArg value}") mkV2Environment)
-    ++ [
+  opencodePackage =
+    pkgs.runCommand "opencode-managed"
+      {
+        nativeBuildInputs = [ pkgs.makeBinaryWrapper ];
+      }
       ''
-        case ":$PATH:" in
-          *":${
+        mkdir -p "$out/bin"
+        makeBinaryWrapper ${pkgs.opencode}/bin/opencode "$out/bin/opencode" \
+          --set-default OPENCODE_DISABLE_PROJECT_CONFIG 1 \
+          --prefix PATH : ${
             lib.makeBinPath [
-              gentleV2
+              gentleManaged
               pkgs.git
             ]
-          }:"*) ;;
-          *) export PATH="${
-            lib.makeBinPath [
-              gentleV2
-              pkgs.git
-            ]
-          }:$PATH" ;;
-        esac
-      ''
-    ]
-  );
-  opencodeV2EnvironmentFile = ".local/share/opencode-v2/environment";
-  browserMcpServiceCommand = "${v2.browserMcp.bridgePackage}/bin/browsermcp-broker --child ${v2.browserMcp.package}/bin/mcp-server-browsermcp --port ${toString v2.browserMcp.bridgePort}";
+          }
+      '';
+  browserMcpServiceCommand = "${cfg.browserMcp.bridgePackage}/bin/browsermcp-broker --child ${cfg.browserMcp.package}/bin/mcp-server-browsermcp --port ${toString cfg.browserMcp.bridgePort}";
   browserMcpLaunchdLabel = "org.nix-community.home.browsermcp";
 in
 {
@@ -117,7 +90,35 @@ in
   ];
 
   options.home.opencode = {
-    enable = mkEnableOption "OpenCode V2 configuration with declarative JSON generation";
+    enable = mkEnableOption "OpenCode configuration with declarative JSON generation";
+    browserMcp = {
+      enable = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Enable the pinned BrowserMCP singleton.";
+      };
+      package = mkOption {
+        type = types.package;
+        default = pkgs.browsermcp-v2;
+        description = "Pinned BrowserMCP package.";
+      };
+      bridgePackage = mkOption {
+        type = types.package;
+        default = pkgs.nixos-scripts;
+        description = "Package providing the loopback BrowserMCP broker.";
+      };
+      bridgePort = mkOption {
+        type = types.port;
+        default = 9010;
+        description = "Loopback-only broker port.";
+      };
+      location = mkOption {
+        type = types.enum [ "global" ];
+        default = "global";
+        readOnly = true;
+        description = "BrowserMCP is emitted globally.";
+      };
+    };
 
     extraInitContent = mkOption {
       type = types.lines;
@@ -151,64 +152,22 @@ in
       '';
     };
 
-    v2 = {
-      enable = mkEnableOption "isolated OpenCode V2 runtime" // {
-        default = true;
-      };
-
-      runtimeRoot = mkOption {
-        type = types.str;
-        default = "${config.home.homeDirectory}/.local/opencode-v2";
-        description = "Version-scoped data, cache, state, database, and temporary root for OpenCode V2.";
-      };
-
-      projectConfigCommand = mkOption {
-        type = types.str;
-        default = "opencode2-project";
-        description = "Explicit command that permits V2-compatible project configuration.";
-      };
-
-      browserMcp = {
-        enable = mkOption {
-          type = types.bool;
-          default = true;
-          description = "Enable the pinned BrowserMCP singleton in the global V2 configuration.";
-        };
-
-        package = mkOption {
-          type = types.package;
-          default = pkgs.browsermcp-v2;
-          description = "Pinned BrowserMCP package used by the V2 global MCP server.";
-        };
-
-        bridgePackage = mkOption {
-          type = types.package;
-          default = pkgs.nixos-scripts;
-          description = "Package providing the loopback BrowserMCP broker.";
-        };
-
-        bridgePort = mkOption {
-          type = types.port;
-          default = 9010;
-          description = "Loopback-only port served by the BrowserMCP broker; collisions exit without restarting or replacing their owner.";
-        };
-
-        location = mkOption {
-          type = types.enum [ "global" ];
-          default = "global";
-          readOnly = true;
-          description = "BrowserMCP is emitted only in the global V2 configuration to preserve its singleton listener.";
-        };
-      };
-
-    };
   };
 
   config = mkMerge [
     # Main configuration
     (mkIf config.home.opencode.enable {
+      # Move the retired versioned layout into the native XDG paths before
+      # anything links into ~/.config/opencode; a refusal fails activation.
+      home.activation.migrateOpencodeLayout = config.lib.dag.entryBefore [ "checkLinkTargets" ] ''
+        ${pkgs.nixos-scripts}/bin/opencode-layout-migrate ${
+          lib.optionalString (!openfangEnabled) "--retire-openfang-skills"
+        }
+      '';
+
       home.packages = with pkgs; [
-        gentleV2
+        gentleManaged
+        opencodePackage
         engram
         rtk
         poppler-utils # PDF page rendering: needed by OpenCode read tool and Claude Code for PDF support
@@ -230,50 +189,40 @@ in
       '';
     })
 
-    (mkIf config.home.opencode.v2.enable (mkRuntimeConfig {
+    (mkIf config.home.opencode.enable (mkRuntimeConfig {
       inherit
         config
         lib
         pkgs
         providers
-        gentleV2
+        gentleManaged
+        openfangEnabled
         ;
       cfg = config.home.opencode;
-      runtimeConfig = v2RuntimeConfig;
     }))
 
-    (mkIf config.home.opencode.v2.enable {
-      home.file.${opencodeV2EnvironmentFile}.text = mkV2ShellEnvironment;
-
+    (mkIf config.home.opencode.enable {
       assertions =
-        lib.optional (pkgs.stdenv.isLinux && v2.browserMcp.enable) {
+        lib.optional (pkgs.stdenv.isLinux && cfg.browserMcp.enable) {
           assertion =
             lib.elem browserMcpServiceCommand config.systemd.user.services.browsermcp.Service.ExecStart
             && config.systemd.user.services.browsermcp.Service.Restart == "on-failure";
           message = "BrowserMCP must use the loopback broker under a restarting systemd user service.";
         }
-        ++ lib.optional (pkgs.stdenv.isDarwin && v2.browserMcp.enable) {
+        ++ lib.optional (pkgs.stdenv.isDarwin && cfg.browserMcp.enable) {
           assertion =
             config.launchd.agents.browsermcp.config.ProgramArguments == [
-              "${v2.browserMcp.bridgePackage}/bin/browsermcp-broker"
+              "${cfg.browserMcp.bridgePackage}/bin/browsermcp-broker"
               "--child"
-              "${v2.browserMcp.package}/bin/mcp-server-browsermcp"
+              "${cfg.browserMcp.package}/bin/mcp-server-browsermcp"
               "--port"
-              (toString v2.browserMcp.bridgePort)
+              (toString cfg.browserMcp.bridgePort)
             ]
             && config.launchd.agents.browsermcp.config.KeepAlive.Crashed;
           message = "BrowserMCP must use the loopback broker under a restarting launchd agent.";
-        }
-        ++ [
-          {
-            assertion =
-              config.home.file.${opencodeV2EnvironmentFile}.text == mkV2ShellEnvironment
-              && !(config.home.activation ? restartOpencodeV2);
-            message = "OpenCode V2 activation must preserve the environment file without restarting active sessions.";
-          }
-        ];
+        };
 
-      systemd.user.services.browsermcp = lib.mkIf (pkgs.stdenv.isLinux && v2.browserMcp.enable) {
+      systemd.user.services.browsermcp = lib.mkIf (pkgs.stdenv.isLinux && cfg.browserMcp.enable) {
         Unit = {
           Description = "BrowserMCP singleton broker";
           After = [ "default.target" ];
@@ -288,15 +237,15 @@ in
         Install.WantedBy = [ "default.target" ];
       };
 
-      launchd.agents.browsermcp = lib.mkIf (pkgs.stdenv.isDarwin && v2.browserMcp.enable) {
+      launchd.agents.browsermcp = lib.mkIf (pkgs.stdenv.isDarwin && cfg.browserMcp.enable) {
         enable = true;
         config = {
           ProgramArguments = [
-            "${v2.browserMcp.bridgePackage}/bin/browsermcp-broker"
+            "${cfg.browserMcp.bridgePackage}/bin/browsermcp-broker"
             "--child"
-            "${v2.browserMcp.package}/bin/mcp-server-browsermcp"
+            "${cfg.browserMcp.package}/bin/mcp-server-browsermcp"
             "--port"
-            (toString v2.browserMcp.bridgePort)
+            (toString cfg.browserMcp.bridgePort)
           ];
           KeepAlive = {
             Crashed = true;

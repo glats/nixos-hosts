@@ -21,13 +21,6 @@ assert lib.versionAtLeast go.version "1.25.10";
     "-X main.version=4.1.1"
   ];
 
-  # Preserve project-first scanner precedence; never consult retired V1 roots.
-  postPatch = ''
-    substituteInPlace internal/skillregistry/registry.go \
-      --replace-fail 'filepath.Join(home, ".config", "opencode", "skills")' \
-                     'filepath.Join(home, ".config", "opencode-v2", "skills")'
-  '';
-
   meta = with lib; {
     description = "AI ecosystem configurator with persistent memory and ODD workflow";
     homepage = "https://github.com/Gentleman-Programming/gentle-ai";

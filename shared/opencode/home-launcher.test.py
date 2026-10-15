@@ -1,4 +1,4 @@
-"""Offline regression for the macm5 scoped V2 launcher and MCP hygiene."""
+"""Offline regression for the OpenCode HM runtime, launchers and MCP hygiene."""
 
 import json
 import os
@@ -15,19 +15,20 @@ expression = f'''
 let
   flake = builtins.getFlake {json.dumps("path:" + str(ROOT))};
   home = flake.homeConfigurations.rog.config;
-  fileV2 = config: builtins.fromJSON (builtins.readFile (builtins.getAttr {json.dumps(".config/opencode-v2/opencode.json")} config.home.file).source);
+  pkg = name: (builtins.head (builtins.filter (p: p.name == name) home.home.packages)).outPath;
 in {{
   inherit (home.programs.zsh) initContent;
-  v2 = fileV2 home;
-  activation = home.home.activationPackage.drvPath;
-  hasAutomaticRestart = home.home.activation ? restartOpencodeV2;
-  openfangAfter = home.home.activation."syncOpencodeSkillsToOpenfang-v2".after;
-  openfangData = home.home.activation."syncOpencodeSkillsToOpenfang-v2".data;
-  setupData = home.home.activation."setupOpencodePluginRuntime-v2".data;
+  oc = builtins.fromJSON (builtins.readFile (builtins.getAttr ".config/opencode/opencode.json" home.home.file).source);
+  activationNames = builtins.attrNames home.home.activation;
+  migrateBefore = home.home.activation.migrateOpencodeLayout.before;
+  migrateData = home.home.activation.migrateOpencodeLayout.data;
+  openfangAfter = home.home.activation.syncOpencodeSkillsToOpenfang.after;
+  openfangData = home.home.activation.syncOpencodeSkillsToOpenfang.data;
+  setupData = home.home.activation.setupOpencodePluginRuntime.data;
   profileDirectory = home.home.profileDirectory;
-  gentleWrapper = (builtins.head (builtins.filter (p: p.name == "gentle-ai-v2-managed") home.home.packages)).outPath;
-  runtimeEnvironment = home.home.file.".local/share/opencode-v2/environment".text;
-  nativeBinary = (toString flake.nixosConfigurations.rog.pkgs.opencode-v2) + "/bin/.opencode2-unwrapped";
+  gentleWrapper = pkg "gentle-ai-managed";
+  opencodeWrapper = pkg "opencode-managed";
+  nativeBinary = (toString flake.nixosConfigurations.rog.pkgs.opencode) + "/bin/opencode";
   username = home.home.username;
   profiles = (import (flake.outPath + "/shared/opencode/providers-base.nix") {{
     lib = flake.inputs.nixpkgs.lib;
@@ -46,65 +47,63 @@ result = json.loads(subprocess.check_output(
     cwd=ROOT, text=True,
 ))
 source = (ROOT / "shared/shell-aliases.nix").read_text()
-assert not result["hasAutomaticRestart"], "activation must not restart active V2 sessions"
-assert "agents" in result["v2"] and "permissions" in result["v2"]
-assert result["v2"]["plugins"] == ["opencode-claude-subscription@0.1.4"]
-assert result["v2"]["providers"]["openai"]["settings"]["transport"] == "http"
-assert result["v2"]["providers"]["nvidia"]["name"] == "NVIDIA NIM", "NVIDIA requires a native V2 declaration"
+assert not any("restart" in name.lower() and "opencode" in name.lower() for name in result["activationNames"]), "activation must not restart active sessions"
+assert "checkLinkTargets" in result["migrateBefore"], "layout migration must run before files are linked"
+assert "/bin/opencode-layout-migrate" in result["migrateData"]
+assert "--retire-openfang-skills" not in result["migrateData"], "rog runs OpenFang; its skills are managed"
+assert "agents" in result["oc"] and "permissions" in result["oc"]
+assert result["oc"]["plugins"] == ["opencode-claude-subscription@0.1.4"]
+assert result["oc"]["providers"]["openai"]["settings"]["transport"] == "http"
+assert result["oc"]["providers"]["nvidia"]["name"] == "NVIDIA NIM", "NVIDIA requires a native declaration"
 assert "sdd-task-result.ts" not in result["setupData"], "Candidate still installs the SDD task adapter"
-for plugin in ("host-config.ts", "rtk.ts", "engram.ts", "opencode-review-transport.ts"):
+for plugin in ("rtk.ts", "engram.ts", "opencode-review-transport.ts"):
     assert plugin in result["setupData"], f"Candidate lost managed plugin: {plugin}"
 assert "ai-assets-reconcile" in result["setupData"] and "rm -rf" not in result["setupData"]
-assert not any(name.startswith("sdd-") for name in result["v2"]["agents"])
-profiles = {profile["name"]: profile["phases"] for profile in result["profiles"]}
+assert not any(name.startswith("sdd-") for name in result["oc"]["agents"])
+profiles = {profile["name"]: profile["roles"] for profile in result["profiles"]}
 selected = profiles[result["selectedProfiles"]["rog"]]
 for role in ("gentle-orchestrator", "gentle-ai-worker", "gentle-ai-verify"):
-    assert result["v2"]["agents"][role]["model"] == selected[role], role
+    assert result["oc"]["agents"][role]["model"] == selected[role], role
 medium = profiles["openai-anthropic-medium"]
 for tier in ("light", "medium", "full"):
-    phases = profiles[f"openai-anthropic-{tier}"]
-    assert phases.keys() == medium.keys(), f"{tier}: missing phase assignment"
-    assert set(model.split("/")[0] for model in phases.values()) == {"anthropic", "openai"}
-    for phase in ("gentle-orchestrator", "gentle-ai-verify"):
-        assert phases[phase] == "anthropic/claude-opus-5-5", (tier, phase)
+    roles = profiles[f"openai-anthropic-{tier}"]
+    assert roles.keys() == medium.keys(), f"{tier}: missing role assignment"
+    assert set(model.split("/")[0] for model in roles.values()) == {"anthropic", "openai"}
+    for role in ("gentle-orchestrator", "gentle-ai-verify"):
+        assert roles[role] == "anthropic/claude-opus-5-5", (tier, role)
 assert profiles["openai-anthropic-light"]["gentle-ai-worker"] == "openai/gpt-6-luna"
 assert medium["gentle-ai-worker"] == "openai/gpt-6.1-sol"
 assert profiles["openai-anthropic-full"]["gentle-ai-worker"] == "anthropic/claude-opus-5-5"
 triple = profiles["openai-anthropic-go"]
 assert triple.keys() == medium.keys()
 assert set(model.split("/")[0] for model in triple.values()) == {"anthropic", "openai"}
-for phase, model in medium.items():
+for role, model in medium.items():
     expected = model
-    assert triple[phase] == expected, phase
+    assert triple[role] == expected, role
     if result["selectedProfiles"]["rog"] == "openai-anthropic-go":
-        assert result["v2"]["agents"][phase]["model"] == expected, phase
+        assert result["oc"]["agents"][role]["model"] == expected, role
 assert set(result["selectedProfiles"].values()) <= profiles.keys()
-assert "setupOpencodePluginRuntime-v2" in result["openfangAfter"]
-assert ".config/opencode-v2/skills" in result["openfangData"]
-assert ".config/opencode/skills" not in result["openfangData"]
-assert "opencode-v2-owned-assets" in result["setupData"]
-assert "optionalString (pkgs.stdenv.isDarwin && config.home.opencode.v2.enable)" in source
-assert "opencode2-project()" in source and "opencode2()" in source
-match = re.search(r"opencode2-home\(\) \(\n(.*?)\n      \)", source, re.S)
-assert match, "missing scoped V2 shell function"
+assert "setupOpencodePluginRuntime" in result["openfangAfter"]
+assert "opencode-no-legacy-assets" in result["openfangData"]
+assert "opencode-owned-assets" in result["setupData"]
+assert "opencode-no-legacy-assets" in result["setupData"], "fresh ownership must not claim legacy bytes"
+assert "opencode-project()" in source
+assert "optionalString (pkgs.stdenv.isDarwin && config.home.opencode.enable)" in source
+match = re.search(r"opencode-home\(\) \(\n(.*?)\n      \)", source, re.S)
+assert match, "missing scoped opencode-home shell function"
 
 with tempfile.TemporaryDirectory() as tmp:
     root = Path(tmp)
-    home = root / "home"
-    environment = home / ".local/share/opencode-v2/environment"
-    environment.parent.mkdir(parents=True)
-    environment.write_text(":\n")
     launcher = root / "opencode-home"
     launcher.write_text('#!/bin/sh\nprintf "%s\\0" "$OPENCODE_HOME_BINARY" "$@" > "$CAPTURE"\n')
     launcher.chmod(0o755)
     body = match.group(1).replace(
-        '${config.home.homeDirectory}', str(home)
-    ).replace('${pkgs.opencode-v2}/bin/opencode2', '/packaged/opencode2').replace(
+        '${config.home.profileDirectory}/bin/opencode', '/packaged/opencode'
+    ).replace(
         '${pkgs.nixos-scripts}/bin/opencode-home', str(launcher)
     ).replace("''${@:2}", "${@:2}")
-    assert '[[ ! -r "$environment" ]]' in body and 'source "$environment" ||' in body
     function_script = root / "function.zsh"
-    function_script.write_text("opencode2-home() (\n" + body + "\n)\nopencode2-home \"$@\"\n")
+    function_script.write_text("opencode-home() (\n" + body + "\n)\nopencode-home \"$@\"\n")
 
     def invoke(args):
         capture = root / "capture"
@@ -112,7 +111,7 @@ with tempfile.TemporaryDirectory() as tmp:
                        env={**os.environ, "CAPTURE": str(capture)})
         return capture.read_bytes().split(b"\0")[:-1]
 
-    expected_prefix = b"/packaged/opencode2"
+    expected_prefix = b"/packaged/opencode"
     assert invoke([]) == [expected_prefix, b"--standalone"]
     assert invoke(["run", "--model", "provider/model", "", "prompt with spaces"]) == [
         expected_prefix, b"run", b"--standalone", b"--model", b"provider/model", b"", b"prompt with spaces"
@@ -123,7 +122,7 @@ with tempfile.TemporaryDirectory() as tmp:
         expected_prefix, b"run", b"--server", b"http://localhost:4096", b"prompt"
     ]
 
-for name, mcp in result["v2"]["mcp"]["servers"].items():
+for name, mcp in result["oc"]["mcp"]["servers"].items():
     if mcp.get("type", "local") == "local":
         env = mcp.get("environment", {})
         assert env["HTTP_PROXY"] == env["HTTPS_PROXY"] == env["ALL_PROXY"] == "", name
@@ -136,73 +135,47 @@ for name, mcp in result["v2"]["mcp"]["servers"].items():
             f"{name}: executable missing from the generated MCP PATH"
         )
     else:
-        assert "environment" not in mcp, f"V2 remote MCP changed: {name}"
-print("PASS: V2 activation preserves sessions; local MCP PATH and proxy hygiene; scoped launcher")
+        assert "environment" not in mcp, f"remote MCP changed: {name}"
+print("PASS: migration precedes linking; local MCP PATH and proxy hygiene; scoped launcher")
 
-# Build the actual compiled HM wrapper, not a shell-function/fake-runtime proxy.
-subprocess.run(["nix", "build", "--impure", "--no-link", "--expr", f'''
+# Build the actual compiled HM wrappers, not shell-function proxies.
+for name in ("gentle-ai-managed", "opencode-managed"):
+    subprocess.run(["nix", "build", "--impure", "--no-link", "--expr", f'''
 let f = builtins.getFlake {json.dumps("path:" + str(ROOT))};
-in builtins.head (builtins.filter (p: p.name == "gentle-ai-v2-managed") f.homeConfigurations.rog.config.home.packages)
+in builtins.head (builtins.filter (p: p.name == "{name}") f.homeConfigurations.rog.config.home.packages)
 '''], cwd=ROOT, check=True)
 wrapper = Path(result["gentleWrapper"]) / "bin/gentle-ai"
 binary = wrapper.read_bytes()
 assert binary[:4] == b"\x7fELF", "Linux wrapper must be native, not a shell script"
-for name, value in {
-    "XDG_CONFIG_HOME": "/home/glats/.config/opencode-v2",
-    "XDG_DATA_HOME": "/home/glats/.local/opencode-v2/data",
-    "XDG_CACHE_HOME": "/home/glats/.local/opencode-v2/cache",
-    "XDG_STATE_HOME": "/home/glats/.local/opencode-v2/state",
-    "OPENCODE_CONFIG_DIR": "/home/glats/.config/opencode-v2",
-    "OPENCODE_DB": "/home/glats/.local/opencode-v2/data/opencode.db",
-    "TMPDIR": "/home/glats/.local/opencode-v2/tmp",
-    "OPENCODE_DISABLE_PROJECT_CONFIG": "1",
-    "GENTLE_AI_OPENCODE_RELAY_CONTRACT": "gentle-ai.opencode-relay/v2-staged",
-}.items():
-    assert name.encode() in binary and value.encode() in binary, name
-private = re.search(rb"/nix/store/[a-z0-9]+-gentle-ai-native-v2-discovery/bin", binary)
+assert b"GENTLE_AI_OPENCODE_RELAY_CONTRACT" in binary and b"gentle-ai.opencode-relay/v2-staged" in binary
+for name in (b"XDG_CONFIG_HOME", b"XDG_DATA_HOME", b"OPENCODE_DB", b"OPENCODE_CONFIG_DIR", b"TMPDIR"):
+    assert name not in binary, f"native layout must not override {name!r}"
+private = re.search(rb"/nix/store/[a-z0-9]+-gentle-ai-native-discovery/bin", binary)
 assert private, "missing truthful private discovery directory"
 native = Path(os.fsdecode(private.group())) / "opencode"
 assert native.is_symlink() and native.resolve() == Path(result["nativeBinary"]).resolve()
-assert os.fsdecode(private.group()) not in result["runtimeEnvironment"], "private bare runtime leaked into host shell"
-assert subprocess.check_output([str(wrapper), "version"], text=True,
-                              env={**os.environ, "XDG_CONFIG_HOME": "/scrubbed/host-config"}).strip() == "gentle-ai 4.1.1"
-print("PASS: native HM Gentle wrapper, complete restored V2 roots and private truthful 2.0.14 discovery")
+assert subprocess.check_output([str(wrapper), "version"], text=True).strip() == "gentle-ai 4.1.1"
+opencode = Path(result["opencodeWrapper"]) / "bin/opencode"
+launcher_bytes = opencode.read_bytes()
+assert launcher_bytes[:4] == b"\x7fELF" and b"OPENCODE_DISABLE_PROJECT_CONFIG" in launcher_bytes
+assert result["gentleWrapper"].encode() in launcher_bytes, "opencode must put the managed gentle-ai first on PATH"
+assert subprocess.check_output([str(opencode), "--version"], text=True).strip().startswith("opencode v2.")
+print("PASS: native HM wrappers; no layout overrides; truthful native discovery")
 
 with tempfile.TemporaryDirectory(prefix="odd-registry-") as tmp:
     root = Path(tmp); home = root / "home"; project = root / "project"
     def skill(path, name, description):
         path.mkdir(parents=True, exist_ok=True)
         (path / "SKILL.md").write_text(f"---\nname: {name}\ndescription: {description}\n---\n")
-    skill(home / ".config/opencode-v2/skills/v2-canary", "v2-canary", "isolated V2")
-    skill(home / ".config/opencode/skills/v1-canary", "v1-canary", "retired root")
-    skill(home / ".config/opencode-v2/skills/collision", "collision", "global copy")
+    skill(home / ".config/opencode/skills/global-canary", "global-canary", "global root")
+    skill(home / ".config/opencode/skills/collision", "collision", "global copy")
     skill(project / "skills/collision", "collision", "project first")
     probe = os.environ.get("GENTLE_AI_REGISTRY_PROBE", str(wrapper))
     rows = json.loads(subprocess.check_output([probe, "skill-registry", "list", "--json", "--cwd", str(project)],
                                              text=True, env={**os.environ,"HOME":str(home)}))
     skills = {row["name"]:row for row in rows}
-    assert "v2-canary" in skills and "v1-canary" not in skills, "Registry still scans the retired global root"
+    assert "global-canary" in skills, "Registry must scan the native global root"
     assert skills["collision"]["description"] == "project first"
     assert skills["collision"]["path"] == str(project / "skills/collision/SKILL.md")
     assert not (project / ".atl").exists(), "read-only list wrote a registry"
-print("PASS: actual Go registry isolates V2 global root, preserves project-first precedence and read-only listing")
-
-# Exercise the actual module-generated compiled wrapper with a quoted/spaced
-# configuration root, without activating HM or fabricating native discovery.
-with tempfile.TemporaryDirectory(prefix="odd wrapper 'quoted'-") as tmp:
-    quoted_home = str(Path(tmp) / "home with 'single quote'")
-    expression = f'''
-let f = builtins.getFlake {json.dumps("path:" + str(ROOT))};
-  h = f.homeConfigurations.rog.extendModules {{
-    modules = [ ({{ lib, ... }}: {{ home.homeDirectory = lib.mkForce {json.dumps(quoted_home)}; }}) ];
-  }};
-in builtins.head (builtins.filter (p: p.name == "gentle-ai-v2-managed") h.config.home.packages)
-'''
-    out = subprocess.check_output(["nix", "build", "--impure", "--no-link", "--print-out-paths", "--expr", expression], text=True, cwd=ROOT).strip()
-    quoted_wrapper = Path(out) / "bin/gentle-ai"
-    compiled = quoted_wrapper.read_bytes()
-    for suffix in ("/.config/opencode-v2", "/.local/opencode-v2/data/opencode.db", "/.local/opencode-v2/tmp"):
-        assert (quoted_home + suffix).encode() in compiled, "configured path was split or lost its quote"
-    assert subprocess.check_output([str(quoted_wrapper), "version"], text=True,
-                                  env={**os.environ, "XDG_CONFIG_HOME":"/wrong-host-root"}).strip() == "gentle-ai 4.1.1"
-print("PASS: actual compiled HM wrapper handles spaces/single quotes in configured roots without activation")
+print("PASS: actual Go registry scans the native global root, keeps project-first precedence and read-only listing")

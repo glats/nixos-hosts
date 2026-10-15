@@ -1,16 +1,16 @@
-# Generate the V2 Home Manager runtime configuration and activation steps.
+# Generate the OpenCode Home Manager runtime configuration and activation steps.
 {
   config,
   lib,
   pkgs,
   providers,
   cfg,
-  runtimeConfig,
-  gentleV2 ? pkgs.gentle-ai,
+  gentleManaged,
+  openfangEnabled,
 }:
 
 let
-  runtimeDir = "${config.home.homeDirectory}/.config/${runtimeConfig.dir}";
+  runtimeDir = "${config.home.homeDirectory}/.config/opencode";
 
   # Per-tool command sources (NOT shared — each tool needs its own)
   opencodeCommandSources = [
@@ -70,30 +70,24 @@ let
   v2Mcps = import ./v2-mcps.nix {
     inherit lib;
     mcps = enabledMcps;
-    browserMcp = cfg.v2.browserMcp;
+    browserMcp = cfg.browserMcp;
   };
-  v2AgentsMd = pkgs.writeText "opencode-v2-AGENTS.md" (
+  v2AgentsMd = pkgs.writeText "opencode-AGENTS.md" (
     lib.concatMapStringsSep "\n\n" builtins.readFile config.home.ai-assets.agentsMdSources
   );
   v2ManagedPlugins = {
-    "host-config.ts" = ./host-config-v2.ts;
     "rtk.ts" = ./rtk-v2.ts;
     "opencode-review-transport.ts" =
-      "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode-v2/plugins/opencode-review-transport.ts";
-    "skill-registry.ts" =
-      "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode-v2/plugins/skill-registry.ts";
-    "engram.ts" = "${pkgs.engram-assets}/share/engram/opencode-v2/plugins/engram.ts";
+      "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/plugins/opencode-review-transport.ts";
+    "skill-registry.ts" = "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/plugins/skill-registry.ts";
+    "engram.ts" = "${pkgs.engram-assets}/share/engram/opencode/plugins/engram.ts";
   };
   assetTrees = import ../ai-assets-tree.nix { inherit lib pkgs; };
   promptTree = pkgs.runCommand "opencode-owned-context" { } ''
     mkdir -p "$out"
     cp ${v2AgentsMd} "$out/AGENTS.md"
   '';
-  legacyPromptTree = pkgs.runCommand "opencode-prior-context" { } ''
-    mkdir -p "$out"
-    cp ${assetTrees.priorRepo}/AGENTS.md "$out/AGENTS.md"
-  '';
-  pluginsTree = pkgs.runCommand "opencode-v2-owned-plugins" { } ''
+  pluginsTree = pkgs.runCommand "opencode-owned-plugins" { } ''
     mkdir -p "$out"
     ${lib.concatStringsSep "\n" (
       lib.mapAttrsToList (name: source: ''
@@ -104,15 +98,9 @@ let
     )}
     chmod -R u+w "$out"
     substituteInPlace "$out/opencode-review-transport.ts" \
-      --replace-fail 'Command: "${pkgs.gentle-ai}/bin/gentle-ai"' 'Command: "${gentleV2}/bin/gentle-ai"'
+      --replace-fail 'Command: "${pkgs.gentle-ai}/bin/gentle-ai"' 'Command: "${gentleManaged}/bin/gentle-ai"'
     substituteInPlace "$out/skill-registry.ts" \
-      --replace-fail 'const GO_COMMAND = "gentle-ai"' 'const GO_COMMAND = "${gentleV2}/bin/gentle-ai"'
-  '';
-  legacyLocalPlugins = pkgs.runCommand "opencode-v2-prior-local-plugins" { } ''
-    mkdir -p "$out"
-    cp ${assetTrees.priorRepo}/shared/opencode/host-config-v2.ts "$out/host-config.ts"
-    cp ${assetTrees.priorRepo}/shared/opencode/rtk-v2.ts "$out/rtk.ts"
-    cp ${assetTrees.priorPkgs.engram-assets}/share/engram/opencode-v2/plugins/engram.ts "$out/engram.ts"
+      --replace-fail 'const GO_COMMAND = "gentle-ai"' 'const GO_COMMAND = "${gentleManaged}/bin/gentle-ai"'
   '';
   entries =
     (map (source: {
@@ -123,7 +111,7 @@ let
       target = "commands";
       inherit source;
     }) opencodeCommandSources);
-  desiredAssets = assetTrees.tree "opencode-v2-owned-assets" (
+  desiredAssets = assetTrees.tree "opencode-owned-assets" (
     entries
     ++ [
       {
@@ -135,21 +123,13 @@ let
         source = promptTree;
       }
     ]
-  ) false;
-  legacyAssets = assetTrees.legacy "v2" [
-    {
-      target = "plugins";
-      source = legacyLocalPlugins;
-    }
-    {
-      target = "";
-      source = legacyPromptTree;
-    }
-  ];
-  openfangAssets = assetTrees.tree "openfang-owned-skills" (lib.filter (
-    entry: entry.target == "skills"
-  ) entries) false;
-  legacyOpenfang = assetTrees.legacy "openfang" [ ];
+  );
+  # The layout migration archives the previous config root, so ownership
+  # starts from a fresh tree with nothing legacy to claim.
+  noLegacy = pkgs.runCommand "opencode-no-legacy-assets" { } "mkdir $out";
+  openfangAssets = assetTrees.tree "openfang-owned-skills" (
+    lib.filter (entry: entry.target == "skills") entries
+  );
 
   providerAllowlist = providers.providerAllowlist;
 
@@ -192,11 +172,11 @@ let
   );
 in
 {
-  home.file.".config/${runtimeConfig.dir}/opencode.json" = {
+  home.file.".config/opencode/opencode.json" = {
     force = true;
     source = jsonFile;
   };
-  home.file.".config/${runtimeConfig.dir}/cli.json" = {
+  home.file.".config/opencode/cli.json" = {
     # This is generated V2 configuration, not user state. Force replacement
     # so Home Manager does not create another `.backup` on later activations.
     force = true;
@@ -208,56 +188,49 @@ in
   # `backupFileExtension = "backup"` may have left this from an earlier V2
   # activation. Remove only the generated V2 collision before linkGeneration;
   # V1 and all other V2 runtime state remain untouched.
-  home.activation."cleanupOpencodeV2CliBackup-${runtimeConfig.label}" =
-    config.lib.dag.entryBefore [ "linkGeneration" ]
-      ''
-        ${pkgs.coreutils}/bin/rm -f "${runtimeDir}/cli.json.backup"
-      '';
+  home.activation.cleanupOpencodeCliBackup = config.lib.dag.entryBefore [ "linkGeneration" ] ''
+    ${pkgs.coreutils}/bin/rm -f "${runtimeDir}/cli.json.backup"
+  '';
 
-  home.activation."makeOpencodeConfigMutable-${runtimeConfig.label}" =
-    config.lib.dag.entryAfter [ "linkGeneration" ]
-      ''
-        runtime_dir="${runtimeDir}"
-        opencode_json="$runtime_dir/opencode.json"
+  home.activation.makeOpencodeConfigMutable = config.lib.dag.entryAfter [ "linkGeneration" ] ''
+    runtime_dir="${runtimeDir}"
+    opencode_json="$runtime_dir/opencode.json"
 
-            mkdir -p "$runtime_dir"
-            if [ -L "$opencode_json" ]; then
-              src="$(${pkgs.coreutils}/bin/readlink -f "$opencode_json")"
-              ${pkgs.coreutils}/bin/cp --remove-destination "$src" "$opencode_json"
-            fi
-            if [ -f "$opencode_json" ] && [ ! -w "$opencode_json" ]; then
-              chmod 644 "$opencode_json"
-            fi
-            if [ -f "$opencode_json" ] && ! ${pkgs.diffutils}/bin/cmp -s "${jsonFile}" "$opencode_json"; then
-          ${pkgs.coreutils}/bin/cp "${jsonFile}" "$opencode_json"
+        mkdir -p "$runtime_dir"
+        if [ -L "$opencode_json" ]; then
+          src="$(${pkgs.coreutils}/bin/readlink -f "$opencode_json")"
+          ${pkgs.coreutils}/bin/cp --remove-destination "$src" "$opencode_json"
+        fi
+        if [ -f "$opencode_json" ] && [ ! -w "$opencode_json" ]; then
           chmod 644 "$opencode_json"
         fi
-      '';
+        if [ -f "$opencode_json" ] && ! ${pkgs.diffutils}/bin/cmp -s "${jsonFile}" "$opencode_json"; then
+      ${pkgs.coreutils}/bin/cp "${jsonFile}" "$opencode_json"
+      chmod 644 "$opencode_json"
+    fi
+  '';
 
   # V2 discovers native skills, commands, and adapters from its own mutable
   # tree; the copy/remap workflow remains writable and idempotent.
-  home.activation."setupOpencodePluginRuntime-${runtimeConfig.label}" =
-    config.lib.dag.entryAfter [ "makeOpencodeConfigMutable-${runtimeConfig.label}" ]
+  home.activation.setupOpencodePluginRuntime =
+    config.lib.dag.entryAfter [ "makeOpencodeConfigMutable" ]
       ''
         runtime_dir="${runtimeDir}"
 
         # Refuse modified/foreign collisions and symlink escapes before any
         # asset changes. Bootstrap claims only exact prior 2.5 consumer bytes.
         ${pkgs.nixos-scripts}/bin/ai-assets-reconcile "$runtime_dir" \
-          ${desiredAssets} ${legacyAssets} 898d3976e8049a7238eaa7de60bff325c30d2b3d
-        # Plugin set: host-config.ts, rtk.ts, engram.ts, skill-registry.ts,
-        # opencode-review-transport.ts; the retired SDD adapter is absent.
+          ${desiredAssets} ${noLegacy} 898d3976e8049a7238eaa7de60bff325c30d2b3d
+        # Plugin set: rtk.ts, engram.ts, skill-registry.ts,
+        # opencode-review-transport.ts.
         mkdir -p "$runtime_dir/node_modules"
         ${pkgs.coreutils}/bin/cp -r ${pkgs.opencode-npm-packages-v2}/lib/node_modules/. "$runtime_dir/node_modules/"
         chmod -R u+w "$runtime_dir/node_modules"
       '';
-  home.activation."syncOpencodeSkillsToOpenfang-v2" =
-    config.lib.dag.entryAfter [ "setupOpencodePluginRuntime-v2" ]
-      ''
-        opencode_skills_dir="${config.home.homeDirectory}/.config/opencode-v2/skills"
-        openfang_skills_dir="${config.home.homeDirectory}/.openfang/skills"
-
-        ${pkgs.nixos-scripts}/bin/ai-assets-reconcile "${config.home.homeDirectory}/.openfang" \
-          ${openfangAssets} ${legacyOpenfang} 898d3976e8049a7238eaa7de60bff325c30d2b3d
-      '';
+  home.activation.syncOpencodeSkillsToOpenfang = lib.mkIf openfangEnabled (
+    config.lib.dag.entryAfter [ "setupOpencodePluginRuntime" ] ''
+      ${pkgs.nixos-scripts}/bin/ai-assets-reconcile "${config.home.homeDirectory}/.openfang" \
+        ${openfangAssets} ${noLegacy} 898d3976e8049a7238eaa7de60bff325c30d2b3d
+    ''
+  );
 }

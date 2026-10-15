@@ -60,7 +60,7 @@ let
         source = stylesTree pkgs.gentle-ai-assets;
       }
     ]
-  ) false;
+  );
   legacyAssets = assetTrees.legacy "claude" [
     {
       target = "";

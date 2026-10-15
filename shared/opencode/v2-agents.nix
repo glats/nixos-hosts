@@ -8,7 +8,7 @@
 let
   skillsRoot = "${runtimeDir}/skills";
   executorContract = ''
-    ## OpenCode V2 executor contract
+    ## OpenCode executor contract
     Use the live direct tool names and input schemas, not names remembered from other runtimes.
     For inspection, use direct read({path, offset?, limit?}). For commands, use direct
     shell({command, workdir?, timeout?, background?}) only when allowed by this agent's permissions.

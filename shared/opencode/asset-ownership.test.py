@@ -12,23 +12,24 @@ ROOT = Path(__file__).resolve().parents[2]
 expression = f'''
 let f = builtins.getFlake {json.dumps("path:" + str(ROOT))}; h = f.homeConfigurations.rog.config;
 in {{
-  v2 = builtins.getContext h.home.activation.setupOpencodePluginRuntime-v2.data;
+  opencode = builtins.getContext h.home.activation.setupOpencodePluginRuntime.data;
   claude = builtins.getContext h.home.activation.deployClaudeCodeAssets.data;
-  openfang = builtins.getContext h.home.activation.syncOpencodeSkillsToOpenfang-v2.data;
+  openfang = builtins.getContext h.home.activation.syncOpencodeSkillsToOpenfang.data;
   source = f.inputs.gentle-ai-src.outPath;
 }}
 '''
 contexts = json.loads(subprocess.check_output(["nix", "eval", "--impure", "--json", "--expr", expression], cwd=ROOT))
-selected = {key for consumer in ("v2", "claude", "openfang") for key in contexts[consumer]
-            if "owned-" in key or "-nixos-scripts-" in key}
+selected = {key for consumer in ("opencode", "claude", "openfang") for key in contexts[consumer]
+            if "owned-" in key or "-no-legacy-" in key or "-nixos-scripts-" in key}
 subprocess.run(["nix", "build", "--no-link", *[key + "^out" for key in sorted(selected)]], check=True, cwd=ROOT)
 
 def output(drv):
     return Path(subprocess.check_output(["nix-store", "--query", "--outputs", drv], text=True).strip())
 
-for consumer in ("v2", "claude", "openfang"):
+for consumer in ("opencode", "claude", "openfang"):
     entries = contexts[consumer]
-    legacy = output(next(key for key in entries if "-gentle-ai-2.5-owned-" in key))
+    # Claude still claims exact prior bytes; OpenCode and OpenFang start fresh.
+    legacy = output(next(key for key in entries if "-gentle-ai-2.5-owned-" in key or "-opencode-no-legacy-assets" in key))
     desired = output(next(key for key in entries if "-owned-" in key and "-gentle-ai-2.5-owned-" not in key))
     cli = output(next(key for key in entries if "-nixos-scripts-" in key)) / "bin/ai-assets-reconcile"
     with tempfile.TemporaryDirectory(prefix=f"odd-{consumer}-") as tmp:
@@ -52,13 +53,13 @@ for consumer in ("v2", "claude", "openfang"):
         assert manifest["schema"] == 2
         assert all(not entry.get("pending") and "prior" not in entry for entry in manifest["files"].values())
         assert all(entry["revision"] == "898d3976e8049a7238eaa7de60bff325c30d2b3d" for entry in manifest["files"].values())
-        if consumer == "v2":
+        if consumer == "opencode":
             assert not (target / "plugins/sdd-task-result.ts").exists()
             actual = (desired / "plugins/opencode-review-transport.ts").read_text()
             tagged = (Path(contexts["source"]) / "internal/assets/opencode/plugins-v2/opencode-review-transport.ts").read_text()
             assert re.sub(r'Command: "[^"]+"', 'Command: "gentle-ai"', actual) == tagged
-            assert "gentle-ai-v2-managed/bin/gentle-ai" in actual
-            assert "gentle-ai-v2-managed/bin/gentle-ai" in (desired / "plugins/skill-registry.ts").read_text()
+            assert "gentle-ai-managed/bin/gentle-ai" in actual
+            assert "gentle-ai-managed/bin/gentle-ai" in (desired / "plugins/skill-registry.ts").read_text()
         if consumer == "claude":
             assert "Organic Driven Development" in (desired / "CLAUDE.md").read_text()
             assert "{{GENTLE_AI_" not in (desired / "CLAUDE.md").read_text()

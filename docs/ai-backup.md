@@ -59,7 +59,7 @@ a `.sha256` sidecar. Dry-run and `list` never modify data.
 | Family | Archived | Skipped (regenerable or live) | Why |
 |---|---|---|---|
 | Claude state | `~/.claude/{projects/,history.jsonl,plans/,todos/,keybindings.json}` and the nested `~/.claude/.claude/` tree, sibling `~/.claude.json`[^claude] | settings, `CLAUDE.md`, skills, commands, agents, caches, shell-snapshots, telemetry, plugin caches, Keychain/`.credentials.json` | Sessions and history are irreplaceable state; settings, caches and credentials are regenerable (config ownership belongs to the dotfile system) |
-| OpenCode state | `~/.local/share/opencode/{storage/,auth.json,opencode-multimodal.json}` + snapshot of every channel-dependent `opencode-<channel>.db`[^opencode] | `bin/`, `log/`, `snapshot/`, `tool-output/`, `node_modules`, live `*.db`, `-wal`/`-shm` sidecars, `.config/opencode/` | live DBs snapshot via `sqlite3 .backup` (safe under WAL); the rest is runtime/provisioned state[^opencode2] |
+| OpenCode state | `~/.local/share/opencode/{storage/,auth.json,opencode-multimodal.json}` + snapshot of every channel-dependent `opencode-<channel>.db`[^opencode] | `bin/`, `log/`, `snapshot/`, `tool-output/`, `node_modules`, live `*.db`, `-wal`/`-shm` sidecars, `~/.config/opencode/` | live DBs snapshot via `sqlite3 .backup` (safe under WAL); the rest is runtime/provisioned state[^opencode-layout] |
 | Engram | global `~/.engram/engram.db` as `…/engram.db.snapshot` only; project dirs opt-in via `AI_BACKUP_EXTRA`[^engram] | live `~/.engram/` tree, `engram.db.before-*`/`pre-cleanup.*` backups, `-wal`/`-shm` | snapshot copy is the consistent moment-in-time copy recommended by SQLite's own backup guide[^sqlite] |
 | Extra project dirs | `AI_BACKUP_EXTRA`, verbatim (see env reference) | — | opt-in only |
 
@@ -70,7 +70,7 @@ a `.sha256` sidecar. Dry-run and `list` never modify data.
     symlinks are resolved before snapshotting and the staged name is
     `<real-basename>.db.snapshot`. Source:
     <https://github.com/sst/opencode/issues/13654>.
-[^opencode2]: Verified against OpenCode's data-layout troubleshooting
+[^opencode-layout]: Verified against OpenCode's data-layout troubleshooting
     guide: <https://opencode.ai/docs/troubleshooting>.
 [^engram]: Snapshot semantics follow the store's own backup path in
     <https://github.com/Gentleman-Programming/engram> (`store.go`).

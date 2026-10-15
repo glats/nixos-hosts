@@ -34,7 +34,6 @@ with pkgs;
 
   # AI tooling
   codex
-  opencode-v2
   openfang
 
   # Game/graphics engine (mono variant for C# support)

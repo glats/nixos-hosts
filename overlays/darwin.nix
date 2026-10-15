@@ -75,7 +75,7 @@ in
     engram-assets
     opencode-npm-packages-v2
     browsermcp-v2
-    opencode-v2
+    opencode
     leaf
     claude-code
     ;
