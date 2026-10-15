@@ -104,23 +104,15 @@ let
   # Cache/compaction cost risk remains (#51109/#52761); no invented TTL option.
   anthropicOpenaiPhases = {
     gentle-orchestrator = "anthropic/claude-opus-5-5";
-    # Luna's focused-work fit saves scarce Opus turns on mechanical phases.
-    sdd-init = "openai/gpt-6-luna";
-    sdd-tasks = "openai/gpt-6-luna";
-    sdd-archive = "openai/gpt-6-luna";
-    sdd-onboard = "openai/gpt-6-luna";
     # Sol is a worker, not the final authority on architecture or acceptance.
-    sdd-explore = "openai/gpt-6.1-sol";
-    sdd-apply = "openai/gpt-6.1-sol";
+    gentle-ai-explore = "openai/gpt-6.1-sol";
+    gentle-ai-worker = "openai/gpt-6.1-sol";
     jd-fix-agent = "openai/gpt-6.1-sol";
     # Opus's documented long-horizon fit and the user's quality requirement
     # outweigh quota savings at these once-shot judgment boundaries.
-    sdd-propose = "anthropic/claude-opus-5-5";
-    sdd-spec = "anthropic/claude-opus-5-5";
-    sdd-design = "anthropic/claude-opus-5-5";
-    sdd-verify = "anthropic/claude-opus-5-5";
+    gentle-ai-verify = "anthropic/claude-opus-5-5";
     jd-judge-a = "anthropic/claude-opus-5-5";
-    # Cross-family reviews counter vendor blind spots; sdd-verify stays Opus.
+    # Cross-family reviews counter vendor blind spots; gentle-ai-verify stays Opus.
     jd-judge-b = "openai/gpt-6.1-sol";
     review-readability = "openai/gpt-6.1-sol";
     review-reliability = "openai/gpt-6.1-sol";
@@ -152,18 +144,14 @@ let
       # Catalog availability is not an entitlement or runtime reliability test.
       # Keep existing credentials and two-provider rollback profiles; do not
       # enable Console "Use balance" or add an automatic paid fallback.
-      phases = anthropicOpenaiPhases // {
-        sdd-init = "opencode-go/gpt-6-luna";
-        sdd-tasks = "opencode-go/gpt-6-luna";
-        sdd-archive = "opencode-go/gpt-6-luna";
-      };
+      phases = anthropicOpenaiPhases;
     }
     {
       name = "openai-anthropic-light";
       # Same Opus judgment as medium; use only for bounded implementation.
       # Luna is recommended for focused edits: learn.chatgpt.com/docs/models.
       phases = anthropicOpenaiPhases // {
-        sdd-apply = "openai/gpt-6-luna";
+        gentle-ai-worker = "openai/gpt-6-luna";
         jd-fix-agent = "openai/gpt-6-luna";
       };
     }
@@ -177,8 +165,8 @@ let
       # Explicit high-consumption option, not the default: move the hardest
       # workers to Opus's documented long-running agentic path.
       phases = anthropicOpenaiPhases // {
-        sdd-explore = "anthropic/claude-opus-5-5";
-        sdd-apply = "anthropic/claude-opus-5-5";
+        gentle-ai-explore = "anthropic/claude-opus-5-5";
+        gentle-ai-worker = "anthropic/claude-opus-5-5";
         jd-fix-agent = "anthropic/claude-opus-5-5";
       };
     }
@@ -190,22 +178,15 @@ let
       name = "work-copilot-anthropic";
       phases = {
         gentle-orchestrator = "github-copilot/gpt-6.1-sol";
-        sdd-init = "github-copilot/gpt-5.4-mini";
-        sdd-explore = "anthropic/claude-sonnet-5-5";
-        sdd-propose = "anthropic/claude-sonnet-5-5";
-        sdd-spec = "github-copilot/claude-sonnet-5.5";
-        sdd-design = "anthropic/claude-sonnet-5-5";
-        sdd-tasks = "github-copilot/gpt-5.4-mini";
+        gentle-ai-explore = "anthropic/claude-sonnet-5-5";
         # Re-fit 2026-09-23: apply is the only may-loop phase in this profile,
         # so it stays on the already-routed Copilot Sonnet 5.5 workforce.
         # Re-fit 2026-10-07: native judgment gates move from Sonnet 4.6 ($3/$15)
         # to Sonnet 5.5 ($2/$10); native archive moves to Haiku 5.5 (day-0).
         # Sources: docs.github.com/copilot/reference/copilot-billing/models-and-pricing
         # and docs.anthropic.com/en/docs/about-claude/pricing.
-        sdd-apply = "github-copilot/claude-sonnet-5.5";
-        sdd-verify = "anthropic/claude-sonnet-5-5";
-        sdd-archive = "anthropic/claude-haiku-5-5";
-        sdd-onboard = "github-copilot/gpt-5.4-mini";
+        gentle-ai-worker = "github-copilot/claude-sonnet-5.5";
+        gentle-ai-verify = "anthropic/claude-sonnet-5-5";
         jd-judge-a = "anthropic/claude-sonnet-5-5";
         jd-judge-b = "anthropic/claude-sonnet-5-5";
         # Re-fit 2026-09-23: corrections may loop, so use the already-routed
@@ -224,16 +205,9 @@ let
       name = "anthropic-openai-opencode";
       phases = {
         gentle-orchestrator = "anthropic/claude-opus-5-5";
-        sdd-init = "opencode-go/deepseek-v4-pro";
-        sdd-explore = "opencode-go/glm-5.3-flash";
-        sdd-propose = "openai/gpt-6.1-sol";
-        sdd-spec = "openai/gpt-6.1-sol";
-        sdd-design = "anthropic/claude-sonnet-5-5";
-        sdd-tasks = "anthropic/claude-haiku-5-5";
-        sdd-apply = "openai/gpt-6-luna";
-        sdd-verify = "anthropic/claude-sonnet-5-5";
-        sdd-archive = "opencode-go/glm-5.3-flash";
-        sdd-onboard = "opencode-go/glm-5.3-flash";
+        gentle-ai-explore = "opencode-go/glm-5.3-flash";
+        gentle-ai-worker = "openai/gpt-6-luna";
+        gentle-ai-verify = "anthropic/claude-sonnet-5-5";
         jd-judge-a = "anthropic/claude-sonnet-5-5";
         jd-judge-b = "anthropic/claude-sonnet-5-5";
         jd-fix-agent = "opencode-go/glm-5.3-flash";
@@ -250,16 +224,9 @@ let
       name = "work-copilot-anthropic-light";
       phases = {
         gentle-orchestrator = "github-copilot/gpt-6.1-sol";
-        sdd-init = "anthropic/claude-haiku-5-5";
-        sdd-explore = "anthropic/claude-sonnet-5-5";
-        sdd-propose = "anthropic/claude-sonnet-5-5";
-        sdd-spec = "github-copilot/claude-sonnet-5.5";
-        sdd-design = "anthropic/claude-sonnet-5-5";
-        sdd-tasks = "anthropic/claude-haiku-5-5";
-        sdd-apply = "github-copilot/claude-sonnet-5.5";
-        sdd-verify = "anthropic/claude-sonnet-5-5";
-        sdd-archive = "anthropic/claude-haiku-5-5";
-        sdd-onboard = "anthropic/claude-haiku-5-5";
+        gentle-ai-explore = "anthropic/claude-sonnet-5-5";
+        gentle-ai-worker = "github-copilot/claude-sonnet-5.5";
+        gentle-ai-verify = "anthropic/claude-sonnet-5-5";
         jd-judge-a = "anthropic/claude-sonnet-5-5";
         jd-judge-b = "anthropic/claude-sonnet-5-5";
         jd-fix-agent = "github-copilot/claude-sonnet-5.5";
@@ -286,16 +253,9 @@ let
         # opencode#52735 (native Opus 5.5 may store pre-tool-call user text as a
         # collapsed reasoning part). Rollback: claude-sonnet-5-5.
         gentle-orchestrator = "anthropic/claude-opus-5-5";
-        sdd-init = "anthropic/claude-haiku-5-5";
-        sdd-explore = "anthropic/claude-sonnet-5-5";
-        sdd-propose = "anthropic/claude-sonnet-5-5";
-        sdd-spec = "anthropic/claude-sonnet-5-5";
-        sdd-design = "anthropic/claude-sonnet-5-5";
-        sdd-tasks = "anthropic/claude-haiku-5-5";
-        sdd-apply = "anthropic/claude-sonnet-5-5";
-        sdd-verify = "anthropic/claude-sonnet-5-5";
-        sdd-archive = "anthropic/claude-haiku-5-5";
-        sdd-onboard = "anthropic/claude-haiku-5-5";
+        gentle-ai-explore = "anthropic/claude-sonnet-5-5";
+        gentle-ai-worker = "anthropic/claude-sonnet-5-5";
+        gentle-ai-verify = "anthropic/claude-sonnet-5-5";
         jd-judge-a = "anthropic/claude-sonnet-5-5";
         jd-judge-b = "anthropic/claude-sonnet-5-5";
         jd-fix-agent = "anthropic/claude-sonnet-5-5";
@@ -318,16 +278,9 @@ let
       phases = {
         # Opus 5.5: see opencode#52735 (pre-tool-call text lands in reasoning).
         gentle-orchestrator = "anthropic/claude-opus-5-5";
-        sdd-init = "anthropic/claude-haiku-5-5";
-        sdd-explore = "anthropic/claude-sonnet-5-5";
-        sdd-propose = "anthropic/claude-opus-5-5";
-        sdd-spec = "anthropic/claude-sonnet-5-5";
-        sdd-design = "anthropic/claude-opus-5-5";
-        sdd-tasks = "anthropic/claude-sonnet-5-5";
-        sdd-apply = "anthropic/claude-sonnet-5-5";
-        sdd-verify = "anthropic/claude-sonnet-5-5";
-        sdd-archive = "anthropic/claude-haiku-5-5";
-        sdd-onboard = "anthropic/claude-sonnet-5-5";
+        gentle-ai-explore = "anthropic/claude-sonnet-5-5";
+        gentle-ai-worker = "anthropic/claude-sonnet-5-5";
+        gentle-ai-verify = "anthropic/claude-sonnet-5-5";
         jd-judge-a = "anthropic/claude-sonnet-5-5";
         jd-judge-b = "anthropic/claude-sonnet-5-5";
         jd-fix-agent = "anthropic/claude-sonnet-5-5";
@@ -351,16 +304,9 @@ let
       phases = {
         # Opus 5.5: see opencode#52735 (pre-tool-call text lands in reasoning).
         gentle-orchestrator = "anthropic/claude-opus-5-5";
-        sdd-init = "anthropic/claude-haiku-5-5";
-        sdd-explore = "anthropic/claude-sonnet-5-5";
-        sdd-propose = "anthropic/claude-opus-5-5";
-        sdd-spec = "anthropic/claude-sonnet-5-5";
-        sdd-design = "anthropic/claude-opus-5-5";
-        sdd-tasks = "anthropic/claude-sonnet-5-5";
-        sdd-apply = "anthropic/claude-sonnet-5-5";
-        sdd-verify = "anthropic/claude-opus-5-5";
-        sdd-archive = "anthropic/claude-haiku-5-5";
-        sdd-onboard = "anthropic/claude-sonnet-5-5";
+        gentle-ai-explore = "anthropic/claude-sonnet-5-5";
+        gentle-ai-worker = "anthropic/claude-sonnet-5-5";
+        gentle-ai-verify = "anthropic/claude-opus-5-5";
         jd-judge-a = "anthropic/claude-opus-5-5";
         jd-judge-b = "anthropic/claude-opus-5-5";
         jd-fix-agent = "anthropic/claude-sonnet-5-5";
@@ -384,17 +330,9 @@ let
         # claude-opus-5-5: unified orchestrator across Anthropic profiles (2026-10-07, user request);
         # no open tool-call issue on native OAuth. Known: opencode#52735 (display only).
         gentle-orchestrator = "anthropic/claude-opus-5-5";
-        sdd-init = "anthropic/claude-haiku-4-5";
-        sdd-explore = "anthropic/claude-sonnet-5-5";
-        # claude-opus-5-5: heaviest architecture phase, strongest reliable reasoning.
-        sdd-propose = "anthropic/claude-opus-5-5";
-        sdd-spec = "anthropic/claude-sonnet-5-5";
-        sdd-design = "anthropic/claude-opus-5-5";
-        sdd-tasks = "anthropic/claude-sonnet-5-5";
-        sdd-apply = "anthropic/claude-sonnet-5-5";
-        sdd-verify = "anthropic/claude-sonnet-5-5";
-        sdd-archive = "anthropic/claude-haiku-4-5";
-        sdd-onboard = "anthropic/claude-sonnet-5-5";
+        gentle-ai-explore = "anthropic/claude-sonnet-5-5";
+        gentle-ai-worker = "anthropic/claude-sonnet-5-5";
+        gentle-ai-verify = "anthropic/claude-sonnet-5-5";
         jd-judge-a = "anthropic/claude-sonnet-5-5";
         jd-judge-b = "anthropic/claude-sonnet-5-5";
         jd-fix-agent = "anthropic/claude-sonnet-5-5";
@@ -417,17 +355,10 @@ let
         # reasoning + structured). Rollback: glm-5.3-flash (1M ctx, structured
         # tool calls, highest Go request headroom).
         gentle-orchestrator = "opencode-go/kimi-k3";
-        sdd-init = "opencode-go/deepseek-v4-flash";
         # deepseek-v4-pro: heaviest read/MCP-research phase needs the larger reasoning budget.
-        sdd-explore = "opencode-go/deepseek-v4-pro";
-        sdd-propose = "opencode-go/deepseek-v4-pro";
-        sdd-spec = "opencode-go/glm-5.3-flash";
-        sdd-design = "opencode-go/deepseek-v4-pro";
-        sdd-tasks = "opencode-go/deepseek-v4-flash";
-        sdd-apply = "opencode-go/glm-5.3-flash";
-        sdd-verify = "opencode-go/deepseek-v4-pro";
-        sdd-archive = "opencode-go/deepseek-v4-flash";
-        sdd-onboard = "opencode-go/deepseek-v4-flash";
+        gentle-ai-explore = "opencode-go/deepseek-v4-pro";
+        gentle-ai-worker = "opencode-go/glm-5.3-flash";
+        gentle-ai-verify = "opencode-go/deepseek-v4-pro";
         neutral = "opencode-go/deepseek-v4-flash";
       };
     }
@@ -438,17 +369,9 @@ let
       phases = {
         # claude-opus-5-5: strongest non-Fable reasoning for orchestration judgment.
         gentle-orchestrator = "anthropic/claude-opus-5-5";
-        sdd-init = "anthropic/claude-sonnet-5-5";
-        sdd-explore = "anthropic/claude-opus-5-5";
-        # claude-opus-5-5: heaviest architecture phase.
-        sdd-propose = "anthropic/claude-opus-5-5";
-        sdd-spec = "anthropic/claude-opus-5-5";
-        sdd-design = "anthropic/claude-opus-5-5";
-        sdd-tasks = "anthropic/claude-sonnet-5-5";
-        sdd-apply = "anthropic/claude-opus-5-5";
-        sdd-verify = "anthropic/claude-opus-5-5";
-        sdd-archive = "anthropic/claude-sonnet-5-5";
-        sdd-onboard = "anthropic/claude-sonnet-5-5";
+        gentle-ai-explore = "anthropic/claude-opus-5-5";
+        gentle-ai-worker = "anthropic/claude-opus-5-5";
+        gentle-ai-verify = "anthropic/claude-opus-5-5";
         jd-judge-a = "anthropic/claude-opus-5-5";
         jd-judge-b = "anthropic/claude-opus-5-5";
         jd-fix-agent = "anthropic/claude-opus-5-5";
@@ -469,17 +392,9 @@ let
       phases = {
         # anthropic/claude-opus-5-5: unified orchestrator across Anthropic profiles (2026-10-07).
         gentle-orchestrator = "anthropic/claude-opus-5-5";
-        sdd-init = "github-copilot/gpt-5.4-mini";
-        sdd-explore = "opencode-go/deepseek-v4-pro";
-        # anthropic/claude-opus-5-5: heaviest phase gets the strongest cross-checked model.
-        sdd-propose = "anthropic/claude-opus-5-5";
-        sdd-spec = "openai/gpt-5.4";
-        sdd-design = "anthropic/claude-opus-5-5";
-        sdd-tasks = "github-copilot/gpt-5.4-mini";
-        sdd-apply = "opencode-go/glm-5.3-flash";
-        sdd-verify = "anthropic/claude-sonnet-5-5";
-        sdd-archive = "github-copilot/claude-haiku-4.5";
-        sdd-onboard = "openai/gpt-5.4-mini";
+        gentle-ai-explore = "opencode-go/deepseek-v4-pro";
+        gentle-ai-worker = "opencode-go/glm-5.3-flash";
+        gentle-ai-verify = "anthropic/claude-sonnet-5-5";
         jd-judge-a = "anthropic/claude-sonnet-5-5";
         jd-judge-b = "anthropic/claude-sonnet-5-5";
         jd-fix-agent = "opencode-go/glm-5.3-flash";
@@ -502,20 +417,12 @@ let
         # GPT 5.6 Terra: quality anchor for the coordinating agent; the
         # worker phases below keep the OpenCode Go request headroom.
         gentle-orchestrator = "openai/gpt-6.1-sol";
-        sdd-init = "opencode-go/deepseek-v4-flash";
         # DeepSeek V4 Pro: the larger Go worker for repository/MCP research.
-        sdd-explore = "opencode-go/deepseek-v4-pro";
-        sdd-propose = "opencode-go/deepseek-v4-pro";
-        sdd-spec = "opencode-go/deepseek-v4-pro";
-        # GPT 5.6 Sol: reserve the premium engineering path for architecture.
-        sdd-design = "openai/gpt-5.6-sol";
-        sdd-tasks = "opencode-go/deepseek-v4-flash";
+        gentle-ai-explore = "opencode-go/deepseek-v4-pro";
         # GPT 5.6 Terra: implementation and acceptance are the costly failure
         # boundaries, so reserve the premium OpenAI path for them.
-        sdd-apply = "openai/gpt-6.1-sol";
-        sdd-verify = "openai/gpt-6.1-sol";
-        sdd-archive = "opencode-go/deepseek-v4-flash";
-        sdd-onboard = "opencode-go/deepseek-v4-flash";
+        gentle-ai-worker = "openai/gpt-6.1-sol";
+        gentle-ai-verify = "openai/gpt-6.1-sol";
         jd-judge-a = "openai/gpt-6.1-sol";
         jd-judge-b = "openai/gpt-6.1-sol";
         jd-fix-agent = "openai/gpt-5.6-luna";
@@ -532,16 +439,9 @@ let
       name = "openai-opencode-heavy";
       phases = {
         gentle-orchestrator = "openai/gpt-6.1-sol";
-        sdd-init = "opencode-go/glm-5.3-flash";
-        sdd-explore = "opencode-go/deepseek-v4-pro";
-        sdd-propose = "opencode-go/deepseek-v4-pro";
-        sdd-spec = "opencode-go/deepseek-v4-pro";
-        sdd-design = "openai/gpt-6.1-sol";
-        sdd-tasks = "opencode-go/glm-5.3-flash";
-        sdd-apply = "openai/gpt-6.1-sol";
-        sdd-verify = "openai/gpt-6.1-sol";
-        sdd-archive = "opencode-go/glm-5.3-flash";
-        sdd-onboard = "opencode-go/glm-5.3-flash";
+        gentle-ai-explore = "opencode-go/deepseek-v4-pro";
+        gentle-ai-worker = "openai/gpt-6.1-sol";
+        gentle-ai-verify = "openai/gpt-6.1-sol";
         jd-judge-a = "opencode-go/deepseek-v4-pro";
         jd-judge-b = "opencode-go/deepseek-v4-pro";
         jd-fix-agent = "opencode-go/glm-5.3-flash";
@@ -558,16 +458,9 @@ let
       name = "openai-opencode-balanced";
       phases = {
         gentle-orchestrator = "openai/gpt-6.1-sol";
-        sdd-init = "opencode-go/deepseek-v4-flash";
-        sdd-explore = "opencode-go/deepseek-v4-pro";
-        sdd-propose = "openai/gpt-6.1-sol";
-        sdd-spec = "openai/gpt-6.1-sol";
-        sdd-design = "openai/gpt-6.1-sol";
-        sdd-tasks = "opencode-go/deepseek-v4-flash";
-        sdd-apply = "openai/gpt-6-luna";
-        sdd-verify = "openai/gpt-6.1-sol";
-        sdd-archive = "opencode-go/deepseek-v4-flash";
-        sdd-onboard = "opencode-go/deepseek-v4-flash";
+        gentle-ai-explore = "opencode-go/deepseek-v4-pro";
+        gentle-ai-worker = "openai/gpt-6-luna";
+        gentle-ai-verify = "openai/gpt-6.1-sol";
         jd-judge-a = "openai/gpt-6.1-sol";
         jd-judge-b = "openai/gpt-6.1-sol";
         jd-fix-agent = "openai/gpt-6-luna";
@@ -584,16 +477,9 @@ let
       name = "opencode-go-openai";
       phases = {
         gentle-orchestrator = "opencode-go/kimi-k3";
-        sdd-init = "openai/gpt-5.6-luna";
-        sdd-explore = "openai/gpt-6.1-sol";
-        sdd-propose = "openai/gpt-5.6-sol";
-        sdd-spec = "openai/gpt-5.6-sol";
-        sdd-design = "openai/gpt-5.6-sol";
-        sdd-tasks = "openai/gpt-5.6-luna";
-        sdd-apply = "openai/gpt-5.6-luna";
-        sdd-verify = "openai/gpt-6.1-sol";
-        sdd-archive = "openai/gpt-5.6-luna";
-        sdd-onboard = "openai/gpt-5.6-luna";
+        gentle-ai-explore = "openai/gpt-6.1-sol";
+        gentle-ai-worker = "openai/gpt-5.6-luna";
+        gentle-ai-verify = "openai/gpt-6.1-sol";
         jd-judge-a = "openai/gpt-6.1-sol";
         jd-judge-b = "openai/gpt-6.1-sol";
         jd-fix-agent = "openai/gpt-5.6-luna";
@@ -610,16 +496,9 @@ let
       name = "openai-full";
       phases = {
         gentle-orchestrator = "openai/gpt-5.6-sol";
-        sdd-init = "openai/gpt-5.6-luna";
-        sdd-explore = "openai/gpt-5.6-sol";
-        sdd-propose = "openai/gpt-5.6-sol";
-        sdd-spec = "openai/gpt-6.1-sol";
-        sdd-design = "openai/gpt-5.6-sol";
-        sdd-tasks = "openai/gpt-5.6-luna";
-        sdd-apply = "openai/gpt-5.6-luna";
-        sdd-verify = "openai/gpt-5.6-sol";
-        sdd-archive = "openai/gpt-5.6-luna";
-        sdd-onboard = "openai/gpt-5.6-luna";
+        gentle-ai-explore = "openai/gpt-5.6-sol";
+        gentle-ai-worker = "openai/gpt-5.6-luna";
+        gentle-ai-verify = "openai/gpt-5.6-sol";
         jd-judge-a = "openai/gpt-5.6-sol";
         jd-judge-b = "openai/gpt-5.6-sol";
         jd-fix-agent = "openai/gpt-6.1-sol";
@@ -638,16 +517,9 @@ let
       # Luna for bounded helpers and mechanical apply loops.
       phases = {
         gentle-orchestrator = "openai/gpt-6.1-sol";
-        sdd-init = "openai/gpt-5.6-luna";
-        sdd-explore = "openai/gpt-6.1-sol";
-        sdd-propose = "openai/gpt-6.1-sol";
-        sdd-spec = "openai/gpt-6.1-sol";
-        sdd-design = "openai/gpt-6.1-sol";
-        sdd-tasks = "openai/gpt-5.6-luna";
-        sdd-apply = "openai/gpt-5.6-luna";
-        sdd-verify = "openai/gpt-6.1-sol";
-        sdd-archive = "openai/gpt-5.6-luna";
-        sdd-onboard = "openai/gpt-5.6-luna";
+        gentle-ai-explore = "openai/gpt-6.1-sol";
+        gentle-ai-worker = "openai/gpt-5.6-luna";
+        gentle-ai-verify = "openai/gpt-6.1-sol";
         jd-judge-a = "openai/gpt-6.1-sol";
         jd-judge-b = "openai/gpt-6.1-sol";
         jd-fix-agent = "openai/gpt-5.6-luna";
@@ -666,16 +538,9 @@ let
       # retrieval, and acceptance phases where Luna is a weaker fit.
       phases = {
         gentle-orchestrator = "openai/gpt-5.6-luna";
-        sdd-init = "openai/gpt-5.6-luna";
-        sdd-explore = "openai/gpt-6.1-sol";
-        sdd-propose = "openai/gpt-6.1-sol";
-        sdd-spec = "openai/gpt-6.1-sol";
-        sdd-design = "openai/gpt-6.1-sol";
-        sdd-tasks = "openai/gpt-5.6-luna";
-        sdd-apply = "openai/gpt-5.6-luna";
-        sdd-verify = "openai/gpt-6.1-sol";
-        sdd-archive = "openai/gpt-5.6-luna";
-        sdd-onboard = "openai/gpt-5.6-luna";
+        gentle-ai-explore = "openai/gpt-6.1-sol";
+        gentle-ai-worker = "openai/gpt-5.6-luna";
+        gentle-ai-verify = "openai/gpt-6.1-sol";
         jd-judge-a = "openai/gpt-6.1-sol";
         jd-judge-b = "openai/gpt-6.1-sol";
         jd-fix-agent = "openai/gpt-5.6-luna";
@@ -701,16 +566,9 @@ let
       name = "github-copilot-light";
       phases = {
         gentle-orchestrator = "github-copilot/gpt-5.4-mini";
-        sdd-init = "github-copilot/gpt-5.4-mini";
-        sdd-explore = "github-copilot/gpt-5.4-mini";
-        sdd-propose = "github-copilot/gpt-5.4-mini";
-        sdd-spec = "github-copilot/gpt-5.4-mini";
-        sdd-design = "github-copilot/gpt-5.4-mini";
-        sdd-tasks = "github-copilot/gpt-5.4-mini";
-        sdd-apply = "github-copilot/gpt-5.3-codex";
-        sdd-verify = "github-copilot/claude-sonnet-5.5";
-        sdd-archive = "github-copilot/gpt-5.4-mini";
-        sdd-onboard = "github-copilot/gpt-5.4-mini";
+        gentle-ai-explore = "github-copilot/gpt-5.4-mini";
+        gentle-ai-worker = "github-copilot/gpt-5.3-codex";
+        gentle-ai-verify = "github-copilot/claude-sonnet-5.5";
         jd-judge-a = "github-copilot/claude-sonnet-5.5";
         jd-judge-b = "github-copilot/claude-sonnet-5.5";
         jd-fix-agent = "github-copilot/gpt-5.3-codex";
@@ -727,16 +585,9 @@ let
       name = "github-copilot-medium";
       phases = {
         gentle-orchestrator = "github-copilot/gpt-6.1-sol";
-        sdd-init = "github-copilot/gpt-5.4-mini";
-        sdd-explore = "github-copilot/claude-sonnet-5.5";
-        sdd-propose = "github-copilot/claude-sonnet-5.5";
-        sdd-spec = "github-copilot/claude-sonnet-5.5";
-        sdd-design = "github-copilot/claude-sonnet-5.5";
-        sdd-tasks = "github-copilot/gpt-5.4-mini";
-        sdd-apply = "github-copilot/gpt-5.3-codex";
-        sdd-verify = "github-copilot/claude-sonnet-5.5";
-        sdd-archive = "github-copilot/gpt-5.4-mini";
-        sdd-onboard = "github-copilot/gpt-5.4-mini";
+        gentle-ai-explore = "github-copilot/claude-sonnet-5.5";
+        gentle-ai-worker = "github-copilot/gpt-5.3-codex";
+        gentle-ai-verify = "github-copilot/claude-sonnet-5.5";
         jd-judge-a = "github-copilot/claude-sonnet-5.5";
         jd-judge-b = "github-copilot/claude-sonnet-5.5";
         jd-fix-agent = "github-copilot/gpt-5.3-codex";
@@ -753,16 +604,9 @@ let
       name = "github-copilot-full";
       phases = {
         gentle-orchestrator = "github-copilot/gpt-6-astra";
-        sdd-init = "github-copilot/gpt-5.4-mini";
-        sdd-explore = "github-copilot/gpt-6-astra";
-        sdd-propose = "github-copilot/gpt-6-astra";
-        sdd-spec = "github-copilot/gpt-6-astra";
-        sdd-design = "github-copilot/gpt-6-astra";
-        sdd-tasks = "github-copilot/gpt-5.4-mini";
-        sdd-apply = "github-copilot/gpt-5.3-codex";
-        sdd-verify = "github-copilot/gpt-6-astra";
-        sdd-archive = "github-copilot/gpt-5.4-mini";
-        sdd-onboard = "github-copilot/gpt-5.4-mini";
+        gentle-ai-explore = "github-copilot/gpt-6-astra";
+        gentle-ai-worker = "github-copilot/gpt-5.3-codex";
+        gentle-ai-verify = "github-copilot/gpt-6-astra";
         jd-judge-a = "github-copilot/gpt-6-astra";
         jd-judge-b = "github-copilot/claude-opus-5.5";
         jd-fix-agent = "github-copilot/gpt-5.3-codex";
@@ -785,16 +629,9 @@ let
       name = "copilot-custom";
       phases = {
         gentle-orchestrator = "github-copilot/gpt-5.6-luna";
-        sdd-init = "github-copilot/gpt-5.4-mini";
-        sdd-explore = "github-copilot/gpt-6.1-sol";
-        sdd-propose = "github-copilot/gpt-6.1-sol";
-        sdd-spec = "github-copilot/claude-sonnet-5.5";
-        sdd-design = "github-copilot/claude-sonnet-5.5";
-        sdd-tasks = "github-copilot/gpt-5.4-mini";
-        sdd-apply = "github-copilot/claude-sonnet-5.5";
-        sdd-verify = "github-copilot/claude-sonnet-5.5";
-        sdd-archive = "github-copilot/claude-haiku-4.5";
-        sdd-onboard = "github-copilot/gpt-5.4-mini";
+        gentle-ai-explore = "github-copilot/gpt-6.1-sol";
+        gentle-ai-worker = "github-copilot/claude-sonnet-5.5";
+        gentle-ai-verify = "github-copilot/claude-sonnet-5.5";
         jd-judge-a = "anthropic/claude-sonnet-5-5";
         jd-judge-b = "anthropic/claude-sonnet-5-5";
         jd-fix-agent = "anthropic/claude-sonnet-5-5";
@@ -811,16 +648,9 @@ let
       name = "nvidia";
       phases = {
         gentle-orchestrator = "nvidia/nvidia/nemotron-3-ultra-550b-a55b";
-        sdd-init = "nvidia/deepseek-ai/deepseek-v4-flash";
-        sdd-explore = "nvidia/nvidia/nemotron-3-ultra-550b-a55b";
-        sdd-propose = "nvidia/nvidia/nemotron-3-ultra-550b-a55b";
-        sdd-spec = "nvidia/mistralai/mistral-medium-3.5-128b";
-        sdd-design = "nvidia/mistralai/mistral-medium-3.5-128b";
-        sdd-tasks = "nvidia/minimaxai/minimax-m3";
-        sdd-apply = "nvidia/minimaxai/minimax-m3";
-        sdd-verify = "nvidia/nvidia/nemotron-3-ultra-550b-a55b";
-        sdd-archive = "nvidia/deepseek-ai/deepseek-v4-flash";
-        sdd-onboard = "nvidia/deepseek-ai/deepseek-v4-flash";
+        gentle-ai-explore = "nvidia/nvidia/nemotron-3-ultra-550b-a55b";
+        gentle-ai-worker = "nvidia/minimaxai/minimax-m3";
+        gentle-ai-verify = "nvidia/nvidia/nemotron-3-ultra-550b-a55b";
         jd-judge-a = "nvidia/nemotron-3-ultra-550b-a55b";
         jd-judge-b = "nvidia/nemotron-3-ultra-550b-a55b";
         jd-fix-agent = "opencode-go/minimax-m3";
@@ -844,24 +674,12 @@ let
       phases = {
         # gpt-5.4: fast execution + tool orchestration (binaryverseai), 400K ctx
         gentle-orchestrator = "github-copilot/gpt-5.4";
-        # gpt-5.4-mini: 0.33x cost, 400K ctx, budget king (Ray Busuttil guide)
-        sdd-init = "github-copilot/gpt-5.4-mini";
         # gpt-5.4: 400K ctx for large repo exploration, fast tool calls
-        sdd-explore = "github-copilot/gpt-5.4";
-        # claude-sonnet-4.6: best architecture + code review (0.71 recall, agent-validator)
-        sdd-propose = "github-copilot/claude-sonnet-4.6";
-        sdd-spec = "github-copilot/claude-sonnet-4.6";
-        sdd-design = "github-copilot/claude-sonnet-4.6";
-        # gpt-5.4-mini: 0.33x cost, fast for task decomposition
-        sdd-tasks = "github-copilot/gpt-5.4-mini";
+        gentle-ai-explore = "github-copilot/gpt-5.4";
         # gpt-5.3-codex: precision coding + terminal workflows (Stefan Stranger), 400K ctx
-        sdd-apply = "github-copilot/gpt-5.3-codex";
+        gentle-ai-worker = "github-copilot/gpt-5.3-codex";
         # claude-sonnet-4.6: better code-quality recall (0.71) than gpt-5.4 for spec-match
-        sdd-verify = "github-copilot/claude-sonnet-4.6";
-        # claude-haiku-4.5: 0.33x cost, 39s avg — fastest for simple file ops
-        sdd-archive = "github-copilot/claude-haiku-4.5";
-        # gpt-5.4-mini: fast, cheap, good enough for guided walkthrough
-        sdd-onboard = "github-copilot/gpt-5.4-mini";
+        gentle-ai-verify = "github-copilot/claude-sonnet-4.6";
         # claude-sonnet-4.6: balanced default — cross-family from orchestrator (Rubber Duck principle)
         jd-judge-a = "github-copilot/claude-sonnet-4.6";
         jd-judge-b = "github-copilot/claude-sonnet-4.6";
@@ -882,24 +700,12 @@ let
         # Safer update than 5.6 because there are current 5.6 access reports and an open
         # OpenCode subagent model-selection bug (#36250) not tied to Sonnet 5 specifically.
         gentle-orchestrator = "github-copilot/gpt-5.5";
-        # gpt-5.4-mini: proven cheap helper model already working in current tier.
-        sdd-init = "github-copilot/gpt-5.4-mini";
         # claude-sonnet-5: 1M context + agent-task positioning makes it a good explore/default upgrade.
-        sdd-explore = "github-copilot/claude-sonnet-5.5";
-        # claude-sonnet-5: balanced upgrade for architecture and structured writing.
-        sdd-propose = "github-copilot/claude-sonnet-5.5";
-        sdd-spec = "github-copilot/claude-sonnet-5.5";
-        sdd-design = "github-copilot/claude-sonnet-5.5";
-        # gpt-5.4-mini: still the cheapest reliable decomposition worker in this provider.
-        sdd-tasks = "github-copilot/gpt-5.4-mini";
+        gentle-ai-explore = "github-copilot/claude-sonnet-5.5";
         # gpt-5.3-codex: coding-specialized and already stable in the current tier.
-        sdd-apply = "github-copilot/gpt-5.3-codex";
+        gentle-ai-worker = "github-copilot/gpt-5.3-codex";
         # claude-sonnet-5: strong review/reasoning default without jumping to risky 5.6.
-        sdd-verify = "github-copilot/claude-sonnet-5.5";
-        # claude-haiku-4.5: fastest low-cost housekeeping model.
-        sdd-archive = "github-copilot/claude-haiku-4.5";
-        # gpt-5.4-mini: good enough for guided walkthroughs while staying cheap.
-        sdd-onboard = "github-copilot/gpt-5.4-mini";
+        gentle-ai-verify = "github-copilot/claude-sonnet-5.5";
         jd-judge-a = "github-copilot/claude-sonnet-5.5";
         jd-judge-b = "github-copilot/claude-sonnet-5.5";
         jd-fix-agent = "github-copilot/gpt-5.3-codex";
@@ -919,24 +725,12 @@ let
         # Safer update than 5.6 because there are current 5.6 access reports and an open
         # OpenCode subagent model-selection bug (#36250) not tied to Sonnet 5 specifically.
         gentle-orchestrator = "github-copilot/gpt-5.4";
-        # gpt-5.4-mini: proven cheap helper model already working in current tier.
-        sdd-init = "github-copilot/gpt-5.4-mini";
         # claude-sonnet-5: 1M context + agent-task positioning makes it a good explore/default upgrade.
-        sdd-explore = "github-copilot/claude-sonnet-5.5";
-        # claude-sonnet-5: balanced upgrade for architecture and structured writing.
-        sdd-propose = "github-copilot/claude-sonnet-5.5";
-        sdd-spec = "github-copilot/claude-sonnet-5.5";
-        sdd-design = "github-copilot/claude-sonnet-5.5";
-        # gpt-5.4-mini: still the cheapest reliable decomposition worker in this provider.
-        sdd-tasks = "github-copilot/gpt-5.4-mini";
+        gentle-ai-explore = "github-copilot/claude-sonnet-5.5";
         # gpt-5.3-codex: coding-specialized and already stable in the current tier.
-        sdd-apply = "github-copilot/gpt-5.3-codex";
+        gentle-ai-worker = "github-copilot/gpt-5.3-codex";
         # claude-sonnet-5: strong review/reasoning default without jumping to risky 5.6.
-        sdd-verify = "github-copilot/claude-sonnet-5.5";
-        # claude-haiku-4.5: fastest low-cost housekeeping model.
-        sdd-archive = "github-copilot/claude-haiku-4.5";
-        # gpt-5.4-mini: good enough for guided walkthroughs while staying cheap.
-        sdd-onboard = "github-copilot/gpt-5.4-mini";
+        gentle-ai-verify = "github-copilot/claude-sonnet-5.5";
         jd-judge-a = "github-copilot/claude-sonnet-5.5";
         jd-judge-b = "github-copilot/claude-sonnet-5.5";
         jd-fix-agent = "github-copilot/gpt-5.3-codex";
@@ -958,17 +752,9 @@ let
         # Keep this tier opt-in only until upstream access is consistently reliable.
         # gpt-5.6-sol: GitHub recommends it for deep reasoning and long-running agentic work.
         gentle-orchestrator = "github-copilot/gpt-5.6-sol";
-        # gpt-5.6-luna: GitHub positions it as the cheaper/faster 5.6 option.
-        sdd-init = "github-copilot/gpt-5.6-luna";
-        sdd-explore = "github-copilot/gpt-5.6-sol";
-        sdd-propose = "github-copilot/gpt-5.6-sol";
-        sdd-spec = "github-copilot/gpt-5.6-sol";
-        sdd-design = "github-copilot/gpt-5.6-sol";
-        sdd-tasks = "github-copilot/gpt-5.6-luna";
-        sdd-apply = "github-copilot/gpt-5.6-sol";
-        sdd-verify = "github-copilot/gpt-5.6-sol";
-        sdd-archive = "github-copilot/gpt-5.6-luna";
-        sdd-onboard = "github-copilot/gpt-5.6-luna";
+        gentle-ai-explore = "github-copilot/gpt-5.6-sol";
+        gentle-ai-worker = "github-copilot/gpt-5.6-sol";
+        gentle-ai-verify = "github-copilot/gpt-5.6-sol";
         neutral = "github-copilot/gpt-5.6-sol";
       };
     }
@@ -976,17 +762,9 @@ let
       name = "opencode-go-full";
       phases = {
         gentle-orchestrator = "opencode-go/deepseek-v4-pro";
-        sdd-init = "opencode-go/deepseek-v4-flash";
-        sdd-explore = "opencode-go/deepseek-v4-pro";
-        sdd-propose = "opencode-go/deepseek-v4-pro";
-        sdd-spec = "opencode-go/deepseek-v4-pro";
-        # glm-5.3: released 2026-08-14, replaces glm-5.1 (which "gives up too quickly").
-        sdd-design = "opencode-go/glm-5.3";
-        sdd-tasks = "opencode-go/deepseek-v4-pro";
-        sdd-apply = "opencode-go/deepseek-v4-pro";
-        sdd-verify = "opencode-go/glm-5.3";
-        sdd-archive = "opencode-go/deepseek-v4-flash";
-        sdd-onboard = "opencode-go/deepseek-v4-flash";
+        gentle-ai-explore = "opencode-go/deepseek-v4-pro";
+        gentle-ai-worker = "opencode-go/deepseek-v4-pro";
+        gentle-ai-verify = "opencode-go/glm-5.3";
         neutral = "opencode-go/deepseek-v4-pro";
       };
     }
@@ -994,17 +772,10 @@ let
       name = "opencode-go-medium";
       phases = {
         gentle-orchestrator = "opencode-go/deepseek-v4-pro";
-        sdd-init = "opencode-go/deepseek-v4-flash";
-        sdd-explore = "opencode-go/deepseek-v4-pro";
-        sdd-propose = "opencode-go/deepseek-v4-pro";
-        sdd-spec = "opencode-go/deepseek-v4-pro";
-        sdd-design = "opencode-go/deepseek-v4-pro";
-        sdd-tasks = "opencode-go/deepseek-v4-flash";
+        gentle-ai-explore = "opencode-go/deepseek-v4-pro";
         # minimax-m3: 1M ctx (kimi-k2.7-code solo 262K) — apply grandes no explotan. Messages transport, sin issues frescos.
-        sdd-apply = "opencode-go/minimax-m3";
-        sdd-verify = "opencode-go/deepseek-v4-pro";
-        sdd-archive = "opencode-go/deepseek-v4-flash";
-        sdd-onboard = "opencode-go/deepseek-v4-flash";
+        gentle-ai-worker = "opencode-go/minimax-m3";
+        gentle-ai-verify = "opencode-go/deepseek-v4-pro";
         neutral = "opencode-go/deepseek-v4-flash";
       };
     }
@@ -1012,34 +783,15 @@ let
       name = "opencode-go-light";
       phases = {
         gentle-orchestrator = "opencode-go/deepseek-v4-flash";
-        sdd-init = "opencode-go/deepseek-v4-flash";
-        sdd-explore = "opencode-go/deepseek-v4-pro";
-        sdd-propose = "opencode-go/deepseek-v4-pro";
-        sdd-spec = "opencode-go/deepseek-v4-pro";
-        sdd-design = "opencode-go/deepseek-v4-pro";
-        sdd-tasks = "opencode-go/deepseek-v4-flash";
-        sdd-apply = "opencode-go/deepseek-v4-flash";
-        sdd-verify = "opencode-go/deepseek-v4-pro";
-        sdd-archive = "opencode-go/deepseek-v4-flash";
-        sdd-onboard = "opencode-go/deepseek-v4-flash";
+        gentle-ai-explore = "opencode-go/deepseek-v4-pro";
+        gentle-ai-worker = "opencode-go/deepseek-v4-flash";
+        gentle-ai-verify = "opencode-go/deepseek-v4-pro";
         neutral = "opencode-go/deepseek-v4-flash";
       };
     }
   ];
 
-  # Keep every existing role fit/profile field unchanged outside the approved
-  # ODD mapping. Retired SDD phase routes are no longer executable agent names.
-  providers = map (
-    provider:
-    provider
-    // {
-      phases = lib.filterAttrs (name: _: !lib.hasPrefix "sdd-" name) provider.phases // {
-        gentle-ai-explore = provider.phases.sdd-explore;
-        gentle-ai-worker = provider.phases.sdd-apply;
-        gentle-ai-verify = provider.phases.sdd-verify;
-      };
-    }
-  ) (canonicalProviders ++ legacyProviders);
+  providers = canonicalProviders ++ legacyProviders;
 
   _assertUniqueProviderNames =
     let

@@ -20,7 +20,7 @@ touches `shared/opencode/providers-base.nix`.
 
 The active Gentle AI v4 graph uses ODD roles, not executable SDD phases
 (orchestrator coordinates, worker implements, explore maps, verify checks). This skill
-provides the evidence framework to find which model best fits each phase and
+provides the evidence framework to find which model best fits each role and
 to keep the routing lists converging toward stable providers with complete
 tool-call behavior.
 
@@ -39,7 +39,7 @@ tool-call behavior.
   from those sources.
 - Edit Nix files directly; run `format-nix && nix flake check --no-build` after
   (unless the user explicitly waives it for the session — record the waiver).
-- One re-fit changes one phase at a time. Lists evolve; they are not redesigned
+- One re-fit changes one role at a time. Lists evolve; they are not redesigned
   wholesale.
 - Secrets rule: agents must NEVER decrypt sops secrets — read ciphertext only.
 
@@ -48,8 +48,8 @@ tool-call behavior.
 | Situation | Mode |
 | --- | --- |
 | New provider, new model family, or periodic review of all profiles | `full` |
-| One phase misbehaved in observed use, or a single phase needs a better fit | `re-fit` |
-| User reports a blocked/degraded phase or asks "why is X slow/broken" | `re-fit` (diagnose first, then swap) |
+| One role misbehaved in observed use, or a single role needs a better fit | `re-fit` |
+| User reports a blocked/degraded role or asks "why is X slow/broken" | `re-fit` (diagnose first, then swap) |
 | User asks to add a whole new profile or rebalance a whole provider family | `full` |
 
 ## Auth Method Recognition
@@ -128,11 +128,16 @@ Read the actual rendered graph and profile assignments. Known roles:
 mapping), `gentle-ai-worker` (bounded implementation), `gentle-ai-verify`
 (read-only checking), `jd-*` (independent judgment/fix roles), and `review-*`
 (Go-bound review actors). Do not recreate retired SDD phase agents or aliases.
-Legacy source fit keys map explore/apply/verify to the three ODD roles; the
-exported profiles remove SDD keys. Preserve every unrelated fit and last-wins
-user override. Role names never grant delegation or delivery permission.
+Profiles in `providers-base.nix` are flat: each `phases` attrset has exactly
+these 14 role keys, with no remap layer: `gentle-orchestrator`,
+`gentle-ai-explore`, `gentle-ai-worker`, `gentle-ai-verify`, `jd-judge-a`,
+`jd-judge-b`, `jd-fix-agent`, `review-readability`, `review-refuter`,
+`review-reliability`, `review-resilience`, `review-risk`, `review-validator`,
+`neutral`. Editing a profile means editing those keys directly. Preserve every
+unrelated fit and last-wins user override. Role names never grant delegation
+or delivery permission.
 
-### Step B: Metrics per phase
+### Step B: Metrics per role
 
 - Write/edit code → SWE-Bench (Pro/Verified), DeepSWE, Terminal-Bench, agentic
   coding index.
@@ -153,7 +158,7 @@ thrashing signals (a cheap tier that burns 2-3x tokens to fail is not cheap).
 
 ### Step D: Document
 
-`Phase | Model | Evidence | Why` — every assignment row carries its citation.
+`Role | Model | Evidence | Why` — every assignment row carries its citation.
 
 ## Execution Steps — mode `full`
 
@@ -165,7 +170,7 @@ thrashing signals (a cheap tier that burns 2-3x tokens to fail is not cheap).
 4. Status verification: opencode.ai/data/ usage+retention, GitHub issues,
    provider deprecations. Apply Gates 1-2.
 5. Fit evaluation per profile following the Research Framework; document the
-   `Phase | Model | Evidence | Why` table.
+   `Role | Model | Evidence | Why` table.
 6. Update `shared/opencode/providers-base.nix` named profiles with dated
    evidence comments; update sops.nix/opencode.nix if a Method-A key is missing.
 7. Validate: `format-nix && nix flake check --no-build` (honor user waiver if
@@ -173,12 +178,12 @@ thrashing signals (a cheap tier that burns 2-3x tokens to fail is not cheap).
 
 ## Execution Steps — mode `re-fit`
 
-1. Collect the trigger evidence: what failed, which phase, which model, which
+1. Collect the trigger evidence: what failed, which role, which model, which
    host (user report, engram observation, or session log).
-2. Re-verify ONLY that phase: current status of the incumbent + research 2-4
-   candidate replacements against the Step-B metrics for that phase. Gates 1-2
+2. Re-verify ONLY that role: current status of the incumbent + research 2-4
+   candidate replacements against the Step-B metrics for that role. Gates 1-2
     apply; no live model calls are required or requested.
-3. Swap one phase assignment; write the dated evidence comment (what failed,
+3. Swap one role assignment; write the dated evidence comment (what failed,
    why the replacement).
 4. Update the profile header comment if the strategy line changed.
 5. Validate as in mode `full`; report the one-line delta.
@@ -206,7 +211,7 @@ This skill biases the agent's decisions as follows:
 3. **Cheap volume, scarce judgment.** Tool-loop and mechanical phases take the
    cheapest tier that passes the gates; quota reserved for judgment phases.
    Moving a volume phase onto scarce quota needs explicit cost justification.
-4. **Minimal, reversible changes.** One phase per re-fit; dated comments;
+4. **Minimal, reversible changes.** One role per re-fit; dated comments;
    never delete a working annotation without replacing it with fresh evidence.
 5. **Evidence before trusting.** Re-check catalog IDs, current issues, and
    provider documentation, including for the current favorite. Distinguish
@@ -217,7 +222,7 @@ This skill biases the agent's decisions as follows:
 - Updated `shared/opencode/providers-base.nix` named profiles with dated,
   cited evidence comments (this repo's real artifact — NOT generic
   full/medium/light/free tier lists).
-- Fit evaluation table: `Phase | Model | Evidence | Why` for every changed
+- Fit evaluation table: `Role | Model | Evidence | Why` for every changed
   assignment.
 - Gap report: providers with missing keys or missing definitions.
 - Fresh status annotations (✅/⚠️/🔴) with current issue references; expired
