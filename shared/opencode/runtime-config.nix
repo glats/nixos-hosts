@@ -244,7 +244,7 @@ in
         # Refuse modified/foreign collisions and symlink escapes before any
         # asset changes. Bootstrap claims only exact prior 2.5 consumer bytes.
         ${pkgs.nixos-scripts}/bin/ai-assets-reconcile "$runtime_dir" \
-          ${desiredAssets} ${legacyAssets} ff77164d4f56f1665b22fb6fac51c2ccbb769400
+          ${desiredAssets} ${legacyAssets} 898d3976e8049a7238eaa7de60bff325c30d2b3d
         # Plugin set: host-config.ts, rtk.ts, engram.ts, skill-registry.ts,
         # opencode-review-transport.ts; the retired SDD adapter is absent.
         mkdir -p "$runtime_dir/node_modules"
@@ -258,6 +258,6 @@ in
         openfang_skills_dir="${config.home.homeDirectory}/.openfang/skills"
 
         ${pkgs.nixos-scripts}/bin/ai-assets-reconcile "${config.home.homeDirectory}/.openfang" \
-          ${openfangAssets} ${legacyOpenfang} ff77164d4f56f1665b22fb6fac51c2ccbb769400
+          ${openfangAssets} ${legacyOpenfang} 898d3976e8049a7238eaa7de60bff325c30d2b3d
       '';
 }

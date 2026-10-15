@@ -42,7 +42,7 @@ for consumer in ("v2", "claude", "openfang"):
                     "receipts/history.json", "synthetic-engram/mirror.md"]
         for name in retained:
             path = target / name; path.parent.mkdir(parents=True, exist_ok=True); path.write_text("synthetic user-owned history")
-        argv = [str(cli), str(target), str(desired), str(legacy), "ff77164d4f56f1665b22fb6fac51c2ccbb769400"]
+        argv = [str(cli), str(target), str(desired), str(legacy), "898d3976e8049a7238eaa7de60bff325c30d2b3d"]
         subprocess.run(argv, check=True)
         subprocess.run(argv, check=True)
         assert not list((target / "skills").glob("sdd-*/SKILL.md")), consumer
@@ -51,7 +51,7 @@ for consumer in ("v2", "claude", "openfang"):
         manifest = json.loads((target / ".gentle-ai-owned.json").read_text())
         assert manifest["schema"] == 2
         assert all(not entry.get("pending") and "prior" not in entry for entry in manifest["files"].values())
-        assert all(entry["revision"] == "ff77164d4f56f1665b22fb6fac51c2ccbb769400" for entry in manifest["files"].values())
+        assert all(entry["revision"] == "898d3976e8049a7238eaa7de60bff325c30d2b3d" for entry in manifest["files"].values())
         if consumer == "v2":
             assert not (target / "plugins/sdd-task-result.ts").exists()
             actual = (desired / "plugins/opencode-review-transport.ts").read_text()

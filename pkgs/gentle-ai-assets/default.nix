@@ -15,7 +15,7 @@ let
 in
 stdenvNoCC.mkDerivation {
   pname = "gentle-ai-assets";
-  version = "4.0.0";
+  version = "4.1.1";
 
   src = gentle-ai-src;
 

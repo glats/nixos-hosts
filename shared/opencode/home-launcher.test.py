@@ -165,7 +165,7 @@ native = Path(os.fsdecode(private.group())) / "opencode"
 assert native.is_symlink() and native.resolve() == Path(result["nativeBinary"]).resolve()
 assert os.fsdecode(private.group()) not in result["runtimeEnvironment"], "private bare runtime leaked into host shell"
 assert subprocess.check_output([str(wrapper), "version"], text=True,
-                              env={**os.environ, "XDG_CONFIG_HOME": "/scrubbed/host-config"}).strip() == "gentle-ai 4.0.0"
+                              env={**os.environ, "XDG_CONFIG_HOME": "/scrubbed/host-config"}).strip() == "gentle-ai 4.1.1"
 print("PASS: native HM Gentle wrapper, complete restored V2 roots and private truthful 2.0.14 discovery")
 
 with tempfile.TemporaryDirectory(prefix="odd-registry-") as tmp:
@@ -204,5 +204,5 @@ in builtins.head (builtins.filter (p: p.name == "gentle-ai-v2-managed") h.config
     for suffix in ("/.config/opencode-v2", "/.local/opencode-v2/data/opencode.db", "/.local/opencode-v2/tmp"):
         assert (quoted_home + suffix).encode() in compiled, "configured path was split or lost its quote"
     assert subprocess.check_output([str(quoted_wrapper), "version"], text=True,
-                                  env={**os.environ, "XDG_CONFIG_HOME":"/wrong-host-root"}).strip() == "gentle-ai 4.0.0"
+                                  env={**os.environ, "XDG_CONFIG_HOME":"/wrong-host-root"}).strip() == "gentle-ai 4.1.1"
 print("PASS: actual compiled HM wrapper handles spaces/single quotes in configured roots without activation")

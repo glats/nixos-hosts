@@ -301,7 +301,7 @@ in
       fi
 
       ${pkgs.nixos-scripts}/bin/ai-assets-reconcile "$claude_dir" \
-        ${desiredAssets} ${legacyAssets} ff77164d4f56f1665b22fb6fac51c2ccbb769400
+        ${desiredAssets} ${legacyAssets} 898d3976e8049a7238eaa7de60bff325c30d2b3d
 
 
     '';

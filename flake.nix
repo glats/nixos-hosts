@@ -72,9 +72,9 @@
     };
 
     # gentle-ai upstream (for skills, commands, plugins)
-    # One canonical v4.0.0 source for the binary and rendered ODD assets.
+    # One canonical v4.1.1 source for the binary and rendered ODD assets.
     gentle-ai-src = {
-      url = "github:Gentleman-Programming/gentle-ai/ff77164d4f56f1665b22fb6fac51c2ccbb769400";
+      url = "github:Gentleman-Programming/gentle-ai/898d3976e8049a7238eaa7de60bff325c30d2b3d";
       flake = false;
     };
 

@@ -85,11 +85,12 @@ for target, root in (("linux", "/home/glats/.config/opencode-v2"),
 before = {p["name"]:p for p in result["beforeProfiles"]}
 after = {p["name"]:p for p in result["afterProfiles"]}
 retired = {"opencode-free", "anthropic-opencode-free", "anthropic-opencode-go"}
-assert len(before) == 35 and len(after) == 32
-assert after.keys() == before.keys() - retired
-assert [p["name"] for p in result["afterProfiles"]] == [
-    p["name"] for p in result["beforeProfiles"] if p["name"] not in retired
-]
+approved_addition = "anthropic-openai-opencode"
+assert len(before) == 35 and len(after) == 33
+assert after.keys() == (before.keys() - retired) | {approved_addition}
+expected_order = [p["name"] for p in result["beforeProfiles"] if p["name"] not in retired]
+expected_order.insert(expected_order.index("work-copilot-anthropic-light"), approved_addition)
+assert [p["name"] for p in result["afterProfiles"]] == expected_order
 for name, profile in before.items():
     if name in retired:
         continue
@@ -98,6 +99,23 @@ for name, profile in before.items():
     mapped.update({"gentle-ai-explore":phases["sdd-explore"],
                    "gentle-ai-worker":phases["sdd-apply"], "gentle-ai-verify":phases["sdd-verify"]})
     assert after[name] == {**profile,"phases":mapped}, f"Unapproved routing churn: {name}"
+approved = after[approved_addition]
+assert approved["phases"] == {
+    "gentle-orchestrator": "anthropic/claude-opus-5-5",
+    "gentle-ai-explore": "opencode-go/glm-5.3-flash",
+    "gentle-ai-worker": "openai/gpt-6-luna",
+    "gentle-ai-verify": "anthropic/claude-sonnet-5-5",
+    "jd-judge-a": "anthropic/claude-sonnet-5-5",
+    "jd-judge-b": "anthropic/claude-sonnet-5-5",
+    "jd-fix-agent": "opencode-go/glm-5.3-flash",
+    "review-readability": "opencode-go/deepseek-v4-pro",
+    "review-refuter": "opencode-go/deepseek-v4-pro",
+    "review-reliability": "opencode-go/deepseek-v4-pro",
+    "review-resilience": "opencode-go/deepseek-v4-pro",
+    "review-risk": "opencode-go/deepseek-v4-pro",
+    "review-validator": "opencode-go/deepseek-v4-pro",
+    "neutral": "anthropic/claude-opus-5-5",
+}, "Approved profile's provider/phase shape changed"
 assert result["beforePolicy"] == result["afterPolicy"]
 expected_nvidia = json.loads(json.dumps(result["nvidiaBefore"]))
 expected_nvidia["nvidia"]["models"]["nemotron-3-ultra-550b-a55b"] = {
