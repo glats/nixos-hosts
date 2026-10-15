@@ -56,9 +56,9 @@ func TestBuildBridgeSSHArgs(t *testing.T) {
 		"-o", "ConnectTimeout=5",
 		"-o", "ServerAliveInterval=15",
 		"-o", "ServerAliveCountMax=4",
-		"-R", "127.0.0.1:1455:127.0.0.1:1455",
-		"-R", "127.0.0.1:1457:127.0.0.1:1457",
-		"-R", "127.0.0.1:53692:127.0.0.1:53692",
+		"-R", "127.0.0.1:1455:localhost:1455",
+		"-R", "127.0.0.1:1457:localhost:1457",
+		"-R", "127.0.0.1:53692:localhost:53692",
 		"rog",
 	}
 	if len(args) != len(want) {

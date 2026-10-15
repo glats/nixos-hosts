@@ -77,12 +77,20 @@ func LocalURL(localPort int) string {
 // BuildBridgeSSHArgs assembles the argument vector for a REVERSE-forward
 // bridge through an ssh_config alias (LAN-mesh members carry their own
 // User/IdentityFile there): each port binds loopback on the remote
-// (browser) host and forwards connections back to the same loopback port
-// on this host. The arg shape is:
+// (browser) host and forwards connections back to <port> on this host. The
+// arg shape is:
 //
 //	ssh -N -o ExitOnForwardFailure=yes -o BatchMode=yes \
 //	    -o ConnectTimeout=5 -o ServerAliveInterval=15 -o ServerAliveCountMax=4 \
-//	    [-R 127.0.0.1:<port>:127.0.0.1:<port> ...] <alias>
+//	    [-R 127.0.0.1:<port>:localhost:<port> ...] <alias>
+//
+// The forward DIAL target is `localhost`, not a bare 127.0.0.1, because the
+// callback listeners bind different stacks per provider: the OpenAI/ChatGPT
+// login of opencode-v2 2.0.14 listens on `[::1]:<port>` (IPv6 loopback,
+// verified on a live t14 attempt), while the Claude plugin pins
+// `127.0.0.1` (its CALLBACK_HOST constant). ssh resolves `localhost` to
+// both loopback families and connects on the first success, so one spec
+// serves either listener.
 //
 // ExitOnForwardFailure turns a busy remote port into an immediate failure
 // instead of ssh's "warning: remote port forwarding failed" limp-along;
@@ -108,7 +116,7 @@ func BuildBridgeSSHArgs(host string, ports []int) ([]string, error) {
 		if port < 1 || port > 65535 {
 			return nil, fmt.Errorf("forward port %d out of range 1..65535", port)
 		}
-		args = append(args, "-R", fmt.Sprintf("127.0.0.1:%d:127.0.0.1:%d", port, port))
+		args = append(args, "-R", fmt.Sprintf("127.0.0.1:%d:localhost:%d", port, port))
 	}
 	return append(args, host), nil
 }
