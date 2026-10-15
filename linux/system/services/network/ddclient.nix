@@ -1,5 +1,26 @@
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
+let
+  # The shared sops secret is the ACME (lego) environment file:
+  # `CLOUDFLARE_DNS_API_TOKEN=<token>`. ddclient needs the bare token, so a
+  # root pre-start step extracts it into the private runtime directory.
+  tokenFile = "/run/ddclient/cloudflare-token";
+  extractToken = pkgs.writeShellScript "ddclient-extract-cloudflare-token" ''
+    set -eu
+    umask 077
+    ${pkgs.gnused}/bin/sed -n 's/^CLOUDFLARE_DNS_API_TOKEN=//p' \
+      ${config.sops.secrets."cloudflare_dns_api_token".path} > ${tokenFile}
+    if [ ! -s ${tokenFile} ]; then
+      echo "CLOUDFLARE_DNS_API_TOKEN missing from the sops secret" >&2
+      exit 1
+    fi
+  '';
+in
 {
   # Create a dedicated user for ddclient (required when not using DynamicUser)
   users.users.ddclient = {
@@ -17,7 +38,7 @@
     enable = true;
     protocol = "cloudflare";
     username = "token";
-    passwordFile = config.sops.secrets."cloudflare_dns_api_token".path;
+    passwordFile = tokenFile;
     usev4 = "webv4, webv4=ifconfig.io";
     # IPv4 only: do not start publishing AAAA records.
     usev6 = "";
@@ -43,6 +64,8 @@
     restartIfChanged = false;
 
     serviceConfig = {
+      # Runs before the module's pre-start, which reads passwordFile.
+      ExecStartPre = lib.mkBefore [ "!${extractToken}" ];
       DynamicUser = lib.mkForce false;
       User = lib.mkForce "ddclient";
       Group = lib.mkForce "ddclient";
