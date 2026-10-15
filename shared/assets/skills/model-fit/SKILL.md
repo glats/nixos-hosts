@@ -1,25 +1,25 @@
 ---
 name: model-fit
 description: >
-  Fit SDD phases to OpenCode models under hard stability and tool-call gates,
+  Fit ODD and review roles to OpenCode models under hard stability and tool-call gates,
   and iteratively mold the named routing profiles in shared/opencode/providers-base.nix.
   Two modes: full audit (fresh market snapshot across all providers) and re-fit
-  (single-phase swap driven by observed evidence). Trigger: model fit, sdd model,
+  (single-role swap driven by observed evidence). Trigger: model fit, odd model,
   provider fit, revisar modelos, auditar providers, modelos opencode, update models,
   providers base, check models, model audit, actualiza modelos, moldear listas,
   swap model, routing fit.
 metadata:
-  version: "4.1"
+  version: "4.2"
 ---
 
 ## Activation Contract
 
 Load when the user asks to fit, audit, review, update, mold, or check OpenCode
-provider models or SDD phase routing. Also load before any SDD change that
+provider models or ODD/review role routing. Also load before any change that
 touches `shared/opencode/providers-base.nix`.
 
-The agent already knows SDD phases from the Gentle AI ecosystem (orchestrator
-routes subagents, apply implements, explore reads codebase, etc.). This skill
+The active Gentle AI v4 graph uses ODD roles, not executable SDD phases
+(orchestrator coordinates, worker implements, explore maps, verify checks). This skill
 provides the evidence framework to find which model best fits each phase and
 to keep the routing lists converging toward stable providers with complete
 tool-call behavior.
@@ -116,18 +116,21 @@ deepseek-v4-flash cache drop ≈27x, #42935), usage multipliers not shown in
 sticker price (e.g. gpt-5.6-luna 2x on Go), 403-for-some-accounts patterns
 (#40343). A provider that silently burns quota is not stable.
 
-## SDD Phase Fit — Research Framework
+## ODD Role Fit — Research Framework
 
 All research uses MCP tools (exa, GitHub, context7) — never guess APIs, model
 IDs, quotas, or option paths.
 
-### Step A: Discover SDD phases
+### Step A: Discover active roles
 
-What each phase does, main vs subagent, runs-once or may-loop. Known map:
-orchestrator (routes subagents, loops constantly), init/archive/onboard
-(boilerplate, once), explore (read+MCP heavy, long context), propose/spec/
-design (judgment writing, once), tasks (mechanical decomposition), apply
-(tool-loop edits, may-loop), verify (acceptance gate, once).
+Read the actual rendered graph and profile assignments. Known roles:
+`gentle-orchestrator` (coordination and judgment), `gentle-ai-explore` (read-only
+mapping), `gentle-ai-worker` (bounded implementation), `gentle-ai-verify`
+(read-only checking), `jd-*` (independent judgment/fix roles), and `review-*`
+(Go-bound review actors). Do not recreate retired SDD phase agents or aliases.
+Legacy source fit keys map explore/apply/verify to the three ODD roles; the
+exported profiles remove SDD keys. Preserve every unrelated fit and last-wins
+user override. Role names never grant delegation or delivery permission.
 
 ### Step B: Metrics per phase
 
@@ -182,7 +185,7 @@ thrashing signals (a cheap tier that burns 2-3x tokens to fail is not cheap).
 
 ## Feedback Loop
 
-- After each SDD run, capture to engram: phase, model, host, misbehavior
+- After each ODD run, capture to engram: role, model, host, misbehavior
   (truncation, give-up, thrash, quota burn) or notable success. Scope: project.
 - A captured misbehavior is the trigger for a `re-fit` on that phase — do not
   wait for a periodic audit.

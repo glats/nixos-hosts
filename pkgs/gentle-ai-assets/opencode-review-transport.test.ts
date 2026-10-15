@@ -1,169 +1,216 @@
 import { afterEach, describe, expect, mock, test } from "bun:test"
+import { execFileSync } from "node:child_process"
 import { chmod, mkdtemp, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 
 mock.module("@opencode/plugin", () => ({ Plugin: { define: (definition: unknown) => definition } }))
-const { default: plugin, createReviewRelay } = await import("./v2-plugins/opencode-review-transport")
-
-let directory: string
+// Exercise the exact tagged implementation, not a copied local relay. Nix only
+// adapts the command path; the HM wrapper is tested independently.
+const source = execFileSync("nix", ["eval", "--offline", "--impure", "--raw", "--expr",
+  '(builtins.getFlake (toString ./.)).inputs.gentle-ai-src.outPath'], { encoding: "utf8" }).trim()
+const { default: plugin } = await import(`${source}/internal/assets/opencode/plugins-v2/opencode-review-transport.ts`)
+let directory = ""
 let oldPath: string | undefined
-let oldMode: string | undefined
+const cleanups: Array<() => Promise<void>> = []
 
 async function fakeCommand(mode = "normal") {
-  directory = await mkdtemp(join(tmpdir(), "opencode-review-relay-"))
+  directory = await mkdtemp(join(tmpdir(), "opencode review 'relay'-"))
   const bin = join(directory, "gentle-ai")
-  const log = join(directory, "calls")
   await writeFile(bin, `#!/usr/bin/env bun
 import { appendFile, writeFile } from "node:fs/promises"
 import { createInterface } from "node:readline"
 await writeFile(${JSON.stringify(join(directory, "cwd"))}, process.cwd())
-const input = createInterface({ input: process.stdin })
+await writeFile(${JSON.stringify(join(directory, "relay-contract"))}, process.env.GENTLE_AI_OPENCODE_RELAY_CONTRACT ?? "")
 let first = true
-for await (const line of input) {
-  const value = JSON.parse(line)
-  await appendFile(${JSON.stringify(log)}, JSON.stringify(value) + "\\n")
+for await (const line of createInterface({ input: process.stdin })) {
+  const frame = JSON.parse(line)
+  await appendFile(${JSON.stringify(join(directory, "calls"))}, JSON.stringify(frame) + "\\n")
   if (first) {
     first = false
     if (${JSON.stringify(mode)} === "incomplete") process.exit(0)
-    if (${JSON.stringify(mode)} === "go-fail") process.exit(1)
-    if (${JSON.stringify(mode)} === "go-fail-bound") {
-      console.error("Error: opencode_review_transport_binding_invalid: private path must not leak")
+    const badPrompt = {
+      "empty-nonce": {schema:"gentle-ai.provider-transport/v1",operation:"prompt",nonce:"",prompt:"prompt"},
+      "empty-prompt": {schema:"gentle-ai.provider-transport/v1",operation:"prompt",nonce:"nonce",prompt:""},
+      "wrong-schema": {schema:"foreign/v1",operation:"prompt",nonce:"nonce",prompt:"prompt"},
+    }[${JSON.stringify(mode)}]
+    if (badPrompt) { process.stdout.write(JSON.stringify(badPrompt)+"\\n"); process.exit(0) }
+    if (${JSON.stringify(mode)} === "malformed") { process.stdout.write("not-json\\n"); process.exit(0) }
+    if (${JSON.stringify(mode)} === "truncated") { process.stdout.write('{"schema":'); process.exit(0) }
+    if (${JSON.stringify(mode)} === "empty-result") {
+      process.stdout.write(JSON.stringify({schema:"gentle-ai.provider-transport/v1",operation:"prompt",nonce:"test-nonce",prompt:"Go materialized review prompt"})+"\\n")
+      continue
+    }
+    if (${JSON.stringify(mode)} !== "normal") {
+      process.stdout.write(JSON.stringify({schema:"gentle-ai.provider-transport/v1",operation:"refused",error:${JSON.stringify(mode)}}) + "\\n")
       process.exit(1)
     }
-    process.stdout.write(JSON.stringify({ schema: "gentle-ai.provider-transport/v1", operation: "prompt", nonce: "test-nonce", prompt: "Go materialized review prompt" }) + "\\n")
+    process.stdout.write(JSON.stringify({schema:"gentle-ai.provider-transport/v1",operation:"prompt",nonce:"test-nonce",prompt:"Go materialized review prompt"}) + "\\n")
   } else {
-    if (value.error) process.exit(1)
-    process.stdout.write(JSON.stringify({ schema: "gentle-ai.provider-transport/v1", operation: "result", output: "captured reviewer result" }) + "\\n")
+    if (frame.error) process.exit(1)
+    process.stdout.write(JSON.stringify({schema:"gentle-ai.provider-transport/v1",operation:"result",output:${JSON.stringify(mode)} === "empty-result" ? "" : "captured reviewer result"}) + "\\n")
   }
 }
 `)
   await chmod(bin, 0o755)
   oldPath = process.env.PATH
   process.env.PATH = `${directory}:${oldPath ?? ""}`
-  oldMode = process.env.FAKE_RELAY_MODE
-  return { bin, log }
+  return bin
 }
 
 afterEach(async () => {
+  for (const cleanup of cleanups.splice(0)) await cleanup()
   if (oldPath === undefined) delete process.env.PATH
   else process.env.PATH = oldPath
-  if (oldMode === undefined) delete process.env.FAKE_RELAY_MODE
-  else process.env.FAKE_RELAY_MODE = oldMode
   if (directory) await rm(directory, { recursive: true, force: true })
 })
 
-function harness(get = async () => ({ location: { directory } })) {
+async function harness() {
   const hooks = new Map<string, (input: any) => Promise<void> | void>()
-  const ctx = {
-    location: { directory: "/tmp" },
-    session: { get },
-    tool: { hook: async (name: string, callback: any) => { hooks.set(name, callback); return { dispose: async () => {} } } },
+  const register = async (name: string, callback: any) => {
+    hooks.set(name, callback)
+    return { dispose: async () => {} }
   }
-  return { hooks, setup: () => (plugin as any).setup(ctx) }
+  const ctx = {
+    location: { directory, workspaceID: "fixture" },
+    tool: { hook: register }, shell: { hook: register },
+    event: { async *subscribe({ signal }: { signal: AbortSignal }) {
+      await new Promise(resolve => signal.addEventListener("abort", resolve, { once: true }))
+    } },
+  }
+  const cleanup = await (plugin as any).setup(ctx)
+  hooks.set("fixture.dispose", cleanup)
+  cleanups.push(cleanup)
+  return hooks
 }
+function event(agent = "review-risk") {
+  return { tool: "subagent", sessionID: "parent", id: "1", input: { agent, prompt: "Go-issued task" } as Record<string, unknown>, status: "completed",
+    result: { output: { status: "completed", sessionID: "child", output: "opaque raw output" }, content: "opaque raw output" } }
+}
+async function calls() { return (await Bun.file(join(directory, "calls")).text()).trim().split("\n").map(JSON.parse) }
 
-describe("OpenCode V2 review relay", () => {
-  test("relays the V1 start frame and returns the Go result", async () => {
-    const { bin, log } = await fakeCommand()
-    const relay = createReviewRelay(directory, "original review prompt", bin)
-    expect(await relay.prompt).toEqual({ nonce: "test-nonce", prompt: "Go materialized review prompt" })
-    expect(await relay.complete("completed Task output")).toBe("captured reviewer result")
-    relay.close()
-    const calls = (await Bun.file(log).text()).trim().split("\n").map(JSON.parse)
-    expect(calls[0]).toEqual({ schema: "gentle-ai.provider-transport/v1", operation: "start", prompt: "original review prompt" })
-    expect(calls[0].agent).toBeUndefined()
-    expect(calls[1]).toEqual({ schema: "gentle-ai.provider-transport/v1", operation: "complete", nonce: "test-nonce", output: "completed Task output" })
+describe("Tagged OpenCode V2 review relay", () => {
+  test("retains provider-transport/v1 wire and returns the Go result", async () => {
+    await fakeCommand(); const hooks = await harness(); const call = event()
+    await hooks.get("execute.before")!(call)
+    expect(call.input.prompt).toBe("Go materialized review prompt")
+    await hooks.get("execute.after")!(call)
+    expect(call.result.content).toBe("captured reviewer result")
+    expect((await calls())[1]).toEqual({schema:"gentle-ai.provider-transport/v1",operation:"complete",nonce:"test-nonce",output:"opaque raw output"})
   })
-
-  test("relays only a requested review agent and preserves the completed result shape", async () => {
-    await fakeCommand()
-    const { hooks, setup } = harness()
-    await setup()
-    const event = { tool: "subagent", agent: "general", sessionID: "s", id: "1", input: { agent: "review-risk", prompt: "bound review" }, status: "completed", result: { output: { status: "completed", sessionID: "child", output: "raw reviewer result" }, content: "raw reviewer result" } }
-    await hooks.get("execute.before")?.(event)
-    expect(event.input.prompt).toBe("Go materialized review prompt")
-    expect(await Bun.file(join(directory, "cwd")).text()).toBe(directory)
-    await hooks.get("execute.after")?.(event)
-    expect(event.result).toMatchObject({ output: { status: "completed", sessionID: "child", output: "captured reviewer result" }, content: "captured reviewer result" })
-    const ordinary = { ...event, id: "2", input: { agent: "general", prompt: "ordinary" } }
-    await hooks.get("execute.before")?.(ordinary)
-    expect(ordinary.input.prompt).toBe("ordinary")
+  test("relays only requested review agents and preserves terminal shape", async () => {
+    await fakeCommand(); const hooks = await harness(); const call = event()
+    await hooks.get("execute.before")!(call); await hooks.get("execute.after")!(call)
+    expect(call.result.output).toMatchObject({status:"completed",sessionID:"child",output:"captured reviewer result"})
+    const ordinary = event("general"); await hooks.get("execute.before")!(ordinary)
+    expect(ordinary.input.prompt).toBe("Go-issued task")
   })
-
-  test("fails closed on incomplete relay output and cannot surface raw reviewer text", async () => {
-    await fakeCommand("incomplete")
-    const { hooks, setup } = harness()
-    await setup()
-    const event = { tool: "subagent", agent: "general", sessionID: "s", id: "1", input: { agent: "review-risk", prompt: "review" }, status: "completed", result: { output: { status: "completed", sessionID: "child", output: "raw reviewer output" }, content: "raw reviewer output" } }
-    await expect(hooks.get("execute.before")?.(event)).rejects.toThrow()
-    expect(event.input.prompt).toContain("opencode_review_transport_relay_refused")
-    await expect(hooks.get("execute.after")?.(event)).rejects.toThrow()
-    expect(event.result.content).toContain("opencode_review_transport_relay_refused")
-    expect(event.result.content).not.toContain("raw reviewer output")
+  test("fails closed on incomplete relay output without surfacing reviewer text", async () => {
+    await fakeCommand("incomplete"); const hooks = await harness(); const call = event()
+    await expect(hooks.get("execute.before")!(call)).rejects.toThrow("relay_unavailable")
+    await expect(hooks.get("execute.after")!(call)).rejects.toThrow("relay_unavailable")
+    expect(call.result.content).not.toContain("opaque raw output")
   })
-
   test("refuses when the Go executable is unavailable", async () => {
-    const { bin } = await fakeCommand()
-    await rm(bin)
-    process.env.PATH = directory
-    const missing = harness()
-    await missing.setup()
-    const event = { tool: "subagent", sessionID: "s", id: "missing", input: { agent: "review-risk", prompt: "bound review" } }
-    await expect(missing.hooks.get("execute.before")?.(event)).rejects.toThrow("opencode_review_transport_relay_refused: executable_unavailable")
-    expect(event.input.prompt).not.toContain("bound review")
+    const bin = await fakeCommand(); await rm(bin); process.env.PATH = directory
+    const hooks = await harness(); await expect(hooks.get("execute.before")!(event())).rejects.toThrow("relay_unavailable")
   })
-
-  test("distinguishes Go refusal without leaking its diagnostic output", async () => {
-    await fakeCommand("go-fail")
-    const rejected = harness()
-    await rejected.setup()
-    const goEvent = { tool: "subagent", sessionID: "s", id: "rejected", input: { agent: "review-risk", prompt: "bound review" } }
-    await expect(rejected.hooks.get("execute.before")?.(goEvent)).rejects.toThrow("opencode_review_transport_relay_refused: go_refused")
+  test("forwards only Go's bounded typed refusal reason", async () => {
+    await fakeCommand("agent_mismatch"); const hooks = await harness()
+    await expect(hooks.get("execute.before")!(event())).rejects.toThrow("agent_mismatch")
   })
-
-  test("reports only a known Go refusal code, never its diagnostic text", async () => {
-    await fakeCommand("go-fail-bound")
-    const { hooks, setup } = harness()
-    await setup()
-    const event = { tool: "subagent", sessionID: "s", id: "bound", input: { agent: "review-risk", prompt: "bound review" } }
-    try {
-      await hooks.get("execute.before")?.(event)
-      throw new Error("review hook did not refuse")
-    } catch (cause) {
-      expect((cause as Error).message).toBe("opencode_review_transport_relay_refused: go_refused:binding_invalid")
+  test("unknown diagnostics cannot leak as a refusal reason", async () => {
+    await fakeCommand("private path must not leak"); const hooks = await harness(); const call = event()
+    await expect(hooks.get("execute.before")!(call)).rejects.toThrow("relay_unavailable")
+    expect(call.input.prompt).not.toContain("private path")
+  })
+  test("background and reused child-session dispatch refuse before spawn", async () => {
+    await fakeCommand(); const hooks = await harness()
+    for (const input of [{background:true}, {sessionID:"old-child"}]) {
+      const call = event(); Object.assign(call.input,input)
+      await expect(hooks.get("execute.before")!(call)).rejects.toThrow("dispatch_refused")
     }
-    expect(event.input.prompt).not.toContain("private path")
+    expect(await Bun.file(join(directory,"calls")).exists()).toBe(false)
   })
-
-  test("does not spawn if the session directory cannot be resolved", async () => {
-    const { log } = await fakeCommand()
-    const { hooks, setup } = harness(async () => { throw new Error("private session error") })
-    await setup()
-    const event = { tool: "subagent", sessionID: "s", id: "unavailable", input: { agent: "review-risk", prompt: "bound review" } }
-    await expect(hooks.get("execute.before")?.(event)).rejects.toThrow("opencode_review_transport_relay_refused: relay_unavailable")
-    expect(await Bun.file(log).exists()).toBe(false)
+  test("rejects running child acknowledgements without admitting raw output", async () => {
+    await fakeCommand(); const hooks = await harness(); const call = event(); call.result.output.status = "running"
+    await hooks.get("execute.before")!(call)
+    await expect(hooks.get("execute.after")!(call)).rejects.toThrow("relay_unavailable")
+    expect(call.result.content).not.toContain("opaque raw output")
   })
-
-  test("rejects incomplete child completion without admitting raw output", async () => {
-    await fakeCommand()
-    const { hooks, setup } = harness()
-    await setup()
-    const event = { tool: "subagent", agent: "general", sessionID: "s", id: "3", input: { agent: "review-risk", prompt: "review" }, status: "completed", result: { output: { status: "running", output: "raw reviewer output" }, content: "raw reviewer output" } }
-    await hooks.get("execute.before")?.(event)
-    await expect(hooks.get("execute.after")?.(event)).rejects.toThrow("opencode_review_transport_relay_refused")
-    expect(event.result.content).not.toContain("raw reviewer output")
-    expect(event.result.output.status).toBe("unavailable")
+  test("uses bound runtime cwd without mutating working-tree bytes", async () => {
+    await fakeCommand(); await writeFile(join(directory,"marker"),"unchanged")
+    const hooks = await harness(); const call = event()
+    await hooks.get("execute.before")!(call); await hooks.get("execute.after")!(call)
+    expect(await Bun.file(join(directory,"cwd")).text()).toBe(directory)
+    expect(await Bun.file(join(directory,"marker")).text()).toBe("unchanged")
   })
-
-  test("does not mutate the working directory", async () => {
-    const { bin } = await fakeCommand()
-    const marker = join(directory, "marker")
-    await writeFile(marker, "unchanged")
-    const relay = createReviewRelay(directory, "review", bin)
-    await relay.prompt
-    await relay.complete("result")
-    relay.close()
-    expect(await Bun.file(marker).text()).toBe("unchanged")
+  test("forwards dispatched role and declares staged V2 contract to child and shell", async () => {
+    await fakeCommand(); const hooks = await harness(); const call = event("review-refuter")
+    await hooks.get("execute.before")!(call); await hooks.get("execute.after")!(call)
+    expect((await calls())[0]).toEqual({schema:"gentle-ai.provider-transport/v1",operation:"start",prompt:"Go-issued task",agent:"review-refuter"})
+    expect(await Bun.file(join(directory,"relay-contract")).text()).toBe("gentle-ai.opencode-relay/v2-staged")
+    const shell = {env:{} as Record<string,string>}; await hooks.get("create.before")!(shell)
+    expect(shell.env.GENTLE_AI_OPENCODE_RELAY_CONTRACT).toBe("gentle-ai.opencode-relay/v2-staged")
+  })
+  for (const mode of ["empty-nonce", "empty-prompt", "wrong-schema", "malformed", "truncated"]) {
+    test(`refuses ${mode} start frames`, async () => {
+      await fakeCommand(mode); const hooks = await harness(); const call = event()
+      await expect(hooks.get("execute.before")!(call)).rejects.toThrow("relay_unavailable")
+      await expect(hooks.get("execute.after")!(call)).rejects.toThrow("relay_unavailable")
+      expect(call.result.content).not.toContain("opaque raw output")
+    })
+  }
+  test("refuses an empty Go result", async () => {
+    await fakeCommand("empty-result"); const hooks = await harness(); const call = event()
+    await hooks.get("execute.before")!(call)
+    await expect(hooks.get("execute.after")!(call)).rejects.toThrow("relay_unavailable")
+    expect(call.result.content).not.toContain("opaque raw output")
+  })
+  for (const changed of ["agent", "sessionID", "id"]) {
+    test(`completion cannot borrow a different ${changed} registration`, async () => {
+      await fakeCommand(); const hooks = await harness(); const call = event()
+      await hooks.get("execute.before")!(call)
+      if (changed === "agent") call.input.agent = "review-validator"
+      else call[changed] = "other"
+      await expect(hooks.get("execute.after")!(call)).rejects.toThrow("relay_unavailable")
+      expect((await calls()).length).toBe(1)
+      expect(call.result.content).not.toContain("opaque raw output")
+    })
+  }
+  test("duplicate before shares one relay; replayed completion refuses", async () => {
+    await fakeCommand(); const hooks = await harness(); const call = event()
+    await hooks.get("execute.before")!(call); await hooks.get("execute.before")!(call)
+    await hooks.get("execute.after")!(call)
+    expect((await calls()).length).toBe(2)
+    await expect(hooks.get("execute.after")!(call)).rejects.toThrow("relay_unavailable")
+  })
+  test("duplicate instances defer to the owner and do not double-complete", async () => {
+    await fakeCommand(); const owner = await harness(); const other = await harness(); const call = event()
+    await owner.get("execute.before")!(call); await other.get("execute.before")!(call)
+    await other.get("execute.after")!(call); await owner.get("execute.after")!(call)
+    expect((await calls()).length).toBe(2)
+    expect(call.result.content).toBe("captured reviewer result")
+  })
+  test("disposal invalidates owned pending completion and future dispatch", async () => {
+    await fakeCommand(); const hooks = await harness(); const call = event()
+    await hooks.get("execute.before")!(call); await hooks.get("fixture.dispose")!({})
+    await expect(hooks.get("execute.after")!(call)).rejects.toThrow("relay_unavailable")
+    await expect(hooks.get("execute.before")!(event())).rejects.toThrow("relay_unavailable")
+    expect(call.result.content).not.toContain("opaque raw output")
+  })
+  test("unrelated instance disposal cannot kill another owner's relay", async () => {
+    await fakeCommand(); const owner = await harness(); const other = await harness(); const call = event()
+    await owner.get("execute.before")!(call); await other.get("fixture.dispose")!({})
+    await owner.get("execute.after")!(call)
+    expect(call.result.content).toBe("captured reviewer result")
+  })
+  test("opaque multiline/quoted raw bytes travel unchanged with Go's nonce", async () => {
+    await fakeCommand(); const hooks = await harness(); const call = event()
+    const raw = "  opaque 'quoted' \nresult\t\u0000—not a verdict  "
+    call.result.output.output = raw
+    await hooks.get("execute.before")!(call); await hooks.get("execute.after")!(call)
+    expect((await calls())[1].output).toBe(raw)
+    expect((await calls())[1].nonce).toBe("test-nonce")
   })
 })

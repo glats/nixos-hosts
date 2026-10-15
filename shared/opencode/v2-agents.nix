@@ -23,10 +23,20 @@ let
   '';
   system =
     name: prompt:
-    if lib.hasPrefix "sdd-" name then
+    if
+      name == "gentle-orchestrator"
+      || name == "general"
+      || lib.hasPrefix "gentle-ai-" name
+      || lib.hasPrefix "jd-" name
+      || lib.hasPrefix "review-" name
+    then
       executorContract
       + "\n"
-      + builtins.replaceStrings [ "~/.config/opencode/skills/" ] [ "${skillsRoot}/" ] prompt
+      +
+        builtins.replaceStrings
+          [ "~/.config/opencode/skills/" "`task`" "`subagent_type`" ]
+          [ "${skillsRoot}/" "`subagent`" "`agent`" ]
+          prompt
     else
       prompt;
   mode =

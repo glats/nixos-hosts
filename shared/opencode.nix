@@ -57,6 +57,33 @@ let
     TMPDIR = "${v2.runtimeRoot}/tmp";
     OPENCODE_DISABLE_PROJECT_CONFIG = "1";
   };
+  # Native compiled wrapper is private to this HM configuration. Host shell
+  # scrubbing cannot erase its children's runtime roots or truthful discovery.
+  nativeV2Discovery = pkgs.runCommand "gentle-ai-native-v2-discovery" { } ''
+    mkdir -p "$out/bin"
+    ln -s ${pkgs.opencode-v2}/bin/.opencode2-unwrapped "$out/bin/opencode"
+  '';
+  gentleV2 =
+    pkgs.runCommand "gentle-ai-v2-managed"
+      {
+        nativeBuildInputs = [ pkgs.makeBinaryWrapper ];
+      }
+      ''
+        mkdir -p "$out/bin"
+        makeBinaryWrapper ${pkgs.gentle-ai}/bin/gentle-ai "$out/bin/gentle-ai" \
+          ${
+            lib.concatStringsSep " " (
+              lib.mapAttrsToList (name: value: "--set ${name} ${lib.escapeShellArg value}") mkV2Environment
+            )
+          } \
+          --set GENTLE_AI_OPENCODE_RELAY_CONTRACT gentle-ai.opencode-relay/v2-staged \
+          --prefix PATH : ${
+            lib.makeBinPath [
+              nativeV2Discovery
+              pkgs.git
+            ]
+          }
+      '';
   mkV2ShellEnvironment = lib.concatStringsSep "\n" (
     (lib.mapAttrsToList (name: value: "export ${name}=${lib.escapeShellArg value}") mkV2Environment)
     ++ [
@@ -64,13 +91,13 @@ let
         case ":$PATH:" in
           *":${
             lib.makeBinPath [
-              pkgs.gentle-ai
+              gentleV2
               pkgs.git
             ]
           }:"*) ;;
           *) export PATH="${
             lib.makeBinPath [
-              pkgs.gentle-ai
+              gentleV2
               pkgs.git
             ]
           }:$PATH" ;;
@@ -181,7 +208,7 @@ in
     # Main configuration
     (mkIf config.home.opencode.enable {
       home.packages = with pkgs; [
-        gentle-ai
+        gentleV2
         engram
         rtk
         poppler-utils # PDF page rendering: needed by OpenCode read tool and Claude Code for PDF support
@@ -209,6 +236,7 @@ in
         lib
         pkgs
         providers
+        gentleV2
         ;
       cfg = config.home.opencode;
       runtimeConfig = v2RuntimeConfig;

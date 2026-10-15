@@ -1,32 +1,16 @@
-"""Offline generated-system regression: python3 shared/opencode/v2-agents.test.py."""
-
+"""Offline ODD graph/provider regression: python3 shared/opencode/v2-agents.test.py."""
 import json
 from pathlib import Path
 import subprocess
 
-
 ROOT = Path(__file__).resolve().parents[2]
-PHASES = {
-    "init", "explore", "research", "propose", "spec", "design", "tasks",
-    "apply", "verify", "archive", "onboard",
-}
-
-
-# Evaluate the real managed graph and runtime assembly, with writeText returning
-# its contents instead of building or activating anything. Pin the pre-fix
-# generator for exact V1-output and non-system-field preservation checks.
-BASELINE = "d2ebad2613ddbbaa8304c091c3892100970b3cb5"
-
-
-def baseline_source(path):
-    return json.dumps(subprocess.check_output(
-        ["git", "show", f"{BASELINE}:{path}"], cwd=ROOT, text=True
-    ), ensure_ascii=False).replace("${", r"\${")
-
-
+BASELINE = "4750736cd68f517a871ac7448639c94546472390"
+old_profiles = json.dumps(subprocess.check_output(
+    ["git", "show", f"{BASELINE}:shared/opencode/providers-base.nix"], cwd=ROOT, text=True
+)).replace("${", r"\${")
 expression = r'''
 let
-  flake = builtins.getFlake ROOT;
+  flake = builtins.getFlake ("path:" + ROOT);
   config = flake.homeConfigurations.rog.config;
   pkgs = flake.nixosConfigurations.rog.pkgs;
   lib = pkgs.lib;
@@ -34,113 +18,96 @@ let
   permissions = import (ROOT + "/shared/opencode/v2-permissions.nix") {
     inherit lib cfg; disabledTools = cfg.disabledTools;
   };
-  oldPermissions = import (builtins.toFile "baseline-v2-permissions.nix" OLD_PERMISSIONS) {
-    inherit lib cfg; disabledTools = cfg.disabledTools;
-  };
-  oldAgents = import (builtins.toFile "baseline-v2-agents.nix" OLD_AGENTS) {
-    inherit lib cfg; permissionRules = oldPermissions.rules;
-  };
   generate = runtimeDir: import (ROOT + "/shared/opencode/v2-agents.nix") {
     inherit lib cfg runtimeDir; permissionRules = permissions.rules;
   };
-  runtimeArgs = {
-    inherit config lib cfg;
-    pkgs = pkgs // { writeText = _: text: text; };
-    providers = import (ROOT + "/shared/opencode/providers.nix") {
-      inherit lib; activeProviderName = cfg.activeProviderName;
-    };
-    runtimeConfig = { version = "v1"; dir = "opencode"; label = "test"; };
-  };
-  runtime = source: (import source runtimeArgs).home.file;
-  probeCfg = cfg // { agents.probe = {
-    prompt = "~/.config/opencode/skills/probe/SKILL.md bash openspec/changes/probe/";
-  }; agents.sdd-probe = {
-    prompt = "~/.config/opencode/skills/sdd-probe/SKILL.md bash openspec/changes/probe/";
-  }; };
+  profiles = import (ROOT + "/shared/opencode/providers-base.nix") { inherit lib; };
+  before = import (builtins.toFile "before-odd-profiles.nix" OLD_PROFILES) { inherit lib; };
+  overrideConfig = config // { home = config.home // { opencode = cfg // {
+    agentOverrides.gentle-ai-worker = { model = "openai/user-override"; variant = "high"; prompt = "user prompt"; };
+  }; }; };
 in {
-  inherit oldAgents;
   linux = generate "/home/glats/.config/opencode-v2";
   darwinRoot = generate "/Users/juan/.config/opencode-v2";
-  v1Before = runtime (builtins.toFile "baseline-runtime.nix" OLD_RUNTIME);
-  v1After = runtime (ROOT + "/shared/opencode/runtime-config.nix");
-  assembledV2 = builtins.fromJSON ((import (ROOT + "/shared/opencode/runtime-config.nix")
-    (runtimeArgs // {
-      runtimeConfig = { version = "v2"; dir = "opencode-v2"; label = "test"; };
-    })).home.file.".config/opencode-v2/opencode.json".source);
+  beforeProfiles = before.providers;
+  afterProfiles = profiles.providers;
+  beforePolicy = before.providerAllowlist;
+  afterPolicy = profiles.providerAllowlist;
+  nvidiaBefore = before.nvidiaProvider;
+  nvidiaAfter = profiles.nvidiaProvider;
   globalPermissions = permissions.global;
-  oldGlobalPermissions = oldPermissions.global;
-  disabledTools = cfg.disabledTools;
-  probe = import (ROOT + "/shared/opencode/v2-agents.nix") {
-    inherit lib; cfg = probeCfg; permissionRules = permissions.rules;
-    runtimeDir = "/custom/runtime";
-  };
+  overrides = (import (ROOT + "/shared/opencode/agents.nix") {
+    inherit lib pkgs; config = overrideConfig;
+  }).config.home.opencode.agents.gentle-ai-worker;
 }
-'''.replace("ROOT", json.dumps(str(ROOT))).replace(
-    "OLD_AGENTS", baseline_source("shared/opencode/v2-agents.nix")
-).replace("OLD_RUNTIME", baseline_source("shared/opencode/runtime-config.nix")).replace(
-    "OLD_PERMISSIONS", baseline_source("shared/opencode/v2-permissions.nix")
-)
-
+'''.replace("ROOT", json.dumps(str(ROOT))).replace("OLD_PROFILES", old_profiles)
 result = json.loads(subprocess.check_output(
-    ["nix", "eval", "--offline", "--impure", "--json", "--expr", expression],
-    cwd=ROOT, text=True,
+    ["nix", "eval", "--offline", "--impure", "--json", "--expr", expression], cwd=ROOT, text=True
 ))
-assert result["v1Before"] == result["v1After"], "V1 runtime output changed"
-assert result["assembledV2"]["agents"] == result["linux"], "Runtime directory wiring changed"
-assert result["assembledV2"]["permissions"] == result["globalPermissions"]
-denies = [
-    {"action": tool, "resource": "*", "effect": "deny"}
-    for tool in result["disabledTools"]
-]
-assert result["globalPermissions"] == (
-    denies + result["oldGlobalPermissions"][len(denies):]
-), "MCP names changed or unrelated global rules changed"
-assert any(rule["action"].startswith("github-personal_") for rule in denies)
-expected = {f"sdd-{phase}" for phase in PHASES}
-for target, root in (
-    ("linux", "/home/glats/.config/opencode-v2/skills"),
-    ("darwinRoot", "/Users/juan/.config/opencode-v2/skills"),
-):
+expected = {
+    "gentle-orchestrator", "gentle-ai-explore", "gentle-ai-verify", "gentle-ai-worker",
+    "jd-judge-a", "jd-judge-b", "jd-fix-agent", "review-risk", "review-readability",
+    "review-reliability", "review-resilience", "review-refuter", "review-validator",
+}
+for target, root in (("linux", "/home/glats/.config/opencode-v2"),
+                     ("darwinRoot", "/Users/juan/.config/opencode-v2")):
     agents = result[target]
-    assert {name for name in agents if name.startswith("sdd-")} == expected
-    for name, old in result["oldAgents"].items():
-        new = agents[name]
-        if name not in expected:
-            assert new == old, name
-            continue
-        assert {k: v for k, v in new.items() if k != "system"} == {
-            k: v for k, v in old.items() if k != "system"
-        }, f"Non-system fields changed: {name}"
-        system = new["system"]
-        assert f"{root}/{name}/SKILL.md" in system, name
-        assert "~/.config/opencode/skills/" not in system, name
-        assert system.endswith(old["system"].replace("~/.config/opencode/skills/", root + "/"))
-        for guidance in (
-            "live direct tool names and input schemas",
-            "read({path, offset?, limit?})",
-            "shell({command, workdir?, timeout?, background?}) only when allowed",
-            "bash-to-shell permission mapping is not a tool alias",
-            "Direct shell and read are not Code Mode catalog tools",
-            "execute({code})", "synchronous", "without await",
-            "search({query?, namespace?, limit?, offset?})",
-            "returned exact callable paths and signatures",
-            f"under {root}/_shared/...",
-            "Keep repository-relative openspec/... artifact paths relative to the repository",
-        ):
-            assert guidance in system, (name, guidance)
-    assert any(rule == {"action": "shell", "resource": "*", "effect": "deny"}
-               for rule in agents["sdd-research"]["permissions"])
-    for action in ("context7_resolve-library-id", "context7_query-docs"):
-        assert {"action": action, "resource": "*", "effect": "allow"} in (
-            agents["sdd-research"]["permissions"]
-        ), f"Missing effective MCP action: {action}"
-    assert not any(rule["action"] in (
-        "context7_resolve_library_id", "context7_query_docs"
-    ) for rule in agents["sdd-research"]["permissions"])
-assert result["probe"]["probe"]["system"] == (
-    "~/.config/opencode/skills/probe/SKILL.md bash openspec/changes/probe/"
-)
-assert result["probe"]["sdd-probe"]["system"].endswith(
-    "/custom/runtime/skills/sdd-probe/SKILL.md bash openspec/changes/probe/"
-), "Broad bash replacement or artifact-path rewrite"
-print("PASS: 11 SDD systems, runtime/shared roots, direct/Code Mode contract, V1 output, effective MCP permissions and research deny")
+    assert not any(name.startswith("sdd-") for name in agents), "Candidate still carries SDD graph"
+    assert expected <= agents.keys(), "Missing tagged ODD/review roles"
+    for name in expected:
+        system = agents[name]["system"]
+        assert "{{GENTLE_AI_" not in system, name
+        assert "tools" not in agents[name], name
+        assert "live direct tool names and input schemas" in system, name
+        assert f"{root}/skills" in system, name
+        assert "Explicit user instructions and repository policy override" in system, name
+        if name != "gentle-orchestrator":
+            assert {"action":"subagent", "resource":"*", "effect":"deny"} in agents[name]["permissions"], name
+    system = agents["gentle-orchestrator"]["system"]
+    assert "Organic Driven Development" in system
+    assert "odd/tasks/<feature-name>.md" in system and "odd/<feature-name>/tasks" in system
+    # These are rendered model instructions, not executable storage guarantees.
+    for contract in (
+        "stable task IDs", "Reuse the same feature identity; never overwrite another feature",
+        "Mirror the full current document and repository-relative file locator",
+        "Read back both writes; they are not atomic",
+        "If Engram is unavailable, preserve local progress and explicitly mark the mirror pending",
+        "Preserve both versions on irreconcilable edits",
+        "mem_context", "mem_search", "mem_get_observation",
+        "read the actual task file", "preserve pending mirrors and conflicting edits",
+        "before the first source write", "Never bulk-convert",
+    ):
+        assert contract in system, f"{target}: missing rendered recovery/selection contract {contract!r}"
+    for name in ("gentle-ai-explore", "gentle-ai-verify", "review-refuter", "review-validator"):
+        assert {"action":"edit", "resource":"*", "effect":"deny"} in agents[name]["permissions"], name
+    assert {"action":"shell", "resource":"*", "effect":"deny"} in agents["gentle-ai-explore"]["permissions"]
+    assert {"action":"subagent", "resource":"*", "effect":"deny"} in agents["general"]["permissions"]
+before = {p["name"]:p for p in result["beforeProfiles"]}
+after = {p["name"]:p for p in result["afterProfiles"]}
+retired = {"opencode-free", "anthropic-opencode-free", "anthropic-opencode-go"}
+assert len(before) == 35 and len(after) == 32
+assert after.keys() == before.keys() - retired
+assert [p["name"] for p in result["afterProfiles"]] == [
+    p["name"] for p in result["beforeProfiles"] if p["name"] not in retired
+]
+for name, profile in before.items():
+    if name in retired:
+        continue
+    phases = profile["phases"]
+    mapped = {k:v for k,v in phases.items() if not k.startswith("sdd-")}
+    mapped.update({"gentle-ai-explore":phases["sdd-explore"],
+                   "gentle-ai-worker":phases["sdd-apply"], "gentle-ai-verify":phases["sdd-verify"]})
+    assert after[name] == {**profile,"phases":mapped}, f"Unapproved routing churn: {name}"
+assert result["beforePolicy"] == result["afterPolicy"]
+expected_nvidia = json.loads(json.dumps(result["nvidiaBefore"]))
+expected_nvidia["nvidia"]["models"]["nemotron-3-ultra-550b-a55b"] = {
+    "name": "Nemotron 3 Ultra",
+    "modelID": "nvidia/nemotron-3-ultra-550b-a55b",
+}
+assert result["nvidiaAfter"] == expected_nvidia
+assert result["overrides"]["model"] == "openai/user-override"
+assert result["overrides"]["variant"] == "high" and result["overrides"]["prompt"] == "user prompt"
+assert any(p["action"].startswith("github-personal_") and p["effect"] == "deny"
+           for p in result["globalPermissions"])
+print("PASS: ODD graph, executor grants, three approved retirements, remaining full-JSON parity, provider policy, same-backend NVIDIA alias and last-wins overrides")
+print("PASS: complete rendered recovery guidance; LIMIT: contract presence does not prove LLM readback/outage/conflict compliance")

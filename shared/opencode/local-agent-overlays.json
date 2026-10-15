@@ -42,7 +42,8 @@
         "mem_get_observation": "allow",
         "task": {
           "*": "deny",
-          "sdd-*": "allow",
+          "gentle-ai-*": "allow",
+          "review-*": "allow",
           "jd-*": "allow",
           "explore": "allow",
           "general": "allow"
@@ -71,7 +72,9 @@
           "go -C * test *": "allow"
         }
       },
-      "sdd-research": {
+      "gentle-ai-explore": {
+        "write": "deny",
+        "edit": "deny",
         "bash": "deny",
         "webfetch": "deny",
         "websearch": "deny",
@@ -173,10 +176,12 @@
   },
   "instructionOverlays": {
     "gentle-orchestrator": [
+      "../rules/authorization.md",
       "../rules/explore-mcp.md",
       "../rules/output-format.md"
     ],
     "subagent": [
+      "../rules/authorization.md",
       "../rules/output-format.md"
     ]
   }

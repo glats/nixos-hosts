@@ -17,6 +17,60 @@ let
     "${pkgs.gentle-ai-assets}/share/gentle-ai/claude/agents"
     "${pkgs.gentle-ai-assets}/share/gentle-ai/claude/commands"
   ];
+  assetTrees = import ./ai-assets-tree.nix { inherit lib pkgs; };
+  claudePrompt = pkgs.writeText "claude-managed-prompt.md" (
+    lib.concatMapStringsSep "\n\n" builtins.readFile config.home.ai-assets.agentsMdSources
+    + "\n\n"
+    + builtins.readFile ./rules/authorization.md
+    + "\n\n"
+    + builtins.readFile "${pkgs.gentle-ai-assets}/share/gentle-ai/claude/orchestrator.md"
+  );
+  promptTree = pkgs.runCommand "claude-owned-prompt" { } ''
+    mkdir -p "$out"
+    cp ${claudePrompt} "$out/CLAUDE.md"
+  '';
+  legacyPromptTree = pkgs.runCommand "claude-prior-prompt" { } ''
+    mkdir -p "$out"
+    cp ${assetTrees.priorRepo}/AGENTS.md "$out/CLAUDE.md"
+  '';
+  stylesTree =
+    assets:
+    pkgs.runCommand "claude-owned-styles" { } ''
+      mkdir -p "$out"
+      for file in ${assets}/share/gentle-ai/claude/persona-*.md ${assets}/share/gentle-ai/claude/output-style-*.md; do
+        if [ -f "$file" ]; then cp "$file" "$out/$(basename "$file")"; fi
+      done
+    '';
+  desiredAssets = assetTrees.tree "claude-owned-assets" (
+    (map (source: {
+      target = "skills";
+      inherit source;
+    }) config.home.ai-assets.skillSources)
+    ++ (map (source: {
+      target = builtins.baseNameOf source;
+      inherit source;
+    }) claudeCommandSources)
+    ++ [
+      {
+        target = "";
+        source = promptTree;
+      }
+      {
+        target = "output-styles";
+        source = stylesTree pkgs.gentle-ai-assets;
+      }
+    ]
+  ) false;
+  legacyAssets = assetTrees.legacy "claude" [
+    {
+      target = "";
+      source = legacyPromptTree;
+    }
+    {
+      target = "output-styles";
+      source = stylesTree assetTrees.priorAssets;
+    }
+  ];
 
   # Merge base MCPs with extra MCPs, then filter by enabled
   allMcps = config.home.ai-assets.mcps // config.home.ai-assets.extraMcps;
@@ -182,11 +236,16 @@ in
   };
 
   config = mkIf cfg.enable {
-    home.packages = with pkgs; [
-      claude-code
-      gentle-ai
-      engram
-    ];
+    home.packages =
+      with pkgs;
+      [
+        claude-code
+        # OpenCode installs the private V2-managed Gentle wrapper when enabled.
+      ]
+      ++ lib.optional (!config.home.opencode.enable) pkgs.gentle-ai
+      ++ (with pkgs; [
+        engram
+      ]);
 
     home.ai-assets.enable = true;
 
@@ -241,95 +300,10 @@ in
         ${pkgs.coreutils}/bin/rm -f "$claude_json.tmp"
       fi
 
-      # Directory management for command-like directories (agents/, commands/).
-      # Handled here (not via home.file) because HM cannot overwrite real dirs with symlinks.
-      # Copies files from each source directory with per-file cmp guard + orphan removal.
-      for src in ${lib.concatStringsSep " " claudeCommandSources}; do
-        if [ ! -d "$src" ]; then
-          continue
-        fi
-        dir_name="$(basename "$src")"
-        target="$claude_dir/$dir_name"
+      ${pkgs.nixos-scripts}/bin/ai-assets-reconcile "$claude_dir" \
+        ${desiredAssets} ${legacyAssets} ff77164d4f56f1665b22fb6fac51c2ccbb769400
 
-        # Remove symlink if HM managed to create one
-        if [ -L "$target" ]; then
-          ${pkgs.coreutils}/bin/rm -f "$target"
-        fi
-        mkdir -p "$target"
 
-        # Copy changed files with cmp guard
-        (cd "$src" && ${pkgs.findutils}/bin/find . -type f) | while read -r rel; do
-          if [ ! -f "$target/$rel" ] || ! ${pkgs.diffutils}/bin/cmp -s "$src/$rel" "$target/$rel"; then
-            mkdir -p "$(dirname "$target/$rel")"
-            ${pkgs.coreutils}/bin/cp -f "$src/$rel" "$target/$rel"
-            chmod 644 "$target/$rel"
-          fi
-        done || :
-
-        # Remove orphaned files (present in target but not in source)
-        (cd "$target" && ${pkgs.findutils}/bin/find . -type f) | while read -r rel; do
-          if [ ! -f "$src/$rel" ]; then
-            rm -f "$target/$rel"
-          fi
-        done || :
-      done
-
-      # Skills: N-way union (all skillSources) with cmp guard + union orphan cleanup
-      skills_target="$claude_dir/skills"
-      if [ -L "$skills_target" ]; then
-        ${pkgs.coreutils}/bin/rm -f "$skills_target"
-      fi
-      mkdir -p "$skills_target"
-
-      skills_sources_list="${lib.concatStringsSep " " config.home.ai-assets.skillSources}"
-      for src in $skills_sources_list; do
-        if [ -d "$src" ]; then
-          (cd "$src" && ${pkgs.findutils}/bin/find . -type f) | while read -r rel; do
-            if [ ! -f "$skills_target/$rel" ] || ! ${pkgs.diffutils}/bin/cmp -s "$src/$rel" "$skills_target/$rel"; then
-              mkdir -p "$(dirname "$skills_target/$rel")"
-              ${pkgs.coreutils}/bin/cp -f "$src/$rel" "$skills_target/$rel"
-              chmod 644 "$skills_target/$rel"
-            fi
-          done
-        fi
-      done
-
-      # Union orphan cleanup: delete files absent from ALL sources
-      (cd "$skills_target" && ${pkgs.findutils}/bin/find . -type f) | while read -r rel; do
-        found=0
-        for src in $skills_sources_list; do
-          [ -f "$src/$rel" ] && { found=1; break; }
-        done
-        [ "$found" = "0" ] && rm -f "$skills_target/$rel"
-      done || :
-
-      # CLAUDE.md: concatenate all configured sources
-      claude_md="${config.home.homeDirectory}/.claude/CLAUDE.md"
-      > "$claude_md"
-      for src in ${lib.concatStringsSep " " config.home.ai-assets.agentsMdSources}; do
-        [ -f "$src" ] && [ -s "$src" ] && cat "$src" >> "$claude_md"
-      done
-      chmod 644 "$claude_md"
-
-      # output-styles/ — copy persona-*.md + output-style-*.md from claude/ root
-      # Claude Code uses ~/.claude/output-styles/ for reusable personas/styles
-      # https://code.claude.com/docs/en/output-styles
-      styles_target="$claude_dir/output-styles"
-      mkdir -p "$styles_target"
-      for f in ${pkgs.gentle-ai-assets}/share/gentle-ai/claude/persona-*.md ${pkgs.gentle-ai-assets}/share/gentle-ai/claude/output-style-*.md; do
-        if [ -f "$f" ]; then
-          name=$(basename "$f")
-          if [ ! -f "$styles_target/$name" ] || ! ${pkgs.diffutils}/bin/cmp -s "$f" "$styles_target/$name"; then
-            ${pkgs.coreutils}/bin/cp -f "$f" "$styles_target/$name"
-            chmod 644 "$styles_target/$name"
-          fi
-        fi
-      done
-
-      # Clean Nix build artifacts (left by previous builds or manual operations).
-      # Never touches runtime data: sessions/, cache/, projects/, .credentials.json, etc.
-      find "$claude_dir" -maxdepth 1 -name '*.backup' -type f -delete 2>/dev/null || true
-      find "$claude_dir" -maxdepth 1 -name '*.bak' -type f -delete 2>/dev/null || true
     '';
   };
 }

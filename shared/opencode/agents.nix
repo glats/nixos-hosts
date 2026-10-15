@@ -17,7 +17,7 @@ let
 
   # Read upstream agent definitions from vanilla assets
   upstreamOverlay = builtins.fromJSON (
-    builtins.readFile "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/sdd-overlay-single.json"
+    builtins.readFile "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/odd-overlay.json"
   );
   upstreamAgents = upstreamOverlay.agent or { };
 
@@ -25,16 +25,9 @@ let
   # Judge Day and review agents are upstream subagents too; leaving them out
   # makes OpenCode inherit the orchestrator model instead of their role fit.
   routedAgents = [
-    "sdd-init"
-    "sdd-explore"
-    "sdd-propose"
-    "sdd-spec"
-    "sdd-design"
-    "sdd-tasks"
-    "sdd-apply"
-    "sdd-verify"
-    "sdd-archive"
-    "sdd-onboard"
+    "gentle-ai-explore"
+    "gentle-ai-worker"
+    "gentle-ai-verify"
     "jd-judge-a"
     "jd-judge-b"
     "jd-fix-agent"
@@ -123,13 +116,7 @@ let
             (lib.concatStringsSep "\n\n" (map (f: builtins.readFile ./${f}) localInstructions)) + "\n\n"
           else
             "";
-        # For the orchestrator, embed AGENTS.md content at build time via builtins.readFile
-        # instead of {file:./AGENTS.md} (runtime loading).
-        basePrompt =
-          if name == "gentle-orchestrator" then
-            builtins.readFile "${pkgs.gentle-ai-assets}/share/gentle-ai/AGENTS.md"
-          else
-            upstream.prompt or "";
+        basePrompt = upstream.prompt or "";
       in
       # Upstream `tools` is deprecated (v2.5.0 migrated to `permission`);
       # always strip it so no agent ever emits a `tools` field.
@@ -139,7 +126,11 @@ let
         prompt = instructionPrompt + basePrompt;
       }
       // {
-        permission = smartMerge localPermission (upstream.permission or { });
+        # Class defaults cannot override upstream read-only/executor denials;
+        # explicit named local overlays remain last-wins.
+        permission = smartMerge namedOverlay (
+          lib.recursiveUpdate classOverlay (upstream.permission or { })
+        );
       }
     );
 
@@ -163,6 +154,14 @@ let
   };
 
   defaultAgents = (lib.mapAttrs overlayAgent upstreamAgents) // {
+    # Preserve the configured built-in general executor boundary; a missing
+    # declaration must not fall back to an unbounded platform default.
+    general = overlayAgent "general" (
+      upstreamAgents.gentle-ai-worker
+      // {
+        description = "Bounded general-purpose ODD executor; never delegates or publishes.";
+      }
+    );
     neutral = neutralAgent;
     managed-writing-task = managedWritingAgent;
   };

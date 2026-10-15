@@ -4,17 +4,23 @@
   gentle-ai-src,
   gentle-ai,
   git,
+  callPackage,
 }:
 
+let
+  rendered = callPackage ./render.nix {
+    inherit gentle-ai-src;
+    vendorHash = gentle-ai.vendorHash;
+  };
+in
 stdenvNoCC.mkDerivation {
   pname = "gentle-ai-assets";
-  version = gentle-ai-src.rev or "unstable";
+  version = "4.0.0";
 
   src = gentle-ai-src;
 
   installPhase = ''
     mkdir -p $out/share/gentle-ai
-    [ -f $src/AGENTS.md ] && cp $src/AGENTS.md $out/share/gentle-ai/
     for dir in opencode skills claude cursor windsurf gemini codex kimi qwen kiro; do
       if [ -d $src/internal/assets/$dir ]; then
         mkdir -p $out/share/gentle-ai/$dir
@@ -33,14 +39,17 @@ stdenvNoCC.mkDerivation {
       rm -rf $out/share/gentle-ai/opencode/plugins
     fi
 
-    # V2 plugins use the pinned native Plugin.define contract.
+    # Overlay fully rendered runtime prompts, never contributor AGENTS.md or
+    # template fragments. The vendored exporter is not shipped as a command.
+    chmod -R u+w $out/share/gentle-ai
+    cp -r ${rendered}/share/gentle-ai/. $out/share/gentle-ai/
+    # The exact tagged V2 relay owns role binding/lifetime/refusal hooks.
     mkdir -p $out/share/gentle-ai/opencode-v2/plugins
-    for plugin in ${./v2-plugins}/*.ts; do
-      install -m 0644 "$plugin" $out/share/gentle-ai/opencode-v2/plugins/
-    done
+    install -m 0644 $src/internal/assets/opencode/plugins-v2/opencode-review-transport.ts \
+      $out/share/gentle-ai/opencode-v2/plugins/opencode-review-transport.ts
+    install -m 0644 ${./v2-plugins/skill-registry.ts} $out/share/gentle-ai/opencode-v2/plugins/skill-registry.ts
     substituteInPlace $out/share/gentle-ai/opencode-v2/plugins/opencode-review-transport.ts \
-      --replace-fail 'const GO_COMMAND = "gentle-ai"' 'const GO_COMMAND = "${gentle-ai}/bin/gentle-ai"' \
-      --replace-fail 'const GIT_BIN = ""' 'const GIT_BIN = "${git}/bin"'
+      --replace-fail 'Command: "gentle-ai"' 'Command: "${gentle-ai}/bin/gentle-ai"'
   '';
 
   meta = with lib; {
