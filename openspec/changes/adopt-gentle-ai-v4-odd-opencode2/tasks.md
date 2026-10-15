@@ -48,7 +48,13 @@ Verification evidence: `nix eval --offline --raw .#nixosConfigurations.thinkcent
 
 - [x] 3.1 `nixos-build switch` on rog — explicitly authorized by user ("continua y terminalo"). Keep previous generation for rollback. Evidence: see "Live verification" below (V1).
 - [x] 3.2 Live checks: `systemctl is-active home-manager-glats.service` = active; `gentle-ai --version` = 4.1.1; `ai-assets-reconcile` on PATH; `~/.config/opencode-v2` has v4 assets, no `sdd-task-result.ts`; upstream V2 review transport present.
-- [ ] 3.3 User runs ONE real ODD session in opencode2 (user action; not automatable here).
+- [x] 3.3 User runs ONE real ODD session in opencode2 (user action; not automatable here).
+  Evidence 2026-10-15 13:12: user restarted opencode2 (new PID 255988); screenshot
+  ~/Pictures/2026-10-15_13-12.png shows default agent gentle-orchestrator "Organic Driven
+  Development coordinator" on Claude Opus 5.5, no sdd-* agents. In-session: `gentle-ai --version`
+  = 4.1.1, PATH has gentle-ai-v2-managed (no f5dd). ODD task run by the orchestrator: delegated
+  read-only map to native `gentle-ai-explore` (completed), then inline removal of the empty
+  skills/sdd-* dirs in ~/.config/opencode-v2 and ~/.claude (0 left; no files deleted).
 - [ ] 3.4 Commit on `feat/adopt-gentle-ai-v4-odd` — NOT authorized yet; needs separate approval. Respect chain strategy decision first.
 
 ## Live verification (rog, 2026-10-15, read-only)
