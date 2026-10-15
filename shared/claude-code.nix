@@ -23,24 +23,16 @@ let
     + "\n\n"
     + builtins.readFile ./rules/authorization.md
     + "\n\n"
+    + builtins.readFile ./rules/explore-mcp.md
+    + "\n\n"
     + builtins.readFile "${pkgs.gentle-ai-assets}/share/gentle-ai/claude/orchestrator.md"
+    + "\n\n"
+    + builtins.readFile "${pkgs.gentle-ai-assets}/share/gentle-ai/claude/engram-protocol.md"
   );
   promptTree = pkgs.runCommand "claude-owned-prompt" { } ''
     mkdir -p "$out"
     cp ${claudePrompt} "$out/CLAUDE.md"
   '';
-  legacyPromptTree = pkgs.runCommand "claude-prior-prompt" { } ''
-    mkdir -p "$out"
-    cp ${assetTrees.priorRepo}/AGENTS.md "$out/CLAUDE.md"
-  '';
-  stylesTree =
-    assets:
-    pkgs.runCommand "claude-owned-styles" { } ''
-      mkdir -p "$out"
-      for file in ${assets}/share/gentle-ai/claude/persona-*.md ${assets}/share/gentle-ai/claude/output-style-*.md; do
-        if [ -f "$file" ]; then cp "$file" "$out/$(basename "$file")"; fi
-      done
-    '';
   desiredAssets = assetTrees.tree "claude-owned-assets" (
     (map (source: {
       target = "skills";
@@ -57,20 +49,10 @@ let
       }
       {
         target = "output-styles";
-        source = stylesTree pkgs.gentle-ai-assets;
+        source = "${pkgs.gentle-ai-assets}/share/gentle-ai/claude/output-styles";
       }
     ]
   );
-  legacyAssets = assetTrees.legacy "claude" [
-    {
-      target = "";
-      source = legacyPromptTree;
-    }
-    {
-      target = "output-styles";
-      source = stylesTree assetTrees.priorAssets;
-    }
-  ];
 
   # Merge base MCPs with extra MCPs, then filter by enabled
   allMcps = config.home.ai-assets.mcps // config.home.ai-assets.extraMcps;
@@ -115,7 +97,7 @@ let
   userAllowRules = cfg.permissions.allow or [ ];
 
   # Generate settings.json with permissions.
-  # Main model is NOT managed here — the claude-code wrapper injects --model sonnet.
+  # Main model is NOT managed here — the claude-code wrapper injects --model opus.
   rtkPreToolUse = {
     matcher = "Bash";
     hooks = [
@@ -132,6 +114,17 @@ let
     && any (hook: (hook.command or "") == "rtk hook claude") (entry.hooks or [ ])
   ) cfg.hooks.preToolUse;
   preToolUse = cfg.hooks.preToolUse ++ optional (!hasRtkPreToolUse) rtkPreToolUse;
+  gentleAi = "${pkgs.gentle-ai}/bin/gentle-ai";
+  reviewHook = "${gentleAi} review stop-hook --agent claude-code";
+  gentleHook = matcher: command: timeout: {
+    inherit matcher;
+    hooks = [
+      {
+        type = "command";
+        inherit command timeout;
+      }
+    ];
+  };
   settingsJson = pkgs.writeText "claude-settings.json" (
     builtins.toJSON {
       # Auto-approve project-scope MCPs (.mcp.json)
@@ -139,10 +132,8 @@ let
       enableAllProjectMcpServers = true;
       # Skip "are you sure?" prompt for dangerous permission modes
       skipDangerousModePermissionPrompt = true;
-      # Keep delegated subagents cheap while the main conversation runs on Sonnet.
-      env = {
-        CLAUDE_CODE_SUBAGENT_MODEL = "haiku";
-      };
+      # Managed Gentle AI style (claude/output-styles/neutral.md, `name: Neutral`).
+      outputStyle = "Neutral";
       permissions = {
         inherit (cfg.permissions)
           deny
@@ -162,6 +153,15 @@ let
       };
       hooks = {
         PreToolUse = preToolUse;
+        # Gentle AI ODD lifecycle (upstream agenthooks/claude.go); telemetry skipped.
+        Stop = [ (gentleHook "" reviewHook 60) ];
+        SessionStart = [ (gentleHook "startup|resume|clear|compact" reviewHook 30) ];
+        UserPromptSubmit = [
+          (gentleHook ""
+            "${gentleAi} skill-registry refresh --quiet --no-gitignore --cwd \"\${CLAUDE_PROJECT_DIR:-$PWD}\" || true"
+            10
+          )
+        ];
       };
       # Custom rules are injected via CLAUDE.md (agentsMdSources in ai-assets.nix).
       # No customInstructions here — this field does not exist in Claude Code's
@@ -301,7 +301,7 @@ in
       fi
 
       ${pkgs.nixos-scripts}/bin/ai-assets-reconcile "$claude_dir" \
-        ${desiredAssets} ${legacyAssets} 898d3976e8049a7238eaa7de60bff325c30d2b3d
+        ${desiredAssets} ${assetTrees.none} 898d3976e8049a7238eaa7de60bff325c30d2b3d
 
 
     '';

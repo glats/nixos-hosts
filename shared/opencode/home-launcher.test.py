@@ -84,9 +84,9 @@ for role, model in medium.items():
         assert result["oc"]["agents"][role]["model"] == expected, role
 assert set(result["selectedProfiles"].values()) <= profiles.keys()
 assert "setupOpencodePluginRuntime" in result["openfangAfter"]
-assert "opencode-no-legacy-assets" in result["openfangData"]
+assert "ai-assets-no-legacy" in result["openfangData"]
 assert "opencode-owned-assets" in result["setupData"]
-assert "opencode-no-legacy-assets" in result["setupData"], "fresh ownership must not claim legacy bytes"
+assert "ai-assets-no-legacy" in result["setupData"], "fresh ownership must not claim legacy bytes"
 assert "opencode-project()" in source
 assert "optionalString (pkgs.stdenv.isDarwin && config.home.opencode.enable)" in source
 match = re.search(r"opencode-home\(\) \(\n(.*?)\n      \)", source, re.S)

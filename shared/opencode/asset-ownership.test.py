@@ -20,7 +20,7 @@ in {{
 '''
 contexts = json.loads(subprocess.check_output(["nix", "eval", "--impure", "--json", "--expr", expression], cwd=ROOT))
 selected = {key for consumer in ("opencode", "claude", "openfang") for key in contexts[consumer]
-            if "owned-" in key or "-no-legacy-" in key or "-nixos-scripts-" in key}
+            if "owned-" in key or "-no-legacy" in key or "-nixos-scripts-" in key}
 subprocess.run(["nix", "build", "--no-link", *[key + "^out" for key in sorted(selected)]], check=True, cwd=ROOT)
 
 def output(drv):
@@ -28,9 +28,8 @@ def output(drv):
 
 for consumer in ("opencode", "claude", "openfang"):
     entries = contexts[consumer]
-    # Claude still claims exact prior bytes; OpenCode and OpenFang start fresh.
-    legacy = output(next(key for key in entries if "-gentle-ai-2.5-owned-" in key or "-opencode-no-legacy-assets" in key))
-    desired = output(next(key for key in entries if "-owned-" in key and "-gentle-ai-2.5-owned-" not in key))
+    legacy = output(next(key for key in entries if "-ai-assets-no-legacy" in key))
+    desired = output(next(key for key in entries if "-owned-" in key))
     cli = output(next(key for key in entries if "-nixos-scripts-" in key)) / "bin/ai-assets-reconcile"
     with tempfile.TemporaryDirectory(prefix=f"odd-{consumer}-") as tmp:
         target = Path(tmp) / "target"

@@ -16,11 +16,11 @@ stdenvNoCC.mkDerivation {
   installPhase = ''
     mkdir -p $out/bin
     makeBinaryWrapper ${claude-code-unwrapped}/bin/claude $out/bin/claude \
-      --add-flags "--model sonnet"
+      --add-flags "--model opus"
   '';
 
   meta = (claude-code-unwrapped.meta or { }) // {
     mainProgram = "claude";
-    description = "Claude Code with Gentle AI default model (Opus plan mode, Sonnet execution)";
+    description = "Claude Code with the Gentle AI default model (Opus)";
   };
 }

@@ -124,9 +124,6 @@ let
       }
     ]
   );
-  # The layout migration archives the previous config root, so ownership
-  # starts from a fresh tree with nothing legacy to claim.
-  noLegacy = pkgs.runCommand "opencode-no-legacy-assets" { } "mkdir $out";
   openfangAssets = assetTrees.tree "openfang-owned-skills" (
     lib.filter (entry: entry.target == "skills") entries
   );
@@ -220,7 +217,7 @@ in
         # Refuse modified/foreign collisions and symlink escapes before any
         # asset changes. Bootstrap claims only exact prior 2.5 consumer bytes.
         ${pkgs.nixos-scripts}/bin/ai-assets-reconcile "$runtime_dir" \
-          ${desiredAssets} ${noLegacy} 898d3976e8049a7238eaa7de60bff325c30d2b3d
+          ${desiredAssets} ${assetTrees.none} 898d3976e8049a7238eaa7de60bff325c30d2b3d
         # Plugin set: rtk.ts, engram.ts, skill-registry.ts,
         # opencode-review-transport.ts.
         mkdir -p "$runtime_dir/node_modules"
@@ -230,7 +227,7 @@ in
   home.activation.syncOpencodeSkillsToOpenfang = lib.mkIf openfangEnabled (
     config.lib.dag.entryAfter [ "setupOpencodePluginRuntime" ] ''
       ${pkgs.nixos-scripts}/bin/ai-assets-reconcile "${config.home.homeDirectory}/.openfang" \
-        ${openfangAssets} ${noLegacy} 898d3976e8049a7238eaa7de60bff325c30d2b3d
+        ${openfangAssets} ${assetTrees.none} 898d3976e8049a7238eaa7de60bff325c30d2b3d
     ''
   );
 }

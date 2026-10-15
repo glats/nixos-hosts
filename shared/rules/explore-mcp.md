@@ -1,7 +1,8 @@
 ## ODD Explore — MCP Research
 
-When the request involves unfamiliar or changing external technology, `gentle-ai-explore`
-should research with MCP tools before analyzing repository code. Keep the research
+When the request involves unfamiliar or changing external technology, exploration
+(the `gentle-ai-explore` agent, or whoever explores in runtimes without it) should
+research with MCP tools before analyzing repository code. Keep the research
 proportional to the request:
 
 - **context7**: fetch current library/framework documentation

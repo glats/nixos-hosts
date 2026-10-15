@@ -1,13 +1,6 @@
-# Immutable union trees and exact prior-consumer bytes for ownership bootstrap.
+# Immutable union trees for asset ownership reconciliation.
 { lib, pkgs }:
 let
-  # Historical inputs are ownership evidence, not a second active runtime.
-  # Read the prior complete source/lock so third-party and local assets cannot
-  # accidentally be bootstrapped from today's replacement bytes.
-  priorFlake = builtins.getFlake "github:glats/nixos-hosts/4750736cd68f517a871ac7448639c94546472390";
-  priorRepo = priorFlake.outPath;
-  priorPkgs = priorFlake.packages.${pkgs.stdenv.hostPlatform.system};
-  priorAssets = priorPkgs.gentle-ai-assets;
   tree =
     name: entries:
     pkgs.runCommand name { } ''
@@ -31,59 +24,7 @@ let
     '';
 in
 {
-  inherit
-    tree
-    priorRepo
-    priorAssets
-    priorPkgs
-    ;
-  legacy =
-    consumer: extra:
-    tree "gentle-ai-2.5-owned-${consumer}" (
-      [
-        {
-          target = "skills";
-          source = "${priorAssets}/share/gentle-ai/skills";
-        }
-        {
-          target = "skills";
-          source = "${priorPkgs.caveman-assets}/share/caveman/skills";
-        }
-        {
-          target = "skills";
-          source = "${priorPkgs.ponytail-assets}/share/ponytail/skills";
-        }
-        {
-          target = "skills";
-          source = "${priorPkgs.local-ai-assets}/share/local-ai/skills";
-        }
-        {
-          target = "skills";
-          source = priorRepo + "/shared/skills";
-        }
-        {
-          target = "commands";
-          source = "${priorAssets}/share/gentle-ai/${
-            if consumer == "claude" then "claude" else "opencode"
-          }/commands";
-        }
-      ]
-      ++ lib.optionals (consumer != "claude") [
-        {
-          target = "commands";
-          source = "${priorPkgs.caveman-assets}/share/caveman/commands";
-        }
-        {
-          target = "commands";
-          source = "${priorPkgs.ponytail-assets}/share/ponytail/commands";
-        }
-      ]
-      ++ lib.optionals (consumer == "claude") [
-        {
-          target = "agents";
-          source = "${priorAssets}/share/gentle-ai/claude/agents";
-        }
-      ]
-      ++ extra
-    );
+  inherit tree;
+  # Every consumer is manifest-owned on all hosts; nothing legacy to claim.
+  none = pkgs.runCommand "ai-assets-no-legacy" { } "mkdir $out";
 }
