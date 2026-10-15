@@ -42,6 +42,7 @@ buildGoModule {
     "cmd/nixos-build-all"
     "cmd/opencode-home"
     "cmd/opencode-harness-init"
+    "cmd/opencode-login-bridge"
     "cmd/sops-rotate-keys"
     "cmd/sync-opencode-remote"
     "cmd/wg-peer"

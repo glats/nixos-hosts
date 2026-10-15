@@ -74,6 +74,45 @@ func LocalURL(localPort int) string {
 	return fmt.Sprintf("http://127.0.0.1:%d/", localPort)
 }
 
+// BuildBridgeSSHArgs assembles the argument vector for a REVERSE-forward
+// bridge through an ssh_config alias (LAN-mesh members carry their own
+// User/IdentityFile there): each port binds loopback on the remote
+// (browser) host and forwards connections back to the same loopback port
+// on this host. The arg shape is:
+//
+//	ssh -N -o ExitOnForwardFailure=yes -o BatchMode=yes \
+//	    -o ConnectTimeout=5 -o ServerAliveInterval=15 -o ServerAliveCountMax=4 \
+//	    [-R 127.0.0.1:<port>:127.0.0.1:<port> ...] <alias>
+//
+// ExitOnForwardFailure turns a busy remote port into an immediate failure
+// instead of ssh's "warning: remote port forwarding failed" limp-along;
+// BatchMode keeps an unset/passphrase-gated identity a non-interactive
+// error. Explicit 127.0.0.1 bind addresses keep the remote listeners
+// loopback-only regardless of the relay's sshd GatewayPorts setting.
+func BuildBridgeSSHArgs(host string, ports []int) ([]string, error) {
+	if host == "" {
+		return nil, fmt.Errorf("bridge host is required (use an ssh_config alias, e.g. a LAN-mesh member)")
+	}
+	if len(ports) == 0 {
+		return nil, fmt.Errorf("at least one callback port is required")
+	}
+	args := []string{
+		"-N",
+		"-o", "ExitOnForwardFailure=yes",
+		"-o", "BatchMode=yes",
+		"-o", "ConnectTimeout=5",
+		"-o", "ServerAliveInterval=15",
+		"-o", "ServerAliveCountMax=4",
+	}
+	for _, port := range ports {
+		if port < 1 || port > 65535 {
+			return nil, fmt.Errorf("forward port %d out of range 1..65535", port)
+		}
+		args = append(args, "-R", fmt.Sprintf("127.0.0.1:%d:127.0.0.1:%d", port, port))
+	}
+	return append(args, host), nil
+}
+
 // ExpandHome makes a leading "~/" or "~" resolve to the current user's home
 // directory; absolute and relative paths pass through unchanged.
 func ExpandHome(path string) (string, error) {

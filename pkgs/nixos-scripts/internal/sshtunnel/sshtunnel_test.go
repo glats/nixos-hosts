@@ -44,6 +44,49 @@ func TestBuildSSHArgsPortsDiffer(t *testing.T) {
 	}
 }
 
+func TestBuildBridgeSSHArgs(t *testing.T) {
+	args, err := BuildBridgeSSHArgs("rog", []int{1455, 1457, 53692})
+	if err != nil {
+		t.Fatalf("BuildBridgeSSHArgs: %v", err)
+	}
+	want := []string{
+		"-N",
+		"-o", "ExitOnForwardFailure=yes",
+		"-o", "BatchMode=yes",
+		"-o", "ConnectTimeout=5",
+		"-o", "ServerAliveInterval=15",
+		"-o", "ServerAliveCountMax=4",
+		"-R", "127.0.0.1:1455:127.0.0.1:1455",
+		"-R", "127.0.0.1:1457:127.0.0.1:1457",
+		"-R", "127.0.0.1:53692:127.0.0.1:53692",
+		"rog",
+	}
+	if len(args) != len(want) {
+		t.Fatalf("arg count = %d, want %d: %v", len(args), len(want), args)
+	}
+	for i, v := range want {
+		if args[i] != v {
+			t.Fatalf("args[%d] = %q, want %q (full: %v)", i, args[i], v, args)
+		}
+	}
+}
+
+func TestBuildBridgeSSHArgsErrors(t *testing.T) {
+	if _, err := BuildBridgeSSHArgs("", []int{1455}); err == nil {
+		t.Fatal("empty host should error")
+	}
+	if _, err := BuildBridgeSSHArgs("rog", nil); err == nil {
+		t.Fatal("no ports should error")
+	}
+	_, badErr := BuildBridgeSSHArgs("rog", []int{1455, 0})
+	if badErr == nil || !strings.Contains(badErr.Error(), "out of range") {
+		t.Fatalf("port 0 should be out of range, got: %v", badErr)
+	}
+	if _, err := BuildBridgeSSHArgs("rog", []int{65536}); err == nil || !strings.Contains(err.Error(), "out of range") {
+		t.Fatalf("port 65536 should be out of range, got: %v", err)
+	}
+}
+
 func TestPickFreePortRequestedFree(t *testing.T) {
 	// A port just probed free must be returned unchanged with no fallback.
 	l, err := net.Listen("tcp4", "127.0.0.1:0")
