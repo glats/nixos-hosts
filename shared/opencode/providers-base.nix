@@ -268,6 +268,32 @@ let
       };
     }
     {
+      name = "anthropic-openai-opencode";
+      phases = {
+        gentle-orchestrator = "anthropic/claude-opus-5-5";
+        sdd-init = "opencode-go/deepseek-v4-pro";
+        sdd-explore = "opencode-go/glm-5.3-flash";
+        sdd-propose = "openai/gpt-6.1-sol";
+        sdd-spec = "openai/gpt-6.1-sol";
+        sdd-design = "anthropic/claude-sonnet-5-5";
+        sdd-tasks = "anthropic/claude-haiku-5-5";
+        sdd-apply = "openai/gpt-6-luna";
+        sdd-verify = "anthropic/claude-sonnet-5-5";
+        sdd-archive = "opencode-go/glm-5.3-flash";
+        sdd-onboard = "opencode-go/glm-5.3-flash";
+        jd-judge-a = "anthropic/claude-sonnet-5-5";
+        jd-judge-b = "anthropic/claude-sonnet-5-5";
+        jd-fix-agent = "opencode-go/glm-5.3-flash";
+        review-readability = "opencode-go/deepseek-v4-pro";
+        review-refuter = "opencode-go/deepseek-v4-pro";
+        review-reliability = "opencode-go/deepseek-v4-pro";
+        review-resilience = "opencode-go/deepseek-v4-pro";
+        review-risk = "opencode-go/deepseek-v4-pro";
+        review-validator = "opencode-go/deepseek-v4-pro";
+        neutral = "anthropic/claude-opus-5-5";
+      };
+    }
+    {
       name = "work-copilot-anthropic";
       phases = {
         gentle-orchestrator = "github-copilot/gpt-6.1-sol";
