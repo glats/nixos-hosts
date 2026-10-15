@@ -8,7 +8,6 @@
 {
   home.packages = [
     pkgs.nixos-scripts
-    pkgs.openspec
   ];
 
   programs.zsh = {

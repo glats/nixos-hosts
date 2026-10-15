@@ -5,7 +5,7 @@
 // Go port of the retired bin/ai-backup bash script: messages, flags,
 // env overrides, pipeline shapes and the 0/1/2/3/4 exit-code categories
 // are preserved. The embedded POSIX-sh payloads are NOT a verbatim
-// port: SDD change ai-backup-manifest-scope redesigned them around an
+// port: historical change ai-backup-manifest-scope redesigned them around an
 // explicit tar member list (no --exclude patterns), .db.snapshot
 // staging and a symlink-safe restore — each payload's comment block
 // carries the rationale.

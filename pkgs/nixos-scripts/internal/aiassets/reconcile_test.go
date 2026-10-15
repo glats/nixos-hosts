@@ -23,6 +23,28 @@ func put(t *testing.T, root, name, body string) {
 	}
 }
 
+func TestReconcileRemovesEmptyParentsOfRetiredFiles(t *testing.T) {
+	root := t.TempDir()
+	target, desired, legacy := filepath.Join(root, "target"), filepath.Join(root, "desired"), filepath.Join(root, "legacy")
+	for _, dir := range []string{target, desired, legacy} {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	put(t, legacy, "skills/sdd-explore/SKILL.md", "retired")
+	put(t, target, "skills/sdd-explore/SKILL.md", "retired")
+	put(t, target, "skills/user/SKILL.md", "keep")
+	if err := Reconcile(target, desired, legacy, "v4-tag"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(target, "skills/sdd-explore")); !os.IsNotExist(err) {
+		t.Fatalf("retired empty parent remains: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(target, "skills")); err != nil {
+		t.Fatalf("non-empty ancestor removed: %v", err)
+	}
+}
+
 func TestReconcileOwnership(t *testing.T) {
 	for _, name := range []string{"bootstrap", "foreign collision", "modified collision", "retired modified", "symlink escape", "interrupted update", "empty before-image"} {
 		t.Run(name, func(t *testing.T) {

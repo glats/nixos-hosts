@@ -23,21 +23,20 @@ This default does not restrict user-requested translations, localized content,
 or bilingual documents. Create and publish those in the language requested by
 the user, including in Confluence, Jira, and other external documentation
 systems. Do not refuse a translation or publication because of this default.
-Memory (engram), SDD (openspec), and internal agent-to-agent outputs remain in
-English as specified below.
+Memory (Engram), ODD feature documents (`odd/tasks/<feature>.md`), and internal
+agent-to-agent outputs remain in English as specified below.
 
 ## Inter-Agent Language
 
 Agent-to-agent outputs are always in English, regardless of the language of
 the user conversation: subagent reports, task prompts and handoffs, review
-findings, and SDD artifacts (explorations, proposals, specs, designs, task
-registers). These are machine-to-machine context, not conversation with the
+findings, and ODD artifacts. These are machine-to-machine context, not conversation with the
 user — the chat-replies-mirror-the-user rule does not apply to them.
 
 ## Persistent Artifacts
 
-Memory (engram) and SDD (openspec) artifacts are always written in English:
-observation titles and content, session summaries, exploration/proposal/
-spec/design/task files, archive reports. These outlive the conversation and
+Memory (Engram) and ODD artifacts are always written in English:
+observation titles and content, session summaries, feature documents, and task
+files. These outlive the conversation and
 may be read by agents in any language context — English is the stable
 storage language regardless of the language the user writes in.

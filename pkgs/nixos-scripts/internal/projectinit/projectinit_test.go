@@ -1,28 +1,26 @@
 package projectinit
 
 import (
-	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 )
 
-func TestInitCreatesEngramAndOpenSpec(t *testing.T) {
+func TestInitCreatesOnlyEngram(t *testing.T) {
 	dir := t.TempDir()
-	called := false
-	result, err := Init(dir, Options{Name: "example", OpenSpec: func(path string) error {
-		called = true
-		return os.MkdirAll(filepath.Join(path, "openspec"), 0o755)
-	}})
+	result, err := Init(dir, Options{Name: "example"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if result.Git || result.Engram != "created" || result.OpenSpec != "created" || !called {
-		t.Fatalf("unexpected result: %+v, called=%v", result, called)
+	if result.Git || result.Engram != "created" {
+		t.Fatalf("unexpected result: %+v", result)
 	}
 	if !exists(filepath.Join(dir, ".engram", "config.json")) {
 		t.Fatal("Engram config was not created")
+	}
+	if exists(filepath.Join(dir, "openspec")) {
+		t.Fatal("OpenSpec state was created")
 	}
 }
 
@@ -34,7 +32,7 @@ func TestInitPreservesDifferentProjectWithoutForce(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, ".engram", "config.json"), []byte(`{"project_name":"other"}`), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Init(dir, Options{Name: "example", NoOpenSpec: true}); err == nil {
+	if _, err := Init(dir, Options{Name: "example"}); err == nil {
 		t.Fatal("Init accepted a conflicting config")
 	}
 }
@@ -55,29 +53,11 @@ func TestHasGitRecognizesWorktreeMarker(t *testing.T) {
 
 func TestInitDryRunDoesNotWrite(t *testing.T) {
 	dir := t.TempDir()
-	called := false
-	if _, err := Init(dir, Options{Name: "example", DryRun: true, OpenSpec: func(string) error {
-		called = true
-		return nil
-	}}); err != nil {
+	if _, err := Init(dir, Options{Name: "example", DryRun: true}); err != nil {
 		t.Fatal(err)
 	}
-	if called || exists(filepath.Join(dir, ".engram", "config.json")) {
-		t.Fatal("dry-run changed the project")
-	}
-}
-
-func TestInitDoesNotWriteEngramWhenOpenSpecFails(t *testing.T) {
-	dir := t.TempDir()
-
-	_, err := Init(dir, Options{Name: "example", OpenSpec: func(string) error {
-		return errors.New("OpenSpec failed")
-	}})
-	if err == nil || !strings.Contains(err.Error(), "initialize OpenSpec") {
-		t.Fatalf("Init error = %v, want OpenSpec initialization error", err)
-	}
 	if exists(filepath.Join(dir, ".engram", "config.json")) {
-		t.Fatal("Engram config was created after OpenSpec failed")
+		t.Fatal("dry-run changed the project")
 	}
 }
 
@@ -104,7 +84,7 @@ func TestInitDetectsGitDirectoryFromRelativeTarget(t *testing.T) {
 		}
 	})
 
-	result, err := Init("target", Options{NoOpenSpec: true})
+	result, err := Init("target", Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -124,7 +104,7 @@ func TestInitDerivesNameFromDirectoryBasename(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := Init(dir, Options{NoOpenSpec: true}); err != nil {
+	if _, err := Init(dir, Options{}); err != nil {
 		t.Fatal(err)
 	}
 	data, err := os.ReadFile(filepath.Join(dir, ".engram", "config.json"))
@@ -140,7 +120,7 @@ func TestInitRejectsMissingDirectoryWithoutWrites(t *testing.T) {
 	parent := t.TempDir()
 	missing := filepath.Join(parent, "missing")
 
-	if _, err := Init(missing, Options{NoOpenSpec: true}); err == nil {
+	if _, err := Init(missing, Options{}); err == nil {
 		t.Fatal("Init accepted a missing directory")
 	}
 	if exists(missing) || exists(filepath.Join(parent, ".engram", "config.json")) {
@@ -159,7 +139,7 @@ func TestInitReportsCurrentMatchingProjectWithoutWrites(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	result, err := Init(dir, Options{Name: "example", NoOpenSpec: true})
+	result, err := Init(dir, Options{Name: "example"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -185,7 +165,7 @@ func TestInitForceOverwritesConflictingProjectWithExpectedModeAndNewline(t *test
 		t.Fatal(err)
 	}
 
-	result, err := Init(dir, Options{Name: "example", Force: true, NoOpenSpec: true})
+	result, err := Init(dir, Options{Name: "example", Force: true})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -208,45 +188,6 @@ func TestInitForceOverwritesConflictingProjectWithExpectedModeAndNewline(t *test
 	}
 }
 
-func TestInitNoOpenSpecSkipsInitializer(t *testing.T) {
-	dir := t.TempDir()
-	called := false
-
-	result, err := Init(dir, Options{NoOpenSpec: true, OpenSpec: func(string) error {
-		called = true
-		return nil
-	}})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if result.OpenSpec != "skipped" || called || exists(filepath.Join(dir, "openspec")) {
-		t.Fatalf("unexpected result: %+v, called=%v", result, called)
-	}
-}
-
-func TestInitSkipsOpenSpecWhenConfigurationExists(t *testing.T) {
-	dir := t.TempDir()
-	configPath := filepath.Join(dir, "openspec", "config.yaml")
-	if err := os.MkdirAll(filepath.Dir(configPath), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(configPath, []byte("schema: 1\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	called := false
-
-	result, err := Init(dir, Options{OpenSpec: func(string) error {
-		called = true
-		return nil
-	}})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if result.OpenSpec != "current" || called {
-		t.Fatalf("unexpected result: %+v, called=%v", result, called)
-	}
-}
-
 func TestInitRejectsMalformedAndUnreadableEngramConfig(t *testing.T) {
 	t.Run("malformed", func(t *testing.T) {
 		dir := t.TempDir()
@@ -258,7 +199,7 @@ func TestInitRejectsMalformedAndUnreadableEngramConfig(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if _, err := Init(dir, Options{NoOpenSpec: true}); err == nil || !strings.Contains(err.Error(), "parse Engram configuration") {
+		if _, err := Init(dir, Options{}); err == nil || !strings.Contains(err.Error(), "parse Engram configuration") {
 			t.Fatalf("Init error = %v, want parse error", err)
 		}
 	})
@@ -277,7 +218,7 @@ func TestInitRejectsMalformedAndUnreadableEngramConfig(t *testing.T) {
 		}
 		t.Cleanup(func() { _ = os.Chmod(configPath, 0o644) })
 
-		if _, err := Init(dir, Options{NoOpenSpec: true}); err == nil || !strings.Contains(err.Error(), "read Engram configuration") {
+		if _, err := Init(dir, Options{}); err == nil || !strings.Contains(err.Error(), "read Engram configuration") {
 			t.Fatalf("Init error = %v, want read error", err)
 		}
 	})

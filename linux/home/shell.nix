@@ -9,7 +9,6 @@
   home.packages = [
     pkgs.nixos-scripts
     pkgs.qrencode
-    pkgs.openspec
   ];
 
   programs.zsh = {

@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -327,6 +328,14 @@ func reconcile(target, desired, legacy, revision string, afterJournal func() err
 		}
 		if err := os.Remove(path); err != nil {
 			return err
+		}
+		for dir := filepath.Dir(path); dir != target; dir = filepath.Dir(dir) {
+			if err := os.Remove(dir); err != nil {
+				if errors.Is(err, os.ErrNotExist) || errors.Is(err, syscall.ENOTEMPTY) || errors.Is(err, syscall.EEXIST) {
+					break
+				}
+				return err
+			}
 		}
 	}
 	// Close retry authority only after the generation completed. Original

@@ -18,7 +18,7 @@ Load when the user asks to fit, audit, review, update, mold, or check OpenCode
 provider models or ODD/review role routing. Also load before any change that
 touches `shared/opencode/providers-base.nix`.
 
-The active Gentle AI v4 graph uses ODD roles, not executable SDD phases
+The active Gentle AI v4 graph uses ODD roles, not ODD roles
 (orchestrator coordinates, worker implements, explore maps, verify checks). This skill
 provides the evidence framework to find which model best fits each role and
 to keep the routing lists converging toward stable providers with complete
@@ -127,8 +127,8 @@ Read the actual rendered graph and profile assignments. Known roles:
 `gentle-orchestrator` (coordination and judgment), `gentle-ai-explore` (read-only
 mapping), `gentle-ai-worker` (bounded implementation), `gentle-ai-verify`
 (read-only checking), `jd-*` (independent judgment/fix roles), and `review-*`
-(Go-bound review actors). Do not recreate retired SDD phase agents or aliases.
-Profiles in `providers-base.nix` are flat: each `phases` attrset has exactly
+(Go-bound review actors). Route work through ODD roles: gentle-orchestrator, gentle-ai-explore, gentle-ai-worker, gentle-ai-verify, jd-* and review-*.
+Profiles in `providers-base.nix` are flat: each `roles` attrset has exactly
 these 14 role keys, with no remap layer: `gentle-orchestrator`,
 `gentle-ai-explore`, `gentle-ai-worker`, `gentle-ai-verify`, `jd-judge-a`,
 `jd-judge-b`, `jd-fix-agent`, `review-readability`, `review-refuter`,
@@ -146,8 +146,8 @@ or delivery permission.
   weak 8-needle retrieval is disqualified for explore even if cheap).
 - Orchestrator → request headroom/quota, structured tool calls, latency —
   NOT raw reasoning; the best reasoner is often the wrong router.
-- Subagent phases → instruction-following, context handling.
-- May-loop phases weight cost-per-loop; once-phases tolerate cost.
+- Subagent roles → instruction-following, context handling.
+- Looping roles weight cost-per-loop; one-shot roles tolerate cost.
 
 ### Step C: Evaluate candidates
 
@@ -203,13 +203,13 @@ thrashing signals (a cheap tier that burns 2-3x tokens to fail is not cheap).
 This skill biases the agent's decisions as follows:
 
 1. **Stability > peak quality.** A slightly weaker model that never truncates
-   tool calls beats a brilliant flaky one in looping phases (orchestrator,
-   apply). Reserve strong-but-risky models for once-shot judgment phases.
+   tool calls beats a brilliant flaky one in looping roles (gentle-orchestrator,
+   gentle-ai-worker). Reserve strong-but-risky models for once-shot review roles.
 2. **No citation, no change.** Assignments without a current data point are
    reverted, not debated. Vendor benchmarks are cross-checked against
    independent data and watched for thrashing.
-3. **Cheap volume, scarce judgment.** Tool-loop and mechanical phases take the
-   cheapest tier that passes the gates; quota reserved for judgment phases.
+3. **Cheap volume, scarce judgment.** Tool-loop and worker and verification roles take the
+   cheapest tier that passes the gates; quota reserved for review roles.
    Moving a volume phase onto scarce quota needs explicit cost justification.
 4. **Minimal, reversible changes.** One role per re-fit; dated comments;
    never delete a working annotation without replacing it with fresh evidence.

@@ -1,4 +1,4 @@
-// Package projectinit creates the local state required for an Engram/OpenSpec project.
+// Package projectinit creates the local state required for an Engram project.
 package projectinit
 
 import (
@@ -13,18 +13,15 @@ import (
 var namePattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]*$`)
 
 type Options struct {
-	Name       string
-	DryRun     bool
-	Force      bool
-	OpenSpec   func(string) error
-	NoOpenSpec bool
+	Name   string
+	DryRun bool
+	Force  bool
 }
 
 type Result struct {
-	Path     string
-	Git      bool
-	Engram   string
-	OpenSpec string
+	Path   string
+	Git    bool
+	Engram string
 }
 
 func Init(path string, options Options) (Result, error) {
@@ -54,20 +51,6 @@ func Init(path string, options Options) (Result, error) {
 	if state == "conflict" && !options.Force {
 		return Result{}, fmt.Errorf("%s already identifies a different project; use --force to replace it", configPath)
 	}
-	openSpec := "current"
-	if options.NoOpenSpec {
-		openSpec = "skipped"
-	} else if !exists(filepath.Join(path, "openspec", "config.yaml")) {
-		openSpec = "created"
-	}
-	if openSpec == "created" && !options.DryRun {
-		if options.OpenSpec == nil {
-			return Result{}, errors.New("OpenSpec initializer is not configured")
-		}
-		if err := options.OpenSpec(path); err != nil {
-			return Result{}, fmt.Errorf("initialize OpenSpec: %w", err)
-		}
-	}
 	if state != "current" && !options.DryRun {
 		if err := writeEngramConfig(configPath, options.Name); err != nil {
 			return Result{}, err
@@ -75,10 +58,9 @@ func Init(path string, options Options) (Result, error) {
 	}
 
 	return Result{
-		Path:     path,
-		Git:      hasGit(path),
-		Engram:   state,
-		OpenSpec: openSpec,
+		Path:   path,
+		Git:    hasGit(path),
+		Engram: state,
 	}, nil
 }
 

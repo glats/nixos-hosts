@@ -1,14 +1,12 @@
-## Explore Phase — MCP Research (MANDATORY)
+## ODD Explore — MCP Research
 
-During `sdd-explore`, the sub-agent MUST use MCP tools to research the topic
-before analyzing the codebase:
+When the request involves unfamiliar or changing external technology, `gentle-ai-explore`
+should research with MCP tools before analyzing repository code. Keep the research
+proportional to the request:
 
 - **context7**: fetch current library/framework documentation
 - **github**: search for prior art, similar implementations, issues
 - **exa**: web search for blog posts, best practices, migration guides
 
-Do NOT guess about APIs, versions, or best practices. Verify with MCP tools first.
-Read code second. Then synthesize findings into the exploration.
-
-This applies regardless of whether the topic seems familiar or well-known.
-Documentation changes faster than training data.
+Verify APIs and versions with tools rather than relying on memory. Read code
+second, then synthesize the findings for the ODD Explore step.

@@ -16,7 +16,7 @@ let
         };
       };
       models = {
-        # RISKY: glm-5.1 "gives up too quickly" on failures. OK for spec, not for apply/verify.
+        # RISKY: glm-5.1 "gives up too quickly" on failures. OK for exploration, not for worker/verify.
         "z-ai/glm-5.1" = {
           name = "GLM 5.1";
         };
@@ -33,7 +33,7 @@ let
         };
         # RISKY on NIM: deepseek-v4-pro — tool-call streaming may not continue in agent workflows
         # (NVIDIA forum Apr 27), requires chat_template_kwargs or hangs (opencode#24264).
-        # Use nemotron-3-ultra for orchestration/reasoning phases instead.
+        # Use nemotron-3-ultra for orchestration and judgment roles instead.
         "deepseek-ai/deepseek-v4-pro" = {
           name = "DeepSeek V4 Pro";
         };
@@ -102,7 +102,7 @@ let
   # OpenAI uses native HTTP Responses below, avoiding the WebSocket route
   # implicated in #53762/#53896; long-run HTTP reliability remains unmeasured.
   # Cache/compaction cost risk remains (#51109/#52761); no invented TTL option.
-  anthropicOpenaiPhases = {
+  anthropicOpenaiRoles = {
     gentle-orchestrator = "anthropic/claude-opus-5-5";
     # Sol is a worker, not the final authority on architecture or acceptance.
     gentle-ai-explore = "openai/gpt-6.1-sol";
@@ -127,13 +127,13 @@ let
   # CANONICAL: evidence-backed, manually-selected profiles.
   # Order here is a structural guarantee (canonicalProviders is
   # concatenated before legacyProviders below), not a comment
-  # convention — see openspec/changes/evidence-based-opencode-routing.
+  # convention — see historical provider-routing decision.
   # ============================================================
   canonicalProviders = [
     {
       name = "openai-anthropic-go";
       # Fit 2026-10-08: preserve medium's Opus judgment and OpenAI workers;
-      # move only init/tasks/archive onto a separate Go allowance.
+      # move only worker, verifier, and onboarding roles onto a separate Go allowance.
       # Sources: opencode.ai/v2/docs/console/go (GPT 6 Luna, native Responses,
       # $15 monthly model allowance on Go, $60 on Go Plus) and
       # learn.chatgpt.com/docs/models (Luna for focused/repeatable work).
@@ -144,13 +144,13 @@ let
       # Catalog availability is not an entitlement or runtime reliability test.
       # Keep existing credentials and two-provider rollback profiles; do not
       # enable Console "Use balance" or add an automatic paid fallback.
-      phases = anthropicOpenaiPhases;
+      roles = anthropicOpenaiRoles;
     }
     {
       name = "openai-anthropic-light";
       # Same Opus judgment as medium; use only for bounded implementation.
       # Luna is recommended for focused edits: learn.chatgpt.com/docs/models.
-      phases = anthropicOpenaiPhases // {
+      roles = anthropicOpenaiRoles // {
         gentle-ai-worker = "openai/gpt-6-luna";
         jd-fix-agent = "openai/gpt-6-luna";
       };
@@ -158,13 +158,13 @@ let
     {
       name = "openai-anthropic-medium";
       # Default balance: OpenAI tool loops, Opus decisions and final gate.
-      phases = anthropicOpenaiPhases;
+      roles = anthropicOpenaiRoles;
     }
     {
       name = "openai-anthropic-full";
       # Explicit high-consumption option, not the default: move the hardest
       # workers to Opus's documented long-running agentic path.
-      phases = anthropicOpenaiPhases // {
+      roles = anthropicOpenaiRoles // {
         gentle-ai-explore = "anthropic/claude-opus-5-5";
         gentle-ai-worker = "anthropic/claude-opus-5-5";
         jd-fix-agent = "anthropic/claude-opus-5-5";
@@ -176,13 +176,13 @@ let
       # MiMo is deprecated in https://models.opencode.ai/api.json;
       # OpenCode v2.0.14 models-dev loader filters deprecated entries.
       name = "work-copilot-anthropic";
-      phases = {
+      roles = {
         gentle-orchestrator = "github-copilot/gpt-6.1-sol";
         gentle-ai-explore = "anthropic/claude-sonnet-5-5";
-        # Re-fit 2026-09-23: apply is the only may-loop phase in this profile,
+        # Re-fit 2026-09-23: worker is the only looping role in this profile,
         # so it stays on the already-routed Copilot Sonnet 5.5 workforce.
         # Re-fit 2026-10-07: native judgment gates move from Sonnet 4.6 ($3/$15)
-        # to Sonnet 5.5 ($2/$10); native archive moves to Haiku 5.5 (day-0).
+        # to Sonnet 5.5 ($2/$10); native verification moves to Haiku 5.5 (day-0).
         # Sources: docs.github.com/copilot/reference/copilot-billing/models-and-pricing
         # and docs.anthropic.com/en/docs/about-claude/pricing.
         gentle-ai-worker = "github-copilot/claude-sonnet-5.5";
@@ -203,7 +203,7 @@ let
     }
     {
       name = "anthropic-openai-opencode";
-      phases = {
+      roles = {
         gentle-orchestrator = "anthropic/claude-opus-5-5";
         gentle-ai-explore = "opencode-go/glm-5.3-flash";
         gentle-ai-worker = "openai/gpt-6-luna";
@@ -222,7 +222,7 @@ let
     }
     {
       name = "work-copilot-anthropic-light";
-      phases = {
+      roles = {
         gentle-orchestrator = "github-copilot/gpt-6.1-sol";
         gentle-ai-explore = "anthropic/claude-sonnet-5-5";
         gentle-ai-worker = "github-copilot/claude-sonnet-5.5";
@@ -244,11 +244,11 @@ let
       # Re-fit 2026-10-07: Claude 5.5 family. Sonnet 5.5 keeps Sonnet 5 pricing
       # ($2/$10 per MTok) with 30%+ faster output and up to 30% less per task.
       # Haiku 5.5 ($0.10/$0.50 for prompts under 100K tokens, 1M ctx, 128K out)
-      # takes the mechanical phases. Haiku 5.5 is day-0 (released 2026-10-07):
-      # if init/tasks/archive/onboard regress, roll back to claude-haiku-4-5.
+      # takes the worker and verification roles. Haiku 5.5 is day-0 (released 2026-10-07):
+      # if worker/verify/onboarding regress, roll back to claude-haiku-4-5.
       # Sources: anthropic.com/claude-sonnet-5-5, anthropic.com/claude-haiku-5-5,
       # platform.claude.com/docs/en/models/haiku-5-5/overview.
-      phases = {
+      roles = {
         # Opus 5.5 orchestrator is a deliberate choice for this tier. Known issue:
         # opencode#52735 (native Opus 5.5 may store pre-tool-call user text as a
         # collapsed reasoning part). Rollback: claude-sonnet-5-5.
@@ -272,10 +272,10 @@ let
       name = "anthropic-medium";
       # Re-fit 2026-10-07: Opus 5.5 ($4/$20 per MTok, cheaper than Opus 5 at
       # $5/$25) handles orchestration and once-shot proposal/architecture judgment.
-      # Sonnet 5.5 covers work and review phases, and Haiku 5.5 (day-0) covers
-      # init and archive. Fable 5.1 ($10/$50) is still not cost-justified.
+      # Sonnet 5.5 covers worker and review roles, and Haiku 5.5 (day-0) covers
+      # exploration and onboarding. Fable 5.1 ($10/$50) is still not cost-justified.
       # Source: platform.claude.com/docs/en/models/sonnet-5-5/overview (model table).
-      phases = {
+      roles = {
         # Opus 5.5: see opencode#52735 (pre-tool-call text lands in reasoning).
         gentle-orchestrator = "anthropic/claude-opus-5-5";
         gentle-ai-explore = "anthropic/claude-sonnet-5-5";
@@ -297,11 +297,11 @@ let
       name = "anthropic-full";
       # Re-fit 2026-10-07: anthropic-medium plus Opus 5.5 on every once-shot
       # judgment gate (verify, judgment-day judges, review lenses), where a missed
-      # defect costs a full apply/verify re-loop. Looping phases (apply,
+      # defect costs a full worker/verify re-loop. Looping roles (worker,
       # jd-fix-agent) stay on Sonnet 5.5 for cost per loop. Fable 5.1 costs 2.5x
       # Opus 5.5 and is reserved for demonstrated Opus capability gaps.
       # Sources: anthropic.com/claude-opus-5-5, platform.claude.com/docs/en/models/sonnet-5-5/overview.
-      phases = {
+      roles = {
         # Opus 5.5: see opencode#52735 (pre-tool-call text lands in reasoning).
         gentle-orchestrator = "anthropic/claude-opus-5-5";
         gentle-ai-explore = "anthropic/claude-sonnet-5-5";
@@ -326,7 +326,7 @@ let
       # cheaper, 1M ctx). Haiku stays on 4.5 here: Haiku 5.5 is day-0 and this
       # profile is defined by proven stability; promote it after a clean run elsewhere.
       # no cross-provider indirection — Opus reserved for the heaviest judgment phase.
-      phases = {
+      roles = {
         # claude-opus-5-5: unified orchestrator across Anthropic profiles (2026-10-07, user request);
         # no open tool-call issue on native OAuth. Known: opencode#52735 (display only).
         gentle-orchestrator = "anthropic/claude-opus-5-5";
@@ -349,8 +349,8 @@ let
       name = "opencode-high";
       # Evidence: OpenCode Go tier — kimi-k3 orchestrator (best model on the Go
       # catalog, amended 2026-09-10, was glm-5.3-flash) and deepseek-v4-pro/flash
-      # for the tool-loop-heavy phases, matching `opencode-go-*`/`openai-opencode-balanced` precedent.
-      phases = {
+      # for the tool-intensive roles, matching `opencode-go-*`/`openai-opencode-balanced` precedent.
+      roles = {
         # kimi-k3: agent-first generation (long-horizon agent work; tools +
         # reasoning + structured). Rollback: glm-5.3-flash (1M ctx, structured
         # tool calls, highest Go request headroom).
@@ -365,8 +365,8 @@ let
     {
       name = "quality";
       # Evidence: Opus-heavy Anthropic tier for maximum judgment quality; only
-      # mechanical phases (init/tasks/archive/onboard) step down to Sonnet.
-      phases = {
+      # worker and verification roles (explore/verify/onboarding) step down to Sonnet.
+      roles = {
         # claude-opus-5-5: strongest non-Fable reasoning for orchestration judgment.
         gentle-orchestrator = "anthropic/claude-opus-5-5";
         gentle-ai-explore = "anthropic/claude-opus-5-5";
@@ -389,7 +389,7 @@ let
       # Evidence: intentionally spans 4 provider prefixes (anthropic, github-copilot,
       # opencode-go, openai) so review/verification isn't anchored to one vendor's
       # blind spots — no BROKEN-annotated models used.
-      phases = {
+      roles = {
         # anthropic/claude-opus-5-5: unified orchestrator across Anthropic profiles (2026-10-07).
         gentle-orchestrator = "anthropic/claude-opus-5-5";
         gentle-ai-explore = "opencode-go/deepseek-v4-pro";
@@ -413,9 +413,9 @@ let
       # OpenAI for architecture, implementation, and acceptance judgment.
       # Sources: https://opencode.ai/docs/go/ (Go request headroom, 0-day
       # retention) and https://opencode.ai/docs/zen/ (GPT 5.6 pricing/models).
-      phases = {
+      roles = {
         # GPT 5.6 Terra: quality anchor for the coordinating agent; the
-        # worker phases below keep the OpenCode Go request headroom.
+        # worker roles below keep the OpenCode Go request headroom.
         gentle-orchestrator = "openai/gpt-6.1-sol";
         # DeepSeek V4 Pro: the larger Go worker for repository/MCP research.
         gentle-ai-explore = "opencode-go/deepseek-v4-pro";
@@ -437,7 +437,7 @@ let
     }
     {
       name = "openai-opencode-heavy";
-      phases = {
+      roles = {
         gentle-orchestrator = "openai/gpt-6.1-sol";
         gentle-ai-explore = "opencode-go/deepseek-v4-pro";
         gentle-ai-worker = "openai/gpt-6.1-sol";
@@ -456,7 +456,7 @@ let
     }
     {
       name = "openai-opencode-balanced";
-      phases = {
+      roles = {
         gentle-orchestrator = "openai/gpt-6.1-sol";
         gentle-ai-explore = "opencode-go/deepseek-v4-pro";
         gentle-ai-worker = "openai/gpt-6-luna";
@@ -475,7 +475,7 @@ let
     }
     {
       name = "opencode-go-openai";
-      phases = {
+      roles = {
         gentle-orchestrator = "opencode-go/kimi-k3";
         gentle-ai-explore = "openai/gpt-6.1-sol";
         gentle-ai-worker = "openai/gpt-5.6-luna";
@@ -494,7 +494,7 @@ let
     }
     {
       name = "openai-full";
-      phases = {
+      roles = {
         gentle-orchestrator = "openai/gpt-5.6-sol";
         gentle-ai-explore = "openai/gpt-5.6-sol";
         gentle-ai-worker = "openai/gpt-5.6-luna";
@@ -513,9 +513,9 @@ let
     }
     {
       name = "openai-medium";
-      # Balanced OpenAI tier: Terra for normal SDD judgment and tool work;
-      # Luna for bounded helpers and mechanical apply loops.
-      phases = {
+      # Balanced OpenAI tier: Terra for normal judgment and tool work;
+      # Luna for bounded helper work and mechanical worker loops.
+      roles = {
         gentle-orchestrator = "openai/gpt-6.1-sol";
         gentle-ai-explore = "openai/gpt-6.1-sol";
         gentle-ai-worker = "openai/gpt-5.6-luna";
@@ -535,8 +535,8 @@ let
     {
       name = "openai-light";
       # Luna handles cheap, bounded work. Terra protects the judgment,
-      # retrieval, and acceptance phases where Luna is a weaker fit.
-      phases = {
+      # retrieval and acceptance roles where Luna is a weaker fit.
+      roles = {
         gentle-orchestrator = "openai/gpt-5.6-luna";
         gentle-ai-explore = "openai/gpt-6.1-sol";
         gentle-ai-worker = "openai/gpt-5.6-luna";
@@ -564,7 +564,7 @@ let
     # no Copilot entitlement.
     {
       name = "github-copilot-light";
-      phases = {
+      roles = {
         gentle-orchestrator = "github-copilot/gpt-5.4-mini";
         gentle-ai-explore = "github-copilot/gpt-5.4-mini";
         gentle-ai-worker = "github-copilot/gpt-5.3-codex";
@@ -583,7 +583,7 @@ let
     }
     {
       name = "github-copilot-medium";
-      phases = {
+      roles = {
         gentle-orchestrator = "github-copilot/gpt-6.1-sol";
         gentle-ai-explore = "github-copilot/claude-sonnet-5.5";
         gentle-ai-worker = "github-copilot/gpt-5.3-codex";
@@ -602,7 +602,7 @@ let
     }
     {
       name = "github-copilot-full";
-      phases = {
+      roles = {
         gentle-orchestrator = "github-copilot/gpt-6-astra";
         gentle-ai-explore = "github-copilot/gpt-6-astra";
         gentle-ai-worker = "github-copilot/gpt-5.3-codex";
@@ -627,7 +627,7 @@ let
   legacyProviders = [
     {
       name = "copilot-custom";
-      phases = {
+      roles = {
         gentle-orchestrator = "github-copilot/gpt-5.6-luna";
         gentle-ai-explore = "github-copilot/gpt-6.1-sol";
         gentle-ai-worker = "github-copilot/claude-sonnet-5.5";
@@ -646,7 +646,7 @@ let
     }
     {
       name = "nvidia";
-      phases = {
+      roles = {
         gentle-orchestrator = "nvidia/nvidia/nemotron-3-ultra-550b-a55b";
         gentle-ai-explore = "nvidia/nvidia/nemotron-3-ultra-550b-a55b";
         gentle-ai-worker = "nvidia/minimaxai/minimax-m3";
@@ -671,14 +671,14 @@ let
     # Verify with `opencode run -m github-copilot/<model> "hi"` if models fail to respond.
     {
       name = "github-copilot";
-      phases = {
+      roles = {
         # gpt-5.4: fast execution + tool orchestration (binaryverseai), 400K ctx
         gentle-orchestrator = "github-copilot/gpt-5.4";
         # gpt-5.4: 400K ctx for large repo exploration, fast tool calls
         gentle-ai-explore = "github-copilot/gpt-5.4";
         # gpt-5.3-codex: precision coding + terminal workflows (Stefan Stranger), 400K ctx
         gentle-ai-worker = "github-copilot/gpt-5.3-codex";
-        # claude-sonnet-4.6: better code-quality recall (0.71) than gpt-5.4 for spec-match
+        # claude-sonnet-4.6: better code-quality recall (0.71) than gpt-5.4 for verification fit
         gentle-ai-verify = "github-copilot/claude-sonnet-4.6";
         # claude-sonnet-4.6: balanced default — cross-family from orchestrator (Rubber Duck principle)
         jd-judge-a = "github-copilot/claude-sonnet-4.6";
@@ -695,7 +695,7 @@ let
     }
     {
       name = "github-copilot-safe";
-      phases = {
+      roles = {
         # claude-sonnet-5: GitHub positions it for general-purpose coding and agent tasks.
         # Safer update than 5.6 because there are current 5.6 access reports and an open
         # OpenCode subagent model-selection bug (#36250) not tied to Sonnet 5 specifically.
@@ -720,7 +720,7 @@ let
     }
     {
       name = "github-copilot-pro";
-      phases = {
+      roles = {
         # claude-sonnet-5: GitHub positions it for general-purpose coding and agent tasks.
         # Safer update than 5.6 because there are current 5.6 access reports and an open
         # OpenCode subagent model-selection bug (#36250) not tied to Sonnet 5 specifically.
@@ -745,7 +745,7 @@ let
     }
     {
       name = "github-copilot-experimental";
-      phases = {
+      roles = {
         # EXPERIMENTAL / ACCOUNT-DEPENDENT:
         # GitHub documents GPT-5.6 Luna/Sol/Terra as supported, but OpenCode has reports of
         # 403/model access issues for some Copilot integrations/accounts (#36575, #38722).
@@ -760,7 +760,7 @@ let
     }
     {
       name = "opencode-go-full";
-      phases = {
+      roles = {
         gentle-orchestrator = "opencode-go/deepseek-v4-pro";
         gentle-ai-explore = "opencode-go/deepseek-v4-pro";
         gentle-ai-worker = "opencode-go/deepseek-v4-pro";
@@ -770,7 +770,7 @@ let
     }
     {
       name = "opencode-go-medium";
-      phases = {
+      roles = {
         gentle-orchestrator = "opencode-go/deepseek-v4-pro";
         gentle-ai-explore = "opencode-go/deepseek-v4-pro";
         # minimax-m3: 1M ctx (kimi-k2.7-code solo 262K) — apply grandes no explotan. Messages transport, sin issues frescos.
@@ -781,7 +781,7 @@ let
     }
     {
       name = "opencode-go-light";
-      phases = {
+      roles = {
         gentle-orchestrator = "opencode-go/deepseek-v4-flash";
         gentle-ai-explore = "opencode-go/deepseek-v4-pro";
         gentle-ai-worker = "opencode-go/deepseek-v4-flash";
@@ -806,8 +806,7 @@ let
     assert _assertUniqueProviderNames;
     providers
   );
-  getModelForPhase =
-    phase: provider: if provider == null then null else provider.phases.${phase} or null;
+  getModelForRole = role: provider: if provider == null then null else provider.roles.${role} or null;
 
 in
 {
@@ -817,6 +816,6 @@ in
     providers
     activeProviderName
     activeProvider
-    getModelForPhase
+    getModelForRole
     ;
 }

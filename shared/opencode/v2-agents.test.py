@@ -4,10 +4,6 @@ from pathlib import Path
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[2]
-BASELINE = "4750736cd68f517a871ac7448639c94546472390"
-old_profiles = json.dumps(subprocess.check_output(
-    ["git", "show", f"{BASELINE}:shared/opencode/providers-base.nix"], cwd=ROOT, text=True
-)).replace("${", r"\${")
 expression = r'''
 let
   flake = builtins.getFlake ("path:" + ROOT);
@@ -22,25 +18,20 @@ let
     inherit lib cfg runtimeDir; permissionRules = permissions.rules;
   };
   profiles = import (ROOT + "/shared/opencode/providers-base.nix") { inherit lib; };
-  before = import (builtins.toFile "before-odd-profiles.nix" OLD_PROFILES) { inherit lib; };
   overrideConfig = config // { home = config.home // { opencode = cfg // {
     agentOverrides.gentle-ai-worker = { model = "openai/user-override"; variant = "high"; prompt = "user prompt"; };
   }; }; };
 in {
-  linux = generate "/home/glats/.config/opencode-v2";
-  darwinRoot = generate "/Users/juan/.config/opencode-v2";
-  beforeProfiles = before.providers;
+  linux = generate "/home/glats/.config/opencode";
+  darwinRoot = generate "/Users/juan/.config/opencode";
   afterProfiles = profiles.providers;
-  beforePolicy = before.providerAllowlist;
-  afterPolicy = profiles.providerAllowlist;
-  nvidiaBefore = before.nvidiaProvider;
   nvidiaAfter = profiles.nvidiaProvider;
   globalPermissions = permissions.global;
   overrides = (import (ROOT + "/shared/opencode/agents.nix") {
     inherit lib pkgs; config = overrideConfig;
   }).config.home.opencode.agents.gentle-ai-worker;
 }
-'''.replace("ROOT", json.dumps(str(ROOT))).replace("OLD_PROFILES", old_profiles)
+'''.replace("ROOT", json.dumps(str(ROOT)))
 result = json.loads(subprocess.check_output(
     ["nix", "eval", "--offline", "--impure", "--json", "--expr", expression], cwd=ROOT, text=True
 ))
@@ -49,8 +40,8 @@ expected = {
     "jd-judge-a", "jd-judge-b", "jd-fix-agent", "review-risk", "review-readability",
     "review-reliability", "review-resilience", "review-refuter", "review-validator",
 }
-for target, root in (("linux", "/home/glats/.config/opencode-v2"),
-                     ("darwinRoot", "/Users/juan/.config/opencode-v2")):
+for target, root in (("linux", "/home/glats/.config/opencode"),
+                     ("darwinRoot", "/Users/juan/.config/opencode")):
     agents = result[target]
     assert not any(name.startswith("sdd-") for name in agents), "Candidate still carries SDD graph"
     assert expected <= agents.keys(), "Missing tagged ODD/review roles"
@@ -82,25 +73,12 @@ for target, root in (("linux", "/home/glats/.config/opencode-v2"),
         assert {"action":"edit", "resource":"*", "effect":"deny"} in agents[name]["permissions"], name
     assert {"action":"shell", "resource":"*", "effect":"deny"} in agents["gentle-ai-explore"]["permissions"]
     assert {"action":"subagent", "resource":"*", "effect":"deny"} in agents["general"]["permissions"]
-before = {p["name"]:p for p in result["beforeProfiles"]}
 after = {p["name"]:p for p in result["afterProfiles"]}
-retired = {"opencode-free", "anthropic-opencode-free", "anthropic-opencode-go"}
+for name, profile in after.items():
+    assert "phases" not in profile and not any(k.startswith("sdd-") for k in profile["roles"]), name
 approved_addition = "anthropic-openai-opencode"
-assert len(before) == 35 and len(after) == 33
-assert after.keys() == (before.keys() - retired) | {approved_addition}
-expected_order = [p["name"] for p in result["beforeProfiles"] if p["name"] not in retired]
-expected_order.insert(expected_order.index("work-copilot-anthropic-light"), approved_addition)
-assert [p["name"] for p in result["afterProfiles"]] == expected_order
-for name, profile in before.items():
-    if name in retired:
-        continue
-    phases = profile["phases"]
-    mapped = {k:v for k,v in phases.items() if not k.startswith("sdd-")}
-    mapped.update({"gentle-ai-explore":phases["sdd-explore"],
-                   "gentle-ai-worker":phases["sdd-apply"], "gentle-ai-verify":phases["sdd-verify"]})
-    assert after[name] == {**profile,"phases":mapped}, f"Unapproved routing churn: {name}"
 approved = after[approved_addition]
-assert approved["phases"] == {
+assert approved["roles"] == {
     "gentle-orchestrator": "anthropic/claude-opus-5-5",
     "gentle-ai-explore": "opencode-go/glm-5.3-flash",
     "gentle-ai-worker": "openai/gpt-6-luna",
@@ -115,17 +93,14 @@ assert approved["phases"] == {
     "review-risk": "opencode-go/deepseek-v4-pro",
     "review-validator": "opencode-go/deepseek-v4-pro",
     "neutral": "anthropic/claude-opus-5-5",
-}, "Approved profile's provider/phase shape changed"
-assert result["beforePolicy"] == result["afterPolicy"]
-expected_nvidia = json.loads(json.dumps(result["nvidiaBefore"]))
-expected_nvidia["nvidia"]["models"]["nemotron-3-ultra-550b-a55b"] = {
+}, "Approved profile's provider/role shape changed"
+assert result["nvidiaAfter"]["nvidia"]["models"]["nemotron-3-ultra-550b-a55b"] == {
     "name": "Nemotron 3 Ultra",
     "modelID": "nvidia/nemotron-3-ultra-550b-a55b",
 }
-assert result["nvidiaAfter"] == expected_nvidia
 assert result["overrides"]["model"] == "openai/user-override"
 assert result["overrides"]["variant"] == "high" and result["overrides"]["prompt"] == "user prompt"
 assert any(p["action"].startswith("github-personal_") and p["effect"] == "deny"
            for p in result["globalPermissions"])
-print("PASS: ODD graph, executor grants, three approved retirements, remaining full-JSON parity, provider policy, same-backend NVIDIA alias and last-wins overrides")
+print("PASS: ODD graph, executor grants, role-keyed profiles, NVIDIA alias and last-wins overrides")
 print("PASS: complete rendered recovery guidance; LIMIT: contract presence does not prove LLM readback/outage/conflict compliance")

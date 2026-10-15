@@ -45,7 +45,7 @@ let
       active = providersConfig.activeProvider;
     in
     if active != null then
-      builtins.mapAttrs (phase: _: providersConfig.getModelForPhase phase active) (
+      builtins.mapAttrs (role: _: providersConfig.getModelForRole role active) (
         builtins.listToAttrs (
           map (p: {
             name = p;
@@ -61,8 +61,8 @@ let
     if providersConfig.activeProvider != null then
       agentModels
       // {
-        neutral = providersConfig.getModelForPhase "neutral" providersConfig.activeProvider;
-        gentle-orchestrator = providersConfig.getModelForPhase "gentle-orchestrator" providersConfig.activeProvider;
+        neutral = providersConfig.getModelForRole "neutral" providersConfig.activeProvider;
+        gentle-orchestrator = providersConfig.getModelForRole "gentle-orchestrator" providersConfig.activeProvider;
       }
     else
       throw "No active provider found. Check activeProviderName in shared/opencode/providers-base.nix";
@@ -102,8 +102,8 @@ let
       namedOverlay = localOverlays.permissionOverlays.named.${name} or { };
       localPermission = lib.recursiveUpdate classOverlay namedOverlay;
       localInstructions =
-        if name == "gentle-orchestrator" then
-          localOverlays.instructionOverlays.gentle-orchestrator or [ ]
+        if builtins.hasAttr name localOverlays.instructionOverlays then
+          localOverlays.instructionOverlays.${name}
         else if upstream.mode or "" == "subagent" then
           localOverlays.instructionOverlays.subagent or [ ]
         else

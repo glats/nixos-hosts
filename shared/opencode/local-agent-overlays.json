@@ -180,6 +180,11 @@
       "../rules/explore-mcp.md",
       "../rules/output-format.md"
     ],
+    "gentle-ai-explore": [
+      "../rules/authorization.md",
+      "../rules/explore-mcp.md",
+      "../rules/output-format.md"
+    ],
     "subagent": [
       "../rules/authorization.md",
       "../rules/output-format.md"
