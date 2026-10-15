@@ -77,6 +77,7 @@
     ../../linux/system/services/network/wireguard.nix
     ../../linux/system/services/network/sing-box-link.nix
     ../../linux/system/services/network/ddclient.nix
+    ../../linux/system/networking/cloudflare-cli.nix
     ../../linux/system/services/network/samba.nix
     ../../linux/system/services/network/ftp.nix
     ../../linux/system/services/network/guacamole.nix

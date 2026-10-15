@@ -9,9 +9,28 @@
   };
   users.groups.ddclient = { };
 
+  # Cloudflare DDNS for every zone served by this host. Only the API token
+  # is secret; the record list stays reviewable here. The cloudflare
+  # protocol updates existing records only (it never creates them) and
+  # preserves each record's proxy setting.
   services.ddclient = {
     enable = true;
-    configFile = config.sops.secrets."ddclient".path;
+    protocol = "cloudflare";
+    username = "token";
+    passwordFile = config.sops.secrets."cloudflare_dns_api_token".path;
+    usev4 = "webv4, webv4=ifconfig.io";
+    # IPv4 only: do not start publishing AAAA records.
+    usev6 = "";
+    zone = "glats.org";
+    domains = [
+      "glats.org"
+      "*.glats.org"
+      "guard.glats.org"
+    ];
+    # Per-host zone override; the global zone above applies to `domains`.
+    extraConfig = ''
+      zone=maquilinux.org maquilinux.org,*.maquilinux.org
+    '';
   };
 
   # Override to use the real user instead of DynamicUser

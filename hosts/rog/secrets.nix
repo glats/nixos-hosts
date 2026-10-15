@@ -33,18 +33,20 @@
     sopsFile = ../../secrets/host/rog/wireguard.yaml;
   };
 
-  # DDNS (ddclient)
-  sops.secrets."ddclient" = {
-    sopsFile = ../../secrets/host/rog/ddclient.yaml;
-    owner = "ddclient";
-    group = "ddclient";
-    mode = "0400";
-  };
-
-  # Cloudflare DNS API token for ACME
+  # Cloudflare DNS API token (glats.org + maquilinux.org zones) for ACME and
+  # ddclient. ddclient's pre-start runs as root and copies it into its
+  # private runtime config, so acme stays the owner.
   sops.secrets."cloudflare_dns_api_token" = {
     sopsFile = ../../secrets/host/rog/cloudflare.yaml;
     owner = "acme";
+  };
+
+  # Same token, readable by glats for the flarectl wrapper.
+  sops.secrets."cloudflare_cli_api_token" = {
+    sopsFile = ../../secrets/host/rog/cloudflare.yaml;
+    key = "cloudflare_dns_api_token";
+    owner = "glats";
+    mode = "0400";
   };
 
   # Guacamole
