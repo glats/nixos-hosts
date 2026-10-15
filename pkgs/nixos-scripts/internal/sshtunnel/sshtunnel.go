@@ -86,7 +86,7 @@ func LocalURL(localPort int) string {
 //
 // The forward DIAL target is `localhost`, not a bare 127.0.0.1, because the
 // callback listeners bind different stacks per provider: the OpenAI/ChatGPT
-// login of opencode-v2 2.0.14 listens on `[::1]:<port>` (IPv6 loopback,
+// login of OpenCode 2.0.14 listens on `[::1]:<port>` (IPv6 loopback,
 // verified on a live t14 attempt), while the Claude plugin pins
 // `127.0.0.1` (its CALLBACK_HOST constant). ssh resolves `localhost` to
 // both loopback families and connects on the first success, so one spec

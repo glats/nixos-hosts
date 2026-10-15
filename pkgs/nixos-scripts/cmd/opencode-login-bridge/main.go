@@ -9,11 +9,11 @@
 // redirect (http://localhost:<port>/...) is followed by rog's browser, hits
 // rog's own loopback and dies: nothing is listening there. The bridge binds
 // the same loopback ports on rog and forwards every connection back through
-// the LAN-mesh SSH session to this host, where the opencode2 CLI's callback
+// the LAN-mesh SSH session to this host, where the opencode CLI's callback
 // listeners capture the redirect; the token exchange runs from this machine
 // directly against the provider endpoints.
 //
-// Port table (verified against the installed opencode-v2 2.0.14 binary and
+// Port table (verified against the installed OpenCode 2.0.14 binary and
 // the pinned opencode-claude-subscription@0.1.4 plugin constants):
 //
 //	1455   OpenAI / ChatGPT browser login  (/auth/callback)
@@ -37,7 +37,7 @@
 //
 // With the bridge up, run the login from another shell of the SAME machine:
 //
-//	opencode2 auth login openai        # zsh wrapper sets the V2 environment
+//	opencode-home auth login openai
 //
 // copy the printed authorize URL into the account host's browser, complete
 // the login there, and the callback lands on the local listener.
@@ -71,9 +71,9 @@ const usageText = `opencode-login-bridge — SSH reverse-forward bridge for Open
 Binds the OAuth callback loopback ports on the account host's ssh alias
 (default rog) and forwards every connection back to the same loopback ports
 on THIS machine, so an authorize URL completed in the account host's browser
-reaches the opencode2 CLI's local callback listeners here.
+reaches the opencode CLI's local callback listeners here.
 
-Default ports (opencode-v2 2.0.14 + opencode-claude-subscription@0.1.4):
+Default ports (OpenCode 2.0.14 + opencode-claude-subscription@0.1.4):
   1455   OpenAI / ChatGPT browser login   (/auth/callback)
   1457   OpenAI fallback port
   53692  Claude Pro/Max subscription     (/callback)
@@ -81,7 +81,7 @@ OpenCode Console login is a device flow — no bridge needed.
 
 Flow:
   1. opencode-login-bridge            (this shell)
-  2. opencode2 auth login openai      (another shell of this machine)
+  2. opencode-home auth login openai      (another shell of this machine)
   3. complete the printed authorize URL in the account host's browser
 
 Flags:
@@ -115,7 +115,7 @@ func main() {
 		die("%v", err)
 	}
 	if fs.NArg() > 0 {
-		die("unexpected arguments %q — open the login in a SECOND shell of this machine: opencode2 auth login <provider>", fs.Args())
+		die("unexpected arguments %q — open the login in a SECOND shell of this machine: opencode-home auth login <provider>", fs.Args())
 	}
 	if err := run(cfg); err != nil {
 		die("%v", err)
@@ -187,7 +187,7 @@ func run(cfg *config) error {
 	case <-time.After(2 * time.Second):
 		portList := renderPorts(ports)
 		fmt.Printf("bridge up: %s%s (loopback) -> this host\n", cfg.host, portList)
-		fmt.Printf("now run in another shell: opencode2 auth login <provider>, then complete the printed authorize URL in %s's browser\n", cfg.host)
+		fmt.Printf("now run in another shell: opencode-home auth login <provider>, then complete the printed authorize URL in %s's browser\n", cfg.host)
 		fmt.Printf("Ctrl+C")
 		if deadline > 0 {
 			fmt.Printf(" or %s deadline", cfg.timeout)

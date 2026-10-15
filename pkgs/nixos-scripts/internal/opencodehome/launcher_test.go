@@ -20,13 +20,13 @@ func TestLaunchTargetAndProxyBehavior(t *testing.T) {
 		wantTarget string
 		wantProxy  bool
 	}{
-		{name: "isolated v2 default", wantTarget: "opencode2", wantProxy: true},
-		{name: "v2 listener up", target: "/nix/store/opencode2", wantTarget: "/nix/store/opencode2", wantProxy: true},
-		{name: "v2 listener down", target: "/nix/store/opencode2", probeErr: errors.New("refused"), wantTarget: "/nix/store/opencode2"},
+		{name: "default target", wantTarget: "opencode", wantProxy: true},
+		{name: "listener up", target: "/nix/store/opencode", wantTarget: "/nix/store/opencode", wantProxy: true},
+		{name: "listener down", target: "/nix/store/opencode", probeErr: errors.New("refused"), wantTarget: "/nix/store/opencode"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			target := filepath.Join(t.TempDir(), "opencode2")
+			target := filepath.Join(t.TempDir(), "opencode")
 			if err := os.WriteFile(target, []byte("#!/bin/sh\nexit 0\n"), 0755); err != nil {
 				t.Fatal(err)
 			}
@@ -100,7 +100,7 @@ func TestLaunchTargetAndProxyBehavior(t *testing.T) {
 
 func TestLaunchForwardsArgumentsToSelectedExecutable(t *testing.T) {
 	dir := t.TempDir()
-	target := filepath.Join(dir, "opencode2")
+	target := filepath.Join(dir, "opencode")
 	capture := filepath.Join(dir, "args")
 	script := "#!/bin/sh\nprintf '%s\\0' \"$@\" > \"$CAPTURE\"\nprintf '%s\\n' \"$XDG_CONFIG_HOME\" >> \"$CAPTURE\"\n"
 	if err := os.WriteFile(target, []byte(script), 0755); err != nil {
@@ -129,7 +129,7 @@ func TestLaunchForwardsArgumentsToSelectedExecutable(t *testing.T) {
 
 func TestInvalidTargetDoesNotExecute(t *testing.T) {
 	for _, target := range []string{"", "relative/opencode", "/nix/store/opencode-home"} {
-		env := []string{"PATH=/bin", "XDG_CONFIG_HOME=/isolated/opencode-v2", "OPENCODE_CONFIG_DIR=/isolated/opencode-v2", "OPENCODE_HOME_BINARY=" + target}
+		env := []string{"PATH=/bin", "XDG_CONFIG_HOME=/home/user/.config/opencode", "OPENCODE_CONFIG_DIR=/home/user/.config/opencode", "OPENCODE_HOME_BINARY=" + target}
 		called := false
 		err := launch(nil, env, func(string, string, time.Duration) (net.Conn, error) { return nil, errors.New("unused") }, func(string, []string, []string) error { called = true; return nil }, io.Discard)
 		if err == nil {
@@ -142,7 +142,7 @@ func TestInvalidTargetDoesNotExecute(t *testing.T) {
 }
 
 func TestUnavailableOrNonExecutableTargetDoesNotProbeOrExecute(t *testing.T) {
-	for _, target := range []string{"/missing/opencode2", "/etc/hosts"} {
+	for _, target := range []string{"/missing/opencode", "/etc/hosts"} {
 		t.Run(target, func(t *testing.T) {
 			called := false
 			env := completeV2Environment(t, target)
@@ -178,8 +178,8 @@ func TestSelfTargetIsRejectedBeforeProbe(t *testing.T) {
 func completeV2Environment(t *testing.T, target string) []string {
 	t.Helper()
 	home := t.TempDir()
-	config := filepath.Join(home, ".config", "opencode-v2")
-	runtime := filepath.Join(home, ".local", "opencode-v2")
+	config := filepath.Join(home, ".config", "opencode")
+	runtime := filepath.Join(home, ".local", "share", "opencode")
 	data := filepath.Join(runtime, "data")
 	return []string{
 		"HOME=" + home,
@@ -195,106 +195,11 @@ func completeV2Environment(t *testing.T, target string) []string {
 	}
 }
 
-func TestIncompleteOrCollidingV2EnvironmentIsRejectedBeforeProbe(t *testing.T) {
-	for _, missing := range []string{"XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_CACHE_HOME", "XDG_STATE_HOME", "OPENCODE_CONFIG_DIR", "OPENCODE_DB", "TMPDIR"} {
-		t.Run("missing-"+missing, func(t *testing.T) {
-			target := executableFixture(t)
-			env := removeEnvironmentKey(completeV2Environment(t, target), missing)
-			assertRejectedBeforeProbe(t, env)
-		})
-	}
-	for _, key := range []string{"XDG_DATA_HOME", "XDG_CACHE_HOME", "XDG_STATE_HOME", "OPENCODE_DB", "TMPDIR", "OPENCODE_CONFIG_DIR"} {
-		t.Run("mismatched-"+key, func(t *testing.T) {
-			target := executableFixture(t)
-			env := completeV2Environment(t, target)
-			env = replaceEnvironmentKey(env, key, key+"=/legacy/opencode")
-			assertRejectedBeforeProbe(t, env)
-		})
-	}
-	t.Run("legacy-config-root", func(t *testing.T) {
-		target := executableFixture(t)
-		env := completeV2Environment(t, target)
-		home := envValue(env, "HOME")
-		env = replaceEnvironmentKey(env, "XDG_CONFIG_HOME", "XDG_CONFIG_HOME="+filepath.Join(home, ".config", "opencode"))
-		env = replaceEnvironmentKey(env, "OPENCODE_CONFIG_DIR", "OPENCODE_CONFIG_DIR="+filepath.Join(home, ".config", "opencode"))
-		assertRejectedBeforeProbe(t, env)
-	})
-	t.Run("legacy-runtime-root", func(t *testing.T) {
-		target := executableFixture(t)
-		env := completeV2Environment(t, target)
-		home := envValue(env, "HOME")
-		legacyData := filepath.Join(home, ".local", "share", "opencode")
-		env = replaceEnvironmentKey(env, "XDG_DATA_HOME", "XDG_DATA_HOME="+filepath.Join(legacyData, "data"))
-		env = replaceEnvironmentKey(env, "XDG_CACHE_HOME", "XDG_CACHE_HOME="+filepath.Join(legacyData, "cache"))
-		env = replaceEnvironmentKey(env, "XDG_STATE_HOME", "XDG_STATE_HOME="+filepath.Join(legacyData, "state"))
-		env = replaceEnvironmentKey(env, "OPENCODE_DB", "OPENCODE_DB="+filepath.Join(legacyData, "data", "opencode.db"))
-		env = replaceEnvironmentKey(env, "TMPDIR", "TMPDIR="+filepath.Join(legacyData, "tmp"))
-		assertRejectedBeforeProbe(t, env)
-	})
-}
-
-func TestCustomV2RuntimeAndExplicitProjectConfigArePreserved(t *testing.T) {
-	target := executableFixture(t)
-	env := completeV2Environment(t, target)
-	custom := filepath.Join(t.TempDir(), "custom-runtime")
-	data := filepath.Join(custom, "data")
-	env = replaceEnvironmentKey(env, "XDG_DATA_HOME", "XDG_DATA_HOME="+data)
-	env = replaceEnvironmentKey(env, "XDG_CACHE_HOME", "XDG_CACHE_HOME="+filepath.Join(custom, "cache"))
-	env = replaceEnvironmentKey(env, "XDG_STATE_HOME", "XDG_STATE_HOME="+filepath.Join(custom, "state"))
-	env = replaceEnvironmentKey(env, "OPENCODE_DB", "OPENCODE_DB="+filepath.Join(data, "opencode.db"))
-	env = replaceEnvironmentKey(env, "TMPDIR", "TMPDIR="+filepath.Join(custom, "tmp"))
-	env = removeEnvironmentKey(env, "OPENCODE_DISABLE_PROJECT_CONFIG")
-	called := false
-	err := launch(nil, env, func(string, string, time.Duration) (net.Conn, error) { return nil, errors.New("listener down") }, func(_ string, _ []string, childEnv []string) error {
-		called = true
-		for _, key := range []string{"XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_CACHE_HOME", "XDG_STATE_HOME", "OPENCODE_CONFIG_DIR", "OPENCODE_DB", "TMPDIR"} {
-			if envValue(childEnv, key) != envValue(env, key) {
-				t.Fatalf("%s changed: %q", key, envValue(childEnv, key))
-			}
-		}
-		if envValue(childEnv, "OPENCODE_DISABLE_PROJECT_CONFIG") != "" {
-			t.Fatal("explicit project-config opt-in was disabled")
-		}
-		return nil
-	}, io.Discard)
-	if err != nil || !called {
-		t.Fatalf("custom/project-config launch: called=%v err=%v", called, err)
-	}
-}
-
 func executableFixture(t *testing.T) string {
 	t.Helper()
-	target := filepath.Join(t.TempDir(), "opencode2")
+	target := filepath.Join(t.TempDir(), "opencode")
 	if err := os.WriteFile(target, []byte("#!/bin/sh\nexit 0\n"), 0o755); err != nil {
 		t.Fatal(err)
 	}
 	return target
-}
-
-func assertRejectedBeforeProbe(t *testing.T, env []string) {
-	t.Helper()
-	probed, executed := false, false
-	err := launch(nil, env, func(string, string, time.Duration) (net.Conn, error) {
-		probed = true
-		return nil, errors.New("unexpected probe")
-	}, func(string, []string, []string) error { executed = true; return nil }, io.Discard)
-	if err == nil || probed || executed {
-		t.Fatalf("err=%v probed=%v executed=%v", err, probed, executed)
-	}
-}
-
-func replaceEnvironmentKey(env []string, key, replacement string) []string {
-	result := removeEnvironmentKey(env, key)
-	return append(result, replacement)
-}
-
-func removeEnvironmentKey(env []string, key string) []string {
-	result := make([]string, 0, len(env))
-	for _, entry := range env {
-		name, _, ok := strings.Cut(entry, "=")
-		if !ok || name != key {
-			result = append(result, entry)
-		}
-	}
-	return result
 }

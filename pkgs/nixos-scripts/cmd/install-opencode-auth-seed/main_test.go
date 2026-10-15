@@ -33,7 +33,7 @@ func TestLegacySeedRefusesBeforeExternalIO(t *testing.T) {
 		if err == nil {
 			t.Fatalf("args %q were accepted", args)
 		}
-		if !strings.Contains(string(output), "opencode2-home auth login openai") {
+		if !strings.Contains(string(output), "opencode-home auth login openai") {
 			t.Fatalf("args %q: missing native-login guidance: %s", args, output)
 		}
 		for path, want := range map[string]string{auth: "fixture-auth", backup: "fixture-backup"} {

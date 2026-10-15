@@ -314,7 +314,7 @@ func cmdCreate(repoRoot, worktreesDir, name string) {
 	fmt.Println("")
 	fmt.Println("To work in this worktree:")
 	fmt.Printf("  cd %s\n", wtDir)
-	fmt.Println("  # start your preferred assistant: opencode, opencode2, claude, ...")
+	fmt.Println("  # start your preferred assistant: opencode, claude, ...")
 	fmt.Println("")
 	fmt.Println("When done:")
 	fmt.Printf("  code-work --done %s    # show safe native cleanup guidance\n", name)
