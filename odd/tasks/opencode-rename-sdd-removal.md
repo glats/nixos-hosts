@@ -31,10 +31,10 @@ S6. "You are authorized to implement, commit on a feature branch and switch rog;
 
 | ID | Specs | Route | Status | Evidence |
 |----|-------|-------|--------|----------|
-| T1 | S1, S2, S3 | delegated writer A (parallel units) | pending | |
-| T2 | S4, S5 (Go: renames + migration command) | delegated writer B (parallel units) | pending | |
-| T3 | S1, S4, S5 (Nix: package, modules, wiring, tests, docs) | delegated writer C (parallel units) | pending | |
-| T4 | S1-S5 seam check + independent verify | parent + verifier (high risk: data, CLI contract) | pending | |
+| T1 | S1, S2, S3 | delegated writer A (parallel units) | done | eb62c465; RED/GREEN projectinit + reconcile prune |
+| T2 | S4, S5 (Go: renames + migration command) | delegated writer B (parallel units) | done | 321abb41; fix d70e10a7 (RED/GREEN resume test) |
+| T3 | S1, S4, S5 (Nix: package, modules, wiring, tests, docs) | writers C/C1/C2 partial, finished inline by parent | done | dd8e7ceb |
+| T4 | S1-S5 seam check + independent verify | parent + verifier (high risk: data, CLI contract) | done | S1-S4 pass; S5 blocker fixed in d70e10a7, recheck pass |
 | T5 | S5, S6 switch rog + migrate + post-check | parent, detached job | pending | |
 
 Route evidence: T1-T3 have disjoint edit surfaces and each is clearly heavier than a subagent start (Writer trigger a). T4 high risk items 1 (persisted data move) and 3 (CLI commands renamed).
@@ -65,3 +65,6 @@ L5 (2026-10-15, evidence, rog + read-only ssh):
 - thinkcentre, t14, macm5: no ownership manifests; 11 SDD skills in `~/.config/opencode-v2/skills`, `~/.openfang/skills`, `~/.claude/{agents,skills}`.
 
 L6 (2026-10-15, decisions): native XDG layout; V2 config tree rebuilt fresh after archiving (so the V2 consumer needs no legacy bootstrap and the `opencode-v2` byte references go); openfang sync only where `home.openfang` is enabled (rog, already manifest-owned), stale `~/.openfang/skills` on other hosts archived by the migration; Claude legacy bootstrap stays (other hosts need it to retire SDD agents). Migration is a tested Go command invoked from Home Manager activation. Rog switch runs last from a detached job because it must stop the server this session runs on.
+
+L7 (2026-10-15, evidence): writers C, C1, C2a stopped early (partial) repeatedly; parent finished T3 inline. Checks: `go -C pkgs/nixos-scripts test ./...` pass; `nix flake check --no-build` pass; rog/t14/thinkcentre toplevel and rog/t14/thinkcentre HM activation eval pass; macm5 eval fails with "Required system: 'aarch64-darwin'" (gentle-ai IFD) identically at baseline c164dc09 — known environmental, unverified for Darwin. `home-launcher.test.py`, `v2-agents.test.py`, `asset-ownership.test.py`, `contracts.test.py` PASS. S4 grep empty; the only intentional references to the old name are `"opencode-" + "v2"` in the migrator and its test (it must locate the old roots). host-config plugin deleted (only forced the native XDG default). Verifier: S1-S4 pass; S5 resume blocker (re-archiving migrated data) fixed by a one-shot archive marker, recheck pass on c1/c2/first-loop probes.
+L8 (2026-10-15): moved 10 OpenFang-generated `~/.openfang/skills/sdd-*` dirs (skill.toml/prompt_context.md derived from retired SDD skills) to `~/.local/share/opencode-migration-archive/openfang-sdd-<ts>/`; removed 2 empty ones. Next: T5 detached rog switch (kills this session's server), then post-check on resume.
