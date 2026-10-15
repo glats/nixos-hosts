@@ -72,9 +72,9 @@
     };
 
     # gentle-ai upstream (for skills, commands, plugins)
-    # Pinned to v2.5.0 tag (release f5dd1a6c) — do not track main.
+    # One canonical v4.0.0 source for the binary and rendered ODD assets.
     gentle-ai-src = {
-      url = "github:Gentleman-Programming/gentle-ai/v2.5.0";
+      url = "github:Gentleman-Programming/gentle-ai/ff77164d4f56f1665b22fb6fac51c2ccbb769400";
       flake = false;
     };
 
@@ -290,9 +290,9 @@
         pkgs.runCommand "opencode-v2-agent-schema" { nativeBuildInputs = [ pkgs.jq ]; } ''
           jq -e '
             (.agents["gentle-orchestrator"].mode == "primary") and
-            (.agents["sdd-explore"].mode == "subagent") and
-            (.agents["sdd-explore"].system | type == "string") and
-            (.agents["sdd-explore"].permissions | type == "array") and
+            (.agents["gentle-ai-explore"].mode == "subagent") and
+            (.agents["gentle-ai-explore"].system | type == "string") and
+            (.agents["gentle-ai-explore"].permissions | type == "array") and
             ([.agents[] | (.permissions | type == "array") and all(.permissions[]; has("action") and has("resource") and has("effect"))] | all) and
             (has("agent") | not) and
             (has("permission") | not) and

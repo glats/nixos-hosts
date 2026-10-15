@@ -40,6 +40,13 @@ let
         "nvidia/nemotron-3-ultra-550b-a55b" = {
           name = "Nemotron 3 Ultra";
         };
+        # 2026-10-09: Same-backend native V2 alias; no routing/model replacement.
+        # OpenCode v2.0.14: schema/config/provider.ts modelID; model-resolver.ts:232.
+        # https://opencode.ai/v2/docs/providers (custom model mapping).
+        "nemotron-3-ultra-550b-a55b" = {
+          name = "Nemotron 3 Ultra";
+          modelID = "nvidia/nemotron-3-ultra-550b-a55b";
+        };
         # RISKY: step-3.7-flash — 11B active = low knowledge storage. Fragile on long multi-turn.
         # Terminal-Bench gap (59.5 vs 82.7). Best with Advisor Mode. Use only for tasks with clear scope.
         "stepfun-ai/step-3.7-flash" = {
@@ -176,124 +183,10 @@ let
       };
     }
     {
-      name = "opencode-free";
-      # Audit 2026-09-09 (`opencode models --refresh`): catálogo free actual =
-      # nemotron-3-ultra-free, nemotron-3.5-lightning-free, mimo-v2.5-free, big-pickle,
-      # ling-3.0-flash-fin-free, muse-spark-1.2/1.3-contributor-free. hy3-free y
-      # x-preview-f-free rotaron fuera; muse-spark-1.2 sigue BROKEN (#43882, #44659).
-      # Reemplaza a las antiguas `alpha-free` y `opencode-free` legacy.
-      phases = {
-        # nemotron-3-ultra-free: mejor modelo agentic free (SWE-Bench ~70%, 1M ctx,
-        # tool calling verificado, TTFT 1.67s) — exactamente lo que necesita orquestación.
-        gentle-orchestrator = "opencode/nemotron-3-ultra-free";
-        # nemotron-3.5-lightning-free: construido para ejecución ligera de alto volumen.
-        sdd-init = "opencode/nemotron-3.5-lightning-free";
-        # nemotron-3-ultra-free: 1M ctx + RULER@1M 94.7 — mejor para explorar repos grandes.
-        sdd-explore = "opencode/nemotron-3-ultra-free";
-        # nemotron-3-ultra-free: GPQA 87 — mejor razonamiento/planning free.
-        sdd-propose = "opencode/nemotron-3-ultra-free";
-        # hy3-free: mejor escritor productivo free (blind eval > GLM-5.1).
-        sdd-spec = "opencode/hy3-free";
-        # nemotron-3-ultra-free: decisiones de arquitectura.
-        sdd-design = "opencode/nemotron-3-ultra-free";
-        # nemotron-3.5-lightning-free: descomposición mecánica a alto volumen.
-        sdd-tasks = "opencode/nemotron-3.5-lightning-free";
-        # mimo-v2.5-free: 70 tok/s para edits de código, worker de apply probado en audits previos.
-        sdd-apply = "opencode/mimo-v2.5-free";
-        # nemotron-3-ultra-free: SWE-Bench Verified ~70% — mejor reviewer free contra spec.
-        sdd-verify = "opencode/nemotron-3-ultra-free";
-        # nemotron-3.5-lightning-free: la clase más rápida/barata para copy-and-close.
-        sdd-archive = "opencode/nemotron-3.5-lightning-free";
-        # mimo-v2.5-free: walkthrough guiado barato.
-        sdd-onboard = "opencode/mimo-v2.5-free";
-        # nemotron-3-ultra-free: default balanceado.
-        jd-judge-a = "opencode/nemotron-3-ultra-free";
-        jd-judge-b = "opencode/nemotron-3-ultra-free";
-        jd-fix-agent = "opencode/mimo-v2.5-free";
-        review-readability = "opencode/nemotron-3-ultra-free";
-        review-refuter = "opencode/nemotron-3-ultra-free";
-        review-reliability = "opencode/nemotron-3-ultra-free";
-        review-resilience = "opencode/nemotron-3-ultra-free";
-        review-risk = "opencode/nemotron-3-ultra-free";
-        review-validator = "opencode/nemotron-3-ultra-free";
-        neutral = "opencode/nemotron-3-ultra-free";
-      };
-    }
-    {
-      name = "anthropic-opencode-free";
-      # Audit 2026-09-09 (`opencode models --refresh`): catálogo free actual =
-      # nemotron-3-ultra-free, nemotron-3.5-lightning-free, mimo-v2.5-free, big-pickle,
-      # ling-3.0-flash-fin-free, muse-spark-1.2/1.3-contributor-free. hy3-free y
-      # x-preview-f-free rotaron fuera del catálogo. muse-spark-1.2 sigue BROKEN
-      # (#43882, #44659, #45744). Estrategia: cuota Anthropic reservada para juicio —
-      # orchestrator, spec, verify y reviews en Sonnet 5.5; el resto en free de Zen.
-      # Re-fit 2026-10-07: Sonnet 4.6 ($3/$15) → Sonnet 5.5 ($2/$10, 1M ctx).
-      phases = {
-        # anthropic/claude-opus-5-5: orquestador unificado en Opus 5.5 (2026-10-07, petición explícita;
-        # $4/$20 vs Fable 5.1 $10/$50 — el router hace loops, Fable no se justifica).
-        gentle-orchestrator = "anthropic/claude-opus-5-5";
-        # nemotron-3.5-lightning-free: construido para ejecución ligera de alto volumen.
-        sdd-init = "opencode/nemotron-3.5-lightning-free";
-        # nemotron-3-ultra-free: 1M ctx + RULER@1M 94.7 — mejor para explorar repos grandes.
-        sdd-explore = "opencode-go/glm-5.3-flash";
-        # nemotron-3-ultra-free: GPQA 87 — mejor razonamiento/planning free.
-        sdd-propose = "opencode/nemotron-3-ultra-free";
-        # anthropic/claude-sonnet-5-5: hy3-free rotó fuera del catálogo free (audit 2026-09-09);
-        # un spec malo propaga defectos a todo el chain (design→tasks→apply→verify).
-        sdd-spec = "anthropic/claude-sonnet-5-5";
-        # nemotron-3-ultra-free: decisiones de arquitectura (GPQA 87, 1M ctx).
-        sdd-design = "opencode/nemotron-3-ultra-free";
-        # nemotron-3.5-lightning-free: descomposición mecánica a alto volumen.
-        sdd-tasks = "opencode/nemotron-3.5-lightning-free";
-        # mimo-v2.5-free: 70 tok/s para edits de código, worker de apply probado en audits previos.
-        sdd-apply = "opencode/mimo-v2.5-free";
-        # anthropic/claude-sonnet-5-5: puerta de aceptación — un defecto no detectado cuesta
-        # un re-loop completo apply→verify; nemotron-free (~70% SWE-bench) queda corto aquí.
-        sdd-verify = "anthropic/claude-sonnet-5-5";
-        # nemotron-3.5-lightning-free: la clase más rápida/barata para copy-and-close.
-        sdd-archive = "opencode/nemotron-3.5-lightning-free";
-        # mimo-v2.5-free: walkthrough guiado barato.
-        sdd-onboard = "opencode/mimo-v2.5-free";
-        # nemotron-3-ultra-free: default balanceado.
-        jd-judge-a = "anthropic/claude-sonnet-5-5";
-        jd-judge-b = "anthropic/claude-sonnet-5-5";
-        jd-fix-agent = "opencode/mimo-v2.5-free";
-        review-readability = "anthropic/claude-sonnet-5-5";
-        review-refuter = "anthropic/claude-sonnet-5-5";
-        review-reliability = "anthropic/claude-sonnet-5-5";
-        review-resilience = "anthropic/claude-sonnet-5-5";
-        review-risk = "anthropic/claude-sonnet-5-5";
-        review-validator = "anthropic/claude-sonnet-5-5";
-        neutral = "opencode/nemotron-3-ultra-free";
-      };
-    }
-    {
-      name = "anthropic-openai-opencode";
-      phases = {
-        gentle-orchestrator = "anthropic/claude-opus-5-5";
-        sdd-init = "opencode-go/deepseek-v4-pro";
-        sdd-explore = "opencode-go/glm-5.3-flash";
-        sdd-propose = "openai/gpt-6.1-sol";
-        sdd-spec = "openai/gpt-6.1-sol";
-        sdd-design = "anthropic/claude-sonnet-5-5";
-        sdd-tasks = "anthropic/claude-haiku-5-5";
-        sdd-apply = "openai/gpt-6-luna";
-        sdd-verify = "anthropic/claude-sonnet-5-5";
-        sdd-archive = "opencode-go/glm-5.3-flash";
-        sdd-onboard = "opencode-go/glm-5.3-flash";
-        jd-judge-a = "anthropic/claude-sonnet-5-5";
-        jd-judge-b = "anthropic/claude-sonnet-5-5";
-        jd-fix-agent = "opencode-go/glm-5.3-flash";
-        review-readability = "opencode-go/deepseek-v4-pro";
-        review-refuter = "opencode-go/deepseek-v4-pro";
-        review-reliability = "opencode-go/deepseek-v4-pro";
-        review-resilience = "opencode-go/deepseek-v4-pro";
-        review-risk = "opencode-go/deepseek-v4-pro";
-        review-validator = "opencode-go/deepseek-v4-pro";
-        neutral = "anthropic/claude-opus-5-5";
-      };
-    }
-    {
+      # 2026-10-09: Retired opencode-free, anthropic-opencode-free and
+      # anthropic-opencode-go by operator decision; no replacement or paid fallback.
+      # MiMo is deprecated in https://models.opencode.ai/api.json;
+      # OpenCode v2.0.14 models-dev loader filters deprecated entries.
       name = "work-copilot-anthropic";
       phases = {
         gentle-orchestrator = "github-copilot/gpt-6.1-sol";
@@ -328,18 +221,35 @@ let
       };
     }
     {
-      name = "work-copilot-anthropic-light";
-      # Audit 2026-09-23: use Copilot Terra ($2/$12 per MTok) for capable
-      # orchestration and native Sonnet 5.5 ($2/$10) for planning work; retain
-      # Copilot Sonnet 5.5 for the implementation path to preserve its workforce.
-      # Re-fit 2026-10-07: native acceptance and adversarial judgment move from
-      # Sonnet 4.6 ($3/$15) to Sonnet 5.5; mechanical phases to Haiku 5.5 (day-0).
-      # Sources: docs.github.com/copilot/reference/copilot-billing/models-and-pricing
-      # and docs.github.com/copilot/reference/ai-models/model-comparison.
+      name = "anthropic-openai-opencode";
       phases = {
-        # Terra is GitHub's balanced agentic model and supports the 1M context tier.
+        gentle-orchestrator = "anthropic/claude-opus-5-5";
+        sdd-init = "opencode-go/deepseek-v4-pro";
+        sdd-explore = "opencode-go/glm-5.3-flash";
+        sdd-propose = "openai/gpt-6.1-sol";
+        sdd-spec = "openai/gpt-6.1-sol";
+        sdd-design = "anthropic/claude-sonnet-5-5";
+        sdd-tasks = "anthropic/claude-haiku-5-5";
+        sdd-apply = "openai/gpt-6-luna";
+        sdd-verify = "anthropic/claude-sonnet-5-5";
+        sdd-archive = "opencode-go/glm-5.3-flash";
+        sdd-onboard = "opencode-go/glm-5.3-flash";
+        jd-judge-a = "anthropic/claude-sonnet-5-5";
+        jd-judge-b = "anthropic/claude-sonnet-5-5";
+        jd-fix-agent = "opencode-go/glm-5.3-flash";
+        review-readability = "opencode-go/deepseek-v4-pro";
+        review-refuter = "opencode-go/deepseek-v4-pro";
+        review-reliability = "opencode-go/deepseek-v4-pro";
+        review-resilience = "opencode-go/deepseek-v4-pro";
+        review-risk = "opencode-go/deepseek-v4-pro";
+        review-validator = "opencode-go/deepseek-v4-pro";
+        neutral = "anthropic/claude-opus-5-5";
+      };
+    }
+    {
+      name = "work-copilot-anthropic-light";
+      phases = {
         gentle-orchestrator = "github-copilot/gpt-6.1-sol";
-        # Mechanical and guided phases use the inexpensive native tier.
         sdd-init = "anthropic/claude-haiku-5-5";
         sdd-explore = "anthropic/claude-sonnet-5-5";
         sdd-propose = "anthropic/claude-sonnet-5-5";
@@ -347,7 +257,6 @@ let
         sdd-design = "anthropic/claude-sonnet-5-5";
         sdd-tasks = "anthropic/claude-haiku-5-5";
         sdd-apply = "github-copilot/claude-sonnet-5.5";
-        # Preserve the native quality gate where a missed defect causes a re-loop.
         sdd-verify = "anthropic/claude-sonnet-5-5";
         sdd-archive = "anthropic/claude-haiku-5-5";
         sdd-onboard = "anthropic/claude-haiku-5-5";
@@ -695,23 +604,6 @@ let
         review-risk = "openai/gpt-6.1-sol";
         review-validator = "openai/gpt-6.1-sol";
         neutral = "openai/gpt-6.1-sol";
-      };
-    }
-    {
-      name = "anthropic-opencode-go";
-      phases = {
-        gentle-orchestrator = "anthropic/claude-opus-5-5";
-        sdd-init = "opencode/nemotron-3.5-lightning-free";
-        sdd-explore = "opencode/nemotron-3-ultra-free";
-        sdd-propose = "opencode/nemotron-3-ultra-free";
-        sdd-spec = "opencode-go/glm-5.3-flash";
-        sdd-design = "opencode/nemotron-3-ultra-free";
-        sdd-tasks = "opencode/nemotron-3.5-lightning-free";
-        sdd-apply = "opencode/mimo-v2.5-free";
-        sdd-verify = "opencode-go/deepseek-v4-pro";
-        sdd-archive = "opencode/nemotron-3.5-lightning-free";
-        sdd-onboard = "opencode/mimo-v2.5-free";
-        neutral = "opencode/nemotron-3-ultra-free";
       };
     }
     {
@@ -1135,7 +1027,19 @@ let
     }
   ];
 
-  providers = canonicalProviders ++ legacyProviders;
+  # Keep every existing role fit/profile field unchanged outside the approved
+  # ODD mapping. Retired SDD phase routes are no longer executable agent names.
+  providers = map (
+    provider:
+    provider
+    // {
+      phases = lib.filterAttrs (name: _: !lib.hasPrefix "sdd-" name) provider.phases // {
+        gentle-ai-explore = provider.phases.sdd-explore;
+        gentle-ai-worker = provider.phases.sdd-apply;
+        gentle-ai-verify = provider.phases.sdd-verify;
+      };
+    }
+  ) (canonicalProviders ++ legacyProviders);
 
   _assertUniqueProviderNames =
     let

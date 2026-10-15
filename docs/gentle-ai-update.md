@@ -1,167 +1,146 @@
-# Gentle AI Update Workflow
+# Gentle AI v4 updates on the V2-only fleet
 
-This document describes how to update Gentle AI in this NixOS configuration.
-Gentle AI is pinned to a **release tag** — never track `main` and never rely on
-sync markers. Home Manager remains the sole deployment authority on all hosts.
+Update the binary, rendered prompts, native relay, managed graph and ownership
+inventory as one candidate. Home Manager is the deployment authority; do not
+run upstream install/sync/update over Nix-managed assets. A build is not approval
+to activate, call models, stage, commit, push or publish.
 
-## Overview
+## Current boundary
 
-Gentle AI provides two independent derivations, both fed by the same pinned
-input:
+| Component | Source/contract |
+|---|---|
+| Gentle binary and assets | v4.0.0, `ff77164d4f56f1665b22fb6fac51c2ccbb769400` |
+| Go | At least 1.25.10; pinned builder currently 1.26.6 |
+| vendorHash | `sha256-YL4Slz/UuY+HEcJTW+pMphcdB6xtpam+E4uTDWifEcY=` |
+| OpenCode CLI and SDK | 2.0.14; no silent upgrade/downgrade |
+| Native relay declaration | `gentle-ai.opencode-relay/v2-staged` |
+| Go-owned wire | `gentle-ai.provider-transport/v1` |
 
-| Derivation | Source | Output path |
-|------------|--------|-------------|
-| `gentle-ai` | `gentle-ai-src` (Go binary, `cmd/gentle-ai`) | `bin/gentle-ai` |
-| `gentle-ai-assets` | `gentle-ai-src` (skills, commands, plugins, overlays) | `$out/share/gentle-ai/` |
+`pkgs/gentle-ai-assets/render.nix` runs a build-only Go test inside the vendored
+tagged `/v4` module. Its actual upstream renderers produce OpenCode and Claude
+prompts plus the ODD/review graph; no exporter CLI is installed. Rendering uses
+the real native `.opencode2-unwrapped`, never a fabricated version executable.
 
-Tool-specific activation scripts (OpenCode, Claude Code) merge skills, commands,
-and AGENTS.md fragments from all configured sources at activation time. The
-four managed OpenCode plugins (`model-variants`, `opencode-review-transport`,
-`sdd-task-result-artifacts`, `skill-registry`) are wired in
-`shared/opencode/runtime-config.nix` and controlled by
-`home.opencode.plugins.*.enable`.
+The HM-scoped compiled `gentle-ai` wrapper restores the full V2 environment for
+its children and privately prefixes truthful bare `opencode` discovery plus Git.
+Host-config shell scrubbing cannot remove those child settings. Public commands
+stay `opencode2` and Darwin-only `opencode2-home`; no global bare alias is added.
+The managed relay and registry use the absolute wrapper path. Go alone owns
+review role binding, materialization, budgets, admission and receipts.
 
-## Update Steps (v2.x, in order)
+## Candidate checks before rollout
 
-### Step 1: Check the Latest v2.x Release
+1. Verify the release tag resolves to the approved immutable commit. Update only
+   `gentle-ai-src` in `flake.nix`/`flake.lock`, package version/hash/toolchain and
+   coupled asset/graph changes. Never follow a moving branch or sync marker.
+2. Resolve the vendoring hash with a temporary fake hash build if dependencies
+   changed, then replace it with the observed real hash. Build binary and assets.
+3. Run focused tests and inspect every failed/skipped check:
 
-```bash
-gh release list --repo Gentleman-Programming/gentle-ai
-```
-
-Note the latest release tag (for example `v2.5.0`).
-
-### Step 2: Bump the Input Tag
-
-In `flake.nix`, update the pinned tag:
-
-```nix
-gentle-ai-src = {
-  url = "github:Gentleman-Programming/gentle-ai/v2.5.0";
-  flake = false;
-};
-```
-
-### Step 3: Re-lock the Input
-
-```bash
-nix flake lock --update-input gentle-ai-src
-```
-
-Confirm the lock resolves the tag (the `original.ref` must be the tag, not a
-branch):
-
-```bash
-jq '.nodes["gentle-ai-src"]' flake.lock
-```
-
-### Step 4: Recompute the Go vendorHash
-
-In `pkgs/gentle-ai/default.nix`, temporarily set:
-
-```nix
-vendorHash = lib.fakeHash;
-```
-
-Then build and copy the expected hash from the failure:
-
-```bash
-nix build .#gentle-ai 2>&1 | grep 'got:'
-```
-
-Put the printed `got: sha256-…` value into `vendorHash` and rebuild until
-`nix build .#gentle-ai` succeeds.
-
-### Step 5: Build Assets and Verify Plugins
-
-```bash
-nix build .#gentle-ai-assets
-```
-
-Assert the managed plugin set matches upstream:
-
-```bash
-ls "$(nix build .#gentle-ai-assets --no-link --print-out-paths)/share/gentle-ai/opencode/plugins/"
-```
-
-Every plugin file present upstream must have a matching
-`shared/opencode/runtime-config.nix` entry; files removed upstream (such as
-`background-agents.ts` in v2.5.0) must keep their activation-time cleanup.
-
-### Step 6: Format and Evaluate
-
-```bash
-format-nix && nix flake check --no-build
-```
-
-`flake.nix` exposes checks containing all three NixOS hosts' toplevels, so
-`--no-build` is mandatory while iterating.
-
-### Step 7: Canary t14
-
-```bash
-nixos-build   # run on t14
-```
-
-Before switching, verify the generated agent graph preserves permissions and
-emits no deprecated `tools` field:
-
-```bash
-out=$(nix build .#homeConfigurations.t14.activationPackage --no-link --print-out-paths)
-jq -e '([.agent[]|has("permission")]|all) and ([.agent[]|has("tools")]|any|not) and
-  (.agent["sdd-apply"].permission.edit=="allow") and
-  (.agent["explore"].permission.write=="deny") and
-  (.agent["gentle-orchestrator"].permission.task=={"*":"deny","sdd-*":"allow"})' \
-  "$out/home-files/.config/opencode/opencode.json"
-```
-
-Also confirm on t14 that enabled plugins are deployed and retired plugin files
-are gone after activation.
-
-### Step 8: Roll Out Other Hosts
-
-After the t14 canary passes, deploy rog, thinkcentre, and macm5 with
-`nixos-build` on each host.
-
-## Verification Checklist
-
-- [ ] `nix build .#gentle-ai` succeeds (vendorHash accepted)
-- [ ] `nix build .#gentle-ai-assets` succeeds and exposes the upstream plugin set
-- [ ] Lock entry resolves the release tag
-- [ ] `format-nix && nix flake check --no-build` passes
-- [ ] t14 permission gate (jq above) returns `true`
-- [ ] Enabled plugins deployed; disabled and legacy plugins removed on activation
-- [ ] `caveman-assets` / `ponytail-assets` unaffected (independent inputs)
-
-## Rollback
-
-If something goes wrong:
-
-1. Revert the tag and hash changes:
-
-   ```bash
-   git checkout HEAD~1 -- flake.nix flake.lock pkgs/gentle-ai/default.nix
+   ```sh
+   bun test pkgs/gentle-ai-assets/opencode-review-transport.test.ts
+   python3 shared/opencode/v2-agents.test.py --odd-candidate
+   python3 shared/opencode/home-launcher.test.py --odd-candidate
+   python3 shared/opencode/asset-ownership.test.py
+   go -C pkgs/nixos-scripts test ./...
+   nix build --no-link .#gentle-ai .#gentle-ai-assets
+   nix flake check --no-build
    ```
 
-   (or restore the previous tag/vendorHash values by hand if the commit is
-   already merged)
+   While new files remain untracked, use the explicit source installable
+   `path:/home/glats/.nixos#gentle-ai-assets` (substitute the local checkout path)
+   and `nix flake check --no-build path:/home/glats/.nixos`; never stage merely to
+   make a Git-filtered flake see them. Python fixtures use explicit path sources.
+4. Evaluate three Linux system/integrated HM targets, all four standalone HM
+   targets, and Darwin system/integrated HM separately. Native Darwin builds and
+   cross-platform IFD cannot be certified from Linux; unavailable is UNVERIFIED.
+5. Compare complete provider profiles outside approved ODD mappings and the
+   explicitly approved retirement/alias exceptions below. Explore,
+   worker and verify inherit the former explore/apply/verify fits; user overrides
+   remain last-wins. Keep provider policy, NVIDIA declaration, MCP/Engram/RTK,
+   launcher arguments, standalone/server/proxy behavior and namespace roots.
 
-2. Re-lock and rebuild:
+The tagged installer SDK equality check does not prove managed 2.0.14 runtime
+incompatibility. A demonstrated incompatibility blocks adoption until an
+explicit runtime-upgrade decision; unit tests cannot advertise organic capability.
 
-   ```bash
-   nix flake lock --update-input gentle-ai-src
-   nix build .#gentle-ai-assets && nix flake check --no-build
-   ```
+### Approved routing retirement (2026-10-09)
 
-3. If a retired plugin file must be removed after rollback, the activation
-   script's unconditional cleanup (and `disabledManagedPluginNames` removals)
-   handles it on the next rebuild — no imperative recovery is needed.
+Operator decision #3979 retires exactly `opencode-free`,
+`anthropic-opencode-free`, and `anthropic-opencode-go`; it does not assign a new
+model or waive model-fit evidence gates. Their MiMo route is deprecated in the
+public catalog and filtered by native 2.0.14. The proposed free replacement did
+not pass the required evidence gates, so there is no automatic or paid fallback.
+Explicit selection of a retired name must fail configuration; external callers
+must obtain an operator-approved alternative rather than silently redirect.
 
-## Principles
+The 32 remaining profile objects and ordering are unchanged after the existing
+ODD mappings. Both integrated and standalone selections remain `openai-medium`
+on rog and `openai-anthropic-go` on thinkcentre, t14 and macm5, with unchanged
+overrides. NVIDIA gains only the native model alias `nemotron-3-ultra-550b-a55b`
+with `modelID = nvidia/nemotron-3-ultra-550b-a55b`, preserving the same backend
+model, endpoint and authentication settings; no NVIDIA role selectors change.
 
-1. **Always pin release tags** — never track a moving branch
-2. **No sync markers** — `flake.lock` is the single source of truth
-3. **Always use upstream plugins** — if there's a bug, PR to upstream
-4. **Per-source derivations are independent** — no monolithic chain
-5. **Local skills live in `local-ai-assets`** — never modify upstream source pins directly
-6. **Permissions, not tools** — agent grants are `permission`-shaped (v2.5.0+)
+The catalog proof covers 23 built-in and three custom selectors with zero
+usable-missing entries. It is not a live tool-call, entitlement or uptime proof.
+Retirement changes the reviewed source fingerprint and generated configuration:
+rerun shared evaluation and native platform configuration/build gates. Keep old
+build evidence as historical evidence, not proof of the repaired candidate.
+
+## Ownership and unfinished work
+
+`ai-assets-reconcile` is a thin Go operational tool in the existing
+`nixos-scripts` package. V2, Claude and OpenFang consume immutable union trees.
+Their per-root `.gentle-ai-owned.json` records installed digests, source revision
+and original rollback bytes. Schema 2 pending entries separately record the
+immediate prior state (including explicit absence) and desired digest. Completed
+entries clear pending retry authority; historical rollback bytes never authorize
+replacement. Schema 1 manifests are conservatively read for installed digests,
+not historical before-image retry authority. Every path is preflighted before asset writes; symlink
+escapes, foreign collisions and modified retirements refuse without deleting
+user data. Replacements are file-atomic and journaled first for idempotent retry.
+No directory is recursively deleted or user tree swept for generic orphans.
+Persistent per-root `.gentle-ai-owned.lock` uses native advisory `flock` on Linux
+and Darwin to serialize reconciler processes through journal and completion.
+Never unlink this lock while another reconciler may be running. Replacements
+recheck preflight bytes immediately before rename; absent targets use a
+same-directory no-clobber hard-link install. Modified paths refuse rather than
+overwrite. Advisory locks do not stop external editors: an existing file or
+ancestor may still change after the final check. This narrows that race window,
+not a full TOCTOU guarantee, cross-root transaction or power-loss durability
+guarantee. Consumer activations still preflight independently; an already
+completed consumer/file is not rolled back when a later conflict refuses.
+
+Bootstrap evidence comes from the exact prior repository generation
+`4750736cd68f517a871ac7448639c94546472390` and its complete lock/pinned 2.5 asset
+sources. V2 bootstrap reproduces the actual prior command/skill remaps and phase
+marker bytes; Claude uses its distinct prior assets. This historical inventory
+is not a second active production stack. Modified or unproven old assets require
+explicit reconciliation before activation; do not force around the refusal.
+
+The current migration remains tracked in
+`openspec/changes/gentle-ai-v4-odd-v2-only/`; history is not converted. Before
+retiring another unfinished workflow, the user must select the work and approve
+a handoff linking its original artifacts, stable task IDs, actual code/evidence
+and remaining gates. Never bulk-convert OpenSpec or create ODD feature documents
+for unselected work. Future substantial ODD work uses `odd/tasks/<feature>.md`
+and a full project Engram `odd/<feature>/tasks` mirror, with readback and explicit
+pending-mirror/conflict handling. Prompt text alone does not prove that behavior.
+
+## Authorized rollout and rollback
+
+Only after independent candidate review and separate model/network consent,
+prove native delegation and real lens/refuter/validator receipts with negative
+cases on rog. Separately authorize rog-first activation, then each other host.
+Keep native Darwin and each host's runtime/MCP/Engram checks distinct; rog or
+loopback success is not fleet certification. Do not restart the current harness
+or active sessions during this implementation.
+
+Rollback restores the coupled prior source/lock/package/assets/graph changes and
+approved system/HM generations, never V1. Preserve credentials, sessions,
+receipts, archives, OpenSpec and ODD documents, unrelated work and Git index.
+Before generation restoration, use the retained prior/current immutable asset
+trees with the same reconciler in a reviewed recovery procedure, or restore
+only digest-matching managed before-images. Refuse modified files; never copy
+an entire directory over a user's tree or reinterpret newer receipt authority.
+Keep migration evidence and journals until rollback is no longer needed.

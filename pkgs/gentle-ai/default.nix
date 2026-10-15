@@ -2,31 +2,34 @@
   lib,
   buildGoModule,
   gentle-ai-src,
+  go,
 }:
 
-buildGoModule {
+assert lib.versionAtLeast go.version "1.25.10";
+(buildGoModule.override { inherit go; }) {
   pname = "gentle-ai";
-  version = gentle-ai-src.rev or "unstable";
+  version = "4.0.0";
 
   src = gentle-ai-src;
 
   subPackages = [ "cmd/gentle-ai" ];
 
-  vendorHash = "sha256-todsAjNOtV/fX4agsaqFwC0MHerMCVB0ufJk1sGSm/Y=";
+  vendorHash = "sha256-YL4Slz/UuY+HEcJTW+pMphcdB6xtpam+E4uTDWifEcY=";
+  ldflags = [
+    "-s"
+    "-w"
+    "-X main.version=4.0.0"
+  ];
 
-  # Local override for the OpenCode skill-registry startup plugin: upstream
-  # resolves the plugin cwd from `input.worktree`, which OpenCode populates
-  # with "/" for git-less directories, so the refresh always skipped there.
-  # The embedded asset tree ships to `gentle-ai sync`, which rewrites the
-  # deployed plugin file — so the CLI embed must match the gentle-ai-assets
-  # override below. TODO(upstream): drop both overrides once gentle-ai-src
-  # carries the worktree-root fix (Gentleman-Programming/gentle-ai).
+  # Preserve project-first scanner precedence; never consult retired V1 roots.
   postPatch = ''
-    cp ${../gentle-ai-assets/skill-registry-worktree-root.ts} internal/assets/opencode/plugins/skill-registry.ts
+    substituteInPlace internal/skillregistry/registry.go \
+      --replace-fail 'filepath.Join(home, ".config", "opencode", "skills")' \
+                     'filepath.Join(home, ".config", "opencode-v2", "skills")'
   '';
 
   meta = with lib; {
-    description = "AI ecosystem configurator with persistent memory and SDD workflow";
+    description = "AI ecosystem configurator with persistent memory and ODD workflow";
     homepage = "https://github.com/Gentleman-Programming/gentle-ai";
     license = licenses.mit;
     platforms = [

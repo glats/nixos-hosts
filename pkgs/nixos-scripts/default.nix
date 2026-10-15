@@ -20,6 +20,7 @@ buildGoModule {
   subPackages = [
     "cmd/adguard-tunnel"
     "cmd/ai-backup"
+    "cmd/ai-assets-reconcile"
 
     "cmd/browsermcp-broker"
     "cmd/code-work"

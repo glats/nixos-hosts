@@ -6,6 +6,7 @@
   providers,
   cfg,
   runtimeConfig,
+  gentleV2 ? pkgs.gentle-ai,
 }:
 
 let
@@ -77,14 +78,78 @@ let
   v2ManagedPlugins = {
     "host-config.ts" = ./host-config-v2.ts;
     "rtk.ts" = ./rtk-v2.ts;
-    "sdd-task-result.ts" =
-      "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode-v2/plugins/sdd-task-result.ts";
     "opencode-review-transport.ts" =
       "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode-v2/plugins/opencode-review-transport.ts";
     "skill-registry.ts" =
       "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode-v2/plugins/skill-registry.ts";
     "engram.ts" = "${pkgs.engram-assets}/share/engram/opencode-v2/plugins/engram.ts";
   };
+  assetTrees = import ../ai-assets-tree.nix { inherit lib pkgs; };
+  promptTree = pkgs.runCommand "opencode-owned-context" { } ''
+    mkdir -p "$out"
+    cp ${v2AgentsMd} "$out/AGENTS.md"
+  '';
+  legacyPromptTree = pkgs.runCommand "opencode-prior-context" { } ''
+    mkdir -p "$out"
+    cp ${assetTrees.priorRepo}/AGENTS.md "$out/AGENTS.md"
+  '';
+  pluginsTree = pkgs.runCommand "opencode-v2-owned-plugins" { } ''
+    mkdir -p "$out"
+    ${lib.concatStringsSep "\n" (
+      lib.mapAttrsToList (name: source: ''
+        cp ${
+          lib.escapeShellArg (if builtins.isPath source then builtins.path { path = source; } else source)
+        } "$out/${name}"
+      '') v2ManagedPlugins
+    )}
+    chmod -R u+w "$out"
+    substituteInPlace "$out/opencode-review-transport.ts" \
+      --replace-fail 'Command: "${pkgs.gentle-ai}/bin/gentle-ai"' 'Command: "${gentleV2}/bin/gentle-ai"'
+    substituteInPlace "$out/skill-registry.ts" \
+      --replace-fail 'const GO_COMMAND = "gentle-ai"' 'const GO_COMMAND = "${gentleV2}/bin/gentle-ai"'
+  '';
+  legacyLocalPlugins = pkgs.runCommand "opencode-v2-prior-local-plugins" { } ''
+    mkdir -p "$out"
+    cp ${assetTrees.priorRepo}/shared/opencode/host-config-v2.ts "$out/host-config.ts"
+    cp ${assetTrees.priorRepo}/shared/opencode/rtk-v2.ts "$out/rtk.ts"
+    cp ${assetTrees.priorPkgs.engram-assets}/share/engram/opencode-v2/plugins/engram.ts "$out/engram.ts"
+  '';
+  entries =
+    (map (source: {
+      target = "skills";
+      inherit source;
+    }) config.home.ai-assets.skillSources)
+    ++ (map (source: {
+      target = "commands";
+      inherit source;
+    }) opencodeCommandSources);
+  desiredAssets = assetTrees.tree "opencode-v2-owned-assets" (
+    entries
+    ++ [
+      {
+        target = "plugins";
+        source = pluginsTree;
+      }
+      {
+        target = "";
+        source = promptTree;
+      }
+    ]
+  ) false;
+  legacyAssets = assetTrees.legacy "v2" [
+    {
+      target = "plugins";
+      source = legacyLocalPlugins;
+    }
+    {
+      target = "";
+      source = legacyPromptTree;
+    }
+  ];
+  openfangAssets = assetTrees.tree "openfang-owned-skills" (lib.filter (
+    entry: entry.target == "skills"
+  ) entries) false;
+  legacyOpenfang = assetTrees.legacy "openfang" [ ];
 
   providerAllowlist = providers.providerAllowlist;
 
@@ -99,6 +164,16 @@ let
       # (opencode#53762). This is a mitigation, not a reliability guarantee.
       # Source: opencode.ai/v2/docs/providers#websockets.
       providers.openai.settings.transport = "http";
+      # Project the existing NVIDIA inventory into the documented native V2
+      # schema; never drop its declaration while retaining its routing IDs.
+      providers.nvidia = {
+        inherit (providers.nvidiaProvider.nvidia) name models;
+        env = [ "NVIDIA_API_KEY" ];
+        package = "@opencode/ai/providers/openai-compatible";
+        settings = {
+          inherit (providers.nvidiaProvider.nvidia.options) baseURL apiKey;
+        };
+      };
       permissions = v2Permissions.global;
       mcp = v2Mcps;
       experimental.policies = [
@@ -146,11 +221,6 @@ in
         opencode_json="$runtime_dir/opencode.json"
 
             mkdir -p "$runtime_dir"
-            if [ ! -f "$runtime_dir/AGENTS.md" ] || ! ${pkgs.diffutils}/bin/cmp -s "${v2AgentsMd}" "$runtime_dir/AGENTS.md"; then
-              ${pkgs.coreutils}/bin/cp -f "${v2AgentsMd}" "$runtime_dir/AGENTS.md"
-              chmod 644 "$runtime_dir/AGENTS.md"
-            fi
-
             if [ -L "$opencode_json" ]; then
               src="$(${pkgs.coreutils}/bin/readlink -f "$opencode_json")"
               ${pkgs.coreutils}/bin/cp --remove-destination "$src" "$opencode_json"
@@ -171,59 +241,12 @@ in
       ''
         runtime_dir="${runtimeDir}"
 
-        commands_dir="$runtime_dir/commands"
-          # Replace any store-linked command tree before copying so the V2
-          # commands are writable for the remap below.
-        [ -L "$commands_dir" ] && ${pkgs.coreutils}/bin/rm -f "$commands_dir"
-        [ -d "$commands_dir" ] && chmod -R u+rwX "$commands_dir"
-        [ -d "$commands_dir" ] && ${pkgs.coreutils}/bin/rm -rf "$commands_dir"
-        mkdir -p "$commands_dir"
-
-        skills_dir="$runtime_dir/skills"
-        [ -L "$skills_dir" ] && ${pkgs.coreutils}/bin/rm -f "$skills_dir"
-        mkdir -p "$skills_dir"
-        for src in ${lib.concatStringsSep " " opencodeCommandSources}; do
-          # Do not preserve the source directory mode: `cp -a` would restore
-          # its store-derived read-only mode on the writable destination.
-          [ -d "$src" ] && ${pkgs.coreutils}/bin/cp -r "$src"/. "$commands_dir/"
-        done
-        for src in ${lib.concatStringsSep " " config.home.ai-assets.skillSources}; do
-          [ -d "$src" ] && ${pkgs.coreutils}/bin/cp -r "$src"/. "$skills_dir/"
-        done
-         chmod -R u+w "$commands_dir" "$skills_dir"
-         ${pkgs.findutils}/bin/find "$commands_dir" "$skills_dir" -type f -exec ${pkgs.gnused}/bin/sed -i 's/subtask/subagent/g' {} +
-
-         # Delegate-only SDD skills are portable upstream assets. OpenCode V2's
-         # native subagent tool requires an explicit agent; without it the model
-         # falls back to the generic agent and bypasses the phase contract.
-         for skill in sdd-init sdd-explore sdd-propose sdd-spec sdd-design sdd-tasks sdd-apply sdd-verify sdd-archive sdd-research; do
-           skill_file="$runtime_dir/skills/$skill/SKILL.md"
-           marker='<!-- opencode-v2-phase-delegation -->'
-           if [ -f "$skill_file" ] && ! ${pkgs.gnugrep}/bin/grep -qF "$marker" "$skill_file"; then
-              ${pkgs.coreutils}/bin/printf '\n%s\n## OpenCode V2 phase delegation\nWhen this skill is loaded by another agent, it MUST call the native `subagent` tool with `agent: "%s"`. It MUST NOT select `general` or omit `agent`.\n' "$marker" "$skill" >> "$skill_file"
-           fi
-         done
-
-        plugins_dir="$runtime_dir/plugins"
-        [ -L "$plugins_dir" ] && ${pkgs.coreutils}/bin/rm -f "$plugins_dir"
-        mkdir -p "$plugins_dir"
-        # Native V2 replaces media handling; these V1-only plugins are an
-        # explicit drop set and stale copies must not survive activation.
-        ${pkgs.coreutils}/bin/rm -f \
-          "$plugins_dir/claude-auth.ts" \
-          "$plugins_dir/opencode-warden.ts" \
-          "$plugins_dir/opencode-subagent-statusline.ts" \
-          "$plugins_dir/opencode-sdd-engram-manage.ts" \
-          "$plugins_dir/model-variants.ts" \
-          "$plugins_dir/opencode-multimodal.ts"
-        ${lib.concatStringsSep "\n" (
-          lib.mapAttrsToList (name: src: ''
-            if [ ! -f "$plugins_dir/${name}" ] || ! ${pkgs.diffutils}/bin/cmp -s "${src}" "$plugins_dir/${name}"; then
-              ${pkgs.coreutils}/bin/cp -f "${src}" "$plugins_dir/${name}"
-              chmod 644 "$plugins_dir/${name}"
-            fi
-          '') v2ManagedPlugins
-        )}
+        # Refuse modified/foreign collisions and symlink escapes before any
+        # asset changes. Bootstrap claims only exact prior 2.5 consumer bytes.
+        ${pkgs.nixos-scripts}/bin/ai-assets-reconcile "$runtime_dir" \
+          ${desiredAssets} ${legacyAssets} ff77164d4f56f1665b22fb6fac51c2ccbb769400
+        # Plugin set: host-config.ts, rtk.ts, engram.ts, skill-registry.ts,
+        # opencode-review-transport.ts; the retired SDD adapter is absent.
         mkdir -p "$runtime_dir/node_modules"
         ${pkgs.coreutils}/bin/cp -r ${pkgs.opencode-npm-packages-v2}/lib/node_modules/. "$runtime_dir/node_modules/"
         chmod -R u+w "$runtime_dir/node_modules"
@@ -234,20 +257,7 @@ in
         opencode_skills_dir="${config.home.homeDirectory}/.config/opencode-v2/skills"
         openfang_skills_dir="${config.home.homeDirectory}/.openfang/skills"
 
-        mkdir -p "$opencode_skills_dir"
-        [ -L "$openfang_skills_dir" ] && ${pkgs.coreutils}/bin/rm -f "$openfang_skills_dir"
-        mkdir -p "$openfang_skills_dir"
-
-        (cd "$opencode_skills_dir" && ${pkgs.findutils}/bin/find . -type f) | while read -r rel; do
-          if [ ! -f "$openfang_skills_dir/$rel" ] || ! ${pkgs.diffutils}/bin/cmp -s "$opencode_skills_dir/$rel" "$openfang_skills_dir/$rel"; then
-            mkdir -p "$(dirname "$openfang_skills_dir/$rel")"
-            ${pkgs.coreutils}/bin/cp -f "$opencode_skills_dir/$rel" "$openfang_skills_dir/$rel"
-            chmod 644 "$openfang_skills_dir/$rel"
-          fi
-        done
-
-        (cd "$openfang_skills_dir" && ${pkgs.findutils}/bin/find . -type f) | while read -r rel; do
-          [ -f "$opencode_skills_dir/$rel" ] || rm -f "$openfang_skills_dir/$rel"
-        done
+        ${pkgs.nixos-scripts}/bin/ai-assets-reconcile "${config.home.homeDirectory}/.openfang" \
+          ${openfangAssets} ${legacyOpenfang} ff77164d4f56f1665b22fb6fac51c2ccbb769400
       '';
 }
