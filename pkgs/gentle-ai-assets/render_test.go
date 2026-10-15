@@ -9,11 +9,14 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
+	"github.com/gentleman-programming/gentle-ai/v4/internal/agents"
 	"github.com/gentleman-programming/gentle-ai/v4/internal/assets"
 	"github.com/gentleman-programming/gentle-ai/v4/internal/components/agentguidance"
+	"github.com/gentleman-programming/gentle-ai/v4/internal/components/filemerge"
 	"github.com/gentleman-programming/gentle-ai/v4/internal/components/opencodeagents"
 	"github.com/gentleman-programming/gentle-ai/v4/internal/components/reviewassets"
 	"github.com/gentleman-programming/gentle-ai/v4/internal/model"
@@ -22,7 +25,7 @@ import (
 
 func exportText(t *testing.T, root, path, text string) {
 	t.Helper()
-	if strings.Contains(text, "{{GENTLE_AI_") {
+	if strings.Contains(text, "{{GENTLE_AI_") || (strings.HasPrefix(path, "claude/") && strings.Contains(text, "{{")) {
 		t.Fatalf("unrendered managed placeholder in %s", path)
 	}
 	destination := filepath.Join(root, filepath.FromSlash(path))
@@ -100,10 +103,13 @@ func TestExportManagedPrompts(t *testing.T) {
 		}
 		exportText(t, root, runtime.path+"/orchestrator.md", prompt)
 	}
-	// Claude consumes file assets, not the OpenCode JSON graph. Preserve its
-	// frontmatter and let the upstream runtime-specific reviewer renderer own
-	// the prompt. Other Claude agent bodies are already complete source assets.
-	err := fs.WalkDir(assets.FS, "claude/agents", func(path string, entry fs.DirEntry, err error) error {
+	// Match reviewassets.renderNativeAgent for the fixed Claude assignments.
+	adapter, err := agents.NewAdapter(model.AgentClaudeCode)
+	if err != nil {
+		t.Fatal(err)
+	}
+	claudeModels := map[string]model.ClaudeModelAlias{"review-refuter": model.ClaudeModelOpus, "jd-judge-a": model.ClaudeModelSonnet, "jd-judge-b": model.ClaudeModelSonnet, "jd-fix-agent": model.ClaudeModelSonnet, "review-risk": model.ClaudeModelSonnet, "review-readability": model.ClaudeModelSonnet, "review-reliability": model.ClaudeModelSonnet, "review-resilience": model.ClaudeModelSonnet}
+	err = fs.WalkDir(assets.FS, "claude/agents", func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -114,12 +120,41 @@ func TestExportManagedPrompts(t *testing.T) {
 		if err != nil {
 			return err
 		}
-		text, _ = reviewassets.RenderReviewerAsset(path, text)
+		if prompt, reviewer := reviewassets.RenderReviewerAsset(path, text); reviewer {
+			text = prompt
+		}
+		name := strings.TrimSuffix(filepath.Base(path), ".md")
+		if strings.HasPrefix(name, "jd-judge-") {
+			text = replaceJudgmentSection(text, reviewassets.JudgmentDayReviewerContract())
+		}
+		if cmr, ok := adapter.(interface {
+			ClaudeModelID(model.ClaudeModelAlias) string
+		}); ok {
+			text = strings.ReplaceAll(text, "{{CLAUDE_MODEL}}", cmr.ClaudeModelID(claudeModels[name]))
+			text = strings.ReplaceAll(text, "{{CLAUDE_EFFORT_FRONTMATTER}}\r\n", "")
+			text = strings.ReplaceAll(text, "{{CLAUDE_EFFORT_FRONTMATTER}}\n", "")
+		}
+		// Upstream (install.go:268) expands {{ENGRAM_TOOL_PREFIX}} to both prefixes; the
+		// shipped agents hardcode the plugin prefix, so grant the MCP-server prefix too.
+		text = regexp.MustCompile(`\{\{ENGRAM_TOOL_PREFIX\}\}([A-Za-z0-9_]+)`).ReplaceAllString(text, "mcp__engram__$1, mcp__plugin_engram_engram__$1")
+		text = regexp.MustCompile(`(^|[ ,\[])mcp__plugin_engram_engram__([A-Za-z0-9_]+)`).ReplaceAllString(text, "${1}mcp__engram__$2, mcp__plugin_engram_engram__$2")
+		text = reviewassets.InjectCodeGraphToolGrant(text, model.AgentClaudeCode, "")
+		text = filemerge.InjectMarkdownSection(text, "agent-language-contract", strings.TrimSpace(assets.MustRead("generic/agent-language-contract.md")))
+		text = agentguidance.InjectRemoteAuthorization(text)
 		exportText(t, root, path, text)
 		return nil
 	})
 	if err != nil {
 		t.Fatal(err)
+	}
+	protocol := filemerge.ExtractHTMLCommentSection(assets.MustRead("engram/protocol.md"), "full")
+	exportText(t, root, "claude/engram-protocol.md", protocol)
+	for _, style := range []struct{ source, output string }{{"claude/output-style-neutral.md", "claude/output-styles/neutral.md"}, {"claude/output-style-gentleman.md", "claude/output-styles/gentleman.md"}} {
+		text, err := assets.Read(style.source)
+		if err != nil {
+			t.Fatal(err)
+		}
+		exportText(t, root, style.output, text)
 	}
 	if len(graph) != 13 {
 		t.Fatalf("unexpected tagged managed graph: %d agents", len(graph))
@@ -138,4 +173,14 @@ func TestExportManagedPrompts(t *testing.T) {
 		t.Fatal(err)
 	}
 	exportText(t, root, "opencode/odd-overlay.json", string(encoded)+"\n")
+}
+
+// replaceJudgmentSection mirrors reviewassets.replaceJudgmentSection (install.go:339-346).
+func replaceJudgmentSection(content, body string) string {
+	const heading = "## Review ledger contract"
+	start := strings.Index(content, heading)
+	if start < 0 {
+		return content
+	}
+	return strings.TrimRight(content[:start], "\n") + "\n\n" + heading + "\n\n" + body + "\n\n"
 }
