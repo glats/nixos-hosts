@@ -15,7 +15,7 @@ Branch: `feat/cloudflare-maquilinux-ddns` · Delivery: ask-on-risk (forecast ~10
 ## Tasks
 
 - [x] T1 — S1, S2, S3, S5 — Nix: native ddclient config + CLI module + sops declarations — route: inline — commit: 44be3965 (RDD off; independent verify PASS)
-- [ ] T2 — S4, S5 — deploy, create proxied A records via flarectl, verify ddclient run — route: inline (needs user: token zone + `nixos-build switch`) — commit: n/a
+- [x] T2 — S4, S5 — deploy, create proxied A records via flarectl, verify ddclient run — route: inline (user ran switch + flarectl) — commit: n/a (runtime)
 
 ## Log
 
@@ -25,3 +25,4 @@ Branch: `feat/cloudflare-maquilinux-ddns` · Delivery: ask-on-risk (forecast ~10
 - L4 T1 evidence: RED `services.ddclient.domains` = [""] (opaque file). GREEN rendered ddclient.conf has global zone=glats.org + `zone=maquilinux.org maquilinux.org,*.maquilinux.org` + `glats.org,*.glats.org,guard.glats.org`; rog toplevel eval OK; `nix flake check --no-build` passed; flarectl wrapper builds (shellcheck). Independent verifier: S1-S3,S5 pass, S4 pass on config; ddclient cloudflare only PATCHes content of existing records (proxied preserved), so T2 must create records first. Old secrets/host/rog/ddclient.yaml removed.
 - L5 next: user adds maquilinux.org zone to the token, runs `nixos-build switch`; then `flarectl dns create --zone maquilinux.org --name maquilinux.org --type A --content <ip> --proxy` and same for `*`; then `sudo systemctl start ddclient` and check the journal.
 - L6 (2026-10-15) user: "flarectl dns create ... ListZonesContext command failed: Invalid request headers (6003) ... despues del build nix". Root cause: `cloudflare_dns_api_token` is the lego env file `CLOUDFLARE_DNS_API_TOKEN=<token>`; ddclient also logged HTTP 400 for maquilinux.org. Fix cf835975: root ExecStartPre extracts bare token to /run/ddclient/cloudflare-token; wrapper strips prefix. Evidence: rebuilt wrapper `flarectl zone list` lists glats.org and maquilinux.org (token already covers both zones); rog eval + flake check pass.
+- L7 (2026-10-15) T2 evidence: user created proxied A records maquilinux.org and *.maquilinux.org via flarectl. ddclient 21:26 `SUCCESS: [cloudflare][maquilinux.org]> IPv4 address set to 201.188.176.217` (and wildcard). Cache: all five hosts status good. dig @1.1.1.1: maquilinux.org/www -> Cloudflare proxy IPs; glats.org unchanged (proxy); guard.glats.org 201.188.176.217. Feature complete; follow-up (not requested): nginx vhost + Cloudflare SSL mode for maquilinux.org.
