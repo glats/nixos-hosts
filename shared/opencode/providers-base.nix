@@ -207,7 +207,7 @@ let
         gentle-orchestrator = "anthropic/claude-opus-5-5";
         gentle-ai-explore = "opencode-go/glm-5.3-flash";
         gentle-ai-worker = "openai/gpt-6-luna";
-        gentle-ai-verify = "anthropic/claude-sonnet-5-5";
+        gentle-ai-verify = "openai/gpt-6.1-sol";
         jd-judge-a = "anthropic/claude-sonnet-5-5";
         jd-judge-b = "anthropic/claude-sonnet-5-5";
         jd-fix-agent = "opencode-go/glm-5.3-flash";
