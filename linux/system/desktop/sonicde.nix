@@ -8,7 +8,6 @@
   services.xserver.enable = true;
   services.xserver.updateDbusEnvironment = true;
 
-  # The 6.6.5 wallpaper input mistakenly points to workspace-addons.
   environment.sonic-de.excludePackages = [
     inputs.sonic-de.packages.${pkgs.stdenv.hostPlatform.system}.sonic-workspace-wallpapers
   ];

@@ -1,19 +1,3 @@
-// Command netconsole-setup is the rog-side netconsole readiness probe run
-// by the netconsole-setup oneshot unit at boot:
-//
-//  1. verifies the diagnostics-gate kernel state (always_kmsg_dump on,
-//     efi_pstore not disabled),
-//  2. reads the CURRENT IPv4 of the configured interface (runtime DHCP,
-//     never a fixed source IP),
-//  3. writes the configfs netconsole target (dev_name, local_ip,
-//     local_port, remote_ip, remote_mac, remote_port, enabled last),
-//  4. emits the nonce probe "netconsole-verify: nonce=<token>" to
-//     /dev/kmsg, binds UDP :6665 and waits up to 2s for the receiver's
-//     matching "netconsole-ack" (contract in internal/netconsole).
-//
-// Any failure exits nonzero (plus a /dev/kmsg breadcrumb) so the unit is
-// visibly failed. All logic lives in internal/netconsole and is covered by
-// unit tests; this entry only parses flags and dispatches.
 package main
 
 import (
@@ -46,10 +30,6 @@ func main() {
 		RemotePort: *remotePort,
 	}
 
-	// Diagnostics-gate check first: without persistent kmsg dumping the
-	// pstore half of the evidence chain is missing, so fail fast. The
-	// check self-heals via runtime sysfs writes when the kernel cmdline
-	// has not been applied yet (first boot after switching the gate on).
 	if err := netconsole.EnsurePstore(os.ReadFile,
 		func(path string, val []byte) error {
 			return os.WriteFile(path, val, 0o644)
@@ -62,8 +42,6 @@ func main() {
 		fatal(km, err.Error())
 	}
 
-	// Bind the ACK socket before emitting the probe: the receiver replies
-	// to the datagram's source port, so :6665 must already be listening.
 	conn, err := net.ListenUDP("udp", &net.UDPAddr{Port: *localPort})
 	if err != nil {
 		fatal(km, err.Error())

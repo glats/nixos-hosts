@@ -1,43 +1,3 @@
-// Command ai-backup performs one-shot compressed backup/restore of AI
-// assistant state (Claude Code, OpenCode, Engram) as a single .tar.zst
-// archive, with consistent sqlite snapshots taken on the source host.
-//
-// Go port of the retired bin/ai-backup bash script: messages, flags,
-// env overrides, pipeline shapes and the 0/1/2/3/4 exit-code categories
-// are preserved. The embedded POSIX-sh payloads are NOT a verbatim
-// port: historical change ai-backup-manifest-scope redesigned them around an
-// explicit tar member list (no --exclude patterns), .db.snapshot
-// staging and a symlink-safe restore — each payload's comment block
-// carries the rationale.
-//
-//	0 success · 1 usage/config · 2 ssh/connectivity · 3 snapshot/backup
-//	failure · 4 restore failure
-//
-// External binaries stay external exactly where the bash original used
-// them: sqlite3 runs only inside the POSIX sh payloads exec'd on the
-// source host (shell-out, no cgo driver), alongside tar, readlink and
-// mktemp; zstd, ssh, sha256sum, du, find and sort are exec'd by this
-// command in the same pipeline shapes as bash.
-//
-// AI_BACKUP_EXTRA (space-separated project .engram/ directory paths,
-// archived as chunks/, manifest.json and config.json only) is read on
-// the orchestrating host and forwarded into the backup payload as an
-// sh assignment: ssh does not forward environment variables, so
-// injecting the value into the payload keeps local and ssh targets
-// identical.
-//
-// Faithfully-replicated pipefail quirks (the bash runs under
-// `set -euo pipefail`):
-//   - `restore --dry-run` pipes the listing through `sed | head -60`.
-//     Once head exits, any later sed write dies of SIGPIPE, so an
-//     archive whose listing is large enough kills the script silently
-//     with exit 141 and the "... (full list: ...)" trailer is never
-//     printed. Measured bash boundary: listings of ~300 members
-//     (~4KB) survive, ~500 members (~7KB) die; the port uses 6KB of
-//     listing bytes as the threshold (the exact boundary is
-//     sed/head/pipe-buffer dependent, not part of the bash contract).
-//   - a failed `du -h` inside a $(...) assignment kills the script
-//     silently with the pipeline's exit code (reproduced).
 package main
 
 import (
@@ -50,7 +10,6 @@ import (
 	"time"
 )
 
-// --- Configuration (override via environment) ---
 var (
 	dest      = envOr("AI_BACKUP_DEST", "/run/media/stuff/samba/backup/ai")
 	zstdLevel = envOr("AI_BACKUP_ZSTD_LEVEL", "6")
@@ -64,11 +23,6 @@ func envOr(key, fallback string) string {
 	return fallback
 }
 
-// usageText is the CLI help header: printed to stdout for -h/--help/
-// help (exit 0) AND for the restore missing-archive case (exit 1).
-// The member-list summary below is the documented backup manifest; it
-// must stay in sync with remoteBackupScript (asserted by
-// TestUsageTextDescribesManifest).
 const usageText = `ai-backup - One-shot compressed backup/restore of AI assistant state.
 
 Backs up Claude Code, OpenCode and Engram state from a source host
@@ -125,10 +79,6 @@ func usage(code int) {
 	os.Exit(code)
 }
 
-// --- Target resolution -------------------------------------------------------
-
-// resolveTarget ports resolve_target(): shorthand targets map to
-// user@host; anything else passes through.
 func resolveTarget(t string) string {
 	switch t {
 	case "local":
@@ -140,13 +90,10 @@ func resolveTarget(t string) string {
 	case "thinkcentre":
 		return "glats@thinkcentre.local"
 	default:
-		return t // user@host passthrough
+		return t
 	}
 }
 
-// targetLabel ports target_label(): short filesystem-safe archive name.
-// `local` → hostname; user@host → user-host with '.' and '/' mapped to
-// '-' (the bash `tr './' '--'`).
 func targetLabel(t string) string {
 	if t == "local" {
 		out, err := exec.Command("hostname").Output()
@@ -167,11 +114,6 @@ func targetLabel(t string) string {
 	return t
 }
 
-// --- Process plumbing --------------------------------------------------------
-
-// exitCode maps a subprocess failure to the shell's exit-code semantics:
-// propagate the child's code, or 127 when the command could not run at
-// all (bash "command not found").
 func exitCode(err error) int {
 	if exitErr, ok := err.(*exec.ExitError); ok {
 		return exitErr.ExitCode()
@@ -179,10 +121,6 @@ func exitCode(err error) int {
 	return 127
 }
 
-// pipeSource wires src's stdout into dst's stdin through a real kernel
-// pipe (bash `src | dst`): if dst exits early, src dies of SIGPIPE
-// exactly like in a shell pipeline. Both stderr sides stay inherited.
-// Must be followed by src.Wait() and dst.Wait().
 func pipeSource(src, dst *exec.Cmd) error {
 	pr, pw, err := os.Pipe()
 	if err != nil {
@@ -196,19 +134,17 @@ func pipeSource(src, dst *exec.Cmd) error {
 		return err
 	}
 	if err := dst.Start(); err != nil {
-		pw.Close() // src gets EPIPE and dies, like the bash pipeline
+		pw.Close()
 		src.Wait()
 		pr.Close()
 		return err
 	}
-	// Drop the parent copies so dst sees EOF once src exits.
+
 	pr.Close()
 	pw.Close()
 	return nil
 }
 
-// pipeTwo runs `src | dst` and returns the pipeline's exit status with
-// pipefail semantics: the rightmost failing stage wins.
 func pipeTwo(src, dst *exec.Cmd) (int, error) {
 	if err := pipeSource(src, dst); err != nil {
 		return 127, err
@@ -224,20 +160,6 @@ func pipeTwo(src, dst *exec.Cmd) (int, error) {
 	return 0, nil
 }
 
-// --- Remote payloads (POSIX sh, run on the source host) ----------------------
-//
-// All three payloads run under /bin/sh -s with the script on stdin
-// (locally or via ssh), emit their own messages, and own their exit
-// codes. They must stay POSIX-compatible: restore targets include
-// macOS, so no bashisms.
-
-// remoteBackupScript is the backup payload: stage consistent sqlite
-// snapshots, validate them, then stream an archive built from an
-// EXPLICIT member list. The member list below IS the backup manifest —
-// the only auditable artifact of what is archived.
-//
-// The first line of the shipped payload is the AI_BACKUP_EXTRA
-// assignment injected by backupPayload() (see its comment).
 const remoteBackupScript = `set -eu
 HOME_DIR="$(cd ~ && pwd)"
 SQLITE="$(command -v sqlite3 || echo /usr/bin/sqlite3)"
@@ -365,9 +287,6 @@ else
 fi
 `
 
-// preRestoreScript runs BEFORE tar extraction on the restore target:
-// the archive's .claude.json member overwrites the live file during
-// the plain-file extraction, so the current one must be kept first.
 const preRestoreScript = `set -eu
 # Runs after the pre-flight has passed (clean target or explicit
 # --force) and before extraction: the archive's plain-file members
@@ -394,15 +313,6 @@ do
 done
 `
 
-// restorePreflightScript runs FIRST, before any pre-restore copy or
-// extraction: a smart guard that refuses to clobber irreplaceable
-// state. Two refusal classes — (1) opencode/claude running on the
-// target: replacing a WAL database under a live handle loses every
-// write the process makes after the swap; (2) target already has
-// state (its own conversations, newer than this archive). Both are
-// overridable with --force (AI_BACKUP_RESTORE_FORCE=1, forwarded by
-// the Go wrapper — ssh does not forward environment variables).
-// Refusal is exit 4 and NOTHING on the target is touched.
 const restorePreflightScript = `set -eu
 if [ "${AI_BACKUP_RESTORE_FORCE:-0}" = "1" ]; then
   echo "ai-backup: pre-flight skipped (--force)"
@@ -444,8 +354,6 @@ fi
 echo "ai-backup: pre-flight clean — nothing to overwrite on target."
 `
 
-// remoteRestoreScript relocates the staged snapshots to their live
-// paths and verifies every database it can find.
 const remoteRestoreScript = `set -eu
 SQLITE="$(command -v sqlite3 || echo /usr/bin/sqlite3)"
 SNAP="$HOME/home-snap"
@@ -504,11 +412,6 @@ done
 exit $rc
 `
 
-// --- Run a POSIX sh snippet on a target (local or over ssh) ------------------
-
-// runOnCmd builds /bin/sh -s (stdin = payload) for local targets, or
-// `ssh $SSH_OPTS TARGET /bin/sh -s` for remote ones (SSH_OPTS is word
-// split exactly like the unquoted bash expansion).
 func runOnCmd(target, payload string) *exec.Cmd {
 	var cmd *exec.Cmd
 	if target == "local" {
@@ -518,31 +421,19 @@ func runOnCmd(target, payload string) *exec.Cmd {
 		cmd = exec.Command("ssh", args...)
 	}
 	cmd.Stdin = strings.NewReader(payload)
-	// nil Stderr in os/exec is /dev/null, NOT inherited — the bash
-	// original inherited the pipeline's stderr, so remote payload
-	// failures (sqlite snapshot errors, tar refusal) must reach the
-	// operator instead of dying silently.
+
 	cmd.Stderr = os.Stderr
 	return cmd
 }
 
-// shQuote renders s as a single POSIX-sh word: single quotes around it,
-// with embedded single quotes replaced by the '\” escape sequence.
 func shQuote(s string) string {
 	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
 }
 
-// backupPayload returns the payload shipped to the source host for a
-// backup: the AI_BACKUP_EXTRA value captured on THIS host is prepended
-// as an sh assignment. The injection exists because ssh does not
-// forward environment variables — without it, extras would work only
-// for local targets.
 func backupPayload() string {
 	return "AI_BACKUP_EXTRA=" + shQuote(os.Getenv("AI_BACKUP_EXTRA")) + "\n" + remoteBackupScript
 }
 
-// restorePreflightPayload forwards the --force decision to the
-// pre-flight payload as an sh assignment, mirroring backupPayload().
 func restorePreflightPayload(force bool) string {
 	v := "0"
 	if force {
@@ -551,8 +442,6 @@ func restorePreflightPayload(force bool) string {
 	return "AI_BACKUP_RESTORE_FORCE=" + v + "\n" + restorePreflightScript
 }
 
-// sshRC runs a remote command with inherited stdio and returns its exit
-// code (127 if ssh could not be started, like bash).
 func sshRC(target, remoteCmd string) int {
 	cmd := exec.Command("ssh", append(strings.Fields(sshOpts), target, remoteCmd)...)
 	cmd.Stdout = os.Stdout
@@ -564,8 +453,6 @@ func sshRC(target, remoteCmd string) int {
 	}
 	return exitCode(err)
 }
-
-// --- Subcommand: backup ------------------------------------------------------
 
 func doBackup(targetArg string) {
 	target := resolveTarget(targetArg)
@@ -581,7 +468,7 @@ func doBackup(targetArg string) {
 
 	outDir := filepath.Join(dest, label)
 	if err := os.MkdirAll(outDir, 0o755); err != nil {
-		fmt.Fprintln(os.Stderr, err) // bash: mkdir -p failure under set -e
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 	ts := time.Now().Format("20060102-150405")
@@ -592,13 +479,12 @@ func doBackup(targetArg string) {
 	fmt.Printf("           snapshotting sqlite, tarring, compressing (zstd -%s) ...\n", zstdLevel)
 	t0 := time.Now().Unix()
 
-	// run_on "$target" < payload | zstd -T0 -$LEVEL > "$part"
 	src := runOnCmd(target, remoteBackupScript)
 	z := exec.Command("zstd", "-T0", "-"+zstdLevel)
-	z.Stderr = os.Stderr // zstd failures (bad level, ENOSPC) must be visible
+	z.Stderr = os.Stderr
 	f, err := os.Create(part)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err) // bash: redirection failure under set -e
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 	z.Stdout = f
@@ -612,14 +498,13 @@ func doBackup(targetArg string) {
 	t1 := time.Now().Unix()
 
 	if err := os.Rename(part, archive); err != nil {
-		fmt.Fprintln(os.Stderr, err) // bash: mv failure under set -e
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 
-	// ( cd "$out_dir" && sha256sum "$(basename ...)" > "$(basename ...).sha256" )
 	shaFile, err := os.Create(archive + ".sha256")
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err) // bash: redirection failure under set -e
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 	sha := exec.Command("sha256sum", filepath.Base(archive))
@@ -636,9 +521,6 @@ func doBackup(targetArg string) {
 	fmt.Printf("           sha256 recorded in %s.sha256\n", filepath.Base(archive))
 }
 
-// duSize ports `$(du -h FILE | cut -f1)`: first TAB-separated field of
-// du's human-readable size. A du failure dies silently with its exit
-// code (bash: failing $(...) assignment under set -e + pipefail).
 func duSize(path string) string {
 	out, err := exec.Command("du", "-h", path).Output()
 	if err != nil {
@@ -651,15 +533,12 @@ func duSize(path string) string {
 	return line
 }
 
-// --- Subcommand: list --------------------------------------------------------
-
 func doList() {
 	if fi, err := os.Stat(dest); err != nil || !fi.IsDir() {
 		fmt.Printf("ai-backup: no destination yet at %s\n", dest)
 		return
 	}
-	// find ... -print0 | sort -z -r — exec'd as in bash; a failed
-	// process substitution just yields no input (→ "no archives yet").
+
 	find := exec.Command("find", dest, "-name", "ai-backup-*.tar.zst", "-print0")
 	sortCmd := exec.Command("sort", "-z", "-r")
 	var buf bytes.Buffer
@@ -681,8 +560,6 @@ func doList() {
 	}
 }
 
-// --- Subcommand: restore -----------------------------------------------------
-
 func doRestore(args []string) {
 	archive := ""
 	to := "local"
@@ -692,9 +569,7 @@ func doRestore(args []string) {
 		switch {
 		case args[0] == "--to":
 			if len(args) < 2 {
-				// bash: `to="$2"` with $2 unset dies under set -u
-				// ("unbound variable", exit 1); the closest equivalent
-				// here is an explicit config error.
+
 				fmt.Fprintln(os.Stderr, "ERROR: --to requires a value")
 				os.Exit(1)
 			}
@@ -712,7 +587,7 @@ func doRestore(args []string) {
 		case args[0] == "-h", args[0] == "--help":
 			usage(0)
 		default:
-			archive = args[0] // last positional wins
+			archive = args[0]
 			args = args[1:]
 		}
 	}
@@ -746,7 +621,7 @@ func doRestore(args []string) {
 		}
 		total := 0
 		for _, line := range lines {
-			total += len(line) + 3 // "  " prefix + newline
+			total += len(line) + 3
 		}
 		for i, line := range lines {
 			if i >= 60 {
@@ -754,14 +629,11 @@ func doRestore(args []string) {
 			}
 			fmt.Println("  " + line)
 		}
-		// Pipeline failure (bad archive): the bash dies under set -e
-		// with the pipeline's code, after whatever head printed.
+
 		if rc != 0 {
 			os.Exit(rc)
 		}
-		// pipefail+head SIGPIPE quirk (see package doc): listings big
-		// enough kill the bash script silently with 141 — the trailer
-		// is never printed.
+
 		if len(lines) > 60 && total > 6*1024 {
 			os.Exit(141)
 		}
@@ -771,10 +643,7 @@ func doRestore(args []string) {
 
 	fmt.Printf("ai-backup: restoring %s -> %s:$HOME\n", filepath.Base(archive), target)
 	fmt.Println("           (pre-flight refuses if opencode/claude run or state exists — override with --force)")
-	// Restore-phase failures (pre-restore copy, extraction, snapshot
-	// relocation, integrity check) map to exit 4 — the documented
-	// "restore failure" category (design decision; the retired bash
-	// returned 1 here, its own header already claimed 4).
+
 	rc := 0
 	runPayload := func(payload string) {
 		sh := runOnCmd(target, payload)
@@ -784,24 +653,16 @@ func doRestore(args []string) {
 			rc = 4
 		}
 	}
-	// Smart pre-flight runs BEFORE anything is touched: a refusal
-	// (running opencode/claude, existing state, no --force) aborts
-	// here with the target completely untouched.
+
 	runPayload(restorePreflightPayload(force))
 	if rc != 0 {
 		os.Exit(rc)
 	}
-	// Keep the current .claude.json before the archive's plain-file
-	// member overwrites it during extraction.
+
 	runPayload(preRestoreScript)
 	if rc == 0 {
 		if target == "local" {
-			// No --warning=no-unknown-keyword is added on the extract
-			// side: the source-side COPYFILE_DISABLE=1 suppression is
-			// authoritative, and that keyword is GNU-tar-only — bsdtar
-			// on macOS targets rejects unknown warnings, so passing it
-			// would disturb remote portability (design: apply only if
-			// it keeps that portability).
+
 			z := exec.Command("zstd", "-dc", archive)
 			t := exec.Command("tar", "-xf", "-", "-C", os.Getenv("HOME"))
 			t.Stdout = os.Stdout
@@ -809,7 +670,7 @@ func doRestore(args []string) {
 				rc = 4
 			}
 		} else {
-			// zstd -dc ARCHIVE | ssh $SSH_OPTS TARGET "tar -xf - -C \$HOME"
+
 			z := exec.Command("zstd", "-dc", archive)
 			s := exec.Command("ssh", append(strings.Fields(sshOpts), target, "tar -xf - -C $HOME")...)
 			s.Stdout = os.Stdout
@@ -819,7 +680,7 @@ func doRestore(args []string) {
 		}
 	}
 	if rc == 0 {
-		// Relocate snapshots, preserve symlinks, integrity-check.
+
 		runPayload(remoteRestoreScript)
 	}
 	if rc == 0 {
@@ -828,9 +689,6 @@ func doRestore(args []string) {
 	os.Exit(rc)
 }
 
-// tarListing ports `zstd -dc ARCHIVE | tar -tf -`: returns the raw
-// member listing (stdout captured, stderr inherited) and the pipeline's
-// pipefail exit status (rightmost failing stage, like bash's $?).
 func tarListing(archive string) (string, int) {
 	z := exec.Command("zstd", "-dc", archive)
 	t := exec.Command("tar", "-tf", "-")
@@ -840,11 +698,9 @@ func tarListing(archive string) (string, int) {
 	return out.String(), rc
 }
 
-// --- Main --------------------------------------------------------------------
-
 func main() {
 	args := os.Args[1:]
-	// No subcommand or a bare TARGET means: run a backup (default macm5).
+
 	switch {
 	case len(args) == 0:
 		doBackup("macm5")

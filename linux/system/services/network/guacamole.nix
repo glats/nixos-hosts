@@ -1,10 +1,6 @@
 { config, pkgs, ... }:
 
 let
-  # Generate guacamole.properties from sops secret at runtime.
-  # The file is placed in /srv/glats/guacamole/config/ and mounted as GUACAMOLE_HOME.
-  # The container entrypoint uses this as a template, appending enable-environment-properties.
-  # Password is read from the decrypted sops file, never stored in the Nix store.
   generateProperties = pkgs.writeShellScript "generate-guacamole-properties" ''
         PROPS_DIR="/srv/glats/guacamole/config"
         PROPS_FILE="$PROPS_DIR/guacamole.properties"
@@ -34,13 +30,7 @@ let
 in
 
 {
-  # Guacamole Stack - Remote Desktop
-  # Data in /srv/glats/guacamole/
-  # Properties file generated at runtime from sops secrets (see generateProperties)
 
-  # Ensure guacamole docker network exists before containers start
-  # Docker networks are created imperatively via systemd — idempotent.
-  # Requires docker daemon to be up (after docker.service).
   systemd.services.docker-network-guacamole = {
     description = "Docker network for Guacamole";
     after = [ "docker.service" ];
@@ -70,9 +60,6 @@ in
     };
   };
 
-  # Set up the guacadmin user password and rotate the PostgreSQL role password.
-  # Runs on every boot to ensure passwords are always current after sops rotation.
-  # Idempotent via ON CONFLICT DO UPDATE, so running on every boot is safe.
   systemd.services.guacamole-admin-setup = {
     description = "Guacamole admin user and database password setup";
     after = [ "docker-guacamoledb.service" ];
@@ -80,9 +67,6 @@ in
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {
       Type = "oneshot";
-      # Do NOT set RemainAfterExit = true here.
-      # The service must re-run on every boot so that a sops password rotation
-      # takes effect immediately (no manual restart needed).
       User = "root";
       ExecStart = pkgs.writeScript "guacamole-admin-setup" ''
         #!${pkgs.python3}/bin/python3
@@ -243,7 +227,6 @@ in
     };
   };
 
-  # 1. PostgreSQL Database
   virtualisation.oci-containers.containers.guacamoledb = {
     image = "postgres:17-alpine";
     autoStart = true;
@@ -273,13 +256,10 @@ in
     ];
   };
 
-  # 2. Guacd - Guacamole Daemon
   virtualisation.oci-containers.containers.guacamoled = {
     image = "guacamole/guacd";
     autoStart = true;
 
-    # Host-backed drive directory for RDP file transfer (drive redirection).
-    # guacd performs the read/write, so the container-internal path is /drive.
     volumes = [ "/srv/glats/guacamole/drive:/drive" ];
 
     environment = {
@@ -292,7 +272,6 @@ in
     ];
   };
 
-  # 3. Guacamole Web Interface
   virtualisation.oci-containers.containers.guacamole = {
     image = "guacamole/guacamole";
     autoStart = true;
@@ -301,9 +280,6 @@ in
       "9003:8080"
     ];
 
-    # Mount the generated guacamole.properties as GUACAMOLE_HOME template.
-    # The entrypoint reads this file as a base and appends enable-environment-properties.
-    # Explicit postgresql-* properties in the file take precedence over env vars.
     volumes = [
       "/srv/glats/guacamole/config:/etc/guacamole:ro"
     ];
@@ -311,8 +287,6 @@ in
     environment = {
       GUACAMOLE_HOME = "/etc/guacamole";
       LOG_LEVEL = "info";
-      # Must be set so the entrypoint installs the PostgreSQL auth extension.
-      # Actual connection properties come from the guacamole.properties file.
       POSTGRESQL_ENABLED = "true";
     };
 
@@ -322,7 +296,6 @@ in
     ];
   };
 
-  # Ensure all guacamole containers wait for the network
   systemd.services.docker-guacamoledb = {
     after = [ "docker-network-guacamole.service" ];
     requires = [ "docker-network-guacamole.service" ];
@@ -333,8 +306,6 @@ in
     requires = [ "docker-network-guacamole.service" ];
   };
 
-  # Generate guacamole.properties before starting the web container
-  # Also waits for guacamole-admin-setup to ensure the admin user and db password are ready.
   systemd.services.docker-guacamole = {
     after = [
       "docker-guacamoledb.service"
@@ -353,7 +324,6 @@ in
     };
   };
 
-  # Ensure drive directory exists, owned by guacd (numeric UID 1000), 0750.
   systemd.tmpfiles.rules = [
     "d /srv/glats/guacamole/drive 0750 1000 1000 -"
   ];

@@ -1,5 +1,3 @@
-# Claude Code Home Manager module
-# Deploys Claude Code with Gentle AI assets on all hosts.
 {
   config,
   lib,
@@ -12,7 +10,6 @@ with lib;
 let
   cfg = config.home.claude-code;
 
-  # Per-tool command sources (NOT shared — each tool needs its own)
   claudeCommandSources = [
     "${pkgs.gentle-ai-assets}/share/gentle-ai/claude/agents"
     "${pkgs.gentle-ai-assets}/share/gentle-ai/claude/commands"
@@ -56,13 +53,9 @@ let
     ]
   );
 
-  # Merge base MCPs with extra MCPs, then filter by enabled
   allMcps = config.home.ai-assets.mcps // config.home.ai-assets.extraMcps;
   enabledMcps = lib.filterAttrs (name: mcp: mcp.enabled or false) allMcps;
 
-  # Translate OpenCode MCP format to Claude Code .mcp.json format
-  # OpenCode: { type = "local"; command = ["cmd", "arg"]; url = "..."; enabled = true; }
-  # Claude:  { "mcpServers": { "name": { "type": "stdio"|"http", "command": "...", "args": [...], "url": "..." } } }
   claudeMcpServers = lib.mapAttrs (
     name: mcp:
     if mcp.type == "local" then
@@ -90,16 +83,11 @@ let
       builtins.removeAttrs mcp [ "enabled" ]
   ) enabledMcps;
 
-  # Generate .mcp.json for Claude Code
   mcpJson = pkgs.writeText "claude-mcp.json" (builtins.toJSON { mcpServers = claudeMcpServers; });
 
-  # Auto-generate MCP allow rules from configured servers
-  # Each server gets mcp__<name>__* so new MCPs don't need manual permission updates
   mcpAllowRules = map (name: "mcp__${name}__*") (builtins.attrNames enabledMcps);
   userAllowRules = cfg.permissions.allow or [ ];
 
-  # Generate settings.json with permissions.
-  # Main model is NOT managed here — the claude-code wrapper injects --model opus.
   rtkPreToolUse = {
     matcher = "Bash";
     hooks = [
@@ -129,12 +117,8 @@ let
   };
   settingsJson = pkgs.writeText "claude-settings.json" (
     builtins.toJSON {
-      # Auto-approve project-scope MCPs (.mcp.json)
-      # Claude Code bug #62888 — without this, servers only visible in CLI not TUI
       enableAllProjectMcpServers = true;
-      # Skip "are you sure?" prompt for dangerous permission modes
       skipDangerousModePermissionPrompt = true;
-      # Managed Gentle AI style (claude/output-styles/neutral.md, `name: Neutral`).
       outputStyle = "Neutral";
       permissions = {
         inherit (cfg.permissions)
@@ -143,11 +127,8 @@ let
           defaultMode
           additionalDirectories
           ;
-        # User rules first, then auto-generated MCP rules appended
         allow = userAllowRules ++ mcpAllowRules;
       };
-      # Disable commit attribution.
-      # Gentle AI policy: no AI co-author credits in commits.
       attribution = {
         commit = "";
         pr = "";
@@ -155,7 +136,6 @@ let
       };
       hooks = {
         PreToolUse = preToolUse;
-        # Gentle AI ODD lifecycle (upstream agenthooks/claude.go); telemetry skipped.
         Stop = [ (gentleHook "" reviewHook 60) ];
         SessionStart = [ (gentleHook "startup|resume|clear|compact" reviewHook 30) ];
         UserPromptSubmit = [
@@ -165,9 +145,6 @@ let
           )
         ];
       };
-      # Custom rules are injected via CLAUDE.md (agentsMdSources in ai-assets.nix).
-      # No customInstructions here — this field does not exist in Claude Code's
-      # settings.json schema and is silently ignored (github issue #12573).
     }
   );
 
@@ -242,7 +219,6 @@ in
       with pkgs;
       [
         claude-code
-        # OpenCode installs the private V2-managed Gentle wrapper when enabled.
       ]
       ++ lib.optional (!config.home.opencode.enable) pkgs.gentle-ai
       ++ (with pkgs; [
@@ -258,9 +234,6 @@ in
       };
     };
 
-    # Mutable asset deployment.
-    # Converts HM symlinks to real copies so Claude Code can write config at runtime.
-    # Copies agents/, commands/, personas/, and skills/ from nix store with cmp guard.
     home.activation."deployClaudeCodeAssets" = config.lib.dag.entryAfter [ "linkGeneration" ] ''
       claude_dir="${claudeDir}"
 
@@ -304,7 +277,6 @@ in
 
       ${pkgs.nixos-scripts}/bin/ai-assets-reconcile "$claude_dir" \
         ${desiredAssets} ${assetTrees.none} 898d3976e8049a7238eaa7de60bff325c30d2b3d
-
 
     '';
   };

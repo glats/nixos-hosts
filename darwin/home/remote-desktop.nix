@@ -1,10 +1,3 @@
-# Remote desktop client launchers for Darwin (macOS).
-#
-# Not shared with linux/home/remote-desktop.nix: macOS requires native Mach-O
-# app bundles and uses different host metadata (IPs, viewer types).
-#
-# Creates .app bundles that appear in Spotlight. Uses native C launchers
-# instead of shell scripts to satisfy macOS Sequoia Launch Constraints.
 {
   config,
   pkgs,
@@ -13,7 +6,6 @@
 }:
 
 let
-  # Generate C source for native Mach-O launcher
   mkLauncherC =
     {
       id,

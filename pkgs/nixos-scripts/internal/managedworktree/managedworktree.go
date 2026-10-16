@@ -1,6 +1,3 @@
-// Package managedworktree stores the portable lifecycle state for managed
-// writing worktrees. State lives in the Git common directory, so linked
-// worktrees share one lock and one view of each task.
 package managedworktree
 
 import (
@@ -84,9 +81,6 @@ func LoadRecord(stateDir, id string) (Record, error) {
 	return record, err
 }
 
-// ResolveTaskID returns the task whose recorded worktree path exactly matches
-// cwd. It intentionally does not infer from a parent directory so legacy
-// worktrees named managed or managed-* cannot be mistaken for managed tasks.
 func ResolveTaskID(stateDir, cwd string) (string, error) {
 	entries, err := os.ReadDir(stateDir)
 	if errors.Is(err, os.ErrNotExist) {

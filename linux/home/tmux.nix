@@ -1,4 +1,3 @@
-# Linux tmux configuration.  Shared base lives in ../../shared/tmux.nix.
 {
   ...
 }:

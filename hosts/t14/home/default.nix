@@ -1,13 +1,3 @@
-# T14 Home Manager module list.
-#
-# Same list-function shape as rog/thinkcentre: shared base filtered for
-# omarchy compatibility, then t14-specific overlays appended.
-#
-# Excluded from shared base:
-#   - theme.nix       — omarchy owns GTK/Qt/colorScheme via omarchy.theme
-#   - fontconfig.nix  — omarchy-nix HM fonts module handles font config
-#   - alacritty.nix   — omarchy provides its own alacritty profile
-#   - gpg.nix         — not used on t14 (no GNOME keyring integration)
 { inputs }:
 
 let

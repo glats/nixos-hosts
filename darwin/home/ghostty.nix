@@ -1,6 +1,3 @@
-# Darwin Ghostty terminal configuration.
-# Imports shared ghostty settings + palette. Adds darwin-specific overrides:
-# macos-option-as-alt, selection-foreground = base00, package = null (brew).
 { config, ... }:
 let
   ghostty = import ../../shared/ghostty.nix {

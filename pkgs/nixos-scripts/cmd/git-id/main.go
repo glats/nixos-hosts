@@ -1,7 +1,3 @@
-// Command git-id sets the local git identity include for a repository.
-//
-// Port of bin/git-id: usage text, messages and exit codes preserved.
-// The identity files are written by home-manager activation from sops secrets.
 package main
 
 import (

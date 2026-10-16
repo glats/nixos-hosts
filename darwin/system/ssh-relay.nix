@@ -1,7 +1,3 @@
-# Optional manual Rust wstunnel launch agent for the managed macm5 client.
-#
-# No secret is embedded in the plist. relay-client reads the provisioned
-# headers file at launch time; credential contents never enter argv or env.
 {
   config,
   lib,
@@ -62,8 +58,6 @@ in
       mode = "0600";
     };
 
-    # nix-darwin renders this under the primary user's ~/Library/LaunchAgents,
-    # which is the same GUI domain relayctl addresses.
     launchd.user.agents.ssh-relay = {
       serviceConfig = {
         ProgramArguments = [

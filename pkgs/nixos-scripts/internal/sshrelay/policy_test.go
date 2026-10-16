@@ -477,7 +477,7 @@ func TestPolicyLoadedUnitRequiresEffectiveDurableInhibition(t *testing.T) {
 			tx, stage, live := testPolicyTransaction(t, command)
 			tx.stopWaitLimit = time.Millisecond
 			marker := filepath.Join(filepath.Dir(live), PolicyInhibitName)
-			// An invalid staged token must not be read before cessation is proven.
+
 			if scenario != "apply" && scenario != "revoke" && scenario != "start-failure" {
 				if err := os.WriteFile(stage, []byte("invalid\n"), 0o600); err != nil {
 					t.Fatal(err)

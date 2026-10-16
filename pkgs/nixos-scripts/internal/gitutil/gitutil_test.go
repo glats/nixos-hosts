@@ -129,9 +129,7 @@ func TestWorktreeName(t *testing.T) {
 		{name: "simple", dir: "/repo/.worktrees/my-feature", worktreesDir: "/repo/.worktrees", want: "my-feature"},
 		{name: "nested slashes", dir: "/repo/.worktrees/feat/multi-github-identity", worktreesDir: "/repo/.worktrees", want: "feat/multi-github-identity"},
 		{name: "no prefix returns unchanged", dir: "/elsewhere", worktreesDir: "/repo/.worktrees", want: "/elsewhere"},
-		// Bash ${PWD#$WORKTREES_DIR/} with an empty WORKTREES_DIR strips a
-		// leading "/" — unreachable in the real flow (guarded by the
-		// non-empty REPO_ROOT check) but pinned here for expansion parity.
+
 		{name: "empty worktreesDir strips leading slash (bash parity)", dir: "/elsewhere", worktreesDir: "", want: "elsewhere"},
 	}
 	for _, tt := range tests {

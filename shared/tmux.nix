@@ -1,10 +1,3 @@
-# Shared tmux configuration for Linux and Darwin.
-#
-# Provides common settings (allow-passthrough, base-index, focus-events,
-# history-limit, base16 theme, resurrect, etc.). Platform files import this
-# module and add platform-specific configuration:
-#   - Linux: escapeTime=0, xclip clipboard bindings
-#   - Darwin: escapeTime=10, pbcopy clipboard bindings
 {
   config,
   lib,

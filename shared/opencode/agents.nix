@@ -8,22 +8,16 @@
 with lib;
 
 let
-  # Import centralized provider configuration, threaded with the per-host
-  # activeProviderName HM option so provider tier is host-driven.
   providersConfig = import ./providers.nix {
     inherit lib;
     activeProviderName = config.home.opencode.activeProviderName;
   };
 
-  # Read upstream agent definitions from vanilla assets
   upstreamOverlay = builtins.fromJSON (
     builtins.readFile "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/odd-overlay.json"
   );
   upstreamAgents = upstreamOverlay.agent or { };
 
-  # Agent names whose models are selected by the active provider profile.
-  # Judge Day and review agents are upstream subagents too; leaving them out
-  # makes OpenCode inherit the orchestrator model instead of their role fit.
   routedAgents = [
     "gentle-ai-explore"
     "gentle-ai-worker"
@@ -39,7 +33,6 @@ let
     "review-validator"
   ];
 
-  # Build agent models from active provider
   agentModels =
     let
       active = providersConfig.activeProvider;
@@ -56,7 +49,6 @@ let
     else
       { };
 
-  # Final model assignments for all agents
   models =
     if providersConfig.activeProvider != null then
       agentModels
@@ -67,12 +59,8 @@ let
     else
       throw "No active provider found. Check activeProviderName in shared/opencode/providers-base.nix";
 
-  # Local overlays loaded from external JSON (upstream purity principle)
   localOverlays = builtins.fromJSON (builtins.readFile ./local-agent-overlays.json);
 
-  # Smart merge: respect upstream __replace__ markers
-  # __replace__ means the upstream value is a complete unit;
-  # local values are merged on top of that unit.
   smartMerge =
     local: upstream:
     if upstream ? "__replace__" then
@@ -80,18 +68,13 @@ let
     else
       lib.recursiveUpdate upstream local;
 
-  # Recursively strip __replace__ markers from a nested attrset
-  # so they don't leak into the final JSON.
   stripReplace =
     val: if isAttrs val then mapAttrs (_: stripReplace) (removeAttrs val [ "__replace__" ]) else val;
 
-  # Overlay an upstream agent with local fields
   overlayAgent =
     name: upstream:
     let
       localModel = models.${name} or null;
-      # Local permission overlays only narrow delegation; everything else
-      # keeps upstream's rendered policy over OpenCode's allow-all base.
       namedOverlay = localOverlays.permissionOverlays.named.${name} or { };
       localInstructions =
         if builtins.hasAttr name localOverlays.instructionOverlays then
@@ -110,8 +93,6 @@ let
             "";
         basePrompt = upstream.prompt or "";
       in
-      # Upstream `tools` is deprecated (v2.5.0 migrated to `permission`);
-      # always strip it so no agent ever emits a `tools` field.
       (removeAttrs upstream [ "tools" ])
       // lib.optionalAttrs (localModel != null) { model = localModel; }
       // lib.optionalAttrs (instructionPrompt != "" || basePrompt != "") {
@@ -122,7 +103,6 @@ let
       }
     );
 
-  # Neutral agent (loaded from local-agent-overlays.json, with {file:} resolved)
   neutralAgent = localOverlays.neutral // {
     model = models.neutral;
     prompt =
@@ -131,7 +111,6 @@ let
       + builtins.readFile ../rules/code-comments.md;
   };
 
-  # Final agent set: upstream + model overlay + tools overlay + neutral
   managedWritingAgent = {
     description = "Edit and test only the assigned managed worktree; never integrate or mutate a host.";
     mode = "primary";

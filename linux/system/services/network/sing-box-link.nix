@@ -1,22 +1,3 @@
-# Server-side loopback inbound of the Darwin↔rog private link
-# (general-purpose private egress; OpenCode's native OpenAI access is
-# the flagship use case, not the purpose).
-#
-# One sing-box process binds 127.0.0.1:4011 and accepts WS connections
-# proxied by nginx from tun.glats.org. Each approved device gets its
-# own entry in the `users` array; the UUID is pulled at activation from
-# a per-device sops file (one _secret per UUID, never the whole array),
-# so removing a key + declaration + users entry revokes only that device.
-#
-# The WS path is a one-time random hex constant, NOT sops: it's
-# obscurity, not auth. nginx passes the location path through (the same
-# value lives in linux/system/services/web/nginx.nix), and the same
-# value is referenced by the macm5 client (darwin/system/sing-box-link.nix)
-# and by bin/device-link for phone link generation. Generating it
-# once keeps the three sites byte-identical without a shared secret.
-#
-# Runs as the unprivileged `sing-box` system user created by the NixOS
-# module. Loopback inbound only — no public listener, no TUN, no caps.
 {
   config,
   lib,
@@ -25,8 +6,6 @@
 }:
 
 let
-  # Random hex generated once via `openssl rand -hex 16`. Treat as
-  # obscurity — not a credential, not a sops key.
   wsPath = "/ed59280aa562f4b7eba4519e3c316e24";
 
   cfg = config.services.sing-box-link;
@@ -48,10 +27,6 @@ in
       enable = true;
       package = pkgs.sing-box;
 
-      # Freeform JSON. Each `users[].uuid = { _secret = ...; }` is
-      # replaced at activation by the NixOS sing-box module's
-      # genJqSecretsReplacementSnippet. The file content is embedded as
-      # a JSON string (default `quote = true`).
       settings = {
         log = {
           level = "info";

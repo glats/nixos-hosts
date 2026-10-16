@@ -1,29 +1,3 @@
-# Host-aware GitHub CLI account priority.
-#
-# Reasserts the preferred active `gh` account after Home Manager
-# activation without replacing either stored GitHub account or
-# affecting explicit MCP account selection.
-#
-# The platform-derived default is `glats` on Linux hosts and
-# `jcuzmar-Falabella_FTC` on Darwin hosts, so all four current hosts
-# (rog, t14, thinkcentre on Linux; macm5 on Darwin) receive the
-# intended policy through their existing shared module lists. The
-# option is overridable per host without duplicating the activation
-# entry.
-#
-# IMPORTANT:
-# - This module only changes the active-account selection. It does
-#   NOT own, validate, or provision credentials. The `users:` map
-#   in `~/.config/gh/hosts.yml`, OAuth tokens, and keyring entries
-#   remain user- and `gh`-managed.
-# - Each Home Manager activation reasserts the host policy. A
-#   manual `gh auth switch` between activations persists only until
-#   the next activation runs.
-# - The `github-personal` and `github-work` MCP wrappers remain
-#   authoritative; they resolve tokens through
-#   `gh auth token --user <account>` and are independent of the
-#   active account. Do not add `programs.gh.hosts`, fake hostnames,
-#   or token/PAT management here.
 {
   config,
   lib,
@@ -53,18 +27,6 @@
   };
 
   config = {
-    # Reassert the configured active account after `writeBoundary`
-    # (which includes `migrateGhAccounts`). The guard is filesystem
-    # only: it inspects `~/.config/gh/hosts.yml` for the configured
-    # user key and, if present, invokes the absolute
-    # `${pkgs.gh}/bin/gh auth switch` with quoted arguments.
-    #
-    # The guard MUST NOT call `gh auth status` or `gh auth token`
-    # because those commands resolve credentials and would touch the
-    # keyring. Both the guard and the switch are non-fatal: missing
-    # `hosts.yml` or missing target user becomes a successful no-op,
-    # and a failed `gh auth switch` is suppressed with `|| true`. This
-    # keeps first-run hosts (no `gh` logins yet) activating cleanly.
     home.activation.ghDefaultAccount = lib.hm.dag.entryAfter [ "writeBoundary" ] (
       let
         account = config.home.github.defaultAccount;

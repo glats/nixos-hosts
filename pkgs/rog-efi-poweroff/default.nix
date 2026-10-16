@@ -1,8 +1,3 @@
-# rog-efi-poweroff
-# Out-of-tree kernel module: DMI-scoped EFI ResetSystem power-off for the
-# ASUS ROG GL553VD, whose firmware freezes at the hardware-level ACPI S5
-# transition (kernel modules are inherently C — documented exception to
-# the Go-only operational-scripts policy, per repo AGENTS.md).
 {
   lib,
   stdenv,

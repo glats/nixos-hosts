@@ -1,54 +1,3 @@
-// Command opencode-login-bridge raises a transient SSH reverse-forward
-// bridge so OpenCode V2 OAuth logins can complete in the account host's
-// browser (default rog) while the OpenCode CLI runs on this machine.
-//
-// Why: OpenCode's browser OAuth flows bind a loopback callback listener on
-// the machine running the CLI, but the browser executing the authorize flow
-// lives on another LAN host — rog, where the Claude / ChatGPT / OpenCode
-// Console sessions are already signed in. Without a bridge the provider
-// redirect (http://localhost:<port>/...) is followed by rog's browser, hits
-// rog's own loopback and dies: nothing is listening there. The bridge binds
-// the same loopback ports on rog and forwards every connection back through
-// the LAN-mesh SSH session to this host, where the opencode CLI's callback
-// listeners capture the redirect; the token exchange runs from this machine
-// directly against the provider endpoints.
-//
-// Port table (verified against the installed OpenCode 2.0.14 binary and
-// the pinned opencode-claude-subscription@0.1.4 plugin constants):
-//
-//	1455   OpenAI / ChatGPT browser login  (/auth/callback)
-//	1457   OpenAI fallback port tried when 1455 is busy locally
-//	53692  Claude Pro/Max subscription browser login (/callback via
-//	       opencode-claude-subscription CALLBACK_PARENT 127.0.0.1)
-//
-// OpenCode Console login is a device flow (verification URL only) and the
-// Claude plugin's "paste code" method needs no local port either — both
-// work with the bridge up but do not depend on it. Mirror future provider
-// changes with -ports instead of an edit.
-//
-// The CLI binds its local callback listeners BEFORE this bridge matters;
-// the bridge binds only on the remote side, so the two never contend for
-// the same loopback sockets.
-//
-// Usage:
-//
-//	opencode-login-bridge                                      # defaults
-//	opencode-login-bridge -host rog -ports 1455,1457,53692 -timeout 15m
-//
-// With the bridge up, run the login from another shell of the SAME machine:
-//
-//	opencode-home auth login openai
-//
-// copy the printed authorize URL into the account host's browser, complete
-// the login there, and the callback lands on the local listener.
-//
-// SSH transport rides the LAN mesh: -host must be an ssh_config alias
-// (programs.ssh declares rog/thinkcentre/t14/macm5 peers with the dedicated
-// id_ed25519_lan identity). BatchMode keeps a failed identity from turning
-// into an interactive prompt. Exit semantics match adguard-tunnel:
-// SIGINT/SIGTERM or the -timeout deadline (default 15m, 0 = none) tear the
-// bridge down — the ssh child dies, the remote forwards unbind — and exit 0;
-// an ssh death mid-bridge exits non-zero with a hint.
 package main
 
 import (
@@ -122,8 +71,6 @@ func main() {
 	}
 }
 
-// run executes the bridge lifecycle: ssh exec, startup verification, then a
-// block until signal, timeout or ssh death.
 func run(cfg *config) error {
 	sshPath, err := exec.LookPath("ssh")
 	if err != nil {
@@ -158,21 +105,12 @@ func run(cfg *config) error {
 	done := make(chan error, 1)
 	go func() { done <- cmd.Wait() }()
 
-	// Signal watcher records the cause BEFORE killing, so every close path
-	// can distinguish a clean teardown (recorded cause) from an unplanned
-	// ssh death. exec.Command (not CommandContext) keeps the kill under our
-	// sole control; a second Ctrl+C falls back to default handling, matching
-	// adguard-tunnel's accepted trade-off.
 	go func() {
 		<-ctx.Done()
 		cause <- "Ctrl+C"
 		_ = cmd.Process.Kill()
 	}()
 
-	// Startup verification window: a busy remote port (stale twin bridge or
-	// a host-local listener) or a rejected identity exits ssh during the
-	// handshake thanks to ExitOnForwardFailure — surface it instead of
-	// announcing a bridge that never bound.
 	select {
 	case doneErr := <-done:
 		if reason, ok := closeReason(cause); ok {
@@ -204,7 +142,7 @@ func run(cfg *config) error {
 				cause <- cfg.timeout + " deadline"
 				_ = cmd.Process.Kill()
 			case <-ctx.Done():
-				// Ctrl+C cause already recorded by its own watcher.
+
 			}
 		}()
 	}
@@ -220,8 +158,6 @@ func run(cfg *config) error {
 	return nil
 }
 
-// closeReason reports the recorded teardown cause, if any. Unplanned ssh
-// deaths never record one.
 func closeReason(cause chan string) (string, bool) {
 	select {
 	case reason := <-cause:
@@ -231,8 +167,6 @@ func closeReason(cause chan string) (string, bool) {
 	}
 }
 
-// parsePorts turns the comma-separated port list into a validated, de-duped
-// port slice preserving order.
 func parsePorts(spec string) ([]int, error) {
 	fields := strings.FieldsFunc(spec, func(r rune) bool { return r == ',' || r == ' ' })
 	if len(fields) == 0 {
@@ -260,7 +194,6 @@ func parsePorts(spec string) ([]int, error) {
 	return ports, nil
 }
 
-// parseTimeout resolves the lifetime deadline; 0 means no deadline.
 func parseTimeout(spec string) (time.Duration, error) {
 	dur, err := time.ParseDuration(spec)
 	if err != nil {
@@ -269,7 +202,6 @@ func parseTimeout(spec string) (time.Duration, error) {
 	return dur, nil
 }
 
-// renderPorts prefixes each port with a host:port marker for the summary line.
 func renderPorts(ports []int) string {
 	parts := make([]string, len(ports))
 	for i, port := range ports {

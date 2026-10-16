@@ -1,18 +1,3 @@
-# netwatch — Background network health monitor for Realtek r8169 NICs.
-#
-# Runs as a systemd timer+oneshot: reads /sys/class/net/*/statistics/
-# every N seconds, compares with previous values, and logs degradation
-# events to journald with identifier "netwatch". Zero overhead when idle.
-#
-# Detects:
-#   - Error/drop counter increases (rx_errors, tx_errors, rx_dropped, tx_dropped)
-#   - Throughput collapse (rx_bytes delta below threshold while link is UP)
-#   - Link speed degradation (drops from 1000Mb/s)
-#   - Active ping probe (only when error counters increase — avoids noise)
-#
-# Usage:
-#   services.netwatch.enable = true;
-#   journalctl -t netwatch -p warning --since "24 hours ago"
 {
   config,
   lib,
@@ -35,7 +20,7 @@ in
 
     throughputThreshold = lib.mkOption {
       type = lib.types.int;
-      default = 1048576; # 1 MB/s
+      default = 1048576;
       description = "Bytes-per-second below which to flag throughput degradation.";
     };
 
@@ -72,24 +57,16 @@ in
       serviceConfig = {
         Type = "oneshot";
         StateDirectory = "netwatch";
-        # Minimal hardening — we need to read sysfs and optionally ping
         ProtectSystem = "strict";
         ProtectHome = true;
         PrivateTmp = true;
         NoNewPrivileges = true;
-        # AF_UNIX is REQUIRED: systemd-cat talks to journald via a unix
-        # socket. Without it every log call fails and set -e kills the
-        # service (reproduced live 2026-08-23: status=1 in ~200ms).
         RestrictAddressFamilies = "AF_UNIX AF_INET AF_INET6 AF_NETLINK";
         CapabilityBoundingSet = "CAP_NET_RAW";
         AmbientCapabilities = "CAP_NET_RAW";
-        # Disable journald rate limiting for this unit so no event is lost
         LogRateLimitBurst = 0;
       };
 
-      # Minimal deps for the script below: cat/basename/date (coreutils),
-      # grep (gnugrep), ping (iputils), systemd-cat (systemd — `logger` is
-      # NOT available on nixos-26.05 since util-linux 2.40 dropped it).
       path = with pkgs; [
         coreutils
         gnugrep
@@ -213,7 +190,6 @@ in
         '';
     };
 
-    # ── TIMER ──────────────────────────────────
     systemd.timers.netwatch = {
       description = "Periodic network health check";
       wantedBy = [ "timers.target" ];

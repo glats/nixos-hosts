@@ -33,25 +33,25 @@ func TestSwatchString(t *testing.T) {
 		want string
 	}{
 		{
-			// luminance of 000000 is 0 → white foreground
+
 			name: "dark background gets white foreground",
 			in:   "000000",
 			want: "\x1b[48;2;0;0;0m\x1b[38;2;255;255;255m #000000 \x1b[0m",
 		},
 		{
-			// luminance of ffffff is 255 → black foreground
+
 			name: "bright background gets black foreground",
 			in:   "ffffff",
 			want: "\x1b[48;2;255;255;255m\x1b[38;2;0;0;0m #ffffff \x1b[0m",
 		},
 		{
-			// luminance of 8a8a8a is (138*299+138*587+138*114)/1000 = 138 → white foreground
+
 			name: "mid gray stays below threshold",
 			in:   "8a8a8a",
 			want: "\x1b[48;2;138;138;138m\x1b[38;2;255;255;255m #8a8a8a \x1b[0m",
 		},
 		{
-			// luminance of a0a0a0 is 160 → above 145 → black foreground
+
 			name: "light gray crosses threshold",
 			in:   "a0a0a0",
 			want: "\x1b[48;2;160;160;160m\x1b[38;2;0;0;0m #a0a0a0 \x1b[0m",

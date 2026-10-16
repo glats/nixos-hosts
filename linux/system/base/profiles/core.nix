@@ -1,13 +1,6 @@
-# Core system profile — host-agnostic shared packages.
-# Imported by all hosts (rog, thinkcentre, t14).
-# Contains: CLI utilities, Nix tooling, themes, system utilities.
-# No conditions, no lib.mkIf. Suite-specific additions live in
-# profiles/mate.nix and profiles/gnome.nix (selected by
-# packages.nix via my.desktop.suite).
 { pkgs }:
 with pkgs;
 [
-  # CLI utilities - file/archive operations
   bat
   delta
   aria2
@@ -23,7 +16,6 @@ with pkgs;
   imagemagick
   ocrmypdf
 
-  # CLI utilities - system/process info
   htop
   iotop
   iftop
@@ -41,7 +33,6 @@ with pkgs;
   systemctl-tui
   xxd
 
-  # CLI utilities - networking
   bc
   iproute2
   iputils
@@ -57,7 +48,6 @@ with pkgs;
   sqlite
   wireguard-tools
 
-  # Nix tooling
   git
   nil
   nix-output-monitor
@@ -67,13 +57,11 @@ with pkgs;
   nix-search-cli
   home-manager
 
-  # Misc
   yq
   libsecret
   google-cloud-sdk
   dex
 
-  # Desktop applications
   flatpak
   meld
   xdg-user-dirs
@@ -86,5 +74,4 @@ with pkgs;
   remmina
   kdePackages.okular
 
-  # System utilities
 ]

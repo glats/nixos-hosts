@@ -1,5 +1,3 @@
-// Package sshtunnel — hermetic unit tests: localhost-only listener probing,
-// pure string/argument assembly. No network beyond loopback, no ssh exec.
 package sshtunnel
 
 import (
@@ -30,7 +28,7 @@ func TestBuildSSHArgs(t *testing.T) {
 }
 
 func TestBuildSSHArgsPortsDiffer(t *testing.T) {
-	// Forward target defaults to the same host string; ports are independent.
+
 	args := BuildSSHArgs("10.0.0.5", "root", "k", 13001, 8443)
 	wantForward := "127.0.0.1:13001:10.0.0.5:8443"
 	found := false
@@ -88,13 +86,13 @@ func TestBuildBridgeSSHArgsErrors(t *testing.T) {
 }
 
 func TestPickFreePortRequestedFree(t *testing.T) {
-	// A port just probed free must be returned unchanged with no fallback.
+
 	l, err := net.Listen("tcp4", "127.0.0.1:0")
 	if err != nil {
 		t.Fatalf("seed listener: %v", err)
 	}
 	free := l.Addr().(*net.TCPAddr).Port
-	l.Close() // release so PickFreePort can claim it directly
+	l.Close()
 
 	got, fellBack, err := PickFreePort(free)
 	if err != nil {
@@ -109,8 +107,7 @@ func TestPickFreePortRequestedFree(t *testing.T) {
 }
 
 func TestPickFreePortBusy(t *testing.T) {
-	// Occupy an explicit genuine port, then the helper must fall back to
-	// requested+FallbackPortStep and say so.
+
 	l, fb := reservePortPair(t)
 	defer l.Close()
 	fb.Close()
@@ -129,8 +126,7 @@ func TestPickFreePortBusy(t *testing.T) {
 }
 
 func TestPickFreePortBothBusy(t *testing.T) {
-	// Occupy an explicit genuine port AND its fallback slot
-	// (requested+FallbackPortStep), then the helper must refuse with a clear error.
+
 	l, fb := reservePortPair(t)
 	busy := l.Addr().(*net.TCPAddr).Port
 	defer l.Close()

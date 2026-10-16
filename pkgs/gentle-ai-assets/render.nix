@@ -1,5 +1,3 @@
-# Build-only prompt export from the exact tagged module. Not installed as a CLI
-# and not wired into production until the binary/assets/graph cutover is ready.
 {
   lib,
   buildGoModule,
@@ -19,9 +17,6 @@ buildGoModule {
     cp ${./render_test.go} internal/nixexport/render_test.go
   '';
 
-  # Run the exporter inside the vendored upstream module so its internal
-  # renderers, runtime manifest, review contract and embedded assets stay one
-  # authority. No test binary or new command reaches the output.
   buildPhase = ''
     runHook preBuild
     mkdir -p "$TMPDIR/native-v2"
@@ -37,7 +32,7 @@ buildGoModule {
     go test -mod=vendor -count=1 -v ./internal/nixexport
     runHook postBuild
   '';
-  doCheck = false; # The build phase is the exporter test, with no model calls.
+  doCheck = false;
   installPhase = ''
     runHook preInstall
     mkdir -p "$out/share/gentle-ai"

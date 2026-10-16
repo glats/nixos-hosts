@@ -1,8 +1,6 @@
 { config, pkgs, ... }:
 
 {
-  # Code-Server - VS Code in Browser (Nativo)
-  # Datos en /srv/glats/code/
   services.code-server = {
     enable = true;
 
@@ -19,7 +17,6 @@
     };
   };
 
-  # Bind mounts para los datos de code-server
   systemd.services.code-server.serviceConfig = {
     BindPaths = [
       "/srv/glats/code/project:/home/glats/project"

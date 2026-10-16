@@ -105,9 +105,6 @@ func TestAppenderAppendAll(t *testing.T) {
 	}
 }
 
-// fakeConn records writes and replays queued reads, so Serve and Handle
-// are exercised without any real network. Once the queue is drained it
-// blocks on block (like a real socket read) until Close releases it.
 type fakeConn struct {
 	reads   []readResult
 	writes  []writeRecord
@@ -228,8 +225,7 @@ func TestHandle(t *testing.T) {
 func TestHandleAppendFailureSuppressesACK(t *testing.T) {
 	conn := &fakeConn{}
 	app := &Appender{Path: filepath.Join(t.TempDir(), "dir", "netconsole.log")}
-	// Corrupt the appender so the write fails after MkdirAll: point Path at
-	// a directory.
+
 	app.Path = t.TempDir()
 	err := Handle(conn, app, time.Now(), []byte("netconsole-verify: nonce=x\n"), testAddr)
 	if err == nil {
@@ -259,7 +255,6 @@ func TestServe(t *testing.T) {
 	done := make(chan error, 1)
 	go func() { done <- Serve(ctx, conn, app, func(e error) { reported = append(reported, e) }) }()
 
-	// Wait until both datagrams were consumed and the ACK was sent.
 	deadline := time.Now().Add(5 * time.Second)
 	for time.Now().Before(deadline) && (len(conn.reads) > 0 || len(conn.writes) == 0) {
 		time.Sleep(5 * time.Millisecond)
@@ -268,7 +263,6 @@ func TestServe(t *testing.T) {
 		t.Fatal("timed out waiting for Serve to process datagrams")
 	}
 
-	// Shutdown path: cancel, then close the socket to unblock the read.
 	cancel()
 	conn.Close()
 	if err := <-done; err != nil {

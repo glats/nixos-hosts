@@ -43,8 +43,6 @@ func TestManagedCommitState(t *testing.T) {
 	}
 }
 
-// TestCodeWorkCommandHelperProcess provides deterministic fake commands and a
-// subprocess entry point for exercising the real command-level dispatch.
 func TestCodeWorkCommandHelperProcess(t *testing.T) {
 	if os.Getenv("CODE_WORK_TEST_HELPER") != "1" {
 		return

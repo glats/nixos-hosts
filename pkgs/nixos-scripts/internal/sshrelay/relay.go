@@ -1,8 +1,3 @@
-// Package sshrelay controls the user launchd job for the on-demand relay.
-//
-// launchd owns the single wstunnel child and wstunnel owns reconnect backoff. The
-// controller only persists intent and performs bounded launchctl mutations; it
-// does not create a second retry loop.
 package sshrelay
 
 import (

@@ -1,14 +1,3 @@
-// Command wg-peer manages declarative WireGuard peers on rog.
-//
-// Port of bin/wg-peer (list/add/remove/qr) and absorbs the retired
-// generate-thinkpad-wireguard as the `generate` subcommand (now targeting
-// the real module linux/system/services/network/wireguard.nix instead of
-// the removed hosts/rog/services/wireguard.nix path).
-//
-// Peers are declarative in linux/system/services/network/wireguard.nix,
-// between the wg-peer managed markers. New peers get no PSK (optional in wg).
-// Client keys live in /etc/wireguard/keys/<name>.key; ready-to-import confs
-// and QR PNGs land in /etc/wireguard/clients/.
 package main
 
 import (
@@ -113,7 +102,6 @@ func writeModule(path, content string) {
 	}
 }
 
-// runCmd executes a command with inherited stdio and dies on failure.
 func runCmd(name string, args ...string) {
 	cmd := exec.Command(name, args...)
 	cmd.Stdout = os.Stdout
@@ -124,7 +112,6 @@ func runCmd(name string, args ...string) {
 	}
 }
 
-// capture runs a command and returns trimmed stdout.
 func capture(name string, args ...string) string {
 	out, err := exec.Command(name, args...).Output()
 	if err != nil {
@@ -133,7 +120,6 @@ func capture(name string, args ...string) string {
 	return strings.TrimSpace(string(out))
 }
 
-// rebuild runs the same gates as the bash original: fmt, flake check, switch.
 func rebuild(module string, repo string) {
 	runCmd("nix", "fmt", "--", module)
 	flake := exec.Command("nix", "flake", "check", "--no-build")
@@ -209,8 +195,6 @@ func add(name string) {
 	}
 	writeModule(module, out)
 
-	// Store the client private key BEFORE the rebuild so the activation
-	// script emits a ready-to-import conf.
 	priv = strings.TrimRight(priv, "\n")
 	if err := exec.Command("sudo", "mkdir", "-p", keysDir).Run(); err != nil {
 		die("mkdir %s: %v", keysDir, err)
@@ -225,10 +209,8 @@ func add(name string) {
 		die("chmod key: %v", err)
 	}
 
-	// Rebuild: conf lands in /etc/wireguard/clients with the real key.
 	rebuild(module, repo)
 
-	// QR PNG next to the conf + print QR to the terminal.
 	qrencode := toolOr("qrencode", "/etc/profiles/per-user/glats/bin/qrencode")
 	confPath := filepath.Join(clientsDir, name+".conf")
 	pngPath := filepath.Join(clientsDir, name+".png")
@@ -285,8 +267,6 @@ func qr(name string) {
 	printQR(conf, toolOr("qrencode", "/etc/profiles/per-user/glats/bin/qrencode"))
 }
 
-// printQR reads the conf via sudo and pipes it into qrencode's ANSIUTF8
-// terminal renderer, matching `sudo cat conf | qrencode -t ANSIUTF8 -s 2 -m 1`.
 func printQR(conf, qrencode string) {
 	cat := exec.Command("sudo", "cat", conf)
 	qr := exec.Command(qrencode, "-t", "ANSIUTF8", "-s", "2", "-m", "1")
@@ -304,10 +284,6 @@ func printQR(conf, qrencode string) {
 	}
 }
 
-// generate ports bin/generate-thinkpad-wireguard: fresh thinkpad client
-// keypair + conf, then updates the thinkpad publicKey in the module. The
-// retired script edited the dead path hosts/rog/services/wireguard.nix;
-// this port targets the real managed module.
 func generate(endpoint string) {
 	repo, err := reporoot.Resolve()
 	if err != nil {

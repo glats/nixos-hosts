@@ -1,10 +1,3 @@
-// Command code-work manages named git worktrees under <repo>/.worktrees
-// with a create/done/abort/list/prune lifecycle.
-//
-// Port of bin/code-work: usage text, messages, exit codes and branch guards
-// preserved. REPO_ROOT is the main repository root (first entry of
-// `git worktree list --porcelain`), so the tool works both from the main
-// checkout and from any linked worktree.
 package main
 
 import (
@@ -20,7 +13,6 @@ import (
 	"github.com/glats/nixos-scripts/internal/managedworktree"
 )
 
-// gitignoreRe matches the grep -qE '^\.(worktrees|worktrees/)' check.
 var gitignoreRe = regexp.MustCompile(`^\.(worktrees|worktrees/)`)
 
 const usageTemplate = `Usage: %[1]s <worktree-name>    Create a named worktree
@@ -42,19 +34,16 @@ Examples:
 Managed writing tasks use cwd for check, ready, and status.
 `
 
-// die ports the bash die(): "Error: <msg>" to stderr, exit 1.
 func die(msg string) {
 	fmt.Fprintln(os.Stderr, "Error:", msg)
 	os.Exit(1)
 }
 
-// dieCode is die() with the bash die's optional second argument.
 func dieCode(msg string, code int) {
 	fmt.Fprintln(os.Stderr, "Error:", msg)
 	os.Exit(code)
 }
 
-// usage ports the bash usage(): optional message, heredoc to stderr, exit 2.
 func usage(scriptName, msg string) {
 	if msg != "" {
 		fmt.Fprintln(os.Stderr, "Error:", msg)
@@ -64,10 +53,6 @@ func usage(scriptName, msg string) {
 	os.Exit(2)
 }
 
-// exitFromErr maps a subprocess failure to the shell's exit-code semantics:
-// propagate the child's exit code, or 127 when the command could not run at
-// all (bash prints a shell-level "command not found" line; the closest
-// portable equivalent is the exec error itself).
 func exitFromErr(err error) {
 	if exitErr, ok := err.(*exec.ExitError); ok {
 		os.Exit(exitErr.ExitCode())
@@ -76,9 +61,6 @@ func exitFromErr(err error) {
 	os.Exit(127)
 }
 
-// gitRun executes git with inherited stdio and returns the error; callers
-// decide whether it is fatal (bash: bare command under set -e, or an
-// if-condition).
 func gitRun(args ...string) error {
 	cmd := exec.Command("git", args...)
 	cmd.Stdout = os.Stdout
@@ -86,16 +68,12 @@ func gitRun(args ...string) error {
 	return cmd.Run()
 }
 
-// gitFail is gitRun with set -e semantics: a failed subprocess terminates
-// the script with git's exit code.
 func gitFail(args ...string) {
 	if err := gitRun(args...); err != nil {
 		exitFromErr(err)
 	}
 }
 
-// gitOut runs git capturing stdout with stderr discarded (bash: 2>/dev/null
-// inside command substitution) and strips trailing newlines like $(...).
 func gitOut(args ...string) (string, error) {
 	out, err := exec.Command("git", args...).Output()
 	if err != nil {
@@ -104,9 +82,6 @@ func gitOut(args ...string) (string, error) {
 	return strings.TrimRight(string(out), "\n"), nil
 }
 
-// gitCapture runs git capturing stdout with stderr inherited (bash: command
-// substitution without redirection) and strips trailing newlines; a failed
-// subprocess terminates the script with git's exit code.
 func gitCapture(args ...string) string {
 	cmd := exec.Command("git", args...)
 	cmd.Stderr = os.Stderr
@@ -117,9 +92,6 @@ func gitCapture(args ...string) string {
 	return strings.TrimRight(string(out), "\n")
 }
 
-// resolveRepoRoot ports the REPO_ROOT=$(git worktree list --porcelain |
-// grep "^worktree " | head -1 | sed ...) determination: the first porcelain
-// entry is the main repo root; failure or no entries yields "".
 func resolveRepoRoot() string {
 	out, err := exec.Command("git", "worktree", "list", "--porcelain").Output()
 	if err != nil {
@@ -128,8 +100,6 @@ func resolveRepoRoot() string {
 	return gitutil.MainWorktree(string(out))
 }
 
-// getCurrentBranch ports get_current_branch(): abbreviated ref of HEAD,
-// dying on failure or detached HEAD.
 func getCurrentBranch() string {
 	branch, err := gitOut("rev-parse", "--abbrev-ref", "HEAD")
 	if err != nil {
@@ -141,8 +111,6 @@ func getCurrentBranch() string {
 	return branch
 }
 
-// hasUncommittedChanges ports the [[ -n "$(git status --porcelain 2>/dev/null)" ]]
-// dirty checks; a failed status counts as clean, as in the bash original.
 func hasUncommittedChanges(dir string) bool {
 	args := []string{"status", "--porcelain"}
 	if dir != "" {
@@ -155,14 +123,10 @@ func hasUncommittedChanges(dir string) bool {
 	return string(out) != ""
 }
 
-// refExists ports the `git show-ref --verify --quiet refs/...` checks.
 func refExists(ref string) bool {
 	return exec.Command("git", "show-ref", "--verify", "--quiet", ref).Run() == nil
 }
 
-// readMarker ports read_marker(): the base branch recorded in the
-// worktree's .worktree-base marker, or the multi-line recovery instructions
-// and exit 1 when the marker is missing.
 func readMarker(wtPath, repoRoot, worktreesDir string) string {
 	marker := filepath.Join(wtPath, ".worktree-base")
 	fi, err := os.Stat(marker)
@@ -181,18 +145,16 @@ func readMarker(wtPath, repoRoot, worktreesDir string) string {
 	}
 	data, err := os.ReadFile(marker)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err) // bash: cat failure under set -e
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 	return strings.TrimRight(string(data), "\n")
 }
 
-// checkGitignore ports check_gitignore(): non-fatal warning when
-// .worktrees is not ignored.
 func checkGitignore(repoRoot string) {
 	data, err := os.ReadFile(filepath.Join(repoRoot, ".gitignore"))
 	if err != nil {
-		return // bash only checks when .gitignore exists
+		return
 	}
 	for _, line := range strings.Split(string(data), "\n") {
 		if gitignoreRe.MatchString(line) {
@@ -258,8 +220,6 @@ func main() {
 	}
 }
 
-// cmdCreate ports cmd_create(): create worktree <name> from the current
-// branch (or an existing local/origin branch of the same name).
 func cmdCreate(repoRoot, worktreesDir, name string) {
 	if name == "" {
 		usage(filepath.Base(os.Args[0]), "Missing worktree name")
@@ -287,7 +247,6 @@ func cmdCreate(repoRoot, worktreesDir, name string) {
 		os.Exit(1)
 	}
 
-	// Resolve branch: local, remote, or create fresh.
 	if refExists("refs/heads/" + name) {
 		fmt.Printf("> Using existing branch '%s'\n", name)
 	} else if refExists("refs/remotes/origin/" + name) {
@@ -322,10 +281,6 @@ func cmdCreate(repoRoot, worktreesDir, name string) {
 	fmt.Println("=====================================")
 }
 
-// cmdDone validates a legacy worktree named explicitly or inferred from cwd
-// when no name is supplied, then prints the native Git
-// commands for safe cleanup. It deliberately does not mutate Git state or
-// change the current directory.
 func cmdDone(pwd, repoRoot, worktreesDir, name string) {
 	if repoRoot == "" {
 		die("Not inside a git repository")
@@ -372,8 +327,6 @@ func cmdDone(pwd, repoRoot, worktreesDir, name string) {
 	fmt.Println("=====================================")
 }
 
-// cmdAbort discards a named worktree and its branch
-// regardless of dirty state.
 func cmdAbort(repoRoot, worktreesDir, name string) {
 	if repoRoot == "" {
 		die("Not inside a git repository")
@@ -393,18 +346,15 @@ func cmdAbort(repoRoot, worktreesDir, name string) {
 
 	fmt.Printf("> Discarding worktree '%s'...\n", name)
 
-	// git worktree remove --force 2>/dev/null || rm -rf "$wt_path"
-	// (only stderr is discarded; stdout stays inherited)
 	remove := exec.Command("git", "worktree", "remove", wtPath, "--force")
 	remove.Stderr = io.Discard
 	if err := remove.Run(); err != nil {
 		if err := os.RemoveAll(wtPath); err != nil {
-			fmt.Fprintln(os.Stderr, err) // rm -rf error under set -e
+			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
 	}
 
-	// git branch -D ... 2>/dev/null || true (stdout visible, as in bash)
 	branch := exec.Command("git", "branch", "-D", currentBranch)
 	branch.Stderr = io.Discard
 	_ = branch.Run()
@@ -414,7 +364,6 @@ func cmdAbort(repoRoot, worktreesDir, name string) {
 	fmt.Printf("> Worktree '%s' discarded.\n", name)
 }
 
-// cmdList ports cmd_list(): worktree table plus a current-worktree hint.
 func cmdList(pwd, repoRoot, worktreesDir string) {
 	if repoRoot == "" {
 		die("Not inside a git repository")
@@ -426,7 +375,6 @@ func cmdList(pwd, repoRoot, worktreesDir string) {
 	}
 }
 
-// cmdPrune ports cmd_prune(): drop stale worktree references.
 func cmdPrune(repoRoot string) {
 	if repoRoot == "" {
 		die("Not inside a git repository")

@@ -46,7 +46,6 @@
     gtk4.extraConfig = {
       gtk-application-prefer-dark-theme = true;
     };
-    # Explicitly set gtk4 theme to silence home-manager warning
     gtk4.theme = config.gtk.theme;
   };
 

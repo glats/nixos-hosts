@@ -1,5 +1,3 @@
-// Command sync-opencode-remote copies managed assets to an existing isolated
-// OpenCode configuration. It never provisions OpenCode or transfers user state.
 package main
 
 import (

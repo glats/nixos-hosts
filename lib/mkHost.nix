@@ -24,16 +24,12 @@ let
         inputs = hostInputs;
       };
       modules = [
-        # Host-specific configuration
         ../hosts/${hostname}
 
-        # Sops-nix for secrets management
         hostInputs.sops-nix.nixosModules.sops
 
-        # Home Manager integrated with NixOS
         homeManagerInput.nixosModules.home-manager
 
-        # Overlays for custom packages
         {
           nixpkgs.overlays = [
             (import ../overlays/linux.nix {
@@ -44,7 +40,6 @@ let
           ++ extraOverlays;
         }
 
-        # Pass inputs to home-manager for module access
         {
           home-manager.extraSpecialArgs = {
             inherit username;
@@ -55,7 +50,6 @@ let
       ++ extraModules;
     };
 
-  # Backward-compatible alias
   mkHost = mkNixosHost;
 in
 {

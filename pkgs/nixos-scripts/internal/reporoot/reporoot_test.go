@@ -38,7 +38,6 @@ func TestResolveGitToplevel(t *testing.T) {
 	run("init", "-q")
 	run("commit", "--allow-empty", "-m", "init")
 
-	// Unset the env override so the git branch applies.
 	t.Setenv(EnvVar, "")
 	if err := os.Chdir(dir); err != nil {
 		t.Fatal(err)
@@ -62,8 +61,7 @@ func TestResolveFallbackHomeNixos(t *testing.T) {
 	}
 	t.Setenv(EnvVar, "")
 	t.Setenv("HOME", home)
-	// cwd is the real repo (a git repo) — force the fallback by running from
-	// a non-git directory.
+
 	nonGit := t.TempDir()
 	if err := os.Chdir(nonGit); err != nil {
 		t.Fatal(err)
@@ -81,7 +79,7 @@ func TestResolveFallbackHomeNixos(t *testing.T) {
 
 func TestResolveNoCandidate(t *testing.T) {
 	empty := t.TempDir()
-	home := t.TempDir() // no .nixos inside
+	home := t.TempDir()
 	t.Setenv(EnvVar, "")
 	t.Setenv("HOME", home)
 	if err := os.Chdir(empty); err != nil {

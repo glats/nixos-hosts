@@ -27,20 +27,14 @@ in
       gpg.program = "${pkgs.gnupg}/bin/gpg";
     };
 
-    # Sign work commits with work key by default
     signing = {
       key = identities.work.signingKey;
       signByDefault = true;
     };
 
-    # Home Manager ignores `contents` when `path` is set, so identity files
-    # and credential pins must be separate includes.
     includes = [
-      # Default: work identity via activation-written file + forced work
-      # account so pushes work regardless of gh's active-account state
       { path = "~/.config/git/identity-work"; }
       { contents.credential = identities.mkCredential pkgs.gh "jcuzmar-Falabella_FTC"; }
-      # Personal identity in Personal directory + forced glats account
       {
         condition = "gitdir:~/Projects/**";
         path = "~/.config/git/identity-personal";
@@ -49,7 +43,6 @@ in
         condition = "gitdir:~/Projects/**";
         contents.credential = identities.mkCredential pkgs.gh "glats";
       }
-      # nixos-hosts uses personal (glats) identity + auth
       {
         condition = "gitdir:~/.config/nix/**";
         path = "~/.config/git/identity-personal";
@@ -59,7 +52,6 @@ in
         contents.credential = identities.mkCredential pkgs.gh "glats";
       }
     ]
-    # Personal repos sign with personal key if set
     ++ lib.optional (identities.personal.signingKey != "") {
       condition = "gitdir:~/Projects/**";
       contents = {

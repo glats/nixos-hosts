@@ -1,11 +1,3 @@
-// Command netconsole-log is the netconsole UDP receiver on thinkcentre:
-// it listens on UDP :6666, durably appends every received line (prefixed
-// with its RFC3339 receive timestamp) to a log file under
-// /var/log/netconsole/, and ACKs rog's nonce probe markers back to the
-// sender so netconsole-setup can verify readiness (2s window on rog).
-//
-// All framing, nonce and append logic lives in internal/netconsole and is
-// covered by unit tests; this entry only parses flags and dispatches.
 package main
 
 import (
@@ -38,7 +30,7 @@ func main() {
 	defer stop()
 	go func() {
 		<-ctx.Done()
-		conn.Close() // unblocks ReadFromUDP; Serve then returns nil
+		conn.Close()
 	}()
 
 	log.Printf("netconsole-log: listening on udp :%d, logging to %s", *port, app.Path)

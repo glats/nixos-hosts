@@ -10,9 +10,6 @@ stdenvNoCC.mkDerivation rec {
   pname = "tinkertool";
   version = "11.71";
 
-  # Upstream serves only the latest DMG, through a session-keyed form, so a
-  # fixed-output derivation replays that form. The hash is the official
-  # SHA-256 from the download page; bump version and hash on new releases.
   src = stdenvNoCC.mkDerivation {
     name = "TinkerTool-${version}.dmg";
     nativeBuildInputs = [ curl ];
@@ -41,7 +38,6 @@ stdenvNoCC.mkDerivation rec {
   };
 
   nativeBuildInputs = [ _7zz ];
-  # The DMG wraps an HFS image inside an Apple partition map: extract twice.
   unpackPhase = ''
     runHook preUnpack
     7zz x -y "$src" >/dev/null
@@ -49,7 +45,6 @@ stdenvNoCC.mkDerivation rec {
     runHook postUnpack
   '';
   dontBuild = true;
-  # Preserve the upstream notarized signature.
   dontFixup = true;
 
   installPhase = ''

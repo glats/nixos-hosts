@@ -37,7 +37,6 @@
       X-MATE-Autostart-enabled=true
     '';
 
-    # Disable mate-screensaver in xrdp sessions - causes disconnection issues
     "autostart/mate-screensaver.desktop".text = ''
       [Desktop Entry]
       Type=Application
@@ -49,7 +48,6 @@
       Hidden=true
     '';
 
-    # Disable mate-power-manager in xrdp sessions - not needed in remote sessions
     "autostart/mate-power-manager.desktop".text = ''
       [Desktop Entry]
       Name=Power Manager
@@ -63,15 +61,6 @@
     '';
   };
 
-  # Flameshot version-dependent X11 config.
-  #
-  # v14+: uses xdg-desktop-portal Screenshot by default; X11/xrdp sessions
-  #       have no portal backend, so useX11LegacyScreenshot=true is REQUIRED.
-  # v13-: uses native X11 capture; does NOT recognize the v14 key and shows
-  #       a "resolve configuration errors" dialog if it is present.
-  #
-  # Activation script checks the installed version so this adapts
-  # automatically on upgrades/downgrades. Never hardcode one branch.
   home.activation.ensureFlameshotX11Legacy = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     ini="$HOME/.config/flameshot/flameshot.ini"
     mkdir -p "$(dirname "$ini")"

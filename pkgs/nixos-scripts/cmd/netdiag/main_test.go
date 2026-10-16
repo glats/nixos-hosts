@@ -89,7 +89,7 @@ func TestLastLine(t *testing.T) {
 		{"\n", ""},
 		{"round-trip: 0.3 ms\n", "round-trip: 0.3 ms"},
 		{"line1\nline2\n", "line2"},
-		{"line1\n\n", ""}, // tail -1 of "a\n\n" is an empty line
+		{"line1\n\n", ""},
 		{"no trailing newline", "no trailing newline"},
 		{"a\n\nb", "b"},
 		{"ping: send failure\n", "ping: send failure"},
@@ -102,13 +102,12 @@ func TestLastLine(t *testing.T) {
 }
 
 func TestBCScale1(t *testing.T) {
-	// bc `scale=1` truncates instead of rounding — pinned here because
-	// the throughput output must match the bash original byte-for-byte.
+
 	cases := []struct {
 		in   float64
 		want string
 	}{
-		{10.4976 * 1048576 / 1048576, "10.4"}, // truncation, not 10.5
+		{10.4976 * 1048576 / 1048576, "10.4"},
 		{10485760.0 / 1048576, "10.0"},
 		{524288.0 / 1048576, "0.5"},
 		{0.05 * 1048576 / 1048576, "0.0"},

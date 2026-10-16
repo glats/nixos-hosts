@@ -9,17 +9,11 @@
 with lib;
 
 let
-  # Import centralized provider configuration
   providers = import ./opencode/providers.nix {
     inherit lib;
     activeProviderName = config.home.opencode.activeProviderName;
   };
 
-  # Bare GitHub MCP tool names pruned from both servers (github-personal,
-  # github-work): releases, tags, teams, collaborators, labels, repo
-  # creation/fork, Copilot assignment, sub-issues, user search. Core
-  # workflows (issues, PRs, reviews, branches, commits, content, search)
-  # stay enabled. Names follow github/github-mcp-server tool IDs.
   githubRareTools = [
     "assign_copilot_to_issue"
     "create_repository"
@@ -42,7 +36,6 @@ let
   mkRuntimeConfig = import ./opencode/runtime-config.nix;
   cfg = config.home.opencode;
   openfangEnabled = config.home ? openfang && config.home.openfang.enable;
-  # gentle-ai discovers the native binary as `opencode` on its own PATH.
   nativeDiscovery = pkgs.runCommand "gentle-ai-native-discovery" { } ''
     mkdir -p "$out/bin"
     ln -s ${pkgs.opencode}/bin/opencode "$out/bin/opencode"
@@ -155,10 +148,7 @@ in
   };
 
   config = mkMerge [
-    # Main configuration
     (mkIf config.home.opencode.enable {
-      # Move the retired versioned layout into the native XDG paths before
-      # anything links into ~/.config/opencode; a refusal fails activation.
       home.activation.migrateOpencodeLayout = config.lib.dag.entryBefore [ "checkLinkTargets" ] ''
         ${pkgs.nixos-scripts}/bin/opencode-layout-migrate ${
           lib.optionalString (!openfangEnabled) "--retire-openfang-skills"
@@ -170,14 +160,13 @@ in
         opencodePackage
         engram
         rtk
-        poppler-utils # PDF page rendering: needed by OpenCode read tool and Claude Code for PDF support
+        poppler-utils
       ];
 
       home.sessionVariables = {
         RTK_TELEMETRY_DISABLED = "1";
       };
 
-      # Export API keys from sops secrets at shell startup
       programs.zsh.initContent = lib.mkAfter ''
               if [ -f "${config.sops.secrets."opencode/nvidia_api_key".path}" ]; then
                 export NVIDIA_API_KEY="$(cat ${config.sops.secrets."opencode/nvidia_api_key".path})"

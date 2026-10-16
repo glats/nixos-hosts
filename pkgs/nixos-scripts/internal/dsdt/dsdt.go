@@ -1,53 +1,32 @@
-// Package dsdt is a strict AML scanner for the S5 sleep package. It finds
-// ONE root `Name(\_S5, Package(){int, int, int, int})` definition in a DSDT
-// and extracts SLP_TYPa (package element 0: the value OSPM writes into the
-// PM1a_CNT.SLP_TYP bits before setting SLP_EN).
-//
-// The scanner is intentionally NARROW — it is not an AML interpreter. Root
-// scope is approximated by matching DefName (0x08) followed by an optional
-// RootChar (0x5C) and the 4-char name "_S5_"; relative names (namespaced
-// under a Scope, prefix chars like '^') are skipped. This is fail-closed:
-// if the live DSDT does not encode _S5 as a scoped-root literal package,
-// the scan reports "missing _S5" and the write path stays off instead of
-// guessing. Any deviation — a second \_S5 definition, non-literal elements
-// (method results, named references, operator expressions), a _S5 that is
-// not a 4-element package — is a hard error.
 package dsdt
 
 import (
 	"fmt"
 )
 
-// AML opcodes used by the scanner (ACPI spec, AML grammar).
 const (
-	opName    = 0x08 // DefName
-	opRoot    = 0x5C // RootChar '\' — name is in the root namespace
-	opPackage = 0x12 // PackageOp (also 0x13 VarPackageOp, unsupported)
+	opName    = 0x08
+	opRoot    = 0x5C
+	opPackage = 0x12
 	opZero    = 0x00
 	opOne     = 0x01
 	opByte    = 0x0A
 	opWord    = 0x0B
 	opDWord   = 0x0C
-	opQWord   = 0x0E // QWordConstOp
+	opQWord   = 0x0E
 	opOnes    = 0xFF
 )
 
-// s5Name is the 4-char ACPI name of the S5 package ("_S5" padded).
 var s5Name = [4]byte{'_', 'S', '5', '_'}
 
-// Result is the recovered S5 data.
 type Result struct {
-	SLPTypA uint64 // element 0: PM1a_CNT SLP_TYP value
-	SLPTypB uint64 // element 1: PM1b_CNT SLP_TYP value (unused when PM1b absent)
-	// All four extracted elements (reserved elements 2-3 kept for tests
-	// and diagnostics breadcrumbs).
+	SLPTypA uint64
+	SLPTypB uint64
+
 	Elements [4]uint64
-	Offset   int // byte offset of the NameOp in the DSDT
+	Offset   int
 }
 
-// Scan data (full AML of a DSDT's DefinitionBlock) for the root \_S5
-// package described in the package doc. Errors name the reason: missing,
-// ambiguous, or malformed/non-literal.
 func Scan(data []byte) (Result, error) {
 	var found int
 	var res Result
@@ -56,8 +35,7 @@ func Scan(data []byte) (Result, error) {
 			continue
 		}
 		j := i + 1
-		// RootChar optional (a top-level DefName in the root namespace
-		// may be encoded without the '\' prefix).
+
 		if data[j] == opRoot {
 			j++
 		}
@@ -87,8 +65,6 @@ func Scan(data []byte) (Result, error) {
 	return res, nil
 }
 
-// parseS5Package parses "PackageOp PkgLength NumElements elements..." at p
-// and requires ALL elements to be integer literals.
 func parseS5Package(data []byte, p int) (Result, error) {
 	if p >= len(data) {
 		return Result{}, fmt.Errorf("truncated: no bytes after name")
@@ -97,15 +73,13 @@ func parseS5Package(data []byte, p int) (Result, error) {
 		return Result{}, fmt.Errorf(
 			"unsupported form: next byte 0x%02x is not PackageOp (methods/references are refused)", data[p])
 	}
-	p++ // consume the PackageOp
+	p++
 	ln, n, err := pkgLength(data, p)
 	if err != nil {
 		return Result{}, err
 	}
 	p += n
-	// PkgLength counts its own encoding plus the following data, NOT the
-	// opcode byte (ACPI spec, AML grammar). Data extent after the length
-	// field is ln - n, so the package ends at p + (ln - n).
+
 	end := p + ln - n
 	if end > len(data) {
 		return Result{}, fmt.Errorf("package length %d exceeds table size", ln)
@@ -127,7 +101,7 @@ func parseS5Package(data []byte, p int) (Result, error) {
 		res.Elements[k] = v
 		p += n
 	}
-	// Tolerate NOTHING after the four declared elements inside the object.
+
 	if p != end {
 		return Result{}, fmt.Errorf("%d trailing bytes inside package object", end-p)
 	}
@@ -136,9 +110,6 @@ func parseS5Package(data []byte, p int) (Result, error) {
 	return res, nil
 }
 
-// pkgLength decodes a PkgLength (1-4 byte encoding; bit 6-7 of the first
-// byte select the length-byte count, bits 0-3 participate in the value).
-// Returns the decoded byte count and how many header bytes were consumed.
 func pkgLength(data []byte, p int) (int, int, error) {
 	if p >= len(data) {
 		return 0, 0, fmt.Errorf("truncated PkgLength")
@@ -152,15 +123,11 @@ func pkgLength(data []byte, p int) (int, int, error) {
 		}
 		val |= int(data[p+1+k]) << uint(4+8*k)
 	}
-	// follow==0 is 1 header byte with 6 value bits; else follow+1 bytes.
+
 	total += int(follow)
 	return val, total, nil
 }
 
-// intConst parses one TermArg that must be an integer literal (IntObj
-// encodings or Zero/One/Ones constants). Anything else — a method CALL,
-// named reference, or nested term — is an error: the scanner cannot tell
-// what such a value would be at runtime and must not guess a sleep type.
 func intConst(data []byte, p, end int) (uint64, int, error) {
 	if p >= end {
 		return 0, 0, fmt.Errorf("truncated element")
@@ -185,7 +152,6 @@ func intConst(data []byte, p, end int) (uint64, int, error) {
 	}
 }
 
-// intConst helper: op at data[p], then a little-endian integer of size n.
 func intOf(data []byte, p, end, n int) (uint64, int, error) {
 	if p+1+n > end {
 		return 0, 0, fmt.Errorf("truncated %d-byte constant", n)

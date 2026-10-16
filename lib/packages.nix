@@ -1,14 +1,3 @@
-# Per-system package definitions extracted from flake.nix.
-#
-# Usage from flake.nix:
-#   let
-#     packages = import ./lib/packages.nix { inherit inputs; pkgsFor = pkgsFor; };
-#   in
-#   {
-#     packages.x86_64-linux = packages.linuxPackages;
-#     packages.x86_64-darwin = packages.darwinPackages;
-#     packages.aarch64-darwin = packages.aarch64DarwinPackages;
-#   }
 {
   inputs,
   pkgsFor,
@@ -19,7 +8,6 @@ let
   darwinPkgs = pkgsFor "x86_64-darwin";
   aarch64DarwinPkgs = pkgsFor "aarch64-darwin";
 
-  # Packages built identically on both platforms.
   commonPackages =
     pkgs:
     let

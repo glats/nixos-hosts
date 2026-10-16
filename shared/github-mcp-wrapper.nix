@@ -1,14 +1,6 @@
 { pkgs, ... }:
 
 let
-  # Helper: create a GitHub MCP wrapper that uses `gh auth token`
-  # instead of a static sops-nix file. Tokens are managed by gh CLI
-  # (auto-renewal via OAuth) — no more expired PATs or lost SSO.
-  #
-  # Uses gh native multi-account support (gh >= 2.40): both accounts live
-  # under github.com and each wrapper targets a specific --user. Do NOT use
-  # fake hostnames (e.g. personal.github.com) — gh config migrations can
-  # wipe hand-crafted hosts.yml entries.
   mkGithubMcpWrapper =
     { name, user }:
     pkgs.writeShellScriptBin name ''

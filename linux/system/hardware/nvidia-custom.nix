@@ -32,7 +32,6 @@
       hardware.nvidia = {
         open = false;
         nvidiaSettings = true;
-        # GTX 1050 requires legacy 580.xx driver (595.xx dropped support for this GPU)
         package = config.boot.kernelPackages.nvidiaPackages.legacy_580;
       };
 
@@ -40,13 +39,6 @@
 
       hardware.nvidia-container-toolkit.enable = true;
 
-      # nvidia-ctk cdi generate hangs indefinitely with legacy 580 driver
-      # (NVML incompatibility with nvidia-container-toolkit 1.18.x).
-      # Upstream module sets requiredBy = [ "docker.service" ], which means
-      # systemd kills docker every time the CDI generator restarts (via udev).
-      # Fix: demote to wantedBy so docker can start without CDI spec ready.
-      # GPU passthrough in containers won't work, but docker itself will.
-      # Refs: NixOS/nixpkgs#463645, #451912, #468385
       systemd.services.nvidia-container-toolkit-cdi-generator = {
         requiredBy = lib.mkForce [ ];
         serviceConfig.TimeoutStartSec = 120;

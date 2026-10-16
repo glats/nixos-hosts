@@ -1,13 +1,3 @@
-// Command linkctl is a sysvinit-style control for the macOS link daemon
-// (org.nixos.sing-box) on macm5.
-//
-// Port of bin/linkctl. start/stop/restart mutate the system domain
-// (root-only) and auto-promote via sudo re-exec (syscall.Exec, the Go
-// equivalent of bash `exec sudo`); status works unprivileged.
-//
-// The daemon is a manual-operation wrapper: its plist sets RunAtLoad=false /
-// KeepAlive=false, so it never autostarts at boot. Post-reboot the job is
-// auto-registered but idle (no pid) — `linkctl start` raises it.
 package main
 
 import (
@@ -28,8 +18,6 @@ func usage() {
 	os.Exit(1)
 }
 
-// lc runs launchctl and returns stdout+stderr combined with the exit code
-// (parity with bash `2>&1` captures and `2>/dev/null || true` probes).
 func lc(suppressStderr bool, args ...string) (string, int) {
 	c := exec.Command("launchctl", args...)
 	var out strings.Builder
@@ -50,8 +38,6 @@ func lc(suppressStderr bool, args ...string) (string, int) {
 	return out.String(), rc
 }
 
-// printState shows state|pid lines plus a one-line hint for the two special
-// states: booted-out / never loaded since boot, and registered-but-idle.
 func printState() {
 	out, _ := lc(true, "print", "system/"+label)
 	if strings.TrimSpace(out) == "" {
@@ -105,8 +91,7 @@ func cmdStop() {
 }
 
 func cmdRestart() {
-	// Stop-then-start (bootout → bootstrap+kickstart): robust across
-	// loaded/unloaded states. Bootout failure is fine (may not be loaded).
+
 	lc(true, "bootout", "system/"+label)
 	if _, rc := lc(true, "bootstrap", "system", plist); rc == 0 {
 		if _, rc := lc(true, "kickstart", "system/"+label); rc != 0 {
@@ -124,8 +109,6 @@ func main() {
 		usage()
 	}
 
-	// Auto-promote: start/stop/restart mutate the SYSTEM domain (root-only).
-	// Re-exec under sudo via the resolved binary path; status is unprivileged.
 	if os.Geteuid() != 0 && args[0] != "status" {
 		self, err := os.Executable()
 		if err != nil {

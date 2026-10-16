@@ -1,9 +1,6 @@
 { config, pkgs, ... }:
 
 {
-  # Wetty - Web Terminal
-  # Datos en /srv/glats/wetty/
-  # Actualizado a imagen oficial wettyoss/wetty (butlerx/wetty está deprecada)
   virtualisation.oci-containers.containers.wetty = {
     image = "wettyoss/wetty:latest";
     autoStart = true;
@@ -16,7 +13,6 @@
       "/srv/glats/wetty/ssh:/root/.ssh"
     ];
 
-    # Usar comando directo con flags nuevos (formato wettyoss)
     cmd = [
       "--ssh-host"
       "172.17.0.1"

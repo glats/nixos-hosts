@@ -1,15 +1,3 @@
-# Shared GPG key import logic used by both Linux and Darwin Home Manager
-# configurations. Extracted from home-linux/gpg.nix and home-darwin/gpg.nix
-# (byte-identical in both files).
-#
-# Does NOT set home.packages -- the calling platform module is responsible
-# for choosing the appropriate pinentry package.
-#
-# Depends on shared/sops.nix for secret paths:
-#   - github/work_gpg_fingerprint
-#   - github/work_gpg_key
-#   - github/personal_gpg_fingerprint
-#   - github/personal_gpg_key
 {
   config,
   lib,
@@ -18,10 +6,6 @@
 }:
 
 let
-  # Import a GPG key from sops secrets into the keyring if not already present.
-  # sops-nix installs secrets asynchronously (launchd agent on darwin, systemd
-  # user service on linux), so wait briefly for the files to appear before
-  # giving up -- otherwise the import is silently skipped on first activation.
   importKey = name: fingerprintPath: keyPath: ''
     for ((i = 0; i < 50; i++)); do
       [ -f "${fingerprintPath}" ] && [ -f "${keyPath}" ] && break

@@ -1,6 +1,3 @@
-# Darwin superfile (TUI file manager) configuration.
-# Imports shared superfile theme and deploys to ~/Library/Application Support/superfile/.
-# Package is already in packages.nix -- this module only deploys config files.
 { config, ... }:
 let
   themeToml = import ../../shared/superfile.nix {

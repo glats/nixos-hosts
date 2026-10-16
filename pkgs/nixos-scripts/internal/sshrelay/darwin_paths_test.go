@@ -143,7 +143,6 @@ func TestStageCredentialsRejectsUnsafeParentsWithoutRepair(t *testing.T) {
 	}
 }
 
-// Resolves live paths using metadata only; never invokes a credential reader.
 func TestNativeDarwinSourceMetadataOnly(t *testing.T) {
 	if runtime.GOOS != "darwin" {
 		t.Skip("native macOS metadata proof")

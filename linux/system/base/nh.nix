@@ -1,5 +1,3 @@
-# nh - yet another NixOS/nix helper
-# Provides `nh os switch` with nix-output-monitor integration
 { config, pkgs, ... }:
 
 {

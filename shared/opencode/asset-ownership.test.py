@@ -63,14 +63,10 @@ for consumer in ("opencode", "claude", "openfang"):
             assert "Organic Driven Development" in (desired / "CLAUDE.md").read_text()
             assert "{{GENTLE_AI_" not in (desired / "CLAUDE.md").read_text()
             assert "Explicit user instructions and repository policy override" in (desired / "CLAUDE.md").read_text()
-        # A modified owned asset refuses before replacing any other byte.
         path = target / next(iter(manifest["files"]))
         path.write_text("synthetic user modification")
         assert subprocess.run(argv, capture_output=True).returncode != 0
         assert path.read_text() == "synthetic user modification"
-        # Existing shipping API, not a new rollback command: restore only the
-        # exact immutable prior asset tree in a synthetic home. The damaged
-        # current asset must cause refusal before any rollback replacement.
         rollback = [str(cli), str(target), str(legacy), str(legacy), "f5dd1a6cf1823371374c7b2bef5b71e4790a146a"]
         assert subprocess.run(rollback, capture_output=True).returncode != 0
         assert path.read_text() == "synthetic user modification"
@@ -87,8 +83,6 @@ for consumer in ("opencode", "claude", "openfang"):
             assert (target / name).read_text() == "synthetic user-owned history"
         print(f"PASS: {consumer} synthetic actual-tree rollback/retry, modified refusal, credentials/history/receipt/mirror preservation")
 
-    # Actual Nix CLI upgrade and exact second-generation interruption journal,
-    # synthesized offline: no production hook, sleep or live asset access.
     with tempfile.TemporaryDirectory(prefix=f"odd-upgrade-{consumer}-") as tmp:
         root = Path(tmp); target = root / "target"; desired = root / "desired"; legacy = root / "legacy"
         for directory in (target, desired, legacy): directory.mkdir()
@@ -105,7 +99,6 @@ for consumer in ("opencode", "claude", "openfang"):
                      prior={"exists": True, "digest": hashlib.sha256(b"A").hexdigest()})
         state.write_text(json.dumps(manifest))
         argv[-1] = "B"
-        # A user edit or arbitrary historical reversion is not pending A.
         for changed in (b"user edit", b"2.5"):
             (target / "asset").write_bytes(changed)
             assert subprocess.run(argv, capture_output=True).returncode != 0

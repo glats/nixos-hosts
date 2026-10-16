@@ -1,4 +1,3 @@
-# Generate the OpenCode Home Manager runtime configuration and activation steps.
 {
   config,
   lib,
@@ -12,23 +11,14 @@
 let
   runtimeDir = "${config.home.homeDirectory}/.config/opencode";
 
-  # Per-tool command sources (NOT shared — each tool needs its own)
   opencodeCommandSources = [
     "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/commands"
     "${pkgs.caveman-assets}/share/caveman/commands"
     "${pkgs.ponytail-assets}/share/ponytail/commands"
   ];
 
-  # Merge base MCPs with extra MCPs, then filter by enabled.
   allMcps = config.home.ai-assets.mcps // config.home.ai-assets.extraMcps;
 
-  # MCP children must never inherit proxy env: OpenCode (Bun) honors
-  # HTTPS_PROXY/HTTP_PROXY for its own fetches, and MCP children inherit
-  # the full parent env. Empty string is falsy in OpenCode's proxy-env
-  # handling (no proxy), and `mcp.environment` is spread AFTER the
-  # parent env when spawning a local server, so the scrub below always
-  # wins. Remote MCPs have no child process — left untouched. Harmless
-  # on hosts that never set proxy vars.
   proxyScrubEnv = {
     HTTPS_PROXY = "";
     HTTP_PROXY = "";
@@ -130,19 +120,13 @@ let
 
   providerAllowlist = providers.providerAllowlist;
 
-  # V2 global configuration is the only managed OpenCode runtime.
   jsonFile = pkgs.writeText "opencode.json" (
     builtins.toJSON ({
       update = "disable";
       plugins = [ "opencode-claude-subscription@0.1.4" ];
       default_agent = "gentle-orchestrator";
       agents = v2Agents;
-      # Fit 2026-10-08: avoid the OpenAI WebSocket interruption route
-      # (opencode#53762). This is a mitigation, not a reliability guarantee.
-      # Source: opencode.ai/v2/docs/providers#websockets.
       providers.openai.settings.transport = "http";
-      # Project the existing NVIDIA inventory into the documented native V2
-      # schema; never drop its declaration while retaining its routing IDs.
       providers.nvidia = {
         inherit (providers.nvidiaProvider.nvidia) name models;
         env = [ "NVIDIA_API_KEY" ];
@@ -174,17 +158,12 @@ in
     source = jsonFile;
   };
   home.file.".config/opencode/cli.json" = {
-    # This is generated V2 configuration, not user state. Force replacement
-    # so Home Manager does not create another `.backup` on later activations.
     force = true;
     text = builtins.toJSON {
       "$schema" = "https://opencode.ai/cli.json";
     };
   };
 
-  # `backupFileExtension = "backup"` may have left this from an earlier V2
-  # activation. Remove only the generated V2 collision before linkGeneration;
-  # V1 and all other V2 runtime state remain untouched.
   home.activation.cleanupOpencodeCliBackup = config.lib.dag.entryBefore [ "linkGeneration" ] ''
     ${pkgs.coreutils}/bin/rm -f "${runtimeDir}/cli.json.backup"
   '';
@@ -207,8 +186,6 @@ in
     fi
   '';
 
-  # V2 discovers native skills, commands, and adapters from its own mutable
-  # tree; the copy/remap workflow remains writable and idempotent.
   home.activation.setupOpencodePluginRuntime =
     config.lib.dag.entryAfter [ "makeOpencodeConfigMutable" ]
       ''

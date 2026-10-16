@@ -1,7 +1,5 @@
 import { Plugin } from "@opencode/plugin"
 
-// Keep the rewrite policy in RTK. This adapter only invokes its native rewrite
-// command and leaves the original shell input untouched when RTK is unavailable.
 export default Plugin.define({
   id: "rtk-v2",
   setup(ctx) {

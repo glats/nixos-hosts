@@ -1,6 +1,5 @@
 { lib, pkgs, ... }:
 let
-  # Google Cloud SDK with the GKE auth plugin component included.
   gdk = pkgs.google-cloud-sdk.withExtraComponents (
     with pkgs.google-cloud-sdk.components;
     [
@@ -15,7 +14,6 @@ in
       [
         pandoc
       ]
-      # wkhtmltopdf has no aarch64-darwin build in nixpkgs 26.05.
       ++ lib.optionals (stdenv.hostPlatform.system == "x86_64-darwin") [
         wkhtmltopdf
       ]
@@ -70,7 +68,6 @@ in
         superfile
         ffmpeg
 
-        # Android platform tools (adb, fastboot)
         android-tools
         yt-dlp
         mise

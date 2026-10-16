@@ -1,8 +1,3 @@
-# Optional Rust wstunnel reverse relay server for macm5 -> rog SSH.
-#
-# The module is intentionally disabled until the runtime restriction file
-# has been provisioned. Importing it alone cannot start a
-# listener or create a secret dependency.
 {
   config,
   lib,
@@ -59,8 +54,6 @@ in
         group = "ssh-relay";
       };
 
-      # Root controls replacement; the service reads only its own 0600 file.
-      # Unlike /run, this policy survives nightly server shutdowns.
       systemd.tmpfiles.rules = [ "d /var/lib/ssh-relay 0755 root root -" ];
 
       systemd.services.ssh-relay = {
@@ -76,7 +69,6 @@ in
           ExecStartPre = [
             "${pkgs.coreutils}/bin/test ! -L ${cfg.restrictionsFile}"
             "${pkgs.coreutils}/bin/test -O ${cfg.restrictionsFile}"
-            # systemd expands specifiers before Bash: %% preserves stat's formats.
             "${pkgs.bash}/bin/bash -eu -c 'test \"$(stat -c %%a \"$1\")\" = 600' -- ${cfg.restrictionsFile}"
             "${pkgs.bash}/bin/bash -eu -c 'resolved=$(readlink -f -- \"$1\"); case \"$resolved\" in /nix/store|/nix/store/*) exit 1;; esac; parent=$(dirname \"$resolved\"); mode=$(stat -c %%a \"$parent\"); test \"$((8#$mode & 0022))\" = 0; owner=$(stat -c %%u \"$parent\"); test \"$owner\" = 0 -o \"$owner\" = \"$(id -u)\"' -- ${cfg.restrictionsFile}"
           ];

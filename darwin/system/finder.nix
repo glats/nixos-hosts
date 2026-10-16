@@ -9,9 +9,6 @@
 let
   primaryHome = "/Users/${primaryUser}";
   trustedApps = [
-    # Directories or .app bundles to auto-trust so Gatekeeper/quarantine
-    # prompts stay out of the way. Add entries here when new GUI apps are
-    # managed via this flake.
     "/Applications"
     "/Applications/Nix Apps"
     "${primaryHome}/Applications"

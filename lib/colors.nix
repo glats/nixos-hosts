@@ -1,13 +1,3 @@
-# Shared color helper functions used by NixOS and Home Manager modules.
-#
-# Usage:
-#   let
-#     colors = import ../lib/colors.nix { inherit lib; };
-#   in
-#   {
-#     # ...
-#     color = "rgb(${colors.hexToRgb config.colorScheme.palette.base00})";
-#   }
 {
   lib,
 }:

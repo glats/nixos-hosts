@@ -1,4 +1,3 @@
-# SOPS configuration for multi-host NixOS/macOS configuration
 keys:
   - &admin_glats age1j4mxejwmktekgf24sju92ryayh5jlmv4ldxj62e2srwghpkpuujscct9lt
   - &host_rog age1q46qlf4kt0pc255nrl4r24m5hnvqwqf9wd8n6206f0zg95v6993qvd9cr8
@@ -7,7 +6,6 @@ keys:
   - &host_t14 age1kc4mnetans8hwzwy24gsnw2hzxzcz3c5wcthcsr5wdfwk5e7vvtqvku74u
 
 creation_rules:
-  # Host-specific secrets
   - path_regex: secrets/host/rog/.+
     key_groups:
       - age:
@@ -20,11 +18,6 @@ creation_rules:
           - *admin_glats
           - *host_thinkcentre
 
-  # link-uuids: per-device VLESS UUIDs for the private-link daemon.
-  # Admin needs to rotate; rog hosts the sing-box server; macm5 runs the
-  # client. Encrypted only for these three recipients — thinkcentre/t14
-  # neither host nor consume the link. Place BEFORE the shared catch-all
-  # so the specific rule wins.
   - path_regex: secrets/shared/link-uuids\.yaml
     key_groups:
       - age:
@@ -32,9 +25,6 @@ creation_rules:
           - *host_rog
           - *host_macm5
 
-  # Relay credentials are intentionally not present yet. When provisioned,
-  # keep this rule before the shared catch-all and limit access to the two
-  # hosts that consume the client/server halves.
   - path_regex: secrets/shared/ssh-relay\.yaml
     key_groups:
       - age:
@@ -42,7 +32,6 @@ creation_rules:
           - *host_rog
           - *host_macm5
 
-  # macm5 Home Manager needs only the shared GitHub/GPG password records.
   - path_regex: secrets/shared/passwords\.yaml
     key_groups:
       - age:
@@ -52,7 +41,6 @@ creation_rules:
           - *host_t14
           - *host_macm5
 
-  # Shared system secrets
   - path_regex: secrets/system/.+
     key_groups:
       - age:
@@ -69,7 +57,6 @@ creation_rules:
           - *host_thinkcentre
           - *host_t14
 
-  # Cross-platform user secrets
   - path_regex: secrets/user/opencode.yaml
     key_groups:
       - age:
@@ -79,7 +66,6 @@ creation_rules:
           - *host_macm5
           - *host_t14
 
-  # Identities file -- needed on all hosts including macOS
   - path_regex: secrets/user/identities.yaml
     key_groups:
       - age:
@@ -89,7 +75,6 @@ creation_rules:
           - *host_t14
           - *host_macm5
 
-  # User secrets (catch-all for other user files)
   - path_regex: secrets/user/.+
     key_groups:
       - age:

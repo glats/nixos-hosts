@@ -18,7 +18,6 @@ in
   };
 
   config = mkMerge [
-    # Unconditional secret declarations (always evaluated)
     {
       sops.secrets."openfang/telegram_bot_token" = {
         sopsFile = ../../secrets/host/rog/openfang.yaml;
@@ -30,12 +29,9 @@ in
       };
     }
 
-    # Conditional config (only when openfang is enabled)
     (mkIf cfg.enable {
-      # Ensure systemd user services are enabled
       systemd.user.enable = true;
 
-      # Generate OpenFang config.toml with Telegram and OpenCode Go via proxy
       home.file.".openfang/config.toml" = {
         force = true;
         text = ''
@@ -86,8 +82,6 @@ in
         '';
       };
 
-      # Export secrets from sops to shell environment
-      # This enables `openfang status` and other commands in the terminal
       programs.zsh.initContent = lib.mkAfter ''
         if [ -f "${config.sops.secrets."openfang/telegram_bot_token".path}" ]; then
           export TELEGRAM_BOT_TOKEN="$(cat ${config.sops.secrets."openfang/telegram_bot_token".path})"
@@ -97,7 +91,6 @@ in
         fi
       '';
 
-      # Wrapper script that reads sops secrets and exports them before starting openfang
       home.file.".local/bin/openfang-start" = {
         executable = true;
         text = ''
@@ -108,7 +101,6 @@ in
         '';
       };
 
-      # Systemd user service for OpenCode Go proxy
       systemd.user.services.opencode-go-proxy = {
         Unit = {
           Description = "OpenCode Go proxy with thinking disabled";
@@ -127,7 +119,6 @@ in
         };
       };
 
-      # Systemd user service to run OpenFang automatically on graphical login
       systemd.user.services.openfang = {
         Unit = {
           Description = "OpenFang AI coding agent with Telegram integration";

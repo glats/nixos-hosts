@@ -9,10 +9,7 @@ let
   inherit (lib) mapAttrsToList;
   wgTools = pkgs.wireguard-tools;
 
-  # --- Peer definitions (single source of truth) ---
-  # Blocks between the wg-peer markers are managed by `wg-peer` (bin/wg-peer).
   peers = {
-    # --- wg-peer:managed-start ---
     oneplus9 = {
       ip = "10.13.13.2";
       publicKey = "EsGamd57GFCaTxEk50FqU0Xya4bLmj2ij3l1AC8F/ig=";
@@ -38,14 +35,11 @@ let
       publicKey = "PUJEcWsMCTOfENyZYqoRRiPx9VZVAr3gXjP0BCT6+38=";
       psk = config.sops.secrets."wireguard/peer_thinkphone_psk";
     };
-    # --- wg-peer:managed-end ---
   };
 
-  # WireGuard interface IP
   serverIP = "10.13.13.1";
   serverEndpoint = "guard.glats.org";
 
-  # Convert peers attrset to NixOS peer configs
   mkWireGuardPeers = mapAttrsToList (
     _: p: {
       publicKey = p.publicKey;
@@ -55,21 +49,17 @@ let
   );
 in
 {
-  # Enable IP forwarding
   boot.kernel.sysctl = {
     "net.ipv4.ip_forward" = 1;
     "net.ipv6.conf.all.disable_ipv6" = 1;
     "net.ipv4.conf.all.src_valid_mark" = 1;
   };
 
-  # NAT for peers (using internalIPs instead of externalInterface
-  # to support multiple network interfaces: ethernet and WiFi)
   networking.nat = {
     enable = true;
     internalIPs = [ "${serverIP}/24" ];
   };
 
-  # DNS for WireGuard peers
   services.dnsmasq = {
     enable = true;
     resolveLocalQueries = false;
@@ -83,7 +73,6 @@ in
     };
   };
 
-  # WireGuard interface
   networking.wireguard.interfaces.wg0 = {
     ips = [ "${serverIP}/24" ];
     listenPort = 51820;
@@ -91,11 +80,6 @@ in
     peers = mkWireGuardPeers peers;
   };
 
-  # --- Generate client configs at activation time ---
-  # Produces /etc/wireguard/clients/<name>.conf for each peer.
-  # If a client private key exists in /etc/wireguard/keys/<name>.key, the conf
-  # is emitted ready-to-import (Model B: server-generated key included).
-  # Otherwise the PrivateKey line stays commented (client-side key generation).
   system.activationScripts.wireguard-client-configs = ''
     mkdir -p /etc/wireguard/clients /etc/wireguard/keys
 

@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -eu
 
-# Open the URL under the copy-mode cursor. A selection wins when present.
 target=$(cat)
 if [[ -z "${target//[[:space:]]/}" ]]; then
   x=$(tmux display-message -p '#{copy_cursor_x}')

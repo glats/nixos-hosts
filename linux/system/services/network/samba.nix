@@ -1,12 +1,10 @@
 { config, pkgs, ... }:
 
 {
-  # Samba server
   services.samba = {
     enable = true;
     openFirewall = true;
 
-    # Global configuration using settings (attribute format)
     settings = {
       global = {
         workgroup = "WORKGROUP";
@@ -19,7 +17,6 @@
         "directory mask" = "0775";
       };
 
-      # Public share
       public = {
         path = "/run/media/stuff/samba";
         comment = "Public";
@@ -28,7 +25,6 @@
         "guest ok" = "yes";
       };
 
-      # ROMs share — read-only, KNULLI compatible
       roms = {
         path = "/run/media/library/roms";
         comment = "ROMs";
@@ -39,13 +35,11 @@
     };
   };
 
-  # Network discovery for Windows (wsdd2)
   services.samba-wsdd = {
     enable = true;
     openFirewall = true;
   };
 
-  # DNS-SD service advertisement for SMB (mDNS/Linux discovery)
   services.avahi.extraServiceFiles = {
     smb = ''
       <?xml version="1.0" standalone="no"?>
@@ -60,7 +54,6 @@
     '';
   };
 
-  # Ensure directory exists and has correct permissions
   systemd.tmpfiles.rules = [
     "d /run/media/stuff/samba 0775 glats glats -"
   ];

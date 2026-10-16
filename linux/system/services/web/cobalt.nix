@@ -1,8 +1,6 @@
 { config, pkgs, ... }:
 
 {
-  # Cobalt - Media Downloader
-  # Datos en /srv/glats/cobalt/
   virtualisation.oci-containers.containers.cobalt = {
     image = "ghcr.io/imputnet/cobalt:11.4.1";
     autoStart = true;

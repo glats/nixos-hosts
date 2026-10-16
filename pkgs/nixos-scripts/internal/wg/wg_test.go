@@ -63,10 +63,10 @@ func TestNextIP(t *testing.T) {
 		want    string
 		wantErr bool
 	}{
-		{sampleModule, "10.13.13.4", false}, // last existing is .3
+		{sampleModule, "10.13.13.4", false},
 		{"ip = \"10.13.13.1\";", "10.13.13.2", false},
-		{"ip = \"192.168.1.50\";", "10.13.13.1", false}, // network filter
-		{`ip = "10.13.13.254";`, "", true},              // exhausted
+		{"ip = \"192.168.1.50\";", "10.13.13.1", false},
+		{`ip = "10.13.13.254";`, "", true},
 	}
 	for _, c := range cases {
 		got, err := NextIP(c.content, "10.13.13")
@@ -94,13 +94,13 @@ func TestInsertPeerByteFormat(t *testing.T) {
 	if !strings.Contains(out, wantBlock) {
 		t.Fatalf("inserted block not byte-exact:\n%q", wantBlock)
 	}
-	// Must land immediately before the end marker line.
+
 	endIdx := strings.Index(out, EndMark)
 	blockIdx := strings.Index(out, wantBlock)
 	if blockIdx == -1 || endIdx == -1 || blockIdx > endIdx {
 		t.Fatal("block must appear before the end marker")
 	}
-	// Block must still parse.
+
 	peers, err := ParsePeers(out)
 	if err != nil || len(peers) != 3 {
 		t.Fatalf("post-insert parse: %v, %d peers", err, len(peers))
@@ -128,7 +128,7 @@ func TestRemovePeer(t *testing.T) {
 }
 
 func TestUpdatePeerPublicKey(t *testing.T) {
-	// Mirrors the retired python3 regex: DOTALL across the comment lines.
+
 	content := `    # thinkpad
     thinkpad = {
       ip = "10.13.13.4";

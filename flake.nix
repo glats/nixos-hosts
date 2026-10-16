@@ -2,8 +2,6 @@
   description = "Unified Nix configuration for NixOS and macOS hosts";
 
   inputs = {
-    # Unified nixpkgs 26.05 for all hosts (NixOS + Darwin).
-    # Security fixes are provided until the end of 2026.
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
 
     home-manager = {
@@ -11,7 +9,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # SonicDE 6.6.5 is the release compatible with nixpkgs 26.05.
     sonic-de = {
       url = "github:sonicde-nixos/sonic-flake/d779fe69d144f9ef270887e71a16cae4cab7a741";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -25,9 +22,6 @@
     nix-colors.url = "github:misterio77/nix-colors";
 
     omarchy-nix = {
-      # Consumer boundary for the Quattro-capable main line. Its nested
-      # quattro inputs remain independent; the host still evaluates against
-      # this flake's nixpkgs 26.05.
       url = "github:glats/omarchy-nix/5c01ca65d42d520f45d2fb2ddd2526eb6e10494d";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.home-manager.follows = "home-manager";
@@ -37,9 +31,6 @@
       inputs.quickshell.follows = "t14-quickshell";
     };
 
-    # Quattro's newer Linux-only dependency boundary. These inputs are routed
-    # exclusively to t14; the shared inputs remain on 26.05 for every other
-    # host.
     t14-nixpkgs.url = "github:NixOS/nixpkgs/ef34387ddd751e1ab8857adf4676492d32eb24ec";
     t14-home-manager = {
       url = "github:nix-community/home-manager/cda90fd8838825c689fde9d3f3b4e937937790df";
@@ -54,61 +45,46 @@
       inputs.nixpkgs.follows = "t14-nixpkgs";
     };
 
-    # nixos-hardware — community-maintained hardware profiles.
-    # t14 imports the lenovo-thinkpad-t14-amd-gen4 profile via extraModules
-    # to merge with the existing hardware-configuration.nix (preserves
-    # btrfs subvolumes, swap, and EFI) and modules/hardware/amd-laptop.nix
-    # (provides fwupd, zramSwap, power-profiles-daemon).
     nixos-hardware = {
       url = "github:NixOS/nixos-hardware/master";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # OpenLogi Linux integration, pinned to the v0.8.11 release commit.
     openlogi = {
       url = "github:AprilNEA/OpenLogi/7a9d092a7dda0cb3b7ec18ada4424d681fca65ca";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # HyprDynamicMonitors — Hyprland monitor profile daemon with
-    # UPower lid-event support and EDID-based description matching.
     hyprdynamicmonitors = {
       url = "github:fiffeek/hyprdynamicmonitors";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # gentle-ai upstream (for skills, commands, plugins)
-    # One canonical v4.1.1 source for the binary and rendered ODD assets.
     gentle-ai-src = {
       url = "github:Gentleman-Programming/gentle-ai/898d3976e8049a7238eaa7de60bff325c30d2b3d";
       flake = false;
     };
 
-    # Caveman ultra-compressed communication skills
     caveman-src = {
       url = "github:JuliusBrussee/caveman";
       flake = false;
     };
 
-    # Ponytail — teaches agents to write less code (YAGNI enforcement)
     ponytail-src = {
       url = "github:DietrichGebert/ponytail";
       flake = false;
     };
 
-    # Claude Code — auto-updating flake from sadjow, always latest binary from GCS
     claude-code-nix = {
       url = "github:sadjow/claude-code-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # engram upstream (for OpenCode plugin)
     engram-src = {
       url = "github:Gentleman-Programming/engram/main";
       flake = false;
     };
 
-    # --- NixOS-only inputs ---
     asus-fan-control-src = {
       url = "github:dominiksalvet/asus-fan-control";
       flake = false;
@@ -119,33 +95,26 @@
       flake = false;
     };
 
-    # thinkfan-ui — PyQt6 GUI for ThinkPad fan control
-    # (writes to /proc/acpi/ibm/fan; mutually exclusive with services.thinkfan)
     thinkfan-ui-src = {
       url = "github:zocker-160/thinkfan-ui";
       flake = false;
     };
 
-    # --- macOS-only inputs ---
-    # nix-darwin must match the nixpkgs release: 26.05.
     nix-darwin = {
       url = "github:nix-darwin/nix-darwin/nix-darwin-26.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Determinate 3.* module
     determinate = {
       url = "https://flakehub.com/f/DeterminateSystems/determinate/3";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # nix-homebrew -- brew-src pinned to commit that fixes `to_sym for nil` crash
     nix-homebrew = {
       url = "github:zhaofengli/nix-homebrew";
       inputs.brew-src.follows = "homebrew-brew";
     };
     homebrew-brew = {
-      # Master incluye fix de `to_sym for nil` y `--force-cleanup` (nix-darwin requerido)
       url = "github:Homebrew/brew/master";
       flake = false;
     };
@@ -165,11 +134,9 @@
       ...
     }:
     let
-      # --- Builders ---
       inherit (import ./lib/mkHost.nix { inherit inputs self; }) mkNixosHost mkHost;
       inherit (import ./lib/mkDarwinHost.nix { inherit inputs self; }) mkDarwinHost;
 
-      # --- Overlay selection by system ---
       linuxOverlay = import ./overlays/linux.nix {
         inherit self inputs;
       };
@@ -189,16 +156,11 @@
 
       pkgsFor = mkPkgsFor nixpkgs [ ];
 
-      # Quattro packages are exposed by omarchy-nix's matching input set and
-      # overlaid only into t14. This keeps the global nixpkgs boundary intact,
-      # especially for the Darwin configuration.
       t14QuattroOverlay = final: _prev: {
         omarchy-runtime = inputs.omarchy-nix.packages.${final.system}.omarchy-runtime;
         quickshell = inputs.omarchy-nix.packages.${final.system}.quickshell;
       };
 
-      # Per-system package definitions.
-      # See lib/packages.nix for the full interface.
       packages = import ./lib/packages.nix {
         inherit inputs;
         pkgsFor = pkgsFor;
@@ -209,10 +171,6 @@
         aarch64DarwinPackages
         ;
 
-      # --- Home module lists ---
-      # Canonical base list of shared Home Manager modules for Linux. See
-      # `linux/home/shared-modules.nix` for the full list.
-      # Shared lists are imported by each platform/host Home Manager entry.
       linuxHomeModules = import ./linux/home/shared-modules.nix {
         inherit inputs;
       };
@@ -221,7 +179,6 @@
         inherit inputs;
       };
 
-      # --- mkHomeConfig: standalone home-manager for any platform ---
       mkHomeConfig =
         {
           hostname,
@@ -241,16 +198,12 @@
         in
         homeManagerInput.lib.homeManagerConfiguration {
           pkgs = mkPkgsFor nixpkgsInput extraOverlays system;
-          # `extraModules` is the complete per-host module list. Do not prepend
-          # a platform-wide list: host/default.nix already composes it, and
-          # prepending would evaluate shared modules twice.
           modules = extraModules;
           extraSpecialArgs = {
             inherit username;
             inputs = hostInputs;
             host = hostname;
             hostName = hostname;
-            # Darwin-specific extras (ignored by linux modules)
             primaryUser = username;
             inherit githubUser;
             javaVersion = "temurin-25.0.1+8.0.LTS";
@@ -263,7 +216,6 @@
       packages.x86_64-darwin = darwinPackages;
       packages.aarch64-darwin = aarch64DarwinPackages;
 
-      # --- Apps for nix run ---
       apps.x86_64-linux = {
         nixos-build = {
           type = "app";
@@ -275,7 +227,6 @@
         };
       };
 
-      # --- Checks ---
       checks.x86_64-linux.format =
         let
           pkgs = nixpkgs.legacyPackages.x86_64-linux;
@@ -368,19 +319,11 @@
           touch $out
         '';
 
-      # --- NixOS configurations ---
       nixosConfigurations = {
         rog = mkNixosHost { hostname = "rog"; };
         thinkcentre = mkNixosHost { hostname = "thinkcentre"; };
         t14 = mkNixosHost {
           hostname = "t14";
-          # Omarchy + hardware-specific modules.
-          #   - omarchy-nix: Hyprland-based desktop environment (NixOS module).
-          #   - nixos-hardware T14 AMD gen4 profile: amdgpu initrd, 32-bit
-          #     graphics, fstrim, amd_pstate=active, backlight, touchpad.
-          # Both modules use mkDefault for overlapping settings (graphics,
-          # microcode) so they merge cleanly with hardware-configuration.nix
-          # and modules/hardware/amd-laptop.nix.
           extraModules = [
             inputs.omarchy-nix.nixosModules.default
             inputs.nixos-hardware.nixosModules.lenovo-thinkpad-t14-amd-gen4
@@ -388,7 +331,6 @@
         };
       };
 
-      # --- Darwin configurations ---
       darwinConfigurations = {
         macm5 = mkDarwinHost {
           configName = "macm5";
@@ -398,7 +340,6 @@
         };
       };
 
-      # --- Standalone home-manager configurations ---
       homeConfigurations =
         let
           baseHomeConfig =
@@ -426,8 +367,6 @@
             };
         in
         {
-          # Standalone HM entries use the same wrapper so hostname, system,
-          # username, and extra modules are passed consistently.
           rog = baseHomeConfig {
             hostname = "rog";
             system = "x86_64-linux";
@@ -440,8 +379,6 @@
             username = "glats";
             extraModules = import ./hosts/thinkcentre/home/default.nix { inherit inputs; };
           };
-          # t14 appends the omarchy config block that the NixOS path provides
-          # via osConfig (standalone HM has no osConfig).
           t14 = baseHomeConfig {
             hostname = "t14";
             system = "x86_64-linux";
@@ -477,17 +414,10 @@
           };
         };
 
-      # --- Formatter ---
-      # Use through `nix fmt -- <path>` in this repo.
-      # Keep this aligned with `format-nix`; do not invoke formatter binaries directly.
       formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixfmt-tree;
       formatter.x86_64-darwin = nixpkgs.legacyPackages.x86_64-darwin.nixfmt-tree;
       formatter.aarch64-darwin = nixpkgs.legacyPackages.aarch64-darwin.nixfmt-tree;
 
-      # --- Go toolchain devshell (pkgs/nixos-scripts) ---
-      # Dev iteration only: `nix develop -c go -C pkgs/nixos-scripts test ./...`
-      # or `nix develop -c go -C pkgs/nixos-scripts run ./cmd/<name>`.
-      # Deployed binaries are always the Nix-built ones (buildGoModule).
       devShells.x86_64-linux.default = nixpkgs.legacyPackages.x86_64-linux.mkShell {
         packages = with nixpkgs.legacyPackages.x86_64-linux; [ go ];
       };

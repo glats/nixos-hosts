@@ -43,8 +43,6 @@
         "vt.global_cursor_default=0"
       ]
       ++ lib.optionals config.boot-settings.includeDiagLogging [
-        # Kernel uses the last occurrence when the same key appears
-        # twice, so this 7 wins over the static 3 above.
         "loglevel=7"
         "systemd.log_level=debug"
         "systemd.log_target=console"

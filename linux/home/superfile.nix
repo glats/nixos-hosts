@@ -1,5 +1,3 @@
-# Linux superfile (TUI file manager) configuration.
-# Imports shared superfile theme and deploys to ~/.config/superfile/.
 { config, pkgs, ... }:
 let
   themeToml = import ../../shared/superfile.nix {

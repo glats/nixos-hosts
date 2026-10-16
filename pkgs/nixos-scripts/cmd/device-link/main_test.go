@@ -76,8 +76,6 @@ func TestBuildLink(t *testing.T) {
 	}
 }
 
-// TestConfigTemplatePlaceholders pins the substitution order: first %s is
-// the UUID, second the WS path (bash printf arg order).
 func TestConfigTemplatePlaceholders(t *testing.T) {
 	const uuid = "00000000-1111-4222-8333-444444444444"
 	out := fmt.Sprintf(configTemplate, uuid, wsPath)

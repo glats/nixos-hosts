@@ -1,4 +1,3 @@
-# Run: nix eval --impure --json --expr 'import ./tests/rog-sonicde.nix { flake = builtins.getFlake ("path:" + toString ./.); }'
 { flake }:
 let
   lib = flake.inputs.nixpkgs.lib;

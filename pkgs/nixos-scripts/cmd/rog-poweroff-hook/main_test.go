@@ -10,8 +10,6 @@ import (
 	"github.com/glats/nixos-scripts/internal/s5write"
 )
 
-// recordingRF records every WriteAt (tests assert ZERO writes on refusal
-// paths) and answers reads with the register's starting value.
 type recordingRF struct {
 	value   uint16
 	writes  []int64
@@ -31,8 +29,6 @@ func (r *recordingRF) WriteAt(p []byte, off int64) (int, error) {
 	return len(p), nil
 }
 
-// fixturePaths copies the real rog FADT + DSDT into a temp dir and returns
-// the file paths for the stage verb flags.
 func fixturePaths(t *testing.T) (fadtPath, dsdtPath string) {
 	t.Helper()
 	copyTable := func(src, name string) string {
@@ -50,7 +46,6 @@ func fixturePaths(t *testing.T) (fadtPath, dsdtPath string) {
 		copyTable(filepath.Join("..", "..", "internal", "dsdt", "testdata", "DSDT.rog.bin"), "DSDT")
 }
 
-// dmiDir fabricates a /sys/class/dmi/id-shaped directory.
 func dmiDir(t *testing.T, vendor, product string) string {
 	t.Helper()
 	dir := t.TempDir()
@@ -65,7 +60,6 @@ func dmiDir(t *testing.T, vendor, product string) string {
 
 var rogProduct = struct{ vendor, name string }{"ASUSTeK COMPUTER INC.\n", "GL553VD\n"}
 
-// hookVM ties deps to a temp kmsg file and exposes breadcrumb assertions.
 type hookVM struct {
 	t     *testing.T
 	d     deps
@@ -81,22 +75,17 @@ func newHook(t *testing.T, vendor, productName string) *hookVM {
 	h := &hookVM{t: t, kmLog: kmLog}
 	h.d = deps{
 		km:          &kmsg.Writer{Path: kmLog},
-		returnedMax: 1, // single s5-returned breadcrumb, no sleeping
+		returnedMax: 1,
 	}
-	// An empty productName pins the PRODUCTION DMI probing path: the
-	// injected directory exists but has no dmi files, so readDMI returns
-	// unreadable and runPoweroff exercises the dmi-live-unreadable branch
-	// (judgment-day re-judgment S1) deterministically — the real
-	// /sys/class/dmi/id of the test machine must not be reached.
+
 	if productName != "" {
 		h.d.dmiDirs = dmiDir(t, vendor, productName)
 	} else {
-		h.d.dmiDirs = t.TempDir() // exists, empty: unreadable, not the real sysfs
+		h.d.dmiDirs = t.TempDir()
 	}
 	return h
 }
 
-// crumbs returns the rog-s5 breadcrumb lines in write order.
 func (h *hookVM) crumbs() []string {
 	b, err := os.ReadFile(h.kmLog)
 	if err != nil {
@@ -115,7 +104,6 @@ func (h *hookVM) crumbs() []string {
 	return out
 }
 
-// breadcrumbs asserts ordered appearance of substrings, then more of them.
 func crumbsOrdered(t *testing.T, crumbs []string, wants ...string) {
 	t.Helper()
 	pos := 0
@@ -161,7 +149,7 @@ func TestStageProducesValidJSON(t *testing.T) {
 }
 
 func TestStageRefusalIsLoud(t *testing.T) {
-	h := newHook(t, "Lenovo\n", "ThinkPad\n") // wrong DMI → refuse
+	h := newHook(t, "Lenovo\n", "ThinkPad\n")
 	out := filepath.Join(t.TempDir(), "staged.json")
 	bad := filepath.Join(t.TempDir(), "badtable")
 	if err := os.WriteFile(bad, []byte("garbage"), 0o600); err != nil {
@@ -181,7 +169,7 @@ func TestPoweroffVerbMatrix(t *testing.T) {
 	cases := []struct {
 		name       string
 		verb       string
-		oldRoot    bool // exists (in the ramfs) or not (pre-pivot)
+		oldRoot    bool
 		stageJSON  bool
 		vendor     string
 		product    string
@@ -246,7 +234,6 @@ func TestPoweroffVerbMatrix(t *testing.T) {
 	}
 }
 
-// unknown verb exits 2 with a log line and no breadcrumbs.
 func TestUnknownVerbExit2(t *testing.T) {
 	h := newHook(t, rogProduct.vendor, rogProduct.name)
 	code := run("frobnicate", h.d, nil)

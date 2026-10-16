@@ -1,7 +1,4 @@
 #!/bin/sh
-# power-monitor.sh - OnePlus 5 battery/charger alert monitor (design D1-D8).
-# Samples bq27411-0 (battery) plus pmi8998_charger (corroboration); debounced
-# state machine; Telegram alerts via sendMessage only. No power actions.
 set -u
 
 BAT=/sys/class/power_supply/bq27411-0
@@ -15,7 +12,7 @@ REMIND_SECS=1800
 
 log() { echo "power-monitor: $1"; }
 
-read_state() { # D2 schema; defaults apply when no state file exists yet
+read_state() {
 	version=1; prev_status=; tx_confirm=0; lost_pending=0; low_warned=0; remind_at=0; last_capacity=
 	[ -f "$STATE" ] || return 0
 	while IFS='=' read -r k v; do
@@ -27,7 +24,7 @@ read_state() { # D2 schema; defaults apply when no state file exists yet
 	done < "$STATE"
 }
 
-write_state() { # atomic replace (mktemp + mv), 0640 per D2
+write_state() {
 	tmp=$(mktemp "$STATE_DIR/.state.XXXXXX") || { log "state mktemp failed"; return 1; }
 	chmod 640 "$tmp"
 	printf 'version=1\nprev_status=%s\ntx_confirm=%s\nlost_pending=%s\nlow_warned=%s\nremind_at=%s\nlast_capacity=%s\n' \
@@ -35,7 +32,7 @@ write_state() { # atomic replace (mktemp + mv), 0640 per D2
 	mv "$tmp" "$STATE" || { log "state mv failed"; rm -f "$tmp"; return 1; }
 }
 
-sample() { # --simulate overrides the battery values; charger is corroboration
+sample() {
 	if [ -n "$SIM_STATUS" ]; then
 		status=$SIM_STATUS; capacity=$SIM_CAPACITY
 	else
@@ -48,7 +45,7 @@ sample() { # --simulate overrides the battery values; charger is corroboration
 
 is_plugged() { case $1 in Charging | Full | "Not charging" | Unknown) return 0 ;; *) return 1 ;; esac; }
 
-notify() { # $1 = alert text; token read runtime-only, never echoed (D5)
+notify() {
 	token=$(awk -F= '/^TELEGRAM_TOKEN=/{print $2; exit}' "$ENV_FILE" 2>/dev/null)
 	chat_id=$(awk -F= '/^CHAT_ID=/{print $2; exit}' "$CONF" 2>/dev/null)
 	if [ -z "${token:-}" ] || [ -z "${chat_id:-}" ]; then
@@ -56,7 +53,7 @@ notify() { # $1 = alert text; token read runtime-only, never echoed (D5)
 		return 1
 	fi
 	cfg=$(mktemp) || { log "degraded: mktemp failed"; return 1; }
-	{ # curl config keeps the token out of ps args and the journal
+	{
 		printf 'url = "https://api.telegram.org/bot%s/sendMessage"\n' "$token"
 		printf 'data = "chat_id=%s"\n' "$chat_id"
 		printf 'data-urlencode = "text=%s"\n' "$1"
@@ -72,27 +69,26 @@ notify() { # $1 = alert text; token read runtime-only, never echoed (D5)
 	return 0
 }
 
-decide() { # D3/D4 state machine
+decide() {
 	now=$(date +%s)
 	if [ "$status" = "Unknown" ] && [ "$prev_status" != "Unknown" ]; then
 		log "status Unknown; treated as plugged (quirk guard)"
 	fi
 	prev_plugged=0; is_plugged "$prev_status" && prev_plugged=1
-	if is_plugged "$status"; then # plugged: closure alert, reset debounce
+	if is_plugged "$status"; then
 		tx_confirm=0
 		if [ "$lost_pending" = 1 ] && notify "✅ OnePlus 5: cargador conectado de nuevo (batería al ${capacity}%)"; then
 			lost_pending=0; low_warned=0; remind_at=0
 		fi
 		return 0
 	fi
-	# Discharging from here on
 	if [ "$prev_plugged" = 1 ] && [ "$tx_confirm" = 0 ]; then
 		tx_confirm=1
 		log "plugged->Discharging: first sample, awaiting confirmation"
 	elif [ "$tx_confirm" = 1 ] && [ "$lost_pending" = 0 ]; then
 		if notify "⚠️ OnePlus 5: cargador desconectado — batería al ${capacity}%"; then
 			lost_pending=1; tx_confirm=0
-		fi # on failure tx_confirm stays 1 so the next cycle retries
+		fi
 	fi
 	if [ "$capacity" -le "$LOW_PCT" ] && [ "$now" -ge "$remind_at" ]; then
 		if notify "🔋 OnePlus 5: batería baja — ${capacity}%"; then
@@ -101,10 +97,9 @@ decide() { # D3/D4 state machine
 	fi
 }
 
-# main
 SIM_STATUS=; SIM_CAPACITY=
 case ${1:-} in
---simulate | --simulate=*) # D8: forced sample; state and notify stay real
+--simulate | --simulate=*)
 	spec=${2:-}
 	case $1 in --simulate=*) spec=${1#--simulate=} ;; esac
 	SIM_STATUS=${spec%%,*}; SIM_CAPACITY=${spec#*,}

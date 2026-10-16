@@ -5,7 +5,6 @@ import (
 	"testing"
 )
 
-// Fixture values mirroring the bash placeholders.
 const (
 	root     = "/repo"
 	hostname = "t14"
@@ -26,7 +25,6 @@ func mkEnv(darwin, nh, nom, raw, noNom bool) Env {
 	}
 }
 
-// wantSteps is the expected step sequence, built with the E/X/XN/F helpers.
 func wantNames(steps []Step) []string {
 	names := make([]string, len(steps))
 	for i, st := range steps {
@@ -59,7 +57,6 @@ func joinArgs(args []string) string {
 	return s
 }
 
-// npmCapture returns the exact npm updateScript capture step.
 func npmCapture() Step {
 	return Step{Kind: KindNpm, Args: []string{"nix", "build", refNpm, "--no-link", "--print-out-paths"}}
 }
@@ -70,10 +67,6 @@ type seqCase struct {
 	command string
 	want    []Step
 }
-
-// ---------------------------------------------------------------------------
-// Linux, nh available, nom unavailable
-// ---------------------------------------------------------------------------
 
 var linuxNH = mkEnv(false, true, false, false, false)
 
@@ -129,10 +122,6 @@ func linuxNHCases(prefix string) []seqCase {
 	}
 }
 
-// ---------------------------------------------------------------------------
-// Linux, no nh (raw path), nom unavailable
-// ---------------------------------------------------------------------------
-
 var linuxRaw = mkEnv(false, false, false, false, false)
 
 func linuxRawCases(prefix string) []seqCase {
@@ -162,7 +151,7 @@ func linuxRawCases(prefix string) []seqCase {
 		}},
 		{prefix + "dry", linuxRaw, "dry", []Step{
 			echo(""), echo("> Dry-activating..."),
-			// dry-activate is never piped through nom, even here.
+
 			ex("sudo", "nixos-rebuild", "dry-activate", "--flake", flakeArg),
 		}},
 		{prefix + "check", linuxRaw, "check", []Step{
@@ -226,7 +215,6 @@ func TestStepsLinuxRaw(t *testing.T) {
 	runSeqCases(t, linuxRawCases("LinuxRaw/"))
 }
 
-// --raw with nh installed must still take the nixos-rebuild path.
 func TestStepsLinuxRawFlagKillsNH(t *testing.T) {
 	env := mkEnv(false, true, false, true, false)
 	got := Steps(env, "switch")
@@ -237,7 +225,6 @@ func TestStepsLinuxRawFlagKillsNH(t *testing.T) {
 	assertSequence(t, got, want)
 }
 
-// --no-nom disables the nom pipe on nom-piped commands only.
 func TestStepsLinuxNoNom(t *testing.T) {
 	env := mkEnv(false, false, true, false, true)
 	got := Steps(env, "switch")
@@ -247,10 +234,6 @@ func TestStepsLinuxNoNom(t *testing.T) {
 	}
 	assertSequence(t, got, want)
 }
-
-// ---------------------------------------------------------------------------
-// nom available: the exact nom-piped argv sequences (bash run_with_nom)
-// ---------------------------------------------------------------------------
 
 func TestStepsLinuxNomPiping(t *testing.T) {
 	env := mkEnv(false, false, true, false, false)
@@ -268,7 +251,7 @@ func TestStepsLinuxNomPiping(t *testing.T) {
 		}},
 		{"dry", []Step{
 			echo(""), echo("> Dry-activating..."),
-			// bash: dry-activate has no run_with_nom wrapper.
+
 			ex("sudo", "nixos-rebuild", "dry-activate", "--flake", flakeArg),
 		}},
 		{"safe", []Step{
@@ -292,7 +275,6 @@ func TestStepsLinuxNomPiping(t *testing.T) {
 	}
 }
 
-// nh commands never go through nom (bash calls nh bare).
 func TestStepsLinuxNHNomAvailableBare(t *testing.T) {
 	env := mkEnv(false, true, true, false, false)
 	got := Steps(env, "build")
@@ -302,10 +284,6 @@ func TestStepsLinuxNHNomAvailableBare(t *testing.T) {
 	}
 	assertSequence(t, got, want)
 }
-
-// ---------------------------------------------------------------------------
-// Darwin branch
-// ---------------------------------------------------------------------------
 
 func darwinCases() []seqCase {
 	dflt := mkEnv(true, false, false, false, false)
@@ -366,10 +344,6 @@ func darwinCases() []seqCase {
 func TestStepsDarwin(t *testing.T) {
 	runSeqCases(t, darwinCases())
 }
-
-// ---------------------------------------------------------------------------
-// ParseArgs
-// ---------------------------------------------------------------------------
 
 func TestParseArgs(t *testing.T) {
 	cases := []struct {
@@ -440,16 +414,12 @@ func TestDetectToolsDarwinNeverProbes(t *testing.T) {
 		t.Errorf("DetectTools(darwin) = (%q,%q), want (\"\",\"\")", nh, nom)
 	}
 	if !IsDarwin() {
-		// Linux probe behavior is LookPath-dependent; only prove runtime.GOOS wiring.
+
 		if runtime.GOOS != "linux" && IsDarwin() {
 			t.Fatal("unreachable")
 		}
 	}
 }
-
-// ---------------------------------------------------------------------------
-// Run: exit-status semantics (set -e, safe guards, npm capture)
-// ---------------------------------------------------------------------------
 
 func TestRunExitPropagation(t *testing.T) {
 	if runtime.GOOS != "linux" && runtime.GOOS != "darwin" {
@@ -464,7 +434,7 @@ func TestRunExitPropagation(t *testing.T) {
 		{"silent set -e death", []Step{execStep([]string{"false"}, false)}, 1},
 		{"child exit code propagated", []Step{execStep([]string{"sh", "-c", "exit 7"}, false)}, 7},
 		{"failure with guard prints and exits 1", []Step{
-			execStep([]string{"false"}, false), // would be silenced without FailLines
+			execStep([]string{"false"}, false),
 			{Kind: KindExec, Args: []string{"false"},
 				FailLines: []string{"", "> ERROR: Build failed. Stopping."}},
 		}, 1},
@@ -474,10 +444,10 @@ func TestRunExitPropagation(t *testing.T) {
 			execStep([]string{"true"}, false),
 		}, 0},
 		{"npm capture then exec", []Step{
-			{Kind: KindNpm, Args: []string{"echo", "/nix/store/one"}}, // execs the path → 127
+			{Kind: KindNpm, Args: []string{"echo", "/nix/store/one"}},
 		}, 127},
 		{"npm capture failure tolerated", []Step{
-			{Kind: KindNpm, Args: []string{"false"}}, // || true
+			{Kind: KindNpm, Args: []string{"false"}},
 			execStep([]string{"true"}, false),
 		}, 0},
 		{"exec start failure is 127", []Step{
@@ -490,10 +460,6 @@ func TestRunExitPropagation(t *testing.T) {
 		}
 	}
 }
-
-// ---------------------------------------------------------------------------
-// helpers
-// ---------------------------------------------------------------------------
 
 func runSeqCases(t *testing.T, cases []seqCase) {
 	t.Helper()

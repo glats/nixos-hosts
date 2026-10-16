@@ -435,8 +435,6 @@ func managedTopLevelCommand(args []string) error {
 	}
 }
 
-// managedCommand is a one-release hidden compatibility adapter. It keeps old
-// task-addressed forms working while directing new callers to the top-level API.
 func managedCommand(args []string) error {
 	fmt.Fprintln(os.Stderr, "code-work managed is deprecated; use code-work <canonical form>")
 	root, cwd, err := managedRoot()

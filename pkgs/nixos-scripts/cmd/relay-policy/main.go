@@ -1,4 +1,3 @@
-// Command relay-policy applies or revokes the fixed rog SSH relay policy.
 package main
 
 import (

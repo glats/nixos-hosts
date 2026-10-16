@@ -1,25 +1,3 @@
-// Command adguard-tunnel opens an SSH local port-forward to the AdGuard Home
-// web UI on the OnePlus 5 (default 172.16.0.12:3000) and prints the local
-// URL to open in a browser.
-//
-// Why a tunnel: the phone's curated nftables firewall intentionally blocks
-// :3000 from the LAN by design (its allowlist permits SSH and DNS only), so
-// operator UI access goes through SSH itself — authenticated with the
-// dedicated key (default ~/.ssh/oneplus5). SSH key auth IS the access
-// control for the admin UI (AdGuard Home runs with authentication disabled).
-//
-// The forward never touches router or Tailscale port-forwarding: UI traffic
-// re-enters only through the operator host's SSH socket pair.
-//
-// Local port behavior: the requested local port is probed first; if busy
-// the helper automatically falls back to requested+10000 (3000 → 13000) and
-// announces it on stdout; if both are busy it refuses with a clear error.
-//
-// Signal handling: SIGINT/SIGTERM tear the forward down (the ssh child is
-// killed via CommandContext) and the helper exits 0 — no orphaned ssh
-// process. An ssh failure (key rejected, host unreachable) exits non-zero
-// with a hint. Deploy/runbook: docs/oneplus5-adguard-dns.md
-// ("Operator UI access via SSH tunnel").
 package main
 
 import (
@@ -89,8 +67,6 @@ func main() {
 	}
 }
 
-// run executes the tunnel lifecycle: preflight checks, free local port,
-// ssh exec, URL print, signal-driven teardown.
 func run(cfg *config) error {
 	sshPath, err := exec.LookPath("ssh")
 	if err != nil {
@@ -126,24 +102,22 @@ func run(cfg *config) error {
 	fmt.Printf("Press Ctrl+C to stop.\n")
 	if cfg.open {
 		if xdg, lookErr := exec.LookPath("xdg-open"); lookErr == nil {
-			_ = exec.Command(xdg, url).Start() // fire-and-forget; failures don't kill the tunnel
+			_ = exec.Command(xdg, url).Start()
 		}
 	}
 
-	// SIGINT/SIGTERM cancel the context; the watcher kills ssh, so the
-	// forward is torn down and we exit 0 cleanly.
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	go func() {
 		<-ctx.Done()
-		stop() // restore default signal handling for a second Ctrl+C
+		stop()
 		_ = cmd.Process.Kill()
 	}()
 
 	if err := cmd.Wait(); err != nil {
 		select {
 		case <-ctx.Done():
-			// We caused the termination ourselves — exit cleanly.
+
 			return nil
 		default:
 			return fmt.Errorf("ssh exited with error — phone unreachable or key not authorized? see docs/oneplus5-adguard-dns.md")

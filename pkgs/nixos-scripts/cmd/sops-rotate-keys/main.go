@@ -1,20 +1,3 @@
-// Command sops-rotate-keys rotates or regenerates sops-nix age keys:
-// admin key regeneration, host key conversion, add-host re-encryption and
-// the recovery guide.
-//
-// Port of bin/sops-rotate-keys: help text, recovery guide, messages and
-// exit codes preserved. All crypto work stays in the external tools
-// (age-keygen, ssh-to-age, sops) exactly as in the bash original — this
-// command never decrypts anything itself; it only execs the same binaries
-// with the same arguments and inherits their output.
-//
-// Deviations from the bash original:
-//   - REPO_DIR resolution uses the repo-wide reporoot chain (env → git
-//     toplevel → ~/.nixos) instead of the script's parent directory; a
-//     compiled binary has no script directory and the store-installed bash
-//     original had the same limitation.
-//   - The dead HOST=$(hostname) assignment was dropped (its value was
-//     never referenced).
 package main
 
 import (
@@ -30,10 +13,6 @@ import (
 
 const hostKeyPath = "/etc/ssh/ssh_host_ed25519_key.pub"
 
-// exitFromErr maps a subprocess failure to the shell's exit-code semantics:
-// propagate the child's exit code, or 127 when the command could not run at
-// all (bash prints a shell-level "command not found" line; the closest
-// portable equivalent is the exec error itself).
 func exitFromErr(err error) {
 	if exitErr, ok := err.(*exec.ExitError); ok {
 		os.Exit(exitErr.ExitCode())
@@ -42,8 +21,6 @@ func exitFromErr(err error) {
 	os.Exit(127)
 }
 
-// run executes a command with fully inherited stdio (interactive prompts —
-// sops updatekeys, git pull — keep working) and returns the error.
 func run(name string, args ...string) error {
 	cmd := exec.Command(name, args...)
 	cmd.Stdout = os.Stdout
@@ -52,16 +29,12 @@ func run(name string, args ...string) error {
 	return cmd.Run()
 }
 
-// runInherit is run() with set -e semantics: a failed subprocess terminates
-// the script with the child's exit code.
 func runInherit(name string, args ...string) {
 	if err := run(name, args...); err != nil {
 		exitFromErr(err)
 	}
 }
 
-// runCapture runs a command inheriting stderr, capturing stdout (bash:
-// command substitution), stripping trailing newlines like $(...).
 func runCapture(name string, args ...string) string {
 	cmd := exec.Command(name, args...)
 	cmd.Stderr = os.Stderr
@@ -109,8 +82,7 @@ func regenerateAdminKey(repoDir string) {
 			fmt.Fprintln(os.Stderr, "Error:", err)
 			os.Exit(1)
 		}
-		// cp without -p: a new destination gets the source's permission
-		// bits (masked by umask in bash; none of the common bits differ).
+
 		if err := os.WriteFile(backup, data, fi.Mode().Perm()); err != nil {
 			fmt.Fprintln(os.Stderr, "Error:", err)
 			os.Exit(1)
@@ -136,7 +108,7 @@ func updateHostKey(repoDir string) {
 	fmt.Println("> Getting current host SSH key...")
 
 	if fi, err := os.Stat(hostKeyPath); err != nil || !fi.Mode().IsRegular() {
-		// bash prints this ERROR to stdout (no >&2 redirect).
+
 		fmt.Printf("ERROR: Host SSH key not found at %s\n", hostKeyPath)
 		os.Exit(1)
 	}
@@ -144,7 +116,7 @@ func updateHostKey(repoDir string) {
 	fmt.Println("> Current host SSH key:")
 	data, err := os.ReadFile(hostKeyPath)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err) // cat failure under set -e
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 	os.Stdout.Write(data)
@@ -204,8 +176,6 @@ func addHost(repoDir string, args []string) {
 	fmt.Printf("> Host '%s' added to %s and pushed.\n", hostname, secretsFile)
 }
 
-// recoveryGuide is the bash heredoc verbatim (quoted heredoc → fully
-// literal, including the ${HOST} placeholders).
 const recoveryGuide = `================================================================================
 SOPS-NIX KEY RECOVERY GUIDE
 ================================================================================

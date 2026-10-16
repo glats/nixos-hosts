@@ -203,7 +203,7 @@ func TestSecondUpgradeInterruption(t *testing.T) {
 				t.Fatal("pending plan accepted user edit")
 			}
 			put(t, target, "asset", prior)
-			// The immediate predecessor, not original 2.5, must be retryable.
+
 			if err := Reconcile(target, desired, legacy, "B"); err != nil {
 				t.Fatal(err)
 			}
@@ -217,8 +217,6 @@ func TestSecondUpgradeInterruption(t *testing.T) {
 	}
 }
 
-// A subprocess handshake proves the production lock is held across journaling
-// and that another real process sees contention before entering Reconcile.
 func TestReconcileProcessLock(t *testing.T) {
 	if mode := os.Getenv("AIASSETS_TEST_CHILD"); mode != "" {
 		r := os.Getenv("AIASSETS_TEST_ROOT")

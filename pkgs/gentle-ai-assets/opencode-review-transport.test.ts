@@ -5,8 +5,6 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 
 mock.module("@opencode/plugin", () => ({ Plugin: { define: (definition: unknown) => definition } }))
-// Exercise the exact tagged implementation, not a copied local relay. Nix only
-// adapts the command path; the HM wrapper is tested independently.
 const source = execFileSync("nix", ["eval", "--offline", "--impure", "--raw", "--expr",
   '(builtins.getFlake (toString ./.)).inputs.gentle-ai-src.outPath'], { encoding: "utf8" }).trim()
 const { default: plugin } = await import(`${source}/internal/assets/opencode/plugins-v2/opencode-review-transport.ts`)

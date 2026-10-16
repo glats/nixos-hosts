@@ -7,7 +7,6 @@
   ...
 }:
 {
-  # touch ID for sudo
   security.pam.services.sudo_local.touchIdAuth = true;
 
   system.defaults.loginwindow = {
@@ -15,7 +14,6 @@
     DisableConsoleAccess = true;
   };
 
-  # Configure macOS Application Firewall to allow SSH incoming connections
   system.activationScripts.firewallSSH.text = ''
     echo "> Configuring firewall for SSH access"
     # Allow sshd-keygen-wrapper through the Application Firewall

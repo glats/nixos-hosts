@@ -1,8 +1,3 @@
-// Command nixos-build-all checks/evaluates/builds every host in the flake.
-//
-// Port of bin/nixos-build-all: subcommands, messages and exit codes
-// preserved. Output goes through nom when available (parity with the
-// bash `|& nom` piping).
 package main
 
 import (
@@ -26,8 +21,6 @@ Commands:
   all     Run check, eval, build, and hm
 `
 
-// repoRoot mirrors the bash resolution: NIXOS_REPO → git toplevel →
-// ~/.config/nix (note: this fallback differs from other scripts).
 func repoRoot() (string, error) {
 	if v := os.Getenv("NIXOS_REPO"); v != "" {
 		return v, nil
@@ -79,9 +72,6 @@ func main() {
 	}
 }
 
-// runBuild executes args with output through nom when available — the bash
-// `|& nom` piping. Failures die silently with the child's (or nom's, per
-// pipefail) status, matching the bash original's set -e semantics.
 func runBuild(args ...string) {
 	if nom, err := exec.LookPath("nom"); err == nil {
 		if rc := nixbuild.RunThroughNom(args, nom); rc != 0 {
@@ -102,7 +92,6 @@ func runBuild(args ...string) {
 	}
 }
 
-// loadHosts evals the attrset names of one flake output.
 func loadHosts(flake, output string) []string {
 	out, err := exec.Command("nix", "eval", "--raw", flake+"#"+output,
 		"--apply", "attrs: builtins.concatStringsSep \"\\n\" (builtins.attrNames attrs)").Output()

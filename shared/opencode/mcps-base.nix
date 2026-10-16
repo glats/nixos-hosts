@@ -8,7 +8,6 @@
 with lib;
 
 let
-  # Static default MCPs - no config references in defaults
   defaultMcps = {
     "github-personal" = {
       type = "local";

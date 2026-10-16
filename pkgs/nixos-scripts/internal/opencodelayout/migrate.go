@@ -11,8 +11,6 @@ import (
 	"time"
 )
 
-// Migrate moves legacy user data into native XDG locations and archives every
-// unrelated file. It is safe to repeat after any completed rename.
 func Migrate(home string, retireOpenfang bool) (string, error) {
 	home, err := filepath.Abs(home)
 	if err != nil {
@@ -58,8 +56,7 @@ func Migrate(home string, retireOpenfang bool) (string, error) {
 		}
 		return err
 	}
-	// Archive what occupies the native paths exactly once: on resume they may
-	// already hold data this migration moved there.
+
 	archived := filepath.Join(archive, ".previous-archived")
 	if !exists(archived) {
 		for _, rel := range []string{".config/opencode", ".local/share/opencode", ".local/state/opencode", ".cache/opencode", ".config/opencode-back"} {

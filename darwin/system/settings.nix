@@ -13,25 +13,13 @@
     ./security.nix
   ];
 
-  # Core remote access services (SSH + built-in Screen Sharing / VNC)
   services = {
-    # Enable OpenSSH (Remote Login). Uses macOS launchd-provided sshd.
     openssh = {
       enable = true;
-      # NOTE: nix-darwin OpenSSH module (unlike NixOS) does not expose a generic
-      # `settings` attrset. For custom sshd_config lines you can use
-      # `services.openssh.extraConfig` if needed, e.g.:
-      # extraConfig = ''
-      #   PermitRootLogin no
-      #   PasswordAuthentication yes
-      # '';
     };
 
-    # Screen Sharing (VNC) has no native nix-darwin module; we start/ensure
-    # the launchd daemon via the activation hook below instead of a module option.
   };
 
-  # system defaults and preferences
   system = {
     stateVersion = 6;
     configurationRevision = self.rev or self.dirtyRev or null;
@@ -40,7 +28,7 @@
 
     defaults = {
       trackpad = {
-        Clicking = true; # Habilita "Tap to click" para el trackpad interno y externo
+        Clicking = true;
       };
       CustomUserPreferences = {
         "com.apple.SoftwareUpdate" = {
@@ -67,20 +55,12 @@
         NSAutomaticPeriodSubstitutionEnabled = false;
         NSAutomaticWindowAnimationsEnabled = false;
         AppleInterfaceStyle = "Dark";
-        # Hide the native macOS menu bar so a custom status bar (e.g. spacebar)
-        # can be used as the visible top bar. This mirrors the GUI setting
-        # "Automatically hide and show the menu bar".
         _HIHideMenuBar = false;
         "com.apple.mouse.tapBehavior" = 1;
       };
-      # smb.NetBIOSName omitted: writing to com.apple.smb.server requires
-      # entitlements the activation script doesn't have; it exits 1 under
-      # set -e and aborts activation before Homebrew bundle runs.
-      # The corporate LocalHostName is managed outside nix-darwin.
     };
   };
 
-  # Set default browser to Microsoft Edge during activation (idempotent)
   system.activationScripts.setDefaultBrowser.text = ''
     if command -v defaultbrowser >/dev/null 2>&1; then
       echo "> Ensuring default browser is Microsoft Edge (com.microsoft.edgemac)"
@@ -89,9 +69,6 @@
     fi
   '';
 
-  # Try to apply settings immediately after activation to avoid logout/login
-  # `postUserActivation` was removed; activation now runs as root. Run
-  # activateSettings -u for each user by switching to that user (sudo -u).
   system.activationScripts.postActivation.text = ''
     # activateSettings needs to run as the target user so that per-user
     # settings are applied. Iterate over /Users and run it for each real user.

@@ -14,8 +14,7 @@ func TestConvertValue(t *testing.T) {
 	}{
 		{name: "two-element array keeps the bash double-space quirk", value: "['a', 'b']", want: `[ "a" "b"  ]`},
 		{name: "empty array", value: "[]", want: "[   ]"},
-		// The bash pipeline always leaves a trailing space (echo's newline
-		// survives tr), so even a single element renders double-spaced.
+
 		{name: "single-element array", value: "['x']", want: `[ "x"  ]`},
 		{name: "array without spaces", value: "['a','b']", want: `[ "a" "b"  ]`},
 		{name: "boolean true passes through", value: "true", want: "true"},
@@ -79,8 +78,7 @@ func TestXargsTrim(t *testing.T) {
 }
 
 func TestConvertDump(t *testing.T) {
-	// Section paths are relative to /org/mate/ in a real dump; the
-	// conversion re-prefixes "org/mate/".
+
 	const dump = `[desktop/interface]
 color-scheme='default'
 enable-animations=true
@@ -117,8 +115,6 @@ object-id-list=['menu-bar', 'notification-area']
 	}
 }
 
-// TestConvertDumpSkipsNonMatchingLines pins that lines which match neither
-// the section nor the key=value pattern are skipped (bash if/elif fall-through).
 func TestConvertDumpSkipsNonMatchingLines(t *testing.T) {
 	got := convertDump("=nokey\nnovalue\n[sec]\nkey='v'\n")
 	if strings.Contains(got, "nokey") || strings.Contains(got, "novalue") {
@@ -129,8 +125,6 @@ func TestConvertDumpSkipsNonMatchingLines(t *testing.T) {
 	}
 }
 
-// TestConvertDumpEmpty pins the bash parity quirk: with an empty dump the
-// unconditional final close still renders (malformed, but identical).
 func TestConvertDumpEmpty(t *testing.T) {
 	want := header + "    };\n"
 	if got := convertDump(""); got != want {
@@ -153,7 +147,7 @@ func TestPrintLastLines(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Capture stdout via os.Pipe to keep the check honest.
+
 			got := captureStdout(t, func() { printLastLines(tt.out, tt.n) })
 			if got != tt.want {
 				t.Errorf("printLastLines(%q, %d) printed %q, want %q", tt.out, tt.n, got, tt.want)

@@ -1,4 +1,3 @@
-// Command relay-client starts the fixed wstunnel client with a runtime header file.
 package main
 
 import (

@@ -1,4 +1,3 @@
-// Package browsermcp exposes one BrowserMCP stdio process over loopback HTTP.
 package browsermcp
 
 import (
@@ -55,7 +54,6 @@ type child struct {
 	pending map[string]chan pendingResult
 }
 
-// Broker starts only one child and assigns every forwarded request a private ID.
 type Broker struct {
 	childArgs []string
 	mu        sync.Mutex
@@ -92,7 +90,6 @@ func Run(ctx context.Context, config Config) error {
 	return err
 }
 
-// IsPortInUse identifies a bind collision so supervisors can leave its owner untouched.
 func IsPortInUse(err error) bool {
 	return errors.Is(err, syscall.EADDRINUSE)
 }
@@ -103,7 +100,6 @@ func (b *Broker) Handler() http.Handler {
 	return mux
 }
 
-// Close stops the owned child when its supervisor stops the broker.
 func (b *Broker) Close() {
 	b.mu.Lock()
 	defer b.mu.Unlock()

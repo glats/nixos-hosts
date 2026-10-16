@@ -1,13 +1,10 @@
 { config, pkgs, ... }:
 
 let
-  rommPort = 8081; # 8080 taken by qBittorrent native module
+  rommPort = 8081;
 in
 {
-  # RomM — self-hosted ROM catalog manager (Netflix-style library browser).
-  # Bridge network: MariaDB + RomM app. Same pattern as authelia.
 
-  # ── Docker bridge network ───────────────────────────────────────────
   systemd.services.docker-network-romm = {
     description = "Docker network for RomM";
     after = [ "docker.service" ];
@@ -33,7 +30,6 @@ in
     };
   };
 
-  # ── Secrets generation (oneshot) ────────────────────────────────────
   systemd.services.romm-secrets = {
     description = "Generate RomM secrets files";
     after = [ "docker-network-romm.service" ];
@@ -74,17 +70,10 @@ in
     };
   };
 
-  # ── MariaDB container ───────────────────────────────────────────────
   virtualisation.oci-containers.containers.romm-db = {
     image = "mariadb:11";
     autoStart = true;
 
-    # Docker default 10s stop timeout isn't enough for MariaDB
-    # to dump buffer pool + flush logs → SIGKILL → corrupt tc.log.
-    # 120s gives InnoDB time to "Shutdown completed" cleanly.
-    # --log-bin eliminates tc.log entirely: MariaDB uses binlog for
-    # crash recovery instead of the memory-mapped tc.log file which
-    # corrupts on every unclean shutdown.
     extraOptions = [
       "--network=romm"
       "--stop-timeout=120"
@@ -100,7 +89,6 @@ in
     ];
   };
 
-  # ── RomM app container ──────────────────────────────────────────────
   virtualisation.oci-containers.containers.romm = {
     image = "rommapp/romm:latest";
     autoStart = true;
@@ -132,7 +120,6 @@ in
     dependsOn = [ "romm-db" ];
   };
 
-  # ── Directories ─────────────────────────────────────────────────────
   systemd.tmpfiles.rules = [
     "d /srv/glats/romm 0755 root root -"
     "d /srv/glats/romm/mariadb 0755 root root -"

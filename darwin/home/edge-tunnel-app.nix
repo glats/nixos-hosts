@@ -1,5 +1,3 @@
-# Edge Home launcher for Darwin. Its icon is injected at first launch on the
-# target Mac because Edge's bundle is unavailable at build time.
 {
   pkgs,
   lib,

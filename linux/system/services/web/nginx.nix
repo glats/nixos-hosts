@@ -8,14 +8,12 @@
 let
   domain = "glats.org";
 
-  # Standard security headers block. frameOption = SAMEORIGIN | DENY
   secHeaders = frameOption: ''
     add_header X-Content-Type-Options nosniff always;
     add_header X-XSS-Protection "1; mode=block" always;
     add_header X-Frame-Options ${frameOption} always;
   '';
 
-  # Generate a simple proxy vhost (port + optional locExtra/vhostExtra)
   mkProxyVhost =
     {
       port,
@@ -36,7 +34,6 @@ let
     }
     // lib.optionalAttrs (basicAuth != null) { basicAuthFile = basicAuth; };
 
-  # ARR-style location extra config: standard headers + 90s timeouts
   arrLocExtra = ''
     proxy_set_header X-Forwarded-Host $host;
     proxy_set_header X-Forwarded-Proto $scheme;
@@ -45,7 +42,6 @@ let
     proxy_read_timeout 90s;
   '';
 
-  # Authelia-protected location extra config
   autheliaLocExtra = ''
     auth_request /internal/authelia/authz;
     auth_request_set $auth_status $upstream_status;
@@ -57,7 +53,6 @@ let
     error_page 401 = @auth_redirect;
   '';
 
-  # Authelia-protected vhost helper (like mkProxyVhost but with auth)
   mkAutheliaVhost =
     { port, domain }:
     let
@@ -100,7 +95,6 @@ let
       extraConfig = secHeaders "SAMEORIGIN";
     };
 
-  # ARR stack - data-driven via port mapping
   arrServices = {
     radarr = 7878;
     sonarr = 8989;
@@ -115,7 +109,6 @@ let
     };
   }) arrServices;
 
-  # Qbit has extra X-Real-IP and X-Forwarded-For headers
   qbitLocExtra = ''
     proxy_set_header X-Forwarded-Host $host;
     proxy_set_header X-Forwarded-Proto $scheme;
@@ -126,7 +119,6 @@ let
     proxy_read_timeout 90s;
   '';
 
-  # Seerr has extra X-Real-IP header
   seerrLocExtra = ''
     proxy_set_header X-Forwarded-Host $host;
     proxy_set_header X-Forwarded-Proto $scheme;
@@ -379,7 +371,6 @@ in
         useACMEHost = "glats.org";
         forceSSL = true;
 
-        # Basic auth (htpasswd)
         basicAuthFile = "/srv/glats/nginx/.htpasswd";
 
         locations."/" = {
@@ -403,7 +394,6 @@ in
         useACMEHost = "glats.org";
         forceSSL = true;
 
-        # Large uploads + long-running connections
         extraConfig = ''
           client_max_body_size 100g;
           client_body_timeout 43200s;
@@ -453,19 +443,10 @@ in
         '';
       };
 
-      # tun.glats.org — VLESS+WS private-link endpoint with cover page.
-      # The unguessable WS path is the ONLY path nginx proxies to the
-      # loopback sing-box listener; every other request resolves to the
-      # cover page under /srv/glats/nginx/html (matches the glats.org
-      # vhost static-root pattern). generated-once random hex (NOT
-      # sops) — obscurity, not authentication. The same value is the
-      # `transport.path` in linux/system/services/network/sing-box-link.nix
-      # and the `path` in the macm5 client + phone share link.
       "tun.${domain}" = {
         useACMEHost = "glats.org";
         forceSSL = true;
 
-        # Cover page at /
         locations."/" = {
           root = "/srv/glats/nginx/html";
           index = "index.html";
@@ -474,20 +455,6 @@ in
           '';
         };
 
-        # Single proxy for the VLESS+WS path. proxyWebsockets=true
-        # expands to the standard proxy_set_header Upgrade / Connection
-        # upgrade / proxy_http_version 1.1 trio.
-        #
-        # Upgrade guard (verify finding G12): a request to this path
-        # WITHOUT a WebSocket upgrade must never reach sing-box — its
-        # `handshake error: bad "Upgrade" header` body is a tell-tale
-        # tunnel artifact. Spec scenario: every path on this vhost that
-        # is not a valid WS upgrade behaves like the cover site.
-        # `if` + `return` is the classic safe rewrite-module guard: it
-        # 404s (rendered as the cover page by the error_page below)
-        # during the rewrite phase, before any proxying; real WS
-        # upgrades ($http_upgrade == "websocket") fall through to
-        # proxyPass untouched.
         locations."/ed59280aa562f4b7eba4519e3c316e24" = {
           proxyPass = "http://127.0.0.1:4011";
           proxyWebsockets = true;
@@ -571,7 +538,6 @@ in
         useACMEHost = "glats.org";
         forceSSL = true;
 
-        # Internal authelia verification endpoint (no access from outside)
         locations."/internal/authelia/authz" = {
           proxyPass = "http://127.0.0.1:9091/api/verify";
           extraConfig = ''
@@ -583,7 +549,6 @@ in
           '';
         };
 
-        # Direct-access locations - API and WebSocket skip auth_request
         locations."/api/" = {
           proxyPass = "http://127.0.0.1:50051";
           proxyWebsockets = true;
@@ -619,7 +584,6 @@ in
           '';
         };
 
-        # Main location - requires auth via auth_request
         locations."/" = {
           proxyPass = "http://127.0.0.1:50051";
           proxyWebsockets = true;
@@ -634,7 +598,6 @@ in
           '';
         };
 
-        # Redirect unauthenticated users to Authelia login
         locations."@auth_redirect" = {
           return = "302 https://auth.glats.org/?rd=https://openfang.glats.org$request_uri";
         };
@@ -644,9 +607,6 @@ in
     }
     // arrVhosts
     // lib.optionalAttrs config.services.ssh-relay.enable {
-      # Isolated wstunnel WebSocket endpoint. The relay service itself binds
-      # only to 127.0.0.1:4012; this vhost does not share the tun.glats.org
-      # path or backend.
       "relay.${domain}" = mkProxyVhost {
         port = config.services.ssh-relay.listenPort;
         frame = "DENY";

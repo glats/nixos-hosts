@@ -1,7 +1,3 @@
-# AdGuard Home systemd unit for the OnePlus 5 (postmarketOS edge).
-#
-# Alpine ships adguardhome with an OpenRC init script only; this unit is the
-# systemd equivalent, authored for pmOS. Deploy via docs/oneplus5-adguard-dns.md.
 [Unit]
 Description=AdGuard Home DNS server
 Documentation=https://github.com/AdguardTeam/AdGuardHome/wiki

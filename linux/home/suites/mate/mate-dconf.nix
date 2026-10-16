@@ -173,13 +173,6 @@ in
       use-menu-path = false;
     };
 
-    #    "org/mate/panel/objects/object-2" = {
-    #      object-type = "separator";
-    #      panel-right-stick = false;
-    #      position = 1515;
-    #      toplevel-id = "bottom";
-    #    };
-
     "org/mate/panel/objects/object-3" = {
       applet-iid = "WnckletFactory::WindowListApplet";
       object-type = "applet";

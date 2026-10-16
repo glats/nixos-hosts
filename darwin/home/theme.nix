@@ -1,5 +1,3 @@
-# Home Manager theme configuration for macOS
-# Only palette - no GTK/QT/dconf (Linux-only)
 { inputs, ... }:
 
 {

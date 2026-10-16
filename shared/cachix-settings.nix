@@ -1,6 +1,3 @@
-# Shared Cachix settings as a plain attrset.
-# Darwin consumes this through Determinate's custom settings; Linux consumes
-# it through nix.settings in shared/cachix.nix.
 {
   substituters = [
     "https://cache.nixos.org/"

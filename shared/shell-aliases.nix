@@ -193,11 +193,6 @@
       )
     '';
 
-    # Syntax highlighting styles via prezto's declarative option instead of
-    # raw ZSH_HIGHLIGHT_STYLES assignments — the raw form ran before
-    # zsh-syntax-highlighting loaded and failed with "invalid subscript
-    # range". HM renders this as `zstyle ':prezto:module:syntax-highlighting'
-    # styles ...`, applied by prezto AFTER the plugin loads.
     prezto.syntaxHighlighting.styles = {
       comment = "fg=#${config.colorScheme.palette.base03}";
       alias = "fg=#${config.colorScheme.palette.base0B}";

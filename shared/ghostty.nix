@@ -1,12 +1,3 @@
-# Shared Ghostty terminal configuration -- pure Nix function, NOT a HM module.
-#
-# Returns { settings, theme } for platform-specific HM modules to consume.
-# Platform differences (macos-option-as-alt, selection-foreground, mkForce)
-# are handled by the caller, not via conditionals.
-#
-# Usage:
-#   let ghostty = import ../../shared/ghostty.nix { colorScheme = config.colorScheme; };
-#   in { programs.ghostty.settings = ghostty.settings; ... }
 {
   colorScheme,
   selectionForegroundPalette ? "base05",

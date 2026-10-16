@@ -1,5 +1,3 @@
-// Package aiassets reconciles only digest-proven managed asset files. Unknown
-// and modified retired files remain user data; collisions fail before writes.
 package aiassets
 
 import (
@@ -25,7 +23,6 @@ type owned struct {
 	Prior    *snapshot `json:"prior,omitempty"`
 }
 
-// Exists distinguishes an absent path from a present zero-byte file.
 type snapshot struct {
 	Exists bool   `json:"exists"`
 	Digest string `json:"digest,omitempty"`
@@ -143,27 +140,21 @@ func write(path string, b []byte, expected snapshot) error {
 	if err := os.Chmod(name, 0644); err != nil {
 		return err
 	}
-	// Advisory locking serializes reconcilers, not editors. Check after preparing
-	// the temporary file to minimize (not eliminate) the check-to-rename window.
+
 	if err := unchanged(path, expected); err != nil {
 		return err
 	}
 	if !expected.Exists {
-		// Same-directory link is a no-clobber install if a new path appears
-		// after the absence check; unlike Rename it cannot replace that file.
+
 		return os.Link(name, path)
 	}
 	return os.Rename(name, path)
 }
 
-// Reconcile preflights every managed path, journals before-images, then applies
-// per-file replacements/removals. A retry accepts only planned or prior bytes.
-// It never walks user directories or deletes a directory, archive or credential.
 func Reconcile(target, desired, legacy, revision string) error {
 	return reconcile(target, desired, legacy, revision, nil)
 }
 
-// afterJournal is an internal deterministic phase seam used only by tests.
 func reconcile(target, desired, legacy, revision string, afterJournal func() error) error {
 	if revision == "" {
 		return fmt.Errorf("source revision required")
@@ -194,7 +185,7 @@ func reconcile(target, desired, legacy, revision string, afterJournal func() err
 		return err
 	}
 	defer syscall.Flock(int(lock.Fd()), syscall.LOCK_UN)
-	// Never unlink the lock: waiters must continue to share the same inode.
+
 	if err := safePath(lockPath); err != nil {
 		return err
 	}
@@ -284,8 +275,7 @@ func reconcile(target, desired, legacy, revision string, afterJournal func() err
 		if entry.Pending && currentState != *entry.Prior && (!currentState.Exists || currentState.Digest != entry.Digest) {
 			return fmt.Errorf("pending asset changed: %s", path)
 		}
-		// Schema 1 before-images are rollback history, not pending-operation
-		// authority. Only an explicit unfinished schema 2 plan admits prior bytes.
+
 		if err == nil && (!known || (digest(current) != entry.Digest && !(entry.Pending && currentState == *entry.Prior))) {
 			return fmt.Errorf("unowned or modified asset collision: %s", path)
 		}
@@ -296,7 +286,7 @@ func reconcile(target, desired, legacy, revision string, afterJournal func() err
 		expected[rel] = currentState
 		next.Files[rel] = owned{Digest: digest(body), Revision: revision, Before: before, Pending: true, Prior: &currentState}
 	}
-	// Journal first: interruption never turns an unproven file into ownership.
+
 	encoded, err := json.MarshalIndent(next, "", "  ")
 	if err != nil {
 		return err
@@ -338,8 +328,7 @@ func reconcile(target, desired, legacy, revision string, afterJournal func() err
 			}
 		}
 	}
-	// Close retry authority only after the generation completed. Original
-	// rollback bytes remain separate in Before; they never authorize a retry.
+
 	for _, rel := range removals {
 		delete(next.Files, rel)
 	}

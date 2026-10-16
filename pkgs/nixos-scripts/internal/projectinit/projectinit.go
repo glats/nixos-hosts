@@ -1,4 +1,3 @@
-// Package projectinit creates the local state required for an Engram project.
 package projectinit
 
 import (

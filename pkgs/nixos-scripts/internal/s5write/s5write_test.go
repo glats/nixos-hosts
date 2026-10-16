@@ -6,8 +6,6 @@ import (
 	"testing"
 )
 
-// recordingRF records every ReadAt/WriteAt against the declared plan, so
-// tests can assert ZERO writes on every refusal path.
 type recordingRF struct {
 	reads  []int64
 	writes []int64
@@ -43,7 +41,6 @@ func (r *recordingRF) WriteAt(p []byte, off int64) (int, error) {
 	return len(p), nil
 }
 
-// rogPlan is the plan rog's live firmware derives (Checkpoint B values).
 func rogPlan() Plan {
 	return Plan{
 		Version:        StagedPlanVersion,
@@ -92,7 +89,6 @@ func TestValidateRefuses(t *testing.T) {
 	}
 }
 
-// RED-test requirement: every refusal leaves the register untouched.
 func TestPowerRefusalPerformsZeroWrites(t *testing.T) {
 	cases := []struct {
 		name string
@@ -127,10 +123,7 @@ func TestPowerRefusalPerformsZeroWrites(t *testing.T) {
 }
 
 func TestPowerReadModifyWrite(t *testing.T) {
-	// Before: SLP_STS entries (0x1240: bits 10-12 pattern 0b0 -> hmm, use a
-	// realistic prior value with SLP_TYP=0 and SLP_EN=0: 0x0010? Use
-	// 0x0140: byte-wise 40 01 -> registers bits: bit6=1 (BSA?) whatever.
-	// The assertion only checks the SLP fields are rewritten correctly.
+
 	rf := newRecordingRF(0x0140, 0x1804)
 	p := rogPlan()
 	was, err := Power(rf, p)
@@ -140,7 +133,7 @@ func TestPowerReadModifyWrite(t *testing.T) {
 	if was != 0x0140 {
 		t.Errorf("was = 0x%x, want 0x0140", was)
 	}
-	want := S5WriteValue(was, p.SLPTyp) // (0x0140 &^ 0x3C00) | 7<<10 | 1<<13 = 0x3D40
+	want := S5WriteValue(was, p.SLPTyp)
 	if want != 0x3D40 {
 		t.Errorf("S5WriteValue = 0x%x, want 0x3D40", want)
 	}
@@ -151,15 +144,14 @@ func TestPowerReadModifyWrite(t *testing.T) {
 	if got != want {
 		t.Errorf("register after write = 0x%x, want 0x%x", got, want)
 	}
-	// The preserved high bits must survive: bit 6 and bit 8 stay set.
+
 	if got&0x0140 != 0x0140 {
 		t.Errorf("pre-existing non-SLP bits clobbered: got=0x%x", got)
 	}
 }
 
 func TestStageFromLiveFixtures(t *testing.T) {
-	// Checkpoint B end-to-end: the real rog FADT + DSDT + DMI must stage a
-	// plan whose values match /proc/ioports (0x1804) and the live _S5 (7).
+
 	fadtRaw, err := os.ReadFile(filepath.Join("..", "fadt", "testdata", "FADT.rog.bin"))
 	if err != nil {
 		t.Fatalf("read FADT fixture: %v", err)
@@ -199,8 +191,7 @@ func TestStageRefuses(t *testing.T) {
 		}
 	})
 	t.Run("ambiguous DSDT", func(t *testing.T) {
-		// Two _S5 packages in one buffer → the scanner refuses, the stage
-		// refuses with it.
+
 		two := make([]byte, 0)
 		pkg := buildS5Bytes()
 		two = append(two, pkg...)
@@ -211,7 +202,6 @@ func TestStageRefuses(t *testing.T) {
 	})
 }
 
-// buildS5Bytes is a single root _S5 NameOp+Package in raw AML bytes.
 func buildS5Bytes() []byte {
 	b := []byte{0x08, 0x5C, '_', 'S', '5', '_', 0x12, 0x07, 0x04, 0x0A, 0x07, 0x00, 0x00, 0x00}
 	return b
@@ -244,8 +234,6 @@ func TestMatchesDMIOfStagedPlan(t *testing.T) {
 	}
 }
 
-// DevPort.Open against an existing regular file (tests never mknod into
-// the real /dev).
 func TestDevPortOpenExisting(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "port")
 	if err := os.WriteFile(path, []byte{0x40, 0x01}, 0o600); err != nil {
@@ -255,34 +243,25 @@ func TestDevPortOpenExisting(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Open: %v", err)
 	}
-	// DevPort.Open returns *os.File for a real file; nothing to close here
-	// through the RegisterFile interface (the production caller owns the
-	// file lifetime).
+
 	buf := make([]byte, 2)
 	if _, err := f.ReadAt(buf, 0); err != nil {
 		t.Errorf("ReadAt: %v", err)
 	}
 }
 
-// The mknod fallback: on a missing node the Open either creates it
-// (privileged) or fails visibly; an EPERM environment (unprivileged CI)
-// still exercises the visible-failure contract.
 func TestDevPortMissingNodeFailsClosed(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "port")
 	_, err := DevPort{Path: path}.Open()
 	if err == nil {
 		t.Errorf("missing node without privileges expected failure or success-with-node")
 	}
-	// Either way no half-open file leaks: the path must stay absent or be
-	// a proper char node we just made.
+
 	if st, serr := os.Stat(path); serr == nil && st.Mode()&os.ModeCharDevice == 0 {
 		t.Errorf("left non-device file behind at %s", path)
 	}
 }
 
-// F3 (judgment-day round 1, confirmed by both judges): the device-number
-// encoding was swapped (minor<<8|major). /dev/port is char 1:4, which in
-// Linux old-style encoding is 0x0104 — major in the HIGH byte.
 func TestMknodDevEncoding(t *testing.T) {
 	if got := mknodDev(1, 4); got != 0x0104 {
 		t.Errorf("mknodDev(1,4) = %#x, want 0x0104 (/dev/port char 1:4)", got)

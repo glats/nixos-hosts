@@ -1,11 +1,3 @@
-# mouse-wiggle — prevent screen lock on t14 when idle.
-#
-# Mechanism: move the mouse pointer by 1px every 50 seconds.
-# This prevents the display from sleeping due to inactivity while
-# the user is e.g. watching a video that lacks idle-inhibition.
-#
-# systemd user service approach (not exec-once) so it survives
-# transient Hyprland restarts and can be managed independently.
 { lib, pkgs, ... }:
 
 let
@@ -55,8 +47,6 @@ in
 {
   home.packages = [ script ];
 
-  # Systemd user service so mouse-wiggle starts with the session
-  # and survives Hyprland restarts.
   systemd.user.services.mouse-wiggle = {
     Unit = {
       Description = "Mouse wiggle — prevent idle lock during fullscreen media";
@@ -73,7 +63,6 @@ in
     };
   };
 
-  # Desktop launcher so it can also be started manually from a menu.
   xdg.desktopEntries.mouse-wiggle = {
     name = "Mouse Wiggle";
     comment = "Prevent screen lock by wiggling the mouse";

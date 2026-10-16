@@ -13,8 +13,6 @@ import (
 	"github.com/glats/nixos-scripts/internal/kmsg"
 )
 
-// fakeConfigFS records attribute writes in order and can fail selected
-// operations, standing in for the configfs netconsole tree.
 type fakeConfigFS struct {
 	files    map[string]string
 	order    []string
@@ -93,7 +91,7 @@ func v4Addr(s string) net.Addr {
 func TestIPv4OfPicksGlobalV4(t *testing.T) {
 	got, err := IPv4Of(addrList(
 		&net.IPNet{IP: net.ParseIP("fe80::1"), Mask: net.CIDRMask(64, 128)},
-		v4Addr("169.254.3.4"), // link-local v4 must be skipped
+		v4Addr("169.254.3.4"),
 		v4Addr("172.16.0.5"),
 	), "enp3s0")
 	if err != nil {
@@ -145,7 +143,7 @@ func TestConfigureTargetWritesAllFieldsEnabledLast(t *testing.T) {
 
 func TestConfigureTargetResetsExistingEnabledTarget(t *testing.T) {
 	fs := newFakeConfigFS()
-	// A leftover target from an earlier run: enabled with stale values.
+
 	fs.files["target1"] = ""
 	fs.files["target1/enabled"] = "1\n"
 	if err := ConfigureTarget(fs, testTarget(), net.IPv4(172, 16, 0, 9)); err != nil {
@@ -167,8 +165,7 @@ func TestConfigureTargetPropagatesErrors(t *testing.T) {
 	}
 
 	fs2 := newFakeConfigFS()
-	// Simulate a missing attribute (e.g. netconsole without dynamic
-	// config support): every write after mkdir fails for that path.
+
 	fs2.mkdirErr["target1"] = nil
 	failing := &failingWriteFS{inner: fs2, failPath: "target1/dev_name"}
 	if err := ConfigureTarget(failing, testTarget(), net.IPv4(10, 0, 0, 1)); err == nil {
@@ -190,8 +187,6 @@ func (f *failingWriteFS) WriteFile(p string, d []byte) error {
 	return f.inner.WriteFile(p, d)
 }
 
-// probeConn delivers scripted datagrams in order, then times out like a
-// deadline-expired ReadFromUDP.
 type probeConn struct {
 	dgrams []probeDgram
 }
@@ -238,7 +233,7 @@ func TestVerifyMatchesACK(t *testing.T) {
 
 func TestVerifyIgnoresSpoofedNonceThenMatches(t *testing.T) {
 	conn := &probeConn{dgrams: []probeDgram{
-		{data: "netconsole-ack: nonce=ffffffffffffffff\n"}, // spoofed
+		{data: "netconsole-ack: nonce=ffffffffffffffff\n"},
 		{data: "prefix netconsole-ack: nonce=abcd1234abcd1234 suffix\n"},
 		{data: ACKPrefix + "abcd1234abcd1234\n"},
 	}}
@@ -248,7 +243,7 @@ func TestVerifyIgnoresSpoofedNonceThenMatches(t *testing.T) {
 }
 
 func TestVerifyTimeoutFailsNamingNonce(t *testing.T) {
-	conn := &probeConn{} // nothing ever arrives
+	conn := &probeConn{}
 	err := Verify(newTestKmsg(t), conn, "cafe0123cafe0123", 2*time.Second)
 	if err == nil {
 		t.Fatal("expected timeout error")

@@ -1,4 +1,3 @@
-// Package rtkinit manages the repository's versioned RTK contract block.
 package rtkinit
 
 import (
@@ -14,7 +13,6 @@ const (
 	closeMarker = "<!-- /rtk-init-managed -->"
 )
 
-// Block returns the canonical managed RTK contract.
 func Block() string {
 	return `<!-- rtk-init-managed v1 -->
 ## RTK (command output filter)

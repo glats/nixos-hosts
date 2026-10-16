@@ -16,7 +16,6 @@
       "/run/media/library/video:/media:ro"
     ];
 
-    # Intel iGPU devices for QSV/VAAPI transcoding
     devices = [
       "/dev/dri/card1:/dev/dri/card1"
       "/dev/dri/renderD128:/dev/dri/renderD128"
@@ -37,13 +36,11 @@
     ];
   };
 
-  # Ensure config/cache directories exist with correct permissions
   systemd.tmpfiles.rules = [
     "d /srv/glats/jellyfin 0755 root root -"
     "d /srv/glats/jellyfin/config 0755 root root -"
     "d /srv/glats/jellyfin/cache 0755 root root -"
   ];
 
-  # Order after media permissions service so ACLs on media dirs are set
   systemd.services."docker-jellyfin".after = [ "arr-media-permissions.service" ];
 }

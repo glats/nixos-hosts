@@ -1,27 +1,6 @@
-# Remote desktop client launchers — unified module for all remote connections.
-#
-# Not shared with darwin/home/remote-desktop.nix: Remmina profiles and Linux
-# launchers are not portable to macOS .app bundles.
-#
-# Deploys .desktop launchers and Remmina profiles with shared defaults.
-# Settings common to all connections are defined once in Nix and merged
-# into each .remmina profile.  This avoids the URI limitation where
-# Remmina forces sound=off and ignores other defaults.
-#
-# Password storage: Remmina uses libsecret (gnome-keyring) to persist
-# credentials.  The `disablepasswordstoring=0` flag in each profile
-# allows the libsecret plugin to save the password to the user's
-# default keyring collection on first connect.  The keyring daemon
-# itself is enabled system-wide by `modules/hardware/keyring.nix`
-# (services.gnome.gnome-keyring.enable) and unlocked via PAM on
-# lightdm/xrdp-sesman logins.  `pkgs.libsecret` is added to
-# home.packages so the libsecret shared library is always resolvable
-# in the user session even if a host config drops the system-level
-# keyring module.
 { lib, pkgs, ... }:
 
 let
-  # Settings common to ALL remote desktop connections.
   commonDefaults = {
     scale = 2;
     viewmode = 1;
@@ -118,7 +97,6 @@ let
     freerdp_log_level = "INFO";
   };
 
-  # RDP-specific defaults (merge on top of common)
   rdpDefaults = commonDefaults // {
     protocol = "RDP";
     colordepth = 99;
@@ -130,7 +108,6 @@ let
     quality = 0;
   };
 
-  # VNC-specific defaults (merge on top of common)
   vncDefaults = commonDefaults // {
     protocol = "VNC";
     colordepth = "";
@@ -148,7 +125,6 @@ let
     proxy = "";
   };
 
-  # Generate a .remmina file from a base attrset + per-host overrides.
   mkRemminaProfile =
     base: overrides:
     let
@@ -157,7 +133,6 @@ let
     in
     "[remmina]\n${lib.concatStringsSep "\n" lines}\n";
 
-  # Desktop entry text (common shape)
   mkDesktop =
     {
       name,
@@ -179,11 +154,6 @@ let
 
 in
 {
-  # === Global Remmina preferences ===
-  # The [remmina] section inside remmina.pref acts as a default template
-  # for *new* connections created from URIs.  It is NOT used when loading
-  # a .remmina file directly, which is why every profile below embeds the
-  # full defaults via mkRemminaProfile.
   xdg.configFile."remmina/remmina.pref" = {
     force = true;
     text = ''
@@ -208,22 +178,12 @@ in
     '';
   };
 
-  # libsecret is required by Remmina's glibsecret plugin (the
-  # remmina-plugin-secret.so) to read/write passwords in the user's
-  # default keyring collection.  The plugin is built into the
-  # remmina package (buildInputs includes libsecret) but the library
-  # must be present in the user environment for D-Bus activation to
-  # resolve the secret schema.  The system-level keyring module
-  # (modules/hardware/keyring.nix) already installs libsecret, but
-  # adding it here makes the dependency explicit at the HM boundary
-  # and survives host configs that drop the hardware module.
   home.packages = [
     pkgs.remmina
     pkgs.libsecret
   ];
 
   home.file = {
-    # === RDP profiles ===
     ".local/share/remmina/rdp-rog.remmina" = {
       force = true;
       text = mkRemminaProfile rdpDefaults {
@@ -247,7 +207,6 @@ in
       };
     };
 
-    # === VNC profiles ===
     ".local/share/remmina/vnc-t14.remmina" = {
       force = true;
       text = mkRemminaProfile vncDefaults {
@@ -262,7 +221,6 @@ in
         server = "CLFTCLGV2FHWW0W.local:5900";
       };
     };
-    # === Desktop launchers ===
     ".local/share/applications/remote-rog.desktop" = {
       force = true;
       text = mkDesktop {
@@ -304,9 +262,6 @@ in
       };
     };
 
-    # Shell launcher so `connect-wayvnc-t14` works from any terminal.
-    # The .desktop entry above serves the app menu; this wraps the same
-    # Remmina profile for keyboard-driven access.
     ".local/bin/connect-wayvnc-t14" = {
       executable = true;
       text = ''

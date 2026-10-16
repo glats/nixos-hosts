@@ -18,7 +18,7 @@ func TestResolveTarget(t *testing.T) {
 		{"macm5", "juan@macm5"},
 		{"t14", "glats@t14.local"},
 		{"thinkcentre", "glats@thinkcentre.local"},
-		{"jcuzmar@mact2.local", "jcuzmar@mact2.local"}, // passthrough
+		{"jcuzmar@mact2.local", "jcuzmar@mact2.local"},
 		{"weird@host.example", "weird@host.example"},
 	}
 	for _, tc := range cases {
@@ -32,8 +32,7 @@ func TestTargetLabel(t *testing.T) {
 	cases := []struct {
 		in, want string
 	}{
-		// Shorthand targets label as-is; only user@host passthrough
-		// args get the "${1%%@*}-${1#*@}" + tr './' '--' treatment.
+
 		{"macm5", "macm5"},
 		{"t14", "t14"},
 		{"thinkcentre", "thinkcentre"},
@@ -46,9 +45,7 @@ func TestTargetLabel(t *testing.T) {
 			t.Errorf("targetLabel(%q) = %q, want %q", tc.in, got, tc.want)
 		}
 	}
-	// `local` resolves to this host's hostname via exec — just verify
-	// it is non-empty and clean. Skipped in sandboxes without `hostname`
-	// (the nix build sandbox has no hostname binary).
+
 	if _, err := exec.LookPath("hostname"); err == nil {
 		if got := targetLabel("local"); got == "" || strings.ContainsAny(got, "\n") {
 			t.Errorf("targetLabel(local) = %q, want a hostname", got)
@@ -57,10 +54,7 @@ func TestTargetLabel(t *testing.T) {
 }
 
 func TestUsageTextDescribesManifest(t *testing.T) {
-	// Replaces the stale TestUsageTextMatchesBashHeader (bin/ai-backup
-	// is retired): the usage header IS the manifest documentation, so
-	// assert it enumerates every member family of the new scope and
-	// keeps the exit-code/env blocks intact.
+
 	for _, want := range []string{
 		"~/.claude",
 		".claude.json",
@@ -81,9 +75,7 @@ func TestUsageTextDescribesManifest(t *testing.T) {
 			t.Errorf("usageText missing manifest/env/exit fragment %q", want)
 		}
 	}
-	// The old wrong claim (live ~/.config/opencode archived wholesale)
-	// must not survive: .config/opencode may only appear in the
-	// exclusion paragraph, never as a backed-up member line.
+
 	for _, line := range strings.Split(usageText, "\n") {
 		if strings.Contains(line, ".config/opencode") && !strings.HasPrefix(strings.TrimSpace(line), ".config/opencode, opencode bin/log") {
 			t.Errorf("usageText line presents .config/opencode as backed up: %q", line)
@@ -91,21 +83,6 @@ func TestUsageTextDescribesManifest(t *testing.T) {
 	}
 }
 
-// --- Embedded-payload integration fixtures -----------------------------------
-//
-// The POSIX payloads are executed for real under /bin/sh with a fake
-// $HOME and a stub sqlite3 first on PATH; the resulting tar stream /
-// relocated files / exit codes are asserted against the embedded Go
-// string constants — no re-mocking of the payload logic. Behaviors NOT
-// coverable here (real macOS bsdtar, Keychain-backed .claude.json
-// OAuth, rog's Home-Manager symlink churn across rebuilds, the peer
-// ssh stream) stay covered by the Phase-6 real-run gate (tasks.md 6.3,
-// documented in docs/ai-backup.md).
-
-// fakeSQLite writes a stub sqlite3 (POSIX sh) whose behavior is driven
-// by environment variables. The real payloads call it as
-// `sqlite3 <db> ".backup '<dest>'"` (backup payload) and
-// `sqlite3 <db> 'PRAGMA integrity_check;'` (restore payload).
 const fakeSQLite = `#!/bin/sh
 case "$2" in
   "PRAGMA integrity_check;")
@@ -127,8 +104,6 @@ esac
 exit 0
 `
 
-// fallbackPath keeps coreutils (readlink, mktemp, date, cp) and tar
-// reachable for the payloads in nix sandboxes and on NixOS hosts.
 func fallbackPath() string {
 	if p := os.Getenv("PATH"); p != "" {
 		return p
@@ -136,10 +111,6 @@ func fallbackPath() string {
 	return "/run/current-system/sw/bin:/bin:/usr/bin"
 }
 
-// runShellPayload runs payload under /bin/sh -s with a fake $HOME and
-// the stub sqlite3 bin dir first on PATH; extraEnv pairs are appended
-// AFTER the base env, so overrides win. Returns both streams: the exit
-// code, stdout and stderr.
 func runShellPayload(t *testing.T, payload string, home string, extraEnv ...string) (int, *bytes.Buffer, *bytes.Buffer) {
 	t.Helper()
 	if _, err := os.Stat("/bin/sh"); err != nil {
@@ -171,7 +142,6 @@ func runShellPayload(t *testing.T, payload string, home string, extraEnv ...stri
 	return rc, &stdout, &stderr
 }
 
-// tarMembers lists the members of a tar stream captured in tarout.
 func tarMembers(t *testing.T, tarout *os.File) []string {
 	t.Helper()
 	if _, err := tarout.Seek(0, 0); err != nil {
@@ -205,23 +175,20 @@ func writeTree(t *testing.T, home string, rels ...string) {
 	}
 }
 
-// buildClaudeHome materializes a fake source home containing every
-// required member family AND every forbidden/excluded artifact, so the
-// member-list run below proves exclusion by absence, not setup luck.
 func buildClaudeHome(t *testing.T) string {
 	t.Helper()
 	home := t.TempDir()
 	writeTree(t, home,
-		// Claude family (required members).
+
 		".claude/projects/host-dir/session.jsonl",
 		".claude/history.jsonl",
 		".claude/plans/plan.md",
 		".claude/todos/todo.md",
 		".claude/keybindings.json",
-		// Nested .claude/.claude tree (triage-later member).
+
 		".claude/.claude/triage/note.md",
 		".claude.json",
-		// Claude excluded by NOT naming: settings, credentials, caches.
+
 		".claude/settings.json",
 		".claude/settings.local.json",
 		".claude/CLAUDE.md",
@@ -230,12 +197,12 @@ func buildClaudeHome(t *testing.T) string {
 		".claude/plugins/cache/p.cache",
 		".claude/.credentials.json",
 		".claude/cache/c.bin",
-		// OpenCode family (required): realpath-named db behind symlink.
+
 		".local/share/opencode/opencode-main-stable.db",
 		".local/share/opencode/storage/db/main.db",
 		".local/share/opencode/auth.json",
 		".local/share/opencode/opencode-multimodal.json",
-		// Live/excluded artifacts that the OLD design leaked.
+
 		".local/share/opencode/opencode.db-wal",
 		".local/share/opencode/opencode.db-shm",
 		".local/share/opencode/bin/tool",
@@ -244,7 +211,7 @@ func buildClaudeHome(t *testing.T) string {
 		".local/share/opencode/tool-output/o.txt",
 		".local/share/opencode/node_modules/pkg/index.js",
 		".config/opencode/config.json",
-		// Engram: live db rides ONLY as its snapshot; stale siblings out.
+
 		".engram/engram.db",
 		".engram/engram.db.before-20240101",
 		".engram/engram.db.pre-cleanup.old",
@@ -298,7 +265,7 @@ func TestBackupPayloadMemberList(t *testing.T) {
 		}
 		return false
 	}
-	// Required members (spec R2 manifest).
+
 	for _, want := range []string{
 		".claude/projects/host-dir/session.jsonl",
 		".claude/history.jsonl",
@@ -317,8 +284,7 @@ func TestBackupPayloadMemberList(t *testing.T) {
 			t.Errorf("archive missing required member %q", want)
 		}
 	}
-	// Forbidden members (spec R2): the fixture deliberately created
-	// every one of these on disk — only NOT naming them keeps them out.
+
 	forbidden := func(m string) bool {
 		return m == ".config/opencode/config.json" ||
 			strings.Contains(m, "node_modules") ||
@@ -345,8 +311,7 @@ func TestBackupPayloadMemberList(t *testing.T) {
 			t.Errorf("forbidden member entered the archive: %q", m)
 		}
 	}
-	// Symlink resolution: the staged snapshot is named after the REAL
-	// basename plus .snapshot — never the symlink name.
+
 	if !has("home-snap/.local/share/opencode/opencode-main-stable.db.snapshot") {
 		t.Error("snapshot must be realpath-named (<real-basename>.db.snapshot)")
 	}
@@ -359,7 +324,7 @@ func TestBackupPayloadExtraDirs(t *testing.T) {
 		"projects/alpha/.engram/chunks/c.bin",
 		"projects/alpha/.engram/manifest.json",
 		"projects/alpha/.engram/config.json",
-		// Non-required engram sibling that must not ride.
+
 		"projects/alpha/.engram/engram.db",
 	)
 	if _, err := os.Stat("/bin/sh"); err != nil {
@@ -382,7 +347,7 @@ func TestBackupPayloadExtraDirs(t *testing.T) {
 		"HOME=" + home,
 		"TMPDIR=" + t.TempDir(),
 		"PATH=" + shimDir + ":" + fallbackPath(),
-		// Space-separated .engram/ paths, tar'd verbatim.
+
 		"AI_BACKUP_EXTRA=" + filepath.Join(home, "projects/alpha/.engram"),
 	}
 	if err := cmd.Run(); err != nil {
@@ -398,10 +363,7 @@ func TestBackupPayloadExtraDirs(t *testing.T) {
 		return false
 	}
 	for _, want := range []string{
-		// Extras are STAGED under extras/<project>/.engram/ so tar -C
-		// alone (which cannot add path prefixes) cannot archive them
-		// as bare .engram/... and clobber the global ~/.engram on
-		// restore. Member layout <project>/.engram/... is preserved.
+
 		"extras/alpha/.engram/chunks/c.bin",
 		"extras/alpha/.engram/manifest.json",
 		"extras/alpha/.engram/config.json",
@@ -416,8 +378,7 @@ func TestBackupPayloadExtraDirs(t *testing.T) {
 }
 
 func TestBackupPayloadExit3NoSnapshots(t *testing.T) {
-	// Zero OpenCode databases on the source home => exit 3 BEFORE any
-	// publication (spec R3 fail-closed scenario).
+
 	home := t.TempDir()
 	writeTree(t, home, ".claude/history.jsonl", ".claude.json", ".engram/engram.db")
 	rc, _, stderr := runShellPayload(t, remoteBackupScript, home)
@@ -430,7 +391,7 @@ func TestBackupPayloadExit3NoSnapshots(t *testing.T) {
 }
 
 func TestBackupPayloadExit3EmptySnapshot(t *testing.T) {
-	// Any empty staged snapshot must also fail closed with exit 3.
+
 	home := t.TempDir()
 	writeTree(t, home, ".local/share/opencode/opencode-main.db")
 	rc, _, stderr := runShellPayload(t, remoteBackupScript, home, "FAKE_SQLITE_EMPTY=1")
@@ -443,9 +404,7 @@ func TestBackupPayloadExit3EmptySnapshot(t *testing.T) {
 }
 
 func TestRestorePayloadSymlinkSnapshotRelocation(t *testing.T) {
-	// Spec R4: the live db path is a symlink -> the symlink must
-	// survive, the snapshot lands at the resolved realpath with
-	// `.snapshot` stripped, and the old file keeps a pre-restore copy.
+
 	home := t.TempDir()
 	opencode := filepath.Join(home, ".local/share/opencode")
 	if err := os.MkdirAll(filepath.Join(home, "home-snap/.local/share/opencode"), 0o755); err != nil {
@@ -454,10 +413,7 @@ func TestRestorePayloadSymlinkSnapshotRelocation(t *testing.T) {
 	if err := os.MkdirAll(opencode, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	// Fixture mirrors the rog scenario: the snapshot's basename-minus-
-	// .snapshot (opencode-stable.db) is ITSELF a symlink on this host,
-	// resolving to a real db — restore must move onto the real target,
-	// never over the symlink (Home Manager re-creates it).
+
 	if err := os.WriteFile(filepath.Join(opencode, "opencode-stable-real.db"), []byte("old-live-db"), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -474,17 +430,16 @@ func TestRestorePayloadSymlinkSnapshotRelocation(t *testing.T) {
 		t.Fatalf("restore payload exit = %d (stdout: %s stderr: %s)", rc, stdout.String(), stderr.String())
 	}
 	t.Logf("restore messages:\n%s", stdout.String())
-	// Symlink survives untouched.
+
 	fi, err := os.Lstat(link)
 	if err != nil || fi.Mode()&os.ModeSymlink == 0 {
 		t.Fatalf("live symlink must be preserved: Lstat err=%v", err)
 	}
-	// `.snapshot` stripped: symlink RESOLUTION target holds the db.
+
 	if got, err := os.ReadFile(filepath.Join(opencode, "opencode-stable-real.db")); err != nil || string(got) != "restored-db-content" {
 		t.Fatalf("relocated db at resolved path: got %q err=%v", got, err)
 	}
-	// Symlink still resolves to the same real db (target text may be
-	// absolute or relative — assert on resolution, not on its bytes).
+
 	resolved, err := filepath.EvalSymlinks(link)
 	if err != nil {
 		t.Fatal(err)
@@ -493,7 +448,7 @@ func TestRestorePayloadSymlinkSnapshotRelocation(t *testing.T) {
 	if err != nil || resolved != want {
 		t.Fatalf("symlink resolution changed: resolved=%q err=%v", resolved, err)
 	}
-	// Old db kept as .pre-restore-<ts> (timestamp unknown: glob).
+
 	kept2, err := filepath.Glob(filepath.Join(opencode, "opencode-stable-real.db.pre-restore-*"))
 	if err != nil || len(kept2) != 1 {
 		t.Fatalf("pre-restore copy missing (glob hit %v err %v)", kept2, err)
@@ -501,15 +456,14 @@ func TestRestorePayloadSymlinkSnapshotRelocation(t *testing.T) {
 	if old, err := os.ReadFile(kept2[0]); err != nil || string(old) != "old-live-db" {
 		t.Fatalf("pre-restore copy must hold the old db: got %q err=%v", old, err)
 	}
-	// Staging tree removed after successful relocation.
+
 	if _, err := os.Stat(filepath.Join(home, "home-snap")); !os.IsNotExist(err) {
 		t.Fatalf("home-snap must be removed after restore (err=%v)", err)
 	}
 }
 
 func TestRestorePayloadIntegrityFailureExitsNonzero(t *testing.T) {
-	// Spec R4: corrupt database after restore => restore reports the
-	// failed check and exits nonzero (Go maps this case to exit 4).
+
 	home := t.TempDir()
 	if err := os.MkdirAll(filepath.Join(home, ".local/share/opencode"), 0o755); err != nil {
 		t.Fatal(err)
@@ -521,8 +475,7 @@ func TestRestorePayloadIntegrityFailureExitsNonzero(t *testing.T) {
 	if rc == 0 {
 		t.Fatal("integrity failure must exit nonzero")
 	}
-	// The per-db check lines echo to stdout (payload does not set
-	// pipefail, the output IS the failure signal text).
+
 	if !strings.Contains(stdout.String(), "corrupt") || !strings.Contains(stdout.String(), "integrity check") {
 		t.Errorf("restore must report the failed integrity check, stdout: %s", stdout.String())
 	}
@@ -542,8 +495,7 @@ func TestRestoreOKPathExitsZero(t *testing.T) {
 }
 
 func TestPreRestoreScriptKeepsClaudeJSON(t *testing.T) {
-	// Task 2.2: the existing $HOME/.claude.json is copied to
-	// .claude.json.pre-restore-<ts> before extraction overwrites it.
+
 	home := t.TempDir()
 	if err := os.WriteFile(filepath.Join(home, ".claude.json"), []byte("previous-oauth"), 0o600); err != nil {
 		t.Fatal(err)
@@ -559,7 +511,7 @@ func TestPreRestoreScriptKeepsClaudeJSON(t *testing.T) {
 	if old, err := os.ReadFile(kept[0]); err != nil || string(old) != "previous-oauth" {
 		t.Fatalf("pre-restore copy content: got %q err=%v", old, err)
 	}
-	// Absent file: payload must stay silent and succeed.
+
 	if rc, _, _ := runShellPayload(t, preRestoreScript, t.TempDir()); rc != 0 {
 		t.Fatal("pre-restore without .claude.json must still succeed")
 	}
@@ -577,8 +529,7 @@ func TestBackupPayloadInjectsAIExtraWithShQuoting(t *testing.T) {
 }
 
 func TestPayloadSyntaxShN(t *testing.T) {
-	// Spec R5 gate: both embedded payloads (plus the pre-restore step)
-	// must parse clean under the exact interpreter that will run them.
+
 	if _, err := os.Stat("/bin/sh"); err != nil {
 		t.Skip("/bin/sh not available")
 	}
@@ -599,12 +550,6 @@ func TestPayloadSyntaxShN(t *testing.T) {
 	}
 }
 
-// --- restore pre-flight (smart collision detection) --------------------------
-
-// runPreflightPayload executes restorePreflightScript with controllable
-// pgrep and sqlite3 shims: pgrepExit 0 simulates opencode/claude
-// RUNNING on the target, 1 simulates a quiet machine. Deterministic —
-// the real rog host may legitimately have opencode open during tests.
 func runPreflightPayload(t *testing.T, payload string, home string, pgrepExit int, extraEnv ...string) (int, *bytes.Buffer, *bytes.Buffer) {
 	t.Helper()
 	if _, err := os.Stat("/bin/sh"); err != nil {
@@ -641,9 +586,7 @@ func runPreflightPayload(t *testing.T, payload string, home string, pgrepExit in
 }
 
 func TestRestorePreflightRefusesRunningProcess(t *testing.T) {
-	// Smart restore: opencode/claude running on the target => refusal
-	// (exit 4) before anything is touched; --force is the documented
-	// override.
+
 	home := t.TempDir()
 	rc, _, stderr := runPreflightPayload(t, restorePreflightScript, home, 0)
 	if rc != 4 {
@@ -655,8 +598,7 @@ func TestRestorePreflightRefusesRunningProcess(t *testing.T) {
 }
 
 func TestRestorePreflightRefusesExistingState(t *testing.T) {
-	// Smart restore: existing irreplaceable state on the target =>
-	// refusal listing every colliding path, without touching anything.
+
 	home := t.TempDir()
 	if err := os.WriteFile(filepath.Join(home, ".claude.json"), []byte("cfg"), 0o600); err != nil {
 		t.Fatal(err)
@@ -677,14 +619,14 @@ func TestRestorePreflightRefusesExistingState(t *testing.T) {
 			t.Errorf("refusal must mention %q, stderr: %s", want, stderr.String())
 		}
 	}
-	// Nothing was modified by a refusal.
+
 	if old, err := os.ReadFile(filepath.Join(home, ".claude.json")); err != nil || string(old) != "cfg" {
 		t.Fatalf("refused restore must not touch the target: got %q err=%v", old, err)
 	}
 }
 
 func TestRestorePreflightCleanTargetPasses(t *testing.T) {
-	// Fresh machine: no collisions, nothing running => restore proceeds.
+
 	home := t.TempDir()
 	rc, stdout, stderr := runPreflightPayload(t, restorePreflightScript, home, 1)
 	if rc != 0 {
@@ -696,7 +638,7 @@ func TestRestorePreflightCleanTargetPasses(t *testing.T) {
 }
 
 func TestRestorePreflightForceSkipsEverything(t *testing.T) {
-	// --force overrides both refusal classes and must be reported.
+
 	home := t.TempDir()
 	if err := os.WriteFile(filepath.Join(home, ".claude.json"), []byte("cfg"), 0o600); err != nil {
 		t.Fatal(err)
@@ -711,8 +653,7 @@ func TestRestorePreflightForceSkipsEverything(t *testing.T) {
 }
 
 func TestRestorePreflightPayloadForceForwarding(t *testing.T) {
-	// The Go wrapper forwards --force as an sh assignment (ssh does
-	// not forward environment), mirroring backupPayload().
+
 	if got := restorePreflightPayload(false); !strings.HasPrefix(got, "AI_BACKUP_RESTORE_FORCE=0\n") || !strings.Contains(got, restorePreflightScript) {
 		t.Fatalf("restorePreflightPayload(false) = %q", got)
 	}
@@ -722,10 +663,7 @@ func TestRestorePreflightPayloadForceForwarding(t *testing.T) {
 }
 
 func TestPreRestoreMovesAsideStateDirs(t *testing.T) {
-	// Smart restore replaces state; replaced items are moved aside as
-	// .pre-restore-<ts> so nothing silently merges — the archive's
-	// copy lands fresh and the old one stays intact under the renamed
-	// dir. The live dirs are MOVED (tar recreates them), not deleted.
+
 	home := t.TempDir()
 	projects := filepath.Join(home, ".claude/projects")
 	if err := os.MkdirAll(projects, 0o755); err != nil {
@@ -753,7 +691,7 @@ func TestPreRestoreMovesAsideStateDirs(t *testing.T) {
 	if !strings.Contains(stdout.String(), ".claude/projects") {
 		t.Errorf("pre-restore must report the moved-aside dirs, stdout: %s", stdout.String())
 	}
-	// The live path is gone; the old tree lives under .pre-restore-<ts>.
+
 	if _, err := os.Stat(projects); !os.IsNotExist(err) {
 		t.Fatalf("live projects dir must be moved aside (err=%v)", err)
 	}

@@ -77,19 +77,11 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    # `lsof` is not in every minimal profile, so we ship it explicitly.
     environment.systemPackages = [ pkgs.lsof ];
 
     systemd.services.shutdown-debug-capture = {
       description = "Capture diagnostic state to /var/log/shutdown-debug before shutdown";
-      # DefaultDependencies is a systemd unit setting, not a NixOS service
-      # option — it lives in unitConfig. We disable it so the service is
-      # NOT auto-pulled into the shutdown graph with all the other
-      # implicit ordering; we control the graph explicitly below.
       unitConfig.DefaultDependencies = false;
-      # `shutdown.target` is the umbrella for all three exit targets
-      # (poweroff, reboot, halt). We want to run as the system is
-      # winding down, before the actual switch to systemd-shutdown.
       after = [
         "local-fs.target"
         "systemd-journald.service"
@@ -100,7 +92,6 @@ in
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
-        # Capture must not stall the shutdown. Both bounds are intentional.
         TimeoutStartSec = 0;
         TimeoutStopSec = "10s";
         ExecStart = capture-script;

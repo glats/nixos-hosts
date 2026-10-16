@@ -13,7 +13,6 @@ baseModules
   ../../../linux/home/openfang.nix
   ../../../linux/home/webcam.nix
 
-  # Override active OpenCode provider for this host
   {
     home.opencode.activeProviderName = "anthropic-openai-opencode";
   }

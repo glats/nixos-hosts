@@ -1,11 +1,8 @@
-# Linux-specific overlay
-# Provides packages and overrides needed by NixOS hosts
 {
   self,
   inputs,
 }:
 final: prev: {
-  # Cross-platform packages from flake outputs
   inherit (self.packages.${prev.stdenv.hostPlatform.system})
     nixos-scripts
     gentle-ai
@@ -24,7 +21,6 @@ final: prev: {
     claude-code
     ;
 
-  # Local pkgs/ derivations
   asus-fan-control = final.callPackage ../pkgs/asus-fan-control {
     asus-fan-control-src = inputs.asus-fan-control-src;
   };
@@ -39,21 +35,6 @@ final: prev: {
   };
   wstunnel-relay = final.callPackage ../pkgs/wstunnel-relay { };
 
-  # linuxPackages_zen is used as-is from nixpkgs (pinned via flake.lock).
-  # Previous versions of zen (early 7.x) produced vmlinuz instead of bzImage
-  # (nixpkgs#521113), requiring a kernelFile override. Zen 7.1.2+ produces
-  # bzImage again — no override needed. Keep an eye on future zen releases
-  # in case the vmlinuz regression re-appears.
-
-  # teams-for-linux 2.11.1 (latest in nixos-26.05) drops the login session on
-  # every quit: Teams encrypts its auth tokens with the `msal.cache.encryption`
-  # session cookie, which Electron discards on process exit, so tokens can no
-  # longer be decrypted on the next start (upstream #2681/#2780, fixed in
-  # v2.15.0 as an opt-in flag — enabled in hosts/t14/home/omarchy.nix; affects
-  # >= 2.10.0). 2.10.0-2.14.0 additionally hard-exit on SIGINT/SIGTERM and
-  # skip the storage flush (upstream #2743, fixed in v2.14.1). Pin 2.15.0
-  # (src hash via nix-prefetch-git, npmDeps hash via fetchNpmDeps from the
-  # first build). Remove when nixos-26.05 catches up.
   teams-for-linux =
     let
       tfl-src = prev.fetchFromGitHub {
@@ -72,8 +53,6 @@ final: prev: {
       };
     });
 
-  # Symbola font: archive.org is unreliable and frequently drops snapshots or
-  # times out. Use a stable mirror (Slackware UK Salix) instead.
   symbola = prev.symbola.overrideAttrs (oldAttrs: {
     src = prev.fetchzip {
       url = "https://slackware.uk/salix/i486/extra-15.0/source/system/symbola-font-ttf/Symbola.zip";
@@ -83,50 +62,16 @@ final: prev: {
   });
 
   libmateweather = prev.libmateweather.overrideAttrs (oldAttrs: {
-    # Fix pointer offset bug in METAR parsing
     postPatch = (oldAttrs.postPatch or "") + ''
       substituteInPlace libmateweather/weather-metar.c \
         --replace-fail 'p += WEATHER_LOCATION_CODE_LEN + 11;' 'p += WEATHER_LOCATION_CODE_LEN + 17;'
     '';
   });
 
-  # mate-volume-control-status-icon crashes (SIGABRT) on volume scroll:
-  # gvc_channel_bar_scroll does g_settings_new("org.mate.SettingsDaemon.plugins.media-keys")
-  # to read the volume-step, but that schema lives in mate-settings-daemon and
-  # mate-media's wrapGAppsHook3 wrapper doesn't include it → GLib fatal abort.
-  # Works on distros with global schemas; breaks with Nix per-package schemas.
-  # No dependency cycle: msd does not depend on mate-media.
-  #
-  # The schema MUST be exposed via `propagatedBuildInputs`, not `buildInputs`:
-  # `wrap-gapps-hook.sh` only adds packages to the wrapper's XDG_DATA_DIRS
-  # via $GSETTINGS_SCHEMAS_PATH, which is built from propagated-build-inputs
-  # (each entry's `share/gsettings-schemas/<name>` is appended). Putting
-  # mate-settings-daemon in `buildInputs` compiles fine but does NOT change
-  # the wrapper, so the status icon still aborts on scroll. Verified on the
-  # current realized /run/current-system wrapper (rog, gen-892) which lists
-  # gsettings-desktop-schemas, gtk+3, mate-desktop, mate-panel, dconf-editor
-  # but NOT mate-settings-daemon.
-  #
-  # The override MUST target top-level `pkgs.mate-media`, NOT `mate.mate-media`:
-  # in current nixpkgs MATE packages were "moved to top-level" (accessing
-  # `mate.mate-media` warns and forwards to `pkgs.mate-media`, not the other
-  # way around), and the NixOS MATE desktop-manager module adds the volume
-  # status icon to `environment.systemPackages` via the bare `with pkgs;`
-  # name — i.e. `pkgs.mate-media`. Overriding `mate = prev.mate // { ... }`
-  # evaluates fine, produces a correct wrapper, but NOTHING in the system
-  # references it, so the crash persists. Verified on rog: after switching to
-  # the committed fix the system closure still contained the old derivation
-  # (fjyg8h9...) and the icon aborted on scroll at 2026-08-28 11:12.
   mate-media = prev.mate-media.overrideAttrs (oldAttrs: {
     propagatedBuildInputs = (oldAttrs.propagatedBuildInputs or [ ]) ++ [ final.mate-settings-daemon ];
   });
 
-  # Shared afdko 4.0.3 override. Pin afdko back to 4.0.3 (which cantarell-fonts
-  # upstream tests against and pins in its uv.lock) because nixpkgs' afdko
-  # 5.0.1 regresses VF hinting and crashes otfautohint with
-  # `assert lo is not None and hi is not None` on Cantarell-VF.otf
-  # (NixOS/nixpkgs#535887).
-  # TODO: remove when NixOS/nixpkgs#535887 is fixed upstream.
   afdko-4_0_3 = prev.python3.pkgs.afdko.overridePythonAttrs (_: {
     pname = "afdko";
     version = "4.0.3";
@@ -136,21 +81,10 @@ final: prev: {
       rev = "4.0.3";
       hash = "sha256-sQka6Szb8A68RFrwaNM5fN3PAeYJ+PGQ/b2ALYT07i4=";
     };
-    # 4.0.3 has a different source layout (no third_party/); the
-    # 5.0.1 patches target paths that don't exist in 4.0.3.
     patches = [ ];
-    # 4.0.3's pyproject.toml declares `scikit-build` (legacy) as a
-    # build-system requirement, while nixpkgs' afdko 5.0.1 uses
-    # `scikit-build-core`. Add the legacy package so the wheel
-    # build can find `skbuild`.
     nativeBuildInputs = [
       prev.python3.pkgs.scikit-build
     ];
-    # 4.0.3's build clones antlr4 from GitHub via
-    # ExternalAntlr4Cpp.cmake, which fails in a network-less Nix
-    # sandbox. Replace the include with an imported target that
-    # points at the system antlr4-runtime. 4.0.3's CMakeLists.txt
-    # honours FORCE_SYSTEM_LIBXML2 natively.
     postPatch = ''
       substituteInPlace CMakeLists.txt \
         --replace-fail 'include(ExternalAntlr4Cpp)' \
@@ -165,23 +99,12 @@ final: prev: {
     env = {
       FORCE_SYSTEM_LIBXML2 = "true";
     };
-    # 4.0.3's pytest test files don't exist in the same shape as
-    # 5.0.1's; disable pytest (doCheck=false alone doesn't unhook
-    # pytest because pytest-check-hook registers unconditionally).
     doCheck = false;
     dontUsePytestCheck = true;
   });
 
-  # cffsubr 0.4.0 ships a bundled `tx` (from afdko 5.0.1) with hard-coded
-  # paths to afdko 5.0.1's site-packages. Rebuild cffsubr against the
-  # 4.0.3 afdko above so its wrapper points at the 4.0.3 path.
   cffsubr = prev.python3.pkgs.cffsubr.override { afdko = final.afdko-4_0_3; };
 
-  # cantarell-fonts 0.311's build:
-  #   1. Calls `otfautohint` from afdko (we want 4.0.3 to avoid the regression)
-  #   2. Runs `cffsubr.subroutinize` which internally invokes a bundled `tx`
-  #      (from cffsubr; cffsubr's `tx` is rebuilt above against afdko 4.0.3)
-  # Both deps must be the 4.0.3 builds.
   cantarell-fonts = prev.cantarell-fonts.overrideAttrs (oldAttrs: {
     nativeBuildInputs = map (
       inp:

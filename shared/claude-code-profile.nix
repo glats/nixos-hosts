@@ -11,8 +11,6 @@
     enable = true;
 
     permissions = {
-      # dontAsk: auto-deny unmatched tools. Zero prompts for allowed tools.
-      # AcceptEdits would be safer for teams, but this is personal machine.
       defaultMode = "auto";
       additionalDirectories = [
         "~"
@@ -41,8 +39,6 @@
         "NotebookEdit"
       ];
 
-      # Hard safety boundaries. deny wins over allow, regardless of scope.
-      # Tool names with specifiers must use the correct format: Tool(pattern).
       deny = [
         "Bash(rm -rf *)"
         "Bash(sudo *)"

@@ -11,9 +11,6 @@ buildGoModule {
   pname = "nixos-scripts";
   version = "1.0.0";
 
-  # Source, tests and derivation co-located: this directory IS the Go module
-  # (src = ./.), so the build sandbox only ever sees Go module files —
-  # secrets/ and the rest of the repo are structurally out of reach.
   src = ./.;
 
   subPackages = [
@@ -49,8 +46,6 @@ buildGoModule {
     "cmd/wg-peer"
   ];
 
-  # Zero external dependencies so far — no vendor FOD needed. Revisit when a
-  # go.mod dependency lands (fakeHash → `got:` loop, see gentle-ai/engram).
   vendorHash = null;
 
   nativeBuildInputs = [
@@ -66,8 +61,6 @@ buildGoModule {
       --prefix PATH : ${lib.makeBinPath [ qrencode ]}
   '';
 
-  # checkPhase runs `go test ./...` on every build, so every host switch
-  # executes the module's test suite.
   doCheck = true;
 
   meta = with lib; {

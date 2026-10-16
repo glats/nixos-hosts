@@ -9,7 +9,6 @@ stdenvNoCC.mkDerivation {
   pname = "engram-assets";
   version = vanilla.version or "unstable";
 
-  # No src needed — we build on top of vanilla
   dontUnpack = true;
 
   buildPhase = ''

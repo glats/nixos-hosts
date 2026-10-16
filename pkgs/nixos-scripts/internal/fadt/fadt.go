@@ -1,18 +1,3 @@
-// Package fadt is a strict parser for the ACPI FADT (Fixed ACPI
-// Description Table, signature "FACP") extracting the PM1a_CNT block
-// register address needed to enter S5 through the fixed-hardware sleep
-// path. Layout follows include/acpi/actbl.h (ACPICA):
-//
-//	Xfacs u64 @132, Xdsdt u64 @140, X_PM1a_CNT_BLK GAS @172,
-//	X_PM1b_CNT_BLK @184, ..., RESET_REG GAS @116 (NOT PM1a — see the
-//	design.md correction: offset 116 is the RESET register of the
-//	Q35-era firmware whose PM1a lives elsewhere).
-//
-// The parser prefers X_PM1a_CNT_BLK (FADT revision >= 4) and falls back to
-// the legacy 32-bit PM1a_CNT_BLK field at offset 64 when the extended
-// field is invalid, mirroring how ACPICA itself resolves the block. It
-// fails closed: any structural problem (signature, length, checksum,
-// neither field usable) is an error, never a guess.
 package fadt
 
 import (
@@ -20,40 +5,35 @@ import (
 	"fmt"
 )
 
-// Signature is the ACPI table signature of the FADT.
 const Signature = "FACP"
 
-// Field offsets inside the FADT (acpica actbl.h, byte-packed).
 const (
-	offsetPM1aCntLegacy = 64  // u32 PM1a_CNT_BLK (legacy field)
-	offsetPM1bCntLegacy = 68  // u32 PM1b_CNT_BLK (legacy field)
-	offsetPM1CntLen     = 89  // u8  PM1_CNT_LEN (register width in bytes)
-	offsetFlags         = 112 // u32 flags
-	offsetResetReg      = 116 // GAS RESET_REG (12 bytes) — NOT PM1a
-	offsetXfacs         = 132 // u64 pointer
-	offsetXdsdt         = 140 // u64 pointer
-	offsetXPM1aCnt      = 172 // GAS X_PM1a_CNT_BLK (12 bytes)
-	offsetXPM1bCnt      = 184 // GAS X_PM1b_CNT_BLK
-	gasLen              = 12  // sizeof acpi_generic_address: u8 + u8 + u8 + u8 + u64
+	offsetPM1aCntLegacy = 64
+	offsetPM1bCntLegacy = 68
+	offsetPM1CntLen     = 89
+	offsetFlags         = 112
+	offsetResetReg      = 116
+	offsetXfacs         = 132
+	offsetXdsdt         = 140
+	offsetXPM1aCnt      = 172
+	offsetXPM1bCnt      = 184
+	gasLen              = 12
 )
 
-// ACPI GenericAddressStructure space IDs that are meaningful here.
 const (
 	spaceSystemIO = 1
 	spaceMemory   = 0
 )
 
-// GAS is the subset of acpi_generic_address this parser carries.
 type GAS struct {
 	SpaceID    uint8
 	BitWidth   uint8
 	BitOffset  uint8
 	AccessSize uint8
 	AddrBase   uint64
-	AddrValid  bool // Address field is nonzero
+	AddrValid  bool
 }
 
-// Header is the ACPI table header the parser validates.
 type Header struct {
 	OemID      string
 	OemTableID string
@@ -61,25 +41,16 @@ type Header struct {
 	Revision   uint8
 }
 
-// Table is the parsed FADT result.
 type Table struct {
 	Header Header
 
-	PM1aCntBase uint64 // I/O port base of PM1a_CNT (16-bit register)
-	PM1aFromX   bool   // true when the base came from X_PM1a_CNT_BLK (GAS @172)
-	PM1bCntBase uint64 // 0 on this platform (legacy field read for completeness)
+	PM1aCntBase uint64
+	PM1aFromX   bool
+	PM1bCntBase uint64
 
-	// X_PM1aCntGas is the raw extended GAS. Populated even when rejected,
-	// so breadcrumbs and tests can show WHY the fallback fired.
 	XPM1aCntGas GAS
 }
 
-// Resolve PM1a_CNT the way the write stage needs it. Validation rules for
-// a usable gas: SystemIO space, 16-bit register (PM1a_CNT is a 2-byte
-// register: SLP_STS | SLP_EN/SLP_TYP word), BitOffset 0 within the
-// register, AccessSize 0 (unspecified) or 2 (word), and a nonzero base.
-//
-// Return (gas, true) when the extended field is usable.
 func xPM1aUsable(g GAS) bool {
 	return g.SpaceID == spaceSystemIO &&
 		g.BitWidth == 16 &&
@@ -88,12 +59,6 @@ func xPM1aUsable(g GAS) bool {
 		g.AddrValid
 }
 
-// Parse validates the FADT structure and resolves PM1a_CNT_BLK: prefer the
-// X_PM1a_CNT_BLK GAS (offset 172), fall back to the legacy 32-bit field at
-// offset 64, reject otherwise. The legacy fallback also requires
-// PM1_CNT_LEN == 2 because the writer performs a 16-bit access into the
-// block; a different register length means the firmware layout is not what
-// the write path assumes.
 func Parse(data []byte) (Table, error) {
 	if len(data) < 36 {
 		return Table{}, fmt.Errorf("fadt: table too short for header: %d bytes", len(data))
@@ -125,13 +90,11 @@ func Parse(data []byte) (Table, error) {
 	}
 	t.XPM1aCntGas = gas(data[offsetXPM1aCnt : offsetXPM1aCnt+gasLen])
 
-	// Preferred: X_PM1a_CNT_BLK (FADT rev >= 4 explains the X fields;
-	// per ACPI spec the legacy field must be used if X is all zero).
 	if xPM1aUsable(t.XPM1aCntGas) {
 		t.PM1aCntBase = t.XPM1aCntGas.AddrBase
 		t.PM1aFromX = true
 	} else {
-		// Fallback: legacy 32-bit PM1a_CNT_BLK at offset 64.
+
 		if length < 68 {
 			return Table{}, fmt.Errorf("fadt: length %d too small for legacy PM1a_CNT_BLK", length)
 		}
@@ -158,7 +121,6 @@ func Parse(data []byte) (Table, error) {
 	return t, nil
 }
 
-// gas decodes 12 bytes of acpi_generic_address.
 func gas(b []byte) GAS {
 	return GAS{
 		SpaceID:    b[0],
@@ -170,7 +132,6 @@ func gas(b []byte) GAS {
 	}
 }
 
-// cstr trims NUL padding from a fixed-width ACPI string field.
 func cstr(b []byte) string {
 	for i, c := range b {
 		if c == 0 {

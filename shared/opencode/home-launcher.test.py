@@ -9,7 +9,6 @@ import subprocess
 import sys
 import tempfile
 
-
 ROOT = Path(__file__).resolve().parents[2]
 expression = f'''
 let
@@ -138,7 +137,6 @@ for name, mcp in result["oc"]["mcp"]["servers"].items():
         assert "environment" not in mcp, f"remote MCP changed: {name}"
 print("PASS: migration precedes linking; local MCP PATH and proxy hygiene; scoped launcher")
 
-# Build the actual compiled HM wrappers, not shell-function proxies.
 for name in ("gentle-ai-managed", "opencode-managed"):
     subprocess.run(["nix", "build", "--impure", "--no-link", "--expr", f'''
 let f = builtins.getFlake {json.dumps("path:" + str(ROOT))};

@@ -1,6 +1,3 @@
-# asus-fan-control
-# Fan control for ASUS devices running Linux
-# Source: https://github.com/dominiksalvet/asus-fan-control
 {
   lib,
   stdenv,

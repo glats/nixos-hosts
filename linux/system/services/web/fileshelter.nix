@@ -1,8 +1,6 @@
 { config, pkgs, ... }:
 
 {
-  # Fileshelter - File Upload Service
-  # Datos en /srv/glats/fileshelter/
   virtualisation.oci-containers.containers.fileshelter = {
     image = "epoupon/fileshelter";
     autoStart = true;

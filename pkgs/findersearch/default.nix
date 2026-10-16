@@ -21,7 +21,6 @@ stdenvNoCC.mkDerivation rec {
     runHook postUnpack
   '';
   dontBuild = true;
-  # Preserve the upstream ad-hoc signature and bundled search engine.
   dontFixup = true;
 
   installPhase = ''

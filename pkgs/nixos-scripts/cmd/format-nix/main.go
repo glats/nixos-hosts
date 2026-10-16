@@ -1,8 +1,3 @@
-// Command format-nix formats all .nix files under a selected flake using its
-// formatter (nix fmt).
-//
-// Port of bin/format-nix: help text, messages, flag surface and exit codes
-// preserved byte-for-byte.
 package main
 
 import (
@@ -132,7 +127,7 @@ var runFormatter = func(file string, stdout, stderr io.Writer) error {
 
 func formatFile(file string, rc *int) {
 	fmt.Printf("Formatting %s\n", file)
-	// bash merges stderr into stdout: 2>&1
+
 	if err := runFormatter(file, os.Stdout, os.Stdout); err != nil {
 		fmt.Printf("Formatter failed on %s\n", file)
 		*rc = 1
@@ -186,8 +181,6 @@ func validateFlakeDirectory(path string) error {
 	return nil
 }
 
-// createCheckCopy creates a repository-local temp copy for treefmt's root
-// discovery and returns its path.
 func createCheckCopy(f string) (string, error) {
 	src, err := os.ReadFile(f)
 	if err != nil {
@@ -210,8 +203,6 @@ func createCheckCopy(f string) (string, error) {
 	return tmpName, nil
 }
 
-// checkFile formats a temp copy of f and sets *rc = 1 if the file would
-// change or the formatter fails (parity with the bash original).
 func checkFile(f string, rc *int) {
 	src, err := os.ReadFile(f)
 	if err != nil {
@@ -225,7 +216,6 @@ func checkFile(f string, rc *int) {
 	}
 	defer os.Remove(tmpName)
 
-	// Parity with bash: quiet formatter run, compare original vs formatted.
 	if err := runFormatter(tmpName, io.Discard, io.Discard); err != nil {
 		fmt.Printf("Formatter (check) failed on %s\n", f)
 		*rc = 1
@@ -243,9 +233,6 @@ func checkFile(f string, rc *int) {
 	}
 }
 
-// nixFiles walks root and returns .nix file paths, skipping .git and
-// .worktrees (full repo copies that would triple the work), in
-// deterministic (lexical) order.
 func nixFiles(root string) ([]string, error) {
 	var files []string
 	err := filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {

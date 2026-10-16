@@ -1,4 +1,3 @@
-# Immutable union trees for asset ownership reconciliation.
 { lib, pkgs }:
 let
   tree =
@@ -25,6 +24,5 @@ let
 in
 {
   inherit tree;
-  # Every consumer is manifest-owned on all hosts; nothing legacy to claim.
   none = pkgs.runCommand "ai-assets-no-legacy" { } "mkdir $out";
 }

@@ -1,23 +1,17 @@
 { config, pkgs, ... }:
 
 {
-  # vsftpd - FTP Server
   services.vsftpd = {
     enable = true;
 
-    # Allow local users
     localUsers = true;
 
-    # Chroot for local users
     chrootlocalUser = true;
 
-    # Allow writing in chroot
     allowWriteableChroot = true;
 
-    # Root directory for local users
     localRoot = "/run/media/archlinux/home/glats/home-server/ftp";
 
-    # Additional configuration
     extraConfig = ''
       # Passive ports (as in Docker)
       pasv_enable=YES
@@ -41,7 +35,6 @@
     '';
   };
 
-  # Open ports in firewall
   networking.firewall.allowedTCPPorts = [
     20
     21
@@ -53,7 +46,6 @@
     }
   ];
 
-  # Ensure directory exists
   systemd.tmpfiles.rules = [
     "d /run/media/archlinux/home/glats/home-server/ftp 0755 glats users -"
   ];

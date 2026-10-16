@@ -1,20 +1,3 @@
-# Shared superfile theme configuration -- pure Nix function, NOT a HM module.
-#
-# Returns a TOML string with the superfile v1.3.3+ theme schema mapped from the
-# nix-colors palette. The previous schema (gradient_1/gradient_2, etc.) was
-# missing `gradient_color`, which caused superfile to panic on file operations
-# (index out of range on empty GradientColor).
-#
-# Slot semantics mirror the rest of the glats stack for visual harmony:
-# selection bg = base02 (kitty/ghostty/btop), cursor = base05 (kitty/ghostty),
-# titles = base07 (btop title), active/accent = base0D (tmux/rofi).
-#
-# Platform-specific HM modules consume this and deploy via xdg.configFile (Linux)
-# or home.file (Darwin).
-#
-# Usage:
-#   let themeToml = import ../../shared/superfile.nix { colorScheme = config.colorScheme; };
-#   in { xdg.configFile."superfile/theme/glats.toml".text = themeToml; ... }
 {
   colorScheme,
   codeSyntaxHighlight ? "onedark",

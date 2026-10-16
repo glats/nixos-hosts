@@ -201,7 +201,6 @@ func (t *policyTransaction) withLock(ctx context.Context, fn func(context.Contex
 	return fn(ctx)
 }
 
-// Inhibition persists independently of the runtime systemd mask and lock.
 func (t *policyTransaction) inhibit() error {
 	dir := filepath.Dir(t.livePath)
 	if err := ensureTrustedDirectory(dir, t.directoryOwner, 0o755); err != nil {
@@ -281,8 +280,7 @@ func (t *policyTransaction) maskAndWait(ctx context.Context) error {
 			if lines[0] == "masked" {
 				return nil
 			}
-			// NixOS's /etc unit takes precedence over the /run runtime mask.
-			// Accept loaded only with independently verified startup inhibition.
+
 			if lines[0] == "loaded" {
 				return t.verifyDurableInhibition(ctx)
 			}
@@ -304,8 +302,7 @@ func (t *policyTransaction) verifyDurableInhibition(ctx context.Context) error {
 	if err != nil || !unitInhibitsPromotion(unit, marker) {
 		return errors.New("relay-policy: loaded service lacks verified startup inhibition")
 	}
-	// cat reads disk files, not the manager's cached configuration. Reject
-	// changed unit files rather than assuming their conditions are effective.
+
 	reload, err := t.run(ctx, "show", "-p", "NeedDaemonReload", "--value", t.service)
 	if err != nil || strings.TrimSpace(reload) != "no" {
 		return errors.New("relay-policy: cannot verify loaded service configuration")
@@ -326,9 +323,6 @@ func (t *policyTransaction) verifyDurableInhibition(ctx context.Context) error {
 	return nil
 }
 
-// Only an exact non-trigger negated path condition proves inhibition. Empty
-// Condition assignments reset the entire condition list, including in drop-ins.
-// Unsupported continuation syntax is rejected rather than guessed at.
 func unitInhibitsPromotion(unit, marker string) bool {
 	section, inhibited := "", false
 	for _, raw := range strings.Split(unit, "\n") {
@@ -337,7 +331,7 @@ func unitInhibitsPromotion(unit, marker string) bool {
 			return false
 		}
 		if strings.HasPrefix(line, "# /") {
-			section = "" // systemctl cat starts another fragment or drop-in.
+			section = ""
 		}
 		if line == "" || strings.HasPrefix(line, "#") || strings.HasPrefix(line, ";") {
 			continue
@@ -529,8 +523,7 @@ func trustedDirectoryForPlatform(path string, info os.FileInfo, owner uint32, pl
 	if trustedDirectoryPath(info, owner) {
 		return true
 	}
-	// macOS's system run directory is root:daemon 0775. Only this canonical
-	// OS directory is authorized; group-writable directories remain denied.
+
 	stat, ok := info.Sys().(*syscall.Stat_t)
 	return platform == "darwin" && path == "/private/var/run" &&
 		info.Mode() == os.ModeDir|0o775 && ok && stat.Uid == 0 && stat.Gid == 1

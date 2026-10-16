@@ -67,8 +67,7 @@ func (f *fakeLauncher) Bootout(ctx context.Context, _ string) error {
 	return f.bootErr
 }
 func (f *fakeLauncher) Print(ctx context.Context, _ string) (string, error) {
-	// The real launcher is context-bound; use a separate channel to exercise
-	// bounded status without making every fake operation block.
+
 	if f.blockPrint != nil {
 		if f.printStarted != nil {
 			close(f.printStarted)

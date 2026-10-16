@@ -57,7 +57,6 @@ for target, root in (("linux", "/home/glats/.config/opencode"),
     system = agents["gentle-orchestrator"]["system"]
     assert "Organic Driven Development" in system
     assert "odd/tasks/<feature-name>.md" in system and "odd/<feature-name>/tasks" in system
-    # These are rendered model instructions, not executable storage guarantees.
     for contract in (
         "stable task IDs", "Reuse the same feature identity; never overwrite another feature",
         "Mirror the full current document and repository-relative file locator",
@@ -72,7 +71,6 @@ for target, root in (("linux", "/home/glats/.config/opencode"),
     for name in ("gentle-ai-explore", "gentle-ai-verify", "review-refuter", "review-validator"):
         assert {"action":"edit", "resource":"*", "effect":"deny"} in agents[name]["permissions"], name
     assert {"action":"shell", "resource":"*", "effect":"deny"} in agents["gentle-ai-explore"]["permissions"]
-    # Only Gentle AI roles: built-in explore/general would inherit the orchestrator model.
     assert "general" not in agents and "explore" not in agents
     granted = {p["resource"] for p in agents["gentle-orchestrator"]["permissions"]
                if p["action"] == "subagent" and p["effect"] == "allow"}

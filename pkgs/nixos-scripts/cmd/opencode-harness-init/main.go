@@ -1,4 +1,3 @@
-// Command opencode-harness-init initializes a directory for Engram.
 package main
 
 import (

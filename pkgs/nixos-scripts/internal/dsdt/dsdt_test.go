@@ -6,9 +6,6 @@ import (
 	"testing"
 )
 
-// Helper builders. A four-element _S5 package reads
-// "SLP_TYPa SLP_TYPb reserved reserved"; two(A, B) appends the element
-// encodings and pads the two reserved entries with ZeroOp.
 func elements(a, b []byte) []byte {
 	res := append([]byte{}, a...)
 	res = append(res, b...)
@@ -22,8 +19,6 @@ func dwordConst(v uint32) []byte {
 	return []byte{opDWord, byte(v), byte(v >> 8), byte(v >> 16), byte(v >> 24)}
 }
 
-// buildS5 crafts a NameOp + package with the given element encodings so
-// tests can exercise the exact AML forms.
 func buildS5(t *testing.T, withRoot bool, elems []byte) []byte {
 	t.Helper()
 	body := append([]byte{4}, elems...)
@@ -33,7 +28,7 @@ func buildS5(t *testing.T, withRoot bool, elems []byte) []byte {
 	}
 	b = append(b, s5Name[:]...)
 	b = append(b, opPackage)
-	// 1-byte PkgLength counts itself (1) + NumElements (1) + the elements.
+
 	if len(elems)+2 > 63 {
 		t.Fatalf("test fixture too large for 1-byte PkgLength")
 	}
@@ -43,10 +38,7 @@ func buildS5(t *testing.T, withRoot bool, elems []byte) []byte {
 }
 
 func TestScanLiveROGDsdt(t *testing.T) {
-	// Checkpoint B: rog's real DSDT. The live _S5 is a single root NameOp
-	// with a literal Package — SLP_TYPa=7, SLP_TYPb=0, reserved 0,0
-	// (kernel-verified 3-bit SLP_TYP; see apply-progress for the policy
-	// discussion around value 7).
+
 	data, err := os.ReadFile(filepath.Join("testdata", "DSDT.rog.bin"))
 	if err != nil {
 		t.Fatalf("read fixture: %v", err)
@@ -110,14 +102,12 @@ func TestScanRejects(t *testing.T) {
 			return append(first, first...)
 		}},
 		{"named reference element", func() []byte {
-			// Package(){PCI0, ...} — a NameString is any letter-led name,
-			// not an integer constant.
+
 			elems := append([]byte{'P', 'C', 'I', '0'}, filler...)
 			return buildS5(t, true, elems)
 		}},
 		{"method-like element", func() []byte {
-			// 0x5B is the ExtOpPrefix (e.g. MethodOp follows it) — not a
-			// literal integer constant.
+
 			elems := append([]byte{0x5B, 0x84}, filler...)
 			return buildS5(t, true, elems)
 		}},
@@ -128,7 +118,7 @@ func TestScanRejects(t *testing.T) {
 			return buildS5(t, true, []byte{opByte, 5, opByte, 5, opZero, opZero, opZero})
 		}},
 		{"not a package (integer arg)", func() []byte {
-			// NameOp _S5, then a bare integer constant instead of Package.
+
 			var b []byte
 			b = append(b, opName, opRoot)
 			b = append(b, s5Name[:]...)
@@ -147,8 +137,6 @@ func TestScanRejects(t *testing.T) {
 	}
 }
 
-// A package element that references a name (e.g. \_SB.PCI0's result) is
-// refused — the scanner cannot know its runtime value and must not guess.
 func TestScanRefusesReferenceForm(t *testing.T) {
 	elems := []byte{opRoot, 'S', 'B', '.', 'P'}
 	if _, err := Scan(buildS5(t, true, elems)); err == nil {
@@ -157,7 +145,7 @@ func TestScanRefusesReferenceForm(t *testing.T) {
 }
 
 func TestSLPTypAbove3BitsRefused(t *testing.T) {
-	// SLP_TYP is a 3-bit field; a bogus word constant 8 must fail loudly.
+
 	data := buildS5(t, true, elements(wordConst(8), wordConst(8)))
 	if _, err := Scan(data); err == nil {
 		t.Errorf("SLP_TYP 8: expected error, got none")

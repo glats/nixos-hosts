@@ -17,15 +17,10 @@ in
       core.hooksPath = "~/.config/git/hooks";
       delta.enable = true;
       gpg.program = "${pkgs.gnupg}/bin/gpg";
-      # Placeholder -- overridden by identity-personal include file written
-      # at activation from sops decrypted secrets. lib.mkForce is required
-      # on t14 where omarchy-nix writes glats@local.
       user.name = lib.mkForce "placeholder";
       user.email = lib.mkForce "placeholder";
     };
 
-    # Explicitly set signing format to silence home-manager warning (legacy default)
-    # If personal GPG key is set, also sign personal commits with it
     signing = {
       format = "openpgp";
     }
@@ -35,18 +30,12 @@ in
     };
 
     includes = [
-      # Default identity from activation-written file + forced personal
-      # account so pushes work regardless of gh's active-account state
-      # (Home Manager ignores `contents` when `path` is set, so they are split.)
       { path = "~/.config/git/identity-personal"; }
       { contents.credential = identities.mkCredential pkgs.gh "glats"; }
-      # Work identity from activation-written file
       {
         condition = "gitdir:~/Work/**";
         path = "~/.config/git/identity-work";
       }
-      # Work signing config (GPG keys are public, stay in Nix) + forced work
-      # account for GitHub auth
       {
         condition = "gitdir:~/Work/**";
         contents = {
@@ -58,9 +47,6 @@ in
     ];
   };
 
-  # Write git identity include files from sops-decrypted secrets at activation time.
-  # Runs after writeBoundary (same timing as gpg.nix key import).
-  # Gracefully skips if sops secrets are not yet available.
   home.activation.writeGitIdentity = lib.hm.dag.entryAfter [ "writeBoundary" "sops-nix" ] ''
     _write_identity() {
       _mode="$1"
@@ -92,10 +78,6 @@ in
       "${config.sops.secrets."identities/work_email".path}"
   '';
 
-  # Strip AI co-author trailers from commits.
-  # Claude Code has a known bug where attribution.commit="" doesn't reliably
-  # prevent Co-Authored-By trailers (anthropics/claude-code#45137, #4287).
-  # This commit-msg hook is the only 100% reliable fix.
   home.file.".config/git/hooks/commit-msg" = {
     executable = true;
     text = ''

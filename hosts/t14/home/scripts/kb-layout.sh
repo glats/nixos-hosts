@@ -1,11 +1,4 @@
 #!/usr/bin/env bash
-# kb-layout.sh — Show or set keyboard layout on t14.
-#
-# Usage:
-#   kb-layout.sh          — print current layout name and exit
-#   kb-layout.sh <layout> — set keyboard to the named layout
-#
-# Layout names must match those in input.kb_layout (es, latam).
 
 set -euo pipefail
 

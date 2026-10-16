@@ -1,7 +1,3 @@
-# SDD Configuration — nixos-hosts
-# Hybrid mode: Engram + openspec artifacts
-# Re-initialized: 2026-07-17
-
 schema: 1
 project: nixos-hosts
 mode: hybrid

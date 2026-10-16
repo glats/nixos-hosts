@@ -1,4 +1,3 @@
-// Command relayctl controls the manual macOS SSH relay launch agent.
 package main
 
 import (

@@ -204,8 +204,6 @@ func installAuthorizationFile(path, token string, owner uint32) error {
 
 const relayServerURL = "wss://relay.glats.org:443"
 
-// ClientArgs is the fixed, non-secret argv for the managed Mac publisher.
-// Header contents are deliberately never read into argv or the environment.
 func ClientArgs(binary, headersFile string, listenerPort uint16) ([]string, error) {
 	if !filepath.IsAbs(binary) {
 		return nil, errors.New("sshrelay: wstunnel binary path must be absolute")
@@ -229,10 +227,6 @@ func ClientArgs(binary, headersFile string, listenerPort uint16) ([]string, erro
 	}, nil
 }
 
-// SanitizedEnvironment keeps only non-secret platform values. PATH is not
-// needed because the child path is absolute; wstunnel option environment
-// variables, proxy settings, certificate overrides, and debug/keylog values
-// must not influence the managed client.
 func SanitizedEnvironment(environment []string) []string {
 	allowed := map[string]struct{}{
 		"HOME":   {},

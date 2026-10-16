@@ -2,10 +2,8 @@
 {
   programs.vscode = {
     enable = true;
-    # Homebrew cask only — saves ~500MB nix store
     package = null;
 
-    # Allow VS Code to manage marketplace extensions like Copilot
     mutableExtensionsDir = true;
 
     profiles.default = {

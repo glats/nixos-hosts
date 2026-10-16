@@ -16,8 +16,6 @@ in
     enableDefaultConfig = false;
 
     settings = {
-      # All supported terminal emulators implement xterm-256color, whereas
-      # macOS does not necessarily include emulator-specific terminfo entries.
       "*".SetEnv.TERM = "xterm-256color";
     }
     // mesh.sshSettingsFor {

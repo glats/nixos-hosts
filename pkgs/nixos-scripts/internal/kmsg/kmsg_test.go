@@ -7,8 +7,6 @@ import (
 	"testing"
 )
 
-// touchKmsg creates an empty file standing in for the always-present
-// /dev/kmsg device (Write intentionally requires the device to exist).
 func touchKmsg(t *testing.T) string {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "kmsg")

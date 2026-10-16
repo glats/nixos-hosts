@@ -34,33 +34,32 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    # Single merged systemPackages — NixOS does not allow duplicate keys.
     environment.systemPackages =
       lib.optionals cfg.retroarch.enable [
         (pkgs.retroarch.withCores (
           cores: with cores; [
-            snes9x # SNES
-            genesis-plus-gx # Genesis / Mega Drive / Game Gear
-            mgba # Game Boy / Color / Advance
-            sameboy # Game Boy / Color (high accuracy)
-            fbneo # Neo Geo / CPS / arcade
-            mupen64plus # N64
-            beetle-psx-hw # PSX (hardware-rendered)
-            flycast # Dreamcast / Naomi / Atomiswave
-            ppsspp # PSP (libretro core)
+            snes9x
+            genesis-plus-gx
+            mgba
+            sameboy
+            fbneo
+            mupen64plus
+            beetle-psx-hw
+            flycast
+            ppsspp
           ]
         ))
         pkgs.retroarch-assets
         pkgs.libretro-shaders-slang
       ]
       ++ lib.optionals cfg.standalone.enable [
-        pkgs.pcsx2 # PS2
-        pkgs.dolphin-emu # GameCube / Wii
-        pkgs.ppsspp # PSP standalone
+        pkgs.pcsx2
+        pkgs.dolphin-emu
+        pkgs.ppsspp
       ]
       ++ lib.optionals cfg.aspirational.enable [
-        pkgs.rpcs3 # PS3 (slow build ~20min, APU may throttle)
-        pkgs.ryubing # Switch (community fork, experimental)
+        pkgs.rpcs3
+        pkgs.ryubing
       ]
       ++ lib.optionals cfg.pegasus.enable [
         pkgs.pegasus-frontend

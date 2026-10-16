@@ -1,7 +1,6 @@
 { lib, pkgs, ... }:
 
 let
-  # ROM platform directories to scaffold under ~/roms/.
   platforms = [
     "snes"
     "n64"
@@ -19,7 +18,6 @@ let
   ];
 in
 {
-  # ROM scaffolding — immutable dirs (fine, user adds files inside them)
   home.file = builtins.listToAttrs (
     map (name: {
       name = "roms/${name}";
@@ -30,9 +28,6 @@ in
     }) platforms
   );
 
-  # RetroArch config — mutable (home.activation copies on first run so RA
-  # can save to it. home.file creates an immutable symlink that breaks
-  # RA's save-on-exit. Pattern from home-manager VSCode module.)
   home.activation.writeRetroarchCfg = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
         CFG="$HOME/.config/retroarch/retroarch.cfg"
         # Remove stale immutable symlink from old home.file-based deploy
@@ -60,6 +55,5 @@ in
         fi
   '';
 
-  # SDL2 controller mapping placeholder
   home.sessionVariables.SDL_GAMECONTROLLERCONFIG = "";
 }
