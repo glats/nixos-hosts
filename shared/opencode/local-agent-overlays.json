@@ -47,16 +47,19 @@
     "gentle-orchestrator": [
       "../rules/authorization.md",
       "../rules/explore-mcp.md",
-      "../rules/output-format.md"
+      "../rules/output-format.md",
+      "../rules/code-comments.md"
     ],
     "gentle-ai-explore": [
       "../rules/authorization.md",
       "../rules/explore-mcp.md",
-      "../rules/output-format.md"
+      "../rules/output-format.md",
+      "../rules/code-comments.md"
     ],
     "subagent": [
       "../rules/authorization.md",
-      "../rules/output-format.md"
+      "../rules/output-format.md",
+      "../rules/code-comments.md"
     ]
   }
 }

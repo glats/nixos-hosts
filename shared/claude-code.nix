@@ -25,6 +25,8 @@ let
     + "\n\n"
     + builtins.readFile ./rules/explore-mcp.md
     + "\n\n"
+    + builtins.readFile ./rules/code-comments.md
+    + "\n\n"
     + builtins.readFile "${pkgs.gentle-ai-assets}/share/gentle-ai/claude/orchestrator.md"
     + "\n\n"
     + builtins.readFile "${pkgs.gentle-ai-assets}/share/gentle-ai/claude/engram-protocol.md"

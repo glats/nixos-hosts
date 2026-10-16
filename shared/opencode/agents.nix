@@ -125,7 +125,10 @@ let
   # Neutral agent (loaded from local-agent-overlays.json, with {file:} resolved)
   neutralAgent = localOverlays.neutral // {
     model = models.neutral;
-    prompt = builtins.readFile "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/persona-gentleman.md";
+    prompt =
+      builtins.readFile "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/persona-gentleman.md"
+      + "\n\n"
+      + builtins.readFile ../rules/code-comments.md;
   };
 
   # Final agent set: upstream + model overlay + tools overlay + neutral
@@ -137,7 +140,9 @@ let
       You may edit files, inspect branch-local Git state, commit local work, run tests,
       Never activate, update inputs, change profiles or generations, use sudo or
       services, push, integrate, clean up, or access external directories.
-    '';
+
+    ''
+    + builtins.readFile ../rules/code-comments.md;
     permission = localOverlays.permissionOverlays.named.managed-writing-task;
   };
 
