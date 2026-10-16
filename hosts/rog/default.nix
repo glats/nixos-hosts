@@ -3,6 +3,7 @@
   pkgs,
   lib,
   home,
+  inputs,
   ...
 }:
 
@@ -32,6 +33,7 @@
     ../../linux/system/desktop/fonts.nix
     ../../linux/system/desktop/i18n.nix
     ../../linux/system/desktop/kmscon.nix
+    ../../linux/system/desktop/sonicde.nix
 
     # Hardware
     ../../linux/system/hardware/nvidia-custom.nix
@@ -49,9 +51,6 @@
     # Features
     ../../linux/system/features/boot.nix
     ../../linux/system/features/conky/options.nix
-
-    # Services — shared
-    ../../linux/system/services/xrdp.nix
 
     # Services — media
     ../../linux/system/services/media/arr-stack.nix
@@ -137,8 +136,16 @@
     "asus_armoury"
   ];
 
-  # Desktop suite — rog uses MATE via XRDP
-  my.desktop.suite = "mate";
+  # SonicDE is remote-only; thinkcentre retains the shared MATE XRDP module.
+  my.desktop.suite = null;
+  services.displayManager.sddm.enable = false;
+  services.xserver.displayManager.lightdm.enable = false;
+  services.xrdp = {
+    enable = true;
+    defaultWindowManager = "${
+      inputs.sonic-de.packages.${pkgs.stdenv.hostPlatform.system}.sonic-workspace
+    }/bin/startplasma-x11";
+  };
 
   boot = {
     # Controlled shutdown trial: retain the 6.12 baseline and enable only
@@ -238,12 +245,14 @@
   systemd.services."docker-guacamoledb".startLimitIntervalSec = lib.mkForce 0;
   systemd.services."docker-jellyseerr".startLimitIntervalSec = lib.mkForce 0;
 
-  environment.systemPackages = with pkgs; [
-    microsoft-edge
-    asus-fan-control
-    pipewire-module-xrdp
-    intel-vaapi-driver
-    libva-vdpau-driver
-    qrencode # bin/device-link QR output when run via sudo from the tree
-  ];
+  environment.systemPackages =
+    (import ../../linux/system/base/profiles/cli-extra.nix { inherit pkgs; })
+    ++ (with pkgs; [
+      microsoft-edge
+      asus-fan-control
+      pipewire-module-xrdp
+      intel-vaapi-driver
+      libva-vdpau-driver
+      qrencode # bin/device-link QR output when run via sudo from the tree
+    ]);
 }

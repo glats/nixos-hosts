@@ -11,6 +11,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # SonicDE 6.6.5 is the release compatible with nixpkgs 26.05.
+    sonic-de = {
+      url = "github:sonicde-nixos/sonic-flake/d779fe69d144f9ef270887e71a16cae4cab7a741";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     sops-nix = {
       url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";

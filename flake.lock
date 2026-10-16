@@ -1628,6 +1628,7 @@
         "openlogi": "openlogi",
         "pipewire-module-xrdp-src": "pipewire-module-xrdp-src",
         "ponytail-src": "ponytail-src",
+        "sonic-de": "sonic-de",
         "sops-nix": "sops-nix",
         "t14-home-manager": "t14-home-manager",
         "t14-hyprland": "t14-hyprland",
@@ -1654,6 +1655,495 @@
       "original": {
         "owner": "oxalica",
         "repo": "rust-overlay",
+        "type": "github"
+      }
+    },
+    "silver-theme": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1774351211,
+        "narHash": "sha256-EVs1ghzl7QtetLF7xTSZ0AqDCgOPRBCPcu/BDqSZm1w=",
+        "owner": "sonic-DE",
+        "repo": "silver-theme",
+        "rev": "b999ec9543a18f4b6e525a5d65336cd35eba4a92",
+        "type": "github"
+      },
+      "original": {
+        "owner": "sonic-DE",
+        "ref": "6.6.0",
+        "repo": "silver-theme",
+        "type": "github"
+      }
+    },
+    "sonic-activities": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1778754965,
+        "narHash": "sha256-yeuxj3p5jMbMSdtoRxyTzRherI8XApbMXokX7AKr6+E=",
+        "owner": "sonic-DE",
+        "repo": "sonic-activities",
+        "rev": "a764b7af7767bc2fa8c676505b382a58ac80f292",
+        "type": "github"
+      },
+      "original": {
+        "owner": "sonic-DE",
+        "ref": "6.6.5",
+        "repo": "sonic-activities",
+        "type": "github"
+      }
+    },
+    "sonic-audio-applet-pulse": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1778756385,
+        "narHash": "sha256-G2C7N3cpIkdM962pL2s0f7XOTuu4TPEnsa1V5m8rHIY=",
+        "owner": "sonic-DE",
+        "repo": "sonic-audio-applet-pulse",
+        "rev": "2c561486c6680d95c44b74c962f79ef0cb72c407",
+        "type": "github"
+      },
+      "original": {
+        "owner": "sonic-DE",
+        "ref": "6.6.5",
+        "repo": "sonic-audio-applet-pulse",
+        "type": "github"
+      }
+    },
+    "sonic-de": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "silver-theme": "silver-theme",
+        "sonic-activities": "sonic-activities",
+        "sonic-audio-applet-pulse": "sonic-audio-applet-pulse",
+        "sonic-decoration": "sonic-decoration",
+        "sonic-desktop-interface": "sonic-desktop-interface",
+        "sonic-frameworks-auth": "sonic-frameworks-auth",
+        "sonic-frameworks-cmake-modules": "sonic-frameworks-cmake-modules",
+        "sonic-frameworks-core-addons": "sonic-frameworks-core-addons",
+        "sonic-frameworks-gui-addons": "sonic-frameworks-gui-addons",
+        "sonic-frameworks-io": "sonic-frameworks-io",
+        "sonic-frameworks-keybind": "sonic-frameworks-keybind",
+        "sonic-frameworks-runner": "sonic-frameworks-runner",
+        "sonic-frameworks-windowsystem": "sonic-frameworks-windowsystem",
+        "sonic-interface-libraries": "sonic-interface-libraries",
+        "sonic-keybind-daemon": "sonic-keybind-daemon",
+        "sonic-network-manager": "sonic-network-manager",
+        "sonic-night-light": "sonic-night-light",
+        "sonic-screen": "sonic-screen",
+        "sonic-screen-library": "sonic-screen-library",
+        "sonic-screenlocker": "sonic-screenlocker",
+        "sonic-sysguard-library": "sonic-sysguard-library",
+        "sonic-system-info": "sonic-system-info",
+        "sonic-win": "sonic-win",
+        "sonic-workspace": "sonic-workspace",
+        "sonic-workspace-addons": "sonic-workspace-addons",
+        "sonic-workspace-wallpapers": "sonic-workspace-wallpapers"
+      },
+      "locked": {
+        "lastModified": 1782226668,
+        "narHash": "sha256-6tZc8e2qKuiZTk2tZ9xlAyazeuoVIPvsTYyXJcco1ao=",
+        "owner": "sonicde-nixos",
+        "repo": "sonic-flake",
+        "rev": "d779fe69d144f9ef270887e71a16cae4cab7a741",
+        "type": "github"
+      },
+      "original": {
+        "owner": "sonicde-nixos",
+        "repo": "sonic-flake",
+        "rev": "d779fe69d144f9ef270887e71a16cae4cab7a741",
+        "type": "github"
+      }
+    },
+    "sonic-decoration": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1778754958,
+        "narHash": "sha256-b36L4X23hJitS5PRlHj6XdPdNZNE9afF+elLeFVye9Y=",
+        "owner": "sonic-DE",
+        "repo": "sonic-decoration",
+        "rev": "2098fbe9148da2342a0d1fb6420cd1adae635058",
+        "type": "github"
+      },
+      "original": {
+        "owner": "sonic-DE",
+        "ref": "6.6.5",
+        "repo": "sonic-decoration",
+        "type": "github"
+      }
+    },
+    "sonic-desktop-interface": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1778756353,
+        "narHash": "sha256-tCxk6CD63MWeZGoRMM1PxNK0hc5q1Ni7182BbfiPaj0=",
+        "owner": "sonic-DE",
+        "repo": "sonic-desktop-interface",
+        "rev": "a22dfc917d79e58acda9ec2713e0592ac68b8fc9",
+        "type": "github"
+      },
+      "original": {
+        "owner": "sonic-DE",
+        "ref": "6.6.5",
+        "repo": "sonic-desktop-interface",
+        "type": "github"
+      }
+    },
+    "sonic-frameworks-auth": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1778386556,
+        "narHash": "sha256-7jrWcUHUowgJygpGef/GGeUJQ+eLRVYB/0BdfFebliU=",
+        "owner": "sonic-DE",
+        "repo": "sonic-frameworks-auth",
+        "rev": "b44f7d7d5b89a804a471db483791a5e9d750a4a7",
+        "type": "github"
+      },
+      "original": {
+        "owner": "sonic-DE",
+        "ref": "6.26.0",
+        "repo": "sonic-frameworks-auth",
+        "type": "github"
+      }
+    },
+    "sonic-frameworks-cmake-modules": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1777034229,
+        "narHash": "sha256-TPFaxj7aekFSxRy0WCGe9MPbuFLfLEPsbq6W/zewBl4=",
+        "owner": "sonic-DE",
+        "repo": "sonic-frameworks-cmake-modules",
+        "rev": "a1dac86d6c848473d840b748b82694ef6916a3ca",
+        "type": "github"
+      },
+      "original": {
+        "owner": "sonic-DE",
+        "ref": "6.26.0",
+        "repo": "sonic-frameworks-cmake-modules",
+        "type": "github"
+      }
+    },
+    "sonic-frameworks-core-addons": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1778387748,
+        "narHash": "sha256-z1IofGxFx+10ztEszb1kvTOMKpr75XJ8kiXZnSz3ebQ=",
+        "owner": "sonic-DE",
+        "repo": "sonic-frameworks-core-addons",
+        "rev": "e8e75ddd3bdc6c4146bd551d2b07930f93dd471c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "sonic-DE",
+        "ref": "6.26.0",
+        "repo": "sonic-frameworks-core-addons",
+        "type": "github"
+      }
+    },
+    "sonic-frameworks-gui-addons": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1778139894,
+        "narHash": "sha256-6B/kMvC11IIlb3IqOQDoTSMGXIgrsKnoGJ4Jh3pR0R4=",
+        "owner": "sonic-DE",
+        "repo": "sonic-frameworks-gui-addons",
+        "rev": "86ba0c26fe69460011fe95f3a670551de0c13bf5",
+        "type": "github"
+      },
+      "original": {
+        "owner": "sonic-DE",
+        "ref": "6.26.0",
+        "repo": "sonic-frameworks-gui-addons",
+        "type": "github"
+      }
+    },
+    "sonic-frameworks-io": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1778388156,
+        "narHash": "sha256-AXsxwpHJw8zUyQwx7bmICGlXXHK/1xdQOo9PpFlIQKo=",
+        "owner": "sonic-DE",
+        "repo": "sonic-frameworks-io",
+        "rev": "01a1e56ca07ba96044340176321a84caf2ff6c76",
+        "type": "github"
+      },
+      "original": {
+        "owner": "sonic-DE",
+        "ref": "6.26.0",
+        "repo": "sonic-frameworks-io",
+        "type": "github"
+      }
+    },
+    "sonic-frameworks-keybind": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1778390889,
+        "narHash": "sha256-6jVRbHKEVjnOeCCfSl+iHJk7B6GPc/s/++W/viJbseE=",
+        "owner": "sonic-DE",
+        "repo": "sonic-frameworks-keybind",
+        "rev": "9ff218c5582b979ab63974ccc33e3bab47ea4e83",
+        "type": "github"
+      },
+      "original": {
+        "owner": "sonic-DE",
+        "ref": "6.26.0",
+        "repo": "sonic-frameworks-keybind",
+        "type": "github"
+      }
+    },
+    "sonic-frameworks-runner": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1778392663,
+        "narHash": "sha256-SQ/tLaMssv3nmbAHW8Y5N1A8RCD3GJtPV/uWSF8tn9w=",
+        "owner": "sonic-DE",
+        "repo": "sonic-frameworks-runner",
+        "rev": "8593dd1a569a58e3708dfc3b52c4707aabca6836",
+        "type": "github"
+      },
+      "original": {
+        "owner": "sonic-DE",
+        "ref": "6.26.0",
+        "repo": "sonic-frameworks-runner",
+        "type": "github"
+      }
+    },
+    "sonic-frameworks-windowsystem": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1778393026,
+        "narHash": "sha256-khgXngslFHD+tHDNZNtJt2BrI2nrNSDBHK6aBbLCGlY=",
+        "owner": "sonic-DE",
+        "repo": "sonic-frameworks-windowsystem",
+        "rev": "95928a19ace528950c3f6cf1fe3635a813b0c2d2",
+        "type": "github"
+      },
+      "original": {
+        "owner": "sonic-DE",
+        "ref": "6.26.0",
+        "repo": "sonic-frameworks-windowsystem",
+        "type": "github"
+      }
+    },
+    "sonic-interface-libraries": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1778754999,
+        "narHash": "sha256-rrHIlPiCGX43UD7R1riDaVZMbB09ZWOJaJItst1496I=",
+        "owner": "sonic-DE",
+        "repo": "sonic-interface-libraries",
+        "rev": "b4a1c5e21c331d6cb0b16615d31e87f28c372010",
+        "type": "github"
+      },
+      "original": {
+        "owner": "sonic-DE",
+        "ref": "6.6.5",
+        "repo": "sonic-interface-libraries",
+        "type": "github"
+      }
+    },
+    "sonic-keybind-daemon": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1778755483,
+        "narHash": "sha256-fVHVWGurM1+Rix4vNf54vIpPj8QTQWuMgH7p/4dJtoo=",
+        "owner": "sonic-DE",
+        "repo": "sonic-keybind-daemon",
+        "rev": "4fbd9877efda72e5c46715de15edf20184534126",
+        "type": "github"
+      },
+      "original": {
+        "owner": "sonic-DE",
+        "ref": "6.6.5",
+        "repo": "sonic-keybind-daemon",
+        "type": "github"
+      }
+    },
+    "sonic-network-manager": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1778755210,
+        "narHash": "sha256-m6yy+YqUiH/uGmX/T9/K4apJTutZDOtnjii9f5udLns=",
+        "owner": "sonic-DE",
+        "repo": "sonic-network-manager",
+        "rev": "31977e97481c64971edde33e83e3c2d39f17d88e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "sonic-DE",
+        "ref": "6.6.5",
+        "repo": "sonic-network-manager",
+        "type": "github"
+      }
+    },
+    "sonic-night-light": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1778829669,
+        "narHash": "sha256-CBYMWIc3SYmh+pY0AyCird4ludErwL8nhLP1oxZQcjY=",
+        "owner": "sonic-DE",
+        "repo": "sonic-night-light",
+        "rev": "3e28868817e9602050d67ee5ea59673d1e0a289c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "sonic-DE",
+        "ref": "6.6.5",
+        "repo": "sonic-night-light",
+        "type": "github"
+      }
+    },
+    "sonic-screen": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1778756172,
+        "narHash": "sha256-tfVKK450j17P/u/uvsUU0LZD4Prs2tNxtCeMD6pdRnA=",
+        "owner": "sonic-DE",
+        "repo": "sonic-screen",
+        "rev": "a971755f028bd31573b4a6c7d2c260f344627012",
+        "type": "github"
+      },
+      "original": {
+        "owner": "sonic-DE",
+        "ref": "6.6.5",
+        "repo": "sonic-screen",
+        "type": "github"
+      }
+    },
+    "sonic-screen-library": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1778754971,
+        "narHash": "sha256-JnnNCkbOZzFcb0TZV46168b/JXYnhV5JerOpdvfwprc=",
+        "owner": "sonic-DE",
+        "repo": "sonic-screen-library",
+        "rev": "e1e1b8f3817e7e5abb3ae2e870adcf8eb1a92d92",
+        "type": "github"
+      },
+      "original": {
+        "owner": "sonic-DE",
+        "ref": "6.6.5",
+        "repo": "sonic-screen-library",
+        "type": "github"
+      }
+    },
+    "sonic-screenlocker": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1779363989,
+        "narHash": "sha256-CsL4GEx1QSjrO38p48lYIjVjw0oeFINv71vqXB3jMRw=",
+        "owner": "sonic-DE",
+        "repo": "sonic-screenlocker",
+        "rev": "4327327c667a231bda64c90edb6096d058f22d0f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "sonic-DE",
+        "ref": "6.6.5.2",
+        "repo": "sonic-screenlocker",
+        "type": "github"
+      }
+    },
+    "sonic-sysguard-library": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1778755291,
+        "narHash": "sha256-q9YCB5SNda3oBLXg/jy4Fyi/g9Dp979u1wyywf882UQ=",
+        "owner": "sonic-DE",
+        "repo": "sonic-sysguard-library",
+        "rev": "550f3ae7ebdfd169cfca6748c5685033c136f9be",
+        "type": "github"
+      },
+      "original": {
+        "owner": "sonic-DE",
+        "ref": "6.6.5",
+        "repo": "sonic-sysguard-library",
+        "type": "github"
+      }
+    },
+    "sonic-system-info": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1778755105,
+        "narHash": "sha256-9q5GIypU6FUrog+bWksy1Bf9A4oUuvxS5HU1NPCNGes=",
+        "owner": "sonic-DE",
+        "repo": "sonic-system-info",
+        "rev": "e34139f51afffdcc25dd341fc5ca4bc27fe15a20",
+        "type": "github"
+      },
+      "original": {
+        "owner": "sonic-DE",
+        "ref": "6.6.5",
+        "repo": "sonic-system-info",
+        "type": "github"
+      }
+    },
+    "sonic-win": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1778758501,
+        "narHash": "sha256-5cy14NZvbIGOI306yAPIGjqeIi7BJT/23VYqmfbmupk=",
+        "owner": "sonic-DE",
+        "repo": "sonic-win",
+        "rev": "862d5a7747af5d1b837ce97663885aded4b8e13a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "sonic-DE",
+        "ref": "6.6.5",
+        "repo": "sonic-win",
+        "type": "github"
+      }
+    },
+    "sonic-workspace": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1778764383,
+        "narHash": "sha256-r9egJI5U7rmiSoPpdT4y0CNsRTEpXjYeLJxk7zii6Gg=",
+        "owner": "sonic-DE",
+        "repo": "sonic-workspace",
+        "rev": "d954caf2643c77c19a963d170714c31bab49ab2e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "sonic-DE",
+        "ref": "6.6.5",
+        "repo": "sonic-workspace",
+        "type": "github"
+      }
+    },
+    "sonic-workspace-addons": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1778755391,
+        "narHash": "sha256-xE0OkBjNn0mx6KX6Ql3TU/D5v18RbZrLLtrfptEcD5Q=",
+        "owner": "sonic-DE",
+        "repo": "sonic-workspace-addons",
+        "rev": "9267c2e9f62505d2dc59f896ce8c3ecefe340d50",
+        "type": "github"
+      },
+      "original": {
+        "owner": "sonic-DE",
+        "ref": "6.6.5",
+        "repo": "sonic-workspace-addons",
+        "type": "github"
+      }
+    },
+    "sonic-workspace-wallpapers": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1778755391,
+        "narHash": "sha256-xE0OkBjNn0mx6KX6Ql3TU/D5v18RbZrLLtrfptEcD5Q=",
+        "owner": "sonic-DE",
+        "repo": "sonic-workspace-addons",
+        "rev": "9267c2e9f62505d2dc59f896ce8c3ecefe340d50",
+        "type": "github"
+      },
+      "original": {
+        "owner": "sonic-DE",
+        "ref": "6.6.5",
+        "repo": "sonic-workspace-addons",
         "type": "github"
       }
     },
