@@ -25,7 +25,6 @@ let
     name: prompt:
     if
       name == "gentle-orchestrator"
-      || name == "general"
       || lib.hasPrefix "gentle-ai-" name
       || lib.hasPrefix "jd-" name
       || lib.hasPrefix "review-" name

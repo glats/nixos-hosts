@@ -154,14 +154,6 @@ let
   };
 
   defaultAgents = (lib.mapAttrs overlayAgent upstreamAgents) // {
-    # Preserve the configured built-in general executor boundary; a missing
-    # declaration must not fall back to an unbounded platform default.
-    general = overlayAgent "general" (
-      upstreamAgents.gentle-ai-worker
-      // {
-        description = "Bounded general-purpose ODD executor; never delegates or publishes.";
-      }
-    );
     neutral = neutralAgent;
     managed-writing-task = managedWritingAgent;
   };

@@ -44,13 +44,8 @@
           "*": "deny",
           "gentle-ai-*": "allow",
           "review-*": "allow",
-          "jd-*": "allow",
-          "explore": "allow",
-          "general": "allow"
+          "jd-*": "allow"
         }
-      },
-      "general": {
-        "task": "deny"
       },
       "managed-writing-task": {
         "read": "allow",
@@ -83,17 +78,6 @@
         "context7_query-docs": "allow",
         "exa_web_search_exa": "allow",
         "exa_web_fetch_exa": "allow"
-      },
-      "explore": {
-        "read": "allow",
-        "codegraph": "allow",
-        "mem_search": "allow",
-        "mem_save": "allow",
-        "mem_get_observation": "allow",
-        "write": "deny",
-        "edit": "deny",
-        "bash": "deny",
-        "task": "deny"
       },
       "jd-judge-a": {
         "read": "allow",

@@ -72,7 +72,11 @@ for target, root in (("linux", "/home/glats/.config/opencode"),
     for name in ("gentle-ai-explore", "gentle-ai-verify", "review-refuter", "review-validator"):
         assert {"action":"edit", "resource":"*", "effect":"deny"} in agents[name]["permissions"], name
     assert {"action":"shell", "resource":"*", "effect":"deny"} in agents["gentle-ai-explore"]["permissions"]
-    assert {"action":"subagent", "resource":"*", "effect":"deny"} in agents["general"]["permissions"]
+    # Only Gentle AI roles: built-in explore/general would inherit the orchestrator model.
+    assert "general" not in agents and "explore" not in agents
+    granted = {p["resource"] for p in agents["gentle-orchestrator"]["permissions"]
+               if p["action"] == "subagent" and p["effect"] == "allow"}
+    assert granted == {"gentle-ai-*", "jd-*", "review-*"}, granted
 after = {p["name"]:p for p in result["afterProfiles"]}
 for name, profile in after.items():
     assert "phases" not in profile and not any(k.startswith("sdd-") for k in profile["roles"]), name
