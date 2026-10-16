@@ -106,6 +106,7 @@ in
     systemPackages = with pkgs; [
       git
       nixos-scripts
+      (pkgs.callPackage ../../pkgs/findersearch { })
     ];
     # Intel uses /usr/local; Apple Silicon uses /opt/homebrew.
     systemPath = [
