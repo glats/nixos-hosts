@@ -107,6 +107,7 @@ in
       git
       nixos-scripts
       (pkgs.callPackage ../../pkgs/findersearch { })
+      (pkgs.callPackage ../../pkgs/tinkertool { })
     ];
     # Intel uses /usr/local; Apple Silicon uses /opt/homebrew.
     systemPath = [
