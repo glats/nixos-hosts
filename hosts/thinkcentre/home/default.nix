@@ -7,7 +7,11 @@ baseModules
 ++ [
   ../../../linux/home/remote-desktop.nix
 
-  ../../../linux/home/suites/mate/default.nix
   ../../../linux/home/conky-thinkcentre.nix
   { home.opencode.activeProviderName = "anthropic-openai-opencode"; }
+  ({ lib, ... }: {
+    qt.enable = lib.mkForce false;
+    # KConfig settings remain opt-in; SonicDE manages Qt appearance.
+    qt.kde.settings = { };
+  })
 ]

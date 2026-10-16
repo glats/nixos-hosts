@@ -1,6 +1,16 @@
 # SonicDE on rog
 
-## Current status: parked
+## Current status: trial on thinkcentre
+
+SonicDE is enabled only on `thinkcentre`, through XRDP without a local display
+manager. `rog` continues using MATE. The shared MATE modules remain available.
+The input and module are reused unchanged. Declarative KConfig settings now
+belong in `hosts/thinkcentre/home/default.nix` under `qt.kde.settings`.
+Build/evaluate `nixosConfigurations.thinkcentre`, not rog, for this trial.
+Deployment and remote-session smoke tests are user-owned and still required.
+The regression check at `tests/rog-sonicde.nix` now verifies both host boundaries.
+
+## Previous status: parked
 
 rog has returned to MATE through the shared XRDP module. SonicDE's input,
 lock entries and `linux/system/desktop/sonicde.nix` remain for future use,

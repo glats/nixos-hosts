@@ -6,10 +6,10 @@ let
   thinkcentre = flake.nixosConfigurations.thinkcentre.config;
   home = flake.homeConfigurations.rog.config;
   checks = {
-    sonicParked =
+    sonicOnlyOnThinkcentre =
       flake.inputs ? sonic-de
       && !(lib.attrByPath [ "services" "desktopManager" "sonic-de" "enable" ] false rog)
-      && !(lib.attrByPath [ "services" "desktopManager" "sonic-de" "enable" ] false thinkcentre)
+      && lib.attrByPath [ "services" "desktopManager" "sonic-de" "enable" ] false thinkcentre
       && !(lib.attrByPath [
         "services"
         "desktopManager"
@@ -23,10 +23,18 @@ let
       && rog.my.desktop.suite == "mate";
     noLocalLogin =
       !rog.services.displayManager.sddm.enable && !rog.services.xserver.displayManager.lightdm.enable;
-    matePreserved =
-      thinkcentre.services.xserver.desktopManager.mate.enable
+    thinkcentreRemoteSession =
+      !thinkcentre.services.xserver.desktopManager.mate.enable
       && thinkcentre.services.xrdp.enable
-      && lib.hasInfix "xrdp-mate-session" thinkcentre.services.xrdp.defaultWindowManager;
+      && lib.hasSuffix "/bin/startplasma-x11" thinkcentre.services.xrdp.defaultWindowManager
+      && !thinkcentre.services.displayManager.sddm.enable
+      && !thinkcentre.services.xserver.displayManager.lightdm.enable;
+    thinkcentreHome =
+      !flake.homeConfigurations.thinkcentre.config.qt.enable
+      && !flake.homeConfigurations.thinkcentre.config.services.picom.enable
+      &&
+        thinkcentre.home-manager.users.glats.qt.kde.settings
+        == flake.homeConfigurations.thinkcentre.config.qt.kde.settings;
     kconfigAvailable = flake.homeConfigurations.rog.options.qt.kde ? settings;
     mateThemeRestored = home.qt.enable && home.qt.platformTheme.name == "gtk3";
     integratedHomeMatches =

@@ -2,6 +2,7 @@
   config,
   pkgs,
   lib,
+  inputs,
   ...
 }:
 
@@ -30,6 +31,7 @@
     ../../linux/system/desktop/fonts.nix
     ../../linux/system/desktop/i18n.nix
     ../../linux/system/desktop/kmscon.nix
+    ../../linux/system/desktop/sonicde.nix
 
     # Hardware (keyring only)
     ../../linux/system/hardware/keyring.nix
@@ -46,7 +48,6 @@
     ../../linux/system/features/conky/options.nix
 
     # Services
-    ../../linux/system/services/xrdp.nix
     ../../linux/system/services/maquilinux-mounts.nix
 
     # Virtualisation
@@ -59,8 +60,16 @@
 
   boot.kernelPackages = pkgs.linuxPackages;
 
-  # Desktop suite — thinkcentre uses MATE via XRDP
-  my.desktop.suite = "mate";
+  # SonicDE trial is remote-only; rog retains the shared MATE XRDP session.
+  my.desktop.suite = null;
+  services.displayManager.sddm.enable = false;
+  services.xserver.displayManager.lightdm.enable = false;
+  services.xrdp = {
+    enable = true;
+    defaultWindowManager = "${
+      inputs.sonic-de.packages.${pkgs.stdenv.hostPlatform.system}.sonic-workspace
+    }/bin/startplasma-x11";
+  };
 
   zramSwap.enable = true;
 
@@ -151,12 +160,14 @@
 
   system.stateVersion = "25.05";
 
-  environment.systemPackages = with pkgs; [
-    microsoft-edge
-    nixos-scripts
-    pipewire-module-xrdp
-    intel-vaapi-driver
-    libva-vdpau-driver
-  ];
+  environment.systemPackages =
+    (import ../../linux/system/base/profiles/cli-extra.nix { inherit pkgs; })
+    ++ (with pkgs; [
+      microsoft-edge
+      nixos-scripts
+      pipewire-module-xrdp
+      intel-vaapi-driver
+      libva-vdpau-driver
+    ]);
 
 }
