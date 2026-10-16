@@ -1,5 +1,19 @@
 # SonicDE on rog
 
+## Current status: parked
+
+rog has returned to MATE through the shared XRDP module. SonicDE's input,
+lock entries and `linux/system/desktop/sonicde.nix` remain for future use,
+but no host imports the module. Keeping the input can fetch sources during
+flake operations; it does not add SonicDE packages to rog's system build.
+The regression check now verifies MATE on rog and thinkcentre, with SonicDE
+disabled. The following notes describe the former SonicDE configuration,
+not the currently enabled desktop. To retry it, use commit `ce59744d` as a
+reference for the rog-only imports, XRDP command and Home Manager Qt/KConfig
+settings; do not blindly revert unrelated changes made since that commit.
+
+## Previous SonicDE configuration
+
 Only `rog` uses SonicDE, through XRDP. Local SDDM and LightDM remain disabled.
 `thinkcentre` retains MATE and its existing XRDP session; the shared MATE modules
 are not removed. No existing user settings are deleted.

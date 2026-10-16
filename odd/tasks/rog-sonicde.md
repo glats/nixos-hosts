@@ -1,14 +1,16 @@
 # SonicDE on rog
-Replace rog's MATE XRDP session with pinned SonicDE, retaining MATE for thinkcentre and native KConfig customization.
+SonicDE trial parked: restore MATE on rog, retaining the pinned SonicDE input and module for future use.
 Branch: master (commit and push authorized in L11). Delivery: single coherent configuration change plus generated lock entries. Runner: Nix evaluation; no activation.
 
 ## Specs
+Current scope amendment (2026-10-16): "hmm mejor hagamos rollback. o sea deja los nix alli. y volvamos a mate para rog. la verdad es que creo que no me voy a acosutmbrar. pero dejaré sonicxde por alli si quiero usarlo alguna vez." This supersedes the active-Sonic requirements below: rog and thinkcentre use MATE, SonicDE is not imported by any host, and its input/module remain available. No activation is authorized. Prior specs remain as trial history.
 S1. "quiero full odd para usar sonic desktop (basado en kde) en mi nix. ojala hay un flake. lo mas simple posible y sustuir solo para rog sonicde." Pin the 26.05-compatible Sonic flake, enable only on rog, preserve other host behavior. Check configuration evaluation and host isolation.
 S2. "además dejar abierot para algo simir a los dconf, no se cual es equivalente en sonic de." Expose the existing Home Manager `qt.kde.settings` extension point without adding a second configuration framework or imposing new preferences. Check integrated and standalone Home Manager.
 S3. "sustituir por mate. pero ojo no borrar amte, poeru se usara en thinkcentre" Preserve MATE modules and thinkcentre's session; remove only rog's MATE imports and selection. Preserve the pre-existing rog provider edit.
 S4. "Solo XRDP (Recomendado)" Replace rog's remote desktop only; no local display manager. Normal Sonic logout replaces the MATE-specific relaunch wrapper. No activation, restarts, credentials, staging, commits or publishing authorized.
 
 ## Tasks
+- T3 [scope amendment] inline, implemented: MATE system/HM imports restored; dormant SonicDE input/module retained; regression checks and runbook updated. RED then seven GREEN predicates, formatting, rog system/HM evaluation and diff whitespace pass. Build graph contains no SonicDE desktop derivations. Independent verification unavailable (subagent permission denied); full suite/build/runtime not run. Commit/push authorized by "commit y pus. voy a hacer build"; Git history records delivery.
 - T1 [S1-S4] inline, complete: configuration, regression check, runbook and lock written; authorized commit recorded by Git history. Route: parent writes; no writer trigger.
 - T2 [S1-S4] delegated verification, partial: RED/GREEN, formatting, Linux host/HM evaluations and build forecast pass; independent verification complete. Darwin proof blocked by cross-platform asset realization; full build and runtime tests pending. Route: high-risk dependency/session/PAM change (items 2 and 5), long evaluations delegated.
 
