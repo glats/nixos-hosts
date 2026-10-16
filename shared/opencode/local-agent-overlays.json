@@ -3,43 +3,17 @@
     "description": "Senior Architect mentor - helpful first, challenging when it matters",
     "mode": "primary",
     "permission": {
-      "bash": "allow",
-      "read": "allow",
-      "edit": "allow",
-      "write": "allow",
-      "delegate": "allow",
-      "task": "allow",
-      "delegation_list": "allow",
-      "delegation_read": "allow",
-      "mem_search": "allow",
-      "mem_save": "allow",
-      "mem_get_observation": "allow"
+      "task": {
+        "*": "deny",
+        "gentle-ai-*": "allow",
+        "review-*": "allow",
+        "jd-*": "allow"
+      }
     }
   },
   "permissionOverlays": {
-    "class": {
-      "subagent": {
-        "read": "allow",
-        "write": "allow",
-        "edit": "allow",
-        "bash": "allow",
-        "mem_search": "allow",
-        "mem_save": "allow",
-        "mem_get_observation": "allow"
-      }
-    },
     "named": {
       "gentle-orchestrator": {
-        "read": "allow",
-        "write": "allow",
-        "edit": "allow",
-        "bash": "allow",
-        "question": "allow",
-        "delegation_list": "allow",
-        "delegation_read": "allow",
-        "mem_search": "allow",
-        "mem_save": "allow",
-        "mem_get_observation": "allow",
         "task": {
           "*": "deny",
           "gentle-ai-*": "allow",
@@ -65,95 +39,6 @@
           "git commit *": "allow",
           "go test *": "allow",
           "go -C * test *": "allow"
-        }
-      },
-      "gentle-ai-explore": {
-        "write": "deny",
-        "edit": "deny",
-        "bash": "deny",
-        "webfetch": "deny",
-        "websearch": "deny",
-        "task": "deny",
-        "context7_resolve-library-id": "allow",
-        "context7_query-docs": "allow",
-        "exa_web_search_exa": "allow",
-        "exa_web_fetch_exa": "allow"
-      },
-      "jd-judge-a": {
-        "read": "allow",
-        "bash": "allow",
-        "mem_search": "allow",
-        "mem_save": "allow",
-        "mem_get_observation": "allow",
-        "write": "deny",
-        "edit": "deny"
-      },
-      "jd-judge-b": {
-        "read": "allow",
-        "bash": "allow",
-        "mem_search": "allow",
-        "mem_save": "allow",
-        "mem_get_observation": "allow",
-        "write": "deny",
-        "edit": "deny"
-      },
-      "review-risk": {
-        "read": "allow",
-        "bash": "allow",
-        "mem_search": "allow",
-        "mem_save": "allow",
-        "mem_get_observation": "allow",
-        "write": "deny",
-        "edit": "deny"
-      },
-      "review-readability": {
-        "read": "allow",
-        "bash": "allow",
-        "mem_search": "allow",
-        "mem_save": "allow",
-        "mem_get_observation": "allow",
-        "write": "deny",
-        "edit": "deny"
-      },
-      "review-reliability": {
-        "read": "allow",
-        "bash": "allow",
-        "mem_search": "allow",
-        "mem_save": "allow",
-        "mem_get_observation": "allow",
-        "write": "deny",
-        "edit": "deny"
-      },
-      "review-resilience": {
-        "read": "allow",
-        "bash": "allow",
-        "mem_search": "allow",
-        "mem_save": "allow",
-        "mem_get_observation": "allow",
-        "write": "deny",
-        "edit": "deny"
-      },
-      "review-refuter": {
-        "read": "allow",
-        "mem_search": "allow",
-        "mem_save": "allow",
-        "mem_get_observation": "allow",
-        "write": "deny",
-        "edit": "deny",
-        "bash": "deny",
-        "task": "deny"
-      },
-      "review-validator": {
-        "read": "allow",
-        "mem_search": "allow",
-        "mem_save": "allow",
-        "mem_get_observation": "allow",
-        "write": "deny",
-        "edit": "deny",
-        "task": "deny",
-        "bash": {
-          "gentle-ai review inspect-candidate --purpose targeted-validation *": "allow",
-          "*": "deny"
         }
       }
     }

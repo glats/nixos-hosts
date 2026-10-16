@@ -90,17 +90,9 @@ let
     name: upstream:
     let
       localModel = models.${name} or null;
-      # Permission-only grants: the generic subagent class overlay is merged
-      # with the per-agent named overlay; named entries win (recursiveUpdate
-      # is recursive RHS precedence). Values are permission-shaped strings or
-      # command maps — never booleans.
-      classOverlay =
-        if upstream.mode or "" == "subagent" then
-          localOverlays.permissionOverlays.class.subagent or { }
-        else
-          { };
+      # Local permission overlays only narrow delegation; everything else
+      # keeps upstream's rendered policy over OpenCode's allow-all base.
       namedOverlay = localOverlays.permissionOverlays.named.${name} or { };
-      localPermission = lib.recursiveUpdate classOverlay namedOverlay;
       localInstructions =
         if builtins.hasAttr name localOverlays.instructionOverlays then
           localOverlays.instructionOverlays.${name}
@@ -126,11 +118,7 @@ let
         prompt = instructionPrompt + basePrompt;
       }
       // {
-        # Class defaults cannot override upstream read-only/executor denials;
-        # explicit named local overlays remain last-wins.
-        permission = smartMerge namedOverlay (
-          lib.recursiveUpdate classOverlay (upstream.permission or { })
-        );
+        permission = smartMerge namedOverlay (upstream.permission or { });
       }
     );
 
