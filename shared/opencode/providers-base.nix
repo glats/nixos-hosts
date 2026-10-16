@@ -128,6 +128,25 @@ let
       };
     }
     {
+      name = "anthropic-opencode";
+      roles = {
+        gentle-orchestrator = "anthropic/claude-opus-5-5";
+        gentle-ai-explore = "opencode-go/glm-5.3-flash";
+        gentle-ai-worker = "opencode-go/glm-5.3-flash";
+        gentle-ai-verify = "anthropic/claude-sonnet-5-5";
+        jd-judge-a = "anthropic/claude-sonnet-5-5";
+        jd-judge-b = "anthropic/claude-sonnet-5-5";
+        jd-fix-agent = "opencode-go/glm-5.3-flash";
+        review-readability = "opencode-go/deepseek-v4-pro";
+        review-refuter = "opencode-go/deepseek-v4-pro";
+        review-reliability = "opencode-go/deepseek-v4-pro";
+        review-resilience = "opencode-go/deepseek-v4-pro";
+        review-risk = "opencode-go/deepseek-v4-pro";
+        review-validator = "opencode-go/deepseek-v4-pro";
+        neutral = "anthropic/claude-opus-5-5";
+      };
+    }
+    {
       name = "work-copilot-anthropic-light";
       roles = {
         gentle-orchestrator = "github-copilot/gpt-6.1-sol";
