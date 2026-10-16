@@ -99,10 +99,10 @@ let
         jd-judge-a = "anthropic/claude-sonnet-5-5";
         jd-judge-b = "anthropic/claude-sonnet-5-5";
         jd-fix-agent = "opencode-go/glm-5.3-flash";
-        review-readability = "opencode-go/deepseek-v4-pro";
-        review-refuter = "opencode-go/deepseek-v4-pro";
-        review-reliability = "opencode-go/deepseek-v4-pro";
-        review-resilience = "opencode-go/deepseek-v4-pro";
+        review-readability = "opencode-go/glm-5.3-flash";
+        review-refuter = "opencode-go/glm-5.3-flash";
+        review-reliability = "opencode-go/glm-5.3-flash";
+        review-resilience = "opencode-go/glm-5.3-flash";
         review-risk = "opencode-go/deepseek-v4-pro";
         review-validator = "opencode-go/deepseek-v4-pro";
         neutral = "openai/gpt-6-astra";

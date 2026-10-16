@@ -5,7 +5,7 @@
 # editing this module.
 {
   lib ? throw "providers.nix must be imported with lib",
-  activeProviderName ? "opencode-go-medium",
+  activeProviderName ? "opencode-medium",
 }:
 
 import ./providers-base.nix { inherit lib activeProviderName; }
