@@ -7,6 +7,54 @@
 
 let
   domain = "glats.org";
+  maquiDomain = "maquilinux.org";
+
+  maquiRepoVhost = acmeHost: {
+    useACMEHost = acmeHost;
+    forceSSL = true;
+    root = "/srv/glats/nginx/repo";
+
+    locations."/linux/" = {
+      tryFiles = "$uri $uri/ =404";
+      extraConfig = ''
+        autoindex on;
+      '';
+    };
+
+    locations."/" = {
+      return = "404";
+    };
+
+    extraConfig = ''
+      add_header X-Content-Type-Options nosniff always;
+      add_header X-Frame-Options DENY always;
+    '';
+  };
+
+  maquiDownloadVhost = acmeHost: {
+    useACMEHost = acmeHost;
+    forceSSL = true;
+    root = "/srv/glats/nginx/maquiroot";
+
+    locations."/" = {
+      tryFiles = "$uri $uri/ =404";
+      extraConfig = ''
+        autoindex on;
+        autoindex_exact_size on;
+        autoindex_localtime on;
+        autoindex_format html;
+      '';
+    };
+
+    extraConfig = ''
+      add_header X-Content-Type-Options nosniff always;
+      add_header X-Frame-Options DENY always;
+
+      # Large file support for rootfs tarballs (3-4GB)
+      client_max_body_size 0;
+      proxy_request_buffering off;
+    '';
+  };
 
   nixCache = import ../../../../shared/nix-cache.nix;
 
@@ -140,6 +188,13 @@ in
     certs."glats.org" = {
       domain = "glats.org";
       extraDomainNames = [ "*.glats.org" ];
+      dnsPropagationCheck = true;
+      group = "nginx";
+    };
+
+    certs.${maquiDomain} = {
+      domain = maquiDomain;
+      extraDomainNames = [ "*.${maquiDomain}" ];
       dnsPropagationCheck = true;
       group = "nginx";
     };
@@ -423,27 +478,9 @@ in
         };
       };
 
-      "repo.${domain}" = {
-        useACMEHost = "glats.org";
-        forceSSL = true;
-        root = "/srv/glats/nginx/repo";
+      "repo.${domain}" = maquiRepoVhost "glats.org";
 
-        locations."/linux/" = {
-          tryFiles = "$uri $uri/ =404";
-          extraConfig = ''
-            autoindex on;
-          '';
-        };
-
-        locations."/" = {
-          return = "404";
-        };
-
-        extraConfig = ''
-          add_header X-Content-Type-Options nosniff always;
-          add_header X-Frame-Options DENY always;
-        '';
-      };
+      "repo.${maquiDomain}" = maquiRepoVhost maquiDomain;
 
       "tun.${domain}" = {
         useACMEHost = "glats.org";
@@ -478,29 +515,14 @@ in
         '';
       };
 
-      "maquiroot.${domain}" = {
-        useACMEHost = "glats.org";
+      "maquiroot.${domain}" = maquiDownloadVhost "glats.org";
+
+      "download.${maquiDomain}" = maquiDownloadVhost maquiDomain;
+
+      ${maquiDomain} = {
+        useACMEHost = maquiDomain;
         forceSSL = true;
-        root = "/srv/glats/nginx/maquiroot";
-
-        locations."/" = {
-          tryFiles = "$uri $uri/ =404";
-          extraConfig = ''
-            autoindex on;
-            autoindex_exact_size on;
-            autoindex_localtime on;
-            autoindex_format html;
-          '';
-        };
-
-        extraConfig = ''
-          add_header X-Content-Type-Options nosniff always;
-          add_header X-Frame-Options DENY always;
-
-          # Large file support for rootfs tarballs (3-4GB)
-          client_max_body_size 0;
-          proxy_request_buffering off;
-        '';
+        locations."/".return = "302 https://download.${maquiDomain}$request_uri";
       };
 
       "qbit.${domain}" = mkProxyVhost {
