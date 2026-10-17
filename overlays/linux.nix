@@ -19,6 +19,7 @@ final: prev: {
     leaf
     herdr
     openfang
+    mcp-supermercados-cl
     claude-code
     ;
 
