@@ -5,6 +5,7 @@
   lib,
   makeWrapper,
   qrencode,
+  pkgs,
 }:
 
 let
@@ -44,6 +45,7 @@ buildGoModule {
     "cmd/linkctl"
     "cmd/netconsole-log"
     "cmd/netconsole-setup"
+    "cmd/pinentry-auto"
     "cmd/rog-poweroff-hook"
     "cmd/netdiag"
     "cmd/nixos-build"
@@ -75,6 +77,11 @@ buildGoModule {
     wrapProgram $out/bin/gpg-unlock \
       --set NIXOS_SCRIPTS_GPG_KEYS_FILE $out/share/nixos-scripts/gpg-unlock-keys \
       --prefix PATH : ${lib.makeBinPath [ git ]}
+    ${lib.optionalString pkgs.stdenv.hostPlatform.isLinux ''
+      ln -s ${pkgs.pinentry-qt}/bin/pinentry-qt $out/bin/pinentry-qt
+      ln -s ${pkgs.pinentry-qt}/bin/pinentry-curses $out/bin/pinentry-curses
+      ln -s pinentry-auto $out/bin/pinentry
+    ''}
   '';
 
   doCheck = true;
@@ -82,5 +89,6 @@ buildGoModule {
   meta = with lib; {
     description = "Go operational tools for the NixOS workflow (source co-located with derivation)";
     license = licenses.mit;
+    mainProgram = "pinentry-auto";
   };
 }

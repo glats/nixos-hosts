@@ -16,7 +16,7 @@ in
     gnupg.agent = {
       enable = true;
       enableSSHSupport = false;
-      pinentryPackage = pkgs.pinentry-qt;
+      pinentryPackage = pkgs.nixos-scripts;
       settings = {
         default-cache-ttl = 34560000;
         max-cache-ttl = 34560000;

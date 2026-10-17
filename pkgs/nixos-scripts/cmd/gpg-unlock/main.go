@@ -18,7 +18,9 @@ func usage() {
 	fmt.Fprintln(os.Stderr, "file, so later signed commits stop prompting until the agent cache")
 	fmt.Fprintln(os.Stderr, "expires. Keys come from `git config user.signingkey` plus the key list")
 	fmt.Fprintln(os.Stderr, "installed by Nix ("+keysFileEnv+"). The passphrase prompt appears in your")
-	fmt.Fprintln(os.Stderr, "current terminal, unless pinentry opens a graphical dialog.")
+	fmt.Fprintln(os.Stderr, "current terminal, or as a pinentry dialog when a display exists; from")
+	fmt.Fprintln(os.Stderr, "OpenCode it never opens, because the OpenCode pinentry refuses curses and")
+	fmt.Fprintln(os.Stderr, "fails immediately there.")
 	fmt.Fprintln(os.Stderr, "Run this once after each gpg-agent restart; never in OpenCode itself.")
 	os.Exit(1)
 }

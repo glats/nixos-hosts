@@ -33,10 +33,16 @@ makes the run exit non-zero and name the key that failed; re-run it to retry.
 
 ## Behavior notes
 
-- The prompt appears in your terminal because `GPG_TTY` is set from `tty`
-  when stdin is a terminal; while the OpenCode wrapper forces `GPG_TTY`
-  empty, so a passphrase request reached from OpenCode fails cleanly instead
-  of drawing curses over the TUI.
+- The passphrase prompt appears in your terminal because `GPG_TTY` is set
+  from `tty` when stdin is a terminal, and pinentry-auto picks the flavor:
+  with `DISPLAY`/`WAYLAND_DISPLAY` (or a `--display` argument from gpg-agent)
+  it execs pinentry-qt; on a real tty without a display (kmscon, plain VT,
+  SSH) it execs pinentry-curses, so the prompt is still available there and
+  `gpg-unlock` works; with the `opencode` marker in `PINENTRY_USER_DATA` and
+  no display, no flavor runs and the passphrase request fails immediately.
+  The OpenCode wrapper sets that marker, so a passphrase request reaching
+  from OpenCode can never draw curses over the TUI. Run `gpg-unlock` from a
+  normal terminal instead.
 - The cache lives in gpg-agent: entries expire after `default-cache-ttl`
   (400 days on this setup) or when the agent restarts, so re-running
   `gpg-unlock` after a reboot or agent restart is the regular recovery step.
