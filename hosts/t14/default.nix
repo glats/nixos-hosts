@@ -34,6 +34,7 @@
 
     ./overlays.nix
     ./omarchy-config.nix
+    ./quattro.nix
 
     ../../linux/system/hardware/gamepad.nix
     ../../linux/system/features/gaming.nix

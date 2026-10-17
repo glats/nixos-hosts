@@ -48,7 +48,7 @@
     installExamples = false;
   };
 
-  systemd.user.services.waybar = {
+  systemd.user.services.waybar = lib.mkIf (!(config.omarchy.quattro.shell.enable or false)) {
     Unit = {
       Description = "Waybar status bar";
       PartOf = [ "graphical-session.target" ];

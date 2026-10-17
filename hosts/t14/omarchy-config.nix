@@ -9,7 +9,7 @@
 
     theme = "glats";
 
-    wifi.backend = "standalone-iwd";
+    wifi.backend = "nm-iwd";
 
     monitors = [ "eDP-1,preferred,auto,1" ];
 
