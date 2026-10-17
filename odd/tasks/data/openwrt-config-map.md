@@ -12,7 +12,7 @@ Purpose: keep the user's current home-network configuration transparent across t
 | WiFi 2.4 | SSID `JICS`, psk2, auto channel (currently 11), txpwr max, ax | wifi-iface radio0 |
 | WiFi 5 | SSID `JICS-5G`, psk2, auto channel (currently 48), txpwr max, ax | wifi-iface radio1 |
 | Port forwards | udp 51820, tcp 80, tcp 443 → 172.16.0.5 (rog) | firewall redirects ×3 |
-| DHCP leases/static | captured in Phase 1: 6 reservations (.5/.6/.9/.10/.11/.12), pool start 5 limit 250 lease 720m, dns push 172.16.0.12 + 172.16.0.1 | `dhcp` host entries + pool params |
+| DHCP leases/static | captured in Phase 1: 6 reservations (.5/.6/.9/.10/.11/.12), pool start 5 limit 250 lease 720m, dns push 172.16.0.12 + 172.16.0.1 → MIGRATED (adguard feature): dns push nowrouter-only `6,172.16.0.1` (AGH on :53 at .1); the `.12` static lease stays for the OnePlus device itself but its DNS role ended | `dhcp` host entries + pool params |
 | Router admin creds | required for Phase 1 (user-provided at execution time) | never stored in repo |
 
 ## Draft UCI (apply post-flash)
@@ -55,12 +55,12 @@ uci set wireless.default_radio1.encryption='psk2'
 uci set wireless.default_radio1.key='__FROM_RAW_EXPORT__'
 uci set wireless.default_radio1.channel='auto'
 
-# dhcp — pool + static leases (exact values from stock /etc/config/dhcp, Phase 1 capture 2026-10-17)
+# dhcp — pool + static leases (exact values from stock /etc/config/dhcp, Phase 1 capture 2026-10-17;
+# UPDATED by adguard-openwrt migration: no dns option rewrite — dnsmasq pushes itself 172.16.0.1 which now hosts AdGuard Home on :53)
 uci set dhcp.lan.start='5'
 uci set dhcp.lan.limit='250'
 uci set dhcp.lan.leasetime='720m'
-# push the same DNS the stock router handed out (172.16.0.12 runs a local DNS server)
-uci add_list dhcp.lan.dhcp_option='6,172.16.0.12,172.16.0.1'
+uci add_list dhcp.lan.dhcp_option='6,172.16.0.1'
 # static leases; names rog/.12 are confirmed, others keep MAC-derived placeholders until renamed
 for spec in \
   'rog    88:d7:f6:22:10:fe 172.16.0.5' \
