@@ -30,7 +30,6 @@
         "syntax-highlighting"
         "history-substring-search"
         "autosuggestions"
-        "ssh"
         "git"
       ];
       prompt.theme = "suse";
