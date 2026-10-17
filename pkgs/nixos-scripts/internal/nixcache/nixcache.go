@@ -266,3 +266,7 @@ func Push(dest string, paths []string, strict bool, run Runner, warn func(string
 	}
 	return nil
 }
+
+// PushOptOutEnv, when set to "0", disables the best-effort post-switch push
+// that nixos-build runs on macm5 after a successful switch.
+const PushOptOutEnv = "NIX_CACHE_PUSH"

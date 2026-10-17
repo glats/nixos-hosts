@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/glats/nixos-scripts/internal/nixbuild"
+	"github.com/glats/nixos-scripts/internal/nixcache"
 	"github.com/glats/nixos-scripts/internal/reporoot"
 )
 
@@ -23,6 +24,11 @@ Commands:
 Options:
   --raw      Use nixos-rebuild instead of nh (Linux only)
   --no-nom   Disable nix-output-monitor
+
+Environment:
+  NIX_CACHE_PUSH=0   Skip the best-effort push of /run/current-system to
+                     thinkcentre that runs after a successful darwin
+                     switch (macm5 only)
 `
 
 func main() {
@@ -61,5 +67,31 @@ func main() {
 		os.Exit(1)
 	}
 
-	os.Exit(nixbuild.Run(nixbuild.Steps(env, command), env.NomPath))
+	code := nixbuild.Run(nixbuild.Steps(env, command), env.NomPath)
+	maybePush(env, command, code, os.Getenv, nixcache.ExecRunner{}, warnHook)
+	os.Exit(code)
+}
+
+func warnHook(msg string) {
+	fmt.Fprintln(os.Stderr, "WARNING: "+msg)
+}
+
+func applyingCommand(command string) bool {
+	switch command {
+	case "switch", "boot", "test", "upgrade", "safe":
+		return true
+	}
+	return false
+}
+
+func maybePush(env nixbuild.Env, command string, code int, getenv func(string) string, runner nixcache.Runner, warn func(string)) {
+	if code != 0 || !env.Darwin || !applyingCommand(command) {
+		return
+	}
+	if getenv(nixcache.PushOptOutEnv) == "0" {
+		return
+	}
+	if err := nixcache.Push(nixcache.DefaultPushTo, nil, false, runner, warn); err != nil {
+		warn(err.Error())
+	}
 }
