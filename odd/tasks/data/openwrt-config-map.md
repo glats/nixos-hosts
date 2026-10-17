@@ -31,17 +31,19 @@ uci add_list network.wan.dns='9.9.9.9'
 uci set network.lan.ipaddr='172.16.0.1'
 uci set network.lan.netmask='255.255.255.0'
 
-# firewall — port redirects (proto udp/tcp via two rules)
-for spec in 'udp 51820 51820 wireguard' 'tcp 80 80 http' 'tcp 443 443 https'; do
+# firewall — port redirects (APPLIED+VERIFIED 2026-10-17; src is MANDATORY in fw4)
+for spec in 'udp 51820 wireguard' 'tcp 80 http' 'tcp 443 https'; do
   set -- $spec
   uci add firewall redirect >/dev/null
-  uci -q set firewall.@redirect[-1].name="$4"
-  uci -q set firewall.@redirect[-1].proto="$1"
-  uci -q set firewall.@redirect[-1].target_port="$2"
-  uci -q set firewall.@redirect[-1].src_dport="$3"
-  uci -q set firewall.@redirect[-1].dest_ip='172.16.0.5'
-  uci -q set firewall.@redirect[-1].target='DNAT'
+  uci set firewall.@redirect[-1].name="$3"
+  uci set firewall.@redirect[-1].proto="$1"
+  uci set firewall.@redirect[-1].src='wan'
+  uci set firewall.@redirect[-1].src_dport="$2"
+  uci set firewall.@redirect[-1].dest_ip='172.16.0.5'
+  uci set firewall.@redirect[-1].target='DNAT'
 done
+# NOTE: `uci commit` is NOT enough for firewall changes — always run afterwards:
+#   /etc/init.d/firewall reload   (a `network restart` does NOT refresh fw4 rules)
 
 # wireless — radios mt7622 (2.4) + mt7915 (5)
 uci set wireless.default_radio0.ssid='JICS'
