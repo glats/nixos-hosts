@@ -8,9 +8,9 @@ baseModules
   ../../../linux/home/remote-desktop.nix
 
   ../../../linux/home/conky-thinkcentre.nix
-  { home.opencode.activeProviderName = "anthropic-openai-opencode"; }
+  ../../../linux/home/suites/sonicde
+  { home.opencode.activeProviderName = "anthropic-opencode"; }
   ({ lib, ... }: {
     qt.enable = lib.mkForce false;
-    qt.kde.settings = { };
   })
 ]

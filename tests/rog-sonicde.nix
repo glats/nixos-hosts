@@ -34,6 +34,33 @@ let
       &&
         thinkcentre.home-manager.users.glats.qt.kde.settings
         == flake.homeConfigurations.thinkcentre.config.qt.kde.settings;
+    thinkcentreKdeSettings =
+      let
+        s = flake.homeConfigurations.thinkcentre.config.qt.kde.settings;
+        sc = s.kglobalshortcutsrc.services;
+      in
+      s.kdeglobals.KDE.LookAndFeelPackage == "org.kde.breezedark.desktop"
+      && s.kdeglobals.General.ColorScheme == "BreezeDark"
+      && s.kscreenlockerrc.Daemon.Autolock == false
+      && s.kscreenlockerrc.Daemon.Timeout == 0
+      && s.powerdevilrc.AC.SuspendAndShutdown.AutoSuspendAction == 0
+      && s.kded5rc."Module-device_automounter".autoload == false
+      && sc."org.kde.krunner.desktop"._launch == "Ctrl+Space"
+      && sc."org.kde.spectacle.desktop"._launch == "none"
+      && sc."org.flameshot.Flameshot.desktop".Capture == "Print";
+    thinkcentreAutostart =
+      let
+        hm = flake.homeConfigurations.thinkcentre.config;
+        files = hm.xdg.configFile;
+        layout = hm.xdg.dataFile."sonicde/layout.js".text;
+      in
+      !(files ? "autostart/io.github.Hexchat.desktop")
+      && !(lib.any (p: (p.pname or "") == "hexchat") hm.home.packages)
+      && files ? "autostart/org.flameshot.Flameshot.desktop"
+      && files ? "autostart/sonicde-layout.desktop"
+      && lib.hasInfix "org.kde.color" layout
+      && lib.hasInfix "applications:kitty.desktop" layout
+      && lib.hasInfix "applications:brave-browser.desktop" layout;
     thinkcentreKwinUnwrapPatch =
       let
         sonicWin =
@@ -42,6 +69,9 @@ let
       lib.any (p: lib.hasSuffix "sonic-win-unwrap-serviceutils.patch" (toString p)) sonicWin.patches
       && thinkcentre.security.wrappers.kwin_x11.source == "${lib.getBin sonicWin}/bin/kwin_x11"
       && lib.elem sonicWin thinkcentre.environment.systemPackages;
+    rogKdeUntouched =
+      rog.home-manager.users.glats.qt.kde.settings == { }
+      && !(rog.home-manager.users.glats.xdg.configFile ? "autostart/sonicde-layout.desktop");
     kconfigAvailable = flake.homeConfigurations.rog.options.qt.kde ? settings;
     mateThemeRestored = home.qt.enable && home.qt.platformTheme.name == "gtk3";
     integratedHomeMatches =

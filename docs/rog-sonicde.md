@@ -5,7 +5,16 @@
 SonicDE is enabled only on `thinkcentre`, through XRDP without a local display
 manager. `rog` continues using MATE. The shared MATE modules remain available.
 The input and module are reused unchanged. Declarative KConfig settings now
-belong in `hosts/thinkcentre/home/default.nix` under `qt.kde.settings`.
+belong in `linux/home/suites/sonicde/default.nix` under `qt.kde.settings`.
+That module sets Breeze Dark, disables screen autolock, AC auto-suspend and
+USB automounting, binds KRunner to `Ctrl+Space` and Flameshot to `Print`, and
+autostarts Flameshot. HexChat stays rog-only. Plasma layout state (black wallpaper, panel
+launchers) is applied at login through plasmashell scripting from
+`~/.local/share/sonicde/layout.js`, because `plasma-org.kde.plasma.desktop-appletsrc`
+uses containment IDs that are unsafe to write directly. Klipper (`Meta+V`) is
+the clipboard manager. Spectacle cannot capture on this KWin build: SonicDE's
+`sonic-win` lacks nixpkgs' `0001-NixOS-Unwrap-executable-name-for-.desktop-search.patch`,
+so KWin rejects Spectacle's `.spectacle-wrapped` process; `Print` uses Flameshot.
 Build/evaluate `nixosConfigurations.thinkcentre`, not rog, for this trial.
 Deployment and remote-session smoke tests are user-owned and still required.
 The regression check at `tests/rog-sonicde.nix` now verifies both host boundaries.
@@ -38,10 +47,9 @@ the workspace-addons source instead of wallpaper sources.
 ## Declarative settings
 
 SonicDE inherits KDE's **KConfig**, not dconf. Use the existing
-`qt.kde.settings` block in `hosts/rog/home/default.nix` for file/group/key values.
+`qt.kde.settings` block in `linux/home/suites/sonicde/default.nix` for file/group/key values.
 Home Manager writes selected keys using `kwriteconfig6`, retaining unspecified
-keys and GUI-editable files. No plasma-manager input is necessary. The empty
-block deliberately imposes no preferences. Verify individual keys against the
+keys and GUI-editable files. No plasma-manager input is necessary. Verify individual keys against the
 pinned SonicDE version before adding them; `null` deletes a key.
 
 GTK applications still use the shared GTK/dconf configuration. The shared
