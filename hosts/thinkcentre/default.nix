@@ -44,6 +44,8 @@
 
     ../../linux/system/services/maquilinux-mounts.nix
 
+    ../../linux/system/services/nix/nix-cache.nix
+
     ../../linux/system/virtualisation/docker.nix
   ];
 
