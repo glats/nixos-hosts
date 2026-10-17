@@ -298,7 +298,7 @@ func TestPrewarmLoadGuardSkips(t *testing.T) {
 	}
 
 	same := &fakeRunner{}
-	if err := Prewarm(Options{Flake: "github:glats/nixos", StateDir: "/srv/x", MaxLoad: 1.0}, 1.0, same, warn); err != nil {
+	if err := Prewarm(Options{Flake: "github:glats/nixos", StateDir: t.TempDir(), MaxLoad: 1.0}, 1.0, same, warn); err != nil {
 		t.Fatalf("load equal to max must not skip: %v", err)
 	}
 	if len(same.argvs) == 0 {
@@ -325,6 +325,11 @@ func TestPrewarmRunsStepsAndResetsNextDir(t *testing.T) {
 	}
 	if len(warnings) != 0 {
 		t.Errorf("happy path must not warn, got %v", warnings)
+	}
+	for _, variant := range []string{"current", "next"} {
+		if info, err := os.Stat(filepath.Join(stateDir, "roots", variant)); err != nil || !info.IsDir() {
+			t.Errorf("GC root dir roots/%s must exist after prewarm: %v", variant, err)
+		}
 	}
 
 	var want [][]string
@@ -444,7 +449,7 @@ func TestPrewarmNextVariantFailuresWarnOnly(t *testing.T) {
 			return nil
 		}
 		var warnings []string
-		err := Prewarm(Options{Flake: "github:glats/nixos", StateDir: "/srv/x", MaxLoad: 1.0}, 0.4, run,
+		err := Prewarm(Options{Flake: "github:glats/nixos", StateDir: t.TempDir(), MaxLoad: 1.0}, 0.4, run,
 			func(m string) { warnings = append(warnings, m) })
 		if err != nil {
 			t.Fatalf("next build failures must not fail Prewarm, got %v", err)

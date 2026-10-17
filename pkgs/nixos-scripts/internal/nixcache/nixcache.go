@@ -227,6 +227,9 @@ func Prewarm(opts Options, load float64, run Runner, warn func(string)) error {
 	if opts.StateDir == "" || filepath.Clean(opts.StateDir) == "/" {
 		return errors.New("nix-cache prewarm: --state-dir must point at a real state directory")
 	}
+	if err := ensureRoots(opts, "current"); err != nil {
+		return err
+	}
 	var fatal error
 	for _, st := range CurrentSteps(opts) {
 		if err := run.Run(st.Args); err != nil {
@@ -240,12 +243,24 @@ func Prewarm(opts Options, load float64, run Runner, warn func(string)) error {
 		warn(fmt.Sprintf("prewarm: next variant skipped: %v", err))
 		return fatal
 	}
+	if err := ensureRoots(opts, "next"); err != nil {
+		warn(fmt.Sprintf("prewarm: next variant skipped: %v", err))
+		return fatal
+	}
 	for _, st := range NextSteps(opts) {
 		if err := run.Run(st.Args); err != nil {
 			warn(fmt.Sprintf("prewarm: %s failed: %v", st.Name, err))
 		}
 	}
 	return fatal
+}
+
+func ensureRoots(opts Options, variant string) error {
+	dir := filepath.Join(opts.StateDir, "roots", variant)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return fmt.Errorf("nix-cache prewarm: GC root dir %s: %w", dir, err)
+	}
+	return nil
 }
 
 func prepareNext(opts Options, run Runner) error {
