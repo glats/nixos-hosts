@@ -46,8 +46,8 @@ let
       && s.powerdevilrc.AC.SuspendAndShutdown.AutoSuspendAction == 0
       && s.kded5rc."Module-device_automounter".autoload == false
       && sc."org.kde.krunner.desktop"._launch == "Ctrl+Space"
-      && sc."org.kde.spectacle.desktop"._launch == "none"
-      && sc."org.flameshot.Flameshot.desktop".Capture == "Print";
+      && sc."org.kde.spectacle.desktop"._launch == "Print"
+      && sc."org.flameshot.Flameshot.desktop".Capture == null;
     thinkcentreAutostart =
       let
         hm = flake.homeConfigurations.thinkcentre.config;
@@ -56,7 +56,9 @@ let
       in
       !(files ? "autostart/io.github.Hexchat.desktop")
       && !(lib.any (p: (p.pname or "") == "hexchat") hm.home.packages)
-      && files ? "autostart/org.flameshot.Flameshot.desktop"
+      && !(files ? "autostart/org.flameshot.Flameshot.desktop")
+      && !(lib.any (p: (p.pname or "") == "flameshot") hm.home.packages)
+      && !(lib.any (p: (p.pname or "") == "flameshot") thinkcentre.environment.systemPackages)
       && files ? "autostart/sonicde-layout.desktop"
       && lib.hasInfix "org.kde.color" layout
       && lib.hasInfix "applications:kitty.desktop" layout
@@ -69,6 +71,9 @@ let
       lib.any (p: lib.hasSuffix "sonic-win-unwrap-serviceutils.patch" (toString p)) sonicWin.patches
       && thinkcentre.security.wrappers.kwin_x11.source == "${lib.getBin sonicWin}/bin/kwin_x11"
       && lib.elem sonicWin thinkcentre.environment.systemPackages;
+    mateKeepsFlameshot =
+      lib.any (p: (p.pname or "") == "flameshot") rog.environment.systemPackages
+      && rog.home-manager.users.glats.xdg.configFile ? "autostart/org.flameshot.Flameshot.desktop";
     rogKdeUntouched =
       rog.home-manager.users.glats.qt.kde.settings == { }
       && !(rog.home-manager.users.glats.xdg.configFile ? "autostart/sonicde-layout.desktop");

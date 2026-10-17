@@ -7,14 +7,16 @@ manager. `rog` continues using MATE. The shared MATE modules remain available.
 The input and module are reused unchanged. Declarative KConfig settings now
 belong in `linux/home/suites/sonicde/default.nix` under `qt.kde.settings`.
 That module sets Breeze Dark, disables screen autolock, AC auto-suspend and
-USB automounting, binds KRunner to `Ctrl+Space` and Flameshot to `Print`, and
-autostarts Flameshot. HexChat stays rog-only. Plasma layout state (black wallpaper, panel
+USB automounting, binds KRunner to `Ctrl+Space` and Spectacle to `Print`, and
+removes the former Flameshot `Print` binding. Flameshot stays in the MATE suite only.
+HexChat stays rog-only. Plasma layout state (black wallpaper, panel
 launchers) is applied at login through plasmashell scripting from
 `~/.local/share/sonicde/layout.js`, because `plasma-org.kde.plasma.desktop-appletsrc`
 uses containment IDs that are unsafe to write directly. Klipper (`Meta+V`) is
-the clipboard manager. Spectacle cannot capture on this KWin build: SonicDE's
+the clipboard manager. Spectacle needed a local fix to capture on this KWin build: SonicDE's
 `sonic-win` lacks nixpkgs' `0001-NixOS-Unwrap-executable-name-for-.desktop-search.patch`,
-so KWin rejects Spectacle's `.spectacle-wrapped` process; `Print` uses Flameshot.
+so KWin rejects Spectacle's `.spectacle-wrapped` process. `linux/system/desktop/sonicde.nix`
+adds the missing hunk (upstream: https://github.com/sonicde-nixos/sonic-flake/pull/2).
 Build/evaluate `nixosConfigurations.thinkcentre`, not rog, for this trial.
 Deployment and remote-session smoke tests are user-owned and still required.
 The regression check at `tests/rog-sonicde.nix` now verifies both host boundaries.

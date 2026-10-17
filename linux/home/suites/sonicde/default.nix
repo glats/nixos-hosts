@@ -19,8 +19,6 @@ let
   };
 in
 {
-  home.packages = [ pkgs.flameshot ];
-
   qt.kde.settings = {
     kdeglobals = {
       KDE.LookAndFeelPackage = "org.kde.breezedark.desktop";
@@ -35,8 +33,8 @@ in
     kded5rc."Module-device_automounter".autoload = false;
     kglobalshortcutsrc.services = {
       "org.kde.krunner.desktop"._launch = "Ctrl+Space";
-      "org.kde.spectacle.desktop"._launch = "none";
-      "org.flameshot.Flameshot.desktop".Capture = "Print";
+      "org.kde.spectacle.desktop"._launch = "Print";
+      "org.flameshot.Flameshot.desktop".Capture = null;
     };
   };
 
@@ -68,17 +66,6 @@ in
       OnlyShowIn=KDE;
       NoDisplay=true
       X-KDE-autostart-phase=2
-    '';
-
-    "autostart/org.flameshot.Flameshot.desktop".text = ''
-      [Desktop Entry]
-      Type=Application
-      Name=Flameshot
-      Exec=${pkgs.flameshot}/bin/flameshot
-      Icon=org.flameshot.Flameshot
-      Terminal=false
-      StartupNotify=false
-      OnlyShowIn=KDE;
     '';
   };
 }
