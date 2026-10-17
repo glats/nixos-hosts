@@ -55,6 +55,7 @@ let
 
   linuxPackages = commonPackages linuxPkgs // {
     openfang = linuxPkgs.callPackage ../pkgs/openfang { };
+    mcp-supermercados-cl = linuxPkgs.callPackage ../pkgs/mcp-supermercados-cl { };
     thinkfan-ui = linuxPkgs.callPackage ../pkgs/thinkfan-ui {
       thinkfan-ui-src = inputs.thinkfan-ui-src;
       wrapQtAppsHook = linuxPkgs.qt6.wrapQtAppsHook;
