@@ -12,11 +12,11 @@ let
 in
 {
   options.home.shell-gpt = {
-    enable = mkEnableOption "ShellGPT AI-powered shell command assistant using nvidia NIM (nemotron-3-ultra). Usage: sgpt --shell \"<natural language request>\"";
+    enable = mkEnableOption "ShellGPT AI-powered shell command assistant using nvidia NIM (nemotron-3-super). Usage: sgpt --shell \"<natural language request>\"";
 
     model = mkOption {
       type = types.str;
-      default = "nvidia/nemotron-3-ultra-550b-a55b";
+      default = "nvidia/nemotron-3-super-120b-a12b";
       description = "Model ID sent to nvidia NIM. Override per host for flash/cheaper models.";
     };
 
