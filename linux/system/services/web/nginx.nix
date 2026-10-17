@@ -8,6 +8,8 @@
 let
   domain = "glats.org";
 
+  nixCache = import ../../../../shared/nix-cache.nix;
+
   secHeaders = frameOption: ''
     add_header X-Content-Type-Options nosniff always;
     add_header X-XSS-Protection "1; mode=block" always;
@@ -604,6 +606,28 @@ in
 
         extraConfig = secHeaders "SAMEORIGIN";
       };
+
+      "cache.${domain}" = {
+        useACMEHost = domain;
+        forceSSL = true;
+
+        basicAuthFile = config.sops.secrets."nix-cache/htpasswd".path;
+
+        locations."/" = {
+          proxyPass = "http://172.16.0.11:${toString nixCache.harmonia.port}";
+          extraConfig = ''
+            proxy_set_header Host $host;
+            proxy_buffering off;
+            proxy_request_buffering off;
+            client_max_body_size 0;
+            proxy_connect_timeout 60s;
+            proxy_send_timeout 3600s;
+            proxy_read_timeout 3600s;
+          '';
+        };
+
+        extraConfig = secHeaders "SAMEORIGIN";
+      };
     }
     // arrVhosts
     // lib.optionalAttrs config.services.ssh-relay.enable {
@@ -620,8 +644,18 @@ in
     };
   };
 
+  sops.secrets."nix-cache/htpasswd" = {
+    sopsFile = ../../../../secrets/host/rog/nix-cache.yaml;
+    owner = "nginx";
+    group = "nginx";
+    mode = "0400";
+  };
+
   systemd.services.nginx = {
-    after = [ "acme-glats.org.service" ];
+    after = [
+      "acme-glats.org.service"
+      "sops-nix.service"
+    ];
     wants = [ "acme-glats.org.service" ];
   };
 }

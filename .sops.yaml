@@ -18,6 +18,18 @@ creation_rules:
           - *admin_glats
           - *host_thinkcentre
 
+  - path_regex: secrets/host/t14/.+
+    key_groups:
+      - age:
+          - *admin_glats
+          - *host_t14
+
+  - path_regex: secrets/host/macm5/.+
+    key_groups:
+      - age:
+          - *admin_glats
+          - *host_macm5
+
   - path_regex: secrets/shared/link-uuids\.yaml
     key_groups:
       - age:
