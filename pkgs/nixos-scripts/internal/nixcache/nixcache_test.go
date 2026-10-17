@@ -92,16 +92,48 @@ func TestResolveFlake(t *testing.T) {
 	}
 }
 
-func TestCloneURLRef(t *testing.T) {
-	cases := []struct{ in, want string }{
-		{"github:glats/nixos", "https://github.com/glats/nixos"},
-		{"/etc/nixos", "/etc/nixos"},
-		{"https://github.com/glats/nixos", "https://github.com/glats/nixos"},
+func TestCloneTarget(t *testing.T) {
+	cases := []struct {
+		in         string
+		wantURL    string
+		wantBranch string
+	}{
+		{"github:glats/nixos", "https://github.com/glats/nixos", ""},
+		{"github:glats/nixos-hosts/master", "https://github.com/glats/nixos-hosts", "master"},
+		{"/etc/nixos", "/etc/nixos", ""},
+		{"https://github.com/glats/nixos", "https://github.com/glats/nixos", ""},
+		{"git+https://github.com/glats/nixos-hosts", "https://github.com/glats/nixos-hosts", ""},
+		{"git+https://github.com/glats/nixos-hosts?ref=master", "https://github.com/glats/nixos-hosts", "master"},
+		{"git+https://github.com/glats/nixos-hosts?ref=master&foo=bar", "https://github.com/glats/nixos-hosts", "master"},
 	}
 	for _, tc := range cases {
-		if got := CloneURL(tc.in); got != tc.want {
-			t.Errorf("CloneURL(%q) = %q, want %q", tc.in, got, tc.want)
+		gotURL, gotBranch := CloneTarget(tc.in)
+		if gotURL != tc.wantURL || gotBranch != tc.wantBranch {
+			t.Errorf("CloneTarget(%q) = (%q, %q), want (%q, %q)",
+				tc.in, gotURL, gotBranch, tc.wantURL, tc.wantBranch)
 		}
+	}
+}
+
+func TestPrewarmGitFlakeRefCloneArgv(t *testing.T) {
+	stateDir := filepath.Join(t.TempDir(), "state")
+	nextDir := filepath.Join(stateDir, "next")
+	opts := Options{
+		Flake:    "git+https://github.com/glats/nixos-hosts?ref=master",
+		StateDir: stateDir,
+		MaxLoad:  1.0,
+	}
+	run := &fakeRunner{}
+	if err := Prewarm(opts, 0.4, run, func(string) {}); err != nil {
+		t.Fatalf("prewarm git+https flake: %v", err)
+	}
+	want := [][]string{
+		{"git", "clone", "--branch", "master", "https://github.com/glats/nixos-hosts", nextDir},
+		{"nix", "flake", "update", "--flake", nextDir},
+	}
+	got := run.argvs[len(CurrentSteps(opts)) : len(CurrentSteps(opts))+len(want)]
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("git flake ref clone argv mismatch:\n got %v\nwant %v", got, want)
 	}
 }
 

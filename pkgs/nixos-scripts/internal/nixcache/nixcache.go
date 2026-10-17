@@ -94,12 +94,29 @@ func ResolveFlake(flagValue string, getenv func(string) string) string {
 	return getenv(EnvFlake)
 }
 
-// CloneURL rewrites the github: flake shorthand for git clone.
-func CloneURL(ref string) string {
+// CloneTarget converts a Nix flake git ref into the URL and branch for
+// git clone, so flake syntax like git+https://...?ref=master stays clonable.
+func CloneTarget(ref string) (string, string) {
 	if rest, ok := strings.CutPrefix(ref, "github:"); ok {
-		return "https://github.com/" + rest
+		if segments := strings.Split(rest, "/"); len(segments) > 2 {
+			return "https://github.com/" + strings.Join(segments[:len(segments)-1], "/"),
+				segments[len(segments)-1]
+		}
+		return "https://github.com/" + rest, ""
 	}
-	return ref
+	if rest, ok := strings.CutPrefix(ref, "git+"); ok {
+		ref = rest
+	}
+	url, branch := ref, ""
+	if before, query, has := strings.Cut(ref, "?"); has {
+		url = before
+		for _, kv := range strings.Split(query, "&") {
+			if key, val, ok := strings.Cut(kv, "="); ok && key == "ref" {
+				branch = val
+			}
+		}
+	}
+	return url, branch
 }
 
 // ParseLoadavg reads the 1-minute load as the first field of /proc/loadavg.
@@ -239,8 +256,14 @@ func prepareNext(opts Options, run Runner) error {
 	if err := os.RemoveAll(next); err != nil {
 		return fmt.Errorf("clearing %s: %w", next, err)
 	}
-	if err := run.Run([]string{"git", "clone", CloneURL(opts.Flake), next}); err != nil {
-		return fmt.Errorf("git clone %s: %w", CloneURL(opts.Flake), err)
+	cloneURL, branch := CloneTarget(opts.Flake)
+	cloneArgv := []string{"git", "clone"}
+	if branch != "" {
+		cloneArgv = append(cloneArgv, "--branch", branch)
+	}
+	cloneArgv = append(cloneArgv, cloneURL, next)
+	if err := run.Run(cloneArgv); err != nil {
+		return fmt.Errorf("git clone %s: %w", cloneURL, err)
 	}
 	if err := run.Run([]string{"nix", "flake", "update", "--flake", next}); err != nil {
 		return fmt.Errorf("nix flake update in %s: %w", next, err)
