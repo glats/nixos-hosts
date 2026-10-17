@@ -29,6 +29,7 @@ in
       Autolock = false;
       Timeout = 0;
     };
+    ksmserverrc.General.loginMode = "emptySession";
     powerdevilrc.AC.SuspendAndShutdown.AutoSuspendAction = 0;
     kded5rc = {
       "Module-device_automounter".autoload = false;

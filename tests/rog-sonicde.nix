@@ -46,6 +46,7 @@ let
       && s.powerdevilrc.AC.SuspendAndShutdown.AutoSuspendAction == 0
       && s.kded5rc."Module-device_automounter".autoload == false
       && s.kded5rc."Module-gtkconfig".autoload == false
+      && s.ksmserverrc.General.loginMode == "emptySession"
       && sc."org.kde.krunner.desktop"._launch == "Ctrl+Space"
       && sc."org.kde.spectacle.desktop"._launch == "Print"
       && sc."org.flameshot.Flameshot.desktop".Capture == null;
