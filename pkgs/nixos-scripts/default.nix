@@ -35,6 +35,7 @@ buildGoModule {
     "cmd/netconsole-setup"
     "cmd/rog-poweroff-hook"
     "cmd/netdiag"
+    "cmd/nix-cache"
     "cmd/nixos-build"
     "cmd/nixos-build-all"
     "cmd/opencode-home"
