@@ -5,7 +5,18 @@
   lib,
   makeWrapper,
   qrencode,
+  pkgs,
 }:
+
+let
+  gitIdent = import ../../shared/git-identity.nix;
+  gpgKeys = lib.concatStringsSep "\n" (
+    lib.filter (k: k != "") [
+      gitIdent.personal.signingKey
+      gitIdent.work.signingKey
+    ]
+  );
+in
 
 buildGoModule {
   pname = "nixos-scripts";
@@ -29,10 +40,12 @@ buildGoModule {
     "cmd/relay-client"
     "cmd/relay-policy"
     "cmd/git-id"
+    "cmd/gpg-unlock"
     "cmd/install-opencode-auth-seed"
     "cmd/linkctl"
     "cmd/netconsole-log"
     "cmd/netconsole-setup"
+    "cmd/pinentry-auto"
     "cmd/rog-poweroff-hook"
     "cmd/netdiag"
     "cmd/nixos-build"
@@ -59,6 +72,16 @@ buildGoModule {
     # qrencode is a runtime dep of device-link (terminal QR output).
     wrapProgram $out/bin/device-link \
       --prefix PATH : ${lib.makeBinPath [ qrencode ]}
+    mkdir -p $out/share/nixos-scripts
+    printf '%s\n' ${lib.escapeShellArg gpgKeys} > $out/share/nixos-scripts/gpg-unlock-keys
+    wrapProgram $out/bin/gpg-unlock \
+      --set NIXOS_SCRIPTS_GPG_KEYS_FILE $out/share/nixos-scripts/gpg-unlock-keys \
+      --prefix PATH : ${lib.makeBinPath [ git ]}
+    ${lib.optionalString pkgs.stdenv.hostPlatform.isLinux ''
+      ln -s ${pkgs.pinentry-qt}/bin/pinentry-qt $out/bin/pinentry-qt
+      ln -s ${pkgs.pinentry-qt}/bin/pinentry-curses $out/bin/pinentry-curses
+      ln -s pinentry-auto $out/bin/pinentry
+    ''}
   '';
 
   doCheck = true;
@@ -66,5 +89,6 @@ buildGoModule {
   meta = with lib; {
     description = "Go operational tools for the NixOS workflow (source co-located with derivation)";
     license = licenses.mit;
+    mainProgram = "pinentry-auto";
   };
 }

@@ -15,8 +15,12 @@ in
 
     gnupg.agent = {
       enable = true;
-      enableSSHSupport = true;
-      pinentryPackage = pkgs.pinentry-curses;
+      enableSSHSupport = false;
+      pinentryPackage = pkgs.nixos-scripts;
+      settings = {
+        default-cache-ttl = 34560000;
+        max-cache-ttl = 34560000;
+      };
     };
 
     nix-ld.enable = true;
