@@ -63,11 +63,15 @@
   home.activation.ensureNvimConfig = lib.hm.dag.entryBefore [ "linkGeneration" ] ''
     GIT="${pkgs.git}/bin/git"
     if [ ! -d "$HOME/.config/nvim" ]; then
-      $DRY_RUN_CMD $GIT clone https://github.com/glats/nvim "$HOME/.config/nvim"
+      $DRY_RUN_CMD $GIT clone https://github.com/glats/nvim "$HOME/.config/nvim" \
+        || echo "ensureNvimConfig: clone failed; skipping" >&2
     else
       if $GIT -C "$HOME/.config/nvim" rev-parse --git-dir >/dev/null 2>&1; then
-        $DRY_RUN_CMD $GIT -C "$HOME/.config/nvim" fetch --depth=1 origin
-        $DRY_RUN_CMD $GIT -C "$HOME/.config/nvim" merge --ff-only origin/main 2>/dev/null || true
+        if $DRY_RUN_CMD $GIT -C "$HOME/.config/nvim" fetch --depth=1 origin; then
+          $DRY_RUN_CMD $GIT -C "$HOME/.config/nvim" merge --ff-only origin/main 2>/dev/null || true
+        else
+          echo "ensureNvimConfig: fetch failed; keeping current config" >&2
+        fi
       fi
     fi
   '';
