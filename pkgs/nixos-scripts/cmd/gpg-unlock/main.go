@@ -44,6 +44,7 @@ func gpg(args ...[]string) (string, int) {
 	}
 	cmd := exec.Command("gpg", argv...)
 	cmd.Env = env
+	cmd.Stdin = os.Stdin
 	var out strings.Builder
 	cmd.Stdout = &out
 	var errOut strings.Builder
@@ -67,7 +68,9 @@ func ttyForPinentry() string {
 	if err != nil || fi.Mode()&os.ModeCharDevice == 0 {
 		return ""
 	}
-	out, err := exec.Command("tty").Output()
+	cmd := exec.Command("tty")
+	cmd.Stdin = os.Stdin
+	out, err := cmd.Output()
 	if err != nil {
 		return ""
 	}
