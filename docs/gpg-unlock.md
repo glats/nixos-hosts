@@ -2,7 +2,7 @@
 
 Cache the passphrase of each git signing key once, so signed commits stop
 prompting. gpg-agent holds the unlocked passphrase (the cache TTL is high on
-every host: 30 000 000 seconds max, set in `linux/system/base/users.nix` and
+every host: 34560000 seconds, set in `linux/system/base/users.nix` and
 `darwin/home/gpg.nix`), so after one run signed commits ask nothing again
 until the agent restarts or the cache entry expires.
 

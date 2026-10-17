@@ -151,12 +151,50 @@ func TestSigningCapable(t *testing.T) {
 }
 
 func TestSignArgs(t *testing.T) {
-	got := SignArgs("/tmp/x", "ABCD1234EF567890", "/tmp/x/msg.txt", "/tmp/x/msg.sig")
+	got := SignArgs("ABCD1234EF567890", "/tmp/x/msg.txt", "/tmp/x/ABCD1234EF567890.sig")
 	joined := strings.Join(got, " ")
 	if !strings.Contains(joined, "ABCD1234EF567890") {
 		t.Fatalf("SignArgs must contain the key, got %v", got)
 	}
 	if !strings.Contains(joined, "--detach-sign") || !strings.Contains(joined, "--local-user") {
 		t.Fatalf("SignArgs must request a detached signature for the key, got %v", got)
+	}
+}
+
+func TestSignArgsUsesMsgFileVerbatim(t *testing.T) {
+	got := SignArgs("ABCD1234EF567890", "/tmp/x/msg.txt", "/tmp/x/ABCD1234EF567890.sig")
+	if last := got[len(got)-1]; last != "/tmp/x/msg.txt" {
+		t.Fatalf("message path must not be re-joined with dir, got %q", last)
+	}
+}
+
+func TestUnionKeysRejectsOptionLikeKeys(t *testing.T) {
+	cases := []struct {
+		name  string
+		git   string
+		extra []string
+		want  []string
+	}{
+		{
+			name:  "dashed git key is dropped",
+			git:   "--batch",
+			extra: []string{"ABCD1234EF567890"},
+			want:  []string{"ABCD1234EF567890"},
+		},
+		{
+			name:  "dashed list key is dropped",
+			git:   "ABCD1234EF567890",
+			extra: []string{"--yes", "EEEE5555FFFF6666"},
+			want:  []string{"ABCD1234EF567890", "EEEE5555FFFF6666"},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := UnionKeys(tc.git, tc.extra)
+			if !reflect.DeepEqual(got, tc.want) {
+				t.Fatalf("UnionKeys = %v, want %v", got, tc.want)
+			}
+		})
 	}
 }

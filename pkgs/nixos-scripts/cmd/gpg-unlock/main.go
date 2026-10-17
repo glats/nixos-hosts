@@ -17,7 +17,7 @@ func usage() {
 	fmt.Fprintln(os.Stderr, "Caches the passphrase of each git signing key by signing a scratch")
 	fmt.Fprintln(os.Stderr, "file, so later signed commits stop prompting until the agent cache")
 	fmt.Fprintln(os.Stderr, "expires. Keys come from `git config user.signingkey` plus the key list")
-	fmt.Fprintln(os.Stderr, "installed by Nix (" + keysFileEnv + "). The passphrase prompt appears in your")
+	fmt.Fprintln(os.Stderr, "installed by Nix ("+keysFileEnv+"). The passphrase prompt appears in your")
 	fmt.Fprintln(os.Stderr, "current terminal, unless pinentry opens a graphical dialog.")
 	fmt.Fprintln(os.Stderr, "Run this once after each gpg-agent restart; never in OpenCode itself.")
 	os.Exit(1)
@@ -114,7 +114,7 @@ func main() {
 			failed = true
 			continue
 		}
-		if _, code := gpg(gpgunlock.SignArgs(dir, key, msgFile, filepath.Join(dir, key+".sig"))); code != 0 {
+		if _, code := gpg(gpgunlock.SignArgs(key, msgFile, filepath.Join(dir, key+".sig"))); code != 0 {
 			fmt.Fprintf(os.Stderr, "gpg-unlock: %s passphrase not cached\n", key)
 			failed = true
 			continue

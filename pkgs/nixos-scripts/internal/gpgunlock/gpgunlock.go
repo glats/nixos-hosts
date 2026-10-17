@@ -1,7 +1,6 @@
 package gpgunlock
 
 import (
-	"path/filepath"
 	"strings"
 )
 
@@ -32,12 +31,16 @@ func NormalizeSigningKey(raw string) string {
 // UnionKeys merges the git-configured signing key with the key list
 // supplied by Nix, deduplicating case-insensitively. The git-configured key
 // comes first so the current repo's key is unlocked before any others.
+// Keys that would be parsed as gpg options (leading `-`) are dropped.
 func UnionKeys(gitKey string, extra []string) []string {
 	var keys []string
 	seen := map[string]bool{}
 	add := func(raw string) {
 		key := NormalizeSigningKey(raw)
 		if key == "" {
+			return
+		}
+		if strings.HasPrefix(key, "-") {
 			return
 		}
 		id := strings.ToLower(key)
@@ -75,13 +78,14 @@ func SigningCapable(colonOutput string) bool {
 }
 
 // SignArgs builds the gpg argv used to trigger the passphrase prompt for one
-// signing key against a scratch file, so gpg-agent caches it.
-func SignArgs(dir, key, msgFile, sigFile string) []string {
+// signing key. msgFile and sigFile are used verbatim (the caller already
+// produces absolute paths), so no path is re-joined here.
+func SignArgs(key, msgFile, sigFile string) []string {
 	return []string{
 		"--yes",
 		"--local-user", key,
-		"--output", filepath.Clean(sigFile),
+		"--output", sigFile,
 		"--detach-sign",
-		filepath.Join(dir, msgFile),
+		msgFile,
 	}
 }
