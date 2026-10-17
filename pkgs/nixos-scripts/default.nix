@@ -78,8 +78,9 @@ buildGoModule {
       --set NIXOS_SCRIPTS_GPG_KEYS_FILE $out/share/nixos-scripts/gpg-unlock-keys \
       --prefix PATH : ${lib.makeBinPath [ git ]}
     ${lib.optionalString pkgs.stdenv.hostPlatform.isLinux ''
-      ln -s ${pkgs.pinentry-qt}/bin/pinentry-qt $out/bin/pinentry-qt
-      ln -s ${pkgs.pinentry-qt}/bin/pinentry-curses $out/bin/pinentry-curses
+      mkdir -p $out/libexec/nixos-scripts
+      ln -s ${pkgs.pinentry-qt}/bin/pinentry-qt $out/libexec/nixos-scripts/pinentry-qt
+      ln -s ${pkgs.pinentry-qt}/bin/pinentry-curses $out/libexec/nixos-scripts/pinentry-curses
       ln -s pinentry-auto $out/bin/pinentry
     ''}
   '';

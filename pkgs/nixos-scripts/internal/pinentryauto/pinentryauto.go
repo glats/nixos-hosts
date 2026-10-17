@@ -1,6 +1,7 @@
 package pinentryauto
 
 import (
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -63,12 +64,22 @@ func forbidsCurses(userData string) bool {
 	return false
 }
 
-// TargetPath resolves the flavor binary next to the pinentry-auto entry
-// point; the flavors are symlinked into the same packaged bin directory as
-// the entry point by the derivation. An empty flavor maps to no path.
+// TargetPath resolves the flavor binary for the pinentry-auto entry point.
+// The packaged flavors live in ../libexec/nixos-scripts next to the bin
+// directory so they never collide with other packages in the user PATH; a
+// same-directory flavor keeps working as a fallback. An empty flavor maps
+// to no path.
 func TargetPath(exeDir string, flavor string) string {
 	if flavor == "" {
 		return ""
 	}
-	return filepath.Join(exeDir, flavor)
+	libexec := filepath.Join(exeDir, "..", "libexec", "nixos-scripts", flavor)
+	if _, err := os.Stat(libexec); err == nil {
+		return libexec
+	}
+	sibling := filepath.Join(exeDir, flavor)
+	if _, err := os.Stat(sibling); err == nil {
+		return sibling
+	}
+	return libexec
 }

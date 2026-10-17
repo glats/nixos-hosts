@@ -1,6 +1,10 @@
 package pinentryauto
 
-import "testing"
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
 
 func TestDecide(t *testing.T) {
 	cases := []struct {
@@ -87,22 +91,58 @@ func TestDecide(t *testing.T) {
 }
 
 func TestTargetPath(t *testing.T) {
-	cases := []struct {
-		name   string
-		exeDir string
-		flavor string
-		want   string
-	}{
-		{name: "qt lives next to the entry point", exeDir: "/bin", flavor: FlavorQt, want: "/bin/pinentry-qt"},
-		{name: "curses lives next to the entry point", exeDir: "/bin", flavor: FlavorCurses, want: "/bin/pinentry-curses"},
-		{name: "empty flavor yields no target", exeDir: "/bin", flavor: "", want: ""},
+	setupLayout := func(t *testing.T, wantsLibexec bool) string {
+		t.Helper()
+		root := t.TempDir()
+		binDir := filepath.Join(root, "bin")
+		if err := os.MkdirAll(binDir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if !wantsLibexec {
+			return binDir
+		}
+		libexecDir := filepath.Join(root, "libexec", "nixos-scripts")
+		if err := os.MkdirAll(libexecDir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		for _, flavor := range []string{FlavorQt, FlavorCurses} {
+			if err := os.WriteFile(filepath.Join(libexecDir, flavor), nil, 0o755); err != nil {
+				t.Fatal(err)
+			}
+		}
+		return binDir
 	}
 
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			if got := TargetPath(tc.exeDir, tc.flavor); got != tc.want {
-				t.Fatalf("TargetPath = %q, want %q", got, tc.want)
-			}
-		})
-	}
+	t.Run("packaged flavors resolve through libexec", func(t *testing.T) {
+		binDir := setupLayout(t, true)
+		if got, want := TargetPath(binDir, FlavorQt), filepath.Join(binDir, "..", "libexec", "nixos-scripts", FlavorQt); got != want {
+			t.Fatalf("TargetPath = %q, want %q", got, want)
+		}
+		if got, want := TargetPath(binDir, FlavorCurses), filepath.Join(binDir, "..", "libexec", "nixos-scripts", FlavorCurses); got != want {
+			t.Fatalf("TargetPath = %q, want %q", got, want)
+		}
+	})
+
+	t.Run("a same-directory flavor still resolves", func(t *testing.T) {
+		binDir := setupLayout(t, false)
+		if err := os.WriteFile(filepath.Join(binDir, FlavorQt), nil, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if got, want := TargetPath(binDir, FlavorQt), filepath.Join(binDir, FlavorQt); got != want {
+			t.Fatalf("TargetPath = %q, want %q", got, want)
+		}
+	})
+
+	t.Run("a missing flavor falls back to the libexec path", func(t *testing.T) {
+		binDir := setupLayout(t, false)
+		if got, want := TargetPath(binDir, FlavorQt), filepath.Join(binDir, "..", "libexec", "nixos-scripts", FlavorQt); got != want {
+			t.Fatalf("TargetPath = %q, want %q", got, want)
+		}
+	})
+
+	t.Run("empty flavor yields no target", func(t *testing.T) {
+		if got := TargetPath(t.TempDir(), ""); got != "" {
+			t.Fatalf("TargetPath = %q, want empty", got)
+		}
+	})
 }
