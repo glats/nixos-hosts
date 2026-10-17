@@ -42,6 +42,10 @@ in
 
   wstunnel-relay = final.callPackage ../pkgs/wstunnel-relay { };
 
+  rtk = prev.rtk.overrideAttrs (old: {
+    patches = (old.patches or [ ]) ++ [ ../patches/rtk/sigpipe-default.patch ];
+  });
+
   inherit (self.packages.${system})
     nixos-scripts
     gentle-ai

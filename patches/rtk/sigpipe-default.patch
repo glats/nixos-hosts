@@ -1,0 +1,15 @@
+--- a/src/main.rs
++++ b/src/main.rs
+@@ -1355,6 +1355,12 @@
+ }
+ 
+ fn main() {
++    #[cfg(unix)]
++    #[allow(unsafe_code)]
++    unsafe {
++        libc::signal(libc::SIGPIPE, libc::SIG_DFL);
++    }
++
+     let code = match run_cli() {
+         Ok(code) => code,
+         Err(e) => {

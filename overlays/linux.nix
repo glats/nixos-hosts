@@ -37,6 +37,10 @@ final: prev: {
   };
   wstunnel-relay = final.callPackage ../pkgs/wstunnel-relay { };
 
+  rtk = prev.rtk.overrideAttrs (old: {
+    patches = (old.patches or [ ]) ++ [ ../patches/rtk/sigpipe-default.patch ];
+  });
+
   teams-for-linux =
     let
       tfl-src = prev.fetchFromGitHub {
