@@ -56,6 +56,7 @@ in
     browsermcp-v2
     opencode
     leaf
+    herdr
     claude-code
     ;
 }

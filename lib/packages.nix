@@ -44,6 +44,7 @@ let
         browsermcp-v2 = pkgs.callPackage ../pkgs/browsermcp-v2 { };
         opencode = pkgs.callPackage ../pkgs/opencode { };
         leaf = pkgs.callPackage ../pkgs/leaf { };
+        herdr = pkgs.callPackage ../pkgs/herdr { };
         claude-code = pkgs.callPackage ../pkgs/claude-code {
           claude-code-unwrapped = inputs.claude-code-nix.packages.${pkgs.stdenv.hostPlatform.system}.default;
         };

@@ -21,6 +21,7 @@
   ../../shared/leaf-theme.nix
   ../../shared/opencode.nix
   ../../shared/opencode-profile.nix
+  ../../shared/herdr.nix
   ../../shared/claude-code.nix
   ../../shared/claude-code-profile.nix
   ../../shared/shell-gpt.nix

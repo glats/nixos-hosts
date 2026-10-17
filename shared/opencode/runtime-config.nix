@@ -10,6 +10,7 @@
 
 let
   runtimeDir = "${config.home.homeDirectory}/.config/opencode";
+  herdrAssets = config.home.herdr.integration;
 
   opencodeCommandSources = [
     "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/commands"
@@ -71,6 +72,7 @@ let
       "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/plugins/opencode-review-transport.ts";
     "skill-registry.ts" = "${pkgs.gentle-ai-assets}/share/gentle-ai/opencode/plugins/skill-registry.ts";
     "engram.ts" = "${pkgs.engram-assets}/share/engram/opencode/plugins/engram.ts";
+    "herdr-agent-state.js" = "${herdrAssets}/plugins/herdr-agent-state.js";
   };
   assetTrees = import ../ai-assets-tree.nix { inherit lib pkgs; };
   promptTree = pkgs.runCommand "opencode-owned-context" { } ''
@@ -92,6 +94,13 @@ let
     substituteInPlace "$out/skill-registry.ts" \
       --replace-fail 'const GO_COMMAND = "gentle-ai"' 'const GO_COMMAND = "${gentleManaged}/bin/gentle-ai"'
   '';
+  # Root-level herdr OpenCode integration files (TUI plugin and its V2
+  # cli.json directory entrypoint), reconciled next to the managed plugins.
+  herdrRootTree = pkgs.runCommand "herdr-opencode-root" { } ''
+    mkdir -p "$out/herdr-opencode"
+    cp ${herdrAssets}/herdr-tui-session.js "$out/"
+    cp ${herdrAssets}/herdr-opencode/tui.js "$out/herdr-opencode/"
+  '';
   entries =
     (map (source: {
       target = "skills";
@@ -107,6 +116,10 @@ let
       {
         target = "plugins";
         source = pluginsTree;
+      }
+      {
+        target = "";
+        source = herdrRootTree;
       }
       {
         target = "";
@@ -161,9 +174,9 @@ in
     force = true;
     text = builtins.toJSON {
       "$schema" = "https://opencode.ai/cli.json";
+      plugins = [ "./herdr-opencode" ];
     };
   };
-
   home.activation.cleanupOpencodeCliBackup = config.lib.dag.entryBefore [ "linkGeneration" ] ''
     ${pkgs.coreutils}/bin/rm -f "${runtimeDir}/cli.json.backup"
   '';
@@ -196,7 +209,7 @@ in
         ${pkgs.nixos-scripts}/bin/ai-assets-reconcile "$runtime_dir" \
           ${desiredAssets} ${assetTrees.none} 898d3976e8049a7238eaa7de60bff325c30d2b3d
         # Plugin set: rtk.ts, engram.ts, skill-registry.ts,
-        # opencode-review-transport.ts.
+        # opencode-review-transport.ts, herdr-agent-state.js.
         mkdir -p "$runtime_dir/node_modules"
         ${pkgs.coreutils}/bin/cp -r ${pkgs.opencode-npm-packages-v2}/lib/node_modules/. "$runtime_dir/node_modules/"
         chmod -R u+w "$runtime_dir/node_modules"

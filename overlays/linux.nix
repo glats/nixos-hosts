@@ -17,6 +17,7 @@ final: prev: {
     browsermcp-v2
     opencode
     leaf
+    herdr
     openfang
     claude-code
     ;
