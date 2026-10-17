@@ -48,7 +48,6 @@ in
       # OPENAI_API_KEY export poisons any tool whose OpenAI-compatible
       # provider falls back to that env var (OpenCode v1's built-in openai
       # provider sent this NIM key to api.openai.com).
-      # See openspec/changes/fix-opencode-v1-v2-credential-collision.
       sgpt() {
         local key_path="${config.sops.secrets."opencode/nvidia_api_key".path}"
         if [ -r "$key_path" ]; then

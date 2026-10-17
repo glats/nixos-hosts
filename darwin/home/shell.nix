@@ -72,7 +72,7 @@
 
       # NOTE: no `mise install` / `mise reshim` here — mise reshim runs
       # automatically on tool install/update/remove, and per-shell invocations
-      # cost ~150ms of startup each (see openspec optimize-zsh-startup-time).
+      # cost ~150ms of startup each.
 
       path=(
         /etc/profiles/per-user/${primaryUser}/bin
