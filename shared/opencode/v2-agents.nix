@@ -19,7 +19,6 @@ let
     returned exact callable paths and signatures. Never guess or normalize tool names.
     Managed skills live at ${skillsRoot}. Resolve skills/_shared/... references in loaded
     skills under ${skillsRoot}/_shared/..., not the repository or the V1 runtime.
-    Keep repository-relative openspec/... artifact paths relative to the repository.
   '';
   system =
     name: prompt:

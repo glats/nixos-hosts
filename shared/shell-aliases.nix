@@ -98,7 +98,6 @@
         # `@continuum-restore on` land before reporting a verdict. Continuum
         # remains the sole restore authority — this never calls Resurrect's
         # restore.sh and never creates a bootstrap session (no `new-session -A`).
-        # See openspec/changes/tmux-restore-attach/design.md for the contract.
         tmux-resume() {
           command -v tmux >/dev/null 2>&1 || {
             echo "tmux-resume: tmux not found" >&2

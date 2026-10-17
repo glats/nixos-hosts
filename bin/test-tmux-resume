@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Regression harness for the shared `tmux-resume` zsh function defined in
-# shared/shell-aliases.nix (openspec/changes/tmux-restore-attach).
+# shared/shell-aliases.nix.
 #
 # It extracts the live function body straight out of the Nix source (so the
 # test can never silently drift from what ships) and exercises it against a
