@@ -10,5 +10,7 @@
 
   home.file.".gnupg/gpg-agent.conf".text = ''
     pinentry-program ${pkgs.pinentry_mac}/bin/pinentry-mac
+    default-cache-ttl 34560000
+    max-cache-ttl 34560000
   '';
 }

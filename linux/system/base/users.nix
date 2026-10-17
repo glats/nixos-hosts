@@ -17,6 +17,10 @@ in
       enable = true;
       enableSSHSupport = false;
       pinentryPackage = pkgs.pinentry-qt;
+      settings = {
+        default-cache-ttl = 34560000;
+        max-cache-ttl = 34560000;
+      };
     };
 
     nix-ld.enable = true;
