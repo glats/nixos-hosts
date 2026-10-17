@@ -34,6 +34,14 @@ let
       &&
         thinkcentre.home-manager.users.glats.qt.kde.settings
         == flake.homeConfigurations.thinkcentre.config.qt.kde.settings;
+    thinkcentreKwinUnwrapPatch =
+      let
+        sonicWin =
+          flake.nixosConfigurations.thinkcentre._module.args.sonic-de.packages.x86_64-linux.sonic-win;
+      in
+      lib.any (p: lib.hasSuffix "sonic-win-unwrap-serviceutils.patch" (toString p)) sonicWin.patches
+      && thinkcentre.security.wrappers.kwin_x11.source == "${lib.getBin sonicWin}/bin/kwin_x11"
+      && lib.elem sonicWin thinkcentre.environment.systemPackages;
     kconfigAvailable = flake.homeConfigurations.rog.options.qt.kde ? settings;
     mateThemeRestored = home.qt.enable && home.qt.platformTheme.name == "gtk3";
     integratedHomeMatches =
