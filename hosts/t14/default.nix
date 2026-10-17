@@ -12,6 +12,7 @@
     ./secrets.nix
 
     ../../linux/system/base/cachix.nix
+    ../../linux/system/base/nix-cache-client.nix
     ../../linux/system/base/nix.nix
     ../../linux/system/base/polkit.nix
     ../../linux/system/base/sops.nix

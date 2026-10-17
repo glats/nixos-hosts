@@ -30,6 +30,7 @@ in
   imports = [
     ../../darwin/system/nix.nix
     ../../darwin/system/cachix.nix
+    ../../darwin/system/nix-cache-client.nix
     ../../darwin/system/homebrew.nix
     ../../darwin/system/settings.nix
     ../../darwin/system/mise.nix
