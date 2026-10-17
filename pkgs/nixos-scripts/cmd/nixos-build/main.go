@@ -29,6 +29,9 @@ Environment:
   NIX_CACHE_PUSH=0   Skip the best-effort push of /run/current-system to
                      thinkcentre that runs after a successful darwin
                      switch (macm5 only)
+
+Flake: NIXOS_REPO, or the current git worktree when it belongs to the
+same repository (for example a herdr worktree).
 `
 
 func main() {

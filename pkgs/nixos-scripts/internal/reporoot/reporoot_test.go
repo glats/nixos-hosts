@@ -120,3 +120,53 @@ func TestFlakePathWorktree(t *testing.T) {
 		t.Fatalf("FlakePath at root with alias = %q, want %q", got, alias)
 	}
 }
+
+func gitRun(t *testing.T, dir string, args ...string) {
+	t.Helper()
+	cmd := exec.Command("git", args...)
+	cmd.Dir = dir
+	cmd.Env = append(os.Environ(),
+		"GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@t",
+		"GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@t",
+	)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git %v: %v (%s)", args, err, out)
+	}
+}
+
+func TestFlakePathExternalGitWorktree(t *testing.T) {
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git not available")
+	}
+	root, _ := filepath.EvalSymlinks(t.TempDir())
+	gitRun(t, root, "init", "-q")
+	gitRun(t, root, "commit", "--allow-empty", "-m", "init")
+	wt := filepath.Join(t.TempDir(), "feature-x")
+	gitRun(t, root, "worktree", "add", "-q", "-b", "feature/x", wt)
+	wt, _ = filepath.EvalSymlinks(wt)
+
+	other, _ := filepath.EvalSymlinks(t.TempDir())
+	gitRun(t, other, "init", "-q")
+	t.Cleanup(func() { os.Chdir("/tmp") })
+
+	sub := filepath.Join(wt, "sub")
+	if err := os.MkdirAll(sub, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	for _, dir := range []string{wt, sub} {
+		os.Chdir(dir)
+		if got := FlakePath(root); got != wt {
+			t.Fatalf("FlakePath in external worktree %q = %q, want %q", dir, got, wt)
+		}
+	}
+
+	os.Chdir(root)
+	if got := FlakePath(root); got != root {
+		t.Fatalf("FlakePath at main checkout = %q, want %q", got, root)
+	}
+
+	os.Chdir(other)
+	if got := FlakePath(root); got != root {
+		t.Fatalf("FlakePath in unrelated repo = %q, want %q", got, root)
+	}
+}

@@ -45,7 +45,39 @@ func FlakePath(root string) string {
 	if strings.HasPrefix(cwd, wt) {
 		return "."
 	}
+	if top, ok := sameRepoWorktree(canonicalRoot); ok {
+		return top
+	}
 	return root
+}
+
+func sameRepoWorktree(canonicalRoot string) (string, bool) {
+	top, err := gitToplevel()
+	if err != nil {
+		return "", false
+	}
+	if top, err = filepath.EvalSymlinks(top); err != nil || top == canonicalRoot {
+		return "", false
+	}
+	cwdCommon, err := gitCommonDir("")
+	if err != nil {
+		return "", false
+	}
+	rootCommon, err := gitCommonDir(canonicalRoot)
+	if err != nil || cwdCommon != rootCommon {
+		return "", false
+	}
+	return top, true
+}
+
+func gitCommonDir(dir string) (string, error) {
+	cmd := exec.Command("git", "rev-parse", "--path-format=absolute", "--git-common-dir")
+	cmd.Dir = dir
+	out, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+	return filepath.EvalSymlinks(strings.TrimSpace(string(out)))
 }
 
 func gitToplevel() (string, error) {
