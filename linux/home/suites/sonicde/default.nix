@@ -48,6 +48,9 @@ in
       d.writeConfig("Color", "0,0,0");
     });
     panels().forEach(function (p) {
+      if (p.location == "bottom") {
+        p.height = 24;
+      }
       p.widgets("org.kde.plasma.icontasks").forEach(function (w) {
         w.currentConfigGroup = ["General"];
         w.writeConfig("launchers", [

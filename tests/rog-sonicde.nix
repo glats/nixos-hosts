@@ -63,7 +63,8 @@ let
       && files ? "autostart/sonicde-layout.desktop"
       && lib.hasInfix "org.kde.color" layout
       && lib.hasInfix "applications:kitty.desktop" layout
-      && lib.hasInfix "applications:brave-browser.desktop" layout;
+      && lib.hasInfix "applications:brave-browser.desktop" layout
+      && lib.hasInfix "p.height = 24;" layout;
     thinkcentreKwinUnwrapPatch =
       let
         sonicWin =
