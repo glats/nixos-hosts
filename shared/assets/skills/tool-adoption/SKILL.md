@@ -1,10 +1,10 @@
 ---
 name: tool-adoption
 description: "Trigger: new tool, add tool, evaluate tool, new CLI, new MCP, new skill, does it fit, integrar herramienta. Research and classify external tools before adopting them."
-license: Apache-2.0
+license: MIT
 metadata:
   author: "glats"
-  version: "1.0"
+  version: "1.1"
 ---
 
 ## Activation Contract
@@ -15,12 +15,13 @@ proposing or installing anything.
 
 ## Hard Rules
 
-- Research before reading repository code: use Context7, GitHub, Exa, and
-  `nixos_nix` where package or option availability matters. Record unavailable
-  sources as unknown; never infer APIs, security, or platform support.
+- Research before reading repository code: use Context7, GitHub, Exa, and the
+  `nixos` MCP (`nix_versions` on NixHub.io) where package availability matters.
+  Record unavailable sources as unknown; never infer APIs, security, or
+  platform support.
 - Do not run upstream `init`, installer, `curl | sh`, or `npx @latest` commands
   in this repository during evaluation. Do not copy generated agent instructions
-  without reviewing their behavior and ownership model. Use the current pattern in the nix code.
+  without reviewing their behavior and ownership model.
 - Check license, pinning, update/telemetry behavior, network listeners, local
   state, filesystem reach, secret exposure, open security issues, and support
   for Linux plus arm64-darwin.
@@ -40,13 +41,21 @@ proposing or installing anything.
 
 1. Identify the canonical upstream repository, release, license, and install
    surface; distinguish marketing claims from source behavior.
-2. Map it to the current harness: shared skills, MCP inventory, Home Manager
-   packages, Go scripts, existing tools, and multi-host deployment.
+2. Map it to the current harness: registered skills (`.atl/skill-registry.md`,
+   sources under `shared/assets/skills/`), MCP config in
+   `shared/opencode/mcps*.nix`, Home Manager packages, Go helpers under
+   `pkgs/nixos-scripts/`, and multi-host deployment to rog, thinkcentre,
+   t14, and macm5.
 3. Inspect runtime boundaries: processes, ports, browser or GUI needs, network
    calls, telemetry, update checks, emitted artifacts, and read/write scope.
-4. Run or delegate `explore` for a named change. Compare package-only,
-   managed integration, and defer options; include validation and rollback.
+4. Delegate one read-only explorer when mapping exceeds a bounded read batch;
+   otherwise explore inline. Compare package-only, managed integration, and
+   defer options; include the host evaluation command and rollback.
 5. Require explicit user approval before proposal or implementation.
+6. After approval, deploy only through the harness path: skill files live in
+   `shared/assets/skills/` and reach `~/.config/opencode/skills/` on the next
+   home-manager rebuild (`nixos-build test`); never hand-edit the installed
+   copy, because `ai-assets-reconcile` refuses modified collisions.
 
 ## Output Contract
 
@@ -56,6 +65,9 @@ risks, platform coverage, and whether it belongs in a separate change.
 
 ## References
 
+Paths are relative to the repository root.
+
 - `AGENTS.md` — repository architecture, Go-only policy, and Nix verification.
 - `docs/rtk-pilot.md` — example of runtime-output and local-state risk analysis.
 - `docs/browser-mcp-setup.md` — example of an MCP/browser boundary.
+- `shared/opencode/mcps.nix` — current MCP inventory source.
