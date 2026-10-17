@@ -14,12 +14,12 @@ Branch: feat/thinkcentre-nix-cache (base origin/master b9cd3830) · Delivery: si
 
 ## Tasks
 
-- T1 [S7] secrets + `.sops.yaml` rules + public keys constants (`shared/nix-cache.nix`) — route inline — done (commit: see Log L8)
-- T2 [S3,S4] Go `nix-cache` (`prewarm`, `push`) with tests, wired in `pkgs/nixos-scripts/default.nix` subPackages — route inline — pending
-- T3 [S1,S2,S3,S4] thinkcentre server module under `linux/system/services/nix/` (harmonia, ncps, idle daemon sched, gc, timer, trusted-users) imported by `hosts/thinkcentre/default.nix` — route inline — pending
-- T4 [S5,S7] client modules: Linux (rog, t14) + `darwin/system/` (macm5), netrc-file from sops — route inline — pending
-- T5 [S6,S7] rog nginx vhost `cache.glats.org` — route inline — pending
-- T6 [S4,S8] macm5 push hook in `nixos-build` + `docs/nix-cache.md` — route inline — pending
+- T1 [S7] secrets + `.sops.yaml` rules + public keys constants (`shared/nix-cache.nix`) — route inline — done c7da2b9d
+- T2 [S3,S4] Go `nix-cache` (`prewarm`, `push`) with tests, wired in `pkgs/nixos-scripts/default.nix` subPackages — route delegated (L7) — done b00090c4
+- T3 [S1,S2,S3,S4] thinkcentre server module under `linux/system/services/nix/` (harmonia, ncps, idle daemon sched, gc, timer, trusted-users) imported by `hosts/thinkcentre/default.nix` — route delegated (L7) — done 52aa7f88
+- T4 [S5,S7] client modules: Linux (rog, t14) + `darwin/system/` (macm5), netrc-file from sops — route delegated (L7) — done 7ee43938
+- T5 [S6,S7] rog nginx vhost `cache.glats.org` — route delegated (L7) — done 405d460c
+- T6 [S4,S8] macm5 push hook in `nixos-build` + `docs/nix-cache.md` — route delegated (L7) — pending
 - Risk: high (items 2 security/credentials and 5 environment/services) → independent verifier at feature end.
 
 ## Log
@@ -32,3 +32,4 @@ Branch: feat/thinkcentre-nix-cache (base origin/master b9cd3830) · Delivery: si
 - L6 (2026-10-17) Evidence gathered: nixpkgs pin has `services.harmonia` (`cache.signKeyPaths`, bind `[::]:5000`) and `services.ncps` (`cache.upstream.urls`, `cache.upstream.publicKeys`, `cache.secretKeyPath`, `cache.hostName` required, sqlite default, `server.addr` `:8501`, `cache.maxSize`, `cache.lru.schedule`); NixOS firewall is disabled via `firewall-custom` so ports need no change; `.sops.yaml` has anchors for all hosts but host rules only for rog and thinkcentre; rog nginx `mkProxyVhost` hardcodes 127.0.0.1 so the cache vhost sets its own `proxyPass`; macm5 uses sops-nix darwin module and Determinate Nix; no `trusted-users` set anywhere; `cmd/nixos-build-all` already enumerates host outputs and is a reuse base. Next step: confirm design with the user, then T1.
 - L7 (2026-10-17) User, verbatim: "Respuesta a S7: me quedo con basic auth + netrc." S7 open question closed. Later, verbatim: "pero no hagas todo inline" → T2–T5 delegated as parallel writers with disjoint surfaces (Writer trigger (a), user-directed); parent owns git and the seam check; T6 runs after T2 (shares `pkgs/nixos-scripts`).
 - L8 (2026-10-17) T1 done inline: `.sops.yaml` rules for `secrets/host/t14/.+` and `secrets/host/macm5/.+` before generic rules; `secrets/host/{thinkcentre,rog,t14,macm5}/nix-cache.yaml` encrypted with admin + host age keys (2 recipients each), plaintext generated in a temp dir and deleted, never decrypted. Keys: thinkcentre `nix-cache/harmonia_signing_key`, `nix-cache/ncps_signing_key`; rog `nix-cache/htpasswd` (bcrypt, user `nix-cache`) + `nix-cache/netrc`; t14/macm5 `nix-cache/netrc` (`machine cache.glats.org login nix-cache`). Assumption: rog also gets a netrc so it can use the remote substituter per S5. Public keys and URLs in `shared/nix-cache.nix`.
+- L9 (2026-10-17) T2–T5 delivered by 4 parallel writers, parent seam check: `go -C pkgs/nixos-scripts test ./...` ok; `nix eval` toplevel drvPath ok for rog, t14, thinkcentre; `nix build .#nixos-scripts` ok; `nix flake check --no-build` "all checks passed!"; macm5 `determinateNix.determinateNixd.authentication.additionalNetrcSources` = `["/run/secrets/nix-cache/netrc"]`. Deviations: Determinate Nix rejects `netrc-file` in `customSettings`, so macm5 uses `determinateNixd.authentication.additionalNetrcSources`; prewarm runs as root, flake `git+https://github.com/glats/nixos-hosts?ref=master`, max-load 2.0, timer every 6h; ncps LRU `17 3 * * *`. Known environmental failure: `nix eval .#darwinConfigurations.macm5.config.system.build.toplevel.drvPath` fails on x86_64-linux (IFD of aarch64-darwin opencode tarball), reproduced at baseline by the T4 writer. RDD assess over b9cd3830..405d460c: risk high (process_boundary), review_due true → independent verifier + native review after T6. Engram mirror pending until T6.
