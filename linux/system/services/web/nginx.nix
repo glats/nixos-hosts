@@ -162,6 +162,41 @@ in
     clientMaxBodySize = "100g";
 
     virtualHosts = {
+      "catch-all" = {
+        listen = [
+          {
+            addr = "0.0.0.0";
+            port = 443;
+            ssl = true;
+            extraParameters = [ "default_server" ];
+          }
+          {
+            addr = "[::]";
+            port = 443;
+            ssl = true;
+            extraParameters = [ "default_server" ];
+          }
+          {
+            addr = "0.0.0.0";
+            port = 80;
+            extraParameters = [ "default_server" ];
+          }
+          {
+            addr = "[::]";
+            port = 80;
+            extraParameters = [ "default_server" ];
+          }
+        ];
+
+        locations."/" = {
+          return = "444";
+        };
+
+        extraConfig = ''
+          ssl_reject_handshake on;
+        '';
+      };
+
       "localhost" = {
         listen = [
           {
