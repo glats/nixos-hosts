@@ -8,7 +8,9 @@ The input and module are reused unchanged. Declarative KConfig settings now
 belong in `linux/home/suites/sonicde/default.nix` under `qt.kde.settings`.
 That module sets Breeze Dark, disables screen autolock, AC auto-suspend and
 USB automounting, binds KRunner to `Ctrl+Space` and Spectacle to `Print`, and
-removes the former Flameshot `Print` binding. Flameshot stays in the MATE suite only.
+removes the former Flameshot `Print` binding. KDE's `gtkconfig` kded module is
+disabled because Home Manager owns `~/.gtkrc-2.0` and the GTK 3/4 files; KDE
+rewriting them makes Home Manager activation fail on existing `.backup` files. Flameshot stays in the MATE suite only.
 HexChat stays rog-only. Plasma layout state (black wallpaper, panel
 launchers) is applied at login through plasmashell scripting from
 `~/.local/share/sonicde/layout.js`, because `plasma-org.kde.plasma.desktop-appletsrc`

@@ -30,7 +30,10 @@ in
       Timeout = 0;
     };
     powerdevilrc.AC.SuspendAndShutdown.AutoSuspendAction = 0;
-    kded5rc."Module-device_automounter".autoload = false;
+    kded5rc = {
+      "Module-device_automounter".autoload = false;
+      "Module-gtkconfig".autoload = false;
+    };
     kglobalshortcutsrc.services = {
       "org.kde.krunner.desktop"._launch = "Ctrl+Space";
       "org.kde.spectacle.desktop"._launch = "Print";
