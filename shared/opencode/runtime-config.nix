@@ -136,7 +136,10 @@ let
   jsonFile = pkgs.writeText "opencode.json" (
     builtins.toJSON ({
       update = "disable";
-      plugins = [ "opencode-claude-subscription@0.1.4" ];
+      plugins = [
+        "opencode-claude-subscription@0.1.4"
+        "@slkiser/opencode-quota@5.0.3"
+      ];
       default_agent = "gentle-orchestrator";
       agents = v2Agents;
       providers.openai.settings.transport = "http";
@@ -175,6 +178,15 @@ in
     text = builtins.toJSON {
       "$schema" = "https://opencode.ai/cli.json";
       plugins = [ "./herdr-opencode" ];
+    };
+  };
+  home.file.".config/opencode/opencode-quota/quota-toast.jsonc" = {
+    force = true;
+    text = builtins.toJSON {
+      enabledProviders = "auto";
+      tuiSidebarPanel.enabled = true;
+      enableToast = false;
+      tuiCompactStatus.enabled = false;
     };
   };
   home.activation.cleanupOpencodeCliBackup = config.lib.dag.entryBefore [ "linkGeneration" ] ''
