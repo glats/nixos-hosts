@@ -54,6 +54,22 @@ let
       lib.hasInfix
         "Toggle top bar, exec, /home/glats/.local/share/omarchy/quattro/bin/omarchy-toggle bar-off"
         host.config.home-manager.users.glats.xdg.configFile."hypr/hyprland.conf".text;
+    shellUsesQuattroVoxtypeStatus =
+      let
+        launcher = builtins.readFile (
+          builtins.head (
+            lib.toList host.config.home-manager.users.glats.systemd.user.services.omarchy-shell.Service.ExecStart
+          )
+        );
+        panelDir = builtins.head (builtins.match ".*PATH=([^:]*quattro-panel-commands/bin):.*" launcher);
+      in
+      builtins.pathExists "${panelDir}/omarchy-voxtype-status"
+      && !(lib.hasInfix "kill 0" (builtins.readFile "${panelDir}/omarchy-voxtype-status"));
+    omarchyPathMatchesShell =
+      host.config.environment.sessionVariables.OMARCHY_PATH == "$HOME/.local/share/omarchy/quattro"
+      &&
+        host.config.home-manager.users.glats.home.sessionVariables.OMARCHY_PATH
+        == "/home/glats/.local/share/omarchy/quattro";
     osdOwnedByShell =
       let
         text = host.config.home-manager.users.glats.xdg.configFile."hypr/hyprland.conf".text;
