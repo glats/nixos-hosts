@@ -1,6 +1,6 @@
 # T14 Quattro staging
 
-The t14 entry point imports `hosts/t14/quattro.nix`. The flake pins published fork commit `b113a3e9df77a2ca9a8ab9ea322e5b9e2ff3ce07` on the fork's `main` branch; no temporary worktree override is required. Verify the locked configuration without activation:
+The t14 entry point imports `hosts/t14/quattro.nix`. The flake pins published fork commit `359d2348b88d91918b62c0ba37a0a7a7290fd61b` on the fork's `main` branch; no temporary worktree override is required. Verify the locked configuration without activation:
 
 ```sh
 nix eval --impure --json --expr 'import ./tests/t14-quattro-locked.nix { flake = builtins.getFlake (toString ./.); }'

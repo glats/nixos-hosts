@@ -21,6 +21,11 @@ let
   native =
     (baseline.extendModules { modules = [ { omarchy.quattro.enable = true; } ]; })
     .config.home-manager.users.glats;
+  shellLauncher = builtins.readFile (
+    builtins.head (
+      lib.toList host.config.home-manager.users.glats.systemd.user.services.omarchy-shell.Service.ExecStart
+    )
+  );
   checks = {
     sharedHyprlandPackage =
       after.wayland.windowManager.hyprland.package.drvPath
@@ -108,6 +113,21 @@ let
       && !(lib.hasInfix "makoctl" text)
       && lib.hasInfix "omarchy-shell notifications dismissOne" text
       && !(builtins.elem "omarchy.notifications" disabled);
+    clipboardEmojisOwnedByShell =
+      let
+        text = host.config.home-manager.users.glats.xdg.configFile."hypr/hyprland.conf".text;
+        disabled =
+          (builtins.fromJSON host.config.home-manager.users.glats.xdg.configFile."omarchy/shell.json".text)
+          .disabledPlugins;
+      in
+      !(lib.hasInfix "clipse -listen" text)
+      && !(lib.hasInfix "omarchy-launch-walker -m clipboard" text)
+      && !(lib.hasInfix "omarchy-launch-walker -m symbols" text)
+      && lib.hasInfix "omarchy-shell shell toggle omarchy.clipboard" text
+      && lib.hasInfix "omarchy-shell shell toggle omarchy.emojis" text
+      && !(builtins.elem "omarchy.clipboard" disabled)
+      && !(builtins.elem "omarchy.emojis" disabled)
+      && lib.hasInfix "wtype" shellLauncher;
     noRemovedHyprlandOptions =
       let
         text = host.config.home-manager.users.glats.xdg.configFile."hypr/hyprland.conf".text;
