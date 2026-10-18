@@ -57,3 +57,13 @@ STOP HERE. Use SSH freely; Phase 2 happens only with explicit user go.
 ## Rule of thumb
 
 Never run a step that can reboot the router unless the PC can also reach it by cable and this runbook is saved locally (print or copy the file). If any doubt: stop, keep Phase 1 only — SSH root on stock is already the main prize and is fully reversible.
+
+## OpenWrt updates (attended sysupgrade — manual accept, automatic detection)
+
+Current: 25.12.5. The update flow is designed as detect-automatically / accept-manually:
+
+1. LuCI (http://router.lan, root) login page shows "An upgrade is available" when a newer release exists (uci: `attendedsysupgrade.client.login_check_for_upgrades='1'`).
+2. System → Attended Sysupgrade → Search: builds a custom image on the official server (https://sysupgrade.openwrt.org) that KEEPS every installed package (`upgrade_packages='1'`) — no package loss.
+3. Review the summary, then Request + Install. The router reboots (~2 min). Settings/config are preserved by default (keep-settings).
+4. Post-update verification: `fw_printenv | grep flag_try` (must stay =8), `/etc/init.d/adguardhome status` (running), `dig example.com @router.lan` (resolves), https://glats.org (200).
+5. Rollback safety: sysupgrade never touches the boot-flag partition; worst case = the unbrick path above.
