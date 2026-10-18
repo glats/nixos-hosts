@@ -12,7 +12,7 @@ to activate, call models, stage, commit, push or publish.
 | Gentle binary and assets | v4.0.0, `ff77164d4f56f1665b22fb6fac51c2ccbb769400` |
 | Go | At least 1.25.10; pinned builder currently 1.26.6 |
 | vendorHash | `sha256-YL4Slz/UuY+HEcJTW+pMphcdB6xtpam+E4uTDWifEcY=` |
-| OpenCode CLI and SDK | 2.0.14; no silent upgrade/downgrade |
+| OpenCode CLI and SDK | 2.0.32 (runtime upgrade approved 2026-10-17); no silent upgrade/downgrade |
 | Native relay declaration | `gentle-ai.opencode-relay/v2-staged` |
 | Go-owned wire | `gentle-ai.provider-transport/v1` |
 
@@ -60,7 +60,7 @@ review role binding, materialization, budgets, admission and receipts.
    remain last-wins. Keep provider policy, NVIDIA declaration, MCP/Engram/RTK,
    launcher arguments, standalone/server/proxy behavior and namespace roots.
 
-The tagged installer SDK equality check does not prove managed 2.0.14 runtime
+The tagged installer SDK equality check does not prove managed 2.0.32 runtime
 incompatibility. A demonstrated incompatibility blocks adoption until an
 explicit runtime-upgrade decision; unit tests cannot advertise organic capability.
 
