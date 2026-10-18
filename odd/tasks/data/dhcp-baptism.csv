@@ -1,6 +1,6 @@
 ip,mac,vendor,fuente,nombre_actual,pista,bautizo_propuesto,bautizo_final
 172.16.0.1,5c:02:14:b0:13:6b,Xiaomi (el router),router,openwrt,AGH :53 + dnsmasq :5353 + LuCI,router (proyecto: router.lan),router.lan
-172.16.0.3,60:63:4c:1b:b7:ff,D-Link International,(sin lease),(sin nombre),¿ONT/switch? — descubierto por el sweep,,dlink-repeater.lan
+172.16.0.3,60:63:4c:1b:b7:ff,D-Link International,(sin lease),(sin nombre),¿ONT/switch? — descubierto por el sweep,,dlink.lan
 172.16.0.5,88:d7:f6:22:10:fe,NIC rog,static[0],rog,confirmado: esta máquina (nixos-hosts),,rog.lan
 172.16.0.6,f8:e4:3b:53:64:cc,,static[1],dev6,impresora Brother (user-identified; estaba apagada),,brother.lan
 172.16.0.9,5a:d7:9c:c6:98:4b,,static[2],dev9,Xiaomi app: macm5,,macm5.lan
@@ -11,12 +11,13 @@ ip,mac,vendor,fuente,nombre_actual,pista,bautizo_propuesto,bautizo_final
 172.16.0.89,84:ea:ed:40:d2:1d,Roku,lease,RokuExpress,streaming box,,roku.lan
 172.16.0.108,18:26:49:ec:7f:c5,Intel Corporate,lease (.109 antes),(sin nombre),"LA T14 POR WIFI (hostname=t14; 3 NICs: .10 eth1, .22 eth2, .108 wifi Intel) — mismo equipo, no thinkcentre",,
 172.16.0.132,78:a6:a0:9e:57:07,Hangzhou EZVIZ,lease,F98329162,CÁMARA de seguridad (Hikvision consumer),,cam.lan
-172.16.0.144,ae:1e:cc:af:60:3c,randomized,lease,Redmi-Pad-SE-8-7,tablet,,redmu.lan
+172.16.0.144,ae:1e:cc:af:60:3c,randomized,lease,Redmi-Pad-SE-8-7,tablet,,redmi.lan
 172.16.0.145,da:49:ea:2a:73:cc,randomized,lease,Tab-S7-de-Nicole,tablet Samsung,,tabs7.lan
-172.16.0.149,da:62:79:ca:c0:c7,randomized,lease,RE305,TP-Link extender (IPs rotan),,dlink-repeater.lan
+172.16.0.150,e4:65:64:e3:72:cf,Shenzhen KTC Technology,lease,Android-2,Philips Android TV (ADB :5555; user-identified),,philips.lan
+172.16.0.149,da:62:79:ca:c0:c7,randomized,lease,RE305,TP-Link extender (IPs rotan),,repeater.lan
 172.16.0.183,70:26:05:00:25:55,Sony Visual Products,lease,(sin nombre),TV Bravia — nginx :80,tv-sony?,sony.lan
 172.16.0.197,f6:91:0d:6d:75:61,Apple,lease,iPhone,iOS,,iphone-nicole.lan
-172.16.0.208,be:b0:5b:41:f2:be,randomized,lease,motorola-edge-70,celular,,motorola-edge.lan
+172.16.0.208,be:b0:5b:41:f2:be,randomized,lease,motorola-edge-70,celular,,moto.lan
 172.16.0.235,84:c5:a6:2e:6e:b3,Intel Corporate,lease,DESKTOP-Nicole,PC Windows de Nicole (NIC Intel),,asus.lan
 172.16.0.244,5a:d6:7e:50:9a:87,randomized,lease,OnePlus-9-Pro-5G,celular,,oneplus9.lan
 172.16.0.249,72:fc:49:94:f2:f7,randomized,lease ciega,(sin nombre),lease ciega,,
