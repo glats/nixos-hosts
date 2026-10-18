@@ -32,8 +32,12 @@ let
     noCompetingLuaEntry =
       !(after.xdg.configFile ? "hypr/hyprland.lua") && !(after.home.file ? ".config/hypr/hyprland.lua");
     hostFragmentsPreserved =
-      after.wayland.windowManager.hyprland.extraConfig
-      == before.wayland.windowManager.hyprland.extraConfig;
+      after.wayland.windowManager.hyprland.extraConfig == lib.replaceStrings
+        [
+          "  col.border_locked_active = -1\n  col.border_locked_inactive = -1\n"
+        ]
+        [ "" ]
+        before.wayland.windowManager.hyprland.extraConfig;
     mouseWigglePreserved =
       after.systemd.user.services.mouse-wiggle == before.systemd.user.services.mouse-wiggle;
     greeterPreserved =
@@ -41,6 +45,11 @@ let
     logindPreserved = candidate.config.services.logind.settings == host.config.services.logind.settings;
     lidOwnershipPreserved = !candidate.config.omarchy.hyprland.lidSwitch.enable;
     runtimeAvailable = after.home.file ? ".local/share/omarchy/quattro";
+    noRemovedHyprlandOptions =
+      let
+        text = host.config.home-manager.users.glats.xdg.configFile."hypr/hyprland.conf".text;
+      in
+      !(lib.hasInfix "pseudotile" text) && !(lib.hasInfix "border_locked_active = -1" text);
   };
 in
 assert lib.assertMsg (lib.all (ok: ok) (builtins.attrValues checks)) (
