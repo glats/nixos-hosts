@@ -58,6 +58,13 @@ let
       hostKeyFingerprint = "SHA256:FNVpTbaoCOiL5ZWszL5t2ekMswJRRcKQYvQeGY7hGYk";
     };
   };
+  router = {
+    verifiedOn = "2026-10-17";
+    hostName = "172.16.0.1";
+    identityFile = "id_ed25519_lan";
+    hostPublicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAoik6DmG1EyRe+E2QahYa6l+FZ9rm3wp/MYQfywsgGE";
+    hostKeyFingerprint = "SHA256:zpAY7nqSkSgBlP433T43qDBKVDB17fNpYardJC8Qt9o";
+  };
   names = builtins.attrNames members;
   records = builtins.attrValues members;
   validRecord =
@@ -78,14 +85,25 @@ assert lib.assertMsg (lib.all validRecord records)
   inherit members;
   peerKeys =
     target: map (name: members.${name}.publicKey) (builtins.filter (name: name != target) names);
-  knownHosts = lib.mapAttrs (name: member: {
-    publicKey = member.hostPublicKey;
-    hostNames = lib.unique [
-      name
-      "${name}.local"
-      member.hostName
-    ];
-  }) (lib.filterAttrs (_: member: member ? hostPublicKey) members);
+  knownHosts =
+    lib.mapAttrs (name: member: {
+      publicKey = member.hostPublicKey;
+      hostNames = lib.unique [
+        name
+        "${name}.local"
+        member.hostName
+      ];
+    }) (lib.filterAttrs (_: member: member ? hostPublicKey) members)
+    // {
+      router = {
+        publicKey = router.hostPublicKey;
+        hostNames = [
+          "router"
+          "router.local"
+          router.hostName
+        ];
+      };
+    };
   sshSettingsFor =
     { source, sshDir }:
     lib.listToAttrs (
@@ -127,5 +145,22 @@ assert lib.assertMsg (lib.all validRecord records)
           BatchMode = true;
         };
       }
+      ++
+        lib.concatMap
+          (alias: [
+            {
+              name = alias;
+              value = {
+                HostName = router.hostName;
+                User = "root";
+                IdentityFile = "${sshDir}/${members.${source}.identityFile}";
+                IdentitiesOnly = true;
+              };
+            }
+          ])
+          [
+            "router"
+            "router.local"
+          ]
     );
 }
