@@ -17,6 +17,12 @@ let
     schemaVersion = (shell.version or null) == 1;
     widgetSchema = builtins.all (widget: builtins.isAttrs widget && widget ? id) widgets;
     keyboardWidget = builtins.any (widget: widgetId widget == "omarchy.keyboard-layout") widgets;
+    groupAWidgets = builtins.all (id: builtins.any (widget: widgetId widget == id) widgets) [
+      "omarchy.media"
+      "omarchy.indicators"
+      "omarchy.weather"
+    ];
+    noAgentsWidget = !(builtins.any (widget: widgetId widget == "omarchy.agents") widgets);
     noDisabledWidget = builtins.all (
       widget: !(builtins.elem (widgetId widget) shell.disabledPlugins)
     ) widgets;

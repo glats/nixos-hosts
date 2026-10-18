@@ -13,12 +13,15 @@
         layout = {
           left = [ { id = "omarchy.workspaces"; } ];
           center = [
+            { id = "omarchy.indicators"; }
             {
               id = "omarchy.clock";
               format = "dddd HH:mm";
             }
+            { id = "omarchy.weather"; }
           ];
           right = [
+            { id = "omarchy.media"; }
             { id = "omarchy.tray"; }
             { id = "omarchy.audio"; }
             { id = "omarchy.bluetooth"; }
@@ -45,7 +48,6 @@
         "omarchy.monitor"
         "omarchy.image-picker"
         "omarchy.dev-gallery"
-        "omarchy.weather"
         "omarchy.tailscale"
         "omarchy.dropbox"
         "omarchy.speedtest"
