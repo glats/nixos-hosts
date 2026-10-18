@@ -13,7 +13,15 @@
         layout = {
           left = [ { id = "omarchy.workspaces"; } ];
           center = [
-            { id = "omarchy.indicators"; }
+            {
+              id = "omarchy.indicators";
+              items = [
+                "ScreenRecording"
+                "NightLight"
+                "Dnd"
+                "StayAwake"
+              ];
+            }
             {
               id = "omarchy.clock";
               format = "dddd HH:mm";

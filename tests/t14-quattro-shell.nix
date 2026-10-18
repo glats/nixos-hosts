@@ -22,6 +22,11 @@ let
       "omarchy.indicators"
       "omarchy.weather"
     ];
+    noDictationIndicator = builtins.all (
+      widget:
+      widgetId widget != "omarchy.indicators"
+      || (widget ? items && !(builtins.elem "Dictation" widget.items))
+    ) widgets;
     noAgentsWidget = !(builtins.any (widget: widgetId widget == "omarchy.agents") widgets);
     noDisabledWidget = builtins.all (
       widget: !(builtins.elem (widgetId widget) shell.disabledPlugins)
