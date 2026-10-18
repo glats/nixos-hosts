@@ -35,9 +35,11 @@ let
       builtins.removeAttrs hm.systemd.user.services [
         "waybar"
         "omarchy-shell"
+        "omarchy-battery-monitor"
       ] == builtins.removeAttrs base.systemd.user.services [
         "waybar"
         "omarchy-shell"
+        "omarchy-battery-monitor"
       ];
     authPreserved = hm.programs.hyprlock == base.programs.hyprlock;
     idlePreserved = hm.services.hypridle == base.services.hypridle;

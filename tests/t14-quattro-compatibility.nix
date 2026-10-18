@@ -70,6 +70,22 @@ let
       &&
         host.config.home-manager.users.glats.home.sessionVariables.OMARCHY_PATH
         == "/home/glats/.local/share/omarchy/quattro";
+    batteryOwnedByShell =
+      let
+        disabled =
+          (builtins.fromJSON host.config.home-manager.users.glats.xdg.configFile."omarchy/shell.json".text)
+          .disabledPlugins;
+        hm = host.config.home-manager.users.glats;
+      in
+      !(hm.systemd.user.timers ? omarchy-battery-monitor)
+      && !(hm.systemd.user.services ? omarchy-battery-monitor)
+      && !(builtins.elem "omarchy.battery" disabled);
+    nightlightKept =
+      host.config.home-manager.users.glats.services.hyprsunset.enable
+      &&
+        builtins.elem "omarchy.nightlight"
+          (builtins.fromJSON host.config.home-manager.users.glats.xdg.configFile."omarchy/shell.json".text)
+          .disabledPlugins;
     osdOwnedByShell =
       let
         text = host.config.home-manager.users.glats.xdg.configFile."hypr/hyprland.conf".text;

@@ -46,7 +46,6 @@
         "omarchy.idle"
         "omarchy.polkit"
         "omarchy.nightlight"
-        "omarchy.battery"
         "omarchy.clipboard"
         "omarchy.emojis"
         "omarchy.reminders"
