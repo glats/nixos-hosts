@@ -9,10 +9,10 @@ Objective: replace t14 desktop components with Quattro shell plugins one at a ti
 - S5 Preserve prior feature guarantees: HDM owns lid/dock, Hyprlang, greetd/ReGreet, wayvnc, mouse-wiggle, NetworkManager.
 
 ## Tasks
-- T0 [S1-S5] delegated explore — pending: map how each candidate plugin integrates (config keys, IPC commands, keybindings, conflicts with legacy daemons, runtime dependencies). Mapping trigger: more than ~5 sequential lookups across fork and runtime.
-- T1 [S1,S4] — pending: media, indicators, weather widgets.
-- T2 [S2,S4] — pending: notifications replace Mako.
-- T3 [S2,S4] — pending: OSD replaces SwayOSD.
+- T0 [S1-S5] delegated explore — done (gentle-ai-explore mapping with path:line evidence): map how each candidate plugin integrates (config keys, IPC commands, keybindings, conflicts with legacy daemons, runtime dependencies). Mapping trigger: more than ~5 sequential lookups across fork and runtime.
+- T1 [S1,S4] inline — configured, commit dbb90957; groupAWidgets RED then GREEN; live check pending.
+- T2 [S2,S4] inline — configured: fork 46ac3fdd gates Mako, comma keys use shell IPC; notificationsOwnedByShell RED then GREEN; live check pending.
+- T3 [S2,S4] inline — configured: fork 46ac3fdd drops swayosd-server, volume/brightness/mic/media keys run Quattro scripts with Quattro bin and pulseaudio first on PATH; osdOwnedByShell RED then GREEN; live check pending.
 - T4 [S2,S4] — pending: night light and battery services.
 - T5 [S2,S4] — pending: clipboard and emojis overlays.
 - T6 [S2,S4] — pending: Omarchy menu.
@@ -20,4 +20,5 @@ Objective: replace t14 desktop components with Quattro shell plugins one at a ti
 - T8 [S3] — deferred: lock, idle, polkit.
 
 ## Log
+- L2 (2026-10-17 T1-T3): T0 map returned (media service already live; only the bar-off flag is consumed; v3 PATH shadows Quattro scripts). T1 consumer-only layout: indicators and weather beside the clock, media on the right; agents stays disabled. T2/T3 combined in one fork commit 46ac3fdd57d7dd7c947c832995f66d985045b421 pushed to main, because media OSD feedback and battery warnings depend on them; consumer drops omarchy.osd and omarchy.notifications from disabledPlugins. Bindings use `env PATH=<quattro bin>:<pulseaudio bin>:$PATH`; pactl was missing from the session PATH (volume script probe +1/-1 restored 0.80). v3 hyprland.conf byte-identical and v3 mako still enabled. Advisory: Quattro brightness for external monitors wants ddcutil, not installed. All t14 tests GREEN, build /nix/store/hxqwgnpff865wg28r2vymyb7zb84sxx1-..., flake check passed. Next: user applies and checks live.
 - L1 (2026-10-17): "si me gusataria moverme un poco mas a quattro. evamos que podemos ir reemplzando sin romper. te parece?¿ ahcemos un new odd?" Answer to grouping question: "a me parace bien. epro el uso de agnetes yua lo tengo creo, teng oepcnode, claude y codex . pero me quedo con opecnode con herdr que se supone ya lo tengo . la aopcion b tambien la quiero. dejemos c para el final". Earlier: "que no nos enredemos en las ramas". Baseline: nixos-hosts master 3bac20db, fork main eb94d307d43ab0270ef4ec75c9c28ac563a4d44c. Next: T0 mapping.

@@ -33,8 +33,6 @@
       };
       disabledPlugins = [
         "omarchy.menu"
-        "omarchy.notifications"
-        "omarchy.osd"
         "omarchy.background"
         "omarchy.lock"
         "omarchy.idle"

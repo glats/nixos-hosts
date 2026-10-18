@@ -54,6 +54,28 @@ let
       lib.hasInfix
         "Toggle top bar, exec, /home/glats/.local/share/omarchy/quattro/bin/omarchy-toggle bar-off"
         host.config.home-manager.users.glats.xdg.configFile."hypr/hyprland.conf".text;
+    osdOwnedByShell =
+      let
+        text = host.config.home-manager.users.glats.xdg.configFile."hypr/hyprland.conf".text;
+        disabled =
+          (builtins.fromJSON host.config.home-manager.users.glats.xdg.configFile."omarchy/shell.json".text)
+          .disabledPlugins;
+      in
+      !(lib.hasInfix "swayosd" text)
+      && lib.hasInfix "omarchy-audio-output-volume raise" text
+      && lib.hasInfix "omarchy-shell media playPause" text
+      && !(builtins.elem "omarchy.osd" disabled);
+    notificationsOwnedByShell =
+      let
+        text = host.config.home-manager.users.glats.xdg.configFile."hypr/hyprland.conf".text;
+        disabled =
+          (builtins.fromJSON host.config.home-manager.users.glats.xdg.configFile."omarchy/shell.json".text)
+          .disabledPlugins;
+      in
+      !host.config.home-manager.users.glats.services.mako.enable
+      && !(lib.hasInfix "makoctl" text)
+      && lib.hasInfix "omarchy-shell notifications dismissOne" text
+      && !(builtins.elem "omarchy.notifications" disabled);
     noRemovedHyprlandOptions =
       let
         text = host.config.home-manager.users.glats.xdg.configFile."hypr/hyprland.conf".text;
