@@ -7,10 +7,6 @@ in
 {
   programs.ssh.knownHosts = mesh.knownHosts;
 
-  networking.hosts = {
-    "172.16.0.1" = [ "router" ];
-  };
-
   services.openssh = {
     enable = true;
     settings = {
