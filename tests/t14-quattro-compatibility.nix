@@ -45,6 +45,15 @@ let
     logindPreserved = candidate.config.services.logind.settings == host.config.services.logind.settings;
     lidOwnershipPreserved = !candidate.config.omarchy.hyprland.lidSwitch.enable;
     runtimeAvailable = after.home.file ? ".local/share/omarchy/quattro";
+    pluginScanFollowsSymlinks = lib.hasInfix "find -L \\\"$dir\\\" -mindepth 2" (
+      builtins.readFile "${
+        host.config.home-manager.users.glats.home.file.".local/share/omarchy/quattro".source
+      }/shell/services/PluginRegistry.qml"
+    );
+    topBarToggleTargetsShell =
+      lib.hasInfix
+        "Toggle top bar, exec, /home/glats/.local/share/omarchy/quattro/bin/omarchy-toggle bar-off"
+        host.config.home-manager.users.glats.xdg.configFile."hypr/hyprland.conf".text;
     noRemovedHyprlandOptions =
       let
         text = host.config.home-manager.users.glats.xdg.configFile."hypr/hyprland.conf".text;

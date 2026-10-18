@@ -3,7 +3,7 @@
 let
   host = flake.nixosConfigurations.t14;
   checks = {
-    publishedFork = flake.inputs.omarchy-nix.rev == "c942dc7debda61ac8fc46da1a59529d6342ea13d";
+    publishedFork = flake.inputs.omarchy-nix.rev == "eb94d307d43ab0270ef4ec75c9c28ac563a4d44c";
     quattroEnabled = host.config.omarchy.quattro.enable;
     shellEnabled = host.config.omarchy.quattro.shell.enable or false;
     hyprlangPreserved =
