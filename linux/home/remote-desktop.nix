@@ -188,22 +188,21 @@ in
       force = true;
       text = mkRemminaProfile rdpDefaults {
         name = "rog";
-        server = "rog.local";
+        server = "rog.lan";
       };
     };
     ".local/share/remmina/rdp-oneplus5.remmina" = {
       force = true;
       text = mkRemminaProfile rdpDefaults {
         name = "oneplus5";
-        server = "172.16.0.12";
-        colordepth = 66;
+        server = "oneplus5.lan";
       };
     };
     ".local/share/remmina/rdp-thinkcentre.remmina" = {
       force = true;
       text = mkRemminaProfile rdpDefaults {
         name = "thinkcentre";
-        server = "thinkcentre.local";
+        server = "thinkcentre.lan";
       };
     };
 
@@ -211,14 +210,14 @@ in
       force = true;
       text = mkRemminaProfile vncDefaults {
         name = "t14";
-        server = "t14.local:5900";
+        server = "t14.lan:5900";
       };
     };
     ".local/share/remmina/vnc-macm5.remmina" = {
       force = true;
       text = mkRemminaProfile vncDefaults {
         name = "macm5";
-        server = "CLFTCLGV2FHWW0W.local:5900";
+        server = "macm5.lan:5900";
       };
     };
     ".local/share/applications/remote-rog.desktop" = {
