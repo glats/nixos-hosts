@@ -18,7 +18,9 @@ func main() {
 	remoteMAC := flag.String("remote-mac", "6c:4b:90:2d:97:42", "receiver MAC")
 	remotePort := flag.Int("remote-port", 6666, "receiver UDP port")
 	configfs := flag.String("configfs", "/sys/kernel/config/netconsole", "configfs netconsole root")
-	timeout := flag.Duration("timeout", 2*time.Second, "ACK wait window")
+	timeout := flag.Duration("timeout", 2*time.Second, "ACK wait window per probe")
+	attempts := flag.Int("probe-attempts", 5, "ACK probes before accepting a soft no-ACK")
+	interval := flag.Duration("probe-interval", 5*time.Second, "sleep between ACK probes")
 	flag.Parse()
 
 	km := kmsg.New()
@@ -59,8 +61,14 @@ func main() {
 	}
 	_ = km.Write(kmsg.UserNotice, "netconsole-setup: start "+netconsole.SetupStatus(target, src, "pending"))
 
-	if err := netconsole.Verify(km, conn, nonce, *timeout); err != nil {
+	acked, err := netconsole.VerifyRetries(km, conn, nonce, *timeout, *interval, *attempts, time.Sleep)
+	if err != nil {
 		fatal(km, err.Error())
+	}
+	if !acked {
+		_ = km.Write(kmsg.UserWarning, netconsole.SetupNoACK(target, nonce, *attempts))
+		log.Printf("%s", netconsole.SetupNoACK(target, nonce, *attempts))
+		return
 	}
 
 	_ = km.Write(kmsg.UserNotice, netconsole.SetupStatus(target, src, nonce))
