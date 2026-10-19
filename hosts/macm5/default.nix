@@ -36,6 +36,7 @@ in
     ../../darwin/system/mise.nix
     ../../darwin/system/zsh.nix
     ../../darwin/services/wsdd.nix
+    ../../darwin/services/sunshine.nix
     ../../darwin/system/sing-box-link.nix
     ../../darwin/system/ssh-relay.nix
 
@@ -102,4 +103,22 @@ in
 
   services.wsdd.enable = true;
   services.ssh-relay.enable = true;
+  services.sunshine = {
+    enable = true;
+    settings.global_prep_cmd =
+      let
+        displayplacer = "/opt/homebrew/bin/displayplacer";
+        builtinMode =
+          res:
+          ''${displayplacer} "id:37D8832A-2D66-02CA-B9F7-8F30A301B230 res:${res} hz:120 color_depth:8 enabled:true scaling:on origin:(0,0) degree:0"'';
+      in
+      builtins.toJSON [
+        {
+          do = builtinMode "1352x878";
+          undo = builtinMode "1800x1169";
+          elevated = false;
+        }
+      ];
+  };
+  homebrew.brews = [ "displayplacer" ];
 }
