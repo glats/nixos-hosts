@@ -73,7 +73,9 @@ in
           ${pkgs.coreutils}/bin/cp --remove-destination "$src" "$herdr_config"
         fi
         if [ -f "$herdr_config" ] && ! ${pkgs.diffutils}/bin/cmp -s "${herdrConfig}" "$herdr_config"; then
-          ${pkgs.coreutils}/bin/cp "${herdrConfig}" "$herdr_config"
+          ${pkgs.coreutils}/bin/cp --remove-destination "${herdrConfig}" "$herdr_config"
+        fi
+        if [ -f "$herdr_config" ]; then
           ${pkgs.coreutils}/bin/chmod 644 "$herdr_config"
         fi
       ''
