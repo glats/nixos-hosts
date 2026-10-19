@@ -213,22 +213,24 @@ let
       legacyBundleName = "remote-t14.app";
       protocol = "vnc";
       viewer = "tigervnc";
-      host = "172.16.0.10";
+      host = "t14.lan";
       port = "5900";
+      username ="glats";
     }
     {
       id = "oneplus5";
       bundleName = "Remote OnePlus5";
       legacyBundleName = "remote-oneplus5.app";
       protocol = "rdp";
-      host = "172.16.0.12";
+      host = "oneplus5.lan";
+      username ="glats";
     }
     {
       id = "rog";
       bundleName = "Remote ROG";
       legacyBundleName = "remote-rog.app";
       protocol = "rdp";
-      host = "172.16.0.5";
+      host = "rog.lan";
       username = "glats";
     }
     {
@@ -236,7 +238,8 @@ let
       bundleName = "Remote ThinkCentre";
       legacyBundleName = "remote-thinkcentre.app";
       protocol = "rdp";
-      host = "172.16.0.11";
+      host = "thinkcentre.lan";
+      username ="glats";
     }
   ];
 
