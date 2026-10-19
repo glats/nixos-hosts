@@ -263,11 +263,11 @@
     "engram-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1786973962,
-        "narHash": "sha256-vs6b6htTEqPquYt0stEW/66kbvExGlnezC6SXv8e9EI=",
+        "lastModified": 1792301414,
+        "narHash": "sha256-2pc/+YiaVSPGVFMxH9uewmmioi5NTjDMsoA+OEfFVn4=",
         "owner": "Gentleman-Programming",
         "repo": "engram",
-        "rev": "47f281cb9dcf20f2c93cd3d9849d10191722d4d3",
+        "rev": "52a308b060a0abd2dd2bd996f7d68786aa489117",
         "type": "github"
       },
       "original": {
