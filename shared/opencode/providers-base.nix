@@ -427,19 +427,19 @@ let
     {
       name = "openai-medium";
       roles = {
-        gentle-orchestrator = "openai/gpt-6.1-sol";
+        gentle-orchestrator = "openai/gpt-6-astra";
         gentle-ai-explore = "openai/gpt-6.1-sol";
-        gentle-ai-worker = "openai/gpt-5.6-luna";
+        gentle-ai-worker = "openai/gpt-6-luna";
         gentle-ai-verify = "openai/gpt-6.1-sol";
         jd-judge-a = "openai/gpt-6.1-sol";
         jd-judge-b = "openai/gpt-6.1-sol";
-        jd-fix-agent = "openai/gpt-5.6-luna";
+        jd-fix-agent = "openai/gpt-6-luna";
         review-readability = "openai/gpt-6.1-sol";
         review-refuter = "openai/gpt-6.1-sol";
         review-reliability = "openai/gpt-6.1-sol";
         review-resilience = "openai/gpt-6.1-sol";
         review-risk = "openai/gpt-6.1-sol";
-        review-validator = "openai/gpt-5.6-luna";
+        review-validator = "openai/gpt-6-luna";
         neutral = "openai/gpt-6.1-sol";
       };
     }
