@@ -52,9 +52,11 @@ Thinkcentre cannot build aarch64-darwin, so macm5 publishes what it builds local
 
 Two mechanisms, both best-effort — a push failure only warns and never changes the command's exit code:
 
-- `nix-cache push` — runs `nix copy --to ssh-ng://glats@thinkcentre` (default path `/run/current-system`; pass store paths to push others). Use `--strict` to make a copy failure fatal.
+- `nix-cache push` — runs `nix copy --no-check-sigs --to ssh-ng://glats@thinkcentre` (default path `/run/current-system`; pass store paths to push others). Use `--strict` to make a copy failure fatal.
 - `nixos-build` hook — after a **successful** darwin applying operation (`switch`, `upgrade`, `safe`; `boot`/`test` are unsupported on darwin and never push), `nixos-build` performs the same push automatically. It never pushes on Linux hosts, after `dry`/`check`/`build`, or after a failed build. Opt out with `NIX_CACHE_PUSH=0` (see `nixos-build help`).
 - `nix-cache push --strict` exits non-zero on copy failure; the nixos-build hook is always best-effort.
+
+Only the exact destination `ssh-ng://glats@thinkcentre` skips signature checks for uploads: locally built Darwin paths can be unsigned, and this transfer trusts the source machine through authenticated SSH as the trusted user `glats`. SSH host verification remains enabled. Custom destinations retain signature checks, and this does not change global `require-sigs` or verification when downloading from caches.
 
 ## Secrets layout
 

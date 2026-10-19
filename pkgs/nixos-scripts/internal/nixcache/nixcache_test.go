@@ -468,7 +468,7 @@ func TestPush(t *testing.T) {
 		if err := Push(dest, nil, false, run, func(string) {}); err != nil {
 			t.Fatalf("push: %v", err)
 		}
-		want := []string{"nix", "copy", "--to", dest, "/run/current-system"}
+		want := []string{"nix", "copy", "--no-check-sigs", "--to", dest, "/run/current-system"}
 		if !reflect.DeepEqual(run.argvs[0], want) {
 			t.Errorf("push argv mismatch:\n got %v\nwant %v", run.argvs[0], want)
 		}
@@ -478,9 +478,23 @@ func TestPush(t *testing.T) {
 		if err := Push(dest, []string{"/nix/store/a", "/nix/store/b"}, false, run, func(string) {}); err != nil {
 			t.Fatalf("push: %v", err)
 		}
-		want := []string{"nix", "copy", "--to", dest, "/nix/store/a", "/nix/store/b"}
+		want := []string{"nix", "copy", "--no-check-sigs", "--to", dest, "/nix/store/a", "/nix/store/b"}
 		if !reflect.DeepEqual(run.argvs[0], want) {
 			t.Errorf("push argv mismatch:\n got %v\nwant %v", run.argvs[0], want)
+		}
+	})
+	t.Run("other destinations retain signature checks", func(t *testing.T) {
+		for _, other := range []string{"ssh-ng://glats@other", "ssh-ng://root@thinkcentre", "ssh-ng://glats@thinkcentre.example", "ssh-ng://glats@thinkcentre?remote-store=other", "https://cache.example", "file:///tmp/cache"} {
+			t.Run(other, func(t *testing.T) {
+				run := &fakeRunner{}
+				if err := Push(other, nil, true, run, func(string) {}); err != nil {
+					t.Fatal(err)
+				}
+				want := []string{"nix", "copy", "--to", other, DefaultPath}
+				if !reflect.DeepEqual(run.argvs, [][]string{want}) {
+					t.Fatalf("got %v, want %v", run.argvs, [][]string{want})
+				}
+			})
 		}
 	})
 	t.Run("best effort failure", func(t *testing.T) {

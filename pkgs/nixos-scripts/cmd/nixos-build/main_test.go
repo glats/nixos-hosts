@@ -20,7 +20,7 @@ func (r *recordingRunner) Run(argv []string) error {
 	return r.err
 }
 
-var pushArgv = []string{"nix", "copy", "--to", "ssh-ng://glats@thinkcentre", "/run/current-system"}
+var pushArgv = []string{"nix", "copy", "--no-check-sigs", "--to", "ssh-ng://glats@thinkcentre", "/run/current-system"}
 
 func TestMaybePush(t *testing.T) {
 	cases := []struct {
