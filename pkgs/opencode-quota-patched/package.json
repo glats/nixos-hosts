@@ -1,0 +1,8 @@
+{
+  "name": "opencode-quota-patched",
+  "version": "5.0.3",
+  "private": true,
+  "dependencies": {
+    "@slkiser/opencode-quota": "5.0.3"
+  }
+}

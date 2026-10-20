@@ -19,6 +19,12 @@ in {{
   inherit (home.programs.zsh) initContent;
   oc = builtins.fromJSON (builtins.unsafeDiscardStringContext (builtins.readFile (builtins.getAttr ".config/opencode/opencode.json" home.home.file).source));
   quotaConfig = (builtins.getAttr ".config/opencode/opencode-quota/quota-toast.jsonc" home.home.file).text;
+  quotaPlugins = builtins.mapAttrs (_: h: h.home.opencode.quotaPlugin != null) {{
+    thinkcentre = flake.homeConfigurations.thinkcentre.config;
+    t14 = flake.homeConfigurations.t14.config;
+    macm5Home = flake.homeConfigurations.macm5.config;
+    macm5Darwin = flake.darwinConfigurations.macm5.config.home-manager.users.juan;
+  }};
   activationNames = builtins.attrNames home.home.activation;
   migrateBefore = home.home.activation.migrateOpencodeLayout.before;
   migrateData = home.home.activation.migrateOpencodeLayout.data;
@@ -53,6 +59,7 @@ assert "/bin/opencode-layout-migrate" in result["migrateData"]
 assert "--retire-openfang-skills" not in result["migrateData"], "rog runs OpenFang; its skills are managed"
 assert "agents" in result["oc"] and "permissions" in result["oc"]
 assert result["oc"]["plugins"] == ["opencode-claude-subscription@0.1.4", "@slkiser/opencode-quota@5.0.3"]
+assert result["quotaPlugins"] == {"thinkcentre": False, "t14": False, "macm5Home": True, "macm5Darwin": True}, result["quotaPlugins"]
 quota = json.loads(result["quotaConfig"])
 assert quota["enabledProviders"] == "auto"
 assert quota["tuiSidebarPanel"] == {"enabled": True}
