@@ -8,7 +8,7 @@ description: >
   functions for .nix expressions. Do NOT trigger for JSON, YAML, TOML, or other non-Nix files.
 license: Apache-2.0
 metadata:
-  version: "1.0"
+  version: "1.1"
 ---
 
 ## When to Use
@@ -26,7 +26,16 @@ any non-Nix file, even if it lives inside a NixOS configuration repository.
 
 ## Critical Patterns
 
-**NEVER guess package names or option paths.** Always verify first via MCP.
+**NEVER guess package names or option paths.** Research first via MCP, then
+verify against the repository's pinned inputs before treating a result as
+compatible. A catalog hit alone is not proof for the target configuration.
+
+Discover the live tool schema and available channels before querying. Record
+the resolved channel/version; do not assume `stable` matches the repository
+pin or let the default `unstable` silently stand in for it. Use an explicit
+matching channel when supported. If unavailable, disclose the mismatch and
+use the pinned source and target evaluation as compatibility evidence.
+Do not update a pin to make it match the catalog.
 
 The MCP exposes two tools:
 - `nix(action, query, source, type, channel, limit)` — unified search/info
@@ -53,9 +62,18 @@ The MCP exposes two tools:
 
 ## Workflow
 
-1. **Search first** — run the appropriate `nix(action="search", ...)` call
-2. **Get details** — if you find a match, run `nix(action="info", ...)` to confirm the attribute path and options
-3. **Write config** — only then write the Nix expression
+1. **Identify the target** — read the host/platform and relevant pinned inputs;
+   query `nix(action="channels")` and inspect the live schema.
+2. **Search first** — use the appropriate search/info calls with a matching
+   explicit channel where supported. Examples below omit channel selection
+   for brevity; they do not authorize using a mismatched default.
+3. **Confirm compatibility** — inspect the pinned package or module source
+   when the catalog cannot represent that version. For Home Manager and
+   nix-darwin, verify their own pins rather than assuming the NixOS channel.
+4. **Write authorized config** — format only touched Nix files, then run the
+   repository's target-scoped evaluations and applicable shared checks.
+   Report unavailable evidence as pending; never claim compatibility from
+   an unrelated catalog, and never activate as part of verification.
 
 ## Common Patterns
 

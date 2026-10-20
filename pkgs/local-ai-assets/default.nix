@@ -19,7 +19,7 @@ stdenvNoCC.mkDerivation {
   '';
 
   meta = with lib; {
-    description = "Locally maintained Gentle AI skills (nix-verify, opencode-session-recovery, git-feature-flow)";
+    description = "Locally maintained skills";
     homepage = "https://github.com/glats/.nixos";
     license = licenses.mit;
     platforms = platforms.all;

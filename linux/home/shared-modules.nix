@@ -26,7 +26,6 @@
   ../../shared/claude-code-profile.nix
   ../../shared/shell-gpt.nix
   { home.shell-gpt.enable = true; }
-  ../../shared/skills.nix
   ./ssh.nix
   ./fontconfig.nix
   ../../shared/sops.nix

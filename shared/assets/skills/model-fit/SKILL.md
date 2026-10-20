@@ -9,7 +9,7 @@ description: >
   providers base, check models, model audit, actualiza modelos, moldear listas,
   swap model, routing fit.
 metadata:
-  version: "4.2"
+  version: "4.3"
 ---
 
 ## Activation Contract
@@ -18,7 +18,7 @@ Load when the user asks to fit, audit, review, update, mold, or check OpenCode
 provider models or ODD/review role routing. Also load before any change that
 touches `shared/opencode/providers-base.nix`.
 
-The active Gentle AI v4 graph uses ODD roles, not ODD roles
+The active Gentle AI graph uses ODD roles
 (orchestrator coordinates, worker implements, explore maps, verify checks). This skill
 provides the evidence framework to find which model best fits each role and
 to keep the routing lists converging toward stable providers with complete
@@ -37,8 +37,10 @@ tool-call behavior.
   tool-call probes as part of model-fit. Use read-only catalogs, documentation,
   current issues, and existing observations; never claim runtime validation
   from those sources.
-- Edit Nix files directly; run `format-nix && nix flake check --no-build` after
-  (unless the user explicitly waives it for the session — record the waiver).
+- Edit only authorized source files; format touched Nix files with
+  `nix fmt -- <paths>` and run `nix flake check --no-build`, plus the repository's
+  separate affected Home Manager and Darwin evaluations. Record any explicit
+  user waiver; never activate hosts as part of validation.
 - One re-fit changes one role at a time. Lists evolve; they are not redesigned
   wholesale.
 - Secrets rule: agents must NEVER decrypt sops secrets — read ciphertext only.
@@ -54,30 +56,31 @@ tool-call behavior.
 
 ## Auth Method Recognition
 
-OpenCode providers use one of two auth methods; identify which applies.
+Load the OpenCode skill and consult documentation for the installed runtime
+version before prescribing provider configuration or authentication commands.
+Trace the repository's provider definitions and rendered configuration in
+`shared/opencode/runtime-config.nix`; do not copy a legacy configuration shape.
 
-### Method A: API key ⟹ needs 3-file setup
+### Method A: API key
 
-```
-① shared/sops.nix
-   sops.secrets."opencode/<provider>_api_key" { mode = "0400"; }
-② shared/opencode.nix (programs.zsh.initContent)
-   export <PROVIDER>_API_KEY="$(cat ${config.sops.secrets."...".path})"
-③ shared/opencode/providers-base.nix
-   provider { options.apiKey = "{env:<PROVIDER>_API_KEY}"; }
-```
+Trace declared secret names, environment wiring, and the actual provider
+renderer without reading credential values. Relevant source entry points are
+`shared/sops.nix`, `shared/opencode.nix`, and
+`shared/opencode/providers-base.nix`; verify the current wiring before proposing
+changes. Do not assume every provider needs edits in all three files.
 
-Examples: nvidia, groq, opencode-go, cerebras, openrouter, mistral, deepseek.
+### Method B: OAuth or built-in authentication
 
-### Method B: /connect (OAuth or built-in) ⟹ no key needed
-
-OpenCode handles auth natively via `/connect`. Only the routing profile needs
-editing. Examples: anthropic, openai (ChatGPT OAuth), github-copilot, google.
+Verify the selected provider and installed runtime support this route using
+current documentation. A routing-only edit must not initiate login or access
+stored credentials. Do not infer authentication requirements from a provider
+name alone.
 
 ### Missing key detection
 
 Cross-reference sops.nix keys, opencode.nix env exports, and provider
-definitions. Flag any gap: "Provider X has no API key configured."
+definitions. Report missing declarative wiring as a gap, not proof that a
+credential is absent or invalid. Never read secret values to resolve it.
 
 ## Evidence Gates — non-negotiable, checked in order
 
@@ -162,19 +165,22 @@ thrashing signals (a cheap tier that burns 2-3x tokens to fail is not cheap).
 
 ## Execution Steps — mode `full`
 
-1. Fresh market snapshot: discover ALL providers (OpenCode source
-   `internal/llm/provider/`, docs via context7, community via exa).
+1. Fresh market snapshot: discover ALL providers from current official
+   documentation and the installed runtime's catalog. Locate implementation
+   paths in that version's source rather than assuming historical paths.
 2. Auth classification (Method A/B); cross-check sops.nix + opencode.nix keys.
-3. Model discovery from official docs/API; note retirement dates (e.g.
-   gpt-5.4/5.4-mini removed from ChatGPT-account Codex on 2026-08-31).
+3. Model discovery from official docs/API; verify retirement dates and account
+   restrictions from current sources rather than reusing historical claims.
 4. Status verification: opencode.ai/data/ usage+retention, GitHub issues,
    provider deprecations. Apply Gates 1-2.
 5. Fit evaluation per profile following the Research Framework; document the
    `Role | Model | Evidence | Why` table.
-6. Update `shared/opencode/providers-base.nix` named profiles with dated
-   evidence comments; update sops.nix/opencode.nix if a Method-A key is missing.
-7. Validate: `format-nix && nix flake check --no-build` (honor user waiver if
-   given, and say so in the report).
+6. Update authorized `shared/opencode/providers-base.nix` named profiles;
+   report dated evidence without adding code comments unless requested.
+   Propose missing auth wiring separately; a model-fit request alone does not
+   authorize credential access or authentication setup.
+7. Validate using the touched-file formatting and target checks in Hard Rules
+   (honor any explicit user waiver and say so in the report).
 
 ## Execution Steps — mode `re-fit`
 
@@ -183,8 +189,8 @@ thrashing signals (a cheap tier that burns 2-3x tokens to fail is not cheap).
 2. Re-verify ONLY that role: current status of the incumbent + research 2-4
    candidate replacements against the Step-B metrics for that role. Gates 1-2
     apply; no live model calls are required or requested.
-3. Swap one role assignment; write the dated evidence comment (what failed,
-   why the replacement).
+3. Swap one authorized role assignment; report dated evidence explaining what
+   failed and why the replacement. Add code comments only when requested.
 4. Update the profile header comment if the strategy line changed.
 5. Validate as in mode `full`; report the one-line delta.
 
@@ -211,7 +217,7 @@ This skill biases the agent's decisions as follows:
 3. **Cheap volume, scarce judgment.** Tool-loop and worker and verification roles take the
    cheapest tier that passes the gates; quota reserved for review roles.
    Moving a volume phase onto scarce quota needs explicit cost justification.
-4. **Minimal, reversible changes.** One role per re-fit; dated comments;
+4. **Minimal, reversible changes.** One role per re-fit; dated evidence;
    never delete a working annotation without replacing it with fresh evidence.
 5. **Evidence before trusting.** Re-check catalog IDs, current issues, and
    provider documentation, including for the current favorite. Distinguish
@@ -220,7 +226,7 @@ This skill biases the agent's decisions as follows:
 ## Output Contract
 
 - Updated `shared/opencode/providers-base.nix` named profiles with dated,
-  cited evidence comments (this repo's real artifact — NOT generic
+  cited evidence in the report (this repo's real artifact — NOT generic
   full/medium/light/free tier lists).
 - Fit evaluation table: `Role | Model | Evidence | Why` for every changed
   assignment.
@@ -230,7 +236,8 @@ This skill biases the agent's decisions as follows:
 - Feedback-loop record saved to engram (mode, swaps, rationale).
 - Evidence limitations: state that live model tests were not run; do not
   present source-backed tool-call assessment as a completed runtime test.
-- Validation status: `format-nix` + `nix flake check --no-build` result, or
+- Validation status: touched-file `nix fmt -- <paths>`,
+  `nix flake check --no-build`, and applicable target evaluation results, or
   the user's explicit waiver noted.
 - Registry note: after a rename/add, remind that `.atl/skill-registry.md` is
   auto-generated (`gentle-ai skill-registry refresh --force`) and that a
