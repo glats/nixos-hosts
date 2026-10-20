@@ -4,6 +4,7 @@ import base64
 import hashlib
 from pathlib import Path
 import re
+import shlex
 import shutil
 import subprocess
 import tempfile
@@ -16,9 +17,21 @@ in {{
   claude = builtins.getContext h.home.activation.deployClaudeCodeAssets.data;
   openfang = builtins.getContext h.home.activation.syncOpencodeSkillsToOpenfang.data;
   source = f.inputs.gentle-ai-src.outPath;
+  revision = f.inputs.gentle-ai-src.rev;
+  activations = {{
+    opencode = h.home.activation.setupOpencodePluginRuntime.data;
+    claude = h.home.activation.deployClaudeCodeAssets.data;
+    openfang = h.home.activation.syncOpencodeSkillsToOpenfang.data;
+  }};
 }}
 '''
 contexts = json.loads(subprocess.check_output(["nix", "eval", "--impure", "--json", "--expr", expression], cwd=ROOT))
+revision = contexts["revision"]
+for consumer, activation in contexts["activations"].items():
+    commands = [shlex.split(line) for line in activation.replace("\\\n", " ").splitlines()
+                if "/bin/ai-assets-reconcile " in line]
+    assert len(commands) == 1, consumer
+    assert commands[0][-1] == revision, consumer
 selected = {key for consumer in ("opencode", "claude", "openfang") for key in contexts[consumer]
             if "owned-" in key or "-no-legacy" in key or "-nixos-scripts-" in key}
 subprocess.run(["nix", "build", "--no-link", *[key + "^out" for key in sorted(selected)]], check=True, cwd=ROOT)
@@ -42,7 +55,7 @@ for consumer in ("opencode", "claude", "openfang"):
                     "receipts/history.json", "synthetic-engram/mirror.md"]
         for name in retained:
             path = target / name; path.parent.mkdir(parents=True, exist_ok=True); path.write_text("synthetic user-owned history")
-        argv = [str(cli), str(target), str(desired), str(legacy), "898d3976e8049a7238eaa7de60bff325c30d2b3d"]
+        argv = [str(cli), str(target), str(desired), str(legacy), revision]
         subprocess.run(argv, check=True)
         subprocess.run(argv, check=True)
         assert not list((target / "skills").glob("sdd-*/SKILL.md")), consumer
@@ -51,7 +64,7 @@ for consumer in ("opencode", "claude", "openfang"):
         manifest = json.loads((target / ".gentle-ai-owned.json").read_text())
         assert manifest["schema"] == 2
         assert all(not entry.get("pending") and "prior" not in entry for entry in manifest["files"].values())
-        assert all(entry["revision"] == "898d3976e8049a7238eaa7de60bff325c30d2b3d" for entry in manifest["files"].values())
+        assert all(entry["revision"] == revision for entry in manifest["files"].values())
         if consumer == "opencode":
             assert not (target / "plugins/sdd-task-result.ts").exists()
             actual = (desired / "plugins/opencode-review-transport.ts").read_text()

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"slices"
 	"sync"
 	"testing"
 )
@@ -58,9 +59,29 @@ func TestRunUsesLoopbackAndRejectsCollision(t *testing.T) {
 }
 
 func TestScrubProxy(t *testing.T) {
-	got := scrubProxy([]string{"KEEP=value", "HTTPS_PROXY=http://proxy", "no_proxy=*"})
-	if len(got) != 1 || got[0] != "KEEP=value" {
-		t.Fatalf("proxy variables leaked into child environment: %v", got)
+	tests := []struct {
+		name string
+		env  []string
+		want []string
+	}{
+		{"proxy variables", []string{"KEEP=value", "HTTPS_PROXY=http://proxy", "no_proxy=*"}, []string{"KEEP=value"}},
+		{"all proxy names", []string{"HTTP_PROXY=", "HTTPS_PROXY=", "ALL_PROXY=", "NO_PROXY=", "http_proxy=", "https_proxy=", "all_proxy=", "no_proxy="}, []string{}},
+		{"entries without equals", []string{"KEEP", "HTTP_PROXY", ""}, []string{"KEEP", ""}},
+		{"exact names and intact values", []string{"Http_Proxy=x", "HTTP_PROXY_EXTRA=x", "=value", "KEEP=a=b", "é=x"}, []string{"Http_Proxy=x", "HTTP_PROXY_EXTRA=x", "=value", "KEEP=a=b", "é=x"}},
+		{"nil input", nil, []string{}},
+		{"duplicate entries", []string{"KEEP=x", "HTTP_PROXY=a=b", "KEEP=x"}, []string{"KEEP=x", "KEEP=x"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			before := slices.Clone(tt.env)
+			got := scrubProxy(tt.env)
+			if got == nil || !slices.Equal(got, tt.want) {
+				t.Fatalf("scrubProxy(%q) = %q, want non-nil %q", tt.env, got, tt.want)
+			}
+			if !slices.Equal(tt.env, before) {
+				t.Fatal("scrubProxy changed its input")
+			}
+		})
 	}
 }
 

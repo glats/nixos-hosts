@@ -7,7 +7,7 @@
 }:
 
 let
-  version = "2.0.14";
+  version = "2.0.32";
   system = stdenvNoCC.hostPlatform.system;
   isLinux = lib.hasSuffix "linux" system;
 
@@ -15,19 +15,19 @@ let
     {
       x86_64-linux = {
         url = "https://registry.npmjs.org/@opencode/cli-linux-x64/-/cli-linux-x64-${version}.tgz";
-        sha256 = "sha256-o4JMwNCA/WnpXEeudRqLpJtmj2SS/P43f1yUHDN+U6k=";
+        sha256 = "sha256-ZKH0s4HC0u/BjI12ss45kUF3i0IbVMmLlL6OgIA2Btw=";
       };
       aarch64-linux = {
         url = "https://registry.npmjs.org/@opencode/cli-linux-arm64/-/cli-linux-arm64-${version}.tgz";
-        sha256 = "sha256-4PuS9EGRN5+rjMhpWVE9sJ5NSynn4mS87q7W32X2k+8=";
+        sha256 = "sha256-uEkjLsYdm2JNHEieVpWfU5Vm6xT45bKvXFTvI3EYz2M=";
       };
       x86_64-darwin = {
         url = "https://registry.npmjs.org/@opencode/cli-darwin-x64/-/cli-darwin-x64-${version}.tgz";
-        sha256 = "sha256-wMv2X0hUfS4zHW4SxUqca8jrBaJTiFJhtGs8p8K23yE=";
+        sha256 = "sha256-7Plc1SLwtI5JL7yL/kvMORZT2g/uaQ/dHSStrck+QvA=";
       };
       aarch64-darwin = {
         url = "https://registry.npmjs.org/@opencode/cli-darwin-arm64/-/cli-darwin-arm64-${version}.tgz";
-        sha256 = "sha256-DDBy4nQnhF7HLwWOpsHjm/6gMGue6mHyQdZsHROzcLI=";
+        sha256 = "sha256-YtilJWZDspeEI/jpcb3IiW0sE8rAg4DRpd2UbM66Cas=";
       };
     }
     .${system} or (throw "Unsupported system: ${system}");

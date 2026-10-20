@@ -4,7 +4,7 @@ description: "Trigger: new tool, add tool, evaluate tool, new CLI, new MCP, new 
 license: MIT
 metadata:
   author: "glats"
-  version: "1.1"
+  version: "1.2"
 ---
 
 ## Activation Contract
@@ -51,11 +51,13 @@ proposing or installing anything.
 4. Delegate one read-only explorer when mapping exceeds a bounded read batch;
    otherwise explore inline. Compare package-only, managed integration, and
    defer options; include the host evaluation command and rollback.
-5. Require explicit user approval before proposal or implementation.
-6. After approval, deploy only through the harness path: skill files live in
-   `shared/assets/skills/` and reach `~/.config/opencode/skills/` on the next
-   home-manager rebuild (`nixos-build test`); never hand-edit the installed
-   copy, because `ai-assets-reconcile` refuses modified collisions.
+5. Propose from read-only evidence; require explicit user approval before
+   implementation. Implementation approval does not authorize activation.
+6. Keep skill sources in `shared/assets/skills/`; never hand-edit installed
+   copies, because `ai-assets-reconcile` refuses modified collisions.
+   Deployment requires separately authorized activation through the target's
+   existing NixOS, standalone Home Manager, or nix-darwin workflow. Do not
+   assume the Linux `nixos-build test` command applies to every host.
 
 ## Output Contract
 

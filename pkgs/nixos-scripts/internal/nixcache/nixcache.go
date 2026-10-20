@@ -54,6 +54,8 @@ push flags:
                         exiting 0
 
 Store paths to push default to /run/current-system.
+Only ssh-ng://glats@thinkcentre uses --no-check-sigs to upload unsigned local
+builds over authenticated SSH; other destinations retain signature checks.
 `
 
 // Runner executes one external command with the exact argv it is given.
@@ -169,14 +171,16 @@ func variantSteps(opts Options, variant, flakeRef string, fatalLinux bool) []Ste
 		}
 	}
 	subst := func(name, link, attr string) Step {
-		st := build(name, link, attr, false)
-		st.Args = []string{
-			st.Args[0], st.Args[1],
-			st.Args[2], st.Args[3],
-			"--option", "max-jobs", "0",
-			st.Args[4], st.Args[5],
+		return Step{
+			Name: name,
+			Args: []string{
+				"nix", "build",
+				"--out-link", filepath.Join(roots, link),
+				"--option", "max-jobs", "0",
+				"--keep-going",
+				flakeRef + "#" + attr,
+			},
 		}
-		return st
 	}
 	var steps []Step
 	for _, h := range linuxHosts {
@@ -295,7 +299,12 @@ func Push(dest string, paths []string, strict bool, run Runner, warn func(string
 	if len(paths) == 0 {
 		paths = []string{DefaultPath}
 	}
-	argv := append([]string{"nix", "copy", "--to", dest}, paths...)
+	argv := []string{"nix", "copy"}
+	if dest == DefaultPushTo {
+		argv = append(argv, "--no-check-sigs")
+	}
+	argv = append(argv, "--to", dest)
+	argv = append(argv, paths...)
 	if err := run.Run(argv); err != nil {
 		if strict {
 			return fmt.Errorf("nix copy --to %s: %w", dest, err)

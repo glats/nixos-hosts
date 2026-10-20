@@ -642,7 +642,7 @@ in
         extraConfig = secHeaders "SAMEORIGIN";
       };
 
-      "cache.${domain}" = {
+      "nix-cache.${domain}" = {
         useACMEHost = domain;
         forceSSL = true;
 

@@ -131,6 +131,15 @@ in
       '';
     };
 
+    quotaPlugin = mkOption {
+      type = types.nullOr types.package;
+      default = null;
+      description = ''
+        Local opencode-quota plugin directory loaded instead of the npm
+        `@slkiser/opencode-quota@5.0.3` spec. null keeps the npm spec.
+      '';
+    };
+
     disabledTools = mkOption {
       type = types.listOf types.str;
       default = concatMap (server: map (tool: "${server}_${tool}") githubRareTools) [
@@ -190,6 +199,7 @@ in
         openfangEnabled
         ;
       cfg = config.home.opencode;
+      assetRevision = inputs.gentle-ai-src.rev;
     }))
 
     (mkIf config.home.opencode.enable {

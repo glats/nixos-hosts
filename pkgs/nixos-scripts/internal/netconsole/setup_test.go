@@ -196,7 +196,7 @@ type probeDgram struct {
 	err  error
 }
 
-var errFakeTimeout = fmt.Errorf("i/o timeout")
+var errFakeTimeout = fmt.Errorf("read udp: %w", os.ErrDeadlineExceeded)
 
 func (c *probeConn) ReadFromUDP(p []byte) (int, *net.UDPAddr, error) {
 	if len(c.dgrams) == 0 {
@@ -285,5 +285,68 @@ func TestSetupStatusBreadcrumb(t *testing.T) {
 		if !strings.Contains(got, want) {
 			t.Errorf("status %q missing %q", got, want)
 		}
+	}
+}
+
+func TestVerifyRetriesAcksFirstAttempt(t *testing.T) {
+	conn := &probeConn{dgrams: []probeDgram{
+		{data: ACKPrefix + "aa11bb22cc33dd44\n"},
+	}}
+	sleeps := []time.Duration{}
+	ok, err := VerifyRetries(newTestKmsg(t), conn, "aa11bb22cc33dd44", 2*time.Second, 5*time.Second, 3, func(d time.Duration) { sleeps = append(sleeps, d) })
+	if err != nil {
+		t.Fatalf("VerifyRetries: %v", err)
+	}
+	if !ok {
+		t.Error("VerifyRetries acked = false, want true on first attempt")
+	}
+	if len(sleeps) != 0 {
+		t.Errorf("VerifyRetries slept %v, want no sleeps on first-attempt ACK", sleeps)
+	}
+}
+
+func TestVerifyRetriesAcksAfterRetry(t *testing.T) {
+	conn := &probeConn{dgrams: []probeDgram{
+		{err: errFakeTimeout},
+		{data: ACKPrefix + "cd12cd12cd12cd12\n"},
+	}}
+	sleeps := []time.Duration{}
+	ok, err := VerifyRetries(newTestKmsg(t), conn, "cd12cd12cd12cd12", time.Second, 5*time.Second, 3, func(d time.Duration) { sleeps = append(sleeps, d) })
+	if err != nil {
+		t.Fatalf("VerifyRetries: %v", err)
+	}
+	if !ok {
+		t.Error("VerifyRetries acked = false, want true after retry")
+	}
+	if len(sleeps) != 1 || sleeps[0] != 5*time.Second {
+		t.Errorf("VerifyRetries sleeps = %v, want one 5s interval", sleeps)
+	}
+}
+
+func TestVerifyRetriesExhaustedSoft(t *testing.T) {
+	conn := &probeConn{}
+	sleeps := []time.Duration{}
+	ok, err := VerifyRetries(newTestKmsg(t), conn, "beef0beef0beef0be", time.Second, 5*time.Second, 4, func(d time.Duration) { sleeps = append(sleeps, d) })
+	if err != nil {
+		t.Fatalf("VerifyRetries exhausted must stay soft (nil error), got: %v", err)
+	}
+	if ok {
+		t.Error("VerifyRetries acked = true, want false after exhausting attempts")
+	}
+	if len(sleeps) != 3 {
+		t.Errorf("VerifyRetries sleeps = %v, want 3 intervals for 4 attempts", sleeps)
+	}
+}
+
+func TestVerifyRetriesPropagatesNonTimeoutError(t *testing.T) {
+	conn := &probeConn{dgrams: []probeDgram{
+		{err: fmt.Errorf("connection refused")},
+	}}
+	_, err := VerifyRetries(newTestKmsg(t), conn, "aa00aa00aa00aa00", time.Second, 5*time.Second, 3, func(time.Duration) {})
+	if err == nil {
+		t.Fatal("expected non-timeout read error to propagate as hard error")
+	}
+	if !strings.Contains(err.Error(), "connection refused") {
+		t.Errorf("propagated error must preserve cause: %v", err)
 	}
 }

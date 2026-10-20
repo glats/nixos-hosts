@@ -5,6 +5,7 @@
   providers,
   cfg,
   gentleManaged,
+  assetRevision,
   openfangEnabled,
 }:
 
@@ -136,7 +137,10 @@ let
   jsonFile = pkgs.writeText "opencode.json" (
     builtins.toJSON ({
       update = "disable";
-      plugins = [ "opencode-claude-subscription@0.1.4" ];
+      plugins = [
+        "opencode-claude-subscription@0.1.4"
+        (if cfg.quotaPlugin == null then "@slkiser/opencode-quota@5.0.3" else "${cfg.quotaPlugin}")
+      ];
       default_agent = "gentle-orchestrator";
       agents = v2Agents;
       providers.openai.settings.transport = "http";
@@ -177,6 +181,15 @@ in
       plugins = [ "./herdr-opencode" ];
     };
   };
+  home.file.".config/opencode/opencode-quota/quota-toast.jsonc" = {
+    force = true;
+    text = builtins.toJSON {
+      enabledProviders = "auto";
+      tuiSidebarPanel.enabled = true;
+      enableToast = false;
+      tuiCompactStatus.enabled = false;
+    };
+  };
   home.activation.cleanupOpencodeCliBackup = config.lib.dag.entryBefore [ "linkGeneration" ] ''
     ${pkgs.coreutils}/bin/rm -f "${runtimeDir}/cli.json.backup"
   '';
@@ -207,7 +220,7 @@ in
         # Refuse modified/foreign collisions and symlink escapes before any
         # asset changes. Bootstrap claims only exact prior 2.5 consumer bytes.
         ${pkgs.nixos-scripts}/bin/ai-assets-reconcile "$runtime_dir" \
-          ${desiredAssets} ${assetTrees.none} 898d3976e8049a7238eaa7de60bff325c30d2b3d
+          ${desiredAssets} ${assetTrees.none} ${assetRevision}
         # Plugin set: rtk.ts, engram.ts, skill-registry.ts,
         # opencode-review-transport.ts, herdr-agent-state.js.
         mkdir -p "$runtime_dir/node_modules"
@@ -217,7 +230,7 @@ in
   home.activation.syncOpencodeSkillsToOpenfang = lib.mkIf openfangEnabled (
     config.lib.dag.entryAfter [ "setupOpencodePluginRuntime" ] ''
       ${pkgs.nixos-scripts}/bin/ai-assets-reconcile "${config.home.homeDirectory}/.openfang" \
-        ${openfangAssets} ${assetTrees.none} 898d3976e8049a7238eaa7de60bff325c30d2b3d
+        ${openfangAssets} ${assetTrees.none} ${assetRevision}
     ''
   );
 }

@@ -3,6 +3,7 @@ package netconsole
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -128,6 +129,30 @@ func Verify(km *kmsg.Writer, conn ackConn, nonce string, timeout time.Duration) 
 func SetupStatus(t Target, src net.IP, nonce string) string {
 	return fmt.Sprintf("netconsole-setup: target1 ready iface=%s src=%s:%d -> %s:%d nonce=%s",
 		t.Iface, src, t.LocalPort, t.RemoteIP, t.RemotePort, nonce)
+}
+
+func VerifyRetries(km *kmsg.Writer, conn ackConn, nonce string, timeout, interval time.Duration, attempts int, sleep func(time.Duration)) (bool, error) {
+	if attempts < 1 {
+		return false, fmt.Errorf("netconsole: probe attempts must be >= 1")
+	}
+	for attempt := 1; ; attempt++ {
+		err := Verify(km, conn, nonce, timeout)
+		if err == nil {
+			return true, nil
+		}
+		if !errors.Is(err, os.ErrDeadlineExceeded) {
+			return false, err
+		}
+		if attempt >= attempts {
+			return false, nil
+		}
+		sleep(interval)
+	}
+}
+
+func SetupNoACK(t Target, nonce string, attempts int) string {
+	return fmt.Sprintf("netconsole-setup: receiver %s:%d did not ACK after %d probes (nonce %s); target1 left enabled, kernel keeps shipping kmsg — check the receiver side (netconsole-log)",
+		t.RemoteIP, t.RemotePort, attempts, nonce)
 }
 
 func TrimParam(v []byte) string {

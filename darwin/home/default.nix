@@ -16,6 +16,7 @@ let
       ]
       ++ [
         ./opencode/mcps-extra.nix
+        ./opencode/quota-plugin.nix
       ];
 
     home.username = primaryUser;
