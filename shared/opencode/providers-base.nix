@@ -330,6 +330,25 @@ let
       };
     }
     {
+      name = "anthropic-copilot";
+      roles = {
+        gentle-orchestrator = "anthropic/claude-opus-5-5";
+        gentle-ai-explore = "anthropic/claude-sonnet-5-5";
+        gentle-ai-worker = "github-copilot/claude-sonnet-5.5";
+        gentle-ai-verify = "anthropic/claude-sonnet-5-5";
+        jd-judge-a = "anthropic/claude-sonnet-5-5";
+        jd-judge-b = "anthropic/claude-sonnet-5-5";
+        jd-fix-agent = "github-copilot/claude-sonnet-5.5";
+        review-readability = "anthropic/claude-sonnet-5-5";
+        review-refuter = "anthropic/claude-sonnet-5-5";
+        review-reliability = "anthropic/claude-sonnet-5-5";
+        review-resilience = "anthropic/claude-sonnet-5-5";
+        review-risk = "anthropic/claude-sonnet-5-5";
+        review-validator = "anthropic/claude-sonnet-5-5";
+        neutral = "github-copilot/claude-sonnet-5.5";
+      };
+    }
+    {
       name = "work-copilot-anthropic-light";
       roles = {
         gentle-orchestrator = "github-copilot/gpt-6.1-sol";

@@ -62,7 +62,7 @@ in
         ../../darwin/home
       ];
       home.stateVersion = "25.05";
-      home.opencode.activeProviderName = "work-copilot-anthropic";
+      home.opencode.activeProviderName = "anthropic-copilot";
     };
     extraSpecialArgs = {
       inherit
