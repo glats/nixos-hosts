@@ -14,6 +14,7 @@
     dock = {
       autohide = true;
       show-recents = false;
+      wvous-tl-corner = 2;
     };
   };
 }
