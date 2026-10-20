@@ -1,6 +1,6 @@
 {
   lanUrl = "http://172.16.0.11:8501";
-  remoteUrl = "https://cache.glats.org";
+  remoteUrl = "https://nix-cache.glats.org";
   harmonia = {
     port = 5000;
     publicKey = "thinkcentre-harmonia-1:0/eIdY3Cqjbj8tMJyc6+1m2QeG57ldYiFfAjN38b7T4=";

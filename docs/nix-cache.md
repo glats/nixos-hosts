@@ -1,11 +1,11 @@
 # Nix binary cache (thinkcentre)
 
-Thinkcentre acts as a LAN Nix binary cache: it serves its own `/nix/store` through Harmonia behind ncps, prewarms every host's closure while idle, and accepts pushes from macm5. rog exposes it off-LAN at `https://cache.glats.org` with basic auth. All hosts (rog, t14, macm5) read from it — thinkcentre never reads its own cache.
+Thinkcentre acts as a LAN Nix binary cache: it serves its own `/nix/store` through Harmonia behind ncps, prewarms every host's closure while idle, and accepts pushes from macm5. rog exposes it off-LAN at `https://nix-cache.glats.org` with basic auth. All hosts (rog, t14, macm5) read from it — thinkcentre never reads its own cache.
 
 ## Quick path
 
 1. On a Linux host, check reachability: `curl http://172.16.0.11:8501/nix-cache-info`.
-2. Off-LAN, check the remote path: `curl -n https://cache.glats.org/nix-cache-info` (netrc user `nix-cache`).
+2. Off-LAN, check the remote path: `curl -n https://nix-cache.glats.org/nix-cache-info` (netrc user `nix-cache`).
 3. After a change on macm5: `nixos-build switch` pushes the new system to the cache automatically.
 
 ## Architecture
@@ -14,7 +14,7 @@ Thinkcentre acts as a LAN Nix binary cache: it serves its own `/nix/store` throu
 |---|---|---|---|
 | Harmonia | thinkcentre | `:5000` | Serves thinkcentre's `/nix/store`, signed with the sops-managed Harmonia key |
 | ncps (proxy) | thinkcentre | `:8501` | In front of Harmonia (`http://127.0.0.1:5000`) plus the upstream substituters; upstream caches stay at default priority 40 |
-| nginx vhost | rog | `https://cache.glats.org` | Wildcard ACME `*.glats.org`; basic auth (htpasswd); proxies to `http://172.16.0.11:5000` (Harmonia) |
+| nginx vhost | rog | `https://nix-cache.glats.org` | Wildcard ACME `*.glats.org`; basic auth (htpasswd); proxies to `http://172.16.0.11:5000` (Harmonia) |
 | Linux clients | rog, t14 | — | `linux/system/base/nix-cache-client.nix` |
 | Darwin client | macm5 | — | `darwin/system/nix-cache-client.nix` (Determinate Nix, `nix.enable = false`) |
 
@@ -26,7 +26,7 @@ Public keys and URLs live in `shared/nix-cache.nix`; the modules import it, so e
 |---|---|---|
 | LAN ncps `http://172.16.0.11:8501?priority=30` | 30 | Fastest, tried first on LAN |
 | Upstream (cache.nixos.org, cachix) | 40 | Default nixpkgs order |
-| Remote `https://cache.glats.org?priority=45` | 45 | Off-LAN fallback via rog; never preferred over LAN or upstream |
+| Remote `https://nix-cache.glats.org?priority=45` | 45 | Off-LAN fallback via rog; never preferred over LAN or upstream |
 
 Thinkcentre is **not** a client of its own cache — it has no `nix-cache-client` module.
 
@@ -66,9 +66,9 @@ All secrets are sops-encrypted; never decrypt them (`sops` encrypt/edit only thr
 |---|---|---|
 | `secrets/host/thinkcentre/nix-cache.yaml` | `nix-cache/harmonia_signing_key` | Harmonia `signKeyPaths` (NAR signing) |
 | | `nix-cache/ncps_signing_key` | ncps `cache.secretKeyPath` (proxy signature) |
-| `secrets/host/rog/nix-cache.yaml` | `nix-cache/htpasswd` | bcrypt htpasswd for `cache.glats.org` (user `nix-cache`), deployed owned by nginx `0400` |
+| `secrets/host/rog/nix-cache.yaml` | `nix-cache/htpasswd` | bcrypt htpasswd for `nix-cache.glats.org` (user `nix-cache`), deployed owned by nginx `0400` |
 | | `nix-cache/netrc` | rog's own netrc so it can use the remote substituter |
-| `secrets/host/t14/nix-cache.yaml` | `nix-cache/netrc` | `machine cache.glats.org login nix-cache` |
+| `secrets/host/t14/nix-cache.yaml` | `nix-cache/netrc` | `machine nix-cache.glats.org login nix-cache` |
 | `secrets/host/macm5/nix-cache.yaml` | `nix-cache/netrc` | same netrc for macm5 |
 
 Each file is encrypted with the admin age key plus the host key; `.sops.yaml` has creation rules for `secrets/host/{rog,thinkcentre,t14,macm5}/.+` placed before the generic rules.
@@ -85,7 +85,7 @@ Basic-auth rotation (rog + clients):
 
 1. Generate a new password and hash: `htpasswd -BnC 10 nix-cache`, then `sops secrets/host/rog/nix-cache.yaml` and replace `nix-cache/htpasswd`.
 2. Rebuild rog (`nixos-build switch`).
-3. Put the new password line (`machine cache.glats.org login nix-cache password <new>`) into `nix-cache/netrc` via sops in `secrets/host/{rog,t14,macm5}/nix-cache.yaml`.
+3. Put the new password line (`machine nix-cache.glats.org login nix-cache password <new>`) into `nix-cache/netrc` via sops in `secrets/host/{rog,t14,macm5}/nix-cache.yaml`.
 4. Rebuild t14 and macm5.
 
 ## Troubleshooting
@@ -93,9 +93,15 @@ Basic-auth rotation (rog + clients):
 | Symptom | Check |
 |---|---|
 | No cache hits on LAN | `curl http://172.16.0.11:8501/nix-cache-info` on a LAN host |
-| Remote cache unreachable | `curl -n https://cache.glats.org/nix-cache-info` (uses the netrc); confirms ACME cert, basic auth, and the rog → Harmonia proxy. Without `-n` expect `401` — that proves auth is on |
+| Remote cache unreachable | `curl -n https://nix-cache.glats.org/nix-cache-info` (uses the netrc); confirms ACME cert, basic auth, and the rog → Harmonia proxy. Without `-n` expect `401` — that proves auth is on |
 | Auth failures with basic auth | the htpasswd blob was regenerated without updating the netrc files, or vice versa |
 | Untrusted key warnings | compare the nix error's key with `shared/nix-cache.nix`; a key rotation without a client rebuild is the usual cause |
 | Prewarm not running | `systemctl status nix-cache-prewarm.timer` (next trigger), `journalctl -u nix-cache-prewarm -n 100` |
 | Prewarm skipped | the log line `prewarm skipped: load average ... > ...` means the idle guard tripped; wait for the next timer activation |
 | Push failures in nixos-build | `WARNING: push failed (best-effort, continuing): ...` on stderr; the build result is still valid — see `nix-cache push --strict` to debug, and check thinkcentre's `nix.settings.trusted-users` |
+
+## Domain migration prerequisite
+
+Before deploying the rename from `cache.glats.org` to `nix-cache.glats.org`, update `nix-cache/netrc` with sops in each of `secrets/host/rog/nix-cache.yaml`, `secrets/host/t14/nix-cache.yaml`, and `secrets/host/macm5/nix-cache.yaml`. Change only `machine cache.glats.org` to `machine nix-cache.glats.org`; preserve the login and password. All three encrypted netrc entries must be updated together with the endpoint. The htpasswd and signing keys do not need rotation.
+
+Ensure the new DNS name routes to rog, then deploy rog before t14 and macm5. This rename removes the old nginx virtual host; clients still configured with the old URL lose that remote cache until updated, while LAN and public caches remain configured. Validate the new URL returns 401 without credentials and 200 with each host's deployed netrc. Do not print credentials during validation. Thinkcentre needs no deployment for this domain-only change.
