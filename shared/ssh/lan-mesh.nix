@@ -127,6 +127,10 @@ assert lib.assertMsg (lib.all validRecord records)
             name = "${target}.local";
             inherit value;
           }
+          {
+            name = member.hostName;
+            inherit value;
+          }
         ]
       ) (builtins.filter (name: name != source) names))
       ++ lib.optional (source == "rog") {
