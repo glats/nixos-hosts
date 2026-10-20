@@ -138,7 +138,7 @@ let
       update = "disable";
       plugins = [
         "opencode-claude-subscription@0.1.4"
-        "@slkiser/opencode-quota@5.0.3"
+        (if cfg.quotaPlugin == null then "@slkiser/opencode-quota@5.0.3" else "${cfg.quotaPlugin}")
       ];
       default_agent = "gentle-orchestrator";
       agents = v2Agents;

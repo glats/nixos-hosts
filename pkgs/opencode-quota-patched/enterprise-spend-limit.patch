@@ -1,0 +1,160 @@
+diff -ru a/dist/lib/anthropic.js b/dist/lib/anthropic.js
+--- a/dist/lib/anthropic.js	2026-10-19 17:25:14
++++ b/dist/lib/anthropic.js	2026-10-19 17:25:29
+@@ -165,8 +165,25 @@
+     if (typeof used !== "number" || !Number.isFinite(used) || used < 0 || used > 100) {
+         return undefined;
+     }
++    const limitCents = record["monthly_limit"];
++    const usedCents = record["used_credits"];
++    const currency = record["currency"];
++    if (typeof limitCents === "number" && Number.isFinite(limitCents) && limitCents > 0 &&
++        typeof usedCents === "number" && Number.isFinite(usedCents) && usedCents >= 0) {
++        return {
++            percentRemaining: Math.round(100 - used),
++            usedUsd: usedCents / 100,
++            limitUsd: limitCents / 100,
++            currency: typeof currency === "string" && currency ? currency : "USD",
++        };
++    }
+     return { percentRemaining: Math.round(100 - used) };
+ }
++function describeUsageResponseKeys(data) {
++    const record = asRecord(data);
++    const keys = record ? Object.keys(record).sort() : [];
++    return keys.length > 0 ? ` (keys: ${sanitizeDisplayText(keys.join(", "))})` : "";
++}
+ function getUsageRoots(data) {
+     const root = asRecord(data);
+     if (!root) {
+@@ -237,14 +254,24 @@
+     return null;
+ }
+ function parseOAuthUsageResponse(data) {
++    let spendOnly = null;
+     for (const root of getUsageRoots(data)) {
+         const fiveHour = parseQuotaWindow(root["five_hour"] ?? root["fiveHour"]);
+         const sevenDay = parseQuotaWindow(root["seven_day"] ?? root["sevenDay"]);
++        const extraUsage = parseExtraUsageQuota(root["extra_usage"]);
++        const fableWeekly = parseFableWeeklyWindow(root["limits"]);
+         if (!fiveHour || !sevenDay) {
++            if (!spendOnly && extraUsage?.limitUsd !== undefined) {
++                spendOnly = {
++                    success: true,
++                    five_hour: fiveHour,
++                    seven_day: sevenDay,
++                    extra_usage: extraUsage,
++                    ...(fableWeekly ? { fable_weekly: fableWeekly } : {}),
++                };
++            }
+             continue;
+         }
+-        const extraUsage = parseExtraUsageQuota(root["extra_usage"]);
+-        const fableWeekly = parseFableWeeklyWindow(root["limits"]);
+         return {
+             success: true,
+             five_hour: fiveHour,
+@@ -253,7 +280,7 @@
+             ...(fableWeekly ? { fable_weekly: fableWeekly } : {}),
+         };
+     }
+-    return null;
++    return spendOnly;
+ }
+ function getClaudeCredentialsPath() {
+     return join(homedir(), ".claude", ".credentials.json");
+@@ -579,7 +606,7 @@
+                 if (!quota) {
+                     return {
+                         state: "unavailable",
+-                        detail: "Unexpected Anthropic quota response shape",
++                        detail: `Unexpected Anthropic quota response shape${describeUsageResponseKeys(data)}`,
+                     };
+                 }
+                 return {
+diff -ru a/dist/providers/anthropic.js b/dist/providers/anthropic.js
+--- a/dist/providers/anthropic.js	2026-10-19 17:25:14
++++ b/dist/providers/anthropic.js	2026-10-19 17:40:18
+@@ -9,6 +9,17 @@
+ import { credentialRowAuthEntry, formatCredentialDisplayNames, readCredentialRows, } from "../lib/opencode-auth.js";
+ import { isCanonicalProviderAvailable } from "../lib/provider-availability.js";
+ import { attemptedErrorResult, attemptedResult, notAttemptedResult, statusDetailsFromRecord, withStatusDetails, } from "./result-helpers.js";
++function formatSpend({ usedUsd, limitUsd, currency }) {
++    const prefix = currency === "USD" ? "$" : "";
++    const suffix = currency === "USD" ? "" : ` ${currency}`;
++    return `${prefix}${usedUsd.toFixed(2)}/${prefix}${limitUsd.toFixed(2)}${suffix}`;
++}
++function spendDetail(result) {
++    const spendOnly = !result.five_hour || !result.seven_day;
++    return spendOnly && result.extra_usage?.limitUsd !== undefined
++        ? { right: formatSpend(result.extra_usage) }
++        : {};
++}
+ export function getAnthropicNoDataMessage() {
+     return "Quota unavailable via local Claude CLI or OAuth credentials";
+ }
+@@ -60,10 +71,10 @@
+                 oauth_credential_source: diagnostics.oauthCredentialSource ?? "(none)",
+                 checked_commands: diagnostics.checkedCommands.join(" | ") || "(none)",
+                 message: diagnostics.message,
+-                five_hour_remaining: quota
++                five_hour_remaining: quota?.five_hour
+                     ? `${quota.five_hour.percentRemaining}% reset_at=${quota.five_hour.resetTimeIso ?? "(none)"}`
+                     : undefined,
+-                seven_day_remaining: quota
++                seven_day_remaining: quota?.seven_day
+                     ? `${quota.seven_day.percentRemaining}% reset_at=${quota.seven_day.resetTimeIso ?? "(none)"}`
+                     : undefined,
+                 fable_weekly_remaining: quota?.fable_weekly
+@@ -97,7 +108,7 @@
+                         errors.push({ label: group, message: result.error });
+                     continue;
+                 }
+-                entries.push(...[["5h", result.five_hour], ["Weekly", result.seven_day]].map(([label, window]) => ({
++                entries.push(...[["5h", result.five_hour], ["Weekly", result.seven_day]].filter(([, window]) => window).map(([label, window]) => ({
+                     accounting: {
+                         resultType: "quota",
+                         acquisitionMethod: "remote_api",
+@@ -124,6 +135,7 @@
+                         group: `${group} Usage Credits`,
+                         label: "Monthly:",
+                         percentRemaining: result.extra_usage.percentRemaining,
++                        ...spendDetail(result),
+                     });
+                 }
+                 if (result.fable_weekly) {
+@@ -157,7 +169,7 @@
+             return withStatusDetails(attemptedErrorResult("Claude", result.error), statusDetails);
+         }
+         const entries = [
+-            {
++            result.five_hour && {
+                 accounting: {
+                     resultType: "quota",
+                     acquisitionMethod,
+@@ -170,7 +182,7 @@
+                 percentRemaining: result.five_hour.percentRemaining,
+                 resetTimeIso: result.five_hour.resetTimeIso,
+             },
+-            {
++            result.seven_day && {
+                 accounting: {
+                     resultType: "quota",
+                     acquisitionMethod,
+@@ -183,7 +195,7 @@
+                 percentRemaining: result.seven_day.percentRemaining,
+                 resetTimeIso: result.seven_day.resetTimeIso,
+             },
+-        ];
++        ].filter(Boolean);
+         if (result.extra_usage) {
+             entries.push({
+                 accounting: {
+@@ -196,6 +208,7 @@
+                 group: "Claude Usage Credits",
+                 label: "Monthly:",
+                 percentRemaining: result.extra_usage.percentRemaining,
++                ...spendDetail(result),
+             });
+         }
+         if (result.fable_weekly) {
