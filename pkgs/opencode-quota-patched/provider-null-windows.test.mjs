@@ -50,4 +50,53 @@ const pro = await entriesFor({
 });
 assert.deepEqual(pro.entries.map((e) => e.label), ["5h:", "Weekly:", "Monthly:"]);
 assert.equal(pro.entries[2].right, undefined, "Pro Monthly entry output must stay unchanged");
+
+let rows = [];
+bindCredentialSource({ kind: "fixture", async readRows() { return rows; } });
+const login = (id, email, active, organization = "Acme") => ({
+  id,
+  integrationId: "anthropic",
+  label: email,
+  active,
+  method: "oauth",
+  value: {
+    type: "oauth",
+    access: `fixture-token-${id}-${Date.now()}`,
+    refresh: "r",
+    expires: Date.now() + 3600000,
+    email,
+    organization,
+  },
+});
+let probedTokens = [];
+async function probe() {
+  probedTokens = [];
+  globalThis.fetch = async (_url, init) => {
+    probedTokens.push(init.headers.Authorization);
+    return new Response(JSON.stringify({
+      five_hour: null,
+      seven_day: null,
+      extra_usage: { is_enabled: true, utilization: 52, monthly_limit: 15000, used_credits: 7758, currency: "USD" },
+    }), { status: 200, headers: { "content-type": "application/json" } });
+  };
+  return await anthropicProvider.fetch({ config: { requestTimeoutMs: 1000 }, client: {} });
+}
+
+rows = [login("new", "user@example.com", false), login("act", "User@Example.com", true), login("old", "user@example.com", false)];
+const deduped = await probe();
+assert.equal(probedTokens.length, 1, "one usage probe per account");
+assert.match(probedTokens[0], /fixture-token-act-/, "the active login wins");
+assert.equal(deduped.entries.length, 1);
+assert.doesNotMatch(deduped.entries[0].group, / 2\b/);
+
+rows = [login("a", "one@example.com", true), login("b", "two@example.com", false), login("c", "one@example.com", false, "Other")];
+const distinct = await probe();
+assert.equal(probedTokens.length, 3, "different accounts or organizations stay separate");
+assert.equal(distinct.entries.length, 3);
+
+rows = [login("n1", "user@example.com", false), login("n2", "user@example.com", false)];
+await probe();
+assert.equal(probedTokens.length, 1);
+assert.match(probedTokens[0], /fixture-token-n1-/, "without an active login the newest one wins");
+console.log("PASS: one probe per Anthropic account, active first, distinct accounts kept");
 console.log("PASS: enterprise provider entries and diagnostics; Pro entries unchanged");

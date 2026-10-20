@@ -1,6 +1,6 @@
 diff -ru a/dist/lib/anthropic.js b/dist/lib/anthropic.js
---- a/dist/lib/anthropic.js	2026-10-19 17:25:14
-+++ b/dist/lib/anthropic.js	2026-10-19 17:25:29
+--- a/dist/lib/anthropic.js	2026-10-19 23:14:03
++++ b/dist/lib/anthropic.js	2026-10-19 23:14:03
 @@ -165,8 +165,25 @@
      if (typeof used !== "number" || !Number.isFinite(used) || used < 0 || used > 100) {
          return undefined;
@@ -73,9 +73,9 @@ diff -ru a/dist/lib/anthropic.js b/dist/lib/anthropic.js
                  }
                  return {
 diff -ru a/dist/providers/anthropic.js b/dist/providers/anthropic.js
---- a/dist/providers/anthropic.js	2026-10-19 17:25:14
-+++ b/dist/providers/anthropic.js	2026-10-19 17:40:18
-@@ -9,6 +9,17 @@
+--- a/dist/providers/anthropic.js	2026-10-19 23:14:03
++++ b/dist/providers/anthropic.js	2026-10-19 23:14:12
+@@ -9,6 +9,36 @@
  import { credentialRowAuthEntry, formatCredentialDisplayNames, readCredentialRows, } from "../lib/opencode-auth.js";
  import { isCanonicalProviderAvailable } from "../lib/provider-availability.js";
  import { attemptedErrorResult, attemptedResult, notAttemptedResult, statusDetailsFromRecord, withStatusDetails, } from "./result-helpers.js";
@@ -83,6 +83,25 @@ diff -ru a/dist/providers/anthropic.js b/dist/providers/anthropic.js
 +    const prefix = currency === "USD" ? "$" : "";
 +    const suffix = currency === "USD" ? "" : ` ${currency}`;
 +    return `${prefix}${usedUsd.toFixed(2)}/${prefix}${limitUsd.toFixed(2)}${suffix}`;
++}
++function accountKey(row) {
++    const email = typeof row.value?.email === "string" ? row.value.email.trim().toLowerCase() : "";
++    if (!email)
++        return null;
++    const organization = typeof row.value?.organization === "string" ? row.value.organization.trim().toLowerCase() : "";
++    return `${email}\u0000${organization}`;
++}
++function onePerAccount(credentials) {
++    const rank = ({ row, auth }) => (row.active ? 0 : auth.state === "configured" ? 1 : 2);
++    const chosen = new Map();
++    credentials.forEach((credential, index) => {
++        const key = accountKey(credential.row) ?? `row:${index}`;
++        const current = chosen.get(key);
++        if (!current || rank(credential) < rank(current.credential)) {
++            chosen.set(key, { credential, index: current ? Math.min(current.index, index) : index });
++        }
++    });
++    return [...chosen.values()].sort((a, b) => a.index - b.index).map(({ credential }) => credential);
 +}
 +function spendDetail(result) {
 +    const spendOnly = !result.five_hour || !result.seven_day;
@@ -93,7 +112,22 @@ diff -ru a/dist/providers/anthropic.js b/dist/providers/anthropic.js
  export function getAnthropicNoDataMessage() {
      return "Quota unavailable via local Claude CLI or OAuth credentials";
  }
-@@ -60,10 +71,10 @@
+@@ -38,12 +68,12 @@
+         let statusDetails;
+         let acquisitionMethod = "local_cli";
+         // A failed login stays in the list so it shows as its own error row.
+-        const databaseCredentials = (await readCredentialRows(["anthropic"], { methods: ["oauth"] })).flatMap((row) => {
++        const databaseCredentials = onePerAccount((await readCredentialRows(["anthropic"], { methods: ["oauth"] })).flatMap((row) => {
+             if (row.integrationId !== "anthropic")
+                 return [];
+             const auth = resolveAnthropicOAuth({ anthropic: credentialRowAuthEntry(row) });
+             return auth.state === "configured" || auth.state === "failed" ? [{ row, auth }] : [];
+-        });
++        }));
+         try {
+             const diagnostics = await getAnthropicDiagnostics(options);
+             const quota = diagnostics.quotaSupported ? diagnostics.quota : undefined;
+@@ -60,10 +90,10 @@
                  oauth_credential_source: diagnostics.oauthCredentialSource ?? "(none)",
                  checked_commands: diagnostics.checkedCommands.join(" | ") || "(none)",
                  message: diagnostics.message,
@@ -106,7 +140,7 @@ diff -ru a/dist/providers/anthropic.js b/dist/providers/anthropic.js
                      ? `${quota.seven_day.percentRemaining}% reset_at=${quota.seven_day.resetTimeIso ?? "(none)"}`
                      : undefined,
                  fable_weekly_remaining: quota?.fable_weekly
-@@ -97,7 +108,7 @@
+@@ -97,7 +127,7 @@
                          errors.push({ label: group, message: result.error });
                      continue;
                  }
@@ -115,7 +149,7 @@ diff -ru a/dist/providers/anthropic.js b/dist/providers/anthropic.js
                      accounting: {
                          resultType: "quota",
                          acquisitionMethod: "remote_api",
-@@ -124,6 +135,7 @@
+@@ -124,6 +154,7 @@
                          group: `${group} Usage Credits`,
                          label: "Monthly:",
                          percentRemaining: result.extra_usage.percentRemaining,
@@ -123,7 +157,7 @@ diff -ru a/dist/providers/anthropic.js b/dist/providers/anthropic.js
                      });
                  }
                  if (result.fable_weekly) {
-@@ -157,7 +169,7 @@
+@@ -157,7 +188,7 @@
              return withStatusDetails(attemptedErrorResult("Claude", result.error), statusDetails);
          }
          const entries = [
@@ -132,7 +166,7 @@ diff -ru a/dist/providers/anthropic.js b/dist/providers/anthropic.js
                  accounting: {
                      resultType: "quota",
                      acquisitionMethod,
-@@ -170,7 +182,7 @@
+@@ -170,7 +201,7 @@
                  percentRemaining: result.five_hour.percentRemaining,
                  resetTimeIso: result.five_hour.resetTimeIso,
              },
@@ -141,7 +175,7 @@ diff -ru a/dist/providers/anthropic.js b/dist/providers/anthropic.js
                  accounting: {
                      resultType: "quota",
                      acquisitionMethod,
-@@ -183,7 +195,7 @@
+@@ -183,7 +214,7 @@
                  percentRemaining: result.seven_day.percentRemaining,
                  resetTimeIso: result.seven_day.resetTimeIso,
              },
@@ -150,7 +184,7 @@ diff -ru a/dist/providers/anthropic.js b/dist/providers/anthropic.js
          if (result.extra_usage) {
              entries.push({
                  accounting: {
-@@ -196,6 +208,7 @@
+@@ -196,6 +227,7 @@
                  group: "Claude Usage Credits",
                  label: "Monthly:",
                  percentRemaining: result.extra_usage.percentRemaining,
