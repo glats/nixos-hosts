@@ -171,14 +171,16 @@ func variantSteps(opts Options, variant, flakeRef string, fatalLinux bool) []Ste
 		}
 	}
 	subst := func(name, link, attr string) Step {
-		st := build(name, link, attr, false)
-		st.Args = []string{
-			st.Args[0], st.Args[1],
-			st.Args[2], st.Args[3],
-			"--option", "max-jobs", "0",
-			st.Args[4], st.Args[5],
+		return Step{
+			Name: name,
+			Args: []string{
+				"nix", "build",
+				"--out-link", filepath.Join(roots, link),
+				"--option", "max-jobs", "0",
+				"--keep-going",
+				flakeRef + "#" + attr,
+			},
 		}
-		return st
 	}
 	var steps []Step
 	for _, h := range linuxHosts {
