@@ -106,65 +106,74 @@ assert lib.assertMsg (lib.all validRecord records)
     };
   sshSettingsFor =
     { source, sshDir }:
-    lib.listToAttrs (
-      (lib.concatMap (
-        target:
-        let
-          member = members.${target};
+    let
+      blocks = lib.listToAttrs (
+        (lib.concatMap (
+          target:
+          let
+            member = members.${target};
+            value = {
+              HostName = member.hostName;
+              User = member.user;
+              IdentityFile = "${sshDir}/${members.${source}.identityFile}";
+              IdentitiesOnly = true;
+            };
+          in
+          [
+            {
+              name = target;
+              inherit value;
+            }
+            {
+              name = "${target}.local";
+              inherit value;
+            }
+            {
+              name = member.hostName;
+              inherit value;
+            }
+          ]
+        ) (builtins.filter (name: name != source) names))
+        ++ lib.optional (source == "rog") {
+          name = "macm5-relay";
           value = {
-            HostName = member.hostName;
-            User = member.user;
+            HostName = "127.0.0.1";
+            Port = 22220;
+            User = members.macm5.user;
             IdentityFile = "${sshDir}/${members.${source}.identityFile}";
             IdentitiesOnly = true;
+            HostKeyAlias = "macm5";
+            StrictHostKeyChecking = "yes";
+            PreferredAuthentications = "publickey";
+            PasswordAuthentication = false;
+            KbdInteractiveAuthentication = false;
+            BatchMode = true;
           };
-        in
-        [
-          {
-            name = target;
-            inherit value;
-          }
-          {
-            name = "${target}.local";
-            inherit value;
-          }
-          {
-            name = member.hostName;
-            inherit value;
-          }
-        ]
-      ) (builtins.filter (name: name != source) names))
-      ++ lib.optional (source == "rog") {
-        name = "macm5-relay";
-        value = {
-          HostName = "127.0.0.1";
-          Port = 22220;
-          User = members.macm5.user;
-          IdentityFile = "${sshDir}/${members.${source}.identityFile}";
-          IdentitiesOnly = true;
-          HostKeyAlias = "macm5";
-          StrictHostKeyChecking = "yes";
-          PreferredAuthentications = "publickey";
-          PasswordAuthentication = false;
-          KbdInteractiveAuthentication = false;
-          BatchMode = true;
-        };
-      }
-      ++
-        lib.concatMap
-          (alias: [
-            {
-              name = alias;
-              value = {
-                HostName = router.hostName;
-                User = "root";
-                IdentityFile = "${sshDir}/${members.${source}.identityFile}";
-                IdentitiesOnly = true;
-              };
-            }
-          ])
-          [
-            "router"
-            "router.local"
-          ]
-    );
+        }
+        ++
+          lib.concatMap
+            (alias: [
+              {
+                name = alias;
+                value = {
+                  HostName = router.hostName;
+                  User = "root";
+                  IdentityFile = "${sshDir}/${members.${source}.identityFile}";
+                  IdentitiesOnly = true;
+                };
+              }
+            ])
+            [
+              "router"
+              "router.local"
+            ]
+      );
+    in
+    blocks
+    // {
+      "*.lan" = lib.hm.dag.entryAfter (builtins.attrNames blocks) {
+        IdentityFile = "${sshDir}/${members.${source}.identityFile}";
+        IdentitiesOnly = true;
+      };
+    };
 }
