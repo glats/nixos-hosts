@@ -73,7 +73,7 @@ let
     {
       name = "work-copilot-anthropic";
       roles = {
-        gentle-orchestrator = "github-copilot/gpt-6.1-sol";
+        gentle-orchestrator = "anthropic/claude-opus-5-5";
         gentle-ai-explore = "anthropic/claude-sonnet-5-5";
         gentle-ai-worker = "github-copilot/claude-sonnet-5.5";
         gentle-ai-verify = "anthropic/claude-sonnet-5-5";

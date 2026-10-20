@@ -408,7 +408,7 @@
             extraModules = [
               ./darwin/home
               {
-                home.opencode.activeProviderName = "openai-anthropic-go";
+                home.opencode.activeProviderName = "work-copilot-anthropic";
               }
             ];
           };
