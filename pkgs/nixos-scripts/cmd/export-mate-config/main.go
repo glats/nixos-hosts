@@ -100,8 +100,7 @@ const autostart = `  };
 `
 
 var (
-	sectionRe    = regexp.MustCompile(`^\[(.*)\]$`)
-	arrayRe      = regexp.MustCompile(`^\[(.*)\]$`)
+	bracketRe    = regexp.MustCompile(`^\[(.*)\]$`)
 	intRe        = regexp.MustCompile(`^[0-9]+$`)
 	multiSpaceRe = regexp.MustCompile(`  +`)
 )
@@ -138,7 +137,7 @@ func arrayBody(content string) string {
 }
 
 func convertValue(value string) string {
-	if m := arrayRe.FindStringSubmatch(value); m != nil {
+	if m := bracketRe.FindStringSubmatch(value); m != nil {
 		return "[ " + arrayBody(m[1]) + " ]"
 	}
 	if value == "true" || value == "false" {
@@ -161,7 +160,7 @@ func convertDump(out string) string {
 			continue
 		}
 
-		if m := sectionRe.FindStringSubmatch(line); m != nil {
+		if m := bracketRe.FindStringSubmatch(line); m != nil {
 
 			if currentPath != "" {
 				b.WriteString("    };\n\n")

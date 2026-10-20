@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strings"
 	"sync"
 	"syscall"
 )
@@ -271,13 +272,7 @@ func strconvQuote(value string) string {
 func scrubProxy(environment []string) []string {
 	result := make([]string, 0, len(environment))
 	for _, entry := range environment {
-		name := entry
-		for i, char := range entry {
-			if char == '=' {
-				name = entry[:i]
-				break
-			}
-		}
+		name, _, _ := strings.Cut(entry, "=")
 		switch name {
 		case "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY", "http_proxy", "https_proxy", "all_proxy", "no_proxy":
 			continue

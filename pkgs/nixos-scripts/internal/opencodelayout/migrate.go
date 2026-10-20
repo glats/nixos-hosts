@@ -148,9 +148,6 @@ func moveStep(archive, source, target string) (bool, error) {
 	key := filepath.Join(archive, ".steps", strconv.Itoa(len(strings.Split(filepath.Clean(source), string(filepath.Separator))))+"-"+strings.NewReplacer("/", "_", "\\", "_").Replace(strings.TrimPrefix(filepath.Clean(source), string(filepath.Separator))))
 	intent := exists(key)
 	if !exists(source) {
-		if intent && exists(target) {
-			return false, nil
-		}
 		return false, nil
 	}
 	if exists(target) {
