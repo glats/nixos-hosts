@@ -20,6 +20,7 @@
     ../../linux/system/base/zsh.nix
     ../../linux/system/base/packages.nix
     ../../linux/system/base/home-manager.nix
+    ../../linux/system/security/ca-blacklist.nix
 
     ../../linux/system/desktop/i18n.nix
     ../../linux/system/desktop/fonts.nix

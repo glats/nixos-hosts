@@ -47,6 +47,12 @@ in
 
   link.directCidrs = [ "163.116.0.0/16" ];
 
+  # Distrust for the eMudhra intermediate CA compromise (Oct 2026).
+  security.pki.caCertificateBlacklist = [
+    "Comodo AAA Services root"
+    "emSign ECC Root CA - G3"
+  ];
+
   nix-homebrew = {
     user = primaryUser;
     enable = true;

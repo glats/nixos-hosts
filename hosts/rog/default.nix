@@ -28,6 +28,8 @@
     ../../linux/system/base/shutdown-fix.nix
     ../../linux/system/base/shutdown-debug.nix
 
+    ../../linux/system/security/ca-blacklist.nix
+
     ../../linux/system/desktop/fonts.nix
     ../../linux/system/desktop/i18n.nix
     ../../linux/system/desktop/kmscon.nix
