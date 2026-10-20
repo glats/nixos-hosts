@@ -199,6 +199,7 @@ in
         openfangEnabled
         ;
       cfg = config.home.opencode;
+      assetRevision = inputs.gentle-ai-src.rev;
     }))
 
     (mkIf config.home.opencode.enable {

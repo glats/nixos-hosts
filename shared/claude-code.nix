@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  inputs,
   ...
 }:
 
@@ -276,7 +277,7 @@ in
       fi
 
       ${pkgs.nixos-scripts}/bin/ai-assets-reconcile "$claude_dir" \
-        ${desiredAssets} ${assetTrees.none} 898d3976e8049a7238eaa7de60bff325c30d2b3d
+        ${desiredAssets} ${assetTrees.none} ${inputs.gentle-ai-src.rev}
 
     '';
   };
