@@ -1,0 +1,14 @@
+--- a/client/SDL/SDL3/sdl_context.cpp
++++ b/client/SDL/SDL3/sdl_context.cpp
+@@ -438,6 +438,11 @@
+ 			window.setOffsetY(originY - monitor->y);
+ 		}
+ 
++		if (freerdp_settings_get_bool(settings, FreeRDP_Workarea) &&
++		    !freerdp_settings_get_bool(settings, FreeRDP_Fullscreen) &&
++		    !freerdp_settings_get_bool(settings, FreeRDP_UseMultimon))
++			std::ignore = SDL_MaximizeWindow(window.window());
++
+ 		_windows.insert({ window.id(), std::move(window) });
+ 	}
+ 
