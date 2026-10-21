@@ -12,7 +12,7 @@ Run this from a clean main checkout:
 code-work my-change
 # You are now in .worktrees/my-change on branch my-change.
 
-opencode # or: opencode-project, opencode-home, claude, or no assistant
+opencode # or: opencode-home, claude, or no assistant
 ```
 
 When the work is ready, integrate the branch manually. From inside the

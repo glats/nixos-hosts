@@ -63,7 +63,6 @@ let
       ''
         mkdir -p "$out/bin"
         makeBinaryWrapper ${pkgs.opencode}/bin/opencode "$out/bin/opencode" \
-          --set-default OPENCODE_DISABLE_PROJECT_CONFIG 1 \
           --set GPG_TTY "" \
           --set PINENTRY_USER_DATA opencode \
           --prefix PATH : ${

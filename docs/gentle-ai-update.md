@@ -23,8 +23,9 @@ the real native `opencode` executable.
 
 The HM-scoped compiled `gentle-ai` wrapper privately prefixes managed `opencode`
 discovery plus Git. Host-config shell scrubbing cannot remove those child
-settings. Public commands are `opencode`, `opencode-project`, and Darwin-only
-`opencode-home`.
+settings. Public commands are `opencode` and Darwin-only `opencode-home`.
+`opencode` loads each project's `AGENTS.md` and project configuration, as
+upstream does.
 The managed relay and registry use the absolute wrapper path. Go alone owns
 review role binding, materialization, budgets, admission and receipts.
 

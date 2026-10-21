@@ -92,7 +92,7 @@ assert "setupOpencodePluginRuntime" in result["openfangAfter"]
 assert "ai-assets-no-legacy" in result["openfangData"]
 assert "opencode-owned-assets" in result["setupData"]
 assert "ai-assets-no-legacy" in result["setupData"], "fresh ownership must not claim legacy bytes"
-assert "opencode-project()" in source
+assert "opencode-project()" not in source, "project config loads by default; the opt-in alias is obsolete"
 assert "optionalString (pkgs.stdenv.isDarwin && config.home.opencode.enable)" in source
 match = re.search(r"opencode-home\(\) \(\n(.*?)\n      \)", source, re.S)
 assert match, "missing scoped opencode-home shell function"
@@ -160,7 +160,7 @@ assert native.is_symlink() and native.resolve() == Path(result["nativeBinary"]).
 assert subprocess.check_output([str(wrapper), "version"], text=True).strip() == "gentle-ai 4.1.1"
 opencode = Path(result["opencodeWrapper"]) / "bin/opencode"
 launcher_bytes = opencode.read_bytes()
-assert launcher_bytes[:4] == b"\x7fELF" and b"OPENCODE_DISABLE_PROJECT_CONFIG" in launcher_bytes
+assert launcher_bytes[:4] == b"\x7fELF" and b"OPENCODE_DISABLE_PROJECT_CONFIG" not in launcher_bytes
 assert result["gentleWrapper"].encode() in launcher_bytes, "opencode must put the managed gentle-ai first on PATH"
 assert subprocess.check_output([str(opencode), "--version"], text=True).strip().startswith("opencode v2.")
 print("PASS: native HM wrappers; no layout overrides; truthful native discovery")

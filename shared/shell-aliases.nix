@@ -164,16 +164,6 @@
           return 1
       }
     ''
-    + lib.optionalString config.home.opencode.enable ''
-      # `opencode` disables project configuration by default; this enables it.
-      opencode-project() {
-        if [ -f "$PWD/.opencode/package.json" ] && ${pkgs.gnugrep}/bin/grep -Eq '"@opencode-ai/plugin"' "$PWD/.opencode/package.json"; then
-          echo "opencode-project: legacy OpenCode SDK project configuration is not compatible with OpenCode" >&2
-          return 1
-        fi
-        OPENCODE_DISABLE_PROJECT_CONFIG= command opencode "$@"
-      }
-    ''
     + lib.optionalString (pkgs.stdenv.isDarwin && config.home.opencode.enable) ''
       opencode-home() (
         local arg standalone=0 server=0
