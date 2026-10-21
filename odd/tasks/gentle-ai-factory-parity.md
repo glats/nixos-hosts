@@ -38,3 +38,4 @@ Route: inline (no parallel units launched together, no context backstop). High-r
 - L3: per-item answers recorded in Specs. Deviation inventory from explorer against upstream 898d397.
 - L4: evidence: this OpenCode session loaded only `~/.config/opencode/AGENTS.md`, not the repo AGENTS.md (wrapper sets `OPENCODE_DISABLE_PROJECT_CONFIG=1`, `shared/opencode.nix:67`).
 - L5 (2026-10-21): D6 decision "Quitar la variable (fábrica)"; activation: "No aplicar todavía".
+- L6 (2026-10-21): "mejor deja todo en master y en .nixos para ahcer el build". Rebased onto master bf778a35 (commits now 8bf57122, 5628e91b, 6d2af922, 1c15a374, 9c08940e); 4 tests + flake check PASS; master fast-forwarded in ~/.nixos (ahead 5, not pushed). Found pre-existing nixos-build bug: switch/test/boot omit FlakePath so nh uses NH_FLAKE.
