@@ -70,6 +70,7 @@ in
       ];
       home.stateVersion = "25.05";
       home.opencode.activeProviderName = "anthropic-copilot";
+      home.shell-gpt.model = "nvidia/nemotron-3.5-super-vl-120b-a12b";
     };
     extraSpecialArgs = {
       inherit
