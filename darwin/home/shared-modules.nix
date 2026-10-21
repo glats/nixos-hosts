@@ -8,6 +8,7 @@
   ./ssh.nix
 
   ./packages.nix
+  ./flameshot.nix
   ./neovim.nix
   ./shell.nix
   ./tmux.nix
