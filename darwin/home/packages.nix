@@ -38,7 +38,6 @@ in
         wget
         jq
         lsd
-        vscode
         gdk
         btop
         flameshot

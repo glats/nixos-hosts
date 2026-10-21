@@ -1,12 +1,25 @@
-{ pkgs, ... }:
+{ pkgs, inputs, ... }:
 {
   programs.vscode = {
     enable = true;
-    package = null;
+    package = pkgs.vscode;
 
     mutableExtensionsDir = true;
 
     profiles.default = {
+      extensions =
+        with inputs.nix-vscode-extensions.extensions.${pkgs.stdenv.hostPlatform.system}.vscode-marketplace; [
+          golang.go
+          jnoortheen.nix-ide
+          arrterian.nix-env-selector
+          bbenoist.nix
+          vue.volar
+          zhuangtongfa.material-theme
+          pkief.material-icon-theme
+          jebbs.plantuml
+          hediet.vscode-drawio
+        ];
+
       userSettings = {
         "files.associations" = {
           "*.tool.mod" = "go.mod";

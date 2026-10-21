@@ -22,6 +22,7 @@
   ../../shared/opencode-profile.nix
   ./opencode-mcps-extra.nix
   ../../shared/herdr.nix
+  ../../shared/vscode.nix
   ../../shared/claude-code.nix
   ../../shared/claude-code-profile.nix
   ../../shared/shell-gpt.nix

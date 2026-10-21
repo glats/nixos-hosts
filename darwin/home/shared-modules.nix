@@ -13,7 +13,7 @@
   ./shell.nix
   ./tmux.nix
   inputs.omarchy-nix.homeManagerModules.btop
-  ./vscode.nix
+  ../../shared/vscode.nix
 
   ./remote-desktop.nix
   ./edge-tunnel-app.nix
