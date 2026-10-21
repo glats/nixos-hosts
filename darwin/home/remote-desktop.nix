@@ -194,8 +194,6 @@ let
           <string>APPL</string>
           <key>CFBundleExecutable</key>
           <string>launcher</string>
-          <key>LSUIElement</key>
-          <true/>
           <key>CFBundleIconFile</key>
           <string>GenericNetworkIcon.icns</string>
           <key>NSLocalNetworkUsageDescription</key>
