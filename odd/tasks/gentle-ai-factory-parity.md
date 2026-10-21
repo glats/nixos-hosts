@@ -24,6 +24,9 @@ Objective: restore gentle-ai factory behavior where the user chose it, keep user
 - T5 S6 inline done (commit B) — wrapper env removed; plugin `shell.create.before` already sets it (observed in session shell). Test asserts absence. Risk item 3.
 - T6 S7,S8 partial (commit B) — global prompts = factory neutral persona + `ruleSources` (output-format now in Claude); repo `CLAUDE.md` = `@AGENTS.md`. OPEN: OpenCode cannot load cwd AGENTS.md while `OPENCODE_DISABLE_PROJECT_CONFIG=1` (docs: "skip project AGENTS.md discovery"; relative `instructions` resolve against global dir). Needs user decision.
 - T7 S9 inline done (commit B) — `shared/codex.nix` writes `~/.codex/AGENTS.md` from `ruleSources`; registered in Linux shared modules.
+- Commits: A=6e81b437 (T2), B=8340a389 (T3-T7), C=5b829e4b (verifier S3 gaps: Claude git clean clusters + .env forms; `shared/opencode/permissions-policy.test.py` PASS).
+- Verifier (independent, gentle-ai-verify): S2,S4,S5,S6,S8,S9 pass; S3 partial → fixed in C; S7 partial (T6 open); no blockers; unrelated opencode.json/Claude sections identical to baseline.
+- RDD assess (base a10372ac, committed-only): risk medium, review_due false (under_budget); not escalated — independent verifier covered item 2.
 - Checks: asset-ownership, v2-agents, home-launcher PASS; `nix flake check --no-build` PASS; t14 HM eval OK; macm5 eval fails at baseline too (darwin IFD of gentle-ai-rendered-prompts on Linux). RED-first not observed for T3-T6 (tests added after code) — exception recorded.
 
 Route: inline (no parallel units launched together, no context backstop). High-risk tasks (T2, T5) get an independent verifier at feature end.
