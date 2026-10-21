@@ -23,6 +23,8 @@ let
 
     home.sessionPath = [ "$HOME/.local/bin" ];
 
+    targets.darwin.linkApps.enable = false;
+
     manual.manpages.enable = false;
 
     home.enableNixpkgsReleaseCheck = false;
