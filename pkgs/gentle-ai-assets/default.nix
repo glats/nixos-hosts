@@ -21,7 +21,7 @@ stdenvNoCC.mkDerivation {
 
   installPhase = ''
     mkdir -p $out/share/gentle-ai
-    for dir in opencode skills claude cursor windsurf gemini codex kimi qwen kiro; do
+    for dir in opencode generic skills claude cursor windsurf gemini codex kimi qwen kiro; do
       if [ -d $src/internal/assets/$dir ]; then
         mkdir -p $out/share/gentle-ai/$dir
         cp -r $src/internal/assets/$dir/* $out/share/gentle-ai/$dir/
@@ -47,7 +47,8 @@ stdenvNoCC.mkDerivation {
     mkdir -p $out/share/gentle-ai/opencode/plugins
     install -m 0644 $src/internal/assets/opencode/plugins-v2/opencode-review-transport.ts \
       $out/share/gentle-ai/opencode/plugins/opencode-review-transport.ts
-    install -m 0644 ${./v2-plugins/skill-registry.ts} $out/share/gentle-ai/opencode/plugins/skill-registry.ts
+    install -m 0644 $src/internal/assets/opencode/plugins-v2/skill-registry.ts \
+      $out/share/gentle-ai/opencode/plugins/skill-registry.ts
     substituteInPlace $out/share/gentle-ai/opencode/plugins/opencode-review-transport.ts \
       --replace-fail 'Command: "gentle-ai"' 'Command: "${gentle-ai}/bin/gentle-ai"'
   '';

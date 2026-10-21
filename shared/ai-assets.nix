@@ -27,10 +27,21 @@ with lib;
       description = "Ordered skill source directories (later wins on conflict).";
     };
 
+    ruleSources = mkOption {
+      type = types.listOf types.path;
+      default = [
+        ./rules/authorization.md
+        ./rules/explore-mcp.md
+        ./rules/output-format.md
+        ./rules/code-comments.md
+      ];
+      description = "User rules included in every harness's global prompt (OpenCode, Claude Code, Codex).";
+    };
+
     agentsMdSources = mkOption {
       type = types.listOf types.path;
-      default = [ ../AGENTS.md ];
-      description = "Ordered AGENTS.md/CLAUDE.md fragments to concatenate.";
+      default = [ ];
+      description = "Extra global AGENTS.md/CLAUDE.md fragments appended after the managed prompt. Keep project facts in the project's own AGENTS.md.";
     };
 
     engramConfig = mkOption {

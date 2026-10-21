@@ -48,7 +48,6 @@ let
       ''
         mkdir -p "$out/bin"
         makeBinaryWrapper ${pkgs.gentle-ai}/bin/gentle-ai "$out/bin/gentle-ai" \
-          --set GENTLE_AI_OPENCODE_RELAY_CONTRACT gentle-ai.opencode-relay/v2-staged \
           --prefix PATH : ${
             lib.makeBinPath [
               nativeDiscovery

@@ -75,24 +75,18 @@ profiles = {profile["name"]: profile["roles"] for profile in result["profiles"]}
 selected = profiles[result["selectedProfiles"]["rog"]]
 for role in ("gentle-orchestrator", "gentle-ai-worker", "gentle-ai-verify"):
     assert result["oc"]["agents"][role]["model"] == selected[role], role
-medium = profiles["openai-anthropic-medium"]
-for tier in ("light", "medium", "full"):
-    roles = profiles[f"openai-anthropic-{tier}"]
-    assert roles.keys() == medium.keys(), f"{tier}: missing role assignment"
-    assert set(model.split("/")[0] for model in roles.values()) == {"anthropic", "openai"}
-    for role in ("gentle-orchestrator", "gentle-ai-verify"):
-        assert roles[role] == "anthropic/claude-opus-5-5", (tier, role)
-assert profiles["openai-anthropic-light"]["gentle-ai-worker"] == "openai/gpt-6-luna"
-assert medium["gentle-ai-worker"] == "openai/gpt-6.1-sol"
-assert profiles["openai-anthropic-full"]["gentle-ai-worker"] == "anthropic/claude-opus-5-5"
-triple = profiles["openai-anthropic-go"]
-assert triple.keys() == medium.keys()
-assert set(model.split("/")[0] for model in triple.values()) == {"anthropic", "openai"}
-for role, model in medium.items():
-    expected = model
-    assert triple[role] == expected, role
-    if result["selectedProfiles"]["rog"] == "openai-anthropic-go":
-        assert result["oc"]["agents"][role]["model"] == expected, role
+title_providers = {"anthropic": "anthropic", "openai": "openai", "opencode": "opencode-go"}
+owner_models = {"anthropic": "anthropic/claude-opus-5-5", "openai": "openai/gpt-6-astra", "opencode": "opencode-go/glm-5.3"}
+core_roles = {"gentle-orchestrator", "gentle-ai-explore", "gentle-ai-worker", "gentle-ai-verify", "neutral"}
+for name, roles in profiles.items():
+    assert core_roles <= roles.keys(), f"{name}: missing core role assignment"
+    tokens = name.split("-")
+    if len(tokens) < 2 or not set(tokens) <= title_providers.keys():
+        continue
+    assert roles.keys() == selected.keys(), f"{name}: missing role assignment"
+    allowed = {title_providers[token] for token in tokens}
+    assert {model.split("/")[0] for model in roles.values()} <= allowed, f"{name}: model outside title providers"
+    assert roles["gentle-orchestrator"] == roles["neutral"] == owner_models[tokens[0]], name
 assert set(result["selectedProfiles"].values()) <= profiles.keys()
 assert "setupOpencodePluginRuntime" in result["openfangAfter"]
 assert "ai-assets-no-legacy" in result["openfangData"]
@@ -157,8 +151,7 @@ in builtins.head (builtins.filter (p: p.name == "{name}") f.homeConfigurations.r
 wrapper = Path(result["gentleWrapper"]) / "bin/gentle-ai"
 binary = wrapper.read_bytes()
 assert binary[:4] == b"\x7fELF", "Linux wrapper must be native, not a shell script"
-assert b"GENTLE_AI_OPENCODE_RELAY_CONTRACT" in binary and b"gentle-ai.opencode-relay/v2-staged" in binary
-for name in (b"XDG_CONFIG_HOME", b"XDG_DATA_HOME", b"OPENCODE_DB", b"OPENCODE_CONFIG_DIR", b"TMPDIR"):
+for name in (b"GENTLE_AI_OPENCODE_RELAY_CONTRACT", b"XDG_CONFIG_HOME", b"XDG_DATA_HOME", b"OPENCODE_DB", b"OPENCODE_CONFIG_DIR", b"TMPDIR"):
     assert name not in binary, f"native layout must not override {name!r}"
 private = re.search(rb"/nix/store/[a-z0-9]+-gentle-ai-native-discovery/bin", binary)
 assert private, "missing truthful private discovery directory"

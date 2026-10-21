@@ -71,8 +71,16 @@ for consumer in ("opencode", "claude", "openfang"):
             tagged = (Path(contexts["source"]) / "internal/assets/opencode/plugins-v2/opencode-review-transport.ts").read_text()
             assert re.sub(r'Command: "[^"]+"', 'Command: "gentle-ai"', actual) == tagged
             assert "gentle-ai-managed/bin/gentle-ai" in actual
-            assert "gentle-ai-managed/bin/gentle-ai" in (desired / "plugins/skill-registry.ts").read_text()
+            registry = (desired / "plugins/skill-registry.ts").read_text()
+            assert "gentle-ai-managed/bin/gentle-ai" in registry
+            upstream = (Path(contexts["source"]) / "internal/assets/opencode/plugins-v2/skill-registry.ts").read_text()
+            assert re.sub(r'execFile\("[^"]+",', 'execFile("gentle-ai",', registry) == upstream
+            prompt = (desired / "AGENTS.md").read_text()
+            assert "NixOS Multi-Host" not in prompt, "global AGENTS.md must not carry NixOS repo facts"
+            assert "## Response Formatting" in prompt and "## Repository authorization boundary" in prompt
         if consumer == "claude":
+            assert "NixOS Multi-Host" not in (desired / "CLAUDE.md").read_text(), "global CLAUDE.md must not carry NixOS repo facts"
+            assert "## Response Formatting" in (desired / "CLAUDE.md").read_text()
             assert "Organic Driven Development" in (desired / "CLAUDE.md").read_text()
             assert "{{GENTLE_AI_" not in (desired / "CLAUDE.md").read_text()
             assert "Explicit user instructions and repository policy override" in (desired / "CLAUDE.md").read_text()

@@ -26,6 +26,8 @@
   ../../shared/vscode.nix
   ../../shared/claude-code.nix
   ../../shared/claude-code-profile.nix
+  ../../shared/codex.nix
+  { home.codex.enable = true; }
   ../../shared/shell-gpt.nix
   { home.shell-gpt.enable = true; }
   ./ssh.nix

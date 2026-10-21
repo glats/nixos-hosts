@@ -17,17 +17,15 @@ let
   ];
   assetTrees = import ./ai-assets-tree.nix { inherit lib pkgs; };
   claudePrompt = pkgs.writeText "claude-managed-prompt.md" (
-    lib.concatMapStringsSep "\n\n" builtins.readFile config.home.ai-assets.agentsMdSources
-    + "\n\n"
-    + builtins.readFile ./rules/authorization.md
-    + "\n\n"
-    + builtins.readFile ./rules/explore-mcp.md
-    + "\n\n"
-    + builtins.readFile ./rules/code-comments.md
-    + "\n\n"
-    + builtins.readFile "${pkgs.gentle-ai-assets}/share/gentle-ai/claude/orchestrator.md"
-    + "\n\n"
-    + builtins.readFile "${pkgs.gentle-ai-assets}/share/gentle-ai/claude/engram-protocol.md"
+    lib.concatMapStringsSep "\n\n" builtins.readFile (
+      [ "${pkgs.gentle-ai-assets}/share/gentle-ai/claude/persona-neutral-residual.md" ]
+      ++ config.home.ai-assets.ruleSources
+      ++ [
+        "${pkgs.gentle-ai-assets}/share/gentle-ai/claude/orchestrator.md"
+        "${pkgs.gentle-ai-assets}/share/gentle-ai/claude/engram-protocol.md"
+      ]
+      ++ config.home.ai-assets.agentsMdSources
+    )
   );
   promptTree = pkgs.runCommand "claude-owned-prompt" { } ''
     mkdir -p "$out"
@@ -116,6 +114,17 @@ let
       }
     ];
   };
+  telemetryHook = matcher: {
+    inherit matcher;
+    hooks = [
+      {
+        type = "command";
+        command = "${gentleAi} telemetry runtime claude --json";
+        timeout = 5;
+        async = true;
+      }
+    ];
+  };
   settingsJson = pkgs.writeText "claude-settings.json" (
     builtins.toJSON {
       enableAllProjectMcpServers = true;
@@ -137,7 +146,11 @@ let
       };
       hooks = {
         PreToolUse = preToolUse;
-        Stop = [ (gentleHook "" reviewHook 60) ];
+        Stop = [
+          (gentleHook "" reviewHook 60)
+          (telemetryHook "")
+        ];
+        SubagentStop = [ (telemetryHook "") ];
         SessionStart = [ (gentleHook "startup|resume|clear|compact" reviewHook 30) ];
         UserPromptSubmit = [
           (gentleHook ""

@@ -65,7 +65,11 @@ let
     browserMcp = cfg.browserMcp;
   };
   v2AgentsMd = pkgs.writeText "opencode-AGENTS.md" (
-    lib.concatMapStringsSep "\n\n" builtins.readFile config.home.ai-assets.agentsMdSources
+    lib.concatMapStringsSep "\n\n" builtins.readFile (
+      [ "${pkgs.gentle-ai-assets}/share/gentle-ai/generic/persona-neutral.md" ]
+      ++ config.home.ai-assets.ruleSources
+      ++ config.home.ai-assets.agentsMdSources
+    )
   );
   v2ManagedPlugins = {
     "rtk.ts" = ./rtk-v2.ts;
@@ -93,7 +97,7 @@ let
     substituteInPlace "$out/opencode-review-transport.ts" \
       --replace-fail 'Command: "${pkgs.gentle-ai}/bin/gentle-ai"' 'Command: "${gentleManaged}/bin/gentle-ai"'
     substituteInPlace "$out/skill-registry.ts" \
-      --replace-fail 'const GO_COMMAND = "gentle-ai"' 'const GO_COMMAND = "${gentleManaged}/bin/gentle-ai"'
+      --replace-fail 'execFile("gentle-ai",' 'execFile("${gentleManaged}/bin/gentle-ai",'
   '';
   # Root-level herdr OpenCode integration files (TUI plugin and its V2
   # cli.json directory entrypoint), reconciled next to the managed plugins.
