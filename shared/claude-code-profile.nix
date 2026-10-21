@@ -41,7 +41,28 @@ let
     ++ lib.concatMap (cluster: [
       "${git}push ${cluster}*"
       "${git}push * ${cluster}*"
-    ]) safety.pushForceClusters;
+    ]) safety.pushForceClusters
+    ++
+      lib.concatMap
+        (cluster: [
+          "${git}clean ${cluster}*"
+          "${git}clean * ${cluster}*"
+        ])
+        [
+          "-df"
+          "-fd"
+          "-xf"
+          "-fx"
+          "-Xf"
+          "-fX"
+          "-xdf"
+          "-xfd"
+          "-dxf"
+          "-dfx"
+          "-fdx"
+          "-fxd"
+          "-ff"
+        ];
   gitAsk = git: [
     "${git}push"
     "${git}push *"
@@ -54,6 +75,12 @@ let
     ".env.*"
     "**/.env"
     "**/.env.*"
+    "**/*.env"
+    "**/*.env.*"
+    "**/.env_*"
+    "**/.env-*"
+    "**/.env/**"
+    "**/secrets"
     "**/secrets/**"
     ".ssh/*"
     "**/.ssh/**"
