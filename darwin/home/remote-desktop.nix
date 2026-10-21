@@ -106,7 +106,7 @@ let
               "/workarea",
               wArg,
               hArg,
-              "/smart-sizing:1680x1050",
+              "/smart-sizing",
               "/network:auto",
               "/gfx:progressive",
               "/bpp:32",
