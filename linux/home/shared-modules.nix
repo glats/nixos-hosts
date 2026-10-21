@@ -10,6 +10,7 @@
   ./gpg.nix
   ./gh.nix
   ../../shared/gh-default-account.nix
+  ./glab.nix
   ./ghostty.nix
   ./superfile.nix
   ./kitty.nix
