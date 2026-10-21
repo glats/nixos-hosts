@@ -33,7 +33,6 @@ in
         hash = "sha256-DQtyqMWp9LqPX3ZamArPHCxRBdXdk9zBwyIUxTNwgNE=";
       })
       ../patches/freerdp/sdl-macos-cmake.patch
-      ../patches/freerdp/sdl-workarea-maximize.patch
     ];
   });
 

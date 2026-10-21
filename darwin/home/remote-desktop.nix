@@ -43,6 +43,22 @@ let
               CFRelease(source);
               return layout;
             }
+
+            static void rdpWindowSize(int *width, int *height) {
+              *width = 1680;
+              *height = 1050;
+              @autoreleasepool {
+                NSScreen *screen = [NSScreen mainScreen];
+                if (!screen) {
+                  return;
+                }
+                NSRect content = [NSWindow contentRectForFrameRect:screen.visibleFrame
+                  styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskClosable
+                    | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable];
+                *width = (int)content.size.width;
+                *height = (int)content.size.height;
+              }
+            }
           ''
         else
           "";
@@ -76,6 +92,11 @@ let
             const char *rdpbin = "${pkgs.freerdp}/bin/sdl-freerdp";
             char kbdArg[sizeof("/kbd:layout:0x0000040A,lang:0x040A")];
             snprintf(kbdArg, sizeof(kbdArg), "/kbd:layout:%s,lang:0x040A", rdpKeyboardLayout());
+            int winW, winH;
+            rdpWindowSize(&winW, &winH);
+            char wArg[32], hArg[32];
+            snprintf(wArg, sizeof(wArg), "/w:%d", winW);
+            snprintf(hArg, sizeof(hArg), "/h:%d", winH);
             const char *args[] = {
               rdpbin,
               "/v:${host}",
@@ -83,9 +104,9 @@ let
               "/p:",
               "/cert:ignore",
               "/workarea",
-              "/w:1680",
-              "/h:1050",
-              "/smart-sizing",
+              wArg,
+              hArg,
+              "/smart-sizing:1680x1050",
               "/network:auto",
               "/gfx:progressive",
               "/bpp:32",
@@ -108,7 +129,10 @@ let
       #include <unistd.h>
       #include <pwd.h>
       #include <string.h>
-      ${lib.optionalString (protocol == "rdp") "#include <Carbon/Carbon.h>"}
+      ${lib.optionalString (protocol == "rdp") ''
+        #include <Carbon/Carbon.h>
+        #import <AppKit/AppKit.h>
+      ''}
 
       ${rdpKeyboardLayoutHelper}
 
@@ -169,7 +193,7 @@ let
         cat > launcher.c <<'CSOURCE'
         ${launcherC}
         CSOURCE
-        $CC -O2 -framework Carbon -o launcher launcher.c
+        $CC -O2 -x objective-c -framework Carbon -framework AppKit -o launcher launcher.c
       '';
       installPhase = ''
         mkdir -p "$out/${bundleName}.app/Contents/MacOS"
@@ -213,7 +237,7 @@ let
       viewer = "tigervnc";
       host = "t14.lan";
       port = "5900";
-      username ="glats";
+      username = "glats";
     }
     {
       id = "oneplus5";
@@ -221,7 +245,7 @@ let
       legacyBundleName = "remote-oneplus5.app";
       protocol = "rdp";
       host = "oneplus5.lan";
-      username ="glats";
+      username = "glats";
     }
     {
       id = "rog";
@@ -237,7 +261,7 @@ let
       legacyBundleName = "remote-thinkcentre.app";
       protocol = "rdp";
       host = "thinkcentre.lan";
-      username ="glats";
+      username = "glats";
     }
   ];
 
