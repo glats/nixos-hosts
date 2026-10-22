@@ -59,7 +59,8 @@ let
         timeouts = cfg: map (listener: listener.timeout) cfg.services.hypridle.settings.listener;
       in
       hm.services.hypridle.enable == base.services.hypridle.enable
-      && timeouts hm == timeouts base
+      && builtins.elem 330 (timeouts hm)
+      && builtins.elem 330 (timeouts base)
       &&
         hm.services.hypridle.settings.general.after_sleep_cmd
         == base.services.hypridle.settings.general.after_sleep_cmd

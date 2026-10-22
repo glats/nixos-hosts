@@ -39,12 +39,9 @@ let
       && lib.hasInfix "/omarchy/bin/omarchy-toggle-idle" idle
       && lib.hasInfix "/omarchy/toggles/idle-off" idle
       && builtins.elem "omarchy.nightlight" disabled
-      && builtins.elem "omarchy.idle" disabled
+      && !(builtins.elem "omarchy.idle" disabled)
       && hm.services.hyprsunset == before.services.hyprsunset
       && hm.services.hypridle.enable
-      &&
-        map (l: l.timeout) hm.services.hypridle.settings.listener
-        == map (l: l.timeout) before.services.hypridle.settings.listener
       && hm.systemd.user.services.mouse-wiggle == before.systemd.user.services.mouse-wiggle;
     sharedHyprlandPackage =
       after.wayland.windowManager.hyprland.package.drvPath
@@ -228,10 +225,48 @@ let
       && !(lib.hasInfix "/omarchy-system-lock" text)
       && idle.general.lock_cmd == quattroLock
       && idle.general.before_sleep_cmd == quattroLock
-      && builtins.any (l: lib.hasInfix quattroLock l.on-timeout) idle.listener
       && !(lib.hasInfix "pidof hyprlock" (builtins.toJSON idle))
       && builtins.elem "omarchy-system-lock" commands
       && builtins.elem "omarchy-hyprland-session-locked" commands;
+    idleOwnedByShell =
+      let
+        hm = host.config.home-manager.users.glats;
+        text = hm.xdg.configFile."hypr/hyprland.conf".text;
+        settings = builtins.fromJSON hm.xdg.configFile."omarchy/shell.json".text;
+        idle = hm.services.hypridle.settings;
+        quattroBin = "/home/glats/.local/share/omarchy/quattro/bin";
+        panel = builtins.head (
+          builtins.match ".*(/nix/store/[a-z0-9]+-quattro-panel-commands)/bin.*" shellLauncher
+        );
+        commands = builtins.attrNames (builtins.readDir "${panel}/bin");
+        migrate = hm.home.activation.migrateStayAwake or null;
+      in
+      !(builtins.elem "omarchy.idle" settings.disabledPlugins)
+      &&
+        settings.idle == {
+          screensaver = 150;
+          lock = 151;
+        }
+      && map (l: l.timeout) idle.listener == [ 330 ]
+      && lib.hasInfix ".local/state/omarchy/indicators/stay-awake" (builtins.head idle.listener)
+      .on-timeout
+      && idle.general.before_sleep_cmd == "env PATH=${quattroBin}:$PATH omarchy-system-lock"
+      && idle.general.inhibit_sleep == 3
+      && !(lib.hasInfix "idle-off" (builtins.toJSON idle))
+      && builtins.elem "omarchy-toggle-idle" commands
+      && !(builtins.elem "omarchy-system-wake" commands)
+      && lib.hasInfix "Toggle locking on idle, exec, env PATH=${quattroBin}:" text
+      && !(lib.hasInfix "/omarchy-toggle-idle" text)
+      && migrate != null
+      && lib.hasInfix "toggles/idle-off" migrate.data
+      && lib.hasInfix "indicators/stay-awake" migrate.data;
+    v3IdlePreserved =
+      map (l: l.timeout) before.services.hypridle.settings.listener == [
+        150
+        151
+        330
+      ]
+      && lib.hasInfix "/omarchy-toggle-idle" before.xdg.configFile."hypr/hyprland.conf".text;
     v3LockPreserved =
       before.services.hypridle.settings.general.lock_cmd == "omarchy-system-lock"
       && lib.hasInfix "/omarchy-system-lock" before.xdg.configFile."hypr/hyprland.conf".text;

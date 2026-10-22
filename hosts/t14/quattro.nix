@@ -43,8 +43,11 @@
           ];
         };
       };
+      idle = {
+        screensaver = 150;
+        lock = 151;
+      };
       disabledPlugins = [
-        "omarchy.idle"
         "omarchy.nightlight"
         "omarchy.reminders"
         "omarchy.agents"
