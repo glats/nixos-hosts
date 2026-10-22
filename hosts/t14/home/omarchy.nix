@@ -71,6 +71,21 @@
   };
 
   home.file = {
+    ".local/share/omarchy/quattro" = lib.mkIf config.omarchy.quattro.shell.enable {
+      source = lib.mkForce (
+        pkgs.runCommandLocal "t14-quattro-runtime" { } ''
+          cp -rs ${
+            inputs.omarchy-nix.packages.${pkgs.stdenv.hostPlatform.system}.omarchy-runtime
+          }/share/omarchy "$out"
+          chmod u+w "$out/shell/plugins/bar/indicators"
+          for indicator in NightLight StayAwake; do
+            rm "$out/shell/plugins/bar/indicators/$indicator.qml"
+            cp ${./quattro-indicators}/"$indicator.qml" "$out/shell/plugins/bar/indicators/$indicator.qml"
+          done
+        ''
+      );
+    };
+
     ".local/share/omarchy/bin/kb-toggle.sh" = {
       source = ./scripts/kb-toggle.sh;
       executable = true;

@@ -27,6 +27,22 @@ let
     )
   );
   checks = {
+    retainedServiceIndicators =
+      let
+        hm = host.config.home-manager.users.glats;
+        source = hm.home.file.".local/share/omarchy/quattro".source;
+        night = builtins.readFile "${source}/shell/plugins/bar/indicators/NightLight.qml";
+        idle = builtins.readFile "${source}/shell/plugins/bar/indicators/StayAwake.qml";
+        disabled = (builtins.fromJSON hm.xdg.configFile."omarchy/shell.json".text).disabledPlugins;
+      in
+      lib.hasInfix "/omarchy/bin/omarchy-toggle-nightlight" night
+      && lib.hasInfix "/omarchy/bin/omarchy-toggle-idle" idle
+      && lib.hasInfix "/omarchy/toggles/idle-off" idle
+      && builtins.elem "omarchy.nightlight" disabled
+      && builtins.elem "omarchy.idle" disabled
+      && hm.services.hyprsunset == before.services.hyprsunset
+      && hm.services.hypridle == before.services.hypridle
+      && hm.systemd.user.services.mouse-wiggle == before.systemd.user.services.mouse-wiggle;
     sharedHyprlandPackage =
       after.wayland.windowManager.hyprland.package.drvPath
       == candidate.config.programs.hyprland.package.drvPath;
