@@ -291,6 +291,48 @@ let
       && lib.hasInfix "omarchy-menu-keybindings" text
       && !(lib.hasInfix "omarchy-show-keybindings" text)
       && builtins.elem "omarchy-menu-keybindings" (builtins.attrNames (builtins.readDir "${panel}/bin"));
+    captureOwnedByShell =
+      let
+        hm = host.config.home-manager.users.glats;
+        text = hm.xdg.configFile."hypr/hyprland.conf".text;
+        panel = builtins.head (
+          builtins.match ".*(/nix/store/[a-z0-9]+-quattro-panel-commands)/bin.*" shellLauncher
+        );
+        commands = builtins.attrNames (builtins.readDir "${panel}/bin");
+        editorMatch = builtins.match ".*export OMARCHY_SCREENSHOT_EDITOR=(/nix/store/[a-z0-9]+-omarchy-screenshot-editor).*" shellLauncher;
+        editor = if editorMatch == null then null else builtins.head editorMatch;
+      in
+      lib.hasInfix "Screenshot, exec, env PATH=/home/glats/.local/share/omarchy/quattro/bin:" text
+      && editor != null
+      && lib.hasInfix "OMARCHY_SCREENSHOT_EDITOR=${editor} omarchy-capture-screenshot" text
+      && lib.hasInfix "--filename" (builtins.readFile editor)
+      && !(lib.hasInfix "/omarchy-capture-screenshot" text)
+      && builtins.elem "omarchy-capture-screenshot" commands
+      && builtins.elem "omarchy-capture-screenrecording" commands
+      && lib.hasInfix "export OMARCHY_SCREENSHOT_EDITOR=${editor}" shellLauncher
+      &&
+        lib.all
+          (
+            file:
+            let
+              content = builtins.readFile "${hm.home.file.".local/share/omarchy/quattro".source}/${file}";
+            in
+            lib.hasInfix "(^|/)gpu-screen-recorder( |$)" content
+            && !(lib.hasInfix "^gpu-screen-recorder\"" content)
+          )
+          [
+            "bin/omarchy-capture-screenrecording"
+            "shell/plugins/bar/indicators/ScreenRecording.qml"
+          ]
+      && !(lib.hasInfix "'^gpu-screen-recorder'" (
+        builtins.readFile "${
+          hm.home.file.".local/share/omarchy/quattro".source
+        }/default/omarchy/omarchy-menu.jsonc"
+      ))
+      && builtins.match ".*/nix/store/[a-z0-9]+-v4l-utils-[0-9.]+/bin:.*" shellLauncher != null;
+    v3CapturePreserved =
+      lib.hasInfix "/omarchy-capture-screenshot"
+        before.xdg.configFile."hypr/hyprland.conf".text;
     v3KeybindingsPreserved =
       lib.hasInfix "/omarchy-show-keybindings"
         before.xdg.configFile."hypr/hyprland.conf".text;
