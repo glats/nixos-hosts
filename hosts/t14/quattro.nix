@@ -1,4 +1,4 @@
-{ ... }:
+{ lib, ... }:
 {
   omarchy.quattro.enable = true;
   omarchy.quattro.shell = {
@@ -11,7 +11,10 @@
         transparent = false;
         centerAnchor = "omarchy.clock";
         layout = {
-          left = [ { id = "omarchy.workspaces"; } ];
+          left = [
+            { id = "omarchy.menu"; }
+            { id = "omarchy.workspaces"; }
+          ];
           center = [
             {
               id = "omarchy.indicators";
@@ -40,7 +43,6 @@
         };
       };
       disabledPlugins = [
-        "omarchy.menu"
         "omarchy.background"
         "omarchy.lock"
         "omarchy.idle"
@@ -61,4 +63,16 @@
     };
   };
   home-manager.users.glats.wayland.windowManager.hyprland.configType = "hyprlang";
+  home-manager.users.glats.xdg.configFile."omarchy/extensions/omarchy-menu.jsonc".text =
+    builtins.toJSON
+      (
+        builtins.listToAttrs (
+          map (id: lib.nameValuePair id { when = "false"; }) [
+            "install"
+            "remove"
+            "setup.reset"
+            "update.channel"
+          ]
+        )
+      );
 }

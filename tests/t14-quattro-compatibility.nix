@@ -144,6 +144,44 @@ let
       && !(builtins.elem "omarchy.clipboard" disabled)
       && !(builtins.elem "omarchy.emojis" disabled)
       && lib.hasInfix "wtype" shellLauncher;
+    menuOwnedByShell =
+      let
+        hm = host.config.home-manager.users.glats;
+        text = hm.xdg.configFile."hypr/hyprland.conf".text;
+        settings = builtins.fromJSON hm.xdg.configFile."omarchy/shell.json".text;
+        override = builtins.fromJSON hm.xdg.configFile."omarchy/extensions/omarchy-menu.jsonc".text;
+        hidden = id: (override.${id}.when or "") == "false";
+        toggle = route: "omarchy-shell shell toggle omarchy.menu '{\"menu\":\"${route}\"}'";
+      in
+      !(lib.hasInfix "/omarchy-menu" text)
+      && lib.all (route: lib.hasInfix (toggle route) text) [
+        "root"
+        "capture"
+        "toggle"
+        "system"
+        "background"
+        "theme"
+        "hardware"
+        "screenrecord"
+        "share"
+      ]
+      && lib.hasInfix "omarchy-launch-walker\n" (text + "\n")
+      && !(builtins.elem "omarchy.menu" settings.disabledPlugins)
+      && builtins.elem { id = "omarchy.menu"; } settings.bar.layout.left
+      && lib.all hidden [
+        "install"
+        "remove"
+        "setup.reset"
+        "update.channel"
+      ]
+      && !(override ? "update.omarchy");
+    v3MenuKeysPreserved =
+      let
+        text = before.xdg.configFile."hypr/hyprland.conf".text;
+      in
+      lib.hasInfix "/omarchy-menu capture" text
+      && lib.hasInfix "/omarchy-menu system" text
+      && !(lib.hasInfix "omarchy.menu" text);
     noRemovedHyprlandOptions =
       let
         text = host.config.home-manager.users.glats.xdg.configFile."hypr/hyprland.conf".text;
