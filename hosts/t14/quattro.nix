@@ -45,7 +45,6 @@
       disabledPlugins = [
         "omarchy.lock"
         "omarchy.idle"
-        "omarchy.polkit"
         "omarchy.nightlight"
         "omarchy.reminders"
         "omarchy.agents"

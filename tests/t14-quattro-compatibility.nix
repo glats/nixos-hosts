@@ -189,12 +189,28 @@ let
       !(lib.hasInfix "swaybg" text)
       && !(builtins.elem "omarchy.background" disabled)
       && !(builtins.elem "omarchy.image-picker" disabled)
-      && builtins.match ".*/nix/store/[a-z0-9]+-vips-[0-9.]+-bin/bin:.*|.*/nix/store/[a-z0-9]+-vips-[0-9.]+/bin:.*" shellLauncher != null
+      &&
+        builtins.match ".*/nix/store/[a-z0-9]+-vips-[0-9.]+-bin/bin:.*|.*/nix/store/[a-z0-9]+-vips-[0-9.]+/bin:.*" shellLauncher
+        != null
       && builtins.elem "omarchy-theme-bg-set" commands
       && builtins.elem "omarchy-theme-bg-next" commands
       && seed != null
       && builtins.elem "linkGeneration" seed.after
       && lib.hasInfix ".local/state/omarchy/current" seed.data;
+    polkitOwnedByShell =
+      let
+        hm = host.config.home-manager.users.glats;
+        disabled = (builtins.fromJSON hm.xdg.configFile."omarchy/shell.json".text).disabledPlugins;
+      in
+      !hm.services.hyprpolkitagent.enable
+      && !(lib.hasInfix "hyprpolkitagent" hm.xdg.configFile."hypr/hyprland.conf".text)
+      && !(builtins.elem "omarchy.polkit" disabled)
+      && host.config.security.polkit.enable;
+    v3PolkitPreserved =
+      before.services.hyprpolkitagent.enable
+      &&
+        lib.hasInfix "systemctl --user start hyprpolkitagent"
+          before.xdg.configFile."hypr/hyprland.conf".text;
     v3BackgroundPreserved =
       lib.hasInfix "swaybg -i ~/.config/omarchy/current/background"
         before.xdg.configFile."hypr/hyprland.conf".text;
