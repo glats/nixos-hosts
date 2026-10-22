@@ -18,6 +18,7 @@ Objective: replace t14 desktop components with Quattro shell plugins one at a ti
 - T4 [S2,S4] — configured: battery service owned by Quattro shell (fork b113a3e9), night light kept on hyprsunset schedule per user; batteryOwnedByShell/nightlightKept RED then GREEN; live check pending.
 - T5 [S2,S4] — configured: fork 359d2348, consumer commit; clipboardEmojisOwnedByShell RED then GREEN; live check pending.
 - T6 [S2,S4,S7] inline — done: fork 9f2edc90 (pushed), consumer pin bump in this commit; menuOwnedByShell RED then GREEN, v3MenuKeysPreserved; live acceptance passed (L13). Omarchy menu. Mapping delegated (gentle-ai-explore, >5 lookups across fork, runtime and consumer). Fork: every `omarchy-menu` bind goes through `pick()` to `omarchy-shell shell toggle omarchy.menu`; consumer: enable plugin, bar widget, declarative menu override, pin bump. Writes inline.
+- T11 [S5] inline — fork commit 50bd4c5 (pushed after user "si"; pin bumped in this commit; compatibility 23/23 on the pinned fork; live activation pending): Chromium Preferences seeded only when absent instead of linked; chromium preference checks RED then GREEN; activation snippet probed (fresh seeded, existing untouched, dangling replaced). User request: "bueno arrelga chroimium".
 - T7 [S2,S4] — pending: background replaces swaybg.
 - T8 [S3] — deferred: lock, idle, polkit.
 - T9 [S5] — open question: Hyprland 0.56 warns at every start that the .conf format loses support in 0.57; a Lua migration needs HDM profile support first. Pin keeps 0.56 until decided.
