@@ -330,6 +330,21 @@ let
         }/default/omarchy/omarchy-menu.jsonc"
       ))
       && builtins.match ".*/nix/store/[a-z0-9]+-v4l-utils-[0-9.]+/bin:.*" shellLauncher != null;
+    extrasEnabled =
+      let
+        disabled =
+          (builtins.fromJSON host.config.home-manager.users.glats.xdg.configFile."omarchy/shell.json".text)
+          .disabledPlugins;
+      in
+      !(builtins.elem "omarchy.reminders" disabled)
+      && !(builtins.elem "omarchy.dev-gallery" disabled)
+      && builtins.elem "omarchy.nightlight" disabled
+      && builtins.elem "omarchy.agents" disabled
+      && lib.hasInfix "systemd-run --user --quiet --collect --setenv=PATH=\"$PATH\"" (
+        builtins.readFile "${
+          host.config.home-manager.users.glats.home.file.".local/share/omarchy/quattro".source
+        }/bin/omarchy-reminder"
+      );
     v3CapturePreserved =
       lib.hasInfix "/omarchy-capture-screenshot"
         before.xdg.configFile."hypr/hyprland.conf".text;
