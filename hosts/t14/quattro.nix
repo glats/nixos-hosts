@@ -72,7 +72,29 @@
             "remove"
             "setup.reset"
             "update.channel"
+            "setup.direct-boot"
+            "setup.security.passwordless-sudo"
+            "update.config"
+            "update.firmware"
+            "trigger.tests"
+            "setup.network.qr"
+            "setup.plugin"
+            "setup.default"
+            "style.font"
+            "style.bar"
+            "style.unlock"
+            "style.hyprland"
+            "setup.monitors"
+            "setup.keybindings"
+            "setup.input"
           ]
         )
+        // {
+          "learn.arch" = {
+            icon = "󱄅";
+            label = "NixOS";
+            action = "omarchy-launch-webapp 'https://nixos.org/manual/nixos/stable/'";
+          };
+        }
       );
 }

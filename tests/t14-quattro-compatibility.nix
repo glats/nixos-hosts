@@ -173,8 +173,27 @@ let
         "remove"
         "setup.reset"
         "update.channel"
+        "setup.direct-boot"
+        "setup.security.passwordless-sudo"
+        "update.config"
+        "update.firmware"
+        "trigger.tests"
+        "setup.network.qr"
+        "setup.plugin"
+        "setup.default"
+        "style.font"
+        "style.bar"
+        "style.unlock"
+        "style.hyprland"
+        "setup.monitors"
+        "setup.keybindings"
+        "setup.input"
       ]
-      && !(override ? "update.omarchy");
+      && !(override ? "update.omarchy")
+      && !(override ? "update.time")
+      && override."learn.arch".label == "NixOS"
+      && override."learn.arch".icon == "󱄅"
+      && lib.hasInfix "nixos.org/manual" override."learn.arch".action;
     backgroundOwnedByShell =
       let
         hm = host.config.home-manager.users.glats;
@@ -260,6 +279,21 @@ let
       && migrate != null
       && lib.hasInfix "toggles/idle-off" migrate.data
       && lib.hasInfix "indicators/stay-awake" migrate.data;
+    keybindingsOwnedByShell =
+      let
+        hm = host.config.home-manager.users.glats;
+        text = hm.xdg.configFile."hypr/hyprland.conf".text;
+        panel = builtins.head (
+          builtins.match ".*(/nix/store/[a-z0-9]+-quattro-panel-commands)/bin.*" shellLauncher
+        );
+      in
+      lib.hasInfix "Show key bindings, exec, env PATH=/home/glats/.local/share/omarchy/quattro/bin:" text
+      && lib.hasInfix "omarchy-menu-keybindings" text
+      && !(lib.hasInfix "omarchy-show-keybindings" text)
+      && builtins.elem "omarchy-menu-keybindings" (builtins.attrNames (builtins.readDir "${panel}/bin"));
+    v3KeybindingsPreserved =
+      lib.hasInfix "/omarchy-show-keybindings"
+        before.xdg.configFile."hypr/hyprland.conf".text;
     v3IdlePreserved =
       map (l: l.timeout) before.services.hypridle.settings.listener == [
         150
