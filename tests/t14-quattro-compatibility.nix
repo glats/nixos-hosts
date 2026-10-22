@@ -27,6 +27,22 @@ let
     )
   );
   checks = {
+    retainedServiceIndicators =
+      let
+        hm = host.config.home-manager.users.glats;
+        source = hm.home.file.".local/share/omarchy/quattro".source;
+        night = builtins.readFile "${source}/shell/plugins/bar/indicators/NightLight.qml";
+        idle = builtins.readFile "${source}/shell/plugins/bar/indicators/StayAwake.qml";
+        disabled = (builtins.fromJSON hm.xdg.configFile."omarchy/shell.json".text).disabledPlugins;
+      in
+      lib.hasInfix "/omarchy/bin/omarchy-toggle-nightlight" night
+      && lib.hasInfix "/omarchy/bin/omarchy-toggle-idle" idle
+      && lib.hasInfix "/omarchy/toggles/idle-off" idle
+      && builtins.elem "omarchy.nightlight" disabled
+      && !(builtins.elem "omarchy.idle" disabled)
+      && hm.services.hyprsunset == before.services.hyprsunset
+      && hm.services.hypridle.enable
+      && hm.systemd.user.services.mouse-wiggle == before.systemd.user.services.mouse-wiggle;
     sharedHyprlandPackage =
       after.wayland.windowManager.hyprland.package.drvPath
       == candidate.config.programs.hyprland.package.drvPath;
@@ -128,6 +144,238 @@ let
       && !(builtins.elem "omarchy.clipboard" disabled)
       && !(builtins.elem "omarchy.emojis" disabled)
       && lib.hasInfix "wtype" shellLauncher;
+    menuOwnedByShell =
+      let
+        hm = host.config.home-manager.users.glats;
+        text = hm.xdg.configFile."hypr/hyprland.conf".text;
+        settings = builtins.fromJSON hm.xdg.configFile."omarchy/shell.json".text;
+        override = builtins.fromJSON hm.xdg.configFile."omarchy/extensions/omarchy-menu.jsonc".text;
+        hidden = id: (override.${id}.when or "") == "false";
+        toggle = route: "omarchy-shell shell toggle omarchy.menu '{\"menu\":\"${route}\"}'";
+      in
+      !(lib.hasInfix "/omarchy-menu" text)
+      && lib.all (route: lib.hasInfix (toggle route) text) [
+        "root"
+        "capture"
+        "toggle"
+        "system"
+        "background"
+        "theme"
+        "hardware"
+        "screenrecord"
+        "share"
+      ]
+      && lib.hasInfix "omarchy-launch-walker\n" (text + "\n")
+      && !(builtins.elem "omarchy.menu" settings.disabledPlugins)
+      && builtins.elem { id = "omarchy.menu"; } settings.bar.layout.left
+      && lib.all hidden [
+        "install"
+        "remove"
+        "setup.reset"
+        "update.channel"
+        "setup.direct-boot"
+        "setup.security.passwordless-sudo"
+        "update.config"
+        "update.firmware"
+        "trigger.tests"
+        "setup.network.qr"
+        "setup.plugin"
+        "setup.default"
+        "style.font"
+        "style.bar"
+        "style.unlock"
+        "style.hyprland"
+        "setup.monitors"
+        "setup.keybindings"
+        "setup.input"
+      ]
+      && !(override ? "update.omarchy")
+      && !(override ? "update.time")
+      && override."learn.arch".label == "NixOS"
+      && override."learn.arch".icon == "󱄅"
+      && lib.hasInfix "nixos.org/manual" override."learn.arch".action;
+    backgroundOwnedByShell =
+      let
+        hm = host.config.home-manager.users.glats;
+        text = hm.xdg.configFile."hypr/hyprland.conf".text;
+        disabled = (builtins.fromJSON hm.xdg.configFile."omarchy/shell.json".text).disabledPlugins;
+        panel = builtins.head (
+          builtins.match ".*(/nix/store/[a-z0-9]+-quattro-panel-commands)/bin.*" shellLauncher
+        );
+        commands = builtins.attrNames (builtins.readDir "${panel}/bin");
+        seed = hm.home.activation.seedQuattroBackground or null;
+      in
+      !(lib.hasInfix "swaybg" text)
+      && !(builtins.elem "omarchy.background" disabled)
+      && !(builtins.elem "omarchy.image-picker" disabled)
+      &&
+        builtins.match ".*/nix/store/[a-z0-9]+-vips-[0-9.]+-bin/bin:.*|.*/nix/store/[a-z0-9]+-vips-[0-9.]+/bin:.*" shellLauncher
+        != null
+      && builtins.elem "omarchy-theme-bg-set" commands
+      && builtins.elem "omarchy-theme-bg-next" commands
+      && seed != null
+      && builtins.elem "linkGeneration" seed.after
+      && lib.hasInfix ".local/state/omarchy/current" seed.data;
+    polkitOwnedByShell =
+      let
+        hm = host.config.home-manager.users.glats;
+        disabled = (builtins.fromJSON hm.xdg.configFile."omarchy/shell.json".text).disabledPlugins;
+      in
+      !hm.services.hyprpolkitagent.enable
+      && !(lib.hasInfix "hyprpolkitagent" hm.xdg.configFile."hypr/hyprland.conf".text)
+      && !(builtins.elem "omarchy.polkit" disabled)
+      && host.config.security.polkit.enable;
+    lockOwnedByShell =
+      let
+        hm = host.config.home-manager.users.glats;
+        text = hm.xdg.configFile."hypr/hyprland.conf".text;
+        disabled = (builtins.fromJSON hm.xdg.configFile."omarchy/shell.json".text).disabledPlugins;
+        idle = hm.services.hypridle.settings;
+        quattroLock = "env PATH=/home/glats/.local/share/omarchy/quattro/bin:$PATH omarchy-system-lock";
+        panel = builtins.head (
+          builtins.match ".*(/nix/store/[a-z0-9]+-quattro-panel-commands)/bin.*" shellLauncher
+        );
+        commands = builtins.attrNames (builtins.readDir "${panel}/bin");
+      in
+      host.config.security.pam.services ? "omarchy-lock-password"
+      && host.config.security.pam.services ? hyprlock
+      && !(builtins.elem "omarchy.lock" disabled)
+      && lib.hasInfix "Lock system, exec, env PATH=/home/glats/.local/share/omarchy/quattro/bin:" text
+      && !(lib.hasInfix "/omarchy-system-lock" text)
+      && idle.general.lock_cmd == quattroLock
+      && idle.general.before_sleep_cmd == quattroLock
+      && !(lib.hasInfix "pidof hyprlock" (builtins.toJSON idle))
+      && builtins.elem "omarchy-system-lock" commands
+      && builtins.elem "omarchy-hyprland-session-locked" commands;
+    idleOwnedByShell =
+      let
+        hm = host.config.home-manager.users.glats;
+        text = hm.xdg.configFile."hypr/hyprland.conf".text;
+        settings = builtins.fromJSON hm.xdg.configFile."omarchy/shell.json".text;
+        idle = hm.services.hypridle.settings;
+        quattroBin = "/home/glats/.local/share/omarchy/quattro/bin";
+        panel = builtins.head (
+          builtins.match ".*(/nix/store/[a-z0-9]+-quattro-panel-commands)/bin.*" shellLauncher
+        );
+        commands = builtins.attrNames (builtins.readDir "${panel}/bin");
+        migrate = hm.home.activation.migrateStayAwake or null;
+      in
+      !(builtins.elem "omarchy.idle" settings.disabledPlugins)
+      &&
+        settings.idle == {
+          screensaver = 150;
+          lock = 151;
+        }
+      && map (l: l.timeout) idle.listener == [ 330 ]
+      && lib.hasInfix ".local/state/omarchy/indicators/stay-awake" (builtins.head idle.listener)
+      .on-timeout
+      && idle.general.before_sleep_cmd == "env PATH=${quattroBin}:$PATH omarchy-system-lock"
+      && idle.general.inhibit_sleep == 3
+      && !(lib.hasInfix "idle-off" (builtins.toJSON idle))
+      && builtins.elem "omarchy-toggle-idle" commands
+      && !(builtins.elem "omarchy-system-wake" commands)
+      && lib.hasInfix "Toggle locking on idle, exec, env PATH=${quattroBin}:" text
+      && !(lib.hasInfix "/omarchy-toggle-idle" text)
+      && migrate != null
+      && lib.hasInfix "toggles/idle-off" migrate.data
+      && lib.hasInfix "indicators/stay-awake" migrate.data;
+    keybindingsOwnedByShell =
+      let
+        hm = host.config.home-manager.users.glats;
+        text = hm.xdg.configFile."hypr/hyprland.conf".text;
+        panel = builtins.head (
+          builtins.match ".*(/nix/store/[a-z0-9]+-quattro-panel-commands)/bin.*" shellLauncher
+        );
+      in
+      lib.hasInfix "Show key bindings, exec, env PATH=/home/glats/.local/share/omarchy/quattro/bin:" text
+      && lib.hasInfix "omarchy-menu-keybindings" text
+      && !(lib.hasInfix "omarchy-show-keybindings" text)
+      && builtins.elem "omarchy-menu-keybindings" (builtins.attrNames (builtins.readDir "${panel}/bin"));
+    captureOwnedByShell =
+      let
+        hm = host.config.home-manager.users.glats;
+        text = hm.xdg.configFile."hypr/hyprland.conf".text;
+        panel = builtins.head (
+          builtins.match ".*(/nix/store/[a-z0-9]+-quattro-panel-commands)/bin.*" shellLauncher
+        );
+        commands = builtins.attrNames (builtins.readDir "${panel}/bin");
+        editorMatch = builtins.match ".*export OMARCHY_SCREENSHOT_EDITOR=(/nix/store/[a-z0-9]+-omarchy-screenshot-editor).*" shellLauncher;
+        editor = if editorMatch == null then null else builtins.head editorMatch;
+      in
+      lib.hasInfix "Screenshot, exec, env PATH=/home/glats/.local/share/omarchy/quattro/bin:" text
+      && editor != null
+      && lib.hasInfix "OMARCHY_SCREENSHOT_EDITOR=${editor} omarchy-capture-screenshot" text
+      && lib.hasInfix "--filename" (builtins.readFile editor)
+      && !(lib.hasInfix "/omarchy-capture-screenshot" text)
+      && builtins.elem "omarchy-capture-screenshot" commands
+      && builtins.elem "omarchy-capture-screenrecording" commands
+      && lib.hasInfix "export OMARCHY_SCREENSHOT_EDITOR=${editor}" shellLauncher
+      &&
+        lib.all
+          (
+            file:
+            let
+              content = builtins.readFile "${hm.home.file.".local/share/omarchy/quattro".source}/${file}";
+            in
+            lib.hasInfix "(^|/)gpu-screen-recorder( |$)" content
+            && !(lib.hasInfix "^gpu-screen-recorder\"" content)
+          )
+          [
+            "bin/omarchy-capture-screenrecording"
+            "shell/plugins/bar/indicators/ScreenRecording.qml"
+          ]
+      && !(lib.hasInfix "'^gpu-screen-recorder'" (
+        builtins.readFile "${
+          hm.home.file.".local/share/omarchy/quattro".source
+        }/default/omarchy/omarchy-menu.jsonc"
+      ))
+      && builtins.match ".*/nix/store/[a-z0-9]+-v4l-utils-[0-9.]+/bin:.*" shellLauncher != null;
+    extrasEnabled =
+      let
+        disabled =
+          (builtins.fromJSON host.config.home-manager.users.glats.xdg.configFile."omarchy/shell.json".text)
+          .disabledPlugins;
+      in
+      !(builtins.elem "omarchy.reminders" disabled)
+      && !(builtins.elem "omarchy.dev-gallery" disabled)
+      && builtins.elem "omarchy.nightlight" disabled
+      && builtins.elem "omarchy.agents" disabled
+      && lib.hasInfix "systemd-run --user --quiet --collect --setenv=PATH=\"$PATH\"" (
+        builtins.readFile "${
+          host.config.home-manager.users.glats.home.file.".local/share/omarchy/quattro".source
+        }/bin/omarchy-reminder"
+      );
+    v3CapturePreserved =
+      lib.hasInfix "/omarchy-capture-screenshot"
+        before.xdg.configFile."hypr/hyprland.conf".text;
+    v3KeybindingsPreserved =
+      lib.hasInfix "/omarchy-show-keybindings"
+        before.xdg.configFile."hypr/hyprland.conf".text;
+    v3IdlePreserved =
+      map (l: l.timeout) before.services.hypridle.settings.listener == [
+        150
+        151
+        330
+      ]
+      && lib.hasInfix "/omarchy-toggle-idle" before.xdg.configFile."hypr/hyprland.conf".text;
+    v3LockPreserved =
+      before.services.hypridle.settings.general.lock_cmd == "omarchy-system-lock"
+      && lib.hasInfix "/omarchy-system-lock" before.xdg.configFile."hypr/hyprland.conf".text;
+    v3PolkitPreserved =
+      before.services.hyprpolkitagent.enable
+      &&
+        lib.hasInfix "systemctl --user start hyprpolkitagent"
+          before.xdg.configFile."hypr/hyprland.conf".text;
+    v3BackgroundPreserved =
+      lib.hasInfix "swaybg -i ~/.config/omarchy/current/background"
+        before.xdg.configFile."hypr/hyprland.conf".text;
+    v3MenuKeysPreserved =
+      let
+        text = before.xdg.configFile."hypr/hyprland.conf".text;
+      in
+      lib.hasInfix "/omarchy-menu capture" text
+      && lib.hasInfix "/omarchy-menu system" text
+      && !(lib.hasInfix "omarchy.menu" text);
     noRemovedHyprlandOptions =
       let
         text = host.config.home-manager.users.glats.xdg.configFile."hypr/hyprland.conf".text;

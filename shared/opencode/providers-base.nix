@@ -508,7 +508,7 @@ let
       roles = {
         gentle-orchestrator = "github-copilot/gpt-6.1-sol";
         gentle-ai-explore = "github-copilot/claude-sonnet-5.5";
-        gentle-ai-worker = "github-copilot/gpt-5.3-codex";
+        gentle-ai-worker = "github-copilot/claude-haiku-5.5";
         gentle-ai-verify = "github-copilot/claude-sonnet-5.5";
         jd-judge-a = "github-copilot/claude-sonnet-5.5";
         jd-judge-b = "github-copilot/claude-sonnet-5.5";

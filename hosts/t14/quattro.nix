@@ -1,6 +1,7 @@
-{ ... }:
+{ lib, ... }:
 {
   omarchy.quattro.enable = true;
+  security.pam.services.omarchy-lock-password = { };
   omarchy.quattro.shell = {
     enable = true;
     settings = {
@@ -11,7 +12,10 @@
         transparent = false;
         centerAnchor = "omarchy.clock";
         layout = {
-          left = [ { id = "omarchy.workspaces"; } ];
+          left = [
+            { id = "omarchy.menu"; }
+            { id = "omarchy.workspaces"; }
+          ];
           center = [
             {
               id = "omarchy.indicators";
@@ -39,18 +43,14 @@
           ];
         };
       };
+      idle = {
+        screensaver = 150;
+        lock = 151;
+      };
       disabledPlugins = [
-        "omarchy.menu"
-        "omarchy.background"
-        "omarchy.lock"
-        "omarchy.idle"
-        "omarchy.polkit"
         "omarchy.nightlight"
-        "omarchy.reminders"
         "omarchy.agents"
         "omarchy.monitor"
-        "omarchy.image-picker"
-        "omarchy.dev-gallery"
         "omarchy.tailscale"
         "omarchy.dropbox"
         "omarchy.speedtest"
@@ -61,4 +61,38 @@
     };
   };
   home-manager.users.glats.wayland.windowManager.hyprland.configType = "hyprlang";
+  home-manager.users.glats.xdg.configFile."omarchy/extensions/omarchy-menu.jsonc".text =
+    builtins.toJSON
+      (
+        builtins.listToAttrs (
+          map (id: lib.nameValuePair id { when = "false"; }) [
+            "install"
+            "remove"
+            "setup.reset"
+            "update.channel"
+            "setup.direct-boot"
+            "setup.security.passwordless-sudo"
+            "update.config"
+            "update.firmware"
+            "trigger.tests"
+            "setup.network.qr"
+            "setup.plugin"
+            "setup.default"
+            "style.font"
+            "style.bar"
+            "style.unlock"
+            "style.hyprland"
+            "setup.monitors"
+            "setup.keybindings"
+            "setup.input"
+          ]
+        )
+        // {
+          "learn.arch" = {
+            icon = "󱄅";
+            label = "NixOS";
+            action = "omarchy-launch-webapp 'https://nixos.org/manual/nixos/stable/'";
+          };
+        }
+      );
 }
