@@ -49,10 +49,8 @@
       };
       disabledPlugins = [
         "omarchy.nightlight"
-        "omarchy.reminders"
         "omarchy.agents"
         "omarchy.monitor"
-        "omarchy.dev-gallery"
         "omarchy.tailscale"
         "omarchy.dropbox"
         "omarchy.speedtest"
