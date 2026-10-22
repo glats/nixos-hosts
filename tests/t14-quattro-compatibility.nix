@@ -41,7 +41,10 @@ let
       && builtins.elem "omarchy.nightlight" disabled
       && builtins.elem "omarchy.idle" disabled
       && hm.services.hyprsunset == before.services.hyprsunset
-      && hm.services.hypridle == before.services.hypridle
+      && hm.services.hypridle.enable
+      &&
+        map (l: l.timeout) hm.services.hypridle.settings.listener
+        == map (l: l.timeout) before.services.hypridle.settings.listener
       && hm.systemd.user.services.mouse-wiggle == before.systemd.user.services.mouse-wiggle;
     sharedHyprlandPackage =
       after.wayland.windowManager.hyprland.package.drvPath
@@ -206,6 +209,32 @@ let
       && !(lib.hasInfix "hyprpolkitagent" hm.xdg.configFile."hypr/hyprland.conf".text)
       && !(builtins.elem "omarchy.polkit" disabled)
       && host.config.security.polkit.enable;
+    lockOwnedByShell =
+      let
+        hm = host.config.home-manager.users.glats;
+        text = hm.xdg.configFile."hypr/hyprland.conf".text;
+        disabled = (builtins.fromJSON hm.xdg.configFile."omarchy/shell.json".text).disabledPlugins;
+        idle = hm.services.hypridle.settings;
+        quattroLock = "env PATH=/home/glats/.local/share/omarchy/quattro/bin:$PATH omarchy-system-lock";
+        panel = builtins.head (
+          builtins.match ".*(/nix/store/[a-z0-9]+-quattro-panel-commands)/bin.*" shellLauncher
+        );
+        commands = builtins.attrNames (builtins.readDir "${panel}/bin");
+      in
+      host.config.security.pam.services ? "omarchy-lock-password"
+      && host.config.security.pam.services ? hyprlock
+      && !(builtins.elem "omarchy.lock" disabled)
+      && lib.hasInfix "Lock system, exec, env PATH=/home/glats/.local/share/omarchy/quattro/bin:" text
+      && !(lib.hasInfix "/omarchy-system-lock" text)
+      && idle.general.lock_cmd == quattroLock
+      && idle.general.before_sleep_cmd == quattroLock
+      && builtins.any (l: lib.hasInfix quattroLock l.on-timeout) idle.listener
+      && !(lib.hasInfix "pidof hyprlock" (builtins.toJSON idle))
+      && builtins.elem "omarchy-system-lock" commands
+      && builtins.elem "omarchy-hyprland-session-locked" commands;
+    v3LockPreserved =
+      before.services.hypridle.settings.general.lock_cmd == "omarchy-system-lock"
+      && lib.hasInfix "/omarchy-system-lock" before.xdg.configFile."hypr/hyprland.conf".text;
     v3PolkitPreserved =
       before.services.hyprpolkitagent.enable
       &&

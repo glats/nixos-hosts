@@ -1,6 +1,7 @@
 { lib, ... }:
 {
   omarchy.quattro.enable = true;
+  security.pam.services.omarchy-lock-password = { };
   omarchy.quattro.shell = {
     enable = true;
     settings = {
@@ -43,7 +44,6 @@
         };
       };
       disabledPlugins = [
-        "omarchy.lock"
         "omarchy.idle"
         "omarchy.nightlight"
         "omarchy.reminders"

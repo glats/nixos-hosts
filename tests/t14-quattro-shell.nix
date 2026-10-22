@@ -32,19 +32,40 @@ let
       widget: !(builtins.elem (widgetId widget) shell.disabledPlugins)
     ) widgets;
     hostServicesPreserved =
-      builtins.removeAttrs hm.systemd.user.services [
+      let
+        withoutIdleTrigger =
+          services:
+          services
+          // {
+            hypridle = services.hypridle // {
+              Unit = builtins.removeAttrs services.hypridle.Unit [ "X-Restart-Triggers" ];
+            };
+          };
+      in
+      builtins.removeAttrs (withoutIdleTrigger hm.systemd.user.services) [
         "waybar"
         "omarchy-shell"
         "omarchy-battery-monitor"
         "hyprpolkitagent"
-      ] == builtins.removeAttrs base.systemd.user.services [
+      ] == builtins.removeAttrs (withoutIdleTrigger base.systemd.user.services) [
         "waybar"
         "omarchy-shell"
         "omarchy-battery-monitor"
         "hyprpolkitagent"
       ];
     authPreserved = hm.programs.hyprlock == base.programs.hyprlock;
-    idlePreserved = hm.services.hypridle == base.services.hypridle;
+    idlePreserved =
+      let
+        timeouts = cfg: map (listener: listener.timeout) cfg.services.hypridle.settings.listener;
+      in
+      hm.services.hypridle.enable == base.services.hypridle.enable
+      && timeouts hm == timeouts base
+      &&
+        hm.services.hypridle.settings.general.after_sleep_cmd
+        == base.services.hypridle.settings.general.after_sleep_cmd
+      &&
+        hm.services.hypridle.settings.general.inhibit_sleep
+        == base.services.hypridle.settings.general.inhibit_sleep;
     mimePreserved = hm.xdg.mimeApps == base.xdg.mimeApps;
     hdmProfilesPreserved =
       hm.home.hyprdynamicmonitors.configFile == base.home.hyprdynamicmonitors.configFile

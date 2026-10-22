@@ -22,7 +22,7 @@
     nix-colors.url = "github:misterio77/nix-colors";
 
     omarchy-nix = {
-      url = "github:glats/omarchy-nix/c1d5718018a894ac19caf6a09156ff5c66ee774d";
+      url = "github:glats/omarchy-nix/b9f591299bd95d9f6dd23c3a43bc8684db0d0274";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.home-manager.follows = "home-manager";
       inputs.quattro-nixpkgs.follows = "t14-nixpkgs";
