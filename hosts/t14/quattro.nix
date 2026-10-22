@@ -43,7 +43,6 @@
         };
       };
       disabledPlugins = [
-        "omarchy.background"
         "omarchy.lock"
         "omarchy.idle"
         "omarchy.polkit"
@@ -51,7 +50,6 @@
         "omarchy.reminders"
         "omarchy.agents"
         "omarchy.monitor"
-        "omarchy.image-picker"
         "omarchy.dev-gallery"
         "omarchy.tailscale"
         "omarchy.dropbox"

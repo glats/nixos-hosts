@@ -175,6 +175,29 @@ let
         "update.channel"
       ]
       && !(override ? "update.omarchy");
+    backgroundOwnedByShell =
+      let
+        hm = host.config.home-manager.users.glats;
+        text = hm.xdg.configFile."hypr/hyprland.conf".text;
+        disabled = (builtins.fromJSON hm.xdg.configFile."omarchy/shell.json".text).disabledPlugins;
+        panel = builtins.head (
+          builtins.match ".*(/nix/store/[a-z0-9]+-quattro-panel-commands)/bin.*" shellLauncher
+        );
+        commands = builtins.attrNames (builtins.readDir "${panel}/bin");
+        seed = hm.home.activation.seedQuattroBackground or null;
+      in
+      !(lib.hasInfix "swaybg" text)
+      && !(builtins.elem "omarchy.background" disabled)
+      && !(builtins.elem "omarchy.image-picker" disabled)
+      && builtins.match ".*/nix/store/[a-z0-9]+-vips-[0-9.]+-bin/bin:.*|.*/nix/store/[a-z0-9]+-vips-[0-9.]+/bin:.*" shellLauncher != null
+      && builtins.elem "omarchy-theme-bg-set" commands
+      && builtins.elem "omarchy-theme-bg-next" commands
+      && seed != null
+      && builtins.elem "linkGeneration" seed.after
+      && lib.hasInfix ".local/state/omarchy/current" seed.data;
+    v3BackgroundPreserved =
+      lib.hasInfix "swaybg -i ~/.config/omarchy/current/background"
+        before.xdg.configFile."hypr/hyprland.conf".text;
     v3MenuKeysPreserved =
       let
         text = before.xdg.configFile."hypr/hyprland.conf".text;
