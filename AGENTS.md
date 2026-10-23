@@ -15,7 +15,7 @@
 
 ## Omarchy and t14
 
-- `flake.nix` pins `github:glats/omarchy-nix` at commit `85a1e86138caca87db8ae59a14ee7f174cffe1f8`.
+- `flake.nix` pins `github:glats/omarchy-nix` at commit `5fc93f4c86f4766e477b7e94776e4a7c25ed3579`.
 - Only `t14` receives `inputs.omarchy-nix.nixosModules.default` and `inputs.nixos-hardware.nixosModules.lenovo-thinkpad-t14-amd-gen4` through `extraModules`.
 - `hosts/t14/home/omarchy.nix` imports `inputs.omarchy-nix.homeManagerModules.default`; `hosts/t14/home/default.nix` imports that entry point.
 - The Linux shared module list includes the `btop` Home Manager module. The t14 Quattro overlay exposes `omarchy-runtime` and `quickshell` only to `t14`.

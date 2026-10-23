@@ -83,11 +83,53 @@
       set -g @continuum-restore on
 
       # Universal bindings
-      unbind [
       bind Space copy-mode
       bind s choose-tree
       bind -T copy-mode-vi v send -X begin-selection
-      bind p paste-buffer
+
+      # herdr-compatible prefix bindings (herdr 0.9 default keymap, see
+      # shared/herdr.nix): herdr workspace = tmux session, tab = window.
+      bind c new-window -c "#{pane_current_path}"
+      bind v split-window -h -c "#{pane_current_path}"
+      bind - split-window -v -c "#{pane_current_path}"
+      bind h select-pane -L
+      bind j select-pane -D
+      bind k select-pane -U
+      bind l select-pane -R
+      bind H swap-pane -t "{left-of}"
+      bind J swap-pane -t "{down-of}"
+      bind K swap-pane -t "{up-of}"
+      bind L swap-pane -t "{right-of}"
+      bind Tab select-pane -t :.+
+      bind BTab select-pane -t :.-
+      bind [ copy-mode
+      bind P command-prompt -p "rename pane:" "select-pane -T '%%'"
+      bind p previous-window
+      bind T command-prompt -I "#W" "rename-window -- '%%'"
+      bind X confirm-before -p "kill-window #W? (y/n)" kill-window
+      bind W command-prompt -I "#S" "rename-session -- '%%'"
+      bind w choose-tree -Zs
+      bind g choose-tree -Z
+      bind q detach-client
+      bind b set status
+      bind R source-file "$HOME/.config/tmux/tmux.conf" \; display "tmux config reloaded"
+
+      # Resize mode: prefix+r, then h/j/k/l or arrows; any other key exits.
+      bind r switch-client -T resize
+      bind -T resize h resize-pane -L 5 \; switch-client -T resize
+      bind -T resize j resize-pane -D 5 \; switch-client -T resize
+      bind -T resize k resize-pane -U 5 \; switch-client -T resize
+      bind -T resize l resize-pane -R 5 \; switch-client -T resize
+      bind -T resize Left resize-pane -L 5 \; switch-client -T resize
+      bind -T resize Down resize-pane -D 5 \; switch-client -T resize
+      bind -T resize Up resize-pane -U 5 \; switch-client -T resize
+      bind -T resize Right resize-pane -R 5 \; switch-client -T resize
+
+      # Move tmux-sessionist off herdr keys: N = new workspace,
+      # D = close workspace; its name prompt moves from g to G.
+      set -g @sessionist-new "C N"
+      set -g @sessionist-kill-session "D"
+      set -g @sessionist-goto "G"
 
       # Keep gx as the Vim-like copy-mode binding.
       bind -T copy-mode-vi g switch-client -T tmux-url-open

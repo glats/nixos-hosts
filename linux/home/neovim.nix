@@ -60,6 +60,22 @@
     force = true;
   };
 
+  home.file.".config/nvim/lua/plugins/nix/perf.lua" = {
+    text = ''
+      return {
+        "folke/snacks.nvim",
+        init = function()
+          local uname = vim.uv.os_uname()
+          if uname == nil or uname.sysname == "Darwin" then
+            return
+          end
+          vim.g.snacks_animate = false
+        end,
+      }
+    '';
+    force = true;
+  };
+
   home.activation.ensureNvimConfig = lib.hm.dag.entryBefore [ "linkGeneration" ] ''
     GIT="${pkgs.git}/bin/git"
     if [ ! -d "$HOME/.config/nvim" ]; then

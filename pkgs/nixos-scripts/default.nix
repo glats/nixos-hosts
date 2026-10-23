@@ -58,6 +58,7 @@ buildGoModule {
     "cmd/opencode-layout-migrate"
     "cmd/sops-rotate-keys"
     "cmd/sync-opencode-remote"
+    "cmd/test-shutdown"
     "cmd/wg-peer"
   ];
 

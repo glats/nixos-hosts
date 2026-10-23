@@ -22,7 +22,7 @@
     nix-colors.url = "github:misterio77/nix-colors";
 
     omarchy-nix = {
-      url = "github:glats/omarchy-nix/85a1e86138caca87db8ae59a14ee7f174cffe1f8";
+      url = "github:glats/omarchy-nix/5fc93f4c86f4766e477b7e94776e4a7c25ed3579";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.home-manager.follows = "home-manager";
       inputs.quattro-nixpkgs.follows = "t14-nixpkgs";
@@ -71,7 +71,7 @@
     };
 
     ponytail-src = {
-      url = "github:DietrichGebert/ponytail";
+      url = "github:DietrichGebert/ponytail/v5.3.2";
       flake = false;
     };
 

@@ -1493,20 +1493,21 @@
         "quickshell": [
           "t14-quickshell"
         ],
+        "ttfx": "ttfx",
         "walker": "walker"
       },
       "locked": {
-        "lastModified": 1792710558,
-        "narHash": "sha256-kqjK0TtfRucH1HYkm3QDXMXCmV0lJF2BRz9754a21kQ=",
+        "lastModified": 1792714684,
+        "narHash": "sha256-2DFB9GoaaAPjYMQhKSCr+iwooEVFSCT7FEMb+8UP+/g=",
         "owner": "glats",
         "repo": "omarchy-nix",
-        "rev": "85a1e86138caca87db8ae59a14ee7f174cffe1f8",
+        "rev": "5fc93f4c86f4766e477b7e94776e4a7c25ed3579",
         "type": "github"
       },
       "original": {
         "owner": "glats",
         "repo": "omarchy-nix",
-        "rev": "85a1e86138caca87db8ae59a14ee7f174cffe1f8",
+        "rev": "5fc93f4c86f4766e477b7e94776e4a7c25ed3579",
         "type": "github"
       }
     },
@@ -1568,15 +1569,16 @@
     "ponytail-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1786139041,
-        "narHash": "sha256-bGdXvzhWPwGdz3T2Yh2h6lf+3PBRFAfdBxP5pESmCHI=",
+        "lastModified": 1792191853,
+        "narHash": "sha256-IJlhfkdXI6pMZZCZO7XBRg88LBiNfzc5Gnm4ofGybL8=",
         "owner": "DietrichGebert",
         "repo": "ponytail",
-        "rev": "2ed6c52c9d7e5e56942508591085fd45dea277d3",
+        "rev": "16352ac229eb08a9598dcae48fe9f2b342567d86",
         "type": "github"
       },
       "original": {
         "owner": "DietrichGebert",
+        "ref": "v5.3.2",
         "repo": "ponytail",
         "type": "github"
       }
@@ -2398,6 +2400,28 @@
       "original": {
         "owner": "zocker-160",
         "repo": "thinkfan-ui",
+        "type": "github"
+      }
+    },
+    "ttfx": {
+      "inputs": {
+        "nixpkgs": [
+          "omarchy-nix",
+          "quattro-nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1790600764,
+        "narHash": "sha256-tLqFKEZAcXocj09l9+2ksvOgFe5465Z3Y37Hr/LrDp8=",
+        "owner": "omacom",
+        "repo": "ttfx",
+        "rev": "921bd551c308c235e01c5867f0199efe0691c271",
+        "type": "github"
+      },
+      "original": {
+        "owner": "omacom",
+        "repo": "ttfx",
+        "rev": "921bd551c308c235e01c5867f0199efe0691c271",
         "type": "github"
       }
     },
