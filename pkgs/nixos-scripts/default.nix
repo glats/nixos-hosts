@@ -32,6 +32,7 @@ buildGoModule {
     "cmd/browsermcp-broker"
     "cmd/code-work"
     "cmd/compare-palette"
+    "cmd/compliance-mode"
     "cmd/device-link"
     "cmd/export-mate-config"
     "cmd/format-nix"
