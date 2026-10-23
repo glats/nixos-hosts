@@ -1493,20 +1493,21 @@
         "quickshell": [
           "t14-quickshell"
         ],
+        "ttfx": "ttfx",
         "walker": "walker"
       },
       "locked": {
-        "lastModified": 1792711457,
-        "narHash": "sha256-P0z5mz9/eYZGpz0CfPCgbJ/KmiWsvVsWoSlUHQ4YmS8=",
+        "lastModified": 1792714684,
+        "narHash": "sha256-2DFB9GoaaAPjYMQhKSCr+iwooEVFSCT7FEMb+8UP+/g=",
         "owner": "glats",
         "repo": "omarchy-nix",
-        "rev": "c1cf3f66daec0e8451647cd79c7a4165ddbc0cb6",
+        "rev": "5fc93f4c86f4766e477b7e94776e4a7c25ed3579",
         "type": "github"
       },
       "original": {
         "owner": "glats",
         "repo": "omarchy-nix",
-        "rev": "c1cf3f66daec0e8451647cd79c7a4165ddbc0cb6",
+        "rev": "5fc93f4c86f4766e477b7e94776e4a7c25ed3579",
         "type": "github"
       }
     },
@@ -2398,6 +2399,28 @@
       "original": {
         "owner": "zocker-160",
         "repo": "thinkfan-ui",
+        "type": "github"
+      }
+    },
+    "ttfx": {
+      "inputs": {
+        "nixpkgs": [
+          "omarchy-nix",
+          "quattro-nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1790600764,
+        "narHash": "sha256-tLqFKEZAcXocj09l9+2ksvOgFe5465Z3Y37Hr/LrDp8=",
+        "owner": "omacom",
+        "repo": "ttfx",
+        "rev": "921bd551c308c235e01c5867f0199efe0691c271",
+        "type": "github"
+      },
+      "original": {
+        "owner": "omacom",
+        "repo": "ttfx",
+        "rev": "921bd551c308c235e01c5867f0199efe0691c271",
         "type": "github"
       }
     },
