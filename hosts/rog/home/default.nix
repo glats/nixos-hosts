@@ -16,4 +16,8 @@ baseModules
   {
     home.opencode.activeProviderName = "anthropic-opencode";
   }
+
+  ({ config, ... }: {
+    home.file."Guacamole".source = config.lib.file.mkOutOfStoreSymlink "/srv/glats/guacamole/drive";
+  })
 ]
