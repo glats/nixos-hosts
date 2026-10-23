@@ -82,7 +82,7 @@ assert lib.assertMsg (
 assert lib.assertMsg (lib.all validRecord records)
   "LAN SSH mesh records must be verified public identities";
 {
-  inherit members;
+  inherit members router;
   peerKeys =
     target: map (name: members.${name}.publicKey) (builtins.filter (name: name != target) names);
   knownHosts =
