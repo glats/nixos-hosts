@@ -188,10 +188,14 @@ let
         "setup.monitors"
         "setup.keybindings"
         "setup.input"
+        "style.theme"
       ]
       && !(override ? "update.omarchy")
       && !(override ? "update.time")
       && override."learn.arch".label == "NixOS"
+      && !(lib.hasInfix "omarchy-theme-set" override."style.theme".action)
+      && lib.hasInfix "omarchy-notification-send" override."style.theme".action
+      && lib.hasInfix "quattro-themes.md" override."style.theme".action
       && override."learn.arch".icon == "󱄅"
       && lib.hasInfix "nixos.org/manual" override."learn.arch".action;
     backgroundOwnedByShell =
@@ -330,6 +334,37 @@ let
         }/default/omarchy/omarchy-menu.jsonc"
       ))
       && builtins.match ".*/nix/store/[a-z0-9]+-v4l-utils-[0-9.]+/bin:.*" shellLauncher != null;
+    hyprctlLuaFallback =
+      let
+        hm = host.config.home-manager.users.glats;
+        shims = builtins.filter (pkg: (pkg.name or "") == "hyprctl-hyprlang-compat") hm.home.packages;
+        shim = builtins.head shims;
+        text = builtins.readFile "${shim}/bin/hyprctl";
+      in
+      hm.wayland.windowManager.hyprland.configType == "hyprlang"
+      && builtins.length shims == 1
+      && (shim.meta.priority or 5) < 5
+      && lib.hasInfix (builtins.unsafeDiscardStringContext "exec ${hm.wayland.windowManager.hyprland.package}/bin/hyprctl \"$@\"") text;
+    screensaverOwnedByShell =
+      let
+        hm = host.config.home-manager.users.glats;
+        panel = builtins.head (
+          builtins.match ".*(/nix/store/[a-z0-9]+-quattro-panel-commands)/bin.*" shellLauncher
+        );
+        launcher = builtins.readFile "${
+          hm.home.file.".local/share/omarchy/quattro".source
+        }/bin/omarchy-launch-screensaver";
+      in
+      builtins.elem "omarchy-launch-screensaver" (builtins.attrNames (builtins.readDir "${panel}/bin"))
+      && builtins.any (pkg: (pkg.pname or "") == "ttfx") hm.home.packages
+      && builtins.match ".*/nix/store/[a-z0-9]+-socat-[0-9.]+/bin:.*" shellLauncher != null
+      && lib.hasInfix "-e \"$OMARCHY_PATH/bin/omarchy-screensaver\"" launcher
+      && !(lib.hasInfix "-e omarchy-screensaver" launcher)
+      && lib.hasInfix "hyprctl dispatch exec \"$command\"" launcher
+      && !(lib.hasInfix "dispatch exec -- bash -lc" launcher)
+      && lib.hasInfix "terminal=foot.desktop" launcher
+      && !(lib.hasInfix "terminal=$(xdg-terminal-exec --print-id)" launcher)
+      && builtins.any (pkg: (pkg.pname or "") == "foot") hm.home.packages;
     extrasEnabled =
       let
         disabled =
