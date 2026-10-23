@@ -12,7 +12,7 @@ stdenvNoCC.mkDerivation {
 
   installPhase = ''
     mkdir -p $out/share/ponytail
-    [ -d $src/skills ] && mkdir -p $out/share/ponytail/skills && cp -r $src/skills/* $out/share/ponytail/skills/
+    [ -d $src/skills ] && mkdir -p $out/share/ponytail/skills && cp -r $src/skills/*/ $out/share/ponytail/skills/
     [ -d $src/.opencode/command ] && mkdir -p $out/share/ponytail/commands && cp -r $src/.opencode/command/* $out/share/ponytail/commands/
   '';
 
