@@ -188,10 +188,14 @@ let
         "setup.monitors"
         "setup.keybindings"
         "setup.input"
+        "style.theme"
       ]
       && !(override ? "update.omarchy")
       && !(override ? "update.time")
       && override."learn.arch".label == "NixOS"
+      && !(lib.hasInfix "omarchy-theme-set" override."style.theme".action)
+      && lib.hasInfix "omarchy-notification-send" override."style.theme".action
+      && lib.hasInfix "quattro-themes.md" override."style.theme".action
       && override."learn.arch".icon == "󱄅"
       && lib.hasInfix "nixos.org/manual" override."learn.arch".action;
     backgroundOwnedByShell =

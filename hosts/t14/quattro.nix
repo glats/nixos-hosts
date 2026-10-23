@@ -93,6 +93,10 @@
             label = "NixOS";
             action = "omarchy-launch-webapp 'https://nixos.org/manual/nixos/stable/'";
           };
+          "style.theme" = {
+            when = "false";
+            action = "omarchy-notification-send \"Theme\" \"glats is managed by Nix. See hosts/t14/quattro-themes.md to make themes switchable.\"";
+          };
         }
       );
 }
