@@ -85,18 +85,6 @@ var xhciStep = Step{
 	},
 }
 
-var displayStopStep = Step{
-	Desc: "stop the display manager",
-	Do:   func(s System) error { return s.Run("systemctl", "stop", "display-manager.service") },
-}
-
-var nvidiaUnloadStep = Step{
-	Desc: "unload the NVIDIA modules",
-	Do: func(s System) error {
-		return s.Run("modprobe", "-r", "nvidia_drm", "nvidia_uvm", "nvidia_modeset", "nvidia")
-	},
-}
-
 var pstoreStep = Step{
 	Desc: "disable the shutdown kmsg dump to EFI pstore",
 	Do:   func(s System) error { return s.WriteFile(KmsgDumpParam, []byte("N")) },
@@ -105,8 +93,8 @@ var pstoreStep = Step{
 var Trials = []Trial{
 	{
 		ID:         "all",
-		Hypothesis: "any OS-side state (wake, xHCI, NVIDIA, pstore) causes the hang; bisect if it powers off",
-		Steps:      []Step{wolStep, acpiWakeStep, xhciStep, displayStopStep, nvidiaUnloadStep, pstoreStep},
+		Hypothesis: "any runtime OS-side state (wake, xHCI, pstore) causes the hang; bisect if it powers off",
+		Steps:      []Step{wolStep, acpiWakeStep, xhciStep, pstoreStep},
 	},
 	{
 		ID:         "wake",
@@ -121,7 +109,9 @@ var Trials = []Trial{
 	{
 		ID:         "nvidia",
 		Hypothesis: "the NVIDIA dGPU left in D0 blocks S5",
-		Steps:      []Step{displayStopStep, nvidiaUnloadStep},
+		Manual: "nvidia_drm modeset keeps the driver pinned, so it cannot be unloaded at runtime. Reboot, press `e` on the " +
+			"first systemd-boot entry, append `module_blacklist=nvidia,nvidia_drm,nvidia_modeset,nvidia_uvm` to the line, " +
+			"boot with Enter, then run `sudo test-shutdown baseline`.",
 	},
 	{
 		ID:         "pstore",
