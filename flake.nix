@@ -71,7 +71,7 @@
     };
 
     ponytail-src = {
-      url = "github:DietrichGebert/ponytail";
+      url = "github:DietrichGebert/ponytail/v5.3.2";
       flake = false;
     };
 
