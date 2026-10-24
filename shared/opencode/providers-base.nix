@@ -535,7 +535,7 @@ let
         gentle-ai-verify = "nvidia/nvidia/nemotron-3-ultra-550b-a55b";
         jd-judge-a = "nvidia/nemotron-3-ultra-550b-a55b";
         jd-judge-b = "nvidia/nemotron-3-ultra-550b-a55b";
-        jd-fix-agent = "opencode-go/minimax-m3";
+        jd-fix-agent = "opencode-go/minimax-m3.1-flash";
         review-readability = "nvidia/nemotron-3-ultra-550b-a55b";
         review-refuter = "nvidia/nemotron-3-ultra-550b-a55b";
         review-reliability = "nvidia/nemotron-3-ultra-550b-a55b";
@@ -570,7 +570,7 @@ let
         gentle-orchestrator = "opencode-go/deepseek-v4-pro";
         gentle-ai-explore = "opencode-go/deepseek-v4-pro";
         gentle-ai-worker = "opencode-go/deepseek-v4-pro";
-        gentle-ai-verify = "opencode-go/glm-5.3";
+        gentle-ai-verify = "opencode-go/deepseek-v4-pro";
         neutral = "opencode-go/deepseek-v4-pro";
       };
     }
@@ -579,7 +579,7 @@ let
       roles = {
         gentle-orchestrator = "opencode-go/deepseek-v4-pro";
         gentle-ai-explore = "opencode-go/deepseek-v4-pro";
-        gentle-ai-worker = "opencode-go/minimax-m3";
+        gentle-ai-worker = "opencode-go/minimax-m3.1-flash";
         gentle-ai-verify = "opencode-go/deepseek-v4-pro";
         neutral = "opencode-go/deepseek-v4-flash";
       };
@@ -587,9 +587,9 @@ let
     {
       name = "opencode-go-light";
       roles = {
-        gentle-orchestrator = "opencode-go/deepseek-v4-flash";
+        gentle-orchestrator = "opencode-go/deepseek-v4.1-flash";
         gentle-ai-explore = "opencode-go/deepseek-v4-pro";
-        gentle-ai-worker = "opencode-go/deepseek-v4-flash";
+        gentle-ai-worker = "opencode-go/minimax-m3.1-flash";
         gentle-ai-verify = "opencode-go/deepseek-v4-pro";
         neutral = "opencode-go/deepseek-v4-flash";
       };
