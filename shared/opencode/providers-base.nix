@@ -587,7 +587,7 @@ let
     {
       name = "opencode-go-light";
       roles = {
-        gentle-orchestrator = "opencode-go/deepseek-v4.1-flash";
+        gentle-orchestrator = "opencode-go/deepseek-v4-pro";
         gentle-ai-explore = "opencode-go/deepseek-v4-pro";
         gentle-ai-worker = "opencode-go/minimax-m3.1-flash";
         gentle-ai-verify = "opencode-go/deepseek-v4-pro";
