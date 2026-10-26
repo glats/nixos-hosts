@@ -1,13 +1,11 @@
 package nixbuild
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"runtime"
-	"strings"
 	"syscall"
 )
 
@@ -41,7 +39,6 @@ type Kind int
 const (
 	KindEcho Kind = iota
 	KindExec
-	KindNpm
 	KindExit
 )
 
@@ -152,27 +149,12 @@ func Steps(env Env, command string) []Step {
 
 	case "upgrade":
 		s = append(s, Step{Kind: KindEcho, Echo: ""})
-		s = append(s, npmSteps(env)...)
-		s = append(s, Step{Kind: KindEcho, Echo: ""})
-		if env.Darwin {
-			s = append(s,
-				Step{Kind: KindEcho, Echo: "> Updating flake inputs..."},
-				execStep([]string{"nix", "flake", "update", "--flake", env.FlakePath}, false),
-				Step{Kind: KindEcho, Echo: ""},
-				Step{Kind: KindEcho, Echo: "> Building Darwin configuration (upgrade)..."},
-				darwinBuild("switch"))
-		} else if useNH {
-			s = append(s,
-				Step{Kind: KindEcho, Echo: "> Updating flake inputs and rebuilding (nh os switch --update)..."},
-				execStep([]string{"nh", "os", "switch", "--update"}, false))
-		} else {
-			s = append(s,
-				Step{Kind: KindEcho, Echo: "> Updating flake inputs..."},
-				execStep([]string{"nix", "flake", "update"}, false),
-				Step{Kind: KindEcho, Echo: ""},
-				linuxHeader("upgrade"),
-				rebuild("switch"))
-		}
+		s = append(s,
+			Step{Kind: KindEcho, Echo: "> Updating BrowserMCP npm dependencies (OpenCode pins are preserved)..."},
+			execStep([]string{"npm", "update", "--prefix", env.FlakePath + "/pkgs/browsermcp-v2", "--package-lock-only", "--no-audit", "--no-fund"}, false),
+			Step{Kind: KindEcho, Echo: "> Updating flake inputs..."},
+			execStep([]string{"nix", "flake", "update", "--flake", env.FlakePath}, false),
+			Step{Kind: KindEcho, Echo: "OpenCode versions remain pinned; use npm install --package-lock-only --save-exact for intentional version changes."})
 
 	case "dry":
 		s = append(s, Step{Kind: KindEcho, Echo: ""})
@@ -247,17 +229,6 @@ func unsupportedDarwin(command string) []Step {
 	}
 }
 
-func npmSteps(env Env) []Step {
-	return []Step{
-		{Kind: KindEcho, Echo: "> Updating npm packages to latest..."},
-		{Kind: KindNpm, Args: []string{
-			"nix", "build",
-			env.FlakePath + "#opencode-npm-packages.updateScript",
-			"--no-link", "--print-out-paths",
-		}},
-	}
-}
-
 func execStep(args []string, throughNom bool) Step {
 	return Step{Kind: KindExec, Args: args, ThroughNom: throughNom}
 }
@@ -279,20 +250,6 @@ func Run(steps []Step, nomPath string) int {
 			fmt.Println(st.Echo)
 		case KindExit:
 			return st.ExitCode
-		case KindNpm:
-			cmd := exec.Command(st.Args[0], st.Args[1:]...)
-			var buf bytes.Buffer
-			cmd.Stdout = &buf
-
-			if err := cmd.Run(); err != nil {
-
-			}
-			if path := strings.TrimRight(buf.String(), "\n"); path != "" {
-
-				if rc := runDirect([]string{path}); rc != 0 {
-					return rc
-				}
-			}
 		case KindExec:
 			rc := 0
 			if st.ThroughNom && nomPath != "" {

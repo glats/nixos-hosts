@@ -15,7 +15,7 @@ Commands:
   switch     Build and activate (default)
   boot       Build and activate on next boot (NixOS only)
   test       Build and activate in test environment (NixOS only)
-  upgrade    Update npm packages + flake inputs + rebuild
+  upgrade    Update BrowserMCP npm lock + flake inputs (no activation)
   dry        Dry-activate (show changes only)
   check      Validate flake
   build      Dry-build only
@@ -32,6 +32,11 @@ Environment:
 
 Flake: NIXOS_REPO, or the current git worktree when it belongs to the
 same repository (for example a herdr worktree).
+
+upgrade updates BrowserMCP's package lock and flake inputs only. OpenCode's
+coupled dependency graph remains pinned; use npm install --package-lock-only
+--save-exact for intentional version changes. Run check to validate and switch
+to build and activate.
 `
 
 func main() {
@@ -81,7 +86,7 @@ func warnHook(msg string) {
 
 func applyingCommand(command string) bool {
 	switch command {
-	case "switch", "boot", "test", "upgrade", "safe":
+	case "switch", "boot", "test", "safe":
 		return true
 	}
 	return false
