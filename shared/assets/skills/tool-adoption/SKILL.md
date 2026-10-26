@@ -1,6 +1,6 @@
 ---
 name: tool-adoption
-description: "Trigger: new tool, new CLI, new MCP, does it fit, worth it, replace, consolidate, integrar herramienta. Compare against the current harness before adopting."
+description: "Trigger: new tool, new CLI, new MCP, does it fit, worth it, replace, consolidate. Compare against the current harness before adopting."
 license: MIT
 metadata:
   author: "glats"
