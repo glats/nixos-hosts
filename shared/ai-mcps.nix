@@ -63,6 +63,12 @@ let
   };
 in
 {
+  options.home.ai-assets.extraMcps = mkOption {
+    type = types.attrsOf (types.submodule { freeformType = types.attrs; });
+    default = { };
+    description = "Extra MCP servers merged with home.ai-assets.mcps.";
+  };
+
   options.home.ai-assets.mcps = mkOption {
     type = types.attrsOf (
       types.submodule {

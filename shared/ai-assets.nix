@@ -9,8 +9,8 @@ with lib;
 
 {
   imports = [
-    ./opencode/mcps-base.nix
-    ./opencode/mcps.nix
+    ./ai-mcps.nix
+    ./ai-tools.nix
   ];
 
   options.home.ai-assets = {
@@ -52,6 +52,7 @@ with lib;
   };
 
   config = mkIf config.home.ai-assets.enable {
+    home.ai-tools.enable = true;
     home.sessionVariables.ARCHIFY_UPDATE_CHECK_DISABLED = "1";
   };
 }

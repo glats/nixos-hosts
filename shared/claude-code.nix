@@ -229,15 +229,7 @@ in
   };
 
   config = mkIf cfg.enable {
-    home.packages =
-      with pkgs;
-      [
-        claude-code
-      ]
-      ++ lib.optional (!config.home.opencode.enable) pkgs.gentle-ai
-      ++ (with pkgs; [
-        engram
-      ]);
+    home.packages = [ pkgs.claude-code ];
 
     home.ai-assets.enable = true;
 

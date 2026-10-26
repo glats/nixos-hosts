@@ -90,6 +90,6 @@ Paths are relative to the repository root unless noted.
 - `AGENTS.md` — repository architecture, Go-only policy, and Nix verification.
 - `docs/rtk-pilot.md` — runtime-output and local-state risk analysis.
 - `docs/browser-mcp-setup.md` — MCP and browser boundary example.
-- `shared/opencode/mcps.nix` — current MCP inventory source.
+- `shared/ai-mcps.nix` — shared MCP inventory source.
 - `references/isolated-trial.md` — trial boundary, probes, teardown, and a
   worked example; relative to this skill directory.

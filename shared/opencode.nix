@@ -9,7 +9,7 @@
 with lib;
 
 let
-  providers = import ./opencode/providers.nix {
+  providers = import ./opencode/providers-base.nix {
     inherit lib;
     activeProviderName = config.home.opencode.activeProviderName;
   };
@@ -164,17 +164,9 @@ in
         }
       '';
 
-      home.packages = with pkgs; [
-        gentleManaged
-        opencodePackage
-        engram
-        rtk
-        poppler-utils
-      ];
-
-      home.sessionVariables = {
-        RTK_TELEMETRY_DISABLED = "1";
-      };
+      home.ai-tools.enable = true;
+      home.ai-tools.gentlePackage = gentleManaged;
+      home.packages = [ opencodePackage ];
 
       programs.zsh.initContent = lib.mkAfter ''
               if [ -f "${config.sops.secrets."opencode/nvidia_api_key".path}" ]; then
