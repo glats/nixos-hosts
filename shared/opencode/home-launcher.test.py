@@ -58,8 +58,9 @@ assert "checkLinkTargets" in result["migrateBefore"], "layout migration must run
 assert "/bin/opencode-layout-migrate" in result["migrateData"]
 assert "--retire-openfang-skills" not in result["migrateData"], "rog runs OpenFang; its skills are managed"
 assert "agents" in result["oc"] and "permissions" in result["oc"]
-assert result["oc"]["plugins"] == ["opencode-claude-subscription@0.1.4", "@slkiser/opencode-quota@5.0.3"]
-assert result["quotaPlugins"] == {"thinkcentre": False, "t14": False, "macm5Home": True, "macm5Darwin": True}, result["quotaPlugins"]
+assert result["oc"]["plugins"][0] == "opencode-claude-subscription@0.1.4"
+assert result["oc"]["plugins"][1].endswith("-opencode-quota-patched-5.0.3"), result["oc"]["plugins"]
+assert result["quotaPlugins"] == {"thinkcentre": True, "t14": True, "macm5Home": True, "macm5Darwin": True}, result["quotaPlugins"]
 quota = json.loads(result["quotaConfig"])
 assert quota["enabledProviders"] == "auto"
 assert quota["tuiSidebarPanel"] == {"enabled": True}

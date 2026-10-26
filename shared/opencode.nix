@@ -131,10 +131,11 @@ in
 
     quotaPlugin = mkOption {
       type = types.nullOr types.package;
-      default = null;
+      default = pkgs.callPackage ../pkgs/opencode-quota-patched { };
       description = ''
         Local opencode-quota plugin directory loaded instead of the npm
-        `@slkiser/opencode-quota@5.0.3` spec. null keeps the npm spec.
+        `@slkiser/opencode-quota@5.0.3` spec. Defaults to the pinned package
+        with passive Anthropic response-header quota. null keeps the npm spec.
       '';
     };
 
