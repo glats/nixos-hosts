@@ -2,15 +2,25 @@
   config,
   lib,
   pkgs,
+  inputs,
   ...
 }:
 
 with lib;
 
+let
+  assetTrees = import ./ai-assets-tree.nix { inherit lib pkgs; };
+  sharedSkills = assetTrees.tree "agents-owned-skills" (
+    map (source: {
+      target = "skills";
+      inherit source;
+    }) config.home.ai-assets.skillSources
+  );
+in
 {
   imports = [
-    ./opencode/mcps-base.nix
-    ./opencode/mcps.nix
+    ./ai-mcps.nix
+    ./ai-tools.nix
   ];
 
   options.home.ai-assets = {
@@ -52,6 +62,10 @@ with lib;
   };
 
   config = mkIf config.home.ai-assets.enable {
+    home.ai-tools.enable = true;
     home.sessionVariables.ARCHIFY_UPDATE_CHECK_DISABLED = "1";
+    home.activation.deploySharedAgentSkills = config.lib.dag.entryAfter [ "linkGeneration" ] ''
+      ${pkgs.nixos-scripts}/bin/ai-assets-reconcile "${config.home.homeDirectory}/.agents" ${sharedSkills} ${assetTrees.none} ${inputs.gentle-ai-src.rev}
+    '';
   };
 }

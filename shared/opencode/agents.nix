@@ -8,7 +8,7 @@
 with lib;
 
 let
-  providersConfig = import ./providers.nix {
+  providersConfig = import ./providers-base.nix {
     inherit lib;
     activeProviderName = config.home.opencode.activeProviderName;
   };

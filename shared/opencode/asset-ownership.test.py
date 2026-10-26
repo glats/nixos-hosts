@@ -16,12 +16,14 @@ in {{
   opencode = builtins.getContext h.home.activation.setupOpencodePluginRuntime.data;
   claude = builtins.getContext h.home.activation.deployClaudeCodeAssets.data;
   openfang = builtins.getContext h.home.activation.syncOpencodeSkillsToOpenfang.data;
+  agents = builtins.getContext h.home.activation.deploySharedAgentSkills.data;
   source = f.inputs.gentle-ai-src.outPath;
   revision = f.inputs.gentle-ai-src.rev;
   activations = {{
     opencode = h.home.activation.setupOpencodePluginRuntime.data;
     claude = h.home.activation.deployClaudeCodeAssets.data;
     openfang = h.home.activation.syncOpencodeSkillsToOpenfang.data;
+    agents = h.home.activation.deploySharedAgentSkills.data;
   }};
 }}
 '''
@@ -32,14 +34,14 @@ for consumer, activation in contexts["activations"].items():
                 if "/bin/ai-assets-reconcile " in line]
     assert len(commands) == 1, consumer
     assert commands[0][-1] == revision, consumer
-selected = {key for consumer in ("opencode", "claude", "openfang") for key in contexts[consumer]
+selected = {key for consumer in ("opencode", "claude", "openfang", "agents") for key in contexts[consumer]
             if "owned-" in key or "-no-legacy" in key or "-nixos-scripts-" in key}
 subprocess.run(["nix", "build", "--no-link", *[key + "^out" for key in sorted(selected)]], check=True, cwd=ROOT)
 
 def output(drv):
     return Path(subprocess.check_output(["nix-store", "--query", "--outputs", drv], text=True).strip())
 
-for consumer in ("opencode", "claude", "openfang"):
+for consumer in ("opencode", "claude", "openfang", "agents"):
     entries = contexts[consumer]
     legacy = output(next(key for key in entries if "-ai-assets-no-legacy" in key))
     desired = output(next(key for key in entries if "-owned-" in key))
