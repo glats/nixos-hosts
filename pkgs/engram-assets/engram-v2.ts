@@ -3,7 +3,9 @@ import { Plugin } from "@opencode/plugin"
 const ENGRAM_PORT = Number.parseInt(process.env.ENGRAM_PORT ?? "7437", 10)
 const ENGRAM_URL = `http://127.0.0.1:${ENGRAM_PORT}`
 const ENGRAM_BIN = process.env.ENGRAM_BIN ?? "engram"
-const WRITE_TOOLS = new Set(["mem_save", "mem_save_prompt", "mem_session_summary", "mem_capture_passive"])
+const WRITE_TOOLS = new Set(
+  ["mem_save", "mem_save_prompt", "mem_session_summary", "mem_capture_passive"].flatMap((tool) => [tool, `engram_${tool}`]),
+)
 
 const MEMORY_INSTRUCTIONS = `## Engram Persistent Memory — Protocol
 
