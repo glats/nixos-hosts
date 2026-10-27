@@ -12,9 +12,21 @@ subscription quota and are ignored. Until a normal Claude request supplies valid
 headers, `/quota_status` reports `Awaiting quota headers from a normal Claude
 request.` No quota values are invented.
 
-Observations stay in memory for at most five minutes, never beyond their window
-reset, and are invalidated on credential changes and plugin cleanup. Requests
-crossing a credential switch are discarded. Only official Anthropic `/v1/messages`
+Last observations survive idle time, window resets and service restarts in native
+plugin storage, scoped to the OpenCode location and active credential ID. The
+sidebar labels each window `Last observed` with its observation time: these are
+historical values, not a live balance, and a reset never invents 100% available.
+Normal responses update the windows they report without dropping other windows.
+Only an Anthropic credential switch clears the snapshot; unrelated credential
+updates and plugin cleanup do not. Storage contains only the credential ID,
+observation timestamps, percentages and reset times, never tokens or messages.
+An unavailable storage backend is reported in `/quota_status`; memory capture
+continues without blocking model requests. Credential switches observed while
+running invalidate pending capture too. A different active credential on restart
+discards the old snapshot; switches away and back entirely during downtime cannot
+be observed.
+
+Requests crossing a credential switch are discarded. Only official Anthropic `/v1/messages`
 HTTP responses are used; proxies and WebSockets do not populate this source.
 No tokens, request bodies or response bodies are read by the observer.
 

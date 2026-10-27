@@ -13,7 +13,7 @@ diff --git a/dist/plugin.js b/dist/plugin.js
          // The quota collector accepts a small V1-shaped configuration client. V2
          // does not expose a mutable global config to plugins; quota settings are
          // read from the plugin's own config file by the collector.
-+        const anthropicHeaderQuota = createAnthropicHeaderQuota(ctx.integration);
++        const anthropicHeaderQuota = createAnthropicHeaderQuota(ctx.integration, Date.now, ctx.storage, `anthropic-header-quota:v1:${ctx.location.directory}`);
          const client = {
 +            anthropicHeaderQuota,
              config: {
@@ -31,15 +31,16 @@ diff --git a/dist/plugin.js b/dist/plugin.js
          void (async () => {
              for await (const event of ctx.event.subscribe({ signal: credentialEvents.signal })) {
                  if (event.type === "credential.updated" || event.type === "credential.switched") {
-+                    anthropicHeaderQuota.invalidate();
++                    await anthropicHeaderQuota.credentialsChanged(event);
                      notifyCredentialsChanged();
                  }
              }
 @@ -247,5 +253,6 @@
          });
-         return () => {
-+            anthropicHeaderQuota.invalidate();
+-        return () => {
++        return async () => {
              credentialEvents.abort();
++            await anthropicHeaderQuota.stop();
              unbindCredentialSource();
          };
 diff --git a/dist/providers/anthropic.js b/dist/providers/anthropic.js
