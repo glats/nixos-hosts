@@ -42,7 +42,8 @@ await quota.start(missing);
 await quota.observe(missing);
 assert.equal((await quota.read()).entries[0].percentRemaining, 80);
 time += 300001;
-assert.deepEqual((await quota.read()).entries, []);
+assert.equal((await quota.read()).entries[0].percentRemaining, 80);
+await quota.invalidate();
 for (const invalid of ["", "NaN", "Infinity", "-0.1", "1.1", "0x1"]) {
   const bad = event({ ...headers, "anthropic-ratelimit-unified-5h-utilization": invalid, "anthropic-ratelimit-unified-7d-reset": "invalid" });
   await quota.start(bad);
@@ -55,7 +56,7 @@ await quota.start(partial);
 await quota.observe(partial);
 assert.deepEqual((await quota.read()).entries.map((entry) => entry.percentRemaining), [0]);
 time += 1001;
-assert.deepEqual((await quota.read()).entries, []);
+assert.deepEqual((await quota.read()).entries.map((entry) => entry.percentRemaining), [0]);
 
 const inflight = event(headers);
 await quota.start(inflight);
@@ -98,4 +99,99 @@ const cloned = event(headers);
 await quota.start(cloned);
 await quota.observe({ ...cloned, request: cloned.request.clone() });
 assert.deepEqual((await quota.read()).entries, []);
-console.log("PASS: passive header windows, no fetch/body reads, expiry, ordering and credential isolation");
+let disk;
+const storage = {
+  async get() { return structuredClone(disk); },
+  async set(_key, value) { disk = structuredClone(value); },
+  async remove() { disk = undefined; },
+};
+let durable = createAnthropicHeaderQuota(integration, () => time, storage);
+const saved = event(headers);
+await durable.start(saved);
+await durable.observe(saved);
+assert.equal(disk.id, connection.id);
+assert.deepEqual(Object.keys(disk).sort(), ["checkedAt", "id", "windows"]);
+const initial = await durable.read();
+assert.match(initial.entries[0].right, /Last observed/);
+assert.equal(initial.entries[0].accounting.observedAtIso, new Date(time).toISOString());
+await durable.stop();
+durable = createAnthropicHeaderQuota(integration, () => time, storage);
+assert.deepEqual((await durable.read()).entries, initial.entries, "restart retains last-known values");
+await durable.stop();
+const originalConnection = connection;
+connection = { ...connection, id: "offline-intermediate" };
+connection = originalConnection;
+durable = createAnthropicHeaderQuota(integration, () => time, storage);
+assert.deepEqual((await durable.read()).entries, initial.entries, "accepted same-ID restoration after unobservable downtime switches");
+time += 8 * 86400000;
+assert.deepEqual((await durable.read()).entries.map((entry) => entry.percentRemaining), [89, 40], "reset retains historical percentages");
+assert.ok((await durable.read()).entries.every((entry) => entry.resetTimeIso === undefined), "expired windows must not show a false countdown");
+const update = event({ "anthropic-ratelimit-unified-5h-utilization": "0.1", "anthropic-ratelimit-unified-5h-reset": String(time / 1000 + 3600) });
+await durable.start(update);
+await durable.observe(update);
+const refreshed = await durable.read();
+assert.deepEqual(refreshed.entries.map((entry) => entry.percentRemaining), [90, 40]);
+assert.notEqual(refreshed.entries[0].accounting.observedAtIso, refreshed.entries[1].accounting.observedAtIso);
+const beforeRejected = JSON.stringify(disk);
+const rejected = event();
+await durable.start(rejected);
+await durable.observe(rejected);
+assert.equal(JSON.stringify(disk), beforeRejected);
+for (const notification of [{ type: "credential.updated", data: {} }, { type: "credential.switched", data: { integrationID: "openai" } }]) {
+  await durable.credentialsChanged(notification);
+  assert.equal(JSON.stringify(disk), beforeRejected);
+}
+await durable.credentialsChanged({ type: "credential.switched", data: { integrationID: "anthropic" } });
+assert.equal(disk, undefined);
+await durable.stop();
+durable = createAnthropicHeaderQuota(integration, () => time, storage);
+assert.deepEqual((await durable.read()).entries, []);
+const freshHeaders = {
+  "anthropic-ratelimit-unified-5h-utilization": "0.25",
+  "anthropic-ratelimit-unified-5h-reset": String(time / 1000 + 3600),
+};
+const persist = event(freshHeaders);
+await durable.start(persist);
+await durable.observe(persist);
+await durable.stop();
+connection = { ...connection, id: "third" };
+durable = createAnthropicHeaderQuota(integration, () => time, storage);
+assert.deepEqual((await durable.read()).entries, [], "restart with a different credential discards the old snapshot");
+assert.equal(disk, undefined);
+for (const corrupt of [null, {}, { id: connection.id, checkedAt: time, windows: [{ label: "5h", percentRemaining: 10000 }] }]) {
+  disk = corrupt;
+  const invalid = createAnthropicHeaderQuota(integration, () => time, storage);
+  assert.deepEqual((await invalid.read()).entries, []);
+}
+const failed = createAnthropicHeaderQuota(integration, () => time, {
+  async get() { throw new Error("fixture storage unavailable"); },
+  async set() { throw new Error("fixture storage unavailable"); },
+  async remove() { throw new Error("fixture storage unavailable"); },
+});
+const offline = event(freshHeaders);
+await failed.start(offline);
+await failed.observe(offline);
+assert.equal((await failed.read()).entries[0].percentRemaining, 75);
+assert.equal((await failed.read()).statusDetails.find(({ key }) => key === "persistence").value, "unavailable");
+await failed.invalidate();
+assert.deepEqual((await failed.read()).entries, []);
+let releaseWrite;
+let enteredWrite;
+const writeGate = new Promise((resolve) => { releaseWrite = resolve; });
+const writeStarted = new Promise((resolve) => { enteredWrite = resolve; });
+disk = undefined;
+const slow = createAnthropicHeaderQuota(integration, () => time, {
+  ...storage,
+  async set(key, value) { enteredWrite(); await writeGate; await storage.set(key, value); },
+});
+const delayed = event(freshHeaders);
+await slow.start(delayed);
+const saving = slow.observe(delayed);
+await writeStarted;
+const clearing = slow.credentialsChanged({ type: "credential.switched", data: { integrationID: "anthropic" } });
+releaseWrite();
+await Promise.all([saving, clearing]);
+assert.equal(disk, undefined, "credential invalidation must win over an in-flight durable write");
+await slow.stop();
+assert.deepEqual((await createAnthropicHeaderQuota(integration, () => time, storage).read()).entries, []);
+console.log("PASS: passive windows, durable restart/reset retention, refresh, credential isolation and no network/body reads");
