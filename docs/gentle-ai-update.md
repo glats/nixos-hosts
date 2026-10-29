@@ -12,7 +12,7 @@ to activate, call models, stage, commit, push or publish.
 | Gentle binary and assets | v4.0.0, `ff77164d4f56f1665b22fb6fac51c2ccbb769400` |
 | Go | At least 1.25.10; pinned builder currently 1.26.6 |
 | vendorHash | `sha256-YL4Slz/UuY+HEcJTW+pMphcdB6xtpam+E4uTDWifEcY=` |
-| OpenCode CLI and SDK | 2.2.0 (runtime upgrade approved 2026-10-27); no silent upgrade/downgrade |
+| OpenCode CLI and SDK | 2.2.0 (runtime upgrade approved 2026-10-27); advanced only by an explicit `nix-upgrade`, then validated before activation |
 | Native relay declaration | `gentle-ai.opencode-relay/v2-staged` |
 | Go-owned wire | `gentle-ai.provider-transport/v1` |
 

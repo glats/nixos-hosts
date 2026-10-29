@@ -15,7 +15,7 @@ Commands:
   switch     Build and activate (default)
   boot       Build and activate on next boot (NixOS only)
   test       Build and activate in test environment (NixOS only)
-  upgrade    Update BrowserMCP npm lock + flake inputs (no activation)
+  upgrade    Update all managed software sources (no build or activation)
   dry        Dry-activate (show changes only)
   check      Validate flake
   build      Dry-build only
@@ -33,10 +33,12 @@ Environment:
 Flake: NIXOS_REPO, or the current git worktree when it belongs to the
 same repository (for example a herdr worktree).
 
-upgrade updates BrowserMCP's package lock and flake inputs only. OpenCode's
-coupled dependency graph remains pinned; use npm install --package-lock-only
---save-exact for intentional version changes. Run check to validate and switch
-to build and activate.
+upgrade updates OpenCode (executable and npm closure), BrowserMCP, GitHub
+release binaries, Gentle AI, Engram, other source packages and all flake inputs
+to their latest releases. It never builds or activates; run check to validate
+and switch to build and activate. The quota plugin, tinkertool and the nixpkgs
+overrides in overlays/ are updated by hand (see docs/software-updates.md).
+Set GITHUB_TOKEN or GH_TOKEN to avoid GitHub's unauthenticated rate limit.
 `
 
 func main() {

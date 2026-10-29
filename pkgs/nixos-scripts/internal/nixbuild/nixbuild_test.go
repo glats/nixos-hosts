@@ -1,6 +1,7 @@
 package nixbuild
 
 import (
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -81,14 +82,7 @@ func linuxNHCases(prefix string) []seqCase {
 			echo(""), echo("> Building NixOS configuration (test)..."),
 			ex("nh", "os", "test"),
 		}},
-		{prefix + "upgrade", linuxNH, "upgrade", []Step{
-			echo(""),
-			echo("> Updating BrowserMCP npm dependencies (OpenCode pins are preserved)..."),
-			ex("npm", "update", "--prefix", root+"/pkgs/browsermcp-v2", "--package-lock-only", "--no-audit", "--no-fund"),
-			echo("> Updating flake inputs..."),
-			ex("nix", "flake", "update", "--flake", root),
-			echo("OpenCode versions remain pinned; use npm install --package-lock-only --save-exact for intentional version changes."),
-		}},
+		{prefix + "upgrade", linuxNH, "upgrade", append([]Step{echo("")}, upgradeSteps(root, false)...)},
 		{prefix + "dry", linuxNH, "dry", []Step{
 			echo(""), echo("> Dry-activating (nh)..."),
 			ex("nh", "os", "switch", "--dry"),
@@ -135,14 +129,7 @@ func linuxRawCases(prefix string) []seqCase {
 			echo(""), echo("> Building NixOS configuration (test)..."),
 			ex("sudo", "nixos-rebuild", "test", "--flake", flakeArg),
 		}},
-		{prefix + "upgrade", linuxRaw, "upgrade", []Step{
-			echo(""),
-			echo("> Updating BrowserMCP npm dependencies (OpenCode pins are preserved)..."),
-			ex("npm", "update", "--prefix", root+"/pkgs/browsermcp-v2", "--package-lock-only", "--no-audit", "--no-fund"),
-			echo("> Updating flake inputs..."),
-			ex("nix", "flake", "update", "--flake", root),
-			echo("OpenCode versions remain pinned; use npm install --package-lock-only --save-exact for intentional version changes."),
-		}},
+		{prefix + "upgrade", linuxRaw, "upgrade", append([]Step{echo("")}, upgradeSteps(root, false)...)},
 		{prefix + "dry", linuxRaw, "dry", []Step{
 			echo(""), echo("> Dry-activating..."),
 
@@ -294,14 +281,7 @@ func darwinCases() []seqCase {
 			echo("> 'test' not supported on Darwin. Use 'switch' instead."),
 			{Kind: KindExit, ExitCode: 1},
 		}},
-		{"Darwin/upgrade", dflt, "upgrade", []Step{
-			echo(""),
-			echo("> Updating BrowserMCP npm dependencies (OpenCode pins are preserved)..."),
-			ex("npm", "update", "--prefix", root+"/pkgs/browsermcp-v2", "--package-lock-only", "--no-audit", "--no-fund"),
-			echo("> Updating flake inputs..."),
-			ex("nix", "flake", "update", "--flake", root),
-			echo("OpenCode versions remain pinned; use npm install --package-lock-only --save-exact for intentional version changes."),
-		}},
+		{"Darwin/upgrade", dflt, "upgrade", append([]Step{echo("")}, upgradeSteps(root, true)...)},
 		{"Darwin/dry", dflt, "dry", []Step{
 			echo(""), echo("> Checking Darwin configuration (dry run)..."),
 			ex("sudo", "darwin-rebuild", "check", "--flake", flakeArg),
@@ -445,6 +425,74 @@ func TestRunExitPropagation(t *testing.T) {
 	}
 }
 
+func nixUpdate(dir, attr string, flags ...string) Step {
+	args := append([]string{"nix", "run", "nixpkgs#nix-update", "--", "--flake"}, flags...)
+	args = append(args, attr)
+	return Step{Kind: KindExec, Args: args, Dir: dir}
+}
+
+func upgradeSteps(root string, darwin bool) []Step {
+	steps := []Step{
+		echo("> Updating OpenCode executable and plugin closure..."),
+		{Kind: KindOpenCodeRelease, Args: []string{root}},
+		ex("npm", "install", "--prefix", root+"/pkgs/opencode-npm-packages-v2", "--package-lock-only", "--save-exact", "--no-audit", "--no-fund"),
+		echo("> Updating BrowserMCP npm dependencies..."),
+		ex("npm", "update", "--prefix", root+"/pkgs/browsermcp-v2", "--package-lock-only", "--no-audit", "--no-fund"),
+		echo("> Updating GitHub release binaries..."),
+		{Kind: KindReleasePins, Args: []string{root}},
+		echo("> Pinning Gentle AI and Engram to their latest releases..."),
+		{Kind: KindFlakePins, Args: []string{root}},
+		echo("> Updating flake inputs..."),
+		ex("nix", "flake", "update", "--flake", root),
+		echo("> Updating source packages and vendor hashes..."),
+		nixUpdate(root, "archify-skill"),
+		nixUpdate(root, "herdr"),
+	}
+	if !darwin {
+		steps = append(steps, nixUpdate(root, "openfang"), nixUpdate(root, "mcp-supermercados-cl"))
+	}
+	return append(steps,
+		nixUpdate(root, "gentle-ai", "--version=skip"),
+		nixUpdate(root, "engram", "--version=skip"),
+		echo("Nothing was built or activated. Validate with 'check' and activate with 'switch'."))
+}
+
+func stubOpenCodeRelease(t *testing.T, err error) *[]string {
+	t.Helper()
+	var roots []string
+	old, oldRelease, oldFlake := UpdateOpenCodeRelease, UpdateReleasePins, UpdateFlakePins
+	UpdateOpenCodeRelease = func(root string) error {
+		roots = append(roots, root)
+		return err
+	}
+	UpdateReleasePins = func(string) error { return nil }
+	UpdateFlakePins = func(string) error { return nil }
+	t.Cleanup(func() { UpdateOpenCodeRelease, UpdateReleasePins, UpdateFlakePins = old, oldRelease, oldFlake })
+	return &roots
+}
+
+func TestUpgradeStopsWhenOpenCodeUpdateFails(t *testing.T) {
+	dir := t.TempDir()
+	log := filepath.Join(dir, "calls")
+	for _, name := range []string{"npm", "nix"} {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte("#!/bin/sh\necho "+name+" >> \"$CALL_LOG\"\n"), 0755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	t.Setenv("PATH", dir)
+	t.Setenv("CALL_LOG", log)
+	roots := stubOpenCodeRelease(t, errors.New("registry unavailable"))
+	if got := Run(Steps(Env{FlakePath: "/repo"}, "upgrade"), ""); got != 1 {
+		t.Fatalf("Run = %d, want 1", got)
+	}
+	if len(*roots) != 1 || (*roots)[0] != "/repo" {
+		t.Fatalf("OpenCode update roots = %v", *roots)
+	}
+	if _, err := os.Stat(log); !os.IsNotExist(err) {
+		t.Fatalf("commands ran after OpenCode failure: %v", err)
+	}
+}
+
 func TestUpgradeStopsOnNpmFailure(t *testing.T) {
 	dir := t.TempDir()
 	log := filepath.Join(dir, "calls")
@@ -459,8 +507,9 @@ func TestUpgradeStopsOnNpmFailure(t *testing.T) {
 	}
 	t.Setenv("PATH", dir)
 	t.Setenv("CALL_LOG", log)
+	roots := stubOpenCodeRelease(t, nil)
 	steps := Steps(Env{FlakePath: "/repo with spaces"}, "upgrade")
-	if got := steps[2].Args[3]; got != "/repo with spaces/pkgs/browsermcp-v2" {
+	if got := steps[3].Args[3]; got != "/repo with spaces/pkgs/opencode-npm-packages-v2" {
 		t.Fatalf("npm prefix = %q", got)
 	}
 	oldStderr := os.Stderr
@@ -490,6 +539,9 @@ func TestUpgradeStopsOnNpmFailure(t *testing.T) {
 	if string(calls) != "npm\n" {
 		t.Fatalf("commands run = %q, want npm only", calls)
 	}
+	if len(*roots) != 1 {
+		t.Fatalf("OpenCode update ran %d times, want once before npm", len(*roots))
+	}
 }
 
 func TestUpgradeFlakeFailurePropagatesWithoutActivation(t *testing.T) {
@@ -505,6 +557,7 @@ func TestUpgradeFlakeFailurePropagatesWithoutActivation(t *testing.T) {
 	}
 	t.Setenv("PATH", dir)
 	t.Setenv("CALL_LOG", log)
+	stubOpenCodeRelease(t, nil)
 	if got := Run(Steps(Env{FlakePath: "/repo"}, "upgrade"), ""); got != 7 {
 		t.Fatalf("Run = %d, want flake update exit 7", got)
 	}
@@ -512,7 +565,7 @@ func TestUpgradeFlakeFailurePropagatesWithoutActivation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if string(calls) != "npm\nnix\n" {
+	if string(calls) != "npm\nnpm\nnix\n" {
 		t.Fatalf("commands run = %q, want only lock and flake updates", calls)
 	}
 }
@@ -535,7 +588,7 @@ func assertSequence(t *testing.T, got, want []Step) {
 	for i := range want {
 		g, w := got[i], want[i]
 		if g.Kind != w.Kind || g.Echo != w.Echo || g.ExitCode != w.ExitCode ||
-			joinArgs(g.Args) != joinArgs(w.Args) || g.ThroughNom != w.ThroughNom {
+			joinArgs(g.Args) != joinArgs(w.Args) || g.ThroughNom != w.ThroughNom || g.Dir != w.Dir {
 			t.Fatalf("step %d differs\ngot:  %s\nwant: %s", i, gotN[i], wantN[i])
 		}
 	}

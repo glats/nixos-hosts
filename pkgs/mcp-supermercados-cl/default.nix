@@ -4,14 +4,14 @@
   fetchFromGitHub,
 }:
 
-buildNpmPackage {
+buildNpmPackage (finalAttrs: {
   pname = "mcp-supermercados-cl";
   version = "1.4.9";
 
   src = fetchFromGitHub {
     owner = "NLACE-COM";
     repo = "mcp-supermercados-cl";
-    rev = "82e6bf8d94e58ec9655c0a0ab031614517bda0c1";
+    tag = "v${finalAttrs.version}";
     hash = "sha256-SP+lLV1zp2xdzobRmM2FdAnReIM9Epo/BI46i5tYR8E=";
   };
 
@@ -24,4 +24,4 @@ buildNpmPackage {
     mainProgram = "mcp-supermercados-cl";
     platforms = platforms.linux;
   };
-}
+})

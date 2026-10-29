@@ -7,6 +7,10 @@ import (
 	"os/exec"
 	"runtime"
 	"syscall"
+
+	"github.com/glats/nixos-scripts/internal/flakepins"
+	"github.com/glats/nixos-scripts/internal/opencodeupdate"
+	"github.com/glats/nixos-scripts/internal/releasepins"
 )
 
 type Env struct {
@@ -40,6 +44,15 @@ const (
 	KindEcho Kind = iota
 	KindExec
 	KindExit
+	KindOpenCodeRelease
+	KindReleasePins
+	KindFlakePins
+)
+
+var (
+	UpdateOpenCodeRelease = opencodeupdate.Run
+	UpdateReleasePins     = releasepins.Run
+	UpdateFlakePins       = flakepins.Run
 )
 
 type Step struct {
@@ -49,6 +62,7 @@ type Step struct {
 	ThroughNom bool
 	FailLines  []string
 	ExitCode   int
+	Dir        string
 }
 
 func IsDarwin() bool { return runtime.GOOS == "darwin" }
@@ -150,11 +164,24 @@ func Steps(env Env, command string) []Step {
 	case "upgrade":
 		s = append(s, Step{Kind: KindEcho, Echo: ""})
 		s = append(s,
-			Step{Kind: KindEcho, Echo: "> Updating BrowserMCP npm dependencies (OpenCode pins are preserved)..."},
+			Step{Kind: KindEcho, Echo: "> Updating OpenCode executable and plugin closure..."},
+			Step{Kind: KindOpenCodeRelease, Args: []string{env.FlakePath}},
+			execStep([]string{"npm", "install", "--prefix", env.FlakePath + "/pkgs/opencode-npm-packages-v2", "--package-lock-only", "--save-exact", "--no-audit", "--no-fund"}, false),
+			Step{Kind: KindEcho, Echo: "> Updating BrowserMCP npm dependencies..."},
 			execStep([]string{"npm", "update", "--prefix", env.FlakePath + "/pkgs/browsermcp-v2", "--package-lock-only", "--no-audit", "--no-fund"}, false),
+			Step{Kind: KindEcho, Echo: "> Updating GitHub release binaries..."},
+			Step{Kind: KindReleasePins, Args: []string{env.FlakePath}},
+			Step{Kind: KindEcho, Echo: "> Pinning Gentle AI and Engram to their latest releases..."},
+			Step{Kind: KindFlakePins, Args: []string{env.FlakePath}},
 			Step{Kind: KindEcho, Echo: "> Updating flake inputs..."},
 			execStep([]string{"nix", "flake", "update", "--flake", env.FlakePath}, false),
-			Step{Kind: KindEcho, Echo: "OpenCode versions remain pinned; use npm install --package-lock-only --save-exact for intentional version changes."})
+			Step{Kind: KindEcho, Echo: "> Updating source packages and vendor hashes..."})
+		for _, u := range sourceUpdates(env.Darwin) {
+			args := append([]string{"nix", "run", "nixpkgs#nix-update", "--", "--flake"}, u.flags...)
+			args = append(args, u.attr)
+			s = append(s, Step{Kind: KindExec, Args: args, Dir: env.FlakePath})
+		}
+		s = append(s, Step{Kind: KindEcho, Echo: "Nothing was built or activated. Validate with 'check' and activate with 'switch'."})
 
 	case "dry":
 		s = append(s, Step{Kind: KindEcho, Echo: ""})
@@ -222,6 +249,24 @@ func Steps(env Env, command string) []Step {
 	return s
 }
 
+type sourceUpdate struct {
+	attr  string
+	flags []string
+}
+
+func sourceUpdates(darwin bool) []sourceUpdate {
+	updates := []sourceUpdate{
+		{attr: "archify-skill"},
+		{attr: "herdr"},
+	}
+	if !darwin {
+		updates = append(updates, sourceUpdate{attr: "openfang"}, sourceUpdate{attr: "mcp-supermercados-cl"})
+	}
+	return append(updates,
+		sourceUpdate{attr: "gentle-ai", flags: []string{"--version=skip"}},
+		sourceUpdate{attr: "engram", flags: []string{"--version=skip"}})
+}
+
 func unsupportedDarwin(command string) []Step {
 	return []Step{
 		{Kind: KindEcho, Echo: "> '" + command + "' not supported on Darwin. Use 'switch' instead."},
@@ -250,12 +295,17 @@ func Run(steps []Step, nomPath string) int {
 			fmt.Println(st.Echo)
 		case KindExit:
 			return st.ExitCode
+		case KindOpenCodeRelease, KindReleasePins, KindFlakePins:
+			if err := pinUpdater(st.Kind)(st.Args[0]); err != nil {
+				fmt.Fprintln(os.Stderr, "ERROR:", err)
+				return 1
+			}
 		case KindExec:
 			rc := 0
 			if st.ThroughNom && nomPath != "" {
 				rc = RunThroughNom(st.Args, nomPath)
 			} else {
-				rc = runDirect(st.Args)
+				rc = runDirect(st.Args, st.Dir)
 			}
 			if rc != 0 {
 				if st.FailLines != nil {
@@ -271,11 +321,22 @@ func Run(steps []Step, nomPath string) int {
 	return 0
 }
 
-func runDirect(argv []string) int {
+func pinUpdater(kind Kind) func(string) error {
+	switch kind {
+	case KindReleasePins:
+		return UpdateReleasePins
+	case KindFlakePins:
+		return UpdateFlakePins
+	}
+	return UpdateOpenCodeRelease
+}
+
+func runDirect(argv []string, dir string) int {
 	if len(argv) == 0 {
 		return 0
 	}
 	cmd := exec.Command(argv[0], argv[1:]...)
+	cmd.Dir = dir
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

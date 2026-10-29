@@ -1,6 +1,6 @@
 # Update, validate, then activate
 
-`nix-upgrade` changes source locks only. `nix-switch` builds and activates the selected configuration without updating its sources. Both aliases still delegate to `nixos-build`; no per-language commands are required.
+`nix-upgrade` changes source versions, hashes and locks only. `nix-switch` builds and activates the selected configuration without updating its sources. Both aliases still delegate to `nixos-build`; no per-language commands are required.
 
 ## Workflow
 
@@ -8,32 +8,44 @@ From the selected repository worktree:
 
 ```console
 nix-upgrade
-git diff -- flake.lock pkgs/browsermcp-v2/package-lock.json
+git diff -- flake.lock pkgs/opencode pkgs/opencode-npm-packages-v2 pkgs/browsermcp-v2
 nixos-build check
 nix-switch
 ```
 
 Run the last command only when ready to activate. `nixos-build build` builds without activation. Existing `boot`, `test`, `dry`, and `safe` retain their behavior; `safe` includes activation.
 
-Upgrade runs native `npm update --package-lock-only` for BrowserMCP, then `nix flake update --flake <selected-worktree>`. It does not build derivations, activate configurations, or push the Darwin system cache. A failed command reports its error and stops subsequent steps. These two updates are not a transaction: if the flake update fails, inspect the already-updated npm lock before retrying.
+Upgrade runs, in order:
+
+1. The OpenCode release update, then `npm install --package-lock-only --save-exact` for OpenCode's closure.
+2. `npm update --package-lock-only` for BrowserMCP.
+3. The GitHub release binary updater (`leaf`, `wstunnel-relay`, `findersearch`).
+4. The Gentle AI and Engram pinning (`gentle-ai-src` and `engram-src` in `flake.nix`, plus the coupled version literals).
+5. `nix flake update --flake <selected-worktree>` for every input.
+6. `nix-update --flake` from the repository root for `archify-skill` and `herdr`, plus `openfang` and `mcp-supermercados-cl` on Linux, and `--version=skip` (vendor hash only) for `gentle-ai` and `engram`.
+
+It never builds derivations (beyond the fixed-output fetches `nix-update` needs to compute hashes), activates configurations, or pushes the Darwin system cache. A failed step reports its error and stops the following steps. The steps are not a transaction: after a failure, inspect `git diff` for already-updated files before retrying.
 
 ## What updates automatically
 
-BrowserMCP's exact direct pins are preserved; eligible transitive dependencies update within their declared ranges. Its compatibility and port-ownership patches remain mandatory build checks. OpenCode's entire coupled npm lock remains frozen during ordinary upgrade. Flake updates change inputs, not literal versions in Nix files or npm manifests; inputs may still select newer software for a later build.
+OpenCode's executable and its coupled npm closure advance together to the registry `latest` release of `@opencode/plugin`. The updater reads the registry (`NPM_CONFIG_REGISTRY` overrides it) and rewrites:
 
-For an intentional, separately approved direct-version change, use npm rather than editing versions or hashes manually:
+- `pkgs/opencode/default.nix`: `version` and each platform tarball `hash`, taken from the registry's integrity for that exact tarball.
+- `pkgs/opencode-npm-packages-v2/package.json`: every `@opencode/*` pin to the release, `effect` and `@ai-sdk/provider` to the versions that release declares, and `@standard-schema/spec` to the version `@opencode/schema` declares. Other pins, such as `zod`, are independent and unchanged.
 
-```console
-npm install --prefix pkgs/browsermcp-v2 --package-lock-only --save-exact @browsermcp/mcp@<approved-version>
-```
+GitHub release binaries use the latest stable (non-prerelease) release from the GitHub API (`GITHUB_API_URL` overrides the base). Unauthenticated calls are limited to 60 per hour, so set `GITHUB_TOKEN` or `GH_TOKEN` (for example `GITHUB_TOKEN=$(gh auth token) nix-upgrade`); the token is sent only to the API host. Nix's own input fetching has the same limit and falls back to cached revisions for inputs it cannot refresh; configure `access-tokens` in `nix.conf` to avoid stale inputs. Every platform hash is recomputed from the downloaded asset, in the representation the file already uses.
 
-For OpenCode, use the same native command with `--prefix pkgs/opencode-npm-packages-v2` and the explicitly approved, compatible package versions together. Do not independently advance its coupled packages, OpenCode itself, or Gentle AI. No `latest`, peer-dependency bypass, or disabled lifecycle scripts is needed for the initial migration.
+Gentle AI and Engram inputs are pinned to the immutable commit of their latest stable release with a version tag (other tags such as Engram's `pi-v*` are skipped), never to a moving branch. The version literals that ship with Gentle AI are rewritten together. Their vendor hashes are recomputed afterwards. A newer release can require a newer Go toolchain or renderer changes than the pinned nixpkgs provides; the build then fails at validation, not at update time.
+
+BrowserMCP's exact direct pins are preserved; eligible transitive dependencies update within their declared ranges. Its compatibility and port-ownership patches remain mandatory build checks. Floating flake inputs move to their latest revision.
+
+Not updated by `nix-upgrade`: the patched quota plugin (it declares an exact peer on `@opencode/plugin` 2.0.16; it is vendored with the host's plugin runtime and its patches must be rebased by hand), `tinkertool` (its upstream is not a GitHub release), `rog-efi-poweroff`, and the deliberate nixpkgs overrides in `overlays/` (`teams-for-linux`, `symbola`, `afdko`, and the Darwin patches). A refreshed `nixpkgs` can retire pinned choices (for example a kernel marked end of life), so run `nixos-build check` and a build before activating; Gentle AI is certified against a specific OpenCode release in `docs/gentle-ai-update.md`.
 
 ## Packaging and validation
 
 Both packages use `package.json` and `package-lock.json` with `buildNpmPackage` and `importNpmLock`. Each tarball's integrity comes from the standard lock: no separate hash manifest or `npmDepsHash` update is necessary. The pinned Nix hook installs offline, then runs `npm rebuild` for lifecycle scripts; it temporarily defers scripts during installation rather than disabling them globally.
 
-The migration preserves all 22 original package versions and tarball integrities. Standard dependency resolution expands OpenCode's lock from 10 curated entries to 285 entries and BrowserMCP's from 12 to 93. These counts include nested and optional/platform entries, not just modules installed on one machine. This expansion was explicitly approved; future lock diffs still require inspection.
+The migration preserves all 22 original package versions and tarball integrities. Standard dependency resolution expands OpenCode's lock from 10 curated entries to 273 entries and BrowserMCP's from 12 to 93. These counts include nested and optional/platform entries, not just modules installed on one machine. This expansion was explicitly approved; future lock diffs still require inspection.
 
 The installed `lib/node_modules` tree remains compatible with the existing Home Manager copy operation. OpenCode retains its dependency-map `package.json` output. BrowserMCP retains its executable wrapper, resource capability adjustments, and protection against killing an unrelated port owner.
 
