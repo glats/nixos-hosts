@@ -71,25 +71,6 @@ let
 
   providers = [
     {
-      name = "work-copilot-anthropic";
-      roles = {
-        gentle-orchestrator = "anthropic/claude-opus-5-5";
-        gentle-ai-explore = "anthropic/claude-sonnet-5-5";
-        gentle-ai-worker = "github-copilot/claude-sonnet-5.5";
-        gentle-ai-verify = "anthropic/claude-sonnet-5-5";
-        jd-judge-a = "anthropic/claude-sonnet-5-5";
-        jd-judge-b = "anthropic/claude-sonnet-5-5";
-        jd-fix-agent = "github-copilot/claude-sonnet-5.5";
-        review-readability = "anthropic/claude-sonnet-5-5";
-        review-refuter = "anthropic/claude-sonnet-5-5";
-        review-reliability = "anthropic/claude-sonnet-5-5";
-        review-resilience = "anthropic/claude-sonnet-5-5";
-        review-risk = "anthropic/claude-sonnet-5-5";
-        review-validator = "anthropic/claude-sonnet-5-5";
-        neutral = "github-copilot/gpt-5.6-luna";
-      };
-    }
-    {
       name = "openai-anthropic-opencode";
       roles = {
         gentle-orchestrator = "openai/gpt-6-astra";
@@ -99,10 +80,10 @@ let
         jd-judge-a = "anthropic/claude-sonnet-5-5";
         jd-judge-b = "anthropic/claude-sonnet-5-5";
         jd-fix-agent = "opencode-go/deepseek-v4-pro";
-        review-readability = "opencode-go/deepseek-v4-pro";
-        review-refuter = "opencode-go/deepseek-v4-pro";
-        review-reliability = "opencode-go/deepseek-v4-pro";
-        review-resilience = "opencode-go/deepseek-v4-pro";
+        review-readability = "openai/gpt-6.1-sol";
+        review-refuter = "openai/gpt-6.1-sol";
+        review-reliability = "openai/gpt-6.1-sol";
+        review-resilience = "openai/gpt-6.1-sol";
         review-risk = "opencode-go/deepseek-v4-pro";
         review-validator = "opencode-go/deepseek-v4-pro";
         neutral = "openai/gpt-6-astra";

@@ -2,7 +2,7 @@
 
 {
   virtualisation.oci-containers.containers.droppy = {
-    image = "ghcr.io/droppyjs/droppy:v1.3.1";
+    image = "droppy-v131-libatomic:1.3.1";
     autoStart = true;
     ports = [ "9002:8989" ];
     volumes = [

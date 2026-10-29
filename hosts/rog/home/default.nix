@@ -14,7 +14,7 @@ baseModules
   ../../../linux/home/webcam.nix
 
   {
-    home.opencode.activeProviderName = "openai-opencode";
+    home.opencode.activeProviderName = "anthropic-opencode";
   }
 
   ({ config, ... }: {
