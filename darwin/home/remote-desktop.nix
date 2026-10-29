@@ -346,7 +346,7 @@ in
       tmp_file="$(/usr/bin/mktemp "$config_dir/.sdl-freerdp.json.XXXXXX")" || exit 1
       if ! (
         umask 077
-        /usr/bin/printf '%s\n' '{"UseLocalMouseScrollDirection":true}' > "$tmp_file"
+        /usr/bin/printf '%s\n' '{"UseLocalMouseScrollDirection":true,"SDL_KeyModMask":["KMOD_LCTRL","KMOD_LALT"]}' > "$tmp_file"
       ); then
         /bin/rm -f "$tmp_file"
         exit 1
@@ -367,7 +367,7 @@ in
       fi
       tmp_file="$(/usr/bin/mktemp "$config_dir/.sdl-freerdp.json.XXXXXX")" || exit 1
       if ! ${pkgs.jq}/bin/jq -e \
-        'if type == "object" then .UseLocalMouseScrollDirection = true else error("JSON root is not an object") end' \
+        'if type == "object" then .UseLocalMouseScrollDirection = true | .SDL_KeyModMask = ["KMOD_LCTRL", "KMOD_LALT"] else error("JSON root is not an object") end' \
         "$config_file" > "$tmp_file"; then
         /bin/rm -f "$tmp_file"
         echo "Refusing to modify invalid or non-object JSON: $config_file" >&2
