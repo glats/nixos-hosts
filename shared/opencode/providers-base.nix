@@ -93,12 +93,12 @@ let
       name = "openai-anthropic-opencode";
       roles = {
         gentle-orchestrator = "openai/gpt-6-astra";
-        gentle-ai-explore = "opencode-go/glm-5.3-flash";
-        gentle-ai-worker = "openai/gpt-6-luna";
-        gentle-ai-verify = "openai/gpt-6.1-sol";
+        gentle-ai-explore = "opencode-go/deepseek-v4-pro";
+        gentle-ai-worker = "opencode-go/deepseek-v4-pro";
+        gentle-ai-verify = "anthropic/claude-sonnet-5-5";
         jd-judge-a = "anthropic/claude-sonnet-5-5";
         jd-judge-b = "anthropic/claude-sonnet-5-5";
-        jd-fix-agent = "opencode-go/glm-5.3-flash";
+        jd-fix-agent = "opencode-go/deepseek-v4-pro";
         review-readability = "opencode-go/deepseek-v4-pro";
         review-refuter = "opencode-go/deepseek-v4-pro";
         review-reliability = "opencode-go/deepseek-v4-pro";
@@ -112,12 +112,12 @@ let
       name = "anthropic-openai-opencode";
       roles = {
         gentle-orchestrator = "anthropic/claude-opus-5-5";
-        gentle-ai-explore = "opencode-go/glm-5.3-flash";
+        gentle-ai-explore = "opencode-go/deepseek-v4-pro";
         gentle-ai-worker = "openai/gpt-6-luna";
         gentle-ai-verify = "openai/gpt-6.1-sol";
-        jd-judge-a = "anthropic/claude-sonnet-5-5";
-        jd-judge-b = "anthropic/claude-sonnet-5-5";
-        jd-fix-agent = "opencode-go/glm-5.3-flash";
+        jd-judge-a = "openai/gpt-6.1-sol";
+        jd-judge-b = "openai/gpt-6.1-sol";
+        jd-fix-agent = "opencode-go/deepseek-v4-pro";
         review-readability = "opencode-go/deepseek-v4-pro";
         review-refuter = "opencode-go/deepseek-v4-pro";
         review-reliability = "opencode-go/deepseek-v4-pro";
@@ -131,12 +131,12 @@ let
       name = "anthropic-opencode";
       roles = {
         gentle-orchestrator = "anthropic/claude-opus-5-5";
-        gentle-ai-explore = "opencode-go/glm-5.3-flash";
-        gentle-ai-worker = "opencode-go/glm-5.3-flash";
+        gentle-ai-explore = "opencode-go/deepseek-v4-pro";
+        gentle-ai-worker = "opencode-go/deepseek-v4-pro";
         gentle-ai-verify = "anthropic/claude-sonnet-5-5";
         jd-judge-a = "anthropic/claude-sonnet-5-5";
         jd-judge-b = "anthropic/claude-sonnet-5-5";
-        jd-fix-agent = "opencode-go/glm-5.3-flash";
+        jd-fix-agent = "opencode-go/deepseek-v4-pro";
         review-readability = "opencode-go/deepseek-v4-pro";
         review-refuter = "opencode-go/deepseek-v4-pro";
         review-reliability = "opencode-go/deepseek-v4-pro";
@@ -146,31 +146,16 @@ let
         neutral = "anthropic/claude-opus-5-5";
       };
     }
-    # Combination profiles added 2026-10-18 (model-fit pass, composed only
-    # from model IDs already present in this file; statuses re-checked
-    # 2026-10-18 against opencode.ai/data and opencode issue trackers: all
-    # historical OpenCode Go truncation issues are closed, no live probes).
-    # Rule: the first title provider owns gentle-orchestrator and neutral
-    # (anthropic = claude-opus-5-5, openai = gpt-6-astra, opencode =
-    # glm-5.3; both gentle-orchestrator and neutral re-fit 2026-10-20 to
-    # opencode-go/glm-5.3 in default variant, no high/max forced, after
-    # fresh catalog+issues+usage evidence). Other roles take the
-    # highest-priority
-    # provider present in the title: explore opencode-go > anthropic >
-    # openai; worker openai > opencode-go > anthropic; verify openai >
-    # anthropic > opencode-go; jd-judges anthropic > openai; jd-fix
-    # opencode-go > openai; reviews opencode-go > anthropic > openai.
-    # Kimi K3 intentionally excluded (2026-10-18 decision).
     {
       name = "anthropic-opencode-openai";
       roles = {
         gentle-orchestrator = "anthropic/claude-opus-5-5";
-        gentle-ai-explore = "opencode-go/glm-5.3-flash";
+        gentle-ai-explore = "opencode-go/deepseek-v4-pro";
         gentle-ai-worker = "openai/gpt-6-luna";
         gentle-ai-verify = "openai/gpt-6.1-sol";
-        jd-judge-a = "anthropic/claude-sonnet-5-5";
-        jd-judge-b = "anthropic/claude-sonnet-5-5";
-        jd-fix-agent = "opencode-go/glm-5.3-flash";
+        jd-judge-a = "openai/gpt-6.1-sol";
+        jd-judge-b = "openai/gpt-6.1-sol";
+        jd-fix-agent = "opencode-go/deepseek-v4-pro";
         review-readability = "opencode-go/deepseek-v4-pro";
         review-refuter = "opencode-go/deepseek-v4-pro";
         review-reliability = "opencode-go/deepseek-v4-pro";
@@ -184,12 +169,12 @@ let
       name = "openai-opencode-anthropic";
       roles = {
         gentle-orchestrator = "openai/gpt-6-astra";
-        gentle-ai-explore = "opencode-go/glm-5.3-flash";
-        gentle-ai-worker = "openai/gpt-6-luna";
-        gentle-ai-verify = "openai/gpt-6.1-sol";
+        gentle-ai-explore = "opencode-go/deepseek-v4-pro";
+        gentle-ai-worker = "opencode-go/deepseek-v4-pro";
+        gentle-ai-verify = "anthropic/claude-sonnet-5-5";
         jd-judge-a = "anthropic/claude-sonnet-5-5";
         jd-judge-b = "anthropic/claude-sonnet-5-5";
-        jd-fix-agent = "opencode-go/glm-5.3-flash";
+        jd-fix-agent = "opencode-go/deepseek-v4-pro";
         review-readability = "opencode-go/deepseek-v4-pro";
         review-refuter = "opencode-go/deepseek-v4-pro";
         review-reliability = "opencode-go/deepseek-v4-pro";
@@ -203,18 +188,18 @@ let
       name = "opencode-anthropic-openai";
       roles = {
         gentle-orchestrator = "opencode-go/glm-5.3";
-        gentle-ai-explore = "opencode-go/glm-5.3-flash";
+        gentle-ai-explore = "anthropic/claude-sonnet-5-5";
         gentle-ai-worker = "openai/gpt-6-luna";
         gentle-ai-verify = "openai/gpt-6.1-sol";
         jd-judge-a = "anthropic/claude-sonnet-5-5";
         jd-judge-b = "anthropic/claude-sonnet-5-5";
-        jd-fix-agent = "opencode-go/glm-5.3-flash";
-        review-readability = "opencode-go/deepseek-v4-pro";
-        review-refuter = "opencode-go/deepseek-v4-pro";
-        review-reliability = "opencode-go/deepseek-v4-pro";
-        review-resilience = "opencode-go/deepseek-v4-pro";
-        review-risk = "opencode-go/deepseek-v4-pro";
-        review-validator = "opencode-go/deepseek-v4-pro";
+        jd-fix-agent = "openai/gpt-5.6-luna";
+        review-readability = "anthropic/claude-sonnet-5-5";
+        review-refuter = "anthropic/claude-sonnet-5-5";
+        review-reliability = "anthropic/claude-sonnet-5-5";
+        review-resilience = "anthropic/claude-sonnet-5-5";
+        review-risk = "anthropic/claude-sonnet-5-5";
+        review-validator = "anthropic/claude-sonnet-5-5";
         neutral = "opencode-go/glm-5.3";
       };
     }
@@ -222,18 +207,18 @@ let
       name = "opencode-openai-anthropic";
       roles = {
         gentle-orchestrator = "opencode-go/glm-5.3";
-        gentle-ai-explore = "opencode-go/glm-5.3-flash";
+        gentle-ai-explore = "anthropic/claude-sonnet-5-5";
         gentle-ai-worker = "openai/gpt-6-luna";
         gentle-ai-verify = "openai/gpt-6.1-sol";
         jd-judge-a = "anthropic/claude-sonnet-5-5";
         jd-judge-b = "anthropic/claude-sonnet-5-5";
-        jd-fix-agent = "opencode-go/glm-5.3-flash";
-        review-readability = "opencode-go/deepseek-v4-pro";
-        review-refuter = "opencode-go/deepseek-v4-pro";
-        review-reliability = "opencode-go/deepseek-v4-pro";
-        review-resilience = "opencode-go/deepseek-v4-pro";
-        review-risk = "opencode-go/deepseek-v4-pro";
-        review-validator = "opencode-go/deepseek-v4-pro";
+        jd-fix-agent = "openai/gpt-5.6-luna";
+        review-readability = "anthropic/claude-sonnet-5-5";
+        review-refuter = "anthropic/claude-sonnet-5-5";
+        review-reliability = "anthropic/claude-sonnet-5-5";
+        review-resilience = "anthropic/claude-sonnet-5-5";
+        review-risk = "anthropic/claude-sonnet-5-5";
+        review-validator = "anthropic/claude-sonnet-5-5";
         neutral = "opencode-go/glm-5.3";
       };
     }
@@ -279,12 +264,12 @@ let
       name = "openai-opencode";
       roles = {
         gentle-orchestrator = "openai/gpt-6-astra";
-        gentle-ai-explore = "opencode-go/glm-5.3-flash";
+        gentle-ai-explore = "opencode-go/deepseek-v4-pro";
         gentle-ai-worker = "openai/gpt-6-luna";
         gentle-ai-verify = "openai/gpt-6.1-sol";
         jd-judge-a = "openai/gpt-6.1-sol";
         jd-judge-b = "openai/gpt-6.1-sol";
-        jd-fix-agent = "opencode-go/glm-5.3-flash";
+        jd-fix-agent = "opencode-go/deepseek-v4-pro";
         review-readability = "opencode-go/deepseek-v4-pro";
         review-refuter = "opencode-go/deepseek-v4-pro";
         review-reliability = "opencode-go/deepseek-v4-pro";
@@ -298,12 +283,12 @@ let
       name = "opencode-anthropic";
       roles = {
         gentle-orchestrator = "opencode-go/glm-5.3";
-        gentle-ai-explore = "opencode-go/glm-5.3-flash";
-        gentle-ai-worker = "opencode-go/glm-5.3-flash";
+        gentle-ai-explore = "opencode-go/deepseek-v4-pro";
+        gentle-ai-worker = "opencode-go/deepseek-v4-pro";
         gentle-ai-verify = "anthropic/claude-sonnet-5-5";
         jd-judge-a = "anthropic/claude-sonnet-5-5";
         jd-judge-b = "anthropic/claude-sonnet-5-5";
-        jd-fix-agent = "opencode-go/glm-5.3-flash";
+        jd-fix-agent = "opencode-go/deepseek-v4-pro";
         review-readability = "opencode-go/deepseek-v4-pro";
         review-refuter = "opencode-go/deepseek-v4-pro";
         review-reliability = "opencode-go/deepseek-v4-pro";
@@ -317,12 +302,12 @@ let
       name = "opencode-openai";
       roles = {
         gentle-orchestrator = "opencode-go/glm-5.3";
-        gentle-ai-explore = "opencode-go/glm-5.3-flash";
+        gentle-ai-explore = "opencode-go/deepseek-v4-pro";
         gentle-ai-worker = "openai/gpt-6-luna";
         gentle-ai-verify = "openai/gpt-6.1-sol";
         jd-judge-a = "openai/gpt-6.1-sol";
         jd-judge-b = "openai/gpt-6.1-sol";
-        jd-fix-agent = "opencode-go/glm-5.3-flash";
+        jd-fix-agent = "opencode-go/deepseek-v4-pro";
         review-readability = "opencode-go/deepseek-v4-pro";
         review-refuter = "opencode-go/deepseek-v4-pro";
         review-reliability = "opencode-go/deepseek-v4-pro";
@@ -550,7 +535,7 @@ let
         gentle-ai-verify = "nvidia/nvidia/nemotron-3-ultra-550b-a55b";
         jd-judge-a = "nvidia/nemotron-3-ultra-550b-a55b";
         jd-judge-b = "nvidia/nemotron-3-ultra-550b-a55b";
-        jd-fix-agent = "opencode-go/minimax-m3";
+        jd-fix-agent = "opencode-go/minimax-m3.1-flash";
         review-readability = "nvidia/nemotron-3-ultra-550b-a55b";
         review-refuter = "nvidia/nemotron-3-ultra-550b-a55b";
         review-reliability = "nvidia/nemotron-3-ultra-550b-a55b";
@@ -585,7 +570,7 @@ let
         gentle-orchestrator = "opencode-go/deepseek-v4-pro";
         gentle-ai-explore = "opencode-go/deepseek-v4-pro";
         gentle-ai-worker = "opencode-go/deepseek-v4-pro";
-        gentle-ai-verify = "opencode-go/glm-5.3";
+        gentle-ai-verify = "opencode-go/deepseek-v4-pro";
         neutral = "opencode-go/deepseek-v4-pro";
       };
     }
@@ -594,7 +579,7 @@ let
       roles = {
         gentle-orchestrator = "opencode-go/deepseek-v4-pro";
         gentle-ai-explore = "opencode-go/deepseek-v4-pro";
-        gentle-ai-worker = "opencode-go/minimax-m3";
+        gentle-ai-worker = "opencode-go/minimax-m3.1-flash";
         gentle-ai-verify = "opencode-go/deepseek-v4-pro";
         neutral = "opencode-go/deepseek-v4-flash";
       };
@@ -602,9 +587,9 @@ let
     {
       name = "opencode-go-light";
       roles = {
-        gentle-orchestrator = "opencode-go/deepseek-v4-flash";
+        gentle-orchestrator = "opencode-go/deepseek-v4-pro";
         gentle-ai-explore = "opencode-go/deepseek-v4-pro";
-        gentle-ai-worker = "opencode-go/deepseek-v4-flash";
+        gentle-ai-worker = "opencode-go/minimax-m3.1-flash";
         gentle-ai-verify = "opencode-go/deepseek-v4-pro";
         neutral = "opencode-go/deepseek-v4-flash";
       };

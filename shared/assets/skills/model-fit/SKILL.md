@@ -9,7 +9,7 @@ description: >
   providers base, check models, model audit, actualiza modelos, moldear listas,
   swap model, routing fit.
 metadata:
-  version: "4.3"
+  version: "4.4"
 ---
 
 ## Activation Contract
@@ -98,10 +98,21 @@ to a model with an OPEN issue showing any of:
   API vs Chat Completions / Messages) — verify the route serves the model's
   native transport before assigning.
 
-Historical evidence to learn from (verify each fresh — some may be fixed):
-muse-spark-1.2-contributor-free (no finish_reason, #43882), silent truncation
-(#44385), glm-5.1 "gives up too quickly", minimax-m2.7 TUI crash on concurrent
-tools (#19463), gpt-oss-120b stops mid-reasoning (#27210).
+Historical evidence (verify each fresh — closed ≠ fixed; v1-triage and
+60-day-stale bots close issues without published fixes):
+muse-spark-1.2-contributor-free (no finish_reason, #43882, resolved as the
+`-free` lane variant), silent truncation (#44385), glm-5.1 "gives up too
+quickly", minimax-m2.7 TUI crash on concurrent tools (#19463), gpt-oss-120b
+stops mid-reasoning (#27210), deepseek-v4-flash cache-billing spike (#42935).
+
+Fresh Go-gateway status verified 2026-10-24 (expire these when re-auditing):
+grok-4.6/4.7 ✅ fixed 2026-10-06 (#52971 re-test); kimi-k2.6 🔴 fails at client
+load — "Model unavailable" before any HTTP request, never reaches the gateway
+(#52971 sweep); minimax-m3 ⚠ session-history tool-call 400 (#32608, bot-closed,
+PR #32609 merge unconfirmed, fresh-session workaround); deepseek-v4.1-flash ⚠
+DSML tool-call-as-text in long sessions (#50206, opened 2026-10-24);
+deepseek-v4-flash and deepseek-v4-flash-vision-exp, space-bunny-free, and
+longcat-2.5-preview-free retired from the live gateway after 2026-10-03.
 
 ### Gate 2: Provider stability
 
@@ -116,8 +127,36 @@ opencode-ai/opencode issues, provider docs):
 
 Cost-instability signals also mark ⚠️: cache-behavior cost spikes (e.g.
 deepseek-v4-flash cache drop ≈27x, #42935), usage multipliers not shown in
-sticker price (e.g. gpt-5.6-luna 2x on Go), 403-for-some-accounts patterns
-(#40343). A provider that silently burns quota is not stable.
+sticker price (e.g. gpt-5.6-luna 2x on Go over 272K), 403-for-some-accounts
+patterns (#40343). A provider that silently burns quota is not stable.
+
+### Go gateway verification protocol
+
+For the `opencode-go` provider specifically, always verify against the two
+sources the catalog drifts between:
+
+- **Live ground truth**: `GET https://opencode.ai/zen/go/v1/models` — the only
+  list the runtime actually serves. The docs model list, models.dev, and the
+  Console catalog each drift from it independently: `deepseek-v4-flash`
+  survived in docs/lists while the gateway had already dropped it; `grok-4.6`,
+  `omen-alpha`, `kimi-k2.6`, `minimax-m2.5/m2.7`, `qwen3.6-plus`,
+  `qwen3.7-max` appear live without a published price.
+- **Per-model endpoint lanes**: `openai /chat/completions`,
+  `openai /responses` (grok, gpt-luna, muse-spark),
+  `anthropic /messages` (claude-haiku, minimax-m3, qwen3.8/3.7, haiku) plus a
+  Google lane. A wrong-route probe returns 500/503/"unavailable" that LOOKS
+  like a broken model; #47463 maintainer-confirmed such reports were route
+  errors. Classify a suspected outage as valid only if the probe used the
+  documented lane. The built-in provider definition selects the lane itself;
+  custom providers that hardcode one `baseURL` (like the `nvidia` block)
+  serve exactly one lane.
+- **Console-side model conditions**: Settings › Privacy blocks paid endpoints
+  that train on request data (muse-spark contributors) and blocks
+  China-hosted regions by default (DeepSeek needs Global enablement only
+  from China). These 403-class failures live outside the repo and cannot be
+  fixed in Nix.
+- **Session header**: `x-opencode-session` is sent by OpenCode itself;
+  missing-session 400s point at third-party harnesses, not the gateway.
 
 ## ODD Role Fit — Research Framework
 
@@ -138,7 +177,9 @@ these 14 role keys, with no remap layer: `gentle-orchestrator`,
 `review-reliability`, `review-resilience`, `review-risk`, `review-validator`,
 `neutral`. Editing a profile means editing those keys directly. Preserve every
 unrelated fit and last-wins user override. Role names never grant delegation
-or delivery permission.
+or delivery permission. The `neutral` slot is a title-provider filler that is
+never spawned as a subagent; its model choice is inert and does not consume
+evidence budget or trigger swaps.
 
 ### Step B: Metrics per role
 
@@ -191,8 +232,9 @@ thrashing signals (a cheap tier that burns 2-3x tokens to fail is not cheap).
     apply; no live model calls are required or requested.
 3. Swap one authorized role assignment; report dated evidence explaining what
    failed and why the replacement. Add code comments only when requested.
-4. Update the profile header comment if the strategy line changed.
-5. Validate as in mode `full`; report the one-line delta.
+   The repo ships without strategy comments by user decision (2026-10-23);
+   do not reintroduce them.
+4. Validate as in mode `full`; report the one-line delta.
 
 ## Feedback Loop
 

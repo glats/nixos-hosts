@@ -17,7 +17,7 @@ func TestPushFailurePolicy(t *testing.T) {
 					var warnings []string
 					maybePush(nixbuild.Env{Darwin: darwin, Hostname: "macm5"}, command, code,
 						func(string) string { return opt }, r, func(w string) { warnings = append(warnings, w) })
-					active := darwin && code == 0 && opt != "0" && (command == "switch" || command == "upgrade" || command == "safe")
+					active := darwin && code == 0 && opt != "0" && (command == "switch" || command == "safe")
 					if !active {
 						if len(r.argvs) != 0 || len(warnings) != 0 {
 							t.Fatalf("unexpected push: %s %v %d %q: %v %v", command, darwin, code, opt, r.argvs, warnings)

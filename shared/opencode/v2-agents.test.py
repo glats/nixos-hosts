@@ -78,16 +78,28 @@ for target, root in (("linux", "/home/glats/.config/opencode"),
 after = {p["name"]:p for p in result["afterProfiles"]}
 for name, profile in after.items():
     assert "phases" not in profile and not any(k.startswith("sdd-") for k in profile["roles"]), name
+    assert "opencode-go/glm-5.3-flash" not in profile["roles"].values(), name
+replacement_profiles = {
+    "openai-anthropic-opencode", "anthropic-openai-opencode", "anthropic-opencode",
+    "anthropic-opencode-openai", "openai-opencode-anthropic", "openai-opencode",
+    "opencode-anthropic", "opencode-openai",
+}
+for name in replacement_profiles:
+    for role in ("gentle-ai-explore", "jd-fix-agent"):
+        assert after[name]["roles"][role] == "opencode-go/deepseek-v4-pro", (name, role)
+for name in ("openai-anthropic-opencode", "anthropic-opencode",
+             "openai-opencode-anthropic", "opencode-anthropic"):
+    assert after[name]["roles"]["gentle-ai-worker"] == "opencode-go/deepseek-v4-pro", name
 approved_addition = "anthropic-openai-opencode"
 approved = after[approved_addition]
 assert approved["roles"] == {
     "gentle-orchestrator": "anthropic/claude-opus-5-5",
-    "gentle-ai-explore": "opencode-go/glm-5.3-flash",
+    "gentle-ai-explore": "opencode-go/deepseek-v4-pro",
     "gentle-ai-worker": "openai/gpt-6-luna",
     "gentle-ai-verify": "openai/gpt-6.1-sol",
-    "jd-judge-a": "anthropic/claude-sonnet-5-5",
-    "jd-judge-b": "anthropic/claude-sonnet-5-5",
-    "jd-fix-agent": "opencode-go/glm-5.3-flash",
+    "jd-judge-a": "openai/gpt-6.1-sol",
+    "jd-judge-b": "openai/gpt-6.1-sol",
+    "jd-fix-agent": "opencode-go/deepseek-v4-pro",
     "review-readability": "opencode-go/deepseek-v4-pro",
     "review-refuter": "opencode-go/deepseek-v4-pro",
     "review-reliability": "opencode-go/deepseek-v4-pro",

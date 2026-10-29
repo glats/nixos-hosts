@@ -14,6 +14,10 @@ baseModules
   ../../../linux/home/webcam.nix
 
   {
-    home.opencode.activeProviderName = "anthropic-opencode";
+    home.opencode.activeProviderName = "openai-opencode";
   }
+
+  ({ config, ... }: {
+    home.file."Guacamole".source = config.lib.file.mkOutOfStoreSymlink "/srv/glats/guacamole/drive";
+  })
 ]

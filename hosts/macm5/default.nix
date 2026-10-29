@@ -69,7 +69,7 @@ in
         ../../darwin/home
       ];
       home.stateVersion = "25.05";
-      home.opencode.activeProviderName = "anthropic-copilot";
+      home.opencode.activeProviderName = "github-copilot-medium";
       home.shell-gpt.model = "nvidia/nemotron-3.5-super-vl-120b-a12b";
     };
     extraSpecialArgs = {

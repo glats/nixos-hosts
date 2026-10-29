@@ -1,40 +1,30 @@
 {
   lib,
-  stdenvNoCC,
-  fetchurl,
+  buildNpmPackage,
+  importNpmLock,
   makeWrapper,
   nodejs,
 }:
 
-let
-  versions = lib.importJSON ./versions.json;
-  hashes = lib.importJSON ./node-modules.json;
-  tarballName = name: if lib.hasPrefix "@" name then lib.last (lib.splitString "/" name) else name;
-  sources = lib.genAttrs (lib.attrNames versions) (
-    name:
-    fetchurl {
-      url = "https://registry.npmjs.org/${
-        lib.replaceStrings [ "/" ] [ "%2F" ] name
-      }/-/${tarballName name}-${versions.${name}}.tgz";
-      hash = hashes.${name};
-    }
-  );
-  copyCommands = lib.concatStrings (
-    lib.mapAttrsToList (name: src: ''
-      mkdir -p "$out/lib/node_modules/${name}"
-      tar -xzf ${src} -C "$out/lib/node_modules/${name}" --strip-components=1
-    '') sources
-  );
-in
-stdenvNoCC.mkDerivation {
+buildNpmPackage {
   pname = "browsermcp-v2";
-  version = versions."@browsermcp/mcp";
-  dontUnpack = true;
-  dontConfigure = true;
-
-  buildPhase = ''
-    mkdir -p "$out/lib/node_modules"
-    ${copyCommands}
+  version = (lib.importJSON ./package.json).dependencies."@browsermcp/mcp";
+  src = ./.;
+  npmDeps = importNpmLock { npmRoot = ./.; };
+  npmConfigHook = importNpmLock.npmConfigHook;
+  dontNpmBuild = true;
+  nativeBuildInputs = [ makeWrapper ];
+  installPhase = ''
+    runHook preInstall
+    mkdir -p "$out/lib"
+    cp -a node_modules "$out/lib/node_modules"
+    mkdir -p "$out/bin"
+    makeWrapper ${nodejs}/bin/node "$out/bin/mcp-server-browsermcp" \
+      --add-flags "$out/lib/node_modules/@browsermcp/mcp/dist/index.js" \
+      --set NODE_PATH "$out/lib/node_modules"
+    runHook postInstall
+  '';
+  postInstall = ''
     # BrowserMCP 0.1.3 keeps a resources/list handler, but OpenCode V2 must not
     # negotiate the incomplete resource-template capability. The bundled SDK
     # otherwise rejects registering that retained handler after the capability
@@ -48,14 +38,13 @@ stdenvNoCC.mkDerivation {
     # port to fail normally instead of killing an unrelated process.
     substituteInPlace "$out/lib/node_modules/@browsermcp/mcp/dist/index.js" \
       --replace-fail $'  killProcessOnPort(port);\n' ""
-    mkdir -p "$out/bin"
-    makeWrapper ${nodejs}/bin/node "$out/bin/mcp-server-browsermcp" \
-      --add-flags "$out/lib/node_modules/@browsermcp/mcp/dist/index.js" \
-      --set NODE_PATH "$out/lib/node_modules"
   '';
-
-  nativeBuildInputs = [ makeWrapper ];
-  installPhase = "true";
+  doInstallCheck = true;
+  installCheckPhase = ''
+    runHook preInstallCheck
+    node check.mjs "$out"
+    runHook postInstallCheck
+  '';
   meta = with lib; {
     description = "Pinned BrowserMCP 0.1.3 with compatible capabilities and safe port ownership";
     platforms = platforms.all;

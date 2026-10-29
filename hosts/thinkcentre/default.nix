@@ -45,6 +45,7 @@
     ../../linux/system/features/conky/options.nix
 
     ../../linux/system/services/maquilinux-mounts.nix
+    ../../linux/system/services/printing/brother.nix
 
     ../../linux/system/services/nix/nix-cache.nix
 

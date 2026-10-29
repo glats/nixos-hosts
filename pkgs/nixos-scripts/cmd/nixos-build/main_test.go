@@ -40,11 +40,10 @@ func TestMaybePush(t *testing.T) {
 			want:    [][]string{pushArgv},
 		},
 		{
-			name:    "darwin upgrade push",
+			name:    "darwin upgrade does not push",
 			env:     nixbuild.Env{Darwin: true},
 			command: "upgrade",
 			code:    0,
-			want:    [][]string{pushArgv},
 		},
 		{
 			name:    "darwin safe push",
@@ -141,5 +140,14 @@ func TestLinuxCheckStepsUnchanged(t *testing.T) {
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("linux check steps = %+v, want %+v", got, want)
+	}
+}
+
+func TestUpgradeIsNotApplyingCommand(t *testing.T) {
+	if applyingCommand("upgrade") {
+		t.Fatal("upgrade must not trigger activation side effects")
+	}
+	if !applyingCommand("switch") {
+		t.Fatal("switch must remain an applying command")
 	}
 }

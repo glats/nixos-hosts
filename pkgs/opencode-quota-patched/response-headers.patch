@@ -1,0 +1,67 @@
+diff --git a/dist/plugin.js b/dist/plugin.js
+--- a/dist/plugin.js
++++ b/dist/plugin.js
+@@ -4,6 +4,7 @@
+  * through OpenCode's integration API.
+  */
+ import { Plugin } from "@opencode/plugin";
++import { createAnthropicHeaderQuota } from "./lib/anthropic-response-headers.mjs";
+ import { resolveOpenCodeLocationRoots } from "./lib/config-file-utils.js";
+ import { sanitizeDisplayText } from "./lib/display-sanitize.js";
+ import { bindCredentialSource, createIntegrationCredentialSource, notifyCredentialsChanged, scrubCredentialErrorText, } from "./lib/opencode-auth.js";
+@@ -59,7 +60,9 @@
+         // The quota collector accepts a small V1-shaped configuration client. V2
+         // does not expose a mutable global config to plugins; quota settings are
+         // read from the plugin's own config file by the collector.
++        const anthropicHeaderQuota = createAnthropicHeaderQuota(ctx.integration, Date.now, ctx.storage, `anthropic-header-quota:v1:${ctx.location.directory}`);
+         const client = {
++            anthropicHeaderQuota,
+             config: {
+                 get: async () => ({ data: {} }),
+                 providers: async () => ({
+@@ -198,5 +201,7 @@
+             }
+         });
++        await ctx.session.hook("http.request", (event) => anthropicHeaderQuota.start(event), { providerID: "anthropic" });
++        await ctx.session.hook("http.response", (event) => anthropicHeaderQuota.observe(event), { providerID: "anthropic" });
+         // Keep quota reports out of every model request built from session history:
+         // normal turns, compaction summaries, and generate requests.
+         for (const hook of ["context", "compaction", "generate"]) {
+@@ -237,6 +242,7 @@
+         void (async () => {
+             for await (const event of ctx.event.subscribe({ signal: credentialEvents.signal })) {
+                 if (event.type === "credential.updated" || event.type === "credential.switched") {
++                    await anthropicHeaderQuota.credentialsChanged(event);
+                     notifyCredentialsChanged();
+                 }
+             }
+@@ -247,5 +253,6 @@
+         });
+-        return () => {
++        return async () => {
+             credentialEvents.abort();
++            await anthropicHeaderQuota.stop();
+             unbindCredentialSource();
+         };
+diff --git a/dist/providers/anthropic.js b/dist/providers/anthropic.js
+--- a/dist/providers/anthropic.js
++++ b/dist/providers/anthropic.js
+@@ -23,6 +23,8 @@
+         if (!providerAvailable) {
+             return false;
+         }
++        if (await ctx.client.anthropicHeaderQuota?.read())
++            return true;
+         return await hasAnthropicCredentialsConfigured({
+             binaryPath: ctx.config?.anthropicBinaryPath,
+         });
+@@ -31,6 +33,9 @@
+         return model.toLowerCase().startsWith("anthropic/");
+     },
+     async fetch(ctx) {
++        const headers = await ctx.client.anthropicHeaderQuota?.read();
++        if (headers)
++            return withStatusDetails(attemptedResult(headers.entries), headers.statusDetails);
+         const options = {
+             binaryPath: ctx.config?.anthropicBinaryPath,
+             requestTimeoutMs: ctx.config?.requestTimeoutMs,

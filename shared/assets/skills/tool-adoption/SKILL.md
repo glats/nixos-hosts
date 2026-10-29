@@ -1,75 +1,84 @@
 ---
 name: tool-adoption
-description: "Trigger: new tool, add tool, evaluate tool, new CLI, new MCP, new skill, does it fit, integrar herramienta. Research and classify external tools before adopting them."
+description: "Trigger: new tool, CLI, MCP, worth it, tool exploration, try tools, coexist, replace, consolidate. Evaluate fit and learning without a replacement bias."
 license: MIT
 metadata:
   author: "glats"
-  version: "1.2"
+  version: "1.4"
 ---
 
 ## Activation Contract
 
-Load when the user brings an external tool, repository, CLI, MCP, skill, app,
-viewer, or service and asks whether it fits this harness. Explore before
-proposing or installing anything.
+Use for external tools, repositories, CLIs, MCPs, skills, apps, viewers, or
+services: evaluating adoption, exploring capabilities, or coexisting with
+current tools. Explore before proposing or installing.
 
 ## Hard Rules
 
-- Research before reading repository code: use Context7, GitHub, Exa, and the
-  `nixos` MCP (`nix_versions` on NixHub.io) where package availability matters.
-  Record unavailable sources as unknown; never infer APIs, security, or
-  platform support.
-- Do not run upstream `init`, installer, `curl | sh`, or `npx @latest` commands
-  in this repository during evaluation. Do not copy generated agent instructions
-  without reviewing their behavior and ownership model.
-- Check license, pinning, update/telemetry behavior, network listeners, local
-  state, filesystem reach, secret exposure, open security issues, and support
-  for Linux plus arm64-darwin.
-- Keep agent skills, MCPs, user packages, background services, and operational
-  helpers as distinct integration classes. Operational helpers remain Go only.
+- Follow the user's goal: replace, consolidate, add capability, learn, or
+  coexist. Ask only when an unresolved choice changes the next safe step.
+- Name the baseline and what stays unchanged. Mark unmeasured costs unknown;
+  judge new capabilities against the goal, not only today's workflow.
+- Value learning and user-accepted parallel maintenance. Retiring assets is a
+  benefit, not a prerequisite; novelty alone is not proof. `keep` and `reject`
+  remain successful outcomes.
+- Distinguish isolated or complementary stacks from overlapping tools sharing
+  state or authority. Name ownership, recurring costs, permissions, and exit;
+  do not veto coexistence solely because it adds maintenance.
+- Research before repository code: Context7, GitHub, Exa, and `nix_versions`
+  from the nixos MCP. Missing evidence is unknown, not inferred support or safety.
+- Keep initial evaluation read-only: no upstream `init`, installers,
+  `curl | sh`, or `npx @latest`. Review generated instructions before copying.
+  Require explicit trial or implementation approval; activation stays separate.
 
 ## Decision Gates
 
 | Finding | Decision |
 | --- | --- |
-| Fits an existing asset, MCP, or package path with acceptable risks | Propose a narrow, pinned integration. |
-| Needs a different lifecycle or has an independent risk profile | Split into separate changes. |
-| Has unresolved security, portability, or ownership blockers | Defer with concrete re-entry conditions. |
-| Duplicates existing harness capability without a clear human benefit | Do not adopt. |
+| Replacement goal; evidence beats baseline and cost is accepted | `replace`, narrowly, reversibly, and pinned. |
+| Consolidation goal; retires multiple assets without losing required capability | `consolidate`; report savings. |
+| New capability or intentional coexistence serves the goal | Propose `hybrid`; name each role, isolation or shared boundary, owner, cost, and exit. |
+| User wants exploration, or value/composition is unmeasured | Propose an isolated trial, even with documentation or overlapping features; do not demand proven superiority first. |
+| Evidence meets only the learning goal, or added cost has no value toward the goal | `keep` with findings, or `reject` with reasons; no adoption required. |
+| Security, target-platform, or ownership blocker | `defer` the affected scope; offer a narrower trial only if it avoids the blocker. |
+| Independent lifecycle or risk profile | Separate change, not automatic rejection. |
 
 ## Execution Steps
 
-1. Identify the canonical upstream repository, release, license, and install
-   surface; distinguish marketing claims from source behavior.
-2. Map it to the current harness: registered skills (`.atl/skill-registry.md`,
-   sources under `shared/assets/skills/`), MCP config in
-   `shared/opencode/mcps*.nix`, Home Manager packages, Go helpers under
-   `pkgs/nixos-scripts/`, and multi-host deployment to rog, thinkcentre,
-   t14, and macm5.
-3. Inspect runtime boundaries: processes, ports, browser or GUI needs, network
-   calls, telemetry, update checks, emitted artifacts, and read/write scope.
-4. Delegate one read-only explorer when mapping exceeds a bounded read batch;
-   otherwise explore inline. Compare package-only, managed integration, and
-   defer options; include the host evaluation command and rollback.
-5. Propose from read-only evidence; require explicit user approval before
-   implementation. Implementation approval does not authorize activation.
-6. Keep skill sources in `shared/assets/skills/`; never hand-edit installed
-   copies, because `ai-assets-reconcile` refuses modified collisions.
-   Deployment requires separately authorized activation through the target's
-   existing NixOS, standalone Home Manager, or nix-darwin workflow. Do not
-   assume the Linux `nixos-build test` command applies to every host.
+1. Establish intent and canonical upstream, release, license, and install
+   surface. Separate marketing, source evidence, and runtime observations.
+2. Inspect pinning, updates, telemetry, processes, listeners, GUI needs, network,
+   local state, filesystem access, secrets, and open security issues.
+3. Map distinct integration classes: skills, MCPs, Home Manager packages,
+   services, and Go-only helpers under `pkgs/nixos-scripts/`. Check target hosts
+   first; report Linux and arm64-darwin coverage without requiring every host
+   for a deliberately host-scoped pilot.
+4. Compare workflow, capability, learning, maintenance, and exit costs. State
+   where the baseline wins. Use `references/isolated-trial.md` for approved
+   experiments; findings never authorize adoption.
+5. Delegate a read-only explorer only beyond the bounded mapping budget.
+   Compare package-only, isolated pilot, managed integration, and no change
+   proportionately; include target evaluation and rollback when proposing changes.
+6. Edit skill sources only in `shared/assets/skills/`, never installed copies:
+   `ai-assets-reconcile` refuses modified collisions. Use each target's separately
+   authorized activation workflow; Linux `nixos-build test` is not universal.
 
 ## Output Contract
 
-Return the tool's canonical source and a concise verdict: **adopt**, **defer**,
-or **reject**. State the integration class, affected paths, evidence-backed
-risks, platform coverage, and whether it belongs in a separate change.
+Return the user's goal, canonical source, baseline, evidence and unknowns,
+and one provisional or supported verdict: `replace`, `consolidate`, `hybrid`,
+`keep`, `defer`, or `reject`. Include benefits, costs, boundaries, integration
+class, affected paths/hosts, and the smallest next step with required approval.
+Give re-entry conditions for baseline-winning `keep` or blocked `defer` decisions.
+A trial is an instrument, not adoption; name its learning question and exit.
 
 ## References
 
-Paths are relative to the repository root.
+Paths are relative to the repository root unless noted.
 
 - `AGENTS.md` — repository architecture, Go-only policy, and Nix verification.
-- `docs/rtk-pilot.md` — example of runtime-output and local-state risk analysis.
-- `docs/browser-mcp-setup.md` — example of an MCP/browser boundary.
-- `shared/opencode/mcps.nix` — current MCP inventory source.
+- `docs/rtk-pilot.md` — runtime-output and local-state risk analysis.
+- `docs/browser-mcp-setup.md` — MCP and browser boundary example.
+- `shared/ai-mcps.nix` — shared MCP inventory source.
+- `references/isolated-trial.md` — trial boundaries, probes, and examples;
+  relative to this skill directory.

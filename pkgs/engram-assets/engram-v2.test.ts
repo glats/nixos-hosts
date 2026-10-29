@@ -39,8 +39,8 @@ function harness(directory = "/work/repo") {
         return Promise.resolve({ dispose: async () => {} })
       },
       get: async ({ sessionID }: { sessionID: string }) =>
-        ["root", "child"].includes(sessionID)
-          ? { id: sessionID, parentID: sessionID === "child" ? "root" : undefined, projectID: "project-id" }
+        ["root", "child", "root-2", "child-2"].includes(sessionID)
+          ? { id: sessionID, parentID: sessionID.startsWith("child") ? sessionID.replace("child", "root") : undefined, projectID: "project-id" }
           : undefined,
     },
     tool: {
@@ -124,6 +124,40 @@ describe("Engram V2 lifecycle adapter", () => {
     expect(requests.some((request) => request.path === "/prompts")).toBe(false)
   })
 
+  test("injects qualified Engram writes into separate concurrent roots in the same directory", async () => {
+    const { hooks, requests, setup } = harness()
+    await setup()
+
+    await Promise.all(["root", "root-2"].map(async (root) => {
+      for (const sessionID of [root, root.replace("root", "child")]) {
+        for (const tool of ["engram_mem_save", "engram_mem_save_prompt", "engram_mem_session_summary", "engram_mem_capture_passive"]) {
+          const event = { tool, sessionID, input: { session_id: "wrong-root", content: "preserved" } }
+          await hooks.get("execute.before")!(event)
+          expect(event.input).toEqual({ session_id: root, content: "preserved" })
+        }
+      }
+    }))
+
+    const registrations = requests.filter((request) => request.path === "/sessions")
+    expect(registrations).toHaveLength(2)
+    expect(registrations.map((request) => request.body.id).sort()).toEqual(["root", "root-2"])
+    expect(registrations.every((request) => request.body.directory === "/work/repo")).toBe(true)
+  })
+
+  test("leaves foreign MCP writes and the outer Code Mode call unchanged", async () => {
+    const { hooks, requests, setup } = harness()
+    await setup()
+    const count = requests.length
+
+    for (const tool of ["other_mem_save", "other_mem_session_summary", "other_engram_mem_save", "engram_mem_search", "execute"]) {
+      const event = { tool, sessionID: "missing", input: { content: "preserved" } }
+      await hooks.get("execute.before")!(event)
+      expect(event.input).toEqual({ content: "preserved" })
+    }
+
+    expect(requests).toHaveLength(count)
+  })
+
   test("captures redacted prompts, Task output, memory context, nudge, and compaction directive", async () => {
     const { hooks, requests, setup } = harness()
     await setup()
@@ -151,8 +185,11 @@ describe("Engram V2 lifecycle adapter", () => {
     const { hooks, setup } = harness()
     await setup()
 
-    const input = { tool: "mem_save", sessionID: "missing", input: {} }
-    await expect(hooks.get("execute.before")?.(input)).rejects.toThrow()
+    for (const tool of ["mem_save", "engram_mem_save", "engram_mem_session_summary"]) {
+      const input = { tool, sessionID: "missing", input: {} }
+      await expect(hooks.get("execute.before")?.(input)).rejects.toThrow()
+      expect(input.input).toEqual({})
+    }
     await expect(hooks.get("context")?.({ sessionID: "missing", system: [], messages: [] })).resolves.toBeUndefined()
   })
 })

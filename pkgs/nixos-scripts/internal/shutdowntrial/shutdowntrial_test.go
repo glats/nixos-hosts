@@ -99,19 +99,6 @@ func TestXHCITrialForcesPowerControlOn(t *testing.T) {
 	}
 }
 
-func TestNvidiaTrialStopsDisplayThenUnloads(t *testing.T) {
-	sys := newFake()
-	tr, _ := Lookup("nvidia")
-	Apply(sys, tr)
-	want := []string{
-		"run systemctl stop display-manager.service",
-		"run modprobe -r nvidia_drm nvidia_uvm nvidia_modeset nvidia",
-	}
-	if !reflect.DeepEqual(sys.ops, want) {
-		t.Fatalf("ops %v, want %v", sys.ops, want)
-	}
-}
-
 func TestPstoreTrialDisablesShutdownDump(t *testing.T) {
 	sys := newFake()
 	tr, _ := Lookup("pstore")
@@ -126,7 +113,7 @@ func TestAllTrialStacksEveryAutomaticTrial(t *testing.T) {
 	sys := newFake()
 	tr, _ := Lookup("all")
 	Apply(sys, tr)
-	if len(sys.ops) != 5+1+2+1 {
+	if len(sys.ops) != 5+1+1 {
 		t.Fatalf("ops %v", sys.ops)
 	}
 }
@@ -151,7 +138,7 @@ func TestLookupUnknownTrial(t *testing.T) {
 }
 
 func TestManualTrialsHaveInstructionsAndNoSteps(t *testing.T) {
-	for _, id := range []string{"outside", "ec-reset"} {
+	for _, id := range []string{"nvidia", "outside", "ec-reset"} {
 		tr, err := Lookup(id)
 		if err != nil {
 			t.Fatal(err)

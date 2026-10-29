@@ -9,7 +9,7 @@
 with lib;
 
 let
-  providers = import ./opencode/providers.nix {
+  providers = import ./opencode/providers-base.nix {
     inherit lib;
     activeProviderName = config.home.opencode.activeProviderName;
   };
@@ -131,10 +131,11 @@ in
 
     quotaPlugin = mkOption {
       type = types.nullOr types.package;
-      default = null;
+      default = pkgs.callPackage ../pkgs/opencode-quota-patched { };
       description = ''
         Local opencode-quota plugin directory loaded instead of the npm
-        `@slkiser/opencode-quota@5.0.3` spec. null keeps the npm spec.
+        `@slkiser/opencode-quota@5.0.3` spec. Defaults to the pinned package
+        with passive Anthropic response-header quota. null keeps the npm spec.
       '';
     };
 
@@ -164,17 +165,9 @@ in
         }
       '';
 
-      home.packages = with pkgs; [
-        gentleManaged
-        opencodePackage
-        engram
-        rtk
-        poppler-utils
-      ];
-
-      home.sessionVariables = {
-        RTK_TELEMETRY_DISABLED = "1";
-      };
+      home.ai-tools.enable = true;
+      home.ai-tools.gentlePackage = gentleManaged;
+      home.packages = [ opencodePackage ];
 
       programs.zsh.initContent = lib.mkAfter ''
               if [ -f "${config.sops.secrets."opencode/nvidia_api_key".path}" ]; then

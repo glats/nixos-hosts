@@ -1,43 +1,32 @@
 {
   lib,
-  stdenvNoCC,
-  fetchurl,
+  buildNpmPackage,
+  importNpmLock,
 }:
 
 let
-  versions = lib.importJSON ./versions.json;
-  hashes = lib.importJSON ./node-modules.json;
-  tarballName = name: if lib.hasPrefix "@" name then lib.last (lib.splitString "/" name) else name;
-  sources = lib.genAttrs (lib.attrNames versions) (
-    name:
-    fetchurl {
-      url = "https://registry.npmjs.org/${
-        lib.replaceStrings [ "/" ] [ "%2F" ] name
-      }/-/${tarballName name}-${versions.${name}}.tgz";
-      hash = hashes.${name};
-    }
-  );
-  copyCommands = lib.concatStrings (
-    lib.mapAttrsToList (name: src: ''
-      mkdir -p "$out/lib/node_modules/${name}"
-      tar -xzf ${src} -C "$out/lib/node_modules/${name}" --strip-components=1
-    '') sources
-  );
+  package = lib.importJSON ./package.json;
 in
-stdenvNoCC.mkDerivation {
+buildNpmPackage {
   pname = "opencode-npm-packages-v2";
-  version = versions."@opencode/plugin";
-  dontUnpack = true;
-  dontConfigure = true;
-
-  buildPhase = ''
-    mkdir -p "$out/lib/node_modules"
-    ${copyCommands}
-    echo '${builtins.toJSON versions}' > "$out/package.json"
+  version = package.dependencies."@opencode/plugin";
+  src = ./.;
+  npmDeps = importNpmLock { npmRoot = ./.; };
+  npmConfigHook = importNpmLock.npmConfigHook;
+  dontNpmBuild = true;
+  installPhase = ''
+    runHook preInstall
+    mkdir -p "$out/lib"
+    cp -a node_modules "$out/lib/node_modules"
+    echo '${builtins.toJSON package.dependencies}' > "$out/package.json"
+    runHook postInstall
   '';
-
-  installPhase = "true";
-
+  doInstallCheck = true;
+  installCheckPhase = ''
+    runHook preInstallCheck
+    node check.mjs "$out"
+    runHook postInstallCheck
+  '';
   meta = with lib; {
     description = "Pinned OpenCode V2 plugin API production dependency closure";
     platforms = platforms.all;

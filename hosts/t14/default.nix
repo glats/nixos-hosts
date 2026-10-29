@@ -34,6 +34,7 @@
 
     ../../linux/system/networking/openssh.nix
     ../../linux/system/networking/netwatch.nix
+    ../../linux/system/services/printing/brother.nix
 
     ./overlays.nix
     ./omarchy-config.nix

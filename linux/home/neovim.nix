@@ -60,7 +60,7 @@
     force = true;
   };
 
-  home.file.".config/nvim/lua/plugins/nix/perf.lua" = {
+  home.file.".config/nvim/lua/plugins/nix-perf.lua" = {
     text = ''
       return {
         "folke/snacks.nvim",

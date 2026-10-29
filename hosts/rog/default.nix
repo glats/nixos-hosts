@@ -49,6 +49,7 @@
     ../../linux/system/features/conky/options.nix
 
     ../../linux/system/services/xrdp.nix
+    ../../linux/system/services/printing/brother.nix
 
     ../../linux/system/services/media/arr-stack.nix
     ../../linux/system/services/media/jellyfin.nix
