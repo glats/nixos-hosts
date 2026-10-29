@@ -1,6 +1,6 @@
 # t14 corporate compliance
 Objective: implement corporate-agent source configuration for t14 without disrupting working access. Branch: `feat/complaince`; historical baseline: `ae9cebe650b8fd12f55f243fc9d685fef235f577`; implementation baseline: `804133f7db14680e367d3d90abe284e7575a684e`; integrated master: `75becf3ef47fa8e5ea22c12de2bfde9efd5c5b28`.
-Delivery: `exception-ok` for explicitly authorized commits, normal master merges and branch push without Feature Flow, rebase, force-push or PR. Installation on t14, activation and enrollment remain unauthorized. Checks passed on merge `c0f7c3af`: full Go suite with canonical TMPDIR, race tests, vet, all-system flake evaluation and target evaluations. System build, reboot and live proof remain pending; default-TMPDIR failures remain documented (L18–L19).
+Delivery: `exception-ok`; the user now requests publication of the TLS correction on `feat/complaince` (L25), retaining normal master merges and no Feature Flow, rebase, force-push or PR. Source checks are recorded in L23–L24; post-merge checks precede push. No assistant build, deployment, activation, enrollment or other remote runtime mutation is authorized. Earlier publication and default-TMPDIR evidence remain in L18–L22; built-wrapper and live proof of the new correction remain pending.
 
 ## Specs
 
@@ -60,6 +60,14 @@ Provide a single command interface to enable or disable the integrated corporate
 
 Acceptance: report the actual selected mode and limitations honestly; do not confuse stopping services with removing enrollment. Preserve access to SSH and do not bypass agent anti-tamper controls. Use the repository's Go operational-tool convention if a new custom command is needed. Switching modes on the real device still requires explicit activation authorization; no runtime mutation is authorized merely by this requirement.
 
+### S8 — Intune Portal TLS packaging correction (source-only)
+
+"si. y bueno para edge funcionara igual o no?" and "funciona. ahora aparece para poner el correo. es encesario que siga por alli o con eso estamos?" (L23).
+
+The Intune Portal must receive a GIO TLS provider compatible with the pinned glib-networking through its package, so the portal starts without manually exporting `GIO_EXTRA_MODULES`. The change is limited to wrapping the portal binary inside its own package output; the package version, ELF handling, arguments, certificate verification, and the existing ON/OFF gating remain unchanged.
+
+Acceptance: a static evaluation shows the portal derivation carries the wrapper declaration and the pinned glib-networking module path, while the OFF child remains without the portal. This is source preparation only: it does not claim that Edge sync, tenant compliance, or end-to-end enrollment is fixed, and no broker, Edge, root-service, or CA-trust change is part of it. Runtime proof and deployment remain pending.
+
 ## Tasks
 
 - [x] T1 — S1–S4: inventory Mac, inspect live t14, and verify pinned Intune feasibility; route: inline state checks plus delegated read-only mapping (mapping budget); evidence: L3–L5; commit: none, read-only.
@@ -69,6 +77,7 @@ Acceptance: report the actual selected mode and limitations honestly; do not con
 - [ ] T5 — S1–S2, S5–S6: finish Linux feature/packaging disposition for Netskope Endpoint DLP, ForeScout, InvGate and FortiClient; route: inline bounded research or one read-only explorer if mapping exceeds budget; no implementation unless a concrete need is established; commit: none for research.
 - [ ] T6 — S3–S6: validate the complete authorized candidate, document rollback and conduct separately authorized activation/enrollment with repeated access checks; route: inline coordination plus independent verification before deployment; gates: candidate, functional proof and explicit remote-change authorization; commit: pending, not authorized.
 - [ ] T7 — S3–S7: selectable ON/OFF Nix configurations and the Go `compliance-mode on|off|status` CLI are source-prepared, independently verified and integration-tested; system build, activation, reboot and live runtime/boot proof remain pending; route: delegated implementation per user preference; evidence: L15–L22; implementation commit: `48ff7a45e2e45c17c96207dbf6635d60648bed13`.
+- [ ] T8 — S8: Intune Portal wraps its own binary with the pinned glib-networking GIO module path (ON only). Source preparation, independent static verification and parent spot check passed; the static checks are evaluation-only. Publication is authorized in L25; commit identity follows in L26. Built wrapper, deployment, runtime checks, Edge sync and enrollment remain unverified; evidence: L23–L26.
 
 ## Log
 
@@ -257,3 +266,27 @@ A fresh independent verifier used an external scratch archive of exact merged HE
 `nix flake check --no-build --no-write-lock-file` passed. Its default platform coverage skipped other systems, so a separate targeted `nix flake check --no-build --all-systems --no-write-lock-file` was run once and passed. This evaluates all declared systems but builds no derivations. t14 parent and child toplevel paths, macm5 Darwin toplevel, and t14/macm5 standalone Home Manager activation paths all evaluated. Parent/child Intune and mode remained true/false with on/off markers; firewall false, kernel `7.1.9`, systemd-boot true. Root nixpkgs remains `nixpkgs_2` at `a9e6d84f9c2f9012f5fe7d964a7851352300e61a`.
 
 The parent spot check `TMPDIR="$(cd "${TMPDIR:-/tmp}" && pwd -P)" go -C pkgs/nixos-scripts test -count=1 ./internal/compliancemode` passed. `git diff --check` passed and the repository stayed clean throughout verification. Global RDD remains off; no review lifecycle or preference changes occurred. This documentation follow-up records implementation/merge identities and proof before the authorized normal push; the confirmed remote result is recorded in session memory after publication. No system build, activation, enrollment, SSH, profile/EFI/boot or service mutation is authorized or performed.
+
+### L23 — Intune Portal TLS packaging correction, source-only, 2026-10-29
+
+User requests verbatim: "si. y bueno para edge funcionara igual o no?" (authorizing a permanent source correction, without deployment, after the parent's proposal to prepare it in Nix) and, after a manual per-process trial, "funciona. ahora aparece para poner el correo. es encesario que siga por alli o con eso estamos?".
+
+Observed context: the installed portal `1.2603.31-noble` with broker `3.0.1`; a host-side curl to the Microsoft public OIDC endpoint returned HTTP 200, which does not prove that the portal's own request worked (the portal HRD request failed with http 0); the isolated GIO default lacked a TLS provider. The existing `glib-networking` module enables GnuTLS. A user-broker-only transient experiment did not fix the portal; launching the portal with `GIO_EXTRA_MODULES` pointing at that module made the email-entry screen appear. This proves only initial portal UI progress in that trial context. It does not prove full authentication, tenant compliance, or Edge profile sync, and the transient broker unit may still run on the host and must not be touched by this work.
+
+Source-map correction: the pinned `intune-portal` package (nixpkgs `a9e6d84f9c2f9012f5fe7d964a7851352300e61a`, `pkgs/by-name/in/intune-portal/package.nix`) is a plain `stdenv.mkDerivation`, not an FHS environment. Earlier FHS assumptions were incorrect; this clarification supersedes them without rewriting history. The package patches ELF files in `buildPhase` and sets `dontPatchELF = true`, which must be preserved.
+
+Decision: add a host-scoped `nixpkgs.overlays` entry in `linux/system/services/security/intune.nix`, gated by `corporate.compliance.enable`, that wraps only `$out/bin/intune-portal` with `GIO_EXTRA_MODULES` pointing at the same pinned `glib-networking` output. The OFF child keeps the original package absence. The broker, the intune agent and daemon, Edge, root services, CA trust, and the package version are not changed.
+
+Scope: source only, four allowed paths (`linux/system/services/security/intune.nix`, `tests/t14-intune-tls.nix`, `docs/t14-corporate-compliance.md`, and this task file). No build, deployment, restart, SSH, authentication, enrollment, staging, commit, push, PR, or Feature Flow is authorized or performed. The live manual trial is temporary and distinct from this source change; its cleanup is outside this task. The user's trial proves initial UI progress only, and the Edge sync remains unverified.
+
+Evidence (source only, no build or deployment): RED, before the module change, `nix eval --impure --no-write-lock-file --json --expr 'import ./tests/t14-intune-tls.nix { flake = builtins.getFlake ("path:" + builtins.toString ./.); }'` failed with exactly `portalWrapsGioTlsProvider, wrapperNativeInputPresent`; the other five checks passed. GREEN after the change: the same command returned all seven checks `true`. `nix fmt -- linux/system/services/security/intune.nix tests/t14-intune-tls.nix` reformatted two files. Host evaluations after the change: t14 parent toplevel `/nix/store/49bwiy6yi5miffd39abv59y8pz79mzfy-nixos-system-t14-26.05.20260822.a9e6d84.drv`, child toplevel `/nix/store/kbf2qms0bw8605kmb3rilmzdrn29vvz8-nixos-system-t14-26.05.20260822.a9e6d84.drv`; mode marker `on\n` (parent) and `off\n` (child); firewall `false`; kernel `7.1.9`. `git diff --check` passed and `flake.lock` is unchanged. Only `hosts/t14/default.nix` imports the Intune module. The new overlay is limited to the t14 configuration. Pending: independent verifier, parent spot check, a separately authorized build and deployment, and runtime proof.
+
+### L24 — Independent static adoption and tracking, 2026-10-29
+
+Independent verifier 358 found no source blockers. Its candidate-vs-base probes matched the pinned base for source, buildPhase, installPhase, version and `dontPatchELF`, and matched the broker `drvPath`. These probes were adopted into the existing seven checks of `tests/t14-intune-tls.nix`, with no new cases or framework. This is a regression-adoption exception: the production behavior was already green, so no fresh RED is claimed. The independent baseline RED was two failing fields (`portalWrapsGioTlsProvider`, `wrapperNativeInputPresent`), and the candidate reached GREEN with all seven checks true. The parent reran the same focused command after `nix fmt` (0 changed) and `git diff --check` passed.
+
+Limits: this is static evaluation only. No wrapped binary was built, and the GUI, device authentication, Edge sync and enrollment were not exercised. The portal-only change leaves the broker, Edge and root services unchanged, and Edge sync remains unverified. Build, deployment and runtime proof are pending separate authorization.
+
+### L25 — Publish the TLS correction for deployment testing, 2026-10-29
+
+User request verbatim: "tiens que hacer push para probar el depsliegue en t14 pues". Publish the four-path correction, regression test, docs and tracking on the existing branch; retain the previously requested normal master integration without Feature Flow, rebase, force-push or PR. This authorizes Git publication, not assistant deployment, enrollment or runtime changes. Remote feature HEAD still matches local `a0dae332`; fetched master has one additional RDP-shortcut commit touching only `darwin/home/remote-desktop.nix`. Commit the correction, merge that update and refresh the focused/target evaluations before normal push.

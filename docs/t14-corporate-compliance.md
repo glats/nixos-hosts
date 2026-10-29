@@ -42,6 +42,14 @@
 | Unenrollment | Not performed. Stopping services is not enrollment removal, and no anti-tamper control is bypassed. |
 | Activation status | Source, tests and independent source verification are complete. No build, switch, reboot, or live boot-entry verification has been run on t14. |
 
+## Intune Portal TLS packaging (source-only)
+
+The Intune Portal package is wrapped in ON configurations so that it starts with the pinned `glib-networking` GIO module path (`GIO_EXTRA_MODULES`). Operators no longer need to export that variable by hand, once this configuration is deployed. The wrapper only renames the portal binary inside its own package output; the version, `dontPatchELF`, the broker, the agent and daemon, Edge, root services and CA trust are unchanged. The OFF specialisation still omits the portal.
+
+This is source preparation only and is pending deployment. The temporary manual trial proved only that the portal reaches its initial email-entry screen; it does not prove full authentication, tenant compliance, or Edge profile sync. Those remain unverified, and the trial's temporary process state is not cleaned up by this change.
+
+Status: source preparation is independently statically verified and parent spot-checked, but unbuilt and undeployed. These are static evaluation checks only; no wrapped binary has been built and no runtime check has passed.
+
 ## Checklist
 
 - [ ] `compliance-mode status` reports `on` on a live ON system (pending live proof).
