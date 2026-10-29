@@ -1,5 +1,5 @@
 # t14 corporate compliance
-Objective: implement corporate-agent source configuration for t14 without disrupting working access. Branch: `feat/complaince`; historical baseline: `ae9cebe650b8fd12f55f243fc9d685fef235f577`; implementation baseline: `804133f7db14680e367d3d90abe284e7575a684e`; integrated master: `75becf3ef47fa8e5ea22c12de2bfde9efd5c5b28`.
+Objective: implement corporate-agent source configuration for t14 without disrupting working access. Branch: `feat/complaince`; historical baseline: `ae9cebe650b8fd12f55f243fc9d685fef235f577`; implementation baseline: `804133f7db14680e367d3d90abe284e7575a684e`; integrated master: `3e5a637402cebf902c2baff51c66ae85da33b492`.
 Delivery: `exception-ok`; the user now requests publication of the TLS correction on `feat/complaince` (L25), retaining normal master merges and no Feature Flow, rebase, force-push or PR. Source checks are recorded in L23–L24; post-merge checks precede push. No assistant build, deployment, activation, enrollment or other remote runtime mutation is authorized. Earlier publication and default-TMPDIR evidence remain in L18–L22; built-wrapper and live proof of the new correction remain pending.
 
 ## Specs
@@ -77,7 +77,7 @@ Acceptance: a static evaluation shows the portal derivation carries the wrapper 
 - [ ] T5 — S1–S2, S5–S6: finish Linux feature/packaging disposition for Netskope Endpoint DLP, ForeScout, InvGate and FortiClient; route: inline bounded research or one read-only explorer if mapping exceeds budget; no implementation unless a concrete need is established; commit: none for research.
 - [ ] T6 — S3–S6: validate the complete authorized candidate, document rollback and conduct separately authorized activation/enrollment with repeated access checks; route: inline coordination plus independent verification before deployment; gates: candidate, functional proof and explicit remote-change authorization; commit: pending, not authorized.
 - [ ] T7 — S3–S7: selectable ON/OFF Nix configurations and the Go `compliance-mode on|off|status` CLI are source-prepared, independently verified and integration-tested; system build, activation, reboot and live runtime/boot proof remain pending; route: delegated implementation per user preference; evidence: L15–L22; implementation commit: `48ff7a45e2e45c17c96207dbf6635d60648bed13`.
-- [ ] T8 — S8: Intune Portal wraps its own binary with the pinned glib-networking GIO module path (ON only). Source preparation, independent static verification and parent spot check passed; the static checks are evaluation-only. Publication is authorized in L25; commit identity follows in L26. Built wrapper, deployment, runtime checks, Edge sync and enrollment remain unverified; evidence: L23–L26.
+- [ ] T8 — S8: Intune Portal wraps its own binary with the pinned glib-networking GIO module path (ON only). Source preparation, independent static verification and post-merge checks passed; these are evaluation-only. Publication authorized in L25; fix commit `e4a6294415e90bc809ec5528bd3e7748dd7d01e7`. Built wrapper, deployment, runtime checks, Edge sync and enrollment remain unverified; evidence: L23–L26.
 
 ## Log
 
@@ -290,3 +290,7 @@ Limits: this is static evaluation only. No wrapped binary was built, and the GUI
 ### L25 — Publish the TLS correction for deployment testing, 2026-10-29
 
 User request verbatim: "tiens que hacer push para probar el depsliegue en t14 pues". Publish the four-path correction, regression test, docs and tracking on the existing branch; retain the previously requested normal master integration without Feature Flow, rebase, force-push or PR. This authorizes Git publication, not assistant deployment, enrollment or runtime changes. Remote feature HEAD still matches local `a0dae332`; fetched master has one additional RDP-shortcut commit touching only `darwin/home/remote-desktop.nix`. Commit the correction, merge that update and refresh the focused/target evaluations before normal push.
+
+### L26 — TLS fix commit and publication checks, 2026-10-29
+
+Fix commit `e4a6294415e90bc809ec5528bd3e7748dd7d01e7` contains exactly the four reviewed paths; hooks changed no bytes. Normal merge `e81afaba734b118eeb6ee004b00088287fa0a0e7` includes master `3e5a637402cebf902c2baff51c66ae85da33b492` without conflicts. The seven focused TLS checks, t14 ON/OFF toplevel evaluations, macm5 Darwin/Home Manager evaluations and `git diff --check` all passed. Existing context/deprecation warnings were nonfatal. This evidence-only follow-up prepares the authorized normal push; the confirmed remote result is stored in session memory. No build, deployment, enrollment or host mutation occurred.
