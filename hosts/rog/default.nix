@@ -106,7 +106,7 @@
   my.desktop.suite = "mate";
 
   boot = {
-    kernelPackages = pkgs.linuxPackages_7_1;
+    kernelPackages = pkgs.linuxPackages_latest;
     extraModulePackages = with config.boot.kernelPackages; [ acpi_call ];
     kernelModules = [ "acpi_call" ];
   };
