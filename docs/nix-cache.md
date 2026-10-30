@@ -18,7 +18,7 @@ Thinkcentre acts as a LAN Nix binary cache: it serves its own `/nix/store` throu
 | Linux clients | rog, t14 | — | `linux/system/base/nix-cache-client.nix` |
 | Darwin client | macm5 | — | `darwin/system/nix-cache-client.nix` (Determinate Nix, `nix.enable = false`) |
 
-Public keys and URLs live in `shared/nix-cache.nix`; the modules import it, so editing the public key there is the single source of truth.
+Public keys and URLs live in `shared/nix-cache.nix`; the modules import it, so editing the public key there is the single source of truth. Each client module also adds the host user to `trusted-users` (Linux: `glats`, macm5: `primaryUser`), so the user may override `substituters` per invocation — for example dropping the remote URL with `NIX_CONFIG` when the cache is down. Without trusted-users the daemon ignores client-side `substituters` overrides.
 
 ## Substituter priorities
 

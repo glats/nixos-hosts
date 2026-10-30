@@ -28,6 +28,8 @@ in
 
     trusted-substituters = cacheUrls;
 
+    trusted-users = [ "glats" ];
+
     netrc-file = config.sops.secrets."nix-cache/netrc".path;
   };
 }

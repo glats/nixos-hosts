@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  primaryUser,
   ...
 }:
 
@@ -24,6 +25,11 @@ in
     trusted-public-keys = [
       cache.ncps.publicKey
       cache.harmonia.publicKey
+    ];
+
+    trusted-users = [
+      "root"
+      primaryUser
     ];
   };
 

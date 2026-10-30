@@ -17,6 +17,10 @@ let
     true;
 in
 assert cache.remoteUrl == "https://nix-cache.glats.org";
+assert builtins.elem "glats" rog.nix.settings.trusted-users;
+assert builtins.elem "glats" t14.nix.settings.trusted-users;
+assert builtins.elem "root" mac.determinateNix.customSettings.trusted-users;
+assert builtins.elem "juan" mac.determinateNix.customSettings.trusted-users;
 assert !(vhosts ? "cache.glats.org");
 assert vhost.useACMEHost == "glats.org";
 assert vhost.forceSSL;
