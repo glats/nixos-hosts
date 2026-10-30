@@ -10,6 +10,7 @@ import (
 
 	"github.com/glats/nixos-scripts/internal/flakepins"
 	"github.com/glats/nixos-scripts/internal/opencodeupdate"
+	"github.com/glats/nixos-scripts/internal/quotaupdate"
 	"github.com/glats/nixos-scripts/internal/releasepins"
 )
 
@@ -47,12 +48,14 @@ const (
 	KindOpenCodeRelease
 	KindReleasePins
 	KindFlakePins
+	KindQuotaPlugin
 )
 
 var (
 	UpdateOpenCodeRelease = opencodeupdate.Run
 	UpdateReleasePins     = releasepins.Run
 	UpdateFlakePins       = flakepins.Run
+	UpdateQuotaPlugin     = quotaupdate.Run
 )
 
 type Step struct {
@@ -169,6 +172,8 @@ func Steps(env Env, command string) []Step {
 			execStep([]string{"npm", "install", "--prefix", env.FlakePath + "/pkgs/opencode-npm-packages-v2", "--package-lock-only", "--save-exact", "--no-audit", "--no-fund"}, false),
 			Step{Kind: KindEcho, Echo: "> Updating BrowserMCP npm dependencies..."},
 			execStep([]string{"npm", "install", "--prefix", env.FlakePath + "/pkgs/browsermcp-v2", "--package-lock-only", "--save-exact", "--no-audit", "--no-fund", "@browsermcp/mcp@latest"}, false),
+			Step{Kind: KindEcho, Echo: "> Updating the quota plugin..."},
+			Step{Kind: KindQuotaPlugin, Args: []string{env.FlakePath}},
 			Step{Kind: KindEcho, Echo: "> Updating GitHub release binaries..."},
 			Step{Kind: KindReleasePins, Args: []string{env.FlakePath}},
 			Step{Kind: KindEcho, Echo: "> Pinning Gentle AI and Engram to their latest releases..."},
@@ -300,7 +305,7 @@ func Run(steps []Step, nomPath string) int {
 			fmt.Println(st.Echo)
 		case KindExit:
 			return st.ExitCode
-		case KindOpenCodeRelease, KindReleasePins, KindFlakePins:
+		case KindOpenCodeRelease, KindReleasePins, KindFlakePins, KindQuotaPlugin:
 			if err := pinUpdater(st.Kind)(st.Args[0]); err != nil {
 				fmt.Fprintln(os.Stderr, "ERROR:", err)
 				return 1
@@ -332,6 +337,8 @@ func pinUpdater(kind Kind) func(string) error {
 		return UpdateReleasePins
 	case KindFlakePins:
 		return UpdateFlakePins
+	case KindQuotaPlugin:
+		return UpdateQuotaPlugin
 	}
 	return UpdateOpenCodeRelease
 }

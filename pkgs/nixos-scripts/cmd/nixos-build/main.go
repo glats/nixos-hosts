@@ -33,12 +33,14 @@ Environment:
 Flake: NIXOS_REPO, or the current git worktree when it belongs to the
 same repository (for example a herdr worktree).
 
-upgrade updates OpenCode (executable and npm closure), BrowserMCP, GitHub
-release binaries, Gentle AI, Engram, other source packages and all flake inputs
-to their latest releases. It never builds or activates; run check to validate
-and switch to build and activate. The quota plugin, tinkertool and the nixpkgs
-overrides in overlays/ are updated by hand (see docs/software-updates.md).
-Set GITHUB_TOKEN or GH_TOKEN to avoid GitHub's unauthenticated rate limit.
+upgrade updates OpenCode (executable and npm closure), BrowserMCP, the quota
+plugin (within its major), GitHub release binaries, Gentle AI, Engram, other
+source packages and all flake inputs to their latest releases. It never builds
+or activates; run check to validate and switch to build and activate. A new
+quota major, tinkertool and the nixpkgs overrides in overlays/ are updated by
+hand (see docs/software-updates.md).
+upgrade uses GITHUB_TOKEN, GH_TOKEN or a logged-in gh to avoid GitHub's
+unauthenticated rate limit; the token is passed only to the child processes.
 `
 
 func main() {
@@ -75,6 +77,10 @@ func main() {
 		fmt.Println("Unknown command: " + command)
 		fmt.Println("Run 'nixos-build help' for usage")
 		os.Exit(1)
+	}
+
+	if command == "upgrade" {
+		nixbuild.ApplyGitHubAuth()
 	}
 
 	code := nixbuild.Run(nixbuild.Steps(env, command), env.NomPath)

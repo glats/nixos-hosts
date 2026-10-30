@@ -4,9 +4,12 @@
   nodejs,
 }:
 
+let
+  version = (lib.importJSON ./package.json).dependencies."@slkiser/opencode-quota";
+in
 buildNpmPackage {
   pname = "opencode-quota-patched";
-  version = "5.0.3";
+  inherit version;
 
   src = lib.fileset.toSource {
     root = ./.;
@@ -57,7 +60,7 @@ buildNpmPackage {
   '';
 
   meta = with lib; {
-    description = "@slkiser/opencode-quota 5.0.3 with Claude Enterprise and passive response-header quota";
+    description = "@slkiser/opencode-quota ${version} with Claude Enterprise and passive response-header quota";
     homepage = "https://github.com/slkiser/opencode-quota";
     license = licenses.mit;
     platforms = platforms.all;

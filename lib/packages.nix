@@ -42,6 +42,7 @@ let
         };
         opencode-npm-packages-v2 = pkgs.callPackage ../pkgs/opencode-npm-packages-v2 { };
         browsermcp-v2 = pkgs.callPackage ../pkgs/browsermcp-v2 { };
+        opencode-quota-patched = pkgs.callPackage ../pkgs/opencode-quota-patched { };
         opencode = pkgs.callPackage ../pkgs/opencode { };
         leaf = pkgs.callPackage ../pkgs/leaf { };
         herdr = pkgs.callPackage ../pkgs/herdr { };

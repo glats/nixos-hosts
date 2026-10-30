@@ -34,6 +34,7 @@ func TestUpgradeCLI(t *testing.T) {
 		}
 		nixbuild.UpdateReleasePins = logCall("releasepins")
 		nixbuild.UpdateFlakePins = logCall("flakepins")
+		nixbuild.UpdateQuotaPlugin = logCall("quota")
 		os.Args = []string{"nixos-build", os.Getenv("PROBE_COMMAND")}
 		main()
 		return
@@ -65,8 +66,8 @@ func TestUpgradeCLI(t *testing.T) {
 		{"rejected", "invalid", registry.URL, "0", "0", 1, "", "", false, false},
 		{"opencode failure", "upgrade", broken.URL, "0", "0", 1, "", "ERROR: @opencode/plugin@latest: registry returned 500 Internal Server Error\n", false, false},
 		{"npm failure", "upgrade", registry.URL, "9", "0", 9, "npm\n", "native-npm-error\n", true, false},
-		{"flake failure", "upgrade", registry.URL, "0", "7", 7, "npm\nnpm\nreleasepins ROOT\nflakepins ROOT\nnix flake\n", "native-nix-error\n", true, true},
-		{"success", "upgrade", registry.URL, "0", "0", 0, "npm\nnpm\nreleasepins ROOT\nflakepins ROOT\nnix flake\n" + strings.Repeat("nix run /repo\n", 6), "", true, true},
+		{"flake failure", "upgrade", registry.URL, "0", "7", 7, "npm\nnpm\nquota ROOT\nreleasepins ROOT\nflakepins ROOT\nnix flake\n", "native-nix-error\n", true, true},
+		{"success", "upgrade", registry.URL, "0", "0", 0, "npm\nnpm\nquota ROOT\nreleasepins ROOT\nflakepins ROOT\nnix flake\n" + strings.Repeat("nix run /repo\n", 6), "", true, true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			dir := t.TempDir()

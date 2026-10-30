@@ -438,6 +438,8 @@ func upgradeSteps(root string, darwin bool) []Step {
 		ex("npm", "install", "--prefix", root+"/pkgs/opencode-npm-packages-v2", "--package-lock-only", "--save-exact", "--no-audit", "--no-fund"),
 		echo("> Updating BrowserMCP npm dependencies..."),
 		ex("npm", "install", "--prefix", root+"/pkgs/browsermcp-v2", "--package-lock-only", "--save-exact", "--no-audit", "--no-fund", "@browsermcp/mcp@latest"),
+		echo("> Updating the quota plugin..."),
+		{Kind: KindQuotaPlugin, Args: []string{root}},
 		echo("> Updating GitHub release binaries..."),
 		{Kind: KindReleasePins, Args: []string{root}},
 		echo("> Pinning Gentle AI and Engram to their latest releases..."),
@@ -460,14 +462,17 @@ func upgradeSteps(root string, darwin bool) []Step {
 func stubOpenCodeRelease(t *testing.T, err error) *[]string {
 	t.Helper()
 	var roots []string
-	old, oldRelease, oldFlake := UpdateOpenCodeRelease, UpdateReleasePins, UpdateFlakePins
+	old, oldRelease, oldFlake, oldQuota := UpdateOpenCodeRelease, UpdateReleasePins, UpdateFlakePins, UpdateQuotaPlugin
 	UpdateOpenCodeRelease = func(root string) error {
 		roots = append(roots, root)
 		return err
 	}
 	UpdateReleasePins = func(string) error { return nil }
 	UpdateFlakePins = func(string) error { return nil }
-	t.Cleanup(func() { UpdateOpenCodeRelease, UpdateReleasePins, UpdateFlakePins = old, oldRelease, oldFlake })
+	UpdateQuotaPlugin = func(string) error { return nil }
+	t.Cleanup(func() {
+		UpdateOpenCodeRelease, UpdateReleasePins, UpdateFlakePins, UpdateQuotaPlugin = old, oldRelease, oldFlake, oldQuota
+	})
 	return &roots
 }
 
