@@ -437,7 +437,7 @@ func upgradeSteps(root string, darwin bool) []Step {
 		{Kind: KindOpenCodeRelease, Args: []string{root}},
 		ex("npm", "install", "--prefix", root+"/pkgs/opencode-npm-packages-v2", "--package-lock-only", "--save-exact", "--no-audit", "--no-fund"),
 		echo("> Updating BrowserMCP npm dependencies..."),
-		ex("npm", "update", "--prefix", root+"/pkgs/browsermcp-v2", "--package-lock-only", "--no-audit", "--no-fund"),
+		ex("npm", "install", "--prefix", root+"/pkgs/browsermcp-v2", "--package-lock-only", "--save-exact", "--no-audit", "--no-fund", "@browsermcp/mcp@latest"),
 		echo("> Updating GitHub release binaries..."),
 		{Kind: KindReleasePins, Args: []string{root}},
 		echo("> Pinning Gentle AI and Engram to their latest releases..."),

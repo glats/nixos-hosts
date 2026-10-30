@@ -102,7 +102,7 @@ in
       };
       bridgePort = mkOption {
         type = types.port;
-        default = 9010;
+        default = 9020;
         description = "Loopback-only broker port.";
       };
       location = mkOption {

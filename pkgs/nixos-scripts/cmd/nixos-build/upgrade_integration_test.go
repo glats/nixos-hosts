@@ -94,7 +94,7 @@ func TestUpgradeCLI(t *testing.T) {
 			for _, path := range []string{"pkgs/opencode-npm-packages-v2/package-lock.json", "pkgs/browsermcp-v2/package-lock.json"} {
 				write(filepath.Join(root, path), "original", 0644)
 			}
-			write(filepath.Join(bin, "npm"), "#!/bin/sh\necho npm >> \"$CALL_LOG\"\nif [ \"$NPM_CODE\" != 0 ]; then echo native-npm-error >&2; exit \"$NPM_CODE\"; fi\ncase \"$1\" in\n  install) [ \"$2\" = --prefix ] && [ \"$3\" = \"$NIXOS_REPO/pkgs/opencode-npm-packages-v2\" ] && [ \"$4\" = --package-lock-only ] && [ \"$5\" = --save-exact ] || exit 97 ;;\n  update) [ \"$2\" = --prefix ] && [ \"$3\" = \"$NIXOS_REPO/pkgs/browsermcp-v2\" ] || exit 98 ;;\n  *) exit 99 ;;\nesac\nprintf updated > \"$3/package-lock.json\"\n", 0755)
+			write(filepath.Join(bin, "npm"), "#!/bin/sh\necho npm >> \"$CALL_LOG\"\nif [ \"$NPM_CODE\" != 0 ]; then echo native-npm-error >&2; exit \"$NPM_CODE\"; fi\ncase \"$1\" in\n  install) [ \"$2\" = --prefix ] && [ \"$4\" = --package-lock-only ] && [ \"$5\" = --save-exact ] || exit 97\n    case \"$3\" in\n      \"$NIXOS_REPO/pkgs/opencode-npm-packages-v2\") ;;\n      \"$NIXOS_REPO/pkgs/browsermcp-v2\") [ \"$8\" = @browsermcp/mcp@latest ] || exit 98 ;;\n      *) exit 99 ;;\n    esac ;;\n  *) exit 99 ;;\nesac\nprintf updated > \"$3/package-lock.json\"\n", 0755)
 			write(filepath.Join(bin, "nix"), "#!/bin/sh\ncase \"$1\" in\n  flake) echo nix flake >> \"$CALL_LOG\" ;;\n  run) [ \"$PWD\" = \"$NIXOS_REPO\" ] || exit 96; echo nix run /repo >> \"$CALL_LOG\" ;;\n  *) exit 95 ;;\nesac\nif [ \"$NIX_CODE\" != 0 ]; then echo native-nix-error >&2; exit \"$NIX_CODE\"; fi\n", 0755)
 			cmd := exec.Command(os.Args[0], "-test.run=^TestUpgradeCLI$")
 			cmd.Dir = dir

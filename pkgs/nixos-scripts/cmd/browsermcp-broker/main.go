@@ -13,7 +13,7 @@ import (
 
 func main() {
 	child := flag.String("child", "", "path to mcp-server-browsermcp")
-	port := flag.Int("port", 9010, "loopback HTTP port")
+	port := flag.Int("port", 9020, "loopback HTTP port")
 	flag.Parse()
 	if *child == "" {
 		log.Fatal("browsermcp-broker: --child is required")

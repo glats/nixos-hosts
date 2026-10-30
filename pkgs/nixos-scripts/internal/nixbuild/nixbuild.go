@@ -168,7 +168,7 @@ func Steps(env Env, command string) []Step {
 			Step{Kind: KindOpenCodeRelease, Args: []string{env.FlakePath}},
 			execStep([]string{"npm", "install", "--prefix", env.FlakePath + "/pkgs/opencode-npm-packages-v2", "--package-lock-only", "--save-exact", "--no-audit", "--no-fund"}, false),
 			Step{Kind: KindEcho, Echo: "> Updating BrowserMCP npm dependencies..."},
-			execStep([]string{"npm", "update", "--prefix", env.FlakePath + "/pkgs/browsermcp-v2", "--package-lock-only", "--no-audit", "--no-fund"}, false),
+			execStep([]string{"npm", "install", "--prefix", env.FlakePath + "/pkgs/browsermcp-v2", "--package-lock-only", "--save-exact", "--no-audit", "--no-fund", "@browsermcp/mcp@latest"}, false),
 			Step{Kind: KindEcho, Echo: "> Updating GitHub release binaries..."},
 			Step{Kind: KindReleasePins, Args: []string{env.FlakePath}},
 			Step{Kind: KindEcho, Echo: "> Pinning Gentle AI and Engram to their latest releases..."},
