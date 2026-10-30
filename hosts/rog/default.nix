@@ -111,6 +111,11 @@
     kernelModules = [ "acpi_call" ];
   };
 
+  fileSystems."/boot".options = lib.mkForce [
+    "fmask=0077"
+    "dmask=0077"
+  ];
+
   zramSwap.enable = true;
 
   nixpkgs.config = {
