@@ -37,6 +37,17 @@ final: prev: {
   };
   wstunnel-relay = final.callPackage ../pkgs/wstunnel-relay { };
 
+  pythonPackagesExtensions = (prev.pythonPackagesExtensions or [ ]) ++ [
+    (_: pyPrev: {
+      fpdf2 = pyPrev.fpdf2.overridePythonAttrs (
+        old:
+        prev.lib.optionalAttrs (prev.lib.versionOlder old.version "2.9.0") {
+          disabledTests = (old.disabledTests or [ ]) ++ [ "test_image_with_explicit_dimensions" ];
+        }
+      );
+    })
+  ];
+
   rtk = prev.rtk.overrideAttrs (old: {
     patches = (old.patches or [ ]) ++ [ ../patches/rtk/sigpipe-default.patch ];
   });
