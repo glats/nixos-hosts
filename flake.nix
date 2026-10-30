@@ -115,7 +115,9 @@
       inputs.brew-src.follows = "homebrew-brew";
     };
     homebrew-brew = {
-      url = "github:Homebrew/brew/master";
+      # 7.0.4 stripped Library/ from the repo (shim + git-bootstrap layout);
+      # nix-homebrew's patch derivation needs the full tree.
+      url = "github:Homebrew/brew/7.0.3";
       flake = false;
     };
 
