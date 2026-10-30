@@ -12,7 +12,7 @@ buildGoModule {
 
   subPackages = [ "cmd/engram" ];
 
-  vendorHash = "sha256-LH8sSmer918+KL5hnOju7b5NsZo+W9sd3HhkQgjS2Ho=";
+  vendorHash = "sha256-hkwwuqar4ngDUWM2XctkiVm8TpfQWnUws/sDxDyvQxU=";
 
   doCheck = false;
 

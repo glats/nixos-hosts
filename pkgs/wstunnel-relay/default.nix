@@ -10,12 +10,12 @@
 let
   assets = {
     "x86_64-linux" = {
-      name = "wstunnel_11.0.0_linux_amd64.tar.gz";
-      hash = "sha256-lwiplxe1qVFFPC/3wUwl00GNAsp/y5b9s4Ko8gg7q14=";
+      name = "wstunnel_11.1.0_linux_amd64.tar.gz";
+      hash = "sha256-US7fTnu2T8EzUiIgEjUUho+udbW65BJLU+OWeHJ2qiM=";
     };
     "aarch64-darwin" = {
-      name = "wstunnel_11.0.0_darwin_arm64.tar.gz";
-      hash = "sha256-FQ5DnIuUhZFUkD1xMTtMCzE6ycz5lDevQlcxNOUFHcQ=";
+      name = "wstunnel_11.1.0_darwin_arm64.tar.gz";
+      hash = "sha256-h/wNaFYySHKcjEU1nlp1AQQZkBRYUMQ8I6luUWVsKIA=";
     };
   };
   system = stdenvNoCC.hostPlatform.system;
@@ -28,10 +28,10 @@ let
 in
 stdenvNoCC.mkDerivation {
   pname = "wstunnel-relay";
-  version = "11.0.0";
+  version = "11.1.0";
 
   src = fetchurl {
-    url = "https://github.com/erebe/wstunnel/releases/download/v11.0.0/${asset.name}";
+    url = "https://github.com/erebe/wstunnel/releases/download/v11.1.0/${asset.name}";
     hash = asset.hash;
   };
 

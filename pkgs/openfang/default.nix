@@ -6,11 +6,11 @@
 
 stdenvNoCC.mkDerivation rec {
   pname = "openfang";
-  version = "0.6.4";
+  version = "0.6.9";
 
   src = fetchurl {
     url = "https://github.com/RightNow-AI/openfang/releases/download/v${version}/openfang-x86_64-unknown-linux-gnu.tar.gz";
-    sha256 = "sha256-sjEkPosSTgKKOLN8LYysqwYhzxhsBSScm3aiy2zmnfM=";
+    sha256 = "sha256-QwmwvPKtxdrEV3biAICHqK0HKTPxrmmP+NTgb7a4dgI=";
   };
 
   sourceRoot = ".";

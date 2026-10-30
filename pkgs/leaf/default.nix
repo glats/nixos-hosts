@@ -8,7 +8,7 @@
 }:
 
 let
-  version = "1.27.0";
+  version = "1.29.2";
 
   system = stdenvNoCC.hostPlatform.system;
   isLinux = lib.hasSuffix "linux" system;
@@ -17,15 +17,15 @@ let
     {
       x86_64-linux = {
         url = "https://github.com/RivoLink/leaf/releases/download/${version}/leaf-linux-x86_64";
-        sha256 = "sha256-QwiH5L63j2xA0cT10XfAbFAWxgJVS1/gCpQh27pcuI4=";
+        sha256 = "sha256-7jHjmljISAU2hfQwKpTPlC+P02yNL119d72sVEF8bac=";
       };
       x86_64-darwin = {
         url = "https://github.com/RivoLink/leaf/releases/download/${version}/leaf-macos-x86_64";
-        sha256 = "sha256-0zJvhyz5soar0si7TzRANApdkQzIpfbjXPSTv247Qrs=";
+        sha256 = "sha256-i+GmFBvP71Cnpd+v9BatfpiWrthgsROgU5f3x1b8jb0=";
       };
       aarch64-darwin = {
         url = "https://github.com/RivoLink/leaf/releases/download/${version}/leaf-macos-arm64";
-        sha256 = "sha256-q+B/PZVZlsR7qX12e9jFwsT9A2W8883En46sYkVFcU0=";
+        sha256 = "sha256-lAsPy7V+j6+rDCrooZzubO/t4eYfcqdqLZNVOuUD2Fo=";
       };
     }
     .${system} or (throw "Unsupported system: ${system}");
