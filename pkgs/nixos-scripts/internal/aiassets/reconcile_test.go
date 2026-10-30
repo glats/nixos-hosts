@@ -12,6 +12,16 @@ import (
 	"testing"
 )
 
+func tempRoot(t *testing.T) string {
+	t.Helper()
+	dir := t.TempDir()
+	resolved, err := filepath.EvalSymlinks(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return resolved
+}
+
 func put(t *testing.T, root, name, body string) {
 	t.Helper()
 	path := filepath.Join(root, name)
@@ -24,7 +34,7 @@ func put(t *testing.T, root, name, body string) {
 }
 
 func TestReconcileRemovesEmptyParentsOfRetiredFiles(t *testing.T) {
-	root := t.TempDir()
+	root := tempRoot(t)
 	target, desired, legacy := filepath.Join(root, "target"), filepath.Join(root, "desired"), filepath.Join(root, "legacy")
 	for _, dir := range []string{target, desired, legacy} {
 		if err := os.MkdirAll(dir, 0755); err != nil {
@@ -48,7 +58,7 @@ func TestReconcileRemovesEmptyParentsOfRetiredFiles(t *testing.T) {
 func TestReconcileOwnership(t *testing.T) {
 	for _, name := range []string{"bootstrap", "foreign collision", "modified collision", "retired modified", "symlink escape", "interrupted update", "empty before-image"} {
 		t.Run(name, func(t *testing.T) {
-			root := t.TempDir()
+			root := tempRoot(t)
 			target, desired, legacy := filepath.Join(root, "target"), filepath.Join(root, "desired"), filepath.Join(root, "legacy")
 			for _, dir := range []string{target, desired, legacy} {
 				if err := os.MkdirAll(dir, 0755); err != nil {
@@ -126,7 +136,7 @@ func TestReconcileOwnership(t *testing.T) {
 func TestPostJournalConflict(t *testing.T) {
 	for _, kind := range []string{"edit", "appeared", "symlink", "parent symlink"} {
 		t.Run(kind, func(t *testing.T) {
-			r := t.TempDir()
+			r := tempRoot(t)
 			target, desired, legacy := filepath.Join(r, "target"), filepath.Join(r, "desired"), filepath.Join(r, "legacy")
 			for _, p := range []string{target, desired, legacy} {
 				if err := os.MkdirAll(p, 0755); err != nil {
@@ -170,7 +180,7 @@ func TestPostJournalConflict(t *testing.T) {
 func TestSecondUpgradeInterruption(t *testing.T) {
 	for _, prior := range []string{"A", ""} {
 		t.Run("prior="+prior, func(t *testing.T) {
-			r := t.TempDir()
+			r := tempRoot(t)
 			target, desired, legacy := filepath.Join(r, "target"), filepath.Join(r, "desired"), filepath.Join(r, "legacy")
 			put(t, legacy, "asset", "2.5")
 			put(t, target, "asset", "2.5")
@@ -247,7 +257,7 @@ func TestReconcileProcessLock(t *testing.T) {
 		}
 		return
 	}
-	r := t.TempDir()
+	r := tempRoot(t)
 	put(t, r, "target/asset", "2.5")
 	put(t, r, "legacy/asset", "2.5")
 	put(t, r, "A/asset", "A")
@@ -301,7 +311,7 @@ func TestReconcileProcessLock(t *testing.T) {
 func TestLockAndSchemaOneSafety(t *testing.T) {
 	for _, kind := range []string{"symlink lock", "directory lock", "schema1 history"} {
 		t.Run(kind, func(t *testing.T) {
-			r := t.TempDir()
+			r := tempRoot(t)
 			target, desired, legacy := filepath.Join(r, "target"), filepath.Join(r, "desired"), filepath.Join(r, "legacy")
 			put(t, target, "asset", "user")
 			put(t, desired, "asset", "B")
@@ -331,7 +341,7 @@ func TestLockAndSchemaOneSafety(t *testing.T) {
 func TestRejectSymlinkManifestAndSource(t *testing.T) {
 	for _, where := range []string{"target", "desired"} {
 		t.Run(where, func(t *testing.T) {
-			r := t.TempDir()
+			r := tempRoot(t)
 			d := filepath.Join(r, "desired")
 			target := filepath.Join(r, "target")
 			legacy := filepath.Join(r, "legacy")

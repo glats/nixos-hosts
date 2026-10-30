@@ -12,7 +12,11 @@ import (
 
 func newCredentialController(t *testing.T, launcher *fakeLauncher, enabled bool) (*Controller, string, string) {
 	t.Helper()
-	root := t.TempDir()
+	dir := t.TempDir()
+	root, err := filepath.EvalSymlinks(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
 	credentialDir := filepath.Join(root, "credentials")
 	if err := os.Mkdir(credentialDir, 0o700); err != nil {
 		t.Fatal(err)

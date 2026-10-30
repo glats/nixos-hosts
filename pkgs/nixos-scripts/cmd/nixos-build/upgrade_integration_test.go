@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -18,6 +19,19 @@ const (
 	nixBefore      = "{\n  version = \"2.0.14\";\n  url = \"https://registry.npmjs.org/@opencode/cli-linux-x64/-/cli-linux-x64-${version}.tgz\";\n  hash = \"sha512-old\";\n}\n"
 	nixAfter       = "{\n  version = \"2.2.1\";\n  url = \"https://registry.npmjs.org/@opencode/cli-linux-x64/-/cli-linux-x64-${version}.tgz\";\n  hash = \"sha512-new\";\n}\n"
 )
+
+// Count the `nix run nixpkgs#nix-update` steps of the upgrade plan for the
+// platform running the test, mirroring sourceUpdates' darwin branching.
+func upgradeNixRunCount() int {
+	darwin := runtime.GOOS == "darwin"
+	count := 0
+	for _, step := range nixbuild.Steps(nixbuild.Env{Darwin: darwin}, "upgrade") {
+		if step.Kind == nixbuild.KindExec && len(step.Args) >= 2 && step.Args[0] == "nix" && step.Args[1] == "run" {
+			count++
+		}
+	}
+	return count
+}
 
 func TestUpgradeCLI(t *testing.T) {
 	if os.Getenv("NIXOS_BUILD_TEST_CHILD") == "1" {
@@ -67,7 +81,7 @@ func TestUpgradeCLI(t *testing.T) {
 		{"opencode failure", "upgrade", broken.URL, "0", "0", 1, "", "ERROR: @opencode/plugin@latest: registry returned 500 Internal Server Error\n", false, false},
 		{"npm failure", "upgrade", registry.URL, "9", "0", 9, "npm\n", "native-npm-error\n", true, false},
 		{"flake failure", "upgrade", registry.URL, "0", "7", 7, "npm\nnpm\nquota ROOT\nreleasepins ROOT\nflakepins ROOT\nnix flake\n", "native-nix-error\n", true, true},
-		{"success", "upgrade", registry.URL, "0", "0", 0, "npm\nnpm\nquota ROOT\nreleasepins ROOT\nflakepins ROOT\nnix flake\n" + strings.Repeat("nix run /repo\n", 6), "", true, true},
+		{"success", "upgrade", registry.URL, "0", "0", 0, "npm\nnpm\nquota ROOT\nreleasepins ROOT\nflakepins ROOT\nnix flake\n" + strings.Repeat("nix run /repo\n", upgradeNixRunCount()), "", true, true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			dir := t.TempDir()
