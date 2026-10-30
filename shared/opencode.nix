@@ -72,8 +72,6 @@ let
             ]
           }
       '';
-  browserMcpServiceCommand = "${cfg.browserMcp.bridgePackage}/bin/browsermcp-broker --child ${cfg.browserMcp.package}/bin/mcp-server-browsermcp --port ${toString cfg.browserMcp.bridgePort}";
-  browserMcpLaunchdLabel = "org.nix-community.home.browsermcp";
 in
 {
   imports = [
@@ -88,22 +86,12 @@ in
       enable = mkOption {
         type = types.bool;
         default = true;
-        description = "Enable the pinned BrowserMCP singleton.";
+        description = "Enable the pinned BrowserMCP server as a local MCP.";
       };
       package = mkOption {
         type = types.package;
         default = pkgs.browsermcp-v2;
         description = "Pinned BrowserMCP package.";
-      };
-      bridgePackage = mkOption {
-        type = types.package;
-        default = pkgs.nixos-scripts;
-        description = "Package providing the loopback BrowserMCP broker.";
-      };
-      bridgePort = mkOption {
-        type = types.port;
-        default = 9020;
-        description = "Loopback-only broker port.";
       };
       location = mkOption {
         type = types.enum [ "global" ];
@@ -192,62 +180,5 @@ in
       cfg = config.home.opencode;
       assetRevision = inputs.gentle-ai-src.rev;
     }))
-
-    (mkIf config.home.opencode.enable {
-      assertions =
-        lib.optional (pkgs.stdenv.isLinux && cfg.browserMcp.enable) {
-          assertion =
-            lib.elem browserMcpServiceCommand config.systemd.user.services.browsermcp.Service.ExecStart
-            && config.systemd.user.services.browsermcp.Service.Restart == "on-failure";
-          message = "BrowserMCP must use the loopback broker under a restarting systemd user service.";
-        }
-        ++ lib.optional (pkgs.stdenv.isDarwin && cfg.browserMcp.enable) {
-          assertion =
-            config.launchd.agents.browsermcp.config.ProgramArguments == [
-              "${cfg.browserMcp.bridgePackage}/bin/browsermcp-broker"
-              "--child"
-              "${cfg.browserMcp.package}/bin/mcp-server-browsermcp"
-              "--port"
-              (toString cfg.browserMcp.bridgePort)
-            ]
-            && config.launchd.agents.browsermcp.config.KeepAlive.Crashed;
-          message = "BrowserMCP must use the loopback broker under a restarting launchd agent.";
-        };
-
-      systemd.user.services.browsermcp = lib.mkIf (pkgs.stdenv.isLinux && cfg.browserMcp.enable) {
-        Unit = {
-          Description = "BrowserMCP singleton broker";
-          After = [ "default.target" ];
-        };
-        Service = {
-          Type = "simple";
-          ExecStart = browserMcpServiceCommand;
-          Restart = "on-failure";
-          RestartSec = "5s";
-          RestartPreventExitStatus = "78";
-        };
-        Install.WantedBy = [ "default.target" ];
-      };
-
-      launchd.agents.browsermcp = lib.mkIf (pkgs.stdenv.isDarwin && cfg.browserMcp.enable) {
-        enable = true;
-        config = {
-          ProgramArguments = [
-            "${cfg.browserMcp.bridgePackage}/bin/browsermcp-broker"
-            "--child"
-            "${cfg.browserMcp.package}/bin/mcp-server-browsermcp"
-            "--port"
-            (toString cfg.browserMcp.bridgePort)
-          ];
-          KeepAlive = {
-            Crashed = true;
-            SuccessfulExit = false;
-          };
-          ProcessType = "Background";
-          RunAtLoad = true;
-        };
-      };
-
-    })
   ];
 }

@@ -29,7 +29,6 @@ buildGoModule {
     "cmd/ai-backup"
     "cmd/ai-assets-reconcile"
 
-    "cmd/browsermcp-broker"
     "cmd/code-work"
     "cmd/compare-palette"
     "cmd/device-link"

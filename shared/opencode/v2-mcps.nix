@@ -20,8 +20,9 @@
     ) mcps)
     // lib.optionalAttrs browserMcp.enable {
       browsermcp = {
-        type = "remote";
-        url = "http://127.0.0.1:${toString browserMcp.bridgePort}/mcp";
+        type = "local";
+        command = [ "${browserMcp.package}/bin/mcp-server-browsermcp" ];
+        disabled = false;
       };
     };
 }
