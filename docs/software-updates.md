@@ -13,6 +13,8 @@ nixos-build check
 nix-switch
 ```
 
+`nixos-build` hands the selected repository or worktree and the host name to `nh` explicitly, so an exported `NH_FLAKE` pointing elsewhere cannot activate a different configuration than the one you built.
+
 Run the last command only when ready to activate. `nixos-build build` builds without activation. Existing `boot`, `test`, `dry`, and `safe` retain their behavior; `safe` includes activation.
 
 Upgrade runs, in order:

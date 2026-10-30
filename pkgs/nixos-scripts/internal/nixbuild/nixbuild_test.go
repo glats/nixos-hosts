@@ -72,20 +72,20 @@ func linuxNHCases(prefix string) []seqCase {
 	return []seqCase{
 		{prefix + "switch", linuxNH, "switch", []Step{
 			echo(""), echo("> Building NixOS configuration (switch)..."),
-			ex("nh", "os", "switch"),
+			ex("nh", "os", "switch", "--hostname", hostname, root),
 		}},
 		{prefix + "boot", linuxNH, "boot", []Step{
 			echo(""), echo("> Building NixOS configuration (boot)..."),
-			ex("nh", "os", "boot"),
+			ex("nh", "os", "boot", "--hostname", hostname, root),
 		}},
 		{prefix + "test", linuxNH, "test", []Step{
 			echo(""), echo("> Building NixOS configuration (test)..."),
-			ex("nh", "os", "test"),
+			ex("nh", "os", "test", "--hostname", hostname, root),
 		}},
 		{prefix + "upgrade", linuxNH, "upgrade", append([]Step{echo("")}, upgradeSteps(root, false)...)},
 		{prefix + "dry", linuxNH, "dry", []Step{
 			echo(""), echo("> Dry-activating (nh)..."),
-			ex("nh", "os", "switch", "--dry"),
+			ex("nh", "os", "switch", "--dry", "--hostname", hostname, root),
 		}},
 		{prefix + "check", linuxNH, "check", []Step{
 			echo("> Validating flake..."),
@@ -104,10 +104,10 @@ func linuxNHCases(prefix string) []seqCase {
 			guard("nh", "os", "build", "--hostname", hostname, root, "> ERROR: Build failed. Stopping."),
 			echo(""),
 			echo("> [3/4] Dry-activating..."),
-			guard("nh", "os", "switch", "--dry", "> ERROR: Dry-activate failed. Stopping."),
+			guard("nh", "os", "switch", "--dry", "--hostname", hostname, root, "> ERROR: Dry-activate failed. Stopping."),
 			echo(""),
 			echo("> [4/4] Switching..."),
-			guard("nh", "os", "switch", "> ERROR: Switch failed. Stopping."),
+			guard("nh", "os", "switch", "--hostname", hostname, root, "> ERROR: Switch failed. Stopping."),
 			echo(""), echo("> Safe build completed successfully!"),
 		}},
 	}
@@ -616,4 +616,23 @@ func guardNom(args ...string) Step {
 	fail := args[len(args)-1]
 	return Step{Kind: KindExec, Args: args[:len(args)-1], ThroughNom: true,
 		FailLines: []string{"", fail}}
+}
+
+func TestStepsLinuxNHPassSelectedFlakeIgnoringNHFlake(t *testing.T) {
+	t.Setenv("NH_FLAKE", "/unrelated")
+	for _, command := range []string{"switch", "boot", "test", "dry"} {
+		t.Run(command, func(t *testing.T) {
+			env := mkEnv(false, true, true, false, true)
+			env.Hostname, env.FlakePath = "rog", "/worktree with spaces"
+			var nh []string
+			for _, step := range Steps(env, command) {
+				if step.Kind == KindExec && len(step.Args) > 0 && step.Args[0] == "nh" {
+					nh = step.Args
+				}
+			}
+			if len(nh) < 5 || nh[len(nh)-3] != "--hostname" || nh[len(nh)-2] != "rog" || nh[len(nh)-1] != "/worktree with spaces" {
+				t.Fatalf("nh argv = %q, want trailing --hostname rog <selected flake>", nh)
+			}
+		})
+	}
 }

@@ -134,7 +134,7 @@ func Steps(env Env, command string) []Step {
 		if env.Darwin {
 			s = append(s, Step{Kind: KindEcho, Echo: "> Building Darwin configuration (switch)..."}, darwinBuild("switch"))
 		} else if useNH {
-			s = append(s, linuxHeader("switch"), execStep([]string{"nh", "os", "switch"}, false))
+			s = append(s, linuxHeader("switch"), execStep(nhOS(env, "switch"), false))
 		} else {
 			s = append(s, linuxHeader("switch"), rebuild("switch"))
 		}
@@ -145,7 +145,7 @@ func Steps(env Env, command string) []Step {
 		}
 		s = append(s, Step{Kind: KindEcho, Echo: ""}, linuxHeader("boot"))
 		if useNH {
-			s = append(s, execStep([]string{"nh", "os", "boot"}, false))
+			s = append(s, execStep(nhOS(env, "boot"), false))
 		} else {
 			s = append(s, rebuild("boot"))
 		}
@@ -156,7 +156,7 @@ func Steps(env Env, command string) []Step {
 		}
 		s = append(s, Step{Kind: KindEcho, Echo: ""}, linuxHeader("test"))
 		if useNH {
-			s = append(s, execStep([]string{"nh", "os", "test"}, false))
+			s = append(s, execStep(nhOS(env, "test"), false))
 		} else {
 			s = append(s, rebuild("test"))
 		}
@@ -192,7 +192,7 @@ func Steps(env Env, command string) []Step {
 		} else if useNH {
 			s = append(s,
 				Step{Kind: KindEcho, Echo: "> Dry-activating (nh)..."},
-				execStep([]string{"nh", "os", "switch", "--dry"}, false))
+				execStep(nhOS(env, "switch", "--dry"), false))
 		} else {
 
 			s = append(s,
@@ -210,15 +210,15 @@ func Steps(env Env, command string) []Step {
 		if env.Darwin {
 			s = append(s, execStep([]string{"nix", "build", refDarwin}, useNom))
 		} else if useNH {
-			s = append(s, execStep([]string{"nh", "os", "build", "--hostname", env.Hostname, env.FlakePath}, false))
+			s = append(s, execStep(nhOS(env, "build"), false))
 		} else {
 			s = append(s, execStep([]string{"nix", "build", refTop}, useNom))
 		}
 
 	case "safe":
-		buildStep := execStep([]string{"nh", "os", "build", "--hostname", env.Hostname, env.FlakePath}, false)
-		dryStep := execStep([]string{"nh", "os", "switch", "--dry"}, false)
-		switchStep := execStep([]string{"nh", "os", "switch"}, false)
+		buildStep := execStep(nhOS(env, "build"), false)
+		dryStep := execStep(nhOS(env, "switch", "--dry"), false)
+		switchStep := execStep(nhOS(env, "switch"), false)
 		if env.Darwin {
 			buildStep = execStep([]string{"nix", "build", refDarwin}, useNom)
 			dryStep = darwinBuild("check")
@@ -272,6 +272,11 @@ func unsupportedDarwin(command string) []Step {
 		{Kind: KindEcho, Echo: "> '" + command + "' not supported on Darwin. Use 'switch' instead."},
 		{Kind: KindExit, ExitCode: 1},
 	}
+}
+
+func nhOS(env Env, action ...string) []string {
+	args := append([]string{"nh", "os"}, action...)
+	return append(args, "--hostname", env.Hostname, env.FlakePath)
 }
 
 func execStep(args []string, throughNom bool) Step {
