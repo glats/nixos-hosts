@@ -154,20 +154,6 @@
     ];
   };
 
-  fileSystems."/run/media/archlinux" = {
-    device = "/dev/disk/by-uuid/3188527d-b895-460a-b754-c396b876d8bf";
-    fsType = "xfs";
-    options = [
-      "rw"
-      "relatime"
-      "attr2"
-      "inode64"
-      "logbufs=8"
-      "logbsize=32k"
-      "noquota"
-    ];
-  };
-
   system.stateVersion = "25.05";
 
   services.sing-box-link.enable = true;

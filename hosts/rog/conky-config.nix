@@ -8,7 +8,6 @@
     mountPoints = [
       "/run/media/library"
       "/run/media/stuff"
-      "/run/media/archlinux"
     ];
   };
 }
