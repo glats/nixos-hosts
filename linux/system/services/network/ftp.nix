@@ -10,7 +10,7 @@
 
     allowWriteableChroot = true;
 
-    localRoot = "/run/media/archlinux/home/glats/home-server/ftp";
+    localRoot = "/run/media/stuff/ftp";
 
     extraConfig = ''
       # Passive ports (as in Docker)
@@ -47,6 +47,6 @@
   ];
 
   systemd.tmpfiles.rules = [
-    "d /run/media/archlinux/home/glats/home-server/ftp 0755 glats users -"
+    "d /run/media/stuff/ftp 0755 glats users -"
   ];
 }
