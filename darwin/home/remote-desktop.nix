@@ -79,8 +79,6 @@ let
             const char *vncbin = "/Applications/TigerVNC.app/Contents/MacOS/vncviewer";
             const char *args[] = {
               vncbin,
-              "-FullScreen",
-              "-FullscreenSystemKeys",
               "-RemoteResize",
               "${vncHost}",
               NULL
