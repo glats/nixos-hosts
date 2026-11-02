@@ -40,6 +40,7 @@ in
     ../../darwin/services/sunshine.nix
     ../../darwin/system/sing-box-link.nix
     ../../darwin/system/ssh-relay.nix
+    ../../darwin/system/lan-resolver.nix
 
     inputs.home-manager.darwinModules.home-manager
     inputs.nix-homebrew.darwinModules.nix-homebrew

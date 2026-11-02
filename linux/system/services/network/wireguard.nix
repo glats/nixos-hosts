@@ -14,26 +14,31 @@ let
       ip = "10.13.13.2";
       publicKey = "EsGamd57GFCaTxEk50FqU0Xya4bLmj2ij3l1AC8F/ig=";
       psk = config.sops.secrets."wireguard/peer_oneplus9_psk";
+      dns = true;
     };
     mac = {
       ip = "10.13.13.3";
       publicKey = "9MFatUrExdDzaIJpvcFPVUTPFyN5wT9uV2nnc3YCA28=";
       psk = config.sops.secrets."wireguard/peer_mac_psk";
+      dns = false;
     };
     thinkpad = {
       ip = "10.13.13.4";
       publicKey = "gzEjB/l6ofatawHeMFOsufbPqDZNKDiW+c+RMwRdkHA=";
       psk = config.sops.secrets."wireguard/peer_thinkpad_psk";
+      dns = false;
     };
     samsung = {
       ip = "10.13.13.5";
       publicKey = "pPDc0fkR9VT3cjAgrYpfExAtrJiVYbpfrEbPcVyrumc=";
       psk = config.sops.secrets."wireguard/peer_samsung_psk";
+      dns = true;
     };
     thinkphone = {
       ip = "10.13.13.6";
       publicKey = "PUJEcWsMCTOfENyZYqoRRiPx9VZVAr3gXjP0BCT6+38=";
       psk = config.sops.secrets."wireguard/peer_thinkphone_psk";
+      dns = true;
     };
   };
 
@@ -67,6 +72,7 @@ in
       listen-address = serverIP;
       bind-interfaces = true;
       server = [
+        "/lan/172.16.0.1"
         "1.1.1.1"
         "8.8.8.8"
       ];
@@ -98,7 +104,7 @@ in
         [Interface]
         Address = ${p.ip}/32
         $PRIVLINE
-        DNS = ${serverIP}
+        ${if p.dns then "DNS = ${serverIP}" else "# DNS not provided; client manages its own resolver"}
 
         [Peer]
         PublicKey = $SERVER_PUB
