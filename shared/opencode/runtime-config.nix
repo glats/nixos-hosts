@@ -136,7 +136,7 @@ let
     lib.filter (entry: entry.target == "skills") entries
   );
 
-  providerAllowlist = providers.providerAllowlist;
+  providerAllowlist = lib.unique (providers.providerAllowlist ++ cfg.extraAllowedProviders);
 
   jsonFile = pkgs.writeText "opencode.json" (
     builtins.toJSON ({

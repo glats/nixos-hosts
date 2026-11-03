@@ -117,6 +117,15 @@ in
       '';
     };
 
+    extraAllowedProviders = mkOption {
+      type = types.listOf types.str;
+      default = [ ];
+      description = ''
+        Provider IDs appended to the global `provider.use` allow list.
+        Allowing a provider does not register it or select its models.
+      '';
+    };
+
     quotaPlugin = mkOption {
       type = types.nullOr types.package;
       default = pkgs.callPackage ../pkgs/opencode-quota-patched { };
