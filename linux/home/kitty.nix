@@ -14,6 +14,7 @@
       background_tint = "0.2";
       scrollback_lines = -1;
       cursor_shape = "block";
+      cursor_blink_interval = 0;
       disable_ligatures = "never";
 
       window_padding_width = lib.mkForce 0;
