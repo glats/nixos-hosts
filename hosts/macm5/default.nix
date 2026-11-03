@@ -70,6 +70,8 @@ in
       ];
       home.stateVersion = "25.05";
       home.opencode.activeProviderName = "github-copilot-medium";
+      home.opencode.extraAllowedProviders = [ "kairos" ];
+      home.packages = [ (pkgs.callPackage ../../pkgs/kairos-cli { }) ];
       home.shell-gpt.model = "nvidia/nemotron-3.5-super-vl-120b-a12b";
     };
     extraSpecialArgs = {
