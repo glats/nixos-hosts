@@ -9,7 +9,7 @@ description: >
   providers base, check models, model audit, actualiza modelos, moldear listas,
   swap model, routing fit.
 metadata:
-  version: "4.4"
+  version: "4.5"
 ---
 
 ## Activation Contract
@@ -53,6 +53,43 @@ tool-call behavior.
 | One role misbehaved in observed use, or a single role needs a better fit | `re-fit` |
 | User reports a blocked/degraded role or asks "why is X slow/broken" | `re-fit` (diagnose first, then swap) |
 | User asks to add a whole new profile or rebalance a whole provider family | `full` |
+
+## Provider Route Fitting Rule (user-owned, 2026-10-30)
+
+The routing lists follow a category-per-provider rule that is deliberately
+OPEN: no provider family (openai, anthropic, github-copilot, opencode-go,
+nvidia, or a future one) is privileged by the structure — the rule only orders
+categories inside a profile name.
+
+- Multi-provider profile names encode ordered providers `p1-p2-p3`:
+  - `p1` = the provider's best orchestrator fit → `gentle-orchestrator` and
+    `neutral`.
+  - `p2` = the provider's thinking fit → `gentle-ai-verify`, `jd-judge-a/b`,
+    and every `review-*` role.
+  - `p3` = the provider's workforce fit → `gentle-ai-explore`,
+    `gentle-ai-worker`, `jd-fix-agent`.
+- Two-provider profiles `p1-p2`: `p1` keeps orchestrator + neutral AND
+  thinking; `p2` carries the whole workforce.
+- Goal: quota/rate-limit balancing. Weigh role placement by observed call
+  frequency, never by role count: orchestrator turns dominate, worker loops
+  next, verify runs per implementation task, review sources are bounded
+  bursts (~0-1 per session, ≤4 lenses + 1 refuter + 1 validator), and jd
+  judges only run on explicit judgment-day. This concentration was verified
+  against `odd/tasks/*.md` history on 2026-10-30 and kept.
+- Single-provider tier profiles `provider-light|medium|full`: one provider,
+  best per-role fit at that tier; the frontier climbs from light (volume
+  model everywhere) through medium (best orchestrator + thinking, volume
+  workforce) to full (best orchestrator + thinking, strongest workforce).
+- Current fit mapping (fresh 2026-10-30; re-verify before every assignment):
+  orchestrator/neutral: `gpt-6-astra` / `claude-opus-5-5` / `glm-5.3`;
+  thinking: `gpt-6.1-sol` / `claude-sonnet-5-5` / `deepseek-v4-pro`;
+  workforce volume: `gpt-6-luna` / `claude-haiku-5-5` / `minimax-m3.1-flash`;
+  explore: `gpt-6-luna` / `claude-sonnet-5-5` / `deepseek-v4-pro`.
+- Adding ANY future provider: verify Gates 1-2 fresh, derive its
+  orchestrator/thinking/explore/volume fits with citations, and extend the
+  profile matrix under the same rule. The rule never hardcodes providers;
+  legacy hand-written profiles (copilot/nvidia families) are documented gaps
+  until they pass gates and fold into the rule.
 
 ## Auth Method Recognition
 
@@ -175,7 +212,9 @@ these 14 role keys, with no remap layer: `gentle-orchestrator`,
 `gentle-ai-explore`, `gentle-ai-worker`, `gentle-ai-verify`, `jd-judge-a`,
 `jd-judge-b`, `jd-fix-agent`, `review-readability`, `review-refuter`,
 `review-reliability`, `review-resilience`, `review-risk`, `review-validator`,
-`neutral`. Editing a profile means editing those keys directly. Preserve every
+`neutral`. Editing a profile means editing those keys directly. Conform
+every assignment to the Provider Route Fitting Rule (above) — provider order
+naming, category placement, and open-provider extension. Preserve every
 unrelated fit and last-wins user override. Role names never grant delegation
 or delivery permission. The `neutral` slot is a title-provider filler that is
 never spawned as a subagent; its model choice is inert and does not consume
