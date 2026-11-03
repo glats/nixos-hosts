@@ -30,6 +30,7 @@ while true; do
     export XRDP_SESSION=1
     export DESKTOP_SESSION=mate
     export XDG_CURRENT_DESKTOP=MATE
+    export LP_NUM_THREADS=2
 
     @mate-session-manager@/bin/mate-session
   )
