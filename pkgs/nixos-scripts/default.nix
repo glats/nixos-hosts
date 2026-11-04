@@ -38,6 +38,7 @@ buildGoModule {
     "cmd/relayctl"
     "cmd/relay-client"
     "cmd/relay-policy"
+    "cmd/gastown-run"
     "cmd/git-id"
     "cmd/gpg-unlock"
     "cmd/install-opencode-auth-seed"
