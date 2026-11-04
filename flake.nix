@@ -412,12 +412,7 @@
             system = "aarch64-darwin";
             username = "juan";
             githubUser = "jcuzmar";
-            extraModules = [
-              ./darwin/home
-              {
-                home.opencode.activeProviderName = "work-copilot-anthropic";
-              }
-            ];
+            extraModules = [ ./darwin/home ];
           };
         };
 

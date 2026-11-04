@@ -11,6 +11,7 @@ let
     imports = baseModules ++ [
       ./opencode/mcps-extra.nix
       ./opencode/quota-plugin.nix
+      ./opencode/provider.nix
     ];
 
     home.username = primaryUser;
