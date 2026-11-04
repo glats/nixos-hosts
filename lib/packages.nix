@@ -57,6 +57,17 @@ let
   linuxPackages = commonPackages linuxPkgs // {
     openfang = linuxPkgs.callPackage ../pkgs/openfang { };
     mcp-supermercados-cl = linuxPkgs.callPackage ../pkgs/mcp-supermercados-cl { };
+    dolt = linuxPkgs.callPackage ../pkgs/dolt { };
+    beads = linuxPkgs.callPackage ../pkgs/beads { };
+    gastown = linuxPkgs.callPackage ../pkgs/gastown {
+      beads = linuxPackages.beads;
+      dolt = linuxPackages.dolt;
+    };
+    gastown-run = linuxPkgs.callPackage ../pkgs/gastown-run {
+      nixos-scripts = linuxPackages.nixos-scripts;
+      gastown = linuxPackages.gastown;
+      beads = linuxPackages.beads;
+    };
     thinkfan-ui = linuxPkgs.callPackage ../pkgs/thinkfan-ui {
       thinkfan-ui-src = inputs.thinkfan-ui-src;
       wrapQtAppsHook = linuxPkgs.qt6.wrapQtAppsHook;

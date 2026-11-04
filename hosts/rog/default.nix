@@ -46,6 +46,7 @@
     ../../linux/system/networking/wol.nix
 
     ../../linux/system/features/boot.nix
+    ../../linux/system/features/gastown.nix
     ../../linux/system/features/conky/options.nix
 
     ../../linux/system/services/xrdp.nix
@@ -87,6 +88,11 @@
   boot-settings = {
     enable = true;
     includeDiagLogging = true;
+  };
+
+  gastown = {
+    enable = true;
+    toolPackages = [ pkgs.go ];
   };
 
   my.shutdownDebug.enable = true;

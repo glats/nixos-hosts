@@ -21,6 +21,8 @@ final: prev: {
     openfang
     mcp-supermercados-cl
     claude-code
+    gastown
+    gastown-run
     ;
 
   asus-fan-control = final.callPackage ../pkgs/asus-fan-control {
