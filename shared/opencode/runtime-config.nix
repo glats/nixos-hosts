@@ -27,8 +27,8 @@ let
     ALL_PROXY = "";
     NO_PROXY = "*";
   };
-  enabledMcps = lib.mapAttrs (
-    _: mcp:
+  withLocalEnvironment =
+    mcp:
     if (mcp.type or "local") == "local" then
       mcp
       // {
@@ -48,8 +48,10 @@ let
         // proxyScrubEnv;
       }
     else
-      mcp
-  ) (lib.filterAttrs (_: mcp: mcp.enabled or false) allMcps);
+      mcp;
+  enabledMcps = lib.mapAttrs (_: withLocalEnvironment) (
+    lib.filterAttrs (_: mcp: mcp.enabled or false) allMcps
+  );
 
   v2Permissions = import ./v2-permissions.nix {
     inherit lib cfg;
@@ -60,7 +62,7 @@ let
     permissionRules = v2Permissions.rules;
   };
   v2Mcps = import ./v2-mcps.nix {
-    inherit lib;
+    inherit lib withLocalEnvironment;
     mcps = enabledMcps;
     browserMcp = cfg.browserMcp;
   };
