@@ -183,8 +183,13 @@ For the `ollama-cloud` provider (profiles `ollama-*`), verify fresh each time:
 - **Plan**: Pro is a monthly credit pool at list per-token prices with no 5-hour
   or weekly windows; usage past the pool draws from purchased credits. Check
   the account usage page for the real burn before judging quota.
-- **Reliability**: InferenceBench does not measure Ollama Cloud; treat tool-call
-  completeness as unproven until observed in use or measured independently.
+- **Output caps**: the API limit can be lower than models.dev. `deepseek-v4-pro`
+  rejects OpenCode's default 256000 `max_tokens` (API maximum 65536), so
+  `runtime-config.nix` caps its `limit.output`; re-check caps when adding models.
+- **Reliability**: observed 2026-11-05 with a paid Pro key and a real subagent
+  graph (glm-5.3 orchestrator, deepseek-v4-pro, minimax-m3.1-flash and
+  glm-5.3-flash subagents, three in parallel): tool calls completed with exact
+  results. InferenceBench still does not measure Ollama Cloud.
 
 ### Go gateway verification protocol
 
