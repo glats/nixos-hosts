@@ -21,8 +21,8 @@ S7. "dejalo en master. sin feature flow" and "haz commit de todo y push. yo hago
 
 ## Tasks
 
-- T1 [S1-S5, S7] inline, source/build/evaluation verified on master; earlier source/harness checks remain applicable because the derived package is identical. Runtime acceptance pending. Implementation commit pending recording.
-- T2 [S6-S7] inline, source/evaluation verified; existing DEBUG/console settings preserved. Full Linux configuration build and live diagnostics are user-operated and pending. Implementation commit pending recording.
+- T1 [S1-S5, S7] inline, source/build/evaluation verified on master; earlier source/harness checks remain applicable because the derived package is identical. Runtime acceptance pending. Implementation commit: `07a48ff8a50b6fea1c0aae7aacdc7f9043f266a1`.
+- T2 [S6-S7] inline, source/evaluation verified; existing DEBUG/console settings preserved. Full Linux configuration build and live diagnostics are user-operated and pending. Implementation commit: `07a48ff8a50b6fea1c0aae7aacdc7f9043f266a1`.
 
 ## Log
 
@@ -90,3 +90,5 @@ L24. Master verification (2026-11-05): formatter made no changes; targeted white
 L25. Independent verifier `ses_e5390c32affeyNd6glEiAmT15r` loaded the requested skills and found no source-integration blockers across S2-S7. S1 remains runtime-pending. It confirmed the exact original patch, supported hook ordering, preserved DEBUG/console configuration and unchanged Homebrew checksum. No new runtime probe was needed for the identical package; L15 evidence was reused. No server activation, restart or client deployment occurred. Risk: item 3 (shared static-channel receive behavior) and item 5 (packaged dependency and service diagnostics).
 
 L26. User: "haz commit de todo y push. yo hago deploy". This supersedes the earlier no-push scope and authorizes including the existing Homebrew `sloth` addition. Keep RDP and Homebrew in separate Conventional Commits; no deployment or service restart. The Homebrew change was included in the successful Darwin host evaluation from L24; installation is untested.
+
+L27. Local master delivery commits: `07a48ff8a50b6fea1c0aae7aacdc7f9043f266a1` contains the RDP backport, main-daemon syslog and feature history; `b845dad645b9ca54e185316cdfc13b6a3ef65cc9` contains the Homebrew `sloth` addition. No AI attribution was added. Code verification remains L24-L25; no source-mutating hooks changed the candidate. Deployment, Linux configuration build and runtime acceptance remain user-operated and pending.
