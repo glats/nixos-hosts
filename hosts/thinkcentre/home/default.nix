@@ -9,7 +9,7 @@ baseModules
 
   ../../../linux/home/conky-thinkcentre.nix
   ../../../linux/home/suites/sonicde
-  { home.opencode.activeProviderName = "anthropic-openai-opencode"; }
+  { home.opencode.activeProviderName = "anthropic-openai-ollama"; }
   ({ lib, ... }: {
     qt.enable = lib.mkForce false;
   })

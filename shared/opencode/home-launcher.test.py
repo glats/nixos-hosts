@@ -76,8 +76,8 @@ profiles = {profile["name"]: profile["roles"] for profile in result["profiles"]}
 selected = profiles[result["selectedProfiles"]["rog"]]
 for role in ("gentle-orchestrator", "gentle-ai-worker", "gentle-ai-verify"):
     assert result["oc"]["agents"][role]["model"] == selected[role], role
-title_providers = {"anthropic": "anthropic", "openai": "openai", "opencode": "opencode-go"}
-owner_models = {"anthropic": "anthropic/claude-opus-5-5", "openai": "openai/gpt-6-astra", "opencode": "opencode-go/glm-5.3"}
+title_providers = {"anthropic": "anthropic", "openai": "openai", "ollama": "ollama-cloud"}
+owner_models = {"anthropic": "anthropic/claude-opus-5-5", "openai": "openai/gpt-6-astra", "ollama": "ollama-cloud/glm-5.3"}
 core_roles = {"gentle-orchestrator", "gentle-ai-explore", "gentle-ai-worker", "gentle-ai-verify", "neutral"}
 for name, roles in profiles.items():
     assert core_roles <= roles.keys(), f"{name}: missing core role assignment"
