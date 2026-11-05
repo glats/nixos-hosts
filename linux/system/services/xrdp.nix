@@ -38,6 +38,14 @@ in
     services.xrdp = {
       enable = true;
       defaultWindowManager = "${xrdpMateSession}";
+      extraConfDirCommands = ''
+        sed -i \
+          -e '/^\[Logging\]/,/^\[/{s/^LogLevel=.*/LogLevel=DEBUG/;s/^#EnableConsole=.*/EnableConsole=true/;s/^#ConsoleLevel=.*/ConsoleLevel=DEBUG/}' \
+          $out/xrdp.ini $out/sesman.ini
+        sed -i \
+          -e '/^\[ChansrvLogging\]/,/^\[/s/^LogLevel=.*/LogLevel=DEBUG/' \
+          $out/sesman.ini
+      '';
     };
 
     environment.systemPackages = with pkgs; [
