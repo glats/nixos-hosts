@@ -114,6 +114,12 @@
     "asus_armoury"
   ];
 
+  specialisation.no-nvidia.configuration = {
+    boot.kernelParams = [
+      "module_blacklist=nvidia,nvidia_drm,nvidia_modeset,nvidia_uvm"
+    ];
+  };
+
   my.desktop.suite = "mate";
 
   boot = {

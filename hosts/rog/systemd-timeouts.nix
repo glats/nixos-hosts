@@ -10,6 +10,7 @@
   systemd.services."docker-guacamoledb".serviceConfig.TimeoutStartSec = lib.mkForce "300";
   systemd.services."docker-jellyfin".serviceConfig.TimeoutStartSec = lib.mkForce "300";
   systemd.services."docker-jellyseerr".serviceConfig.TimeoutStartSec = lib.mkForce "300";
+  systemd.services."nginx-config-reload".serviceConfig.TimeoutSec = lib.mkForce "300";
 
   systemd.services.nginx.startLimitIntervalSec = lib.mkForce 0;
   systemd.services."docker-droppy".startLimitIntervalSec = lib.mkForce 0;
