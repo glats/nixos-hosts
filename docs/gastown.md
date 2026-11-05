@@ -70,6 +70,80 @@ never closes a task.
 Reports, streams and per-step output are under
 `~/.local/state/gastown/runs/<project>/<timestamp>-NN/`.
 
+## Swarm: state a goal, get notified, answer when asked
+
+`gastown-run swarm` runs a whole goal instead of pre-split tasks. A Mayor agent
+plans and dispatches, workers code in parallel, and a trusted gate (plain code,
+not a model) verifies every result before you see it. You are told what is
+happening and asked when a decision is needed.
+
+```sh
+# once per project: a private town, a staging repository, your trusted checks
+gastown-run swarm init \
+  --check 'test -z "$(gofmt -l .)"' --check 'go vet ./...' --check 'go test ./...' \
+  --polecat-agent opencode:nvidia/nvidia/nemotron-3-ultra-550b-a55b \
+  --polecat-agent opencode:nvidia/google/gemma-4-31b-it \
+  --polecat-agent codex:gpt-5.6-luna:low \
+  --protect main.go --protect cmd/ \
+  --notify-cmd 'notify-send "$GASTOWN_NOTIFY_TITLE" "$GASTOWN_NOTIFY_BODY"' \
+  myproj ~/code/myproj
+gastown-run swarm check myproj      # probes each opencode model: alive, key valid
+gastown-run swarm run --goal "Add a --json flag to the export command" myproj
+gastown-run swarm reply myproj "Use the second option"   # when it asked you something
+gastown-run swarm status myproj
+gastown-run swarm stop myproj       # or: systemctl --user stop gts-myproj-*
+```
+
+`run` starts Dolt, the daemon, tmux, the Mayor and the workers inside one
+`systemd --user` unit with memory, CPU and task limits, works until the goal is
+verified, and shuts everything down. Expect several GB of memory and about half
+a core while it runs. Nothing stays running afterwards.
+
+What you receive, in `~/.local/state/gastown/swarm/<project>/notifications.jsonl`
+and through `--notify-cmd` (it gets `GASTOWN_NOTIFY_SEVERITY`, `_TITLE` and
+`_BODY`): questions the Mayor escalated ("Needs you"), the Mayor's mail, the
+gate's verdict for every branch ("Ready for review: git fetch <staging> gastown/<bead>"),
+provider limits and agent switches, and the final result. Point `--notify-cmd` at
+`notify-send`, `ntfy`, a Telegram bot script or anything else that takes a message.
+
+Agents and providers:
+
+- `codex:<model>:<effort>` uses your ChatGPT login (only `auth.json` is exposed to
+  the agent) with the model and reasoning effort you name.
+- `opencode:nvidia/<model id>` uses NVIDIA NIM through OpenCode with a minimal
+  inline configuration and the `NVIDIA_API_KEY` from your environment. Your own
+  OpenCode configuration, sessions and database are never mounted. The model id
+  is NVIDIA's full id, which usually repeats the organization
+  (`nvidia/nvidia/nemotron-3-ultra-550b-a55b`, `nvidia/google/gemma-4-31b-it`).
+  Several models in `providers-base.nix` have reached end of life; use
+  `swarm check` to find out which still answer.
+- Workers use the first agent in the order given. When a worker pane shows a usage
+  or rate limit, that agent cools down for 30 minutes and new workers use the next
+  one; if every agent is limited, dispatch pauses until one recovers.
+- The Mayor defaults to the Codex model at medium effort. Cheap workers confabulate
+  less when the coordinator is stronger.
+
+Safety model:
+
+- Agents run inside `bwrap`: they can write only the swarm's own town directory,
+  cannot see your home, SSH or GPG keys, and receive only the environment variables
+  the chosen agents need. Network stays on because the model APIs need it.
+- Agents never get the tmux socket and cannot start other agents; a deferred
+  scheduler inside the trusted side starts workers, so a compromised agent cannot
+  ask tmux to run something outside the sandbox.
+- The gate rebuilds each branch on the base, removes Gas Town's own files, the
+  ignore entries workers add to hide them and any new binary file, rejects a branch
+  that changes a `--protect` path (a file, or a `dir/`), flags edits to files that
+  already existed, runs your checks in isolation, and only then publishes
+  `gastown/<bead>` in the swarm's staging repository.
+- When the goal is verified, the accepted branches are merged into
+  `gastown/integrated` and your checks run on the combination. A conflict between
+  branches, or checks that fail only together, is reported instead of hidden. Your repository
+  is not touched. A model saying "done" counts for nothing: a goal is complete only
+  if at least one branch passed the gate after the goal was sent.
+- Mayor mail is shown as unverified claims. A "goal complete" with nothing verified
+  is rejected with a high alert.
+
 ## Limits
 
 - Prompt rules are not enforcement: a model may still try forbidden commands.
@@ -77,7 +151,13 @@ Reports, streams and per-step output are under
 - Cancelling stops processes in the unit; it does not cancel a model request
   already in flight on the provider side.
 - Token usage is recorded per run; subscription quota cost is not measured.
-- Tasks run one at a time. There is no parallel swarm and no mobile client yet.
+- `run` executes tasks one at a time; `swarm` runs workers in parallel. There is no mobile client yet.
 - Dependencies must be vendored or otherwise committed; the executor and the
   checks cannot download them.
 - `doctor` proves the boundary on the worker clone at the time it runs.
+- Swarm: workers and the Mayor are language models and can ask for the wrong thing,
+  stall or invent a result; the gate and your checks are the only authority, so write
+  checks that actually express "done". The Mayor's answer to your reply is not
+  instant. Replies are not delivered to a phone yet; answer with `swarm reply`.
+- Swarm: `codex:` agents are not probed by `swarm check` because they spend quota.
+- Swarm: tasks stay in the swarm's town until you delete `~/.local/state/gastown/swarm/<project>`.

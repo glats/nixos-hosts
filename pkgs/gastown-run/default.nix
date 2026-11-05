@@ -17,6 +17,7 @@
   diffutils,
   gnumake,
   gawk,
+  opencode ? null,
   toolPackages ? [ ],
 }:
 
@@ -62,5 +63,6 @@ runCommand "gastown-run"
       --set GASTOWN_BASH ${bash}/bin/bash \
       --set GASTOWN_SYSTEM_PATH ${systemPath} \
       --set GASTOWN_TOOL_PATH ${toolPath} \
+      ${lib.optionalString (opencode != null) "--set GASTOWN_OPENCODE ${opencode}/bin/opencode"} \
       --prefix PATH : ${lib.makeBinPath [ git ]}
   ''
