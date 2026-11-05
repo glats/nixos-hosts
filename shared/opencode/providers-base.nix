@@ -1,6 +1,6 @@
 {
   lib ? throw "providers-base.nix must be imported with lib",
-  activeProviderName ? "opencode-go-medium",
+  activeProviderName ? "ollama-medium",
 }:
 
 let
@@ -62,7 +62,7 @@ let
 
   providerAllowlist = [
     "opencode"
-    "opencode-go"
+    "ollama-cloud"
     "anthropic"
     "openai"
     "github-copilot"
@@ -71,15 +71,15 @@ let
 
   providers = [
     {
-      name = "openai-anthropic-opencode";
+      name = "openai-anthropic-ollama";
       roles = {
         gentle-orchestrator = "openai/gpt-6-astra";
-        gentle-ai-explore = "opencode-go/deepseek-v4-pro";
-        gentle-ai-worker = "opencode-go/minimax-m3.1-flash";
+        gentle-ai-explore = "ollama-cloud/deepseek-v4-pro";
+        gentle-ai-worker = "ollama-cloud/minimax-m3.1-flash";
         gentle-ai-verify = "anthropic/claude-sonnet-5-5";
         jd-judge-a = "anthropic/claude-sonnet-5-5";
         jd-judge-b = "anthropic/claude-sonnet-5-5";
-        jd-fix-agent = "opencode-go/minimax-m3.1-flash";
+        jd-fix-agent = "ollama-cloud/minimax-m3.1-flash";
         review-readability = "anthropic/claude-sonnet-5-5";
         review-refuter = "anthropic/claude-sonnet-5-5";
         review-reliability = "anthropic/claude-sonnet-5-5";
@@ -90,15 +90,15 @@ let
       };
     }
     {
-      name = "anthropic-openai-opencode";
+      name = "anthropic-openai-ollama";
       roles = {
         gentle-orchestrator = "anthropic/claude-opus-5-5";
-        gentle-ai-explore = "opencode-go/deepseek-v4-pro";
-        gentle-ai-worker = "opencode-go/minimax-m3.1-flash";
+        gentle-ai-explore = "ollama-cloud/deepseek-v4-pro";
+        gentle-ai-worker = "ollama-cloud/minimax-m3.1-flash";
         gentle-ai-verify = "openai/gpt-6.1-sol";
         jd-judge-a = "openai/gpt-6.1-sol";
         jd-judge-b = "openai/gpt-6.1-sol";
-        jd-fix-agent = "opencode-go/minimax-m3.1-flash";
+        jd-fix-agent = "ollama-cloud/minimax-m3.1-flash";
         review-readability = "openai/gpt-6.1-sol";
         review-refuter = "openai/gpt-6.1-sol";
         review-reliability = "openai/gpt-6.1-sol";
@@ -109,15 +109,15 @@ let
       };
     }
     {
-      name = "anthropic-opencode";
+      name = "anthropic-ollama";
       roles = {
         gentle-orchestrator = "anthropic/claude-opus-5-5";
-        gentle-ai-explore = "opencode-go/deepseek-v4-pro";
-        gentle-ai-worker = "opencode-go/minimax-m3.1-flash";
+        gentle-ai-explore = "ollama-cloud/deepseek-v4-pro";
+        gentle-ai-worker = "ollama-cloud/minimax-m3.1-flash";
         gentle-ai-verify = "anthropic/claude-sonnet-5-5";
         jd-judge-a = "anthropic/claude-sonnet-5-5";
         jd-judge-b = "anthropic/claude-sonnet-5-5";
-        jd-fix-agent = "opencode-go/minimax-m3.1-flash";
+        jd-fix-agent = "ollama-cloud/minimax-m3.1-flash";
         review-readability = "anthropic/claude-sonnet-5-5";
         review-refuter = "anthropic/claude-sonnet-5-5";
         review-reliability = "anthropic/claude-sonnet-5-5";
@@ -128,47 +128,47 @@ let
       };
     }
     {
-      name = "anthropic-opencode-openai";
+      name = "anthropic-ollama-openai";
       roles = {
         gentle-orchestrator = "anthropic/claude-opus-5-5";
         gentle-ai-explore = "openai/gpt-6-luna";
         gentle-ai-worker = "openai/gpt-6-luna";
-        gentle-ai-verify = "opencode-go/deepseek-v4-pro";
-        jd-judge-a = "opencode-go/deepseek-v4-pro";
-        jd-judge-b = "opencode-go/deepseek-v4-pro";
+        gentle-ai-verify = "ollama-cloud/deepseek-v4-pro";
+        jd-judge-a = "ollama-cloud/deepseek-v4-pro";
+        jd-judge-b = "ollama-cloud/deepseek-v4-pro";
         jd-fix-agent = "openai/gpt-6-luna";
-        review-readability = "opencode-go/deepseek-v4-pro";
-        review-refuter = "opencode-go/deepseek-v4-pro";
-        review-reliability = "opencode-go/deepseek-v4-pro";
-        review-resilience = "opencode-go/deepseek-v4-pro";
-        review-risk = "opencode-go/deepseek-v4-pro";
-        review-validator = "opencode-go/deepseek-v4-pro";
+        review-readability = "ollama-cloud/deepseek-v4-pro";
+        review-refuter = "ollama-cloud/deepseek-v4-pro";
+        review-reliability = "ollama-cloud/deepseek-v4-pro";
+        review-resilience = "ollama-cloud/deepseek-v4-pro";
+        review-risk = "ollama-cloud/deepseek-v4-pro";
+        review-validator = "ollama-cloud/deepseek-v4-pro";
         neutral = "anthropic/claude-opus-5-5";
       };
     }
     {
-      name = "openai-opencode-anthropic";
+      name = "openai-ollama-anthropic";
       roles = {
         gentle-orchestrator = "openai/gpt-6-astra";
         gentle-ai-explore = "anthropic/claude-sonnet-5-5";
         gentle-ai-worker = "anthropic/claude-haiku-5-5";
-        gentle-ai-verify = "opencode-go/deepseek-v4-pro";
-        jd-judge-a = "opencode-go/deepseek-v4-pro";
-        jd-judge-b = "opencode-go/deepseek-v4-pro";
+        gentle-ai-verify = "ollama-cloud/deepseek-v4-pro";
+        jd-judge-a = "ollama-cloud/deepseek-v4-pro";
+        jd-judge-b = "ollama-cloud/deepseek-v4-pro";
         jd-fix-agent = "anthropic/claude-haiku-5-5";
-        review-readability = "opencode-go/deepseek-v4-pro";
-        review-refuter = "opencode-go/deepseek-v4-pro";
-        review-reliability = "opencode-go/deepseek-v4-pro";
-        review-resilience = "opencode-go/deepseek-v4-pro";
-        review-risk = "opencode-go/deepseek-v4-pro";
-        review-validator = "opencode-go/deepseek-v4-pro";
+        review-readability = "ollama-cloud/deepseek-v4-pro";
+        review-refuter = "ollama-cloud/deepseek-v4-pro";
+        review-reliability = "ollama-cloud/deepseek-v4-pro";
+        review-resilience = "ollama-cloud/deepseek-v4-pro";
+        review-risk = "ollama-cloud/deepseek-v4-pro";
+        review-validator = "ollama-cloud/deepseek-v4-pro";
         neutral = "openai/gpt-6-astra";
       };
     }
     {
-      name = "opencode-anthropic-openai";
+      name = "ollama-anthropic-openai";
       roles = {
-        gentle-orchestrator = "opencode-go/glm-5.3";
+        gentle-orchestrator = "ollama-cloud/glm-5.3";
         gentle-ai-explore = "openai/gpt-6-luna";
         gentle-ai-worker = "openai/gpt-6-luna";
         gentle-ai-verify = "anthropic/claude-sonnet-5-5";
@@ -181,13 +181,13 @@ let
         review-resilience = "anthropic/claude-sonnet-5-5";
         review-risk = "anthropic/claude-sonnet-5-5";
         review-validator = "anthropic/claude-sonnet-5-5";
-        neutral = "opencode-go/glm-5.3";
+        neutral = "ollama-cloud/glm-5.3";
       };
     }
     {
-      name = "opencode-openai-anthropic";
+      name = "ollama-openai-anthropic";
       roles = {
-        gentle-orchestrator = "opencode-go/glm-5.3";
+        gentle-orchestrator = "ollama-cloud/glm-5.3";
         gentle-ai-explore = "anthropic/claude-sonnet-5-5";
         gentle-ai-worker = "anthropic/claude-haiku-5-5";
         gentle-ai-verify = "openai/gpt-6.1-sol";
@@ -200,7 +200,7 @@ let
         review-resilience = "openai/gpt-6.1-sol";
         review-risk = "openai/gpt-6.1-sol";
         review-validator = "openai/gpt-6.1-sol";
-        neutral = "opencode-go/glm-5.3";
+        neutral = "ollama-cloud/glm-5.3";
       };
     }
     {
@@ -242,15 +242,15 @@ let
       };
     }
     {
-      name = "openai-opencode";
+      name = "openai-ollama";
       roles = {
         gentle-orchestrator = "openai/gpt-6-astra";
-        gentle-ai-explore = "opencode-go/deepseek-v4-pro";
-        gentle-ai-worker = "opencode-go/minimax-m3.1-flash";
+        gentle-ai-explore = "ollama-cloud/deepseek-v4-pro";
+        gentle-ai-worker = "ollama-cloud/minimax-m3.1-flash";
         gentle-ai-verify = "openai/gpt-6.1-sol";
         jd-judge-a = "openai/gpt-6.1-sol";
         jd-judge-b = "openai/gpt-6.1-sol";
-        jd-fix-agent = "opencode-go/minimax-m3.1-flash";
+        jd-fix-agent = "ollama-cloud/minimax-m3.1-flash";
         review-readability = "openai/gpt-6.1-sol";
         review-refuter = "openai/gpt-6.1-sol";
         review-reliability = "openai/gpt-6.1-sol";
@@ -261,41 +261,41 @@ let
       };
     }
     {
-      name = "opencode-anthropic";
+      name = "ollama-anthropic";
       roles = {
-        gentle-orchestrator = "opencode-go/glm-5.3";
+        gentle-orchestrator = "ollama-cloud/glm-5.3";
         gentle-ai-explore = "anthropic/claude-sonnet-5-5";
         gentle-ai-worker = "anthropic/claude-haiku-5-5";
-        gentle-ai-verify = "opencode-go/deepseek-v4-pro";
-        jd-judge-a = "opencode-go/deepseek-v4-pro";
-        jd-judge-b = "opencode-go/deepseek-v4-pro";
+        gentle-ai-verify = "ollama-cloud/deepseek-v4-pro";
+        jd-judge-a = "ollama-cloud/deepseek-v4-pro";
+        jd-judge-b = "ollama-cloud/deepseek-v4-pro";
         jd-fix-agent = "anthropic/claude-haiku-5-5";
-        review-readability = "opencode-go/deepseek-v4-pro";
-        review-refuter = "opencode-go/deepseek-v4-pro";
-        review-reliability = "opencode-go/deepseek-v4-pro";
-        review-resilience = "opencode-go/deepseek-v4-pro";
-        review-risk = "opencode-go/deepseek-v4-pro";
-        review-validator = "opencode-go/deepseek-v4-pro";
-        neutral = "opencode-go/glm-5.3";
+        review-readability = "ollama-cloud/deepseek-v4-pro";
+        review-refuter = "ollama-cloud/deepseek-v4-pro";
+        review-reliability = "ollama-cloud/deepseek-v4-pro";
+        review-resilience = "ollama-cloud/deepseek-v4-pro";
+        review-risk = "ollama-cloud/deepseek-v4-pro";
+        review-validator = "ollama-cloud/deepseek-v4-pro";
+        neutral = "ollama-cloud/glm-5.3";
       };
     }
     {
-      name = "opencode-openai";
+      name = "ollama-openai";
       roles = {
-        gentle-orchestrator = "opencode-go/glm-5.3";
+        gentle-orchestrator = "ollama-cloud/glm-5.3";
         gentle-ai-explore = "openai/gpt-6-luna";
         gentle-ai-worker = "openai/gpt-6-luna";
-        gentle-ai-verify = "opencode-go/deepseek-v4-pro";
-        jd-judge-a = "opencode-go/deepseek-v4-pro";
-        jd-judge-b = "opencode-go/deepseek-v4-pro";
+        gentle-ai-verify = "ollama-cloud/deepseek-v4-pro";
+        jd-judge-a = "ollama-cloud/deepseek-v4-pro";
+        jd-judge-b = "ollama-cloud/deepseek-v4-pro";
         jd-fix-agent = "openai/gpt-6-luna";
-        review-readability = "opencode-go/deepseek-v4-pro";
-        review-refuter = "opencode-go/deepseek-v4-pro";
-        review-reliability = "opencode-go/deepseek-v4-pro";
-        review-resilience = "opencode-go/deepseek-v4-pro";
-        review-risk = "opencode-go/deepseek-v4-pro";
-        review-validator = "opencode-go/deepseek-v4-pro";
-        neutral = "opencode-go/glm-5.3";
+        review-readability = "ollama-cloud/deepseek-v4-pro";
+        review-refuter = "ollama-cloud/deepseek-v4-pro";
+        review-reliability = "ollama-cloud/deepseek-v4-pro";
+        review-resilience = "ollama-cloud/deepseek-v4-pro";
+        review-risk = "ollama-cloud/deepseek-v4-pro";
+        review-validator = "ollama-cloud/deepseek-v4-pro";
+        neutral = "ollama-cloud/glm-5.3";
       };
     }
     {
@@ -516,7 +516,7 @@ let
         gentle-ai-verify = "nvidia/nvidia/nemotron-3-ultra-550b-a55b";
         jd-judge-a = "nvidia/nemotron-3-ultra-550b-a55b";
         jd-judge-b = "nvidia/nemotron-3-ultra-550b-a55b";
-        jd-fix-agent = "opencode-go/minimax-m3.1-flash";
+        jd-fix-agent = "ollama-cloud/minimax-m3.1-flash";
         review-readability = "nvidia/nemotron-3-ultra-550b-a55b";
         review-refuter = "nvidia/nemotron-3-ultra-550b-a55b";
         review-reliability = "nvidia/nemotron-3-ultra-550b-a55b";
@@ -546,60 +546,60 @@ let
       };
     }
     {
-      name = "opencode-go-full";
+      name = "ollama-full";
       roles = {
-        gentle-orchestrator = "opencode-go/glm-5.3";
-        gentle-ai-explore = "opencode-go/deepseek-v4-pro";
-        gentle-ai-worker = "opencode-go/deepseek-v4-pro";
-        gentle-ai-verify = "opencode-go/deepseek-v4-pro";
-        jd-judge-a = "opencode-go/deepseek-v4-pro";
-        jd-judge-b = "opencode-go/deepseek-v4-pro";
-        jd-fix-agent = "opencode-go/deepseek-v4-pro";
-        review-readability = "opencode-go/deepseek-v4-pro";
-        review-refuter = "opencode-go/deepseek-v4-pro";
-        review-reliability = "opencode-go/deepseek-v4-pro";
-        review-resilience = "opencode-go/deepseek-v4-pro";
-        review-risk = "opencode-go/deepseek-v4-pro";
-        review-validator = "opencode-go/deepseek-v4-pro";
-        neutral = "opencode-go/glm-5.3";
+        gentle-orchestrator = "ollama-cloud/glm-5.3";
+        gentle-ai-explore = "ollama-cloud/deepseek-v4-pro";
+        gentle-ai-worker = "ollama-cloud/deepseek-v4-pro";
+        gentle-ai-verify = "ollama-cloud/deepseek-v4-pro";
+        jd-judge-a = "ollama-cloud/deepseek-v4-pro";
+        jd-judge-b = "ollama-cloud/deepseek-v4-pro";
+        jd-fix-agent = "ollama-cloud/deepseek-v4-pro";
+        review-readability = "ollama-cloud/deepseek-v4-pro";
+        review-refuter = "ollama-cloud/deepseek-v4-pro";
+        review-reliability = "ollama-cloud/deepseek-v4-pro";
+        review-resilience = "ollama-cloud/deepseek-v4-pro";
+        review-risk = "ollama-cloud/deepseek-v4-pro";
+        review-validator = "ollama-cloud/deepseek-v4-pro";
+        neutral = "ollama-cloud/glm-5.3";
       };
     }
     {
-      name = "opencode-go-medium";
+      name = "ollama-medium";
       roles = {
-        gentle-orchestrator = "opencode-go/glm-5.3";
-        gentle-ai-explore = "opencode-go/deepseek-v4-pro";
-        gentle-ai-worker = "opencode-go/minimax-m3.1-flash";
-        gentle-ai-verify = "opencode-go/deepseek-v4-pro";
-        jd-judge-a = "opencode-go/deepseek-v4-pro";
-        jd-judge-b = "opencode-go/deepseek-v4-pro";
-        jd-fix-agent = "opencode-go/minimax-m3.1-flash";
-        review-readability = "opencode-go/deepseek-v4-pro";
-        review-refuter = "opencode-go/deepseek-v4-pro";
-        review-reliability = "opencode-go/deepseek-v4-pro";
-        review-resilience = "opencode-go/deepseek-v4-pro";
-        review-risk = "opencode-go/deepseek-v4-pro";
-        review-validator = "opencode-go/deepseek-v4-pro";
-        neutral = "opencode-go/glm-5.3";
+        gentle-orchestrator = "ollama-cloud/glm-5.3";
+        gentle-ai-explore = "ollama-cloud/deepseek-v4-pro";
+        gentle-ai-worker = "ollama-cloud/minimax-m3.1-flash";
+        gentle-ai-verify = "ollama-cloud/deepseek-v4-pro";
+        jd-judge-a = "ollama-cloud/deepseek-v4-pro";
+        jd-judge-b = "ollama-cloud/deepseek-v4-pro";
+        jd-fix-agent = "ollama-cloud/minimax-m3.1-flash";
+        review-readability = "ollama-cloud/deepseek-v4-pro";
+        review-refuter = "ollama-cloud/deepseek-v4-pro";
+        review-reliability = "ollama-cloud/deepseek-v4-pro";
+        review-resilience = "ollama-cloud/deepseek-v4-pro";
+        review-risk = "ollama-cloud/deepseek-v4-pro";
+        review-validator = "ollama-cloud/deepseek-v4-pro";
+        neutral = "ollama-cloud/glm-5.3";
       };
     }
     {
-      name = "opencode-go-light";
+      name = "ollama-light";
       roles = {
-        gentle-orchestrator = "opencode-go/glm-5.3-flash";
-        gentle-ai-explore = "opencode-go/minimax-m3.1-flash";
-        gentle-ai-worker = "opencode-go/minimax-m3.1-flash";
-        gentle-ai-verify = "opencode-go/glm-5.3-flash";
-        jd-judge-a = "opencode-go/glm-5.3-flash";
-        jd-judge-b = "opencode-go/glm-5.3-flash";
-        jd-fix-agent = "opencode-go/minimax-m3.1-flash";
-        review-readability = "opencode-go/glm-5.3-flash";
-        review-refuter = "opencode-go/glm-5.3-flash";
-        review-reliability = "opencode-go/glm-5.3-flash";
-        review-resilience = "opencode-go/glm-5.3-flash";
-        review-risk = "opencode-go/glm-5.3-flash";
-        review-validator = "opencode-go/glm-5.3-flash";
-        neutral = "opencode-go/glm-5.3-flash";
+        gentle-orchestrator = "ollama-cloud/glm-5.3-flash";
+        gentle-ai-explore = "ollama-cloud/minimax-m3.1-flash";
+        gentle-ai-worker = "ollama-cloud/minimax-m3.1-flash";
+        gentle-ai-verify = "ollama-cloud/glm-5.3-flash";
+        jd-judge-a = "ollama-cloud/glm-5.3-flash";
+        jd-judge-b = "ollama-cloud/glm-5.3-flash";
+        jd-fix-agent = "ollama-cloud/minimax-m3.1-flash";
+        review-readability = "ollama-cloud/glm-5.3-flash";
+        review-refuter = "ollama-cloud/glm-5.3-flash";
+        review-reliability = "ollama-cloud/glm-5.3-flash";
+        review-resilience = "ollama-cloud/glm-5.3-flash";
+        review-risk = "ollama-cloud/glm-5.3-flash";
+        review-validator = "ollama-cloud/glm-5.3-flash";
+        neutral = "ollama-cloud/glm-5.3-flash";
       };
     }
   ];

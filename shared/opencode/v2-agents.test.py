@@ -78,34 +78,34 @@ for target, root in (("linux", "/home/glats/.config/opencode"),
 after = {p["name"]:p for p in result["afterProfiles"]}
 for name, profile in after.items():
     assert "phases" not in profile and not any(k.startswith("sdd-") for k in profile["roles"]), name
-    assert "opencode-go/glm-5.3-flash" not in profile["roles"].values(), name
+    assert "ollama-cloud/glm-5.3-flash" not in profile["roles"].values(), name
 replacement_profiles = {
-    "openai-anthropic-opencode", "anthropic-openai-opencode", "anthropic-opencode",
-    "anthropic-opencode-openai", "openai-opencode-anthropic", "openai-opencode",
-    "opencode-anthropic", "opencode-openai",
+    "openai-anthropic-ollama", "anthropic-openai-ollama", "anthropic-ollama",
+    "anthropic-ollama-openai", "openai-ollama-anthropic", "openai-ollama",
+    "ollama-anthropic", "ollama-openai",
 }
 for name in replacement_profiles:
     for role in ("gentle-ai-explore", "jd-fix-agent"):
-        assert after[name]["roles"][role] == "opencode-go/deepseek-v4-pro", (name, role)
-for name in ("openai-anthropic-opencode", "anthropic-opencode",
-             "openai-opencode-anthropic", "opencode-anthropic"):
-    assert after[name]["roles"]["gentle-ai-worker"] == "opencode-go/deepseek-v4-pro", name
-approved_addition = "anthropic-openai-opencode"
+        assert after[name]["roles"][role] == "ollama-cloud/deepseek-v4-pro", (name, role)
+for name in ("openai-anthropic-ollama", "anthropic-ollama",
+             "openai-ollama-anthropic", "ollama-anthropic"):
+    assert after[name]["roles"]["gentle-ai-worker"] == "ollama-cloud/deepseek-v4-pro", name
+approved_addition = "anthropic-openai-ollama"
 approved = after[approved_addition]
 assert approved["roles"] == {
     "gentle-orchestrator": "anthropic/claude-opus-5-5",
-    "gentle-ai-explore": "opencode-go/deepseek-v4-pro",
+    "gentle-ai-explore": "ollama-cloud/deepseek-v4-pro",
     "gentle-ai-worker": "openai/gpt-6-luna",
     "gentle-ai-verify": "openai/gpt-6.1-sol",
     "jd-judge-a": "openai/gpt-6.1-sol",
     "jd-judge-b": "openai/gpt-6.1-sol",
-    "jd-fix-agent": "opencode-go/deepseek-v4-pro",
-    "review-readability": "opencode-go/deepseek-v4-pro",
-    "review-refuter": "opencode-go/deepseek-v4-pro",
-    "review-reliability": "opencode-go/deepseek-v4-pro",
-    "review-resilience": "opencode-go/deepseek-v4-pro",
-    "review-risk": "opencode-go/deepseek-v4-pro",
-    "review-validator": "opencode-go/deepseek-v4-pro",
+    "jd-fix-agent": "ollama-cloud/deepseek-v4-pro",
+    "review-readability": "ollama-cloud/deepseek-v4-pro",
+    "review-refuter": "ollama-cloud/deepseek-v4-pro",
+    "review-reliability": "ollama-cloud/deepseek-v4-pro",
+    "review-resilience": "ollama-cloud/deepseek-v4-pro",
+    "review-risk": "ollama-cloud/deepseek-v4-pro",
+    "review-validator": "ollama-cloud/deepseek-v4-pro",
     "neutral": "anthropic/claude-opus-5-5",
 }, "Approved profile's provider/role shape changed"
 assert result["nvidiaAfter"]["nvidia"]["models"]["nemotron-3-ultra-550b-a55b"] == {

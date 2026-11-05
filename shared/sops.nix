@@ -7,7 +7,7 @@
   sops.secrets."opencode/nvidia_api_key" = {
     mode = "0400";
   };
-  sops.secrets."opencode/opencode_go_api_key" = {
+  sops.secrets."opencode/ollama_api_key" = {
     mode = "0400";
   };
   sops.secrets."opencode/groq_api_key" = {

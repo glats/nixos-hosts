@@ -109,9 +109,9 @@ in
 
     activeProviderName = mkOption {
       type = types.str;
-      default = lib.mkDefault "opencode-go-full";
+      default = lib.mkDefault "ollama-full";
       description = ''
-        Name of the active OpenCode provider tier (e.g. "opencode-go-full",
+        Name of the active OpenCode provider tier (e.g. "ollama-full",
         "github-copilot"). Per-host plain assignments override this default
         without needing `mkForce`.
       '';
@@ -170,8 +170,8 @@ in
               if [ -f "${config.sops.secrets."opencode/nvidia_api_key".path}" ]; then
                 export NVIDIA_API_KEY="$(cat ${config.sops.secrets."opencode/nvidia_api_key".path})"
               fi
-          if [ -f "${config.sops.secrets."opencode/opencode_go_api_key".path}" ]; then
-            export OPENCODE_API_KEY="$(cat ${config.sops.secrets."opencode/opencode_go_api_key".path})"
+          if [ -f "${config.sops.secrets."opencode/ollama_api_key".path}" ]; then
+            export OLLAMA_API_KEY="$(cat ${config.sops.secrets."opencode/ollama_api_key".path})"
           fi
         ${config.home.opencode.extraInitContent}
       '';
