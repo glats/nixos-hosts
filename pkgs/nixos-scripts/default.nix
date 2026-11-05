@@ -79,8 +79,9 @@ buildGoModule {
     wrapProgram $out/bin/gpg-unlock \
       --set NIXOS_SCRIPTS_GPG_KEYS_FILE $out/share/nixos-scripts/gpg-unlock-keys \
       --prefix PATH : ${lib.makeBinPath [ git ]}
+    mkdir -p $out/libexec/nixos-scripts
+    mv $out/bin/gastown-run $out/libexec/nixos-scripts/gastown-run
     ${lib.optionalString pkgs.stdenv.hostPlatform.isLinux ''
-      mkdir -p $out/libexec/nixos-scripts
       ln -s ${pkgs.pinentry-qt}/bin/pinentry-qt $out/libexec/nixos-scripts/pinentry-qt
       ln -s ${pkgs.pinentry-qt}/bin/pinentry-curses $out/libexec/nixos-scripts/pinentry-curses
       ln -s pinentry-auto $out/bin/pinentry

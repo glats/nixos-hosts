@@ -92,7 +92,12 @@
 
   gastown = {
     enable = true;
-    toolPackages = [ pkgs.go ];
+    toolPackages = with pkgs; [
+      go
+      python3
+      bats
+      shellcheck
+    ];
   };
 
   my.shutdownDebug.enable = true;

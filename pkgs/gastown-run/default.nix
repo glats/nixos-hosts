@@ -16,6 +16,7 @@
   findutils,
   diffutils,
   gnumake,
+  gawk,
   toolPackages ? [ ],
 }:
 
@@ -36,6 +37,7 @@ let
       findutils
       diffutils
       gnumake
+      gawk
     ]
     ++ toolPackages
   );
@@ -51,7 +53,7 @@ runCommand "gastown-run"
   }
   ''
     mkdir -p $out/bin
-    makeWrapper ${nixos-scripts}/bin/gastown-run $out/bin/gastown-run \
+    makeWrapper ${nixos-scripts}/libexec/nixos-scripts/gastown-run $out/bin/gastown-run \
       --set GASTOWN_GT ${gastown}/bin/gt \
       --set GASTOWN_BD ${beads}/bin/bd \
       --set GASTOWN_TMUX ${tmux}/bin/tmux \

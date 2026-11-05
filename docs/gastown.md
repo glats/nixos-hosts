@@ -7,7 +7,7 @@ starts what it needs and stops it again.
 Enable it per host with `gastown.enable = true;` (see `hosts/rog/default.nix`).
 `gastown.toolPackages` adds the toolchain your projects need (for example
 `pkgs.go`) to the executor and to the trusted checks. bash, coreutils, git,
-grep, sed, find, diff and make are always present.
+grep, sed, awk, find, diff and make are always present.
 
 Pinned versions: `gt` 1.2.1 (gastown commit `466aa41`), `bd` 1.0.5, `dolt`
 2.6.0 (`pkgs/gastown`, `pkgs/beads`, `pkgs/dolt`). Codex uses your existing
@@ -28,6 +28,10 @@ gastown-run run --task "Add a --json flag" \
 gastown-run run --tasks tasks.json myproj   # several tasks, one at a time
 gastown-run status myproj
 ```
+
+The executor and your checks run with a clean environment: only `PATH`, `HOME`,
+`TMPDIR` and the Go variables are set. A command that needs anything else must set
+it inline, for example `--check 'USER=gastown ./mql lint spec'`.
 
 `tasks.json` is a list of `{"title", "prompt", "checks": ["cmd", ...]}`. A task
 without checks is rejected, because only checks can close a task.

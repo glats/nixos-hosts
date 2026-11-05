@@ -18,7 +18,7 @@ in
       example = lib.literalExpression "[ pkgs.go pkgs.gnumake ]";
       description = ''
         Packages placed on PATH for the sandboxed Codex executor and for the
-        trusted checks gastown-run runs. bash, coreutils, git, grep, sed, find,
+        trusted checks gastown-run runs. bash, coreutils, git, grep, sed, awk, find,
         diff and make are always present; add the toolchain of the projects
         you run tasks on.
       '';
