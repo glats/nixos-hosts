@@ -39,10 +39,6 @@ review role binding, materialization, budgets, admission and receipts.
 3. Run focused tests and inspect every failed/skipped check:
 
    ```sh
-   bun test pkgs/gentle-ai-assets/opencode-review-transport.test.ts
-   python3 shared/opencode/v2-agents.test.py --odd-candidate
-   python3 shared/opencode/home-launcher.test.py --odd-candidate
-   python3 shared/opencode/asset-ownership.test.py
    go -C pkgs/nixos-scripts test ./...
    nix build --no-link .#gentle-ai .#gentle-ai-assets
    nix flake check --no-build

@@ -54,9 +54,6 @@ On `macm5`, first check **System Settings > Printers & Scanners > Add Printer**.
 ## Verification and rollback
 
 ```console
-nix eval --impure --json --file tests/brother-printer.nix
-nix eval --impure --json --file tests/gtk4-theme.nix
-nix build --impure --file tests/simple-scan-launcher.nix --no-link
 nix eval 'path:.#nixosConfigurations.rog.config.system.build.toplevel.drvPath'
 nix eval 'path:.#nixosConfigurations.thinkcentre.config.system.build.toplevel.drvPath'
 nix eval 'path:.#nixosConfigurations.t14.config.system.build.toplevel.drvPath'

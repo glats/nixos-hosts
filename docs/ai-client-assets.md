@@ -32,11 +32,10 @@ delete existing client skill directories, or run during evaluation.
 
 ## Verification and rollback
 
-Run `python3 shared/ai-skills.test.py` and `python3 shared/ai-tools.test.py` for
-client-independent evaluation. `python3 shared/opencode/asset-ownership.test.py`
-exercises actual packaged consumer trees against temporary directories, including
-retry, rollback, user-edit refusal and unmanaged-file preservation. Never run host
-activation merely to test reconciliation.
+Evaluate the home configurations to check deployment wiring. Never run host
+activation merely to test reconciliation. The Python regression suites that
+exercised packaged consumer trees were removed; recover them from the git tag
+`archive/tests-before-removal` if needed.
 
 Evaluate shared changes on Linux and Darwin separately. Rolling back the Nix
 configuration restores previous client behavior without implicitly deleting

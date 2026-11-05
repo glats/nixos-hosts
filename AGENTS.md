@@ -10,7 +10,7 @@
 - Linux modules live in `linux/system/` and `linux/home/`; Darwin modules live in `darwin/`; cross-platform Home Manager modules live in `shared/`.
 - `linux/home/shared-modules.nix` and `darwin/home/shared-modules.nix` are the canonical shared Home Manager module lists.
 - Overlays in `overlays/` are imported by flake builders, never used as modules.
-- Custom operational binaries live in `pkgs/nixos-scripts/`; `bin/test-tmux-resume` and `bin/webcam` are the only shell-script exceptions.
+- Custom operational binaries live in `pkgs/nixos-scripts/`; `bin/webcam` is the only shell-script exception.
 - Secrets are sops-encrypted under `secrets/`; `.sops.yaml` defines creation-rule ordering.
 
 ## Omarchy and t14
