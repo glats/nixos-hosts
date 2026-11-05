@@ -350,10 +350,7 @@ func (r *Runner) RunTask(p Project, t Task, job string) (report Report, err erro
 		return fail(errors.New("executor_moved_head"))
 	}
 
-	checkEnv := []string{"PATH=" + c.ToolPath, "HOME=" + filepath.Join(workspace, ".logs/tool-home"),
-		"TMPDIR=" + filepath.Join(workspace, ".logs/gotmp"), "GOCACHE=" + filepath.Join(workspace, ".logs/gocache"),
-		"GOPATH=" + filepath.Join(workspace, ".logs/gopath"), "GOTOOLCHAIN=local", "GOPROXY=off", "GOSUMDB=off",
-		"GOENV=off", "GOFLAGS=-buildvcs=false", "CGO_ENABLED=0", "LANG=C.UTF-8"}
+	checkEnv := CheckEnv(c, workspace)
 	if e := prepareCheckLogs(workspace); e != nil {
 		return fail(e)
 	}
@@ -454,4 +451,32 @@ func envValue(env []string, key string) string {
 		}
 	}
 	return ""
+}
+
+func CheckEnv(c Config, workspace string) []string {
+	return []string{"PATH=" + c.ToolPath, "HOME=" + filepath.Join(workspace, ".logs/tool-home"),
+		"TMPDIR=" + filepath.Join(workspace, ".logs/gotmp"), "GOCACHE=" + filepath.Join(workspace, ".logs/gocache"),
+		"GOPATH=" + filepath.Join(workspace, ".logs/gopath"), "GOTOOLCHAIN=local", "GOPROXY=off", "GOSUMDB=off",
+		"GOENV=off", "GOFLAGS=-buildvcs=false", "CGO_ENABLED=0", "LANG=C.UTF-8"}
+}
+
+// RunChecks runs trusted checks in isolation inside dir and records their output under logDir.
+func (r *Runner) RunChecks(dir string, checks []string, logDir string) []CheckResult {
+	results := []CheckResult{}
+	if err := prepareCheckLogs(dir); err != nil {
+		return append(results, CheckResult{Command: "prepare", Exit: -1})
+	}
+	_ = os.MkdirAll(logDir, 0o700)
+	for i, check := range checks {
+		command := Isolated(r.Config, dir, CheckEnv(r.Config, dir), "/bin/sh", "-c", check)
+		command.Dir, command.Timeout = dir, 10*time.Minute
+		res, err := r.Exec.Run(command)
+		_ = os.WriteFile(filepath.Join(logDir, fmt.Sprintf("check-%d.stdout", i+1)), res.Stdout, 0o600)
+		_ = os.WriteFile(filepath.Join(logDir, fmt.Sprintf("check-%d.stderr", i+1)), res.Stderr, 0o600)
+		if err != nil {
+			res.Exit = -1
+		}
+		results = append(results, CheckResult{Command: check, Exit: res.Exit})
+	}
+	return results
 }

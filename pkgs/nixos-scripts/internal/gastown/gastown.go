@@ -15,6 +15,7 @@ import (
 type Config struct {
 	GT, BD, Tmux, Codex, Bwrap string
 	Bash                       string
+	OpenCode                   string
 	ToolPath, SystemPath       string
 	NativeHome, State          string
 	DoltPort                   int

@@ -25,7 +25,7 @@ func ConfigFromEnv(getenv func(string) string) (Config, error) {
 		Codex: getenv("GASTOWN_CODEX"), Bwrap: getenv("GASTOWN_BWRAP"), Bash: getenv("GASTOWN_BASH"),
 		ToolPath: getenv("GASTOWN_TOOL_PATH"), SystemPath: getenv("GASTOWN_SYSTEM_PATH"),
 		NativeHome: getenv("HOME"), State: getenv("GASTOWN_STATE"), DoltPort: 45678,
-		Model: "gpt-5.6-luna", Effort: "low",
+		Model: "gpt-5.6-luna", Effort: "low", OpenCode: getenv("GASTOWN_OPENCODE"),
 	}
 	if c.State == "" {
 		base := getenv("XDG_STATE_HOME")
@@ -338,6 +338,17 @@ func Main(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprint(stderr, usage)
 		return 2
 	}
+	if args[0] == "confine" {
+		return Confine(args[1:], stderr)
+	}
+	if args[0] == "swarm" {
+		c, err := ConfigFromEnv(os.Getenv)
+		if err != nil {
+			fmt.Fprintln(stderr, "gastown-run:", err)
+			return 2
+		}
+		return SwarmMain(c, args[1:], stdout, stderr)
+	}
 	if args[0] == "guard" {
 		cwd, _ := os.Getwd()
 		return Guard(args[1:], cwd, OSExec{})
@@ -412,6 +423,7 @@ const usage = `gastown-run - run project tasks through Gas Town with a sandboxed
   gastown-run status <project>              show worker clone state and last report
   gastown-run doctor [--crew NAME] <project>
                                             prove the executor sandbox boundary (no model)
+  gastown-run swarm ...                     goal-driven swarm with notifications (gastown-run swarm for help)
   gastown-run abandon [--crew NAME] <project>
                                             release the task a failed run left hooked
                                             (partial work is kept in a git stash)
