@@ -72,12 +72,13 @@ for plugin in ("rtk.ts", "engram.ts", "opencode-review-transport.ts"):
     assert plugin in result["setupData"], f"Candidate lost managed plugin: {plugin}"
 assert "ai-assets-reconcile" in result["setupData"] and "rm -rf" not in result["setupData"]
 assert not any(name.startswith("sdd-") for name in result["oc"]["agents"])
+assert result["oc"]["providers"]["ollama-cloud"]["models"]["deepseek-v4-pro"]["limit"]["output"] == 65536, "deepseek-v4-pro output cap exceeds the Ollama Cloud maximum"
 profiles = {profile["name"]: profile["roles"] for profile in result["profiles"]}
 selected = profiles[result["selectedProfiles"]["rog"]]
 for role in ("gentle-orchestrator", "gentle-ai-worker", "gentle-ai-verify"):
     assert result["oc"]["agents"][role]["model"] == selected[role], role
-title_providers = {"anthropic": "anthropic", "openai": "openai", "opencode": "opencode-go"}
-owner_models = {"anthropic": "anthropic/claude-opus-5-5", "openai": "openai/gpt-6-astra", "opencode": "opencode-go/glm-5.3"}
+title_providers = {"anthropic": "anthropic", "openai": "openai", "ollama": "ollama-cloud"}
+owner_models = {"anthropic": "anthropic/claude-opus-5-5", "openai": "openai/gpt-6-astra", "ollama": "ollama-cloud/glm-5.3"}
 core_roles = {"gentle-orchestrator", "gentle-ai-explore", "gentle-ai-worker", "gentle-ai-verify", "neutral"}
 for name, roles in profiles.items():
     assert core_roles <= roles.keys(), f"{name}: missing core role assignment"

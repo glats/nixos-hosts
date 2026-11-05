@@ -57,8 +57,8 @@ tool-call behavior.
 ## Provider Route Fitting Rule (user-owned, 2026-10-30)
 
 The routing lists follow a category-per-provider rule that is deliberately
-OPEN: no provider family (openai, anthropic, github-copilot, opencode-go,
-nvidia, or a future one) is privileged by the structure — the rule only orders
+OPEN: no provider family (openai, anthropic, github-copilot, ollama-cloud,
+opencode-go, nvidia, or a future one) is privileged by the structure — the rule only orders
 categories inside a profile name.
 
 - Multi-provider profile names encode ordered providers `p1-p2-p3`:
@@ -166,6 +166,30 @@ Cost-instability signals also mark ⚠️: cache-behavior cost spikes (e.g.
 deepseek-v4-flash cache drop ≈27x, #42935), usage multipliers not shown in
 sticker price (e.g. gpt-5.6-luna 2x on Go over 272K), 403-for-some-accounts
 patterns (#40343). A provider that silently burns quota is not stable.
+
+### Ollama Cloud verification protocol
+
+For the `ollama-cloud` provider (profiles `ollama-*`), verify fresh each time:
+
+- **Live catalog**: `GET https://ollama.com/api/tags` and the `ollama-cloud`
+  entry of `https://models.dev/api.json`. Model ids use the API names (for
+  example `glm-5.3`, `deepseek-v4-pro`, `minimax-m3.1-flash`), not the `:cloud`
+  CLI suffix. Confirm with `opencode models` under a clean `HOME` and
+  `XDG_*` with `OLLAMA_API_KEY` set; the repo's `provider.use` allowlist hides
+  providers it does not list.
+- **Auth**: Method A. The key comes from ollama.com Settings > Keys and is
+  exported as `OLLAMA_API_KEY` from sops secret `opencode/ollama_api_key`;
+  there is no `/connect` step in this repo.
+- **Plan**: Pro is a monthly credit pool at list per-token prices with no 5-hour
+  or weekly windows; usage past the pool draws from purchased credits. Check
+  the account usage page for the real burn before judging quota.
+- **Output caps**: the API limit can be lower than models.dev. `deepseek-v4-pro`
+  rejects OpenCode's default 256000 `max_tokens` (API maximum 65536), so
+  `runtime-config.nix` caps its `limit.output`; re-check caps when adding models.
+- **Reliability**: observed 2026-11-05 with a paid Pro key and a real subagent
+  graph (glm-5.3 orchestrator, deepseek-v4-pro, minimax-m3.1-flash and
+  glm-5.3-flash subagents, three in parallel): tool calls completed with exact
+  results. InferenceBench still does not measure Ollama Cloud.
 
 ### Go gateway verification protocol
 

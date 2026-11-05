@@ -148,6 +148,7 @@ let
       default_agent = "gentle-orchestrator";
       agents = v2Agents;
       providers.openai.settings.transport = "http";
+      providers.ollama-cloud.models.deepseek-v4-pro.limit.output = 65536;
       providers.nvidia = {
         inherit (providers.nvidiaProvider.nvidia) name models;
         env = [ "NVIDIA_API_KEY" ];
