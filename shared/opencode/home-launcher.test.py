@@ -72,6 +72,7 @@ for plugin in ("rtk.ts", "engram.ts", "opencode-review-transport.ts"):
     assert plugin in result["setupData"], f"Candidate lost managed plugin: {plugin}"
 assert "ai-assets-reconcile" in result["setupData"] and "rm -rf" not in result["setupData"]
 assert not any(name.startswith("sdd-") for name in result["oc"]["agents"])
+assert result["oc"]["providers"]["ollama-cloud"]["models"]["deepseek-v4-pro"]["limit"]["output"] == 65536, "deepseek-v4-pro output cap exceeds the Ollama Cloud maximum"
 profiles = {profile["name"]: profile["roles"] for profile in result["profiles"]}
 selected = profiles[result["selectedProfiles"]["rog"]]
 for role in ("gentle-orchestrator", "gentle-ai-worker", "gentle-ai-verify"):
