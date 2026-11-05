@@ -49,6 +49,7 @@
       "betterdisplay"
       "bruno"
       "openlogi"
+      "sloth"
     ];
   };
 }
