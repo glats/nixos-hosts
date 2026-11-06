@@ -47,7 +47,7 @@ let
         "npx"
         "-y"
         "chrome-devtools-mcp@latest"
-        "--autoConnect"
+        "--browserUrl=http://127.0.0.1:9222"
       ];
       enabled = true;
     };
