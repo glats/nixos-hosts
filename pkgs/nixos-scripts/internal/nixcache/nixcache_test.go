@@ -173,6 +173,16 @@ func TestCurrentSteps(t *testing.T) {
 			Fatal: true,
 		},
 		{
+			Name: "nixos host samsung",
+			Args: []string{
+				"nix", "build",
+				"--out-link", "/srv/nix-cache/roots/current/nixos-samsung",
+				"--keep-going",
+				ref + "#nixosConfigurations.samsung.config.system.build.toplevel",
+			},
+			Fatal: true,
+		},
+		{
 			Name: "home host rog",
 			Args: []string{
 				"nix", "build",
@@ -199,6 +209,16 @@ func TestCurrentSteps(t *testing.T) {
 				"--out-link", "/srv/nix-cache/roots/current/home-thinkcentre",
 				"--keep-going",
 				ref + "#homeConfigurations.thinkcentre.activationPackage",
+			},
+			Fatal: true,
+		},
+		{
+			Name: "home host samsung",
+			Args: []string{
+				"nix", "build",
+				"--out-link", "/srv/nix-cache/roots/current/home-samsung",
+				"--keep-going",
+				ref + "#homeConfigurations.samsung.activationPackage",
 			},
 			Fatal: true,
 		},

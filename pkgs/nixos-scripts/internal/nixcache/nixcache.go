@@ -23,7 +23,7 @@ const (
 	darwinHost      = "macm5"
 )
 
-var linuxHosts = []string{"rog", "t14", "thinkcentre"}
+var linuxHosts = []string{"rog", "t14", "thinkcentre", "samsung"}
 
 // UsageText is printed by nix-cache help and documents every flag.
 const UsageText = `Usage: nix-cache [command] [flags]
