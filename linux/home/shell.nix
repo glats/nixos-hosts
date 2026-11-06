@@ -61,6 +61,17 @@
     };
 
     initContent = lib.mkAfter ''
+      if [[ -o interactive && -o login && -t 0 && -t 1 \
+            && -n "''${SSH_CONNECTION:-}" && -n "''${SSH_TTY:-}" \
+            && -z "''${SSH_ORIGINAL_COMMAND:-}" \
+            && "''${PINENTRY_USER_DATA:-}" != opencode ]]; then
+        () {
+          setopt localtraps
+          trap ':' INT
+          ${pkgs.nixos-scripts}/bin/ssh-keyring-unlock || true
+        }
+      fi
+
       code-work() {
         case "''${1:-}" in
           new|check|ready|status|merge|clean|abandon|recover-lock|managed)
