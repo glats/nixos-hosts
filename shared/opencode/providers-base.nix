@@ -168,7 +168,7 @@ let
     {
       name = "ollama-anthropic-openai";
       roles = {
-        gentle-orchestrator = "ollama-cloud/glm-5.3";
+        gentle-orchestrator = "ollama-cloud/deepseek-v4-pro";
         gentle-ai-explore = "openai/gpt-6-luna";
         gentle-ai-worker = "openai/gpt-6-luna";
         gentle-ai-verify = "anthropic/claude-sonnet-5-5";
@@ -181,13 +181,13 @@ let
         review-resilience = "anthropic/claude-sonnet-5-5";
         review-risk = "anthropic/claude-sonnet-5-5";
         review-validator = "anthropic/claude-sonnet-5-5";
-        neutral = "ollama-cloud/glm-5.3";
+        neutral = "ollama-cloud/deepseek-v4-pro";
       };
     }
     {
       name = "ollama-openai-anthropic";
       roles = {
-        gentle-orchestrator = "ollama-cloud/glm-5.3";
+        gentle-orchestrator = "ollama-cloud/deepseek-v4-pro";
         gentle-ai-explore = "anthropic/claude-sonnet-5-5";
         gentle-ai-worker = "anthropic/claude-haiku-5-5";
         gentle-ai-verify = "openai/gpt-6.1-sol";
@@ -200,7 +200,7 @@ let
         review-resilience = "openai/gpt-6.1-sol";
         review-risk = "openai/gpt-6.1-sol";
         review-validator = "openai/gpt-6.1-sol";
-        neutral = "ollama-cloud/glm-5.3";
+        neutral = "ollama-cloud/deepseek-v4-pro";
       };
     }
     {
@@ -263,7 +263,7 @@ let
     {
       name = "ollama-anthropic";
       roles = {
-        gentle-orchestrator = "ollama-cloud/glm-5.3";
+        gentle-orchestrator = "ollama-cloud/deepseek-v4-pro";
         gentle-ai-explore = "anthropic/claude-sonnet-5-5";
         gentle-ai-worker = "anthropic/claude-haiku-5-5";
         gentle-ai-verify = "ollama-cloud/deepseek-v4-pro";
@@ -276,13 +276,13 @@ let
         review-resilience = "ollama-cloud/deepseek-v4-pro";
         review-risk = "ollama-cloud/deepseek-v4-pro";
         review-validator = "ollama-cloud/deepseek-v4-pro";
-        neutral = "ollama-cloud/glm-5.3";
+        neutral = "ollama-cloud/deepseek-v4-pro";
       };
     }
     {
       name = "ollama-openai";
       roles = {
-        gentle-orchestrator = "ollama-cloud/glm-5.3";
+        gentle-orchestrator = "ollama-cloud/deepseek-v4-pro";
         gentle-ai-explore = "openai/gpt-6-luna";
         gentle-ai-worker = "openai/gpt-6-luna";
         gentle-ai-verify = "ollama-cloud/deepseek-v4-pro";
@@ -295,7 +295,7 @@ let
         review-resilience = "ollama-cloud/deepseek-v4-pro";
         review-risk = "ollama-cloud/deepseek-v4-pro";
         review-validator = "ollama-cloud/deepseek-v4-pro";
-        neutral = "ollama-cloud/glm-5.3";
+        neutral = "ollama-cloud/deepseek-v4-pro";
       };
     }
     {
@@ -548,7 +548,7 @@ let
     {
       name = "ollama-full";
       roles = {
-        gentle-orchestrator = "ollama-cloud/glm-5.3";
+        gentle-orchestrator = "ollama-cloud/deepseek-v4-pro";
         gentle-ai-explore = "ollama-cloud/deepseek-v4-pro";
         gentle-ai-worker = "ollama-cloud/deepseek-v4-pro";
         gentle-ai-verify = "ollama-cloud/deepseek-v4-pro";
@@ -561,13 +561,13 @@ let
         review-resilience = "ollama-cloud/deepseek-v4-pro";
         review-risk = "ollama-cloud/deepseek-v4-pro";
         review-validator = "ollama-cloud/deepseek-v4-pro";
-        neutral = "ollama-cloud/glm-5.3";
+        neutral = "ollama-cloud/deepseek-v4-pro";
       };
     }
     {
       name = "ollama-medium";
       roles = {
-        gentle-orchestrator = "ollama-cloud/glm-5.3";
+        gentle-orchestrator = "ollama-cloud/deepseek-v4-pro";
         gentle-ai-explore = "ollama-cloud/deepseek-v4-pro";
         gentle-ai-worker = "ollama-cloud/minimax-m3.1-flash";
         gentle-ai-verify = "ollama-cloud/deepseek-v4-pro";
@@ -580,26 +580,26 @@ let
         review-resilience = "ollama-cloud/deepseek-v4-pro";
         review-risk = "ollama-cloud/deepseek-v4-pro";
         review-validator = "ollama-cloud/deepseek-v4-pro";
-        neutral = "ollama-cloud/glm-5.3";
+        neutral = "ollama-cloud/deepseek-v4-pro";
       };
     }
     {
       name = "ollama-light";
       roles = {
-        gentle-orchestrator = "ollama-cloud/glm-5.3-flash";
+        gentle-orchestrator = "ollama-cloud/minimax-m3.1-flash";
         gentle-ai-explore = "ollama-cloud/minimax-m3.1-flash";
         gentle-ai-worker = "ollama-cloud/minimax-m3.1-flash";
-        gentle-ai-verify = "ollama-cloud/glm-5.3-flash";
-        jd-judge-a = "ollama-cloud/glm-5.3-flash";
-        jd-judge-b = "ollama-cloud/glm-5.3-flash";
+        gentle-ai-verify = "ollama-cloud/minimax-m3.1-flash";
+        jd-judge-a = "ollama-cloud/minimax-m3.1-flash";
+        jd-judge-b = "ollama-cloud/minimax-m3.1-flash";
         jd-fix-agent = "ollama-cloud/minimax-m3.1-flash";
-        review-readability = "ollama-cloud/glm-5.3-flash";
-        review-refuter = "ollama-cloud/glm-5.3-flash";
-        review-reliability = "ollama-cloud/glm-5.3-flash";
-        review-resilience = "ollama-cloud/glm-5.3-flash";
-        review-risk = "ollama-cloud/glm-5.3-flash";
-        review-validator = "ollama-cloud/glm-5.3-flash";
-        neutral = "ollama-cloud/glm-5.3-flash";
+        review-readability = "ollama-cloud/minimax-m3.1-flash";
+        review-refuter = "ollama-cloud/minimax-m3.1-flash";
+        review-reliability = "ollama-cloud/minimax-m3.1-flash";
+        review-resilience = "ollama-cloud/minimax-m3.1-flash";
+        review-risk = "ollama-cloud/minimax-m3.1-flash";
+        review-validator = "ollama-cloud/minimax-m3.1-flash";
+        neutral = "ollama-cloud/minimax-m3.1-flash";
       };
     }
   ];
