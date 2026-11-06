@@ -58,8 +58,7 @@ buildGoModule {
     "cmd/sync-opencode-remote"
     "cmd/test-shutdown"
     "cmd/wg-peer"
-  ]
-  ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [ "cmd/ssh-keyring-unlock" ];
+  ];
 
   vendorHash = null;
 
@@ -68,13 +67,7 @@ buildGoModule {
     makeWrapper
   ];
 
-  nativeCheckInputs = [
-    jq
-  ]
-  ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
-    pkgs.systemd
-    pkgs.zsh
-  ];
+  nativeCheckInputs = [ jq ];
 
   postFixup = ''
     # qrencode is a runtime dep of device-link (terminal QR output).
@@ -86,13 +79,6 @@ buildGoModule {
       --set NIXOS_SCRIPTS_GPG_KEYS_FILE $out/share/nixos-scripts/gpg-unlock-keys \
       --prefix PATH : ${lib.makeBinPath [ git ]}
     ${lib.optionalString pkgs.stdenv.hostPlatform.isLinux ''
-      wrapProgram $out/bin/ssh-keyring-unlock \
-        --prefix PATH : ${
-          lib.makeBinPath [
-            pkgs.systemd
-            pkgs.gnome-keyring
-          ]
-        }
       mkdir -p $out/libexec/nixos-scripts
       ln -s ${pkgs.pinentry-qt}/bin/pinentry-qt $out/libexec/nixos-scripts/pinentry-qt
       ln -s ${pkgs.pinentry-qt}/bin/pinentry-curses $out/libexec/nixos-scripts/pinentry-curses
