@@ -47,7 +47,8 @@ let
         "npx"
         "-y"
         "chrome-devtools-mcp@latest"
-        "--browserUrl=http://127.0.0.1:9222"
+        "--autoConnect"
+        "--userDataDir=${config.home.homeDirectory}/Library/Application Support/Microsoft Edge"
       ];
       enabled = true;
     };
