@@ -326,6 +326,10 @@
           touch $out
         '';
 
+      checks.x86_64-linux.gh-default-account = import ./checks/gh-default-account {
+        pkgs = nixpkgs.legacyPackages.x86_64-linux;
+      };
+
       nixosConfigurations = {
         rog = mkNixosHost { hostname = "rog"; };
         thinkcentre = mkNixosHost { hostname = "thinkcentre"; };

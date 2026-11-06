@@ -40,3 +40,20 @@ prompt appears only when needed, cancellation still opens the shell, and GitHub
 operations work in both the terminal and OpenCode without an XRDP session.
 This user-assisted acceptance check is required; unit tests do not prove access
 to the live credential store.
+
+## Home Manager activation
+
+Selecting the default GitHub account during activation is best-effort. The
+`gh auth switch` command gets five seconds to complete, followed by a two-second
+grace period before forced termination. Failure or timeout prints a warning and
+activation continues; the requested account may not have become active.
+
+After unlocking the keyring in your terminal, retry account selection manually:
+
+```console
+gh auth switch --hostname github.com --user glats
+```
+
+Use the account configured by `home.github.defaultAccount` on other hosts. This
+limit prevents account selection from blocking activation; it does not resolve
+an unavailable keyring, bypass SSO, or suppress failures from other services.
