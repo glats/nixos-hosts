@@ -10,7 +10,7 @@ Confirm that the phone's local private identity is the `oneplus5` source
 identity and that its public fingerprint matches `shared/ssh/lan-mesh.nix`.
 Never copy a private key into the repository, SOPS, or another host.
 
-Add these four exact Nix-source public lines to the phone user's
+Add these five exact Nix-source public lines to the phone user's
 `~/.ssh/authorized_keys` for `glats`:
 
 ```text
@@ -18,6 +18,7 @@ ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGX9n6Xva9Lpuf4Fn4rTqLl+3zbfSN2jzJQW7V54J1mu
 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAID47wBmPxBXhRq8uxOABpd+G72Gyizn+hDU/B5Z6xAkT glats@rog-lan
 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKSehpAzNhKa87/oag3V60HqcmO4/ix6IbOjyXEQM8s6 glats@thinkcentre-lan
 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILjmQmDCgrLLPpd9dpvWnB2Uqi25kTvj9Bycp0rKQt+R glats@t14-lan
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDggw5AAcR8eVYNshLh3qsQZ0CwOb1pp4AshtOnIzjdh glats@samsung-lan
 ```
 
 Back up the current file before merging. Keep unrelated keys only when their
@@ -25,7 +26,7 @@ owner and purpose are known. Remove duplicates, set ownership to `glats`,
 mode `600` on the file, and mode `700` on `.ssh`. Repeating the edit must not
 duplicate lines or alter comments.
 
-Configure these four aliases in the phone user's SSH config. All use the
+Configure these five aliases in the phone user's SSH config. All use the
 phone's local identity, never a target identity:
 
 ```sshconfig
@@ -44,6 +45,11 @@ Host t14
     User glats
     IdentityFile ~/.ssh/id_ed25519_lan
     IdentitiesOnly yes
+Host samsung
+    HostName samsung.local
+    User glats
+    IdentityFile ~/.ssh/id_ed25519_lan
+    IdentitiesOnly yes
 Host macm5
     HostName CLFTCLGV2FHWW0W.local
     User juan
@@ -56,14 +62,15 @@ policy. Verify peer host keys against the independently supplied records.
 
 ## Evidence and drift review
 
-Record the date, registry revision, four authorized-key comments, permissions,
-and redacted output from `ssh -G rog`, `ssh -G thinkcentre`, `ssh -G t14`, and
+Record the date, registry revision, five authorized-key comments, permissions,
+and redacted output from `ssh -G rog`, `ssh -G thinkcentre`, `ssh -G t14`, `ssh -G samsung`, and
 `ssh -G macm5`. After host keys are verified, run:
 
 ```text
 ssh -o BatchMode=yes rog true
 ssh -o BatchMode=yes thinkcentre true
 ssh -o BatchMode=yes t14 true
+ssh -o BatchMode=yes samsung true
 ssh -o BatchMode=yes macm5 true
 ```
 
