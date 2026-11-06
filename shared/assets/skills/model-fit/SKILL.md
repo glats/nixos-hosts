@@ -186,8 +186,9 @@ For the `ollama-cloud` provider (profiles `ollama-*`), verify fresh each time:
 - **Output caps**: the API limit can be lower than models.dev. `deepseek-v4-pro`
   rejects OpenCode's default 256000 `max_tokens` (API maximum 65536), so
   `runtime-config.nix` caps its `limit.output`; re-check caps when adding models.
-- **Gate 1 on Ollama Cloud (2026-11-06)**: `glm-5.3` and `glm-5.3-flash` are
-  excluded from `ollama-*` profiles. Open ollama/ollama issues: #18193 (glm-5.3
+- **Gate 1 on Ollama Cloud (2026-11-06)**: `glm-5.3-flash` is excluded from
+  `ollama-*` profiles; `glm-5.3` stays only as orchestrator/neutral by explicit
+  user decision (2026-11-06) despite the open issues below. Open ollama/ollama issues: #18193 (glm-5.3
   endless reasoning, aborts long agentic tasks; official Z.AI unaffected),
   #18506 (glm-5.3-flash emits malformed string-encoded tool calls), #18926
   (glm-5.3/glm-5.3-flash streams never terminate). `deepseek-v4.1-flash` is also
@@ -197,7 +198,7 @@ For the `ollama-cloud` provider (profiles `ollama-*`), verify fresh each time:
   hung requests plus 5 min queue waits ending in 429 since 2026-10-16; keep
   parallel subagent fan-out at or below 2 plus the orchestrator.
 - **Peak pricing**: `deepseek-*` rates double 12:00-18:00 UTC on weekdays.
-- **Fit**: orchestrator, thinking and full workforce `deepseek-v4-pro` (Terminal-Bench
+- **Fit**: thinking and full workforce `deepseek-v4-pro`; orchestrator `glm-5.3` (user-owned) (Terminal-Bench
   2.1 87.9 vs glm-5.3 88.2, DeepSWE 62.7 vs 66.9, at about half the price);
   volume tier `minimax-m3.1-flash` (no open defect found; clean stream exit per
   #18926; no independent benchmark yet).
