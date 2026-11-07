@@ -62,6 +62,8 @@
 
   home.file.".config/nvim/lua/plugins/nix-perf.lua" = {
     text = ''
+      local cmdline_queries = {}
+
       return {
         "folke/snacks.nvim",
         init = function()
@@ -70,6 +72,21 @@
             return
           end
           vim.g.snacks_animate = false
+          vim.api.nvim_create_autocmd("User", {
+            pattern = "VeryLazy",
+            once = true,
+            callback = function()
+              vim.schedule(function()
+                require("lazy").load({ plugins = { "blink.cmp" } })
+                for _, kind in ipairs({ "highlights", "injections" }) do
+                  local ok, query = pcall(vim.treesitter.query.get, "vim", kind)
+                  if ok then
+                    cmdline_queries[kind] = query
+                  end
+                end
+              end)
+            end,
+          })
         end,
       }
     '';
