@@ -21,7 +21,7 @@ Delivery strategy: ask-on-risk. Router changes and the samsung rebuild are manua
 - [x] T2 (S7) samsung reliability settings in `hosts/samsung/default.nix` (suspend/sleep/hibernate targets off, `wifi.powersave = false`). Route: inline. Commit: 9342e8d7.
 - [x] T3 docs: `docs/samsung-adguard-dns.md` runbook, superseded banner on `docs/oneplus5-adguard-dns.md`. Route: inline. Commit: this docs commit.
 - [x] T4 verification: `nix eval` of samsung, rog, thinkcentre, t14 and home samsung OK; `nix flake check --no-build` all checks passed; parity and `--check-config` as in T1. Route: inline. Not covered: macm5 (cannot evaluate from Linux), live DNS behavior (needs T5 and the samsung rebuild).
-- [ ] T5 (S2,S3,S8) router reservations. Route: manual, gated on explicit user OK. Status: not started.
+- [x] T5 (S2,S3,S8) router reservations. Route: manual, user OK ("sigue"). Evidence 2026-11-07: backup /root/dhcp-before-samsung-adguard-20261107-222556 on the router; `@host[10]` oneplus5 repointed to samsung (c8:f7:33:73:9a:24, 172.16.0.12), new host `lg-tv` (48:8d:36:65:51:7c, 172.16.0.22); DHCP option 6 unchanged; only dnsmasq restarted (WAN uptime and WiFi untouched); samsung.lan -> .12, lg-tv.lan -> .22, oneplus5.lan no longer resolves; samsung renewed to 172.16.0.12 (DHCPACK in router log) and its services stayed active.
 - [ ] T6 (follow-up) remove dead oneplus5 from `shared/ssh/lan-mesh.nix` and docs. Route: inline, needs user OK.
 
 Risk: T1-T2 none beyond item 3 check (new module only imported by samsung; shared files untouched). T5 touches live network config (item 5, delivery/environment): manual with backup and rollback.
@@ -35,3 +35,4 @@ Risk: T1-T2 none beyond item 3 check (new module only imported by samsung; share
 - L5 (2026-11-07, user): "ya"
 - Analysis: AdGuard was OOM-killed on the 242 MB router 4 s and ~81 s after the two HaGeZi list updates; pprof was disabled so the cause is probable, not proven (engram #4415, #5175). The only complete copy of the live config is the OnePlus backup (rog:~/Backups/oneplus5-rescue-20261105.fqBK85, etc/adguardhome/AdGuardHome.yaml, schema 34, AdGuard 0.107.79). Plan saved at engram #5174.
 - Progress (2026-11-07): T1-T4 done and verified on branch feat/samsung-adguard. Next: user decision on T5 (router reservations) and the samsung rebuild; T6 pending user OK.
+- Progress (2026-11-07, later): T5 done. Remaining: the samsung rebuild (user) to start AdGuard on .12, live verification (dig battery in docs/samsung-adguard-dns.md), T6 cleanup with user OK. Note: samsung.lan now resolves to .12 before AdGuard exists; nothing listens on :53 until the rebuild, so clients fall back to the router for DNS.
