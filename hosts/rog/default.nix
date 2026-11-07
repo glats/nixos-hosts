@@ -122,6 +122,7 @@
     "dmask=0077"
   ];
 
+  swapDevices = lib.mkForce [ ];
   zramSwap.enable = true;
 
   nixpkgs.config = {
