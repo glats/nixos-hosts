@@ -1,5 +1,10 @@
 # OnePlus 5 as LAN DNS (AdGuard Home) — Runbook
 
+> **Superseded.** AdGuard Home no longer runs on the OnePlus 5 (the phone is dead).
+> It is now declared in Nix on samsung; see `docs/samsung-adguard-dns.md`. This runbook
+> is kept for history only.
+
+
 The OnePlus 5 (`172.16.0.12`, postmarketOS edge, systemd) runs AdGuard Home as a
 LAN-only DNS server for manually enrolled TVs. Baseline is **log-only**: every
 query is logged with the client IP, nothing is blocked. Hagezi vendor blocklists
