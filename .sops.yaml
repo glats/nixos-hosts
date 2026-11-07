@@ -4,6 +4,7 @@ keys:
   - &host_thinkcentre age1uhv0z8e04q2385wlrn0vgd237ts2exea375yr4yeqwx5v9zgw9esdg3rsn
   - &host_macm5 age1cthdpfdak79gmnvt9puypv4effjs86ukz94dm35pv46dj24ehpxqlena3f
   - &host_t14 age1kc4mnetans8hwzwy24gsnw2hzxzcz3c5wcthcsr5wdfwk5e7vvtqvku74u
+  - &host_samsung age1eeq94gfk4sv0m3wnme25wr6p5mkx85qc0sp0faty6h930qake3fswpcqsm
 
 creation_rules:
   - path_regex: secrets/host/rog/.+
@@ -52,6 +53,7 @@ creation_rules:
           - *host_thinkcentre
           - *host_t14
           - *host_macm5
+          - *host_samsung
 
   - path_regex: secrets/system/.+
     key_groups:
@@ -77,6 +79,7 @@ creation_rules:
           - *host_thinkcentre
           - *host_macm5
           - *host_t14
+          - *host_samsung
 
   - path_regex: secrets/user/identities.yaml
     key_groups:
@@ -86,6 +89,7 @@ creation_rules:
           - *host_thinkcentre
           - *host_t14
           - *host_macm5
+          - *host_samsung
 
   - path_regex: secrets/user/.+
     key_groups:

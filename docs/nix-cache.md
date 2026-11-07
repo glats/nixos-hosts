@@ -42,7 +42,7 @@ A systemd timer on thinkcentre (`nix-cache-prewarm.service` / `nix-cache-prewarm
 - Flake: `git+https://github.com/glats/nixos-hosts?ref=master`; state dir `/var/lib/nix-cache-prewarm`.
 - Idle guard: the service skips the whole run when the 1-minute load average exceeds `--max-load 2.0`; it also runs with `Nice = 19`, `IOSchedulingClass = idle`, and thinkcentre sets `nix.daemonCPUSchedPolicy = "idle"` and `nix.daemonIOSchedClass = "idle"`.
 - Two variants per run, both keeping GC roots as out-links under `/var/lib/nix-cache-prewarm/roots/`:
-  - `current`: the build at the `origin/master` flake lock — `nixosConfigurations.{rog,t14,thinkcentre}` toplevels and `homeConfigurations.{rog,t14,thinkcentre}` activation packages. A failed Linux build here fails prewarm.
+  - `current`: the build at the `origin/master` flake lock — `nixosConfigurations.{rog,t14,thinkcentre,samsung}` toplevels and `homeConfigurations.{rog,t14,thinkcentre,samsung}` activation packages. A failed Linux build here fails prewarm.
   - `next`: a scratch clone under `/var/lib/nix-cache-prewarm/next` after `nix flake update`, same outputs, always best-effort so a broken upgrade never fails the service.
 - macm5 is **substitute-only** in prewarm (`--option max-jobs 0 --keep-going`): thinkcentre cannot build `aarch64-darwin`, so darwin closures are pulled from upstream instead. Prewarm failures for macm5 are warnings only.
 

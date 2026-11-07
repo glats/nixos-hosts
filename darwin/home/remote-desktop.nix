@@ -261,6 +261,14 @@ let
       host = "thinkcentre.lan";
       username = "glats";
     }
+    {
+      id = "samsung";
+      bundleName = "Remote Samsung";
+      legacyBundleName = "remote-samsung.app";
+      protocol = "rdp";
+      host = "samsung.lan";
+      username = "glats";
+    }
   ];
 
   appSources = lib.listToAttrs (
