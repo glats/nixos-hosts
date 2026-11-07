@@ -3,7 +3,7 @@ import subprocess
 import sys
 
 
-sources = ("rog", "t14", "thinkcentre", "macm5")
+sources = ("rog", "t14", "thinkcentre", "samsung", "macm5")
 members = (*sources, "oneplus5")
 
 

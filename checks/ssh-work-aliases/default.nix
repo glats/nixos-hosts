@@ -4,6 +4,7 @@ let
     "rog"
     "t14"
     "thinkcentre"
+    "samsung"
     "macm5"
   ];
   configurations = map (

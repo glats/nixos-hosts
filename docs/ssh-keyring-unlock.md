@@ -20,7 +20,7 @@ ssh rog-auth
 ```
 
 The shared SSH configuration generates `rog-auth`, `t14-auth`,
-`thinkcentre-auth`, and `macm5-auth` for each managed client's peers, excluding
+`thinkcentre-auth`, `samsung-auth`, and `macm5-auth` for each managed client's peers, excluding
 itself. For example, macm5 can connect to `rog-auth`, and rog can connect to
 `macm5-auth`. The destination account is `glats` on Linux and `juan` on macm5.
 The phone remains in the existing mesh but gets no new authentication alias.
@@ -33,7 +33,7 @@ aliases (`rog`, `rog.local`, `rog.lan`, and their peers) for key-based access an
 automation; their policy and the `macm5-relay` alias are unchanged. SCP/SFTP
 using an `-auth` alias also requires a password.
 
-On rog, t14, and thinkcentre, the existing SSH PAM stack includes GNOME Keyring.
+On rog, t14, thinkcentre, and samsung, the existing SSH PAM stack includes GNOME Keyring.
 Unlock still requires the account and login-keyring passwords to match.
 On macm5, the alias provides password SSH only: macOS Keychain is not GNOME
 Keyring, and automatic Keychain unlock through SSH has not been verified.

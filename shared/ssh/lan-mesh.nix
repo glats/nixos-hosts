@@ -150,6 +150,7 @@ assert lib.assertMsg (lib.all validRecord records)
                 "rog"
                 "t14"
                 "thinkcentre"
+                "samsung"
                 "macm5"
               ])
               {
