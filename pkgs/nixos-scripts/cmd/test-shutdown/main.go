@@ -109,7 +109,7 @@ func detach(log *shutdowntrial.Log, id string) {
 		fail(err)
 	}
 	fmt.Println("powering off; after the next boot run: sudo test-shutdown result off|hung <note>")
-	cmd := exec.Command("systemd-run", "--collect", "--unit=test-shutdown-"+id,
+	cmd := exec.Command("systemd-run", "--collect", "--wait", "--pipe", "--unit=test-shutdown-"+id,
 		"--setenv="+detachedEnv+"=1", "--setenv=PATH="+os.Getenv("PATH"), self, "-log", log.Path, id)
 	cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
 	if err := cmd.Run(); err != nil {
