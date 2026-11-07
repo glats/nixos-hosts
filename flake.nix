@@ -333,6 +333,7 @@
       nixosConfigurations = {
         rog = mkNixosHost { hostname = "rog"; };
         thinkcentre = mkNixosHost { hostname = "thinkcentre"; };
+        samsung = mkNixosHost { hostname = "samsung"; };
         t14 = mkNixosHost {
           hostname = "t14";
           extraModules = [
@@ -389,6 +390,12 @@
             system = "x86_64-linux";
             username = "glats";
             extraModules = import ./hosts/thinkcentre/home/default.nix { inherit inputs; };
+          };
+          samsung = baseHomeConfig {
+            hostname = "samsung";
+            system = "x86_64-linux";
+            username = "glats";
+            extraModules = import ./hosts/samsung/home/default.nix { inherit inputs; };
           };
           t14 = baseHomeConfig {
             hostname = "t14";
