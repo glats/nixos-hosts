@@ -37,6 +37,7 @@ in
     ../../linux/system/networking/avahi.nix
 
     ../../linux/system/services/xrdp.nix
+    ../../linux/system/services/network/adguardhome.nix
 
     ../../linux/system/features/boot.nix
     ../../linux/system/features/conky/options.nix
@@ -44,7 +45,17 @@ in
 
   networking = {
     hostName = "samsung";
-    networkmanager.enable = true;
+    networkmanager = {
+      enable = true;
+      wifi.powersave = false;
+    };
+  };
+
+  systemd.targets = {
+    sleep.enable = false;
+    suspend.enable = false;
+    hibernate.enable = false;
+    hybrid-sleep.enable = false;
   };
 
   boot-settings.enable = true;
