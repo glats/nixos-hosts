@@ -330,6 +330,11 @@
         pkgs = nixpkgs.legacyPackages.x86_64-linux;
       };
 
+      checks.x86_64-linux.ssh-work-aliases = import ./checks/ssh-work-aliases {
+        pkgs = nixpkgs.legacyPackages.x86_64-linux;
+        homeManager = home-manager;
+      };
+
       nixosConfigurations = {
         rog = mkNixosHost { hostname = "rog"; };
         thinkcentre = mkNixosHost { hostname = "thinkcentre"; };

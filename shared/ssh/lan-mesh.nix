@@ -133,6 +133,25 @@ assert lib.assertMsg (lib.all validRecord records)
               inherit value;
             }
           ]
+          ++
+            lib.optional
+              (builtins.elem target [
+                "rog"
+                "t14"
+                "thinkcentre"
+                "macm5"
+              ])
+              {
+                name = "${target}-auth";
+                value = value // {
+                  PreferredAuthentications = "password";
+                  PasswordAuthentication = true;
+                  PubkeyAuthentication = false;
+                  BatchMode = false;
+                  ControlMaster = "no";
+                  ControlPath = "none";
+                };
+              }
         ) (builtins.filter (name: name != source) names))
         ++ lib.optional (source == "rog") {
           name = "macm5-relay";

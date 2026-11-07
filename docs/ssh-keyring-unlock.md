@@ -10,13 +10,49 @@ that module, so it does not automatically unlock a locked keyring. Password
 authentication can unlock it when the Linux account password matches the login
 keyring password. A successful SSH login alone does not prove the unlock worked.
 
-## Password-authenticated session
+## Password-authenticated sessions between managed hosts
+
+After applying Home Manager on the connecting client, use the destination's
+`-auth` alias for an interactive password-authenticated connection:
+
+```console
+ssh rog-auth
+```
+
+The shared SSH configuration generates `rog-auth`, `t14-auth`,
+`thinkcentre-auth`, and `macm5-auth` for each managed client's peers, excluding
+itself. For example, macm5 can connect to `rog-auth`, and rog can connect to
+`macm5-auth`. The destination account is `glats` on Linux and `juan` on macm5.
+The phone remains in the existing mesh but gets no new authentication alias.
+
+These aliases require password authentication and do not reuse an existing SSH
+control connection. The password prompt happens before the remote shell and
+OpenCode start, on every new `-auth` connection, even if the keyring is already
+unlocked. No password is saved in the SSH configuration. Use the existing
+aliases (`rog`, `rog.local`, `rog.lan`, and their peers) for key-based access and
+automation; their policy and the `macm5-relay` alias are unchanged. SCP/SFTP
+using an `-auth` alias also requires a password.
+
+On rog, t14, and thinkcentre, the existing SSH PAM stack includes GNOME Keyring.
+Unlock still requires the account and login-keyring passwords to match.
+On macm5, the alias provides password SSH only: macOS Keychain is not GNOME
+Keyring, and automatic Keychain unlock through SSH has not been verified.
+This change does not modify either platform's SSH server or credential storage.
+
+The first end-to-end acceptance test is macm5 to rog after a reboot, without
+an XRDP login first. Verify the keyring state below, then Git access to a
+private repository, the intended GitHub CLI accounts, and both GitHub MCP
+connections. Do not print tokens. An already-unlocked XRDP session is not proof
+that SSH unlocked the keyring. Other destination hosts require their own live
+validation; successful SSH authentication alone is insufficient.
+
+## One-off password-authenticated session
 
 For a one-off password-authenticated connection, without changing the server or
 the client's persistent configuration:
 
 ```console
-ssh -t -o PubkeyAuthentication=no -o PreferredAuthentications=password rog.lan
+ssh -t -o ControlPath=none -o PubkeyAuthentication=no -o PreferredAuthentications=password glats@rog.lan
 ```
 
 Enter the Linux account password in the SSH client, never in chat or command
