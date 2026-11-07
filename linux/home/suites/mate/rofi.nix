@@ -118,11 +118,11 @@ in
 
   programs.rofi = {
     enable = true;
-    font = "Sans 12";
-    terminal = "mate-terminal";
     theme = "ulauncher-like";
 
-    extraConfig = {
+    settings = {
+      font = "Sans 12";
+      terminal = "mate-terminal";
       modi = "drun";
       display-drun = "🔍";
       show-icons = true;
