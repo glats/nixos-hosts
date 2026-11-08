@@ -8,5 +8,7 @@ baseModules
   ../../../linux/home/remote-desktop.nix
   ../../../linux/home/suites/mate/default.nix
 
+  ./wallpaper.nix
+
   { home.opencode.activeProviderName = "anthropic-openai-ollama"; }
 ]
