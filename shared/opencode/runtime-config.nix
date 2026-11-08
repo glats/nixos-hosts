@@ -230,9 +230,13 @@ in
           ${desiredAssets} ${assetTrees.none} ${assetRevision}
         # Plugin set: rtk.ts, engram.ts, skill-registry.ts,
         # opencode-review-transport.ts, herdr-agent-state.js.
-        mkdir -p "$runtime_dir/node_modules"
-        ${pkgs.coreutils}/bin/cp -r ${pkgs.opencode-npm-packages-v2}/lib/node_modules/. "$runtime_dir/node_modules/"
-        chmod -R u+w "$runtime_dir/node_modules"
+        node_modules_stamp="$runtime_dir/node_modules/.nix-source"
+        if [ "$(${pkgs.coreutils}/bin/cat "$node_modules_stamp" 2>/dev/null)" != "${pkgs.opencode-npm-packages-v2}" ]; then
+          mkdir -p "$runtime_dir/node_modules"
+          ${pkgs.coreutils}/bin/cp -r ${pkgs.opencode-npm-packages-v2}/lib/node_modules/. "$runtime_dir/node_modules/"
+          chmod -R u+w "$runtime_dir/node_modules"
+          printf '%s' "${pkgs.opencode-npm-packages-v2}" > "$node_modules_stamp"
+        fi
       '';
   home.activation.syncOpencodeSkillsToOpenfang = lib.mkIf openfangEnabled (
     config.lib.dag.entryAfter [ "setupOpencodePluginRuntime" ] ''
