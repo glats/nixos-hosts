@@ -21,6 +21,8 @@ let
   script = pkgs.writeShellScript "test-gh-default-account" activation;
 in
 pkgs.runCommand "gh-default-account-check" { } ''
-  ${pkgs.bash}/bin/bash ${./test.sh} ${script} ${pkgs.coreutils}/bin/timeout ${pkgs.bash}/bin/bash
+  ${pkgs.bash}/bin/bash ${./test.sh} ${script} ${pkgs.coreutils}/bin/timeout ${pkgs.bash}/bin/bash ${
+    if pkgs.stdenv.hostPlatform.isLinux then "linux" else ""
+  }
   touch $out
 ''

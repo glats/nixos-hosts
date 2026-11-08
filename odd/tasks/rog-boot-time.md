@@ -13,7 +13,7 @@ Branch: fix/rog-boot-time | Delivery: ask-on-risk | Runner: go -C pkgs/nixos-scr
 - [x] T1 S1 inline commit:pending (eval: swapDevices=[] on rog; toplevel drv evaluates)
 - [x] T2 S2,S5 inline commit:pending (RED: 4 new tests failed on base; GREEN: aiassets pkg ok; differential vs base binary on 4319-file tree: target trees identical, no-op 10-18s -> 0.07s fast path / 0.8s slow no-op; deviation: per-file fsync kept for changed files for crash-recovery correctness, streaming hash dropped as unnecessary) (Risk item 1: manages user-owned files)
 - [x] T3 S3 inline commit:pending (home activationPackage rog builds; shell logic COPIED/SKIPPED verified in scratch; tradeoff: manual edits to node_modules persist until package store path changes or .nix-source removed)
-- [ ] T4 S4 inline commit:-
+- [x] T4 S4 inline commit:pending (gh check passes incl. new no-bus case; hm eval rog/thinkcentre/t14/samsung + nixos eval x4 + flake check --no-build ok; darwin not evaluable on x86_64 (platform mismatch, same on base); user units rendered and syntax-checked)
 
 ## Log
 L1 (2026-11-07) user: "odd para resolver esto. haz un explore para ve la mejor solcuion y sofisticada"
