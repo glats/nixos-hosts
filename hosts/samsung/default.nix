@@ -48,8 +48,11 @@ in
     networkmanager = {
       enable = true;
       wifi.powersave = false;
+      settings.main.autoconnect-retries-default = 0;
     };
   };
+
+  systemd.services.NetworkManager.stopIfChanged = false;
 
   systemd.targets = {
     sleep.enable = false;
