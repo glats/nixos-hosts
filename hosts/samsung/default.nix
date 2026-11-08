@@ -41,6 +41,8 @@ in
 
     ../../linux/system/features/boot.nix
     ../../linux/system/features/conky/options.nix
+
+    ../../linux/system/virtualisation/docker.nix
   ];
 
   networking = {
