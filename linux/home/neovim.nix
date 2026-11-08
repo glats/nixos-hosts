@@ -95,7 +95,7 @@
 
   home.activation.ensureNvimConfig = lib.hm.dag.entryBefore [ "linkGeneration" ] ''
     if [ ! -d "$HOME/.config/nvim" ]; then
-      $DRY_RUN_CMD ${pkgs.git}/bin/git clone https://github.com/glats/nvim "$HOME/.config/nvim" \
+      $DRY_RUN_CMD ${pkgs.coreutils}/bin/timeout 60s ${pkgs.git}/bin/git clone https://github.com/glats/nvim "$HOME/.config/nvim" \
         || echo "ensureNvimConfig: clone failed; skipping" >&2
     fi
   '';

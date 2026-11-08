@@ -2,6 +2,7 @@ package aiassets
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -74,22 +75,17 @@ func TestReconcileNoopLeavesManifestUntouched(t *testing.T) {
 }
 
 func TestStampFastPathSkipsSourceReads(t *testing.T) {
-	if os.Geteuid() == 0 {
-		t.Skip("permission bits do not apply to root")
-	}
 	noRacyWindow(t)
 	target, desired, legacy := stampFixture(t)
 	if err := Reconcile(target, desired, legacy, "A"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := os.Stat(filepath.Join(target, stampName)); err != nil {
-		t.Fatalf("stamp missing after success: %v", err)
+	if readManifest(t, target).Applied == nil {
+		t.Fatal("applied stamp missing after success")
 	}
-	unreadable := filepath.Join(desired, "a/one")
-	if err := os.Chmod(unreadable, 0); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { os.Chmod(unreadable, 0644) })
+	previous := readSource
+	readSource = func(string) ([]byte, error) { return nil, errors.New("source contents read") }
+	t.Cleanup(func() { readSource = previous })
 	if err := Reconcile(target, desired, legacy, "A"); err != nil {
 		t.Fatalf("fast path read source contents: %v", err)
 	}
@@ -148,35 +144,56 @@ func TestStampInvalidatedBySourceChange(t *testing.T) {
 }
 
 func TestStampNotTrustedWhenFilesAreRacy(t *testing.T) {
+	previous := racyWindow
+	racyWindow = time.Second
+	t.Cleanup(func() { racyWindow = previous })
 	target, desired, legacy := stampFixture(t)
 	if err := Reconcile(target, desired, legacy, "A"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := os.Stat(filepath.Join(target, stampName)); !os.IsNotExist(err) {
-		t.Fatalf("stamp written while files are inside the racy window: %v", err)
+	if readManifest(t, target).Applied != nil {
+		t.Fatal("stamp written while files are inside the racy window")
 	}
-	old := time.Now().Add(-time.Hour)
-	for _, dir := range []string{target, desired} {
-		filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
-			if err == nil && !d.IsDir() {
-				os.Chtimes(path, old, old)
-			}
-			return nil
-		})
-	}
+	time.Sleep(racyWindow + 100*time.Millisecond)
 	if err := Reconcile(target, desired, legacy, "A"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := os.Stat(filepath.Join(target, stampName)); err != nil {
-		t.Fatalf("stamp missing once files left the racy window: %v", err)
+	if readManifest(t, target).Applied == nil {
+		t.Fatal("stamp missing once files left the racy window")
 	}
 }
 
-func TestSourceMayNotContainStamp(t *testing.T) {
+func TestStampManifestStaysStableOnceApplied(t *testing.T) {
+	noRacyWindow(t)
 	target, desired, legacy := stampFixture(t)
-	put(t, desired, stampName, "{}")
-	if err := Reconcile(target, desired, legacy, "A"); err == nil {
-		t.Fatal("source with reserved stamp accepted")
+	if err := Reconcile(target, desired, legacy, "A"); err != nil {
+		t.Fatal(err)
+	}
+	state := filepath.Join(target, manifestName)
+	before := inode(t, state)
+	for i := 0; i < 2; i++ {
+		if err := Reconcile(target, desired, legacy, "A"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if inode(t, state) != before {
+		t.Fatal("manifest rewritten although the applied stamp is current")
+	}
+}
+
+func TestUserFileNamedLikeAStampIsPreserved(t *testing.T) {
+	noRacyWindow(t)
+	target, desired, legacy := stampFixture(t)
+	put(t, target, ".gentle-ai-owned.stamp", "user data")
+	put(t, desired, "c/kept", "kept")
+	if err := Reconcile(target, desired, legacy, "A"); err != nil {
+		t.Fatal(err)
+	}
+	if err := Reconcile(target, desired, legacy, "A"); err != nil {
+		t.Fatal(err)
+	}
+	if b, _ := os.ReadFile(filepath.Join(target, ".gentle-ai-owned.stamp")); string(b) != "user data" {
+		t.Fatalf("user file replaced: %q", b)
 	}
 }
 
@@ -191,4 +208,97 @@ func readManifest(t *testing.T, target string) manifest {
 		t.Fatal(err)
 	}
 	return m
+}
+
+func agedFixture(t *testing.T) (target, desired, legacy string) {
+	t.Helper()
+	noRacyWindow(t)
+	target, desired, legacy = stampFixture(t)
+	if err := Reconcile(target, desired, legacy, "A"); err != nil {
+		t.Fatal(err)
+	}
+	if err := Reconcile(target, desired, legacy, "A"); err != nil {
+		t.Fatal(err)
+	}
+	if readManifest(t, target).Applied == nil {
+		t.Fatal("fixture has no applied stamp")
+	}
+	return target, desired, legacy
+}
+
+func restoreMtime(t *testing.T, path string, info os.FileInfo) {
+	t.Helper()
+	if err := os.Chtimes(path, info.ModTime(), info.ModTime()); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestStampDetectsSameSizeEditWithRestoredMtime(t *testing.T) {
+	for _, inSource := range []bool{false, true} {
+		name := "target"
+		if inSource {
+			name = "source"
+		}
+		t.Run(name, func(t *testing.T) {
+			target, desired, legacy := agedFixture(t)
+			root := target
+			if inSource {
+				root = desired
+			}
+			path := filepath.Join(root, "a/one")
+			info, err := os.Stat(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			put(t, root, "a/one", "uno")
+			restoreMtime(t, path, info)
+			err = Reconcile(target, desired, legacy, "A")
+			if inSource {
+				if err != nil {
+					t.Fatal(err)
+				}
+				if b, _ := os.ReadFile(filepath.Join(target, "a/one")); string(b) != "uno" {
+					t.Fatalf("source edit ignored: %q", b)
+				}
+				return
+			}
+			if err == nil || !strings.Contains(err.Error(), "collision") {
+				t.Fatalf("target edit not detected: %v", err)
+			}
+		})
+	}
+}
+
+func TestStampRejectsSymlinkedAncestor(t *testing.T) {
+	target, desired, legacy := agedFixture(t)
+	moved := filepath.Join(filepath.Dir(target), "moved")
+	if err := os.Rename(filepath.Join(target, "a"), moved); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(moved, filepath.Join(target, "a")); err != nil {
+		t.Fatal(err)
+	}
+	if err := Reconcile(target, desired, legacy, "A"); err == nil || !strings.Contains(err.Error(), "refusing symlink") {
+		t.Fatalf("symlinked ancestor accepted: %v", err)
+	}
+}
+
+func TestStampInterruptedRetirementRecovers(t *testing.T) {
+	target, desired, legacy := agedFixture(t)
+	if err := os.Remove(filepath.Join(desired, "a/one")); err != nil {
+		t.Fatal(err)
+	}
+	stop := errors.New("interrupted")
+	if err := reconcile(target, desired, legacy, "B", func() error { return stop }); !errors.Is(err, stop) {
+		t.Fatalf("interruption: %v", err)
+	}
+	if readManifest(t, target).Applied != nil {
+		t.Fatal("journal kept a stale applied stamp")
+	}
+	if err := Reconcile(target, desired, legacy, "B"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(target, "a/one")); !os.IsNotExist(err) {
+		t.Fatalf("retired file remains: %v", err)
+	}
 }

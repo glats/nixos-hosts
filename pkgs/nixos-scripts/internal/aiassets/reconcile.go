@@ -16,12 +16,13 @@ import (
 
 const manifestName = ".gentle-ai-owned.json"
 const lockName = ".gentle-ai-owned.lock"
-const stampName = ".gentle-ai-owned.stamp"
 
 var racyWindow = 2 * time.Second
 
+var readSource = os.ReadFile
+
 func reserved(rel string) bool {
-	return rel == manifestName || rel == lockName || rel == stampName
+	return rel == manifestName || rel == lockName
 }
 
 type owned struct {
@@ -55,8 +56,9 @@ func unchanged(path string, expected snapshot) error {
 }
 
 type manifest struct {
-	Schema int              `json:"schema"`
-	Files  map[string]owned `json:"files"`
+	Schema  int              `json:"schema"`
+	Files   map[string]owned `json:"files"`
+	Applied *stamp           `json:"applied,omitempty"`
 }
 
 func digest(b []byte) string { h := sha256.Sum256(b); return hex.EncodeToString(h[:]) }
@@ -101,7 +103,7 @@ func tree(root string) (map[string][]byte, error) {
 		if reserved(rel) {
 			return fmt.Errorf("source contains reserved manifest")
 		}
-		b, err := os.ReadFile(path)
+		b, err := readSource(path)
 		if err != nil {
 			return err
 		}
@@ -206,9 +208,8 @@ func reconcile(target, desired, legacy, revision string, afterJournal func() err
 		return fmt.Errorf("ownership lock replaced")
 	}
 	state := filepath.Join(target, manifestName)
-	stampPath := filepath.Join(target, stampName)
 	source, newest, sourceErr := fingerprint(desired, legacy, revision)
-	if sourceErr == nil && upToDate(target, stampPath, state, source) {
+	if sourceErr == nil && upToDate(target, state, source) {
 		return nil
 	}
 	want, err := tree(desired)
@@ -308,21 +309,17 @@ func reconcile(target, desired, legacy, revision string, afterJournal func() err
 	}
 
 	if len(toWrite) == 0 && len(removals) == 0 {
+		next.Applied = applied(target, source, newest, sourceErr, next)
 		complete, err := json.MarshalIndent(next, "", "  ")
 		if err != nil {
 			return err
 		}
 		if stateExpected.Exists && bytes.Equal(b, complete) {
-			return saveStamp(target, stampPath, source, newest, complete, next)
+			return nil
 		}
-		os.Remove(stampPath)
-		if err := write(state, complete, stateExpected); err != nil {
-			return err
-		}
-		return saveStamp(target, stampPath, source, newest, complete, next)
+		return write(state, complete, stateExpected)
 	}
 
-	os.Remove(stampPath)
 	encoded, err := json.MarshalIndent(next, "", "  ")
 	if err != nil {
 		return err
@@ -373,12 +370,10 @@ func reconcile(target, desired, legacy, revision string, afterJournal func() err
 		entry.Prior = nil
 		next.Files[rel] = entry
 	}
+	next.Applied = applied(target, source, newest, sourceErr, next)
 	complete, err := json.MarshalIndent(next, "", "  ")
 	if err != nil {
 		return err
 	}
-	if err := write(state, complete, snapshot{Exists: true, Digest: digest(encoded)}); err != nil {
-		return err
-	}
-	return saveStamp(target, stampPath, source, newest, complete, next)
+	return write(state, complete, snapshot{Exists: true, Digest: digest(encoded)})
 }

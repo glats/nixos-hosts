@@ -10,28 +10,38 @@ import (
 	"time"
 )
 
-const stampTool = 1
+const stampTool = 2
 
 type fileStat struct {
-	Size    int64 `json:"size"`
-	MtimeNs int64 `json:"mtime_ns"`
+	Digest  string `json:"digest"`
+	Size    int64  `json:"size"`
+	MtimeNs int64  `json:"mtime_ns"`
+	CtimeNs int64  `json:"ctime_ns"`
+	Ino     uint64 `json:"ino"`
 }
 
 type stamp struct {
-	Tool     int                 `json:"tool"`
-	Source   string              `json:"source"`
-	Manifest string              `json:"manifest"`
-	Files    map[string]fileStat `json:"files"`
+	Tool   int                 `json:"tool"`
+	Source string              `json:"source"`
+	Files  map[string]fileStat `json:"files"`
+}
+
+func newest(info fs.FileInfo, ctimeNs int64) time.Time {
+	t := info.ModTime()
+	if c := time.Unix(0, ctimeNs); c.After(t) {
+		return c
+	}
+	return t
 }
 
 func fingerprint(desired, legacy, revision string) (string, time.Time, error) {
 	h := sha256.New()
 	fmt.Fprintf(h, "tool=%d\nrevision=%s\n", stampTool, revision)
-	var newest time.Time
+	var latest time.Time
 	for _, root := range []string{desired, legacy} {
 		abs, err := filepath.Abs(root)
 		if err != nil {
-			return "", newest, err
+			return "", latest, err
 		}
 		fmt.Fprintf(h, "root=%s\n", abs)
 		err = filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
@@ -45,86 +55,87 @@ func fingerprint(desired, legacy, revision string) (string, time.Time, error) {
 			if err != nil {
 				return err
 			}
+			ctime, ino, ok := inodeStat(info)
+			if !ok {
+				return fmt.Errorf("inode metadata unavailable")
+			}
 			rel, err := filepath.Rel(root, path)
 			if err != nil {
 				return err
 			}
-			if info.ModTime().After(newest) {
-				newest = info.ModTime()
+			if t := newest(info, ctime); t.After(latest) {
+				latest = t
 			}
-			fmt.Fprintf(h, "%s\x00%d\x00%d\x00%d\n", rel, info.Mode().Type(), info.Size(), info.ModTime().UnixNano())
+			fmt.Fprintf(h, "%s\x00%d\x00%d\x00%d\x00%d\x00%d\n", rel, info.Mode().Type(), info.Size(), info.ModTime().UnixNano(), ctime, ino)
 			return nil
 		})
 		if err != nil {
-			return "", newest, err
+			return "", latest, err
 		}
 	}
-	return fmt.Sprintf("%x", h.Sum(nil)), newest, nil
+	return fmt.Sprintf("%x", h.Sum(nil)), latest, nil
 }
 
-func upToDate(target, stampPath, state, source string) bool {
-	raw, err := read(stampPath)
+func upToDate(target, state, source string) bool {
+	raw, err := read(state)
 	if err != nil {
 		return false
 	}
-	var s stamp
-	if json.Unmarshal(raw, &s) != nil || s.Tool != stampTool || s.Source != source {
-		return false
-	}
-	manifestBytes, err := read(state)
-	if err != nil || digest(manifestBytes) != s.Manifest {
-		return false
-	}
 	var m manifest
-	if json.Unmarshal(manifestBytes, &m) != nil || m.Files == nil || len(m.Files) != len(s.Files) {
+	if json.Unmarshal(raw, &m) != nil || m.Applied == nil || m.Files == nil {
 		return false
 	}
+	s := m.Applied
+	if s.Tool != stampTool || s.Source != source || len(m.Files) != len(s.Files) {
+		return false
+	}
+	checked := map[string]bool{}
 	for rel, entry := range m.Files {
-		if entry.Pending {
-			return false
-		}
 		recorded, ok := s.Files[rel]
-		if !ok || !filepath.IsLocal(rel) || filepath.Clean(rel) != rel || reserved(rel) {
+		if !ok || entry.Pending || entry.Digest != recorded.Digest {
 			return false
 		}
-		info, err := os.Lstat(filepath.Join(target, rel))
-		if err != nil || !info.Mode().IsRegular() || info.Size() != recorded.Size || info.ModTime().UnixNano() != recorded.MtimeNs {
+		if !filepath.IsLocal(rel) || filepath.Clean(rel) != rel || reserved(rel) {
+			return false
+		}
+		path := filepath.Join(target, rel)
+		if dir := filepath.Dir(path); !checked[dir] {
+			if safePath(dir) != nil {
+				return false
+			}
+			checked[dir] = true
+			for d := filepath.Dir(dir); d != target && len(d) > len(target) && !checked[d]; d = filepath.Dir(d) {
+				checked[d] = true
+			}
+		}
+		info, err := os.Lstat(path)
+		if err != nil || !info.Mode().IsRegular() {
+			return false
+		}
+		ctime, ino, ok := inodeStat(info)
+		if !ok || info.Size() != recorded.Size || info.ModTime().UnixNano() != recorded.MtimeNs || ctime != recorded.CtimeNs || ino != recorded.Ino {
 			return false
 		}
 	}
 	return true
 }
 
-func saveStamp(target, stampPath, source string, sourceNewest time.Time, manifestBytes []byte, final manifest) error {
+func applied(target, source string, sourceLatest time.Time, sourceErr error, final manifest) *stamp {
 	cutoff := time.Now().Add(-racyWindow)
-	if sourceNewest.After(cutoff) {
+	if sourceErr != nil || sourceLatest.After(cutoff) {
 		return nil
 	}
-	s := stamp{Tool: stampTool, Source: source, Manifest: digest(manifestBytes), Files: map[string]fileStat{}}
-	for rel := range final.Files {
+	s := stamp{Tool: stampTool, Source: source, Files: map[string]fileStat{}}
+	for rel, entry := range final.Files {
 		info, err := os.Lstat(filepath.Join(target, rel))
-		if err != nil || !info.Mode().IsRegular() || info.ModTime().After(cutoff) {
+		if err != nil || !info.Mode().IsRegular() {
 			return nil
 		}
-		s.Files[rel] = fileStat{Size: info.Size(), MtimeNs: info.ModTime().UnixNano()}
+		ctime, ino, ok := inodeStat(info)
+		if !ok || newest(info, ctime).After(cutoff) {
+			return nil
+		}
+		s.Files[rel] = fileStat{Digest: entry.Digest, Size: info.Size(), MtimeNs: info.ModTime().UnixNano(), CtimeNs: ctime, Ino: ino}
 	}
-	encoded, err := json.Marshal(s)
-	if err != nil || safePath(stampPath) != nil {
-		return nil
-	}
-	f, err := os.CreateTemp(target, ".gentle-ai-stamp-")
-	if err != nil {
-		return nil
-	}
-	name := f.Name()
-	defer os.Remove(name)
-	_, err = f.Write(encoded)
-	if closeErr := f.Close(); err != nil || closeErr != nil {
-		return nil
-	}
-	if os.Chmod(name, 0644) != nil {
-		return nil
-	}
-	os.Rename(name, stampPath)
-	return nil
+	return &s
 }
