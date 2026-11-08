@@ -1,6 +1,7 @@
 package aiassets
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -10,10 +11,18 @@ import (
 	"os"
 	"path/filepath"
 	"syscall"
+	"time"
 )
 
 const manifestName = ".gentle-ai-owned.json"
 const lockName = ".gentle-ai-owned.lock"
+const stampName = ".gentle-ai-owned.stamp"
+
+var racyWindow = 2 * time.Second
+
+func reserved(rel string) bool {
+	return rel == manifestName || rel == lockName || rel == stampName
+}
 
 type owned struct {
 	Digest   string    `json:"digest"`
@@ -89,7 +98,7 @@ func tree(root string) (map[string][]byte, error) {
 		if err != nil {
 			return err
 		}
-		if rel == manifestName || rel == lockName {
+		if reserved(rel) {
 			return fmt.Errorf("source contains reserved manifest")
 		}
 		b, err := os.ReadFile(path)
@@ -196,6 +205,12 @@ func reconcile(target, desired, legacy, revision string, afterJournal func() err
 	if !os.SameFile(info, pathInfo) {
 		return fmt.Errorf("ownership lock replaced")
 	}
+	state := filepath.Join(target, manifestName)
+	stampPath := filepath.Join(target, stampName)
+	source, newest, sourceErr := fingerprint(desired, legacy, revision)
+	if sourceErr == nil && upToDate(target, stampPath, state, source) {
+		return nil
+	}
 	want, err := tree(desired)
 	if err != nil {
 		return err
@@ -205,7 +220,6 @@ func reconcile(target, desired, legacy, revision string, afterJournal func() err
 		return err
 	}
 	m := manifest{Schema: 2, Files: map[string]owned{}}
-	state := filepath.Join(target, manifestName)
 	b, err := read(state)
 	stateExpected := observed(b, err)
 	if err == nil {
@@ -237,7 +251,7 @@ func reconcile(target, desired, legacy, revision string, afterJournal func() err
 		}
 	}
 	for rel := range m.Files {
-		if !filepath.IsLocal(rel) || filepath.Clean(rel) != rel || rel == manifestName || rel == lockName {
+		if !filepath.IsLocal(rel) || filepath.Clean(rel) != rel || reserved(rel) {
 			return fmt.Errorf("invalid owned path: %s", rel)
 		}
 	}
@@ -261,6 +275,7 @@ func reconcile(target, desired, legacy, revision string, afterJournal func() err
 		removals = append(removals, rel)
 		next.Files[rel] = entry
 	}
+	toWrite := []string{}
 	for rel, body := range want {
 		path := filepath.Join(target, rel)
 		current, err := read(path)
@@ -284,9 +299,30 @@ func reconcile(target, desired, legacy, revision string, afterJournal func() err
 			before = current
 		}
 		expected[rel] = currentState
+		if err == nil && known && currentState.Digest == entry.Digest && entry.Digest == digest(body) {
+			next.Files[rel] = owned{Digest: entry.Digest, Revision: revision, Before: before}
+			continue
+		}
 		next.Files[rel] = owned{Digest: digest(body), Revision: revision, Before: before, Pending: true, Prior: &currentState}
+		toWrite = append(toWrite, rel)
 	}
 
+	if len(toWrite) == 0 && len(removals) == 0 {
+		complete, err := json.MarshalIndent(next, "", "  ")
+		if err != nil {
+			return err
+		}
+		if stateExpected.Exists && bytes.Equal(b, complete) {
+			return saveStamp(target, stampPath, source, newest, complete, next)
+		}
+		os.Remove(stampPath)
+		if err := write(state, complete, stateExpected); err != nil {
+			return err
+		}
+		return saveStamp(target, stampPath, source, newest, complete, next)
+	}
+
+	os.Remove(stampPath)
 	encoded, err := json.MarshalIndent(next, "", "  ")
 	if err != nil {
 		return err
@@ -299,8 +335,8 @@ func reconcile(target, desired, legacy, revision string, afterJournal func() err
 			return err
 		}
 	}
-	for rel, body := range want {
-		if err := write(filepath.Join(target, rel), body, expected[rel]); err != nil {
+	for _, rel := range toWrite {
+		if err := write(filepath.Join(target, rel), want[rel], expected[rel]); err != nil {
 			return err
 		}
 	}
@@ -341,5 +377,8 @@ func reconcile(target, desired, legacy, revision string, afterJournal func() err
 	if err != nil {
 		return err
 	}
-	return write(state, complete, snapshot{Exists: true, Digest: digest(encoded)})
+	if err := write(state, complete, snapshot{Exists: true, Digest: digest(encoded)}); err != nil {
+		return err
+	}
+	return saveStamp(target, stampPath, source, newest, complete, next)
 }

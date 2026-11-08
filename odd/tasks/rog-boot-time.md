@@ -11,7 +11,7 @@ Branch: fix/rog-boot-time | Delivery: ask-on-risk | Runner: go -C pkgs/nixos-scr
 
 ## Tasks
 - [x] T1 S1 inline commit:pending (eval: swapDevices=[] on rog; toplevel drv evaluates)
-- [ ] T2 S2,S5 inline commit:- (Risk item 1: manages user-owned files)
+- [x] T2 S2,S5 inline commit:pending (RED: 4 new tests failed on base; GREEN: aiassets pkg ok; differential vs base binary on 4319-file tree: target trees identical, no-op 10-18s -> 0.07s fast path / 0.8s slow no-op; deviation: per-file fsync kept for changed files for crash-recovery correctness, streaming hash dropped as unnecessary) (Risk item 1: manages user-owned files)
 - [ ] T3 S3 inline commit:-
 - [ ] T4 S4 inline commit:-
 
