@@ -25,8 +25,9 @@
       if the command fails or exceeds five seconds, with a two-second
       forced-termination grace period. On Linux, activation only attempts the
       switch when a user session bus exists (so boot-time activation never
-      waits on a locked keyring); a user service retries the switch after
-      login until the keyring is available.
+      waits on a locked keyring); a user service retries the switch every minute
+      until the keyring is available, which may only happen at graphical login
+      on hosts with lingering enabled.
 
       Example per-host override:
         { home.github.defaultAccount = "glats"; }
@@ -60,14 +61,13 @@
       systemd.user.services.gh-default-account = lib.mkIf isLinux {
         Unit = {
           Description = "Select the default GitHub CLI account once the keyring is available";
-          StartLimitIntervalSec = 600;
-          StartLimitBurst = 6;
+          StartLimitIntervalSec = 0;
         };
         Service = {
           Type = "oneshot";
           ExecStart = "${pkgs.writeShellScript "gh-default-account" (switchAccount "exit 1")}";
           Restart = "on-failure";
-          RestartSec = "30s";
+          RestartSec = "60s";
         };
         Install.WantedBy = [ "default.target" ];
       };
