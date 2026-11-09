@@ -44,14 +44,23 @@ let
               return layout;
             }
 
-            static void rdpWindowSize(int *width, int *height, int *hidpi) {
+            static void rdpWindowSize(int *width, int *height, int *hidpi, int *monitor) {
               *width = 1680;
               *height = 1050;
               *hidpi = 0;
+              *monitor = 0;
               @autoreleasepool {
                 NSScreen *screen = [NSScreen mainScreen];
                 if (!screen) {
                   return;
+                }
+                NSArray<NSScreen *> *screens = [NSScreen screens];
+                for (NSUInteger i = 1; i < screens.count; i++) {
+                  NSSize size = screens[i].frame.size;
+                  if (size.width >= size.height) {
+                    *monitor = (int)i + 1;
+                    break;
+                  }
                 }
                 NSRect content = [NSWindow contentRectForFrameRect:screen.visibleFrame
                   styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskClosable
@@ -92,11 +101,12 @@ let
             const char *rdpbin = "${pkgs.freerdp}/bin/sdl-freerdp";
             char kbdArg[sizeof("/kbd:layout:0x0000040A,lang:0x040A")];
             snprintf(kbdArg, sizeof(kbdArg), "/kbd:layout:%s,lang:0x040A", rdpKeyboardLayout());
-            int winW, winH, hidpi;
-            rdpWindowSize(&winW, &winH, &hidpi);
-            char wArg[32], hArg[32];
+            int winW, winH, hidpi, monitor;
+            rdpWindowSize(&winW, &winH, &hidpi, &monitor);
+            char wArg[32], hArg[32], monitorArg[32];
             snprintf(wArg, sizeof(wArg), "/w:%d", winW);
             snprintf(hArg, sizeof(hArg), "/h:%d", winH);
+            snprintf(monitorArg, sizeof(monitorArg), "/monitors:%d", monitor);
             const char *args[20];
             int n = 0;
             args[n++] = rdpbin;
@@ -110,6 +120,9 @@ let
               args[n++] = hArg;
               args[n++] = "/smart-sizing";
             } else {
+              if (monitor > 0) {
+                args[n++] = monitorArg;
+              }
               args[n++] = "/dynamic-resolution";
             }
             args[n++] = "/network:auto";
