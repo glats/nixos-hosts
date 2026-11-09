@@ -58,7 +58,7 @@ let
                     | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable];
                 *width = (int)content.size.width;
                 *height = (int)content.size.height;
-                *hidpi = screen.backingScaleFactor > 1.0;
+                *hidpi = [[NSScreen screens] count] == 1 && screen.backingScaleFactor > 1.0;
               }
             }
           ''
