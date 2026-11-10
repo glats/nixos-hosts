@@ -11,7 +11,6 @@
   ./flameshot.nix
   ./neovim.nix
   ./shell.nix
-  ../../shared/starship.nix
   ./tmux.nix
   inputs.omarchy-nix.homeManagerModules.btop
   ../../shared/vscode.nix

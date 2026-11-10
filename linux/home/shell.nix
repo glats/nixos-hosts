@@ -26,11 +26,13 @@
         "spectrum"
         "utility"
         "completion"
+        "prompt"
         "syntax-highlighting"
         "history-substring-search"
         "autosuggestions"
         "git"
       ];
+      prompt.theme = "suse";
       editor = {
         keymap = "emacs";
         dotExpansion = true;

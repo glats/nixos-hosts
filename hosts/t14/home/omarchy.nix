@@ -107,6 +107,7 @@
   };
 
   programs.zsh.zplug.enable = lib.mkForce false;
+  programs.starship.enable = lib.mkForce false;
 
   fonts.fontconfig.enable = lib.mkForce false;
 
