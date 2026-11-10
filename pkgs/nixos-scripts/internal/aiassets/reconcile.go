@@ -1,6 +1,7 @@
 package aiassets
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -10,10 +11,19 @@ import (
 	"os"
 	"path/filepath"
 	"syscall"
+	"time"
 )
 
 const manifestName = ".gentle-ai-owned.json"
 const lockName = ".gentle-ai-owned.lock"
+
+var racyWindow = 2 * time.Second
+
+var readSource = os.ReadFile
+
+func reserved(rel string) bool {
+	return rel == manifestName || rel == lockName
+}
 
 type owned struct {
 	Digest   string    `json:"digest"`
@@ -46,8 +56,9 @@ func unchanged(path string, expected snapshot) error {
 }
 
 type manifest struct {
-	Schema int              `json:"schema"`
-	Files  map[string]owned `json:"files"`
+	Schema  int              `json:"schema"`
+	Files   map[string]owned `json:"files"`
+	Applied *stamp           `json:"applied,omitempty"`
 }
 
 func digest(b []byte) string { h := sha256.Sum256(b); return hex.EncodeToString(h[:]) }
@@ -89,10 +100,10 @@ func tree(root string) (map[string][]byte, error) {
 		if err != nil {
 			return err
 		}
-		if rel == manifestName || rel == lockName {
+		if reserved(rel) {
 			return fmt.Errorf("source contains reserved manifest")
 		}
-		b, err := os.ReadFile(path)
+		b, err := readSource(path)
 		if err != nil {
 			return err
 		}
@@ -196,6 +207,11 @@ func reconcile(target, desired, legacy, revision string, afterJournal func() err
 	if !os.SameFile(info, pathInfo) {
 		return fmt.Errorf("ownership lock replaced")
 	}
+	state := filepath.Join(target, manifestName)
+	source, newest, sourceErr := fingerprint(desired, legacy, revision)
+	if sourceErr == nil && upToDate(target, state, source) {
+		return nil
+	}
 	want, err := tree(desired)
 	if err != nil {
 		return err
@@ -205,7 +221,6 @@ func reconcile(target, desired, legacy, revision string, afterJournal func() err
 		return err
 	}
 	m := manifest{Schema: 2, Files: map[string]owned{}}
-	state := filepath.Join(target, manifestName)
 	b, err := read(state)
 	stateExpected := observed(b, err)
 	if err == nil {
@@ -237,7 +252,7 @@ func reconcile(target, desired, legacy, revision string, afterJournal func() err
 		}
 	}
 	for rel := range m.Files {
-		if !filepath.IsLocal(rel) || filepath.Clean(rel) != rel || rel == manifestName || rel == lockName {
+		if !filepath.IsLocal(rel) || filepath.Clean(rel) != rel || reserved(rel) {
 			return fmt.Errorf("invalid owned path: %s", rel)
 		}
 	}
@@ -261,6 +276,7 @@ func reconcile(target, desired, legacy, revision string, afterJournal func() err
 		removals = append(removals, rel)
 		next.Files[rel] = entry
 	}
+	toWrite := []string{}
 	for rel, body := range want {
 		path := filepath.Join(target, rel)
 		current, err := read(path)
@@ -284,7 +300,24 @@ func reconcile(target, desired, legacy, revision string, afterJournal func() err
 			before = current
 		}
 		expected[rel] = currentState
+		if err == nil && known && currentState.Digest == entry.Digest && entry.Digest == digest(body) {
+			next.Files[rel] = owned{Digest: entry.Digest, Revision: revision, Before: before}
+			continue
+		}
 		next.Files[rel] = owned{Digest: digest(body), Revision: revision, Before: before, Pending: true, Prior: &currentState}
+		toWrite = append(toWrite, rel)
+	}
+
+	if len(toWrite) == 0 && len(removals) == 0 {
+		next.Applied = applied(target, source, newest, sourceErr, next)
+		complete, err := json.MarshalIndent(next, "", "  ")
+		if err != nil {
+			return err
+		}
+		if stateExpected.Exists && bytes.Equal(b, complete) {
+			return nil
+		}
+		return write(state, complete, stateExpected)
 	}
 
 	encoded, err := json.MarshalIndent(next, "", "  ")
@@ -299,8 +332,8 @@ func reconcile(target, desired, legacy, revision string, afterJournal func() err
 			return err
 		}
 	}
-	for rel, body := range want {
-		if err := write(filepath.Join(target, rel), body, expected[rel]); err != nil {
+	for _, rel := range toWrite {
+		if err := write(filepath.Join(target, rel), want[rel], expected[rel]); err != nil {
 			return err
 		}
 	}
@@ -337,6 +370,7 @@ func reconcile(target, desired, legacy, revision string, afterJournal func() err
 		entry.Prior = nil
 		next.Files[rel] = entry
 	}
+	next.Applied = applied(target, source, newest, sourceErr, next)
 	complete, err := json.MarshalIndent(next, "", "  ")
 	if err != nil {
 		return err

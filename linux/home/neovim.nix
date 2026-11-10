@@ -62,6 +62,8 @@
 
   home.file.".config/nvim/lua/plugins/nix-perf.lua" = {
     text = ''
+      local cmdline_queries = {}
+
       return {
         "folke/snacks.nvim",
         init = function()
@@ -70,6 +72,21 @@
             return
           end
           vim.g.snacks_animate = false
+          vim.api.nvim_create_autocmd("User", {
+            pattern = "VeryLazy",
+            once = true,
+            callback = function()
+              vim.schedule(function()
+                require("lazy").load({ plugins = { "blink.cmp" } })
+                for _, kind in ipairs({ "highlights", "injections" }) do
+                  local ok, query = pcall(vim.treesitter.query.get, "vim", kind)
+                  if ok then
+                    cmdline_queries[kind] = query
+                  end
+                end
+              end)
+            end,
+          })
         end,
       }
     '';
@@ -77,18 +94,29 @@
   };
 
   home.activation.ensureNvimConfig = lib.hm.dag.entryBefore [ "linkGeneration" ] ''
-    GIT="${pkgs.git}/bin/git"
     if [ ! -d "$HOME/.config/nvim" ]; then
-      $DRY_RUN_CMD $GIT clone https://github.com/glats/nvim "$HOME/.config/nvim" \
+      $DRY_RUN_CMD ${pkgs.coreutils}/bin/timeout 60s ${pkgs.git}/bin/git clone https://github.com/glats/nvim "$HOME/.config/nvim" \
         || echo "ensureNvimConfig: clone failed; skipping" >&2
-    else
-      if $GIT -C "$HOME/.config/nvim" rev-parse --git-dir >/dev/null 2>&1; then
-        if $DRY_RUN_CMD $GIT -C "$HOME/.config/nvim" fetch --depth=1 origin; then
-          $DRY_RUN_CMD $GIT -C "$HOME/.config/nvim" merge --ff-only origin/main 2>/dev/null || true
-        else
-          echo "ensureNvimConfig: fetch failed; keeping current config" >&2
-        fi
-      fi
     fi
   '';
+
+  systemd.user.services.nvim-config-update = {
+    Unit = {
+      Description = "Update the Neovim configuration checkout";
+      StartLimitIntervalSec = 900;
+      StartLimitBurst = 5;
+    };
+    Service = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.writeShellScript "nvim-config-update" ''
+        dir="$HOME/.config/nvim"
+        ${pkgs.git}/bin/git -C "$dir" rev-parse --git-dir >/dev/null 2>&1 || exit 0
+        ${pkgs.coreutils}/bin/timeout 60s ${pkgs.git}/bin/git -C "$dir" fetch --depth=1 origin || exit 1
+        ${pkgs.git}/bin/git -C "$dir" merge --ff-only origin/main 2>/dev/null || true
+      ''}";
+      Restart = "on-failure";
+      RestartSec = "30s";
+    };
+    Install.WantedBy = [ "default.target" ];
+  };
 }

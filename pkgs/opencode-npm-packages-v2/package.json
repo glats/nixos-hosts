@@ -4,14 +4,14 @@
   "private": true,
   "dependencies": {
     "@ai-sdk/provider": "3.0.8",
-    "@opencode/ai": "2.2.2",
-    "@opencode/client": "2.2.2",
-    "@opencode/plugin": "2.2.2",
-    "@opencode/protocol": "2.2.2",
-    "@opencode/schema": "2.2.2",
-    "@opencode/util": "2.2.2",
+    "@opencode/ai": "2.2.7",
+    "@opencode/client": "2.2.7",
+    "@opencode/plugin": "2.2.7",
+    "@opencode/protocol": "2.2.7",
+    "@opencode/schema": "2.2.7",
+    "@opencode/util": "2.2.7",
     "@standard-schema/spec": "1.1.0",
-    "effect": "4.0.6",
+    "effect": "4.1.0",
     "zod": "4.1.8"
   }
 }

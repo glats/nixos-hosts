@@ -39,9 +39,14 @@ in
       enable = true;
       defaultWindowManager = "${xrdpMateSession}";
       extraConfDirCommands = ''
+        substituteInPlace "$out/xrdp.ini" \
+          --replace-fail EnableSyslog=false EnableSyslog=true
         sed -i \
           -e '/^\[Logging\]/,/^\[/{s/^LogLevel=.*/LogLevel=DEBUG/;s/^#EnableConsole=.*/EnableConsole=true/;s/^#ConsoleLevel=.*/ConsoleLevel=DEBUG/}' \
           $out/xrdp.ini $out/sesman.ini
+        substituteInPlace $out/xrdp.ini \
+          --replace-fail "security_layer=negotiate" "security_layer=tls" \
+          --replace-fail "crypt_level=high" "crypt_level=medium"
         sed -i \
           -e '/^\[ChansrvLogging\]/,/^\[/s/^LogLevel=.*/LogLevel=DEBUG/' \
           $out/sesman.ini

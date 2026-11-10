@@ -61,7 +61,7 @@
     };
 
     gentle-ai-src = {
-      url = "github:Gentleman-Programming/gentle-ai/2dba7784114fff57864519c4c0d067e952a8c98b";
+      url = "github:Gentleman-Programming/gentle-ai/55240afb100ad6d2ef5fbe16f7be33a7693f77ad";
       flake = false;
     };
 
@@ -81,7 +81,7 @@
     };
 
     engram-src = {
-      url = "github:Gentleman-Programming/engram/98912f811c90428e83a6aac99fa439bedb4b268f";
+      url = "github:Gentleman-Programming/engram/f96b613952bf7b4fd2d51f30286a68bd5ffdebf2";
       flake = false;
     };
 
@@ -326,9 +326,19 @@
           touch $out
         '';
 
+      checks.x86_64-linux.gh-default-account = import ./checks/gh-default-account {
+        pkgs = nixpkgs.legacyPackages.x86_64-linux;
+      };
+
+      checks.x86_64-linux.ssh-work-aliases = import ./checks/ssh-work-aliases {
+        pkgs = nixpkgs.legacyPackages.x86_64-linux;
+        homeManager = home-manager;
+      };
+
       nixosConfigurations = {
         rog = mkNixosHost { hostname = "rog"; };
         thinkcentre = mkNixosHost { hostname = "thinkcentre"; };
+        samsung = mkNixosHost { hostname = "samsung"; };
         t14 = mkNixosHost {
           hostname = "t14";
           extraModules = [
@@ -385,6 +395,12 @@
             system = "x86_64-linux";
             username = "glats";
             extraModules = import ./hosts/thinkcentre/home/default.nix { inherit inputs; };
+          };
+          samsung = baseHomeConfig {
+            hostname = "samsung";
+            system = "x86_64-linux";
+            username = "glats";
+            extraModules = import ./hosts/samsung/home/default.nix { inherit inputs; };
           };
           t14 = baseHomeConfig {
             hostname = "t14";

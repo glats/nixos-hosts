@@ -224,3 +224,58 @@ func TestRecordResultRejectsBadOutcomeAndMissingTrial(t *testing.T) {
 		t.Fatal("expected error for invalid outcome")
 	}
 }
+
+func TestNvidiaUnloadTrialStopsConsumersThenUnloads(t *testing.T) {
+	sys := newFake()
+	sys.files[ModulesPath] = "snd 1 0 - Live 0x0\n"
+	tr, _ := Lookup("nvidia-unload")
+	Apply(sys, tr)
+	want := []string{
+		"run systemctl stop ollama.service",
+		"run systemctl stop kmsconvt@tty1.service",
+		"run modprobe -r nvidia_drm nvidia_uvm nvidia_modeset nvidia",
+	}
+	if !reflect.DeepEqual(sys.ops, want) {
+		t.Fatalf("ops %v, want %v", sys.ops, want)
+	}
+}
+
+func TestNvidiaUnloadAbortsWithoutPoweroffWhenModulesRemain(t *testing.T) {
+	sys := newFake()
+	sys.files[ModulesPath] = "nvidia 111697920 1 nvidia_uvm, Live 0x0\n"
+	log := &Log{Path: filepath.Join(t.TempDir(), "trials.jsonl")}
+	err := Execute(sys, log, "nvidia-unload", Context{}, func(string) {})
+	if err == nil {
+		t.Fatal("expected abort error")
+	}
+	for _, op := range sys.ops {
+		if op == "run systemctl poweroff" {
+			t.Fatalf("powered off despite abort: %v", sys.ops)
+		}
+	}
+	if entries, _ := log.Read(); len(entries) != 0 {
+		t.Fatalf("aborted trial logged: %+v", entries)
+	}
+}
+
+func TestNvidiaUnloadAbortsWhenUnloadFails(t *testing.T) {
+	sys := newFake()
+	sys.files[ModulesPath] = ""
+	sys.failRun["modprobe -r nvidia_drm nvidia_uvm nvidia_modeset nvidia"] = errors.New("in use")
+	log := &Log{Path: filepath.Join(t.TempDir(), "trials.jsonl")}
+	if err := Execute(sys, log, "nvidia-unload", Context{}, func(string) {}); err == nil {
+		t.Fatal("expected abort error")
+	}
+}
+
+func TestNvidiaUnloadPowersOffWhenClean(t *testing.T) {
+	sys := newFake()
+	sys.files[ModulesPath] = "snd 1 0 - Live 0x0\n"
+	log := &Log{Path: filepath.Join(t.TempDir(), "trials.jsonl")}
+	if err := Execute(sys, log, "nvidia-unload", Context{BootID: "b1"}, func(string) {}); err != nil {
+		t.Fatal(err)
+	}
+	if last := sys.ops[len(sys.ops)-1]; last != "run systemctl poweroff" {
+		t.Fatalf("poweroff not last: %v", sys.ops)
+	}
+}

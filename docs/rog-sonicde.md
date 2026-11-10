@@ -21,7 +21,6 @@ so KWin rejects Spectacle's `.spectacle-wrapped` process. `linux/system/desktop/
 adds the missing hunk (upstream: https://github.com/sonicde-nixos/sonic-flake/pull/2).
 Build/evaluate `nixosConfigurations.thinkcentre`, not rog, for this trial.
 Deployment and remote-session smoke tests are user-owned and still required.
-The regression check at `tests/rog-sonicde.nix` now verifies both host boundaries.
 
 ## Previous status: parked
 
@@ -62,10 +61,9 @@ own appearance. MATE settings on disk remain available for rollback.
 
 ## Verification and rollout
 
-Run the configuration regression check without staging new files:
+Evaluate the configurations without staging new files:
 
 ```console
-nix eval --impure --json --expr 'import ./tests/rog-sonicde.nix { flake = builtins.getFlake ("path:" + toString ./.); }'
 nix eval path:.#nixosConfigurations.rog.config.system.build.toplevel.drvPath --no-write-lock-file
 nix eval path:.#homeConfigurations.rog.activationPackage.drvPath --no-write-lock-file
 nix flake check path:. --no-build --no-write-lock-file

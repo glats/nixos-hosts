@@ -10,4 +10,11 @@
       extraArgs = "--keep-since 4d --keep 3";
     };
   };
+
+  systemd.services.nh-clean.serviceConfig = {
+    ExecStartPre = "${pkgs.coreutils}/bin/sleep 600";
+    Nice = 19;
+    IOSchedulingClass = "idle";
+    CPUSchedulingPolicy = "idle";
+  };
 }

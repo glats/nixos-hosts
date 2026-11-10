@@ -205,6 +205,13 @@ in
         server = "thinkcentre.lan";
       };
     };
+    ".local/share/remmina/rdp-samsung.remmina" = {
+      force = true;
+      text = mkRemminaProfile rdpDefaults {
+        name = "samsung";
+        server = "samsung.lan";
+      };
+    };
 
     ".local/share/remmina/vnc-t14.remmina" = {
       force = true;
@@ -242,6 +249,14 @@ in
         name = "thinkcentre";
         comment = "RDP connection to thinkcentre";
         exec = "${pkgs.remmina}/bin/remmina -c /home/glats/.local/share/remmina/rdp-thinkcentre.remmina";
+      };
+    };
+    ".local/share/applications/remote-samsung.desktop" = {
+      force = true;
+      text = mkDesktop {
+        name = "samsung";
+        comment = "RDP connection to samsung";
+        exec = "${pkgs.remmina}/bin/remmina -c /home/glats/.local/share/remmina/rdp-samsung.remmina";
       };
     };
     ".local/share/applications/remote-t14.desktop" = {

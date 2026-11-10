@@ -15,6 +15,7 @@ const (
 	WakeupPath      = "/proc/acpi/wakeup"
 	XHCIControlGlob = "/sys/bus/pci/drivers/xhci_hcd/*:*/power/control"
 	KmsgDumpParam   = "/sys/module/printk/parameters/always_kmsg_dump"
+	ModulesPath     = "/proc/modules"
 	WolInterface    = "enp3s0"
 	DefaultLogPath  = "/var/lib/test-shutdown/trials.jsonl"
 )
@@ -32,10 +33,11 @@ type Step struct {
 }
 
 type Trial struct {
-	ID         string
-	Hypothesis string
-	Steps      []Step
-	Manual     string
+	ID           string
+	Hypothesis   string
+	Steps        []Step
+	Manual       string
+	AbortOnError bool
 }
 
 type StepResult struct {
@@ -85,6 +87,39 @@ var xhciStep = Step{
 	},
 }
 
+var stopOllamaStep = Step{
+	Desc: "stop ollama so nothing reloads the NVIDIA driver",
+	Do:   func(s System) error { return s.Run("systemctl", "stop", "ollama.service") },
+}
+
+var stopConsoleStep = Step{
+	Desc: "stop the tty1 console that holds the NVIDIA DRM device",
+	Do:   func(s System) error { return s.Run("systemctl", "stop", "kmsconvt@tty1.service") },
+}
+
+var nvidiaUnloadStep = Step{
+	Desc: "unload the NVIDIA modules",
+	Do: func(s System) error {
+		return s.Run("modprobe", "-r", "nvidia_drm", "nvidia_uvm", "nvidia_modeset", "nvidia")
+	},
+}
+
+var nvidiaGoneStep = Step{
+	Desc: "verify no NVIDIA module is loaded",
+	Do: func(s System) error {
+		data, err := s.ReadFile(ModulesPath)
+		if err != nil {
+			return err
+		}
+		for _, line := range strings.Split(string(data), "\n") {
+			if strings.HasPrefix(line, "nvidia") {
+				return fmt.Errorf("still loaded: %s", strings.Fields(line)[0])
+			}
+		}
+		return nil
+	},
+}
+
 var pstoreStep = Step{
 	Desc: "disable the shutdown kmsg dump to EFI pstore",
 	Do:   func(s System) error { return s.WriteFile(KmsgDumpParam, []byte("N")) },
@@ -112,6 +147,12 @@ var Trials = []Trial{
 		Manual: "nvidia_drm modeset keeps the driver pinned, so it cannot be unloaded at runtime. Reboot, press `e` on the " +
 			"first systemd-boot entry, append `module_blacklist=nvidia,nvidia_drm,nvidia_modeset,nvidia_uvm` to the line, " +
 			"boot with Enter, then run `sudo test-shutdown baseline`.",
+	},
+	{
+		ID:           "nvidia-unload",
+		Hypothesis:   "the NVIDIA driver shutdown hook, not the GPU itself, blocks S5; a clean module unload before poweroff avoids it",
+		Steps:        []Step{stopOllamaStep, stopConsoleStep, nvidiaUnloadStep, nvidiaGoneStep},
+		AbortOnError: true,
 	},
 	{
 		ID:         "pstore",
@@ -251,6 +292,13 @@ func Execute(s System, log *Log, id string, ctx Context, breadcrumb func(string)
 		return nil
 	}
 	results := Apply(s, t)
+	if t.AbortOnError {
+		for _, r := range results {
+			if r.Error != "" {
+				return fmt.Errorf("trial %s aborted, not powering off: %s: %s", t.ID, r.Desc, r.Error)
+			}
+		}
+	}
 	if err := log.Append(Entry{
 		Kind:   "trial",
 		Time:   ctx.Now,

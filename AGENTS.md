@@ -2,7 +2,7 @@
 
 ## Repository Facts
 
-- Hosts: `rog` (MATE, XRDP, NVIDIA, home server), `thinkcentre` (headless, XRDP), `t14` (ThinkPad, Omarchy/Hyprland), and `macm5` (Apple Silicon, nix-darwin).
+- Hosts: `rog` (MATE, XRDP, NVIDIA, home server), `thinkcentre` (headless, XRDP), `t14` (ThinkPad, Omarchy/Hyprland), `samsung` (Samsung tablet PC, GNOME), and `macm5` (Apple Silicon, nix-darwin).
 - Users: `glats` on Linux; `juan` on `macm5` (GitHub identity `jcuzmar`).
 - Stack: NixOS flakes, Home Manager (integrated and standalone), sops-nix, and nix-darwin.
 - `/etc/nixos` is a symlink to this repository (`~/.nixos`).
@@ -10,7 +10,7 @@
 - Linux modules live in `linux/system/` and `linux/home/`; Darwin modules live in `darwin/`; cross-platform Home Manager modules live in `shared/`.
 - `linux/home/shared-modules.nix` and `darwin/home/shared-modules.nix` are the canonical shared Home Manager module lists.
 - Overlays in `overlays/` are imported by flake builders, never used as modules.
-- Custom operational binaries live in `pkgs/nixos-scripts/`; `bin/test-tmux-resume` and `bin/webcam` are the only shell-script exceptions.
+- Custom operational binaries live in `pkgs/nixos-scripts/`; `bin/webcam` is the only shell-script exception.
 - Secrets are sops-encrypted under `secrets/`; `.sops.yaml` defines creation-rule ordering.
 
 ## Omarchy and t14

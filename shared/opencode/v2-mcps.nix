@@ -1,5 +1,6 @@
 {
   lib,
+  withLocalEnvironment,
   mcps,
   browserMcp,
 }:
@@ -19,7 +20,7 @@
       }
     ) mcps)
     // lib.optionalAttrs browserMcp.enable {
-      browsermcp = {
+      browsermcp = withLocalEnvironment {
         type = "local";
         command = [ "${browserMcp.package}/bin/mcp-server-browsermcp" ];
         disabled = false;

@@ -586,20 +586,20 @@ let
     {
       name = "ollama-light";
       roles = {
-        gentle-orchestrator = "ollama-cloud/glm-5.3-flash";
+        gentle-orchestrator = "ollama-cloud/minimax-m3.1-flash";
         gentle-ai-explore = "ollama-cloud/minimax-m3.1-flash";
         gentle-ai-worker = "ollama-cloud/minimax-m3.1-flash";
-        gentle-ai-verify = "ollama-cloud/glm-5.3-flash";
-        jd-judge-a = "ollama-cloud/glm-5.3-flash";
-        jd-judge-b = "ollama-cloud/glm-5.3-flash";
+        gentle-ai-verify = "ollama-cloud/minimax-m3.1-flash";
+        jd-judge-a = "ollama-cloud/minimax-m3.1-flash";
+        jd-judge-b = "ollama-cloud/minimax-m3.1-flash";
         jd-fix-agent = "ollama-cloud/minimax-m3.1-flash";
-        review-readability = "ollama-cloud/glm-5.3-flash";
-        review-refuter = "ollama-cloud/glm-5.3-flash";
-        review-reliability = "ollama-cloud/glm-5.3-flash";
-        review-resilience = "ollama-cloud/glm-5.3-flash";
-        review-risk = "ollama-cloud/glm-5.3-flash";
-        review-validator = "ollama-cloud/glm-5.3-flash";
-        neutral = "ollama-cloud/glm-5.3-flash";
+        review-readability = "ollama-cloud/minimax-m3.1-flash";
+        review-refuter = "ollama-cloud/minimax-m3.1-flash";
+        review-reliability = "ollama-cloud/minimax-m3.1-flash";
+        review-resilience = "ollama-cloud/minimax-m3.1-flash";
+        review-risk = "ollama-cloud/minimax-m3.1-flash";
+        review-validator = "ollama-cloud/minimax-m3.1-flash";
+        neutral = "ollama-cloud/minimax-m3.1-flash";
       };
     }
   ];

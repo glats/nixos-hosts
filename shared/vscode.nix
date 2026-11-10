@@ -1,8 +1,56 @@
-{ pkgs, inputs, ... }:
+{
+  pkgs,
+  inputs,
+  lib,
+  ...
+}:
 {
   programs.vscode = {
     enable = true;
-    package = pkgs.vscode;
+    package =
+      let
+        # Backport of unstable's fix for nixpkgs#584492 while nixos-26.05 lacks it.
+        # VSCode 1.144 moved the bundled ripgrep from @vscode/ripgrep to
+        # @vscode/ripgrep-universal, shipped outside node_modules.asar, so
+        # 26.05's hardcoded rm/ln path no longer exists and patchPhase fails.
+        patch-584492 =
+          if lib.versionAtLeast pkgs.vscode.version "1.122.0" && pkgs.stdenv.hostPlatform.isLinux then
+            let
+              ripgrepSystem =
+                if pkgs.stdenv.hostPlatform.isx86_64 then
+                  "linux-x64"
+                else if pkgs.stdenv.hostPlatform.isAarch64 then
+                  "linux-arm64"
+                else
+                  throw "unsupported system for vscode ripgrep-universal: ${pkgs.stdenv.hostPlatform.system}";
+            in
+            old:
+            (
+              builtins.replaceStrings
+                [
+                  ''asar extract "$packed" "$unpacked"''
+                  "resources/app/node_modules/@vscode/ripgrep/bin/rg"
+                ]
+                [
+                  (''
+                    asar extract "$packed" "$unpacked"
+                              if [ -d "$packed.unpacked" ]; then
+                                cp -a "$packed.unpacked/." "$unpacked/"
+                              fi'')
+                  "resources/app/node_modules/@vscode/ripgrep-universal/bin/${ripgrepSystem}/rg"
+                ]
+                old.postPatch
+              + ''
+
+                rm -rf "resources/app/node_modules.asar.unpacked"
+                ln -rs "$unpacked" "resources/app/node_modules.asar.unpacked"''
+            )
+          else
+            old: old.postPatch;
+      in
+      pkgs.vscode.overrideAttrs (old: {
+        postPatch = patch-584492 old;
+      });
 
     mutableExtensionsDir = true;
 

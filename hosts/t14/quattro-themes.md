@@ -44,8 +44,6 @@ All apps change together and the result stays reproducible.
    at the Quattro switcher output instead of the old Walker menu.
 3. Unhide `style.theme` in `hosts/t14/quattro.nix` and set its action to that
    writer.
-4. Update `menuOwnedByShell` in `tests/t14-quattro-compatibility.nix`, which
-   asserts the theme entry is hidden and never runs `omarchy-theme-set`.
 
 Cost: one rebuild per switch (tens of seconds).
 
@@ -72,4 +70,3 @@ Fast switching, but apps with baked colors stay `glats`.
 - [ ] `glats` is still the current theme after the first rebuild.
 - [ ] Lock screen, bar, terminal and Hyprland borders show the same colors.
 - [ ] A rebuild after switching does not revert or break the chosen theme.
-- [ ] The t14 regression files pass (`tests/t14-quattro-*.nix`).
