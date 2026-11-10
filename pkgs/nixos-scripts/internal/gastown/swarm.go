@@ -34,6 +34,12 @@ type Swarm struct {
 	Out  io.Writer
 }
 
+// ClaudeTokenEnv is the only credential a claude agent receives: the
+// subscription token from `claude setup-token`. It never refreshes inside the
+// sandbox, so the user's own login cannot be rotated away, and no API key
+// variable is ever forwarded.
+const ClaudeTokenEnv = "CLAUDE_CODE_OAUTH_TOKEN"
+
 type openCodeProvider struct{ Name, Env, Package, BaseURL string }
 
 var openCodeProviders = map[string]openCodeProvider{
@@ -55,9 +61,13 @@ func AgentEnvNames(specs, extra []string) []string {
 		add(n)
 	}
 	for _, spec := range specs {
-		if kind, rest, _ := strings.Cut(spec, ":"); kind == "opencode" {
+		kind, rest, _ := strings.Cut(spec, ":")
+		switch kind {
+		case "opencode":
 			provider, _, _ := strings.Cut(rest, "/")
 			add(openCodeProviders[provider].Env)
+		case "claude":
+			add(ClaudeTokenEnv)
 		}
 	}
 	return names
@@ -142,7 +152,7 @@ func (s *Swarm) save() error {
 }
 
 // AgentPreset builds a Gas Town agent preset that runs a coding agent confined
-// to the town. Spec forms: codex:<model>:<effort> and opencode:<provider/model>.
+// to the town. Spec forms: codex:<model>:<effort>, claude:<model> and opencode:<provider/model>.
 func AgentPreset(c Config, self, town, spec string, agentEnv []string) (string, map[string]any, error) {
 	kind, rest, _ := strings.Cut(spec, ":")
 	confine := []string{"confine", "--root", town, "--home", filepath.Join(town, ".agent-home"), "--bwrap", c.Bwrap,
@@ -160,6 +170,14 @@ func AgentPreset(c Config, self, town, spec string, agentEnv []string) (string, 
 		return name, map[string]any{"name": name, "command": self, "args": args, "process_names": []string{"codex", "bwrap", "gastown-run"},
 			"resume_flag": "resume", "resume_style": "subcommand", "prompt_mode": "arg", "ready_prompt_prefix": "› ",
 			"ready_delay_ms": 3000, "instructions_file": "AGENTS.md"}, nil
+	case "claude":
+		if c.Claude == "" || rest == "" {
+			return "", nil, errors.New("claude spec needs GASTOWN_CLAUDE and a model: claude:<model> (" + spec + ")")
+		}
+		name := "claude-" + strings.Trim(specCleaner.ReplaceAllString(strings.ToLower(rest), "-"), "-")
+		args := append(confine, "--prepare-claude", "--env", ClaudeTokenEnv, "--", c.Claude, "--dangerously-skip-permissions", "--model", rest)
+		return name, map[string]any{"name": name, "command": self, "args": args, "process_names": []string{"claude", "node", "bwrap", "gastown-run"},
+			"prompt_mode": "arg", "ready_prompt_prefix": "❯ ", "ready_delay_ms": 5000, "supports_hooks": true, "instructions_file": "CLAUDE.md"}, nil
 	case "opencode":
 		provider, model, ok := strings.Cut(rest, "/")
 		known, found := openCodeProviders[provider]
@@ -183,7 +201,7 @@ func AgentPreset(c Config, self, town, spec string, agentEnv []string) (string, 
 			"env": map[string]string{"OPENCODE_PERMISSION": `{"*":"allow"}`, "OPENCODE_CONFIG_CONTENT": string(inline)}, "prompt_mode": "none",
 			"ready_delay_ms": 8000, "instructions_file": "AGENTS.md"}, nil
 	}
-	return "", nil, errors.New("unknown agent spec (use codex:<model>:<effort> or opencode:<provider/model>): " + spec)
+	return "", nil, errors.New("unknown agent spec (use codex:<model>:<effort>, claude:<model> or opencode:<provider/model>): " + spec)
 }
 
 func (s *Swarm) presets() (map[string]any, map[string][]string, error) {

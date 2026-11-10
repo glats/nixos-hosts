@@ -15,7 +15,7 @@ Branch: `feat/bot` | Delivery: work-unit commits on the branch; push only when t
 
 ## Tasks
 
-- [ ] T1 | S4 | Claude Code agent preset `claude:<model>` (subscription login only), confined | Route: inline | Status: pending | Commit: -
+- [x] T1 | S4 | Claude Code agent preset `claude:<model>` (subscription token only), confined | Route: inline | Status: done except the live gate check (needs the user token, L4) | Commit: see L4
 - [ ] T2 | S4 | Ollama Cloud worker through OpenCode `opencode:ollama-cloud/<model>`, verified auth | Route: inline | Status: pending | Commit: -
 - [ ] T3 | S5 | Token ledger per run, role, agent and model; `swarm usage`; totals in the final notification | Route: inline | Status: pending | Commit: -
 - [ ] T4 | S6 | Polecat ODD worker contract installed read-only in every agent home | Route: inline | Status: pending | Commit: -
@@ -115,3 +115,11 @@ Operational facts (avoid these traps):
 - Unknowns resolved before handoff: Ollama Cloud is declared in the user's OpenCode config with model `deepseek-v4-pro` only (auth mechanism still to verify in T2); Claude Code 2.1.322 with `~/.claude/.credentials.json`; Claude session JSONL carries `message.usage`; the Codex interactive rollout file inspected had no `token_count` event (T3 must locate usage); gentle-ai 4.4.0 ships `opencode/agents/gentle-ai-worker.md` but it assumes a parent orchestrator, hence a dedicated polecat contract (T4).
 - Recommended order for Sonnet: T1, T2, T3, T4 (mechanical), then T6 (mechanical against its spec), then T5 runs (bounded; present the table), then ask D-PHONE and D-BUILD, then T9.
 - Risk: item 2 (agents with real subscription credentials under confinement) for T1, T2, T7; item 5 (delivery/environment) for T8.
+
+### L4 — 2026-11-10: T1 executed (Sonnet-phase run)
+
+- Deviation from T1 text, with evidence: the plan bound `~/.claude/.credentials.json`. Observed instead: the user's file holds empty `accessToken` and `refreshToken` and `expiresAt: 0`, and the user's own `claude -p` answers "OAuth session expired and could not be refreshed". A single-file bind also cannot take Claude's atomic rename on refresh, and a refresh inside the sandbox could rotate the user's refresh token away. Decision: claude agents authenticate only with `CLAUDE_CODE_OAUTH_TOKEN` (from `claude setup-token`, subscription based, no API billing), no home bind. `ANTHROPIC_API_KEY` is never forwarded (tests).
+- First-run dialogs observed in a live pane (login method, theme picker). New `confine --prepare-claude` pre-answers onboarding, theme, workspace trust and the bypass-permissions notice (`PrepareClaude`, idempotent, preserves existing keys). Observed: with a fake token the confined pane reaches the prompt with no dialog (401 expected).
+- Codex Mayor hit its subscription limit during the live attempt ("try again at Nov 11th, 2026 12:46 PM"); live runs that need the Codex Mayor wait for that, or use an OpenCode Mayor.
+- Pending live check: one toy goal with `--polecat-agent claude:sonnet` once the user exports `CLAUDE_CODE_OAUTH_TOKEN`.
+- Tests: 112 in internal/gastown, all pass. Risk: item 2 (credentials under confinement; narrowed to a single env token).

@@ -1,6 +1,9 @@
 package gastown
 
 import (
+	"encoding/json"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -135,5 +138,36 @@ func TestConfineAllowsBindingASingleCredentialFile(t *testing.T) {
 	text := argvText(t, s, nil)
 	if !strings.Contains(text, "--bind\x00/home/u/.codex/auth.json\x00/state/swarm/town/.agent-home/.codex/auth.json") {
 		t.Fatal("single-file bind missing")
+	}
+}
+
+func TestPrepareClaudePreAnswersFirstRunDialogsAndKeepsExistingSettings(t *testing.T) {
+	home := t.TempDir()
+	if err := os.WriteFile(filepath.Join(home, ".claude.json"), []byte(`{"userID":"keep","projects":{"/other":{"x":1}}}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 2; i++ {
+		if err := PrepareClaude(home, "/town/rig"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var state map[string]any
+	data, _ := os.ReadFile(filepath.Join(home, ".claude.json"))
+	if err := json.Unmarshal(data, &state); err != nil {
+		t.Fatal(err)
+	}
+	projects := state["projects"].(map[string]any)
+	if state["hasCompletedOnboarding"] != true || state["userID"] != "keep" || projects["/other"] == nil ||
+		projects["/town/rig"].(map[string]any)["hasTrustDialogAccepted"] != true {
+		t.Fatalf("state not prepared: %s", data)
+	}
+	var settings map[string]any
+	data, _ = os.ReadFile(filepath.Join(home, ".claude", "settings.json"))
+	_ = json.Unmarshal(data, &settings)
+	if settings["skipDangerousModePermissionPrompt"] != true || settings["theme"] != "dark" {
+		t.Fatalf("settings not prepared: %s", data)
+	}
+	if err := PrepareClaude(home, "relative"); err == nil {
+		t.Fatal("a relative project path must be refused")
 	}
 }

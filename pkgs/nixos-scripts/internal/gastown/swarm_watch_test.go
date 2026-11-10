@@ -2,6 +2,7 @@ package gastown
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -479,5 +480,76 @@ func TestRulesTellTheMayorWhichPathsAreProtected(t *testing.T) {
 		if !strings.Contains(rules, want) {
 			t.Errorf("rules missing %q", want)
 		}
+	}
+}
+
+func TestClaudePresetUsesOnlyTheSubscriptionTokenAndIsConfined(t *testing.T) {
+	t.Setenv("ANTHROPIC_API_KEY", "sk-leak")
+	c := testConfig()
+	c.Claude, c.NativeHome = "/nix/claude", "/home/u"
+	name, preset, err := AgentPreset(c, "/nix/gastown-run", "/state/town", "claude:sonnet", []string{"EXTRA_KEY"})
+	if err != nil || name != "claude-sonnet" {
+		t.Fatalf("name=%q err=%v", name, err)
+	}
+	args := strings.Join(preset["args"].([]string), "\x00")
+	for _, want := range []string{"confine", "--prepare-claude", "--env\x00CLAUDE_CODE_OAUTH_TOKEN", "--\x00/nix/claude\x00--dangerously-skip-permissions\x00--model\x00sonnet"} {
+		if !strings.Contains(args, want) {
+			t.Errorf("args missing %q", strings.ReplaceAll(want, "\x00", " "))
+		}
+	}
+	if strings.Contains(args, "--home-bind") {
+		t.Error("claude must not bind any part of the real home: a refresh inside the sandbox could rotate the user's login away")
+	}
+	for _, leak := range []string{"ANTHROPIC_API_KEY", "sk-leak", "ANTHROPIC_AUTH_TOKEN"} {
+		if strings.Contains(args, leak) || strings.Contains(fmt.Sprint(preset["env"]), leak) {
+			t.Errorf("%s must never reach the claude agent", leak)
+		}
+	}
+	if preset["prompt_mode"] != "arg" || preset["ready_prompt_prefix"] != "❯ " {
+		t.Errorf("prompt mode/prefix wrong: %v %v", preset["prompt_mode"], preset["ready_prompt_prefix"])
+	}
+	names, _ := preset["process_names"].([]string)
+	if !strings.Contains(strings.Join(names, ","), "claude") {
+		t.Errorf("process_names must include claude: %v", names)
+	}
+}
+
+func TestClaudePresetNeedsTheBinaryAndAModel(t *testing.T) {
+	c := testConfig()
+	c.NativeHome = "/home/u"
+	if _, _, err := AgentPreset(c, "/x", "/state/town", "claude:sonnet", nil); err == nil {
+		t.Fatal("claude without GASTOWN_CLAUDE must be refused")
+	}
+	c.Claude = "/nix/claude"
+	if _, _, err := AgentPreset(c, "/x", "/state/town", "claude:", nil); err == nil {
+		t.Fatal("claude without a model must be refused")
+	}
+}
+
+func TestSwarmEnvironmentNeverForwardsAnthropicKeys(t *testing.T) {
+	t.Setenv("ANTHROPIC_API_KEY", "sk-leak")
+	f := &swarmFake{}
+	s := newSwarm(t, f, "claude:sonnet")
+	if strings.Contains(strings.Join(s.env(), "\n"), "ANTHROPIC") {
+		t.Fatal("anthropic keys must not be forwarded to the swarm environment")
+	}
+}
+
+func TestClaudePresetIsNotProbed(t *testing.T) {
+	c := testConfig()
+	c.Claude, c.NativeHome = "/nix/claude", "/home/u"
+	_, preset, _ := AgentPreset(c, "/nix/gastown-run", "/state/town", "claude:opus", nil)
+	if _, _, ok := ProbeCommand(preset); ok {
+		t.Fatal("claude agents use subscription quota and are not probed")
+	}
+}
+
+func TestSwarmEnvironmentForwardsTheClaudeSubscriptionToken(t *testing.T) {
+	t.Setenv("CLAUDE_CODE_OAUTH_TOKEN", "tok-sub")
+	t.Setenv("ANTHROPIC_API_KEY", "sk-leak")
+	s := newSwarm(t, &swarmFake{}, "claude:sonnet")
+	text := strings.Join(s.env(), "\n")
+	if !strings.Contains(text, "CLAUDE_CODE_OAUTH_TOKEN=tok-sub") || strings.Contains(text, "ANTHROPIC") {
+		t.Fatalf("only the subscription token may be forwarded: %q", text)
 	}
 }

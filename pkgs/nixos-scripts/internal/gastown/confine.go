@@ -1,6 +1,7 @@
 package gastown
 
 import (
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -141,6 +142,7 @@ func Confine(args []string, stderr io.Writer) int {
 	path := fs.String("path", os.Getenv("GASTOWN_SYSTEM_PATH"), "PATH inside the sandbox")
 	realHomeFlag := fs.String("real-home", "", "real home directory that home-bind entries come from (default: $HOME)")
 	trustCodex := fs.Bool("trust-codex-project", false, "mark the working directory's git root as trusted in the agent's Codex config")
+	prepareClaude := fs.Bool("prepare-claude", false, "pre-answer Claude Code's first-run dialogs for the working directory's git root")
 	var ro, rw, homeBinds, allowEnv listFlag
 	fs.Var(&ro, "ro", "extra read-only absolute path")
 	fs.Var(&rw, "rw", "extra writable absolute path")
@@ -182,6 +184,12 @@ func Confine(args []string, stderr io.Writer) int {
 			return 1
 		}
 	}
+	if *prepareClaude {
+		if err := PrepareClaude(*home, GitRoot(cwd)); err != nil {
+			fmt.Fprintln(stderr, "gastown-run confine:", err)
+			return 1
+		}
+	}
 	gitconfig := filepath.Join(*home, ".gitconfig")
 	if _, statErr := os.Stat(gitconfig); statErr != nil {
 		_ = os.WriteFile(gitconfig, []byte("[user]\n\tname = gastown-agent\n\temail = agent@localhost\n[init]\n\tdefaultBranch = main\n[safe]\n\tdirectory = *\n"), 0o600)
@@ -203,6 +211,55 @@ func GitRoot(dir string) string {
 			return filepath.Clean(dir)
 		}
 	}
+}
+
+// PrepareClaude answers Claude Code's first-run dialogs (onboarding, theme,
+// workspace trust, bypass-permissions notice) in an agent home so a headless
+// session never stops at them. Existing settings are preserved; it is idempotent.
+func PrepareClaude(home, project string) error {
+	if !filepath.IsAbs(project) {
+		return errors.New("project path must be absolute: " + project)
+	}
+	state := filepath.Join(home, ".claude.json")
+	doc := map[string]any{}
+	if data, err := os.ReadFile(state); err == nil {
+		_ = json.Unmarshal(data, &doc)
+	}
+	doc["hasCompletedOnboarding"] = true
+	doc["theme"] = "dark"
+	projects, _ := doc["projects"].(map[string]any)
+	if projects == nil {
+		projects = map[string]any{}
+	}
+	entry, _ := projects[project].(map[string]any)
+	if entry == nil {
+		entry = map[string]any{}
+	}
+	entry["hasTrustDialogAccepted"] = true
+	projects[project] = entry
+	doc["projects"] = projects
+	if err := writeJSON(state, doc); err != nil {
+		return err
+	}
+	settingsPath := filepath.Join(home, ".claude", "settings.json")
+	settings := map[string]any{}
+	if data, err := os.ReadFile(settingsPath); err == nil {
+		_ = json.Unmarshal(data, &settings)
+	}
+	settings["theme"] = "dark"
+	settings["skipDangerousModePermissionPrompt"] = true
+	return writeJSON(settingsPath, settings)
+}
+
+func writeJSON(path string, doc map[string]any) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		return err
+	}
+	data, err := json.MarshalIndent(doc, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, append(data, '\n'), 0o600)
 }
 
 // TrustProject marks a project root as trusted in a Codex config.toml so the

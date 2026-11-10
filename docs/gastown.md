@@ -110,6 +110,11 @@ Agents and providers:
 
 - `codex:<model>:<effort>` uses your ChatGPT login (only `auth.json` is exposed to
   the agent) with the model and reasoning effort you name.
+- `claude:<model>` (`sonnet`, `opus`, `haiku` or a full id) runs Claude Code on your
+  Claude subscription. Run `claude setup-token` once and export the printed token as
+  `CLAUDE_CODE_OAUTH_TOKEN` where you start the swarm; it is the only credential the
+  agent receives. `ANTHROPIC_API_KEY` is never forwarded, and `~/.claude` is never
+  mounted, so nothing inside the sandbox can rotate your own login away.
 - `opencode:nvidia/<model id>` uses NVIDIA NIM through OpenCode with a minimal
   inline configuration and the `NVIDIA_API_KEY` from your environment. Your own
   OpenCode configuration, sessions and database are never mounted. The model id

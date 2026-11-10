@@ -15,7 +15,7 @@ import (
 type Config struct {
 	GT, BD, Tmux, Codex, Bwrap string
 	Bash                       string
-	OpenCode                   string
+	OpenCode, Claude           string
 	ToolPath, SystemPath       string
 	NativeHome, State          string
 	DoltPort                   int

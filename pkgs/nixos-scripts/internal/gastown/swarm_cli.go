@@ -17,7 +17,7 @@ const swarmUsage = `gastown-run swarm - a goal-driven swarm: a Mayor plans, conf
 
   swarm init [flags] <project> <repo-path>
       --check CMD            trusted check the gate runs on every branch (repeatable, required)
-      --polecat-agent SPEC   worker agent, in fallback order (repeatable); SPEC is codex:<model>:<effort> or opencode:nvidia/<model id>, e.g. opencode:nvidia/nvidia/nemotron-3-ultra-550b-a55b
+      --polecat-agent SPEC   worker agent, in fallback order (repeatable); SPEC is codex:<model>:<effort>, claude:<model> or opencode:nvidia/<model id>, e.g. opencode:nvidia/nvidia/nemotron-3-ultra-550b-a55b
       --mayor-agent SPEC     coordinator agent (default: the worker model at medium effort)
       --max-polecats N       parallel workers (default 2)
       --dolt-port N          port for the swarm's own Dolt (default 45900)

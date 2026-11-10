@@ -18,6 +18,7 @@
   gnumake,
   gawk,
   opencode ? null,
+  claude-code ? null,
   toolPackages ? [ ],
 }:
 
@@ -64,5 +65,6 @@ runCommand "gastown-run"
       --set GASTOWN_SYSTEM_PATH ${systemPath} \
       --set GASTOWN_TOOL_PATH ${toolPath} \
       ${lib.optionalString (opencode != null) "--set GASTOWN_OPENCODE ${opencode}/bin/opencode"} \
+      ${lib.optionalString (claude-code != null) "--set GASTOWN_CLAUDE ${claude-code}/bin/claude"} \
       --prefix PATH : ${lib.makeBinPath [ git ]}
   ''
