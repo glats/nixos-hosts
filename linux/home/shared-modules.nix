@@ -2,6 +2,7 @@
 [
   ./base.nix
   ./shell.nix
+  ../../shared/starship.nix
   ./theme.nix
   inputs.omarchy-nix.homeManagerModules.btop
   ./tmux.nix
