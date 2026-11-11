@@ -32,6 +32,10 @@ Replies are queued as files and read by the supervisor on its next round (20 s p
 
 ## Known traps
 
+- `campaign start` and `swarm run` block until the unit ends (`--wait`); run them in the background and watch `notifications.jsonl`. Killing the client leaves the unit running.
+- If every branch is rejected, suspect the gate environment before the workers: compare `gate-logs/<bead>/check-N.stdout` with the same check run in the gate's bwrap.
+- To change checks, stop the swarm, edit `swarm.json`, reset blocked or running items to `selected` in `campaign.json`, remove stale failed entries from `watch.json`, and keep a backup.
+
 - Boot dog and refinery escalations are Gas Town infrastructure noise.
 - `swarm check` does not probe codex or claude agents (subscription quota).
 - `swarm init` cannot be repeated on an existing project; changing the Mayor means removing its state directory, only when nothing ran.

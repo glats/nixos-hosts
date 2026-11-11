@@ -14,7 +14,7 @@ Load when the user wants to point `gastown-run` at a repository. After kickoff, 
 ## Hard Rules
 
 - The swarm clones committed state only. Commit or tell the user what is left out.
-- Every `--check` must be offline, deterministic and pass on the base today. Run each one in a clean clone first. Never use checks that need root, network, devices or a VM: workers cannot run them.
+- Every `--check` must be offline, deterministic and pass on the base today. Run each one inside the gate's own isolation (bwrap, cleared environment, no network, no USER or HOME, PATH limited to the tool packages), not in an interactive shell: a check that passes in your shell can fail every branch there. Never use checks that need root, network, devices or a VM: workers cannot run them.
 - Credentials come from the user's environment (provider keys from their shell, `CLAUDE_CODE_OAUTH_TOKEN` for claude agents). Never print them and never use API-key billing.
 - `swarm init` cannot be repeated on an existing project.
 
@@ -31,7 +31,7 @@ Load when the user wants to point `gastown-run` at a repository. After kickoff, 
 ## Execution Steps
 
 1. Check the repo state and find the existing test and lint commands.
-2. Validate each check in a clean clone; drop the ones that already fail.
+2. Validate each check in a clean clone under the gate's isolation; set missing variables inline (for example ), ask for missing tools in the host's gastown tool packages, and drop checks that still fail.
 3. Pick agents; run `gastown-run swarm check <p>` after init.
 4. Write the intent: scope the team supports, what stays open to forks, which docs to read first, and an instruction to ask about resources.
 5. Emit `swarm init`, `swarm check` and `campaign start` as one block.
