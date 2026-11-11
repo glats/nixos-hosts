@@ -39,6 +39,7 @@ in
       "wheel"
       "audio"
       "video"
+      "render"
       "docker"
       "keys"
       "libvirtd"
