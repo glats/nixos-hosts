@@ -1,0 +1,38 @@
+# Operations
+
+Swarm state lives in `~/.local/state/gastown/swarm/<project>/`: `campaign.json` (memory), `notifications.jsonl`, `watch.json`, `ledger.jsonl` (tokens), `staging.git` (accepted branches), `gate-logs/`.
+
+## Commands
+
+| Goal | Command |
+|---|---|
+| Plan and run an intent (resumes if saved) | `gastown-run campaign start <p> "<intent>"` |
+| Pick items | `gastown-run campaign reply <p> "a c"` or `all` |
+| Answer a Mayor question | `gastown-run campaign answer --question <id> <p> "<text>"` |
+| Steer running work | `gastown-run campaign reply <p> "<instruction>"` |
+| Status, tokens | `gastown-run campaign status <p>`, `gastown-run swarm usage <p>` |
+| Stop (state kept) | `gastown-run campaign stop <p>` |
+| One-off goal without a campaign | `gastown-run swarm run --goal "<text>" <p>` |
+| Models alive before spending | `gastown-run swarm check <p>` |
+
+Replies are queued as files and read by the supervisor on its next round (20 s plus the round itself); confirm in `campaign.json` instead of assuming.
+
+## Notifications
+
+| Title | Meaning |
+|---|---|
+| Campaign plan ready | Process, questions and items proposed; waits for the user. |
+| Item started / verified | Goal sent / a gate-accepted branch exists. |
+| Ready for review | A branch passed the checks; fetch it from `staging.git`. |
+| Rejected `<bead>` | The gate refused the branch; logs in `gate-logs/<bead>`. |
+| Item blocked | No verified result and no activity for 30 minutes, or a decision is missing. |
+| Mayor (unverified) | A model claim, not a fact. |
+| Accepted branches conflict | Parallel branches touch the same lines; merge by hand from staging. |
+| Answer kept as a note | The answer matched no single question; resend with `--question`. |
+
+## Known traps
+
+- Boot dog and refinery escalations are Gas Town infrastructure noise.
+- `swarm check` does not probe codex or claude agents (subscription quota).
+- `swarm init` cannot be repeated on an existing project; changing the Mayor means removing its state directory, only when nothing ran.
+- A power loss mid-item leaves it `running` until it is marked blocked; resume with `campaign start`, then reply to re-send it.
