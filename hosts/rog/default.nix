@@ -109,6 +109,7 @@
   hardware.rog.s5-recovery.s5Write.enable = false;
 
   hardware.rog.s5-recovery.efiFallback.enable = true;
+  hardware.rog.s5-recovery.campaign.enable = true;
 
   boot.blacklistedKernelModules = [
     "asus_nb_wmi"
