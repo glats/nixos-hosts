@@ -69,6 +69,10 @@ real XRDP path on `rog` only after the user explicitly approves the session rest
 - T5 (inline, requires explicit user approval): apply on `rog` and reconnect a real
   XRDP session to confirm hardware GL in the live session. Linked: S1, S6. Status:
   pending, NOT authorized yet.
+- T6 (delegated, optional, after T5): soak the live session with a real RDP client
+  attached to measure the xrdp transport layer, which is the layer issue #1228
+  implicates and which the scratch measurement could not exercise. Linked: S6.
+  Status: pending.
 
 ## Log
 
@@ -248,6 +252,56 @@ real XRDP path on `rog` only after the user explicitly approves the session rest
   Also: nixpkgs `xorg-server` 21.1.24 already ships
   `lib/xorg/modules/libglamoregl.so` and the `GLAMOR_FOR_XORG` API in `glamor.h`, so
   upstream xorgxrdp 0.10.5 compiles with `--enable-glamor` and needs NO patch.
+- L7 (2026-11-11): the user raised a memory-leak objection before applying the change:
+  "vamos a instalar glamor? croe que tiene un memory leak. lo vi hace tiempo. no se si
+  habra engram o git histori de eso. parefce que usaba archlinux en esa epoca".
+  HISTORY SEARCH: no glamor reference exists in this repository's history or in engram
+  from before this session (the only glamor commits are 07660d23 and 6c42f92e from
+  today). The only glamor-adjacent history on the machine is in the unrelated `knulli`
+  packaging repository, whose glamor commits are about the EGL build dependency, not
+  about leaks. So the recollection could not be confirmed from local history; it was
+  traced upstream instead.
+  UPSTREAM TRACE: the recollection maps precisely to xrdp issue #1228, "Memory leak in
+  Xorg only when running with Xrdp", opened October 2018 by `geiseri` on ARCH LINUX:
+  the Xorg process grows to over 70% of an 8 GB VM in about an hour under KDE+Chrome,
+  only inside xrdp and not from the console. It was never root-caused and remains open.
+  Two facts make it inapplicable as a glamor defect: it targets xorg-server 1.19-1.20,
+  when the xorgxrdp session was software-rendered and glamor acceleration was not
+  necessarily involved at all; and the growth was reported in the X SERVER under a
+  heavy desktop, which is the classic client-side pixmap/atom accumulation pattern.
+  Upstream research found NO confirmed growing leak in glamor's EGL/DRI3 path for this
+  configuration. The two confirmed glamor leaks are out of scope: `fs_getcolor_source`
+  (fixed in xorg-server 21.1.0, present in 21.1.24, wrong code path) and the
+  downstream Rockchip `device_path` strdup (one-time per server lifetime, cannot grow).
+  The one confirmed xrdp leak, issue #1634, is in the `neutrinordp` proxy module, not
+  in glamor, xorgxrdp or the X server.
+  EMPIRICAL A/B (the deciding evidence), display `:77`, 15 minutes per build, identical
+  load, the live session on `:10` never touched:
+    load: a purpose-built `glchurn` client creating and destroying a GLX context in a
+    loop (29,000 contexts on software GL, 47,000 on glamor, 62% more churn on the
+    glamor path) plus `glxgears` rendering continuously for the whole window;
+    confirmed paths: software -> `GLX: Initialized DRISWRAST GL provider for screen 0`,
+    glamor -> `use glamor set` / `glamor init ok` / `GLX: Initialized DRI2 GL provider`,
+    and `glxinfo -B` on the glamor scratch display reporting
+    `direct rendering: Yes`, `Mesa Intel(R) HD Graphics 630 (KBL GT2)`, GL 4.6 core.
+    result: Xorg RSS delta 0 KB in BOTH builds over 30 samples at 30 s, i.e. 0.00
+    KB/min, flat from the very first sample. fd count flat (19 and 27, constant),
+    thread count flat, PSS and VmSize flat. i915 GEM bytes oscillated inside a 3 MB
+    band with no trend (40.2-43.2 MB, 77-85 objects).
+    RSS is page-granular, so a leak of one 4 KB page per context would have shown
+    about 18 discrete steps during the run; zero were observed.
+  VERDICT: enabling glamor does NOT introduce unbounded memory growth in this
+  configuration. The leak the user remembers is, to the best available evidence, the
+  xrdp-session-layer phenomenon of issue #1228, which is not glamor-specific and, in
+  this configuration, would already be present today on the software-GL build.
+  HONEST CAVEAT: the scratch server had no RDP client attached, so the xrdp transport
+  path (the layer issue #1228 actually implicates) was NOT exercised. This work clears
+  the glamor path; it does not clear the xrdp session layer. A session-level soak with
+  a real RDP client, ideally a multi-hour one, is the remaining verification.
+  OBSERVED TRADE-OFF to report: the glamor session Xorg has a higher BASELINE resident
+  memory than the software one (105,692 KB versus 20,196 KB in the scratch runs),
+  because glamor allocates its rendering buffers. That is a constant offset, not a leak,
+  and it is the price of moving the per-frame cost from the CPU to the GPU.
 - L5 (2026-11-11): THE FIX, implemented and PROVED EMPIRICALLY on a scratch display.
   Two repository files changed, nothing else:
     1. `overlays/linux.nix`: `xorgxrdp` (exposed by nixpkgs' `xrdp` package through
