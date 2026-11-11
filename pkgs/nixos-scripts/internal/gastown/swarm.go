@@ -43,7 +43,8 @@ const ClaudeTokenEnv = "CLAUDE_CODE_OAUTH_TOKEN"
 type openCodeProvider struct{ Name, Env, Package, BaseURL string }
 
 var openCodeProviders = map[string]openCodeProvider{
-	"nvidia": {Name: "NVIDIA NIM", Env: "NVIDIA_API_KEY", Package: "@opencode/ai/providers/openai-compatible", BaseURL: "https://integrate.api.nvidia.com/v1"},
+	"nvidia":       {Name: "NVIDIA NIM", Env: "NVIDIA_API_KEY", Package: "@opencode/ai/providers/openai-compatible", BaseURL: "https://integrate.api.nvidia.com/v1"},
+	"ollama-cloud": {Name: "Ollama Cloud", Env: "OLLAMA_API_KEY", Package: "@opencode/ai/providers/openai-compatible", BaseURL: "https://ollama.com/v1"},
 }
 
 // AgentEnvNames lists the environment variables the agents need from the
@@ -182,7 +183,7 @@ func AgentPreset(c Config, self, town, spec string, agentEnv []string) (string, 
 		provider, model, ok := strings.Cut(rest, "/")
 		known, found := openCodeProviders[provider]
 		if c.OpenCode == "" || !ok || model == "" || !found {
-			return "", nil, errors.New("opencode spec needs GASTOWN_OPENCODE and a known provider: opencode:nvidia/<model> (" + spec + ")")
+			return "", nil, errors.New("opencode spec needs GASTOWN_OPENCODE and a known provider: opencode:nvidia/<model> or opencode:ollama-cloud/<model> (" + spec + ")")
 		}
 		name := "opencode-" + strings.Trim(specCleaner.ReplaceAllString(strings.ToLower(rest), "-"), "-")
 		inline, _ := json.Marshal(map[string]any{

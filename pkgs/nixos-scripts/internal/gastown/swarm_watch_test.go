@@ -553,3 +553,34 @@ func TestSwarmEnvironmentForwardsTheClaudeSubscriptionToken(t *testing.T) {
 		t.Fatalf("only the subscription token may be forwarded: %q", text)
 	}
 }
+
+func TestOllamaCloudPresetIsConfinedStandaloneAndNeverEmbedsTheKey(t *testing.T) {
+	t.Setenv("OLLAMA_API_KEY", "ol-secret")
+	c := testConfig()
+	c.OpenCode, c.NativeHome = "/nix/opencode", "/home/u"
+	name, preset, err := AgentPreset(c, "/nix/gastown-run", "/state/town", "opencode:ollama-cloud/glm-5.3-flash", nil)
+	if err != nil || name != "opencode-ollama-cloud-glm-5-3-flash" {
+		t.Fatalf("name=%q err=%v", name, err)
+	}
+	args := strings.Join(preset["args"].([]string), "\x00")
+	for _, want := range []string{"--env\x00OLLAMA_API_KEY", "--\x00/nix/opencode\x00--standalone\x00--auto"} {
+		if !strings.Contains(args, want) {
+			t.Errorf("args missing %q", strings.ReplaceAll(want, "\x00", " "))
+		}
+	}
+	if strings.Contains(args, "--home-bind") || strings.Contains(args, "ol-secret") {
+		t.Error("ollama-cloud must not bind the home or carry the key in argv")
+	}
+	cfg := preset["env"].(map[string]string)["OPENCODE_CONFIG_CONTENT"]
+	for _, want := range []string{`"model":"ollama-cloud/glm-5.3-flash"`, `{env:OLLAMA_API_KEY}`, `https://ollama.com/v1`} {
+		if !strings.Contains(cfg, want) {
+			t.Errorf("inline config missing %q: %s", want, cfg)
+		}
+	}
+	if strings.Contains(cfg, "ol-secret") {
+		t.Error("the key must never be embedded in the inline config")
+	}
+	if got := AgentEnvNames([]string{"opencode:ollama-cloud/glm-5.3-flash"}, nil); len(got) != 1 || got[0] != "OLLAMA_API_KEY" {
+		t.Errorf("env names = %v", got)
+	}
+}

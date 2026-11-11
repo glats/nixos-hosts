@@ -16,7 +16,7 @@ Branch: `feat/bot` | Delivery: work-unit commits on the branch; push only when t
 ## Tasks
 
 - [x] T1 | S4 | Claude Code agent preset `claude:<model>` (subscription token only), confined | Route: inline | Status: done except the live gate check (needs the user token, L4) | Commit: see L4
-- [ ] T2 | S4 | Ollama Cloud worker through OpenCode `opencode:ollama-cloud/<model>`, verified auth | Route: inline | Status: pending | Commit: -
+- [x] T2 | S4 | Ollama Cloud worker through OpenCode `opencode:ollama-cloud/<model>`, verified auth | Route: inline | Status: done | Commit: see L5
 - [ ] T3 | S5 | Token ledger per run, role, agent and model; `swarm usage`; totals in the final notification | Route: inline | Status: pending | Commit: -
 - [ ] T4 | S6 | Polecat ODD worker contract installed read-only in every agent home | Route: inline | Status: pending | Commit: -
 - [ ] T5 | S5 | Model-fit benchmark for Mayor and workers; set measured defaults | Route: inline runs, user reviews the table | Status: pending (after T1-T4) | Commit: -
@@ -123,3 +123,10 @@ Operational facts (avoid these traps):
 - Codex Mayor hit its subscription limit during the live attempt ("try again at Nov 11th, 2026 12:46 PM"); live runs that need the Codex Mayor wait for that, or use an OpenCode Mayor.
 - Pending live check: one toy goal with `--polecat-agent claude:sonnet` once the user exports `CLAUDE_CODE_OAUTH_TOKEN`.
 - Tests: 112 in internal/gastown, all pass. Risk: item 2 (credentials under confinement; narrowed to a single env token).
+
+### L5 — 2026-11-10: T2 executed
+
+- Auth mechanism verified (models.dev catalog plus live runs): env `OLLAMA_API_KEY`, base URL `https://ollama.com/v1`, OpenAI-compatible; the user's OpenCode `auth.json` does not exist, so no file bind is needed. `ollama-cloud` was added to `openCodeProviders`; the key reaches agents only by `--env`, never in argv or inline config (test).
+- `swarm check` reported `ok` for `glm-5.3-flash`, `minimax-m3.1-flash`, `deepseek-v4-pro` and `kimi-k3`.
+- Observed toy goal (G1) with Mayor `opencode:ollama-cloud/glm-5.3` and workers `glm-5.3-flash` then `minimax-m3.1-flash`: the Mayor dispatched bead ocl-t6o, the worker produced `Sub` plus a two-case test, the gate published `gastown/ocl-t6o`, goal verified, swarm finished, no leftovers. An OpenCode Mayor therefore works, which matters because the Codex Mayor is out of quota until Nov 11 12:46.
+- Tests: 113 in internal/gastown. Risk: item 2 (real subscription key under confinement, env only).

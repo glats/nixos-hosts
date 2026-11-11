@@ -115,6 +115,10 @@ Agents and providers:
   `CLAUDE_CODE_OAUTH_TOKEN` where you start the swarm; it is the only credential the
   agent receives. `ANTHROPIC_API_KEY` is never forwarded, and `~/.claude` is never
   mounted, so nothing inside the sandbox can rotate your own login away.
+- `opencode:ollama-cloud/<model>` uses your Ollama Cloud subscription through OpenCode
+  with the `OLLAMA_API_KEY` from your environment (base URL `https://ollama.com/v1`;
+  e.g. `opencode:ollama-cloud/glm-5.3-flash`). It works as worker and as Mayor
+  (`--mayor-agent opencode:ollama-cloud/glm-5.3`).
 - `opencode:nvidia/<model id>` uses NVIDIA NIM through OpenCode with a minimal
   inline configuration and the `NVIDIA_API_KEY` from your environment. Your own
   OpenCode configuration, sessions and database are never mounted. The model id
