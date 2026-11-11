@@ -209,8 +209,6 @@ in
   };
 
   config = {
-    sops.age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
-
     sops.secrets."link/uuid_macm5" = {
       sopsFile = ../../secrets/shared/link-uuids.yaml;
       key = "uuid_macm5";
