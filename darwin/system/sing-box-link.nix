@@ -12,7 +12,6 @@ let
   cfg = config.link;
 
   uuidValue = config.sops.placeholder."link/uuid_macm5";
-  uuidPhone = config.sops.placeholder."link/uuid_phone";
 
   fullRules = [
     { action = "sniff"; }
