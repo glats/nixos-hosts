@@ -15,6 +15,7 @@ baseModules
 
   {
     home.opencode.activeProviderName = "anthropic-ollama";
+    home.ghostty.xrdp-optimized = true;
   }
 
   ({ config, ... }: {

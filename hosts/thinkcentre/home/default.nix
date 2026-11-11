@@ -9,7 +9,10 @@ baseModules
 
   ../../../linux/home/conky-thinkcentre.nix
   ../../../linux/home/suites/sonicde
-  { home.opencode.activeProviderName = "anthropic-openai-ollama"; }
+  {
+    home.opencode.activeProviderName = "anthropic-openai-ollama";
+    home.ghostty.xrdp-optimized = true;
+  }
   ({ lib, ... }: {
     qt.enable = lib.mkForce false;
   })
