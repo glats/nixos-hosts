@@ -56,6 +56,7 @@ runCommand "gastown-run"
   }
   ''
     mkdir -p $out/bin
+    install -Dm0444 ${../nixos-scripts/internal/gastown/polecat-odd.md} $out/share/gastown/polecat-odd.md
     makeWrapper ${nixos-scripts}/libexec/nixos-scripts/gastown-run $out/bin/gastown-run \
       --set GASTOWN_GT ${gastown}/bin/gt \
       --set GASTOWN_BD ${beads}/bin/bd \
@@ -63,6 +64,7 @@ runCommand "gastown-run"
       --set GASTOWN_BWRAP ${bubblewrap}/bin/bwrap \
       --set GASTOWN_CODEX ${codex}/bin/codex \
       --set GASTOWN_BASH ${bash}/bin/bash \
+      --set GASTOWN_POLECAT_CONTRACT $out/share/gastown/polecat-odd.md \
       --set GASTOWN_SQLITE ${sqlite}/bin/sqlite3 \
       --set GASTOWN_SYSTEM_PATH ${systemPath} \
       --set GASTOWN_TOOL_PATH ${toolPath} \

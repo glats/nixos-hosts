@@ -584,3 +584,37 @@ func TestOllamaCloudPresetIsConfinedStandaloneAndNeverEmbedsTheKey(t *testing.T)
 		t.Errorf("env names = %v", got)
 	}
 }
+
+func TestEveryAgentKindGetsThePolecatContractReadOnly(t *testing.T) {
+	c := testConfig()
+	c.OpenCode, c.Claude, c.PolecatContract = "/nix/opencode", "/nix/claude", "/nix/store/x/share/gastown/polecat-odd.md"
+	for spec, dest := range map[string]string{"codex:m:low": ".codex/AGENTS.md", "claude:sonnet": ".claude/CLAUDE.md", "opencode:nvidia/m": ".config/opencode/AGENTS.md"} {
+		_, preset, err := AgentPreset(c, "/nix/gastown-run", "/state/town", spec, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		args := strings.Join(preset["args"].([]string), "\x00")
+		if !strings.Contains(args, "--ro-file\x00"+c.PolecatContract+"="+dest) {
+			t.Errorf("%s: contract not mounted at %s: %q", spec, dest, strings.ReplaceAll(args, "\x00", " "))
+		}
+	}
+	c.PolecatContract = ""
+	_, preset, _ := AgentPreset(c, "/nix/gastown-run", "/state/town", "codex:m:low", nil)
+	if strings.Contains(strings.Join(preset["args"].([]string), " "), "--ro-file") {
+		t.Error("without a contract file no mount is added")
+	}
+}
+
+func TestPolecatContractStatesTheWorkerRules(t *testing.T) {
+	data, err := os.ReadFile("polecat-odd.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(data)
+	for _, rule := range []string{"gt hook", "Never launch subagents", "RED", "GREEN", "Change only the files the bead requires", ".beads/",
+		"Never move, rename or restructure", "gt escalate -s HIGH", "gt done", "re-runs every check", "ignores this file"} {
+		if !strings.Contains(text, rule) {
+			t.Errorf("contract is missing %q", rule)
+		}
+	}
+}

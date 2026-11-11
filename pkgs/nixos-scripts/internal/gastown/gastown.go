@@ -16,6 +16,7 @@ type Config struct {
 	GT, BD, Tmux, Codex, Bwrap string
 	Bash                       string
 	OpenCode, Claude, Sqlite   string
+	PolecatContract            string
 	ToolPath, SystemPath       string
 	NativeHome, State          string
 	DoltPort                   int

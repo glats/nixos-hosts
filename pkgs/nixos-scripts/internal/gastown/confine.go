@@ -17,6 +17,7 @@ type ConfineSpec struct {
 	Bwrap, Path               string
 	RO, RW                    []string
 	HomeBinds, AllowEnv       []string
+	RoFiles                   []string
 	Command                   []string
 }
 
@@ -99,6 +100,17 @@ func ConfineArgv(s ConfineSpec, environ []string) ([]string, error) {
 		}
 		argv = append(argv, "--bind", filepath.Join(realHome, clean), filepath.Join(home, clean))
 	}
+	for _, entry := range s.RoFiles {
+		src, rel, ok := strings.Cut(entry, "=")
+		if !ok || !strings.HasPrefix(src, "/nix/store/") || filepath.Clean(src) != src {
+			return nil, errors.New("read-only file must be /nix/store/...=<path in home>: " + entry)
+		}
+		clean := filepath.Clean(rel)
+		if rel == "" || filepath.IsAbs(rel) || clean == "." || clean == ".." || strings.HasPrefix(clean, "../") {
+			return nil, errors.New("read-only file destination must be a relative path inside the home: " + entry)
+		}
+		argv = append(argv, "--ro-bind", src, filepath.Join(home, clean))
+	}
 	for _, flagName := range []struct {
 		flag  string
 		paths []string
@@ -146,6 +158,8 @@ func Confine(args []string, stderr io.Writer) int {
 	var ro, rw, homeBinds, allowEnv listFlag
 	fs.Var(&ro, "ro", "extra read-only absolute path")
 	fs.Var(&rw, "rw", "extra writable absolute path")
+	var roFiles listFlag
+	fs.Var(&roFiles, "ro-file", "Nix store file to mount read-only into the agent home, as /nix/store/...=<relative path>")
 	fs.Var(&homeBinds, "home-bind", "entry of the real home to expose, relative")
 	fs.Var(&allowEnv, "env", "extra environment variable to pass")
 	if fs.Parse(args) != nil || fs.NArg() == 0 || *root == "" || *home == "" || *bwrap == "" || *path == "" {
@@ -162,7 +176,7 @@ func Confine(args []string, stderr io.Writer) int {
 		return 1
 	}
 	spec := ConfineSpec{Root: *root, Cwd: cwd, Home: *home, RealHome: realHome, Bwrap: *bwrap, Path: *path,
-		RO: ro, RW: rw, HomeBinds: homeBinds, AllowEnv: allowEnv, Command: fs.Args()}
+		RO: ro, RW: rw, HomeBinds: homeBinds, AllowEnv: allowEnv, RoFiles: roFiles, Command: fs.Args()}
 	argv, err := ConfineArgv(spec, os.Environ())
 	if err != nil {
 		fmt.Fprintln(stderr, "gastown-run confine: refused:", err)

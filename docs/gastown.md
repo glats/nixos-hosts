@@ -106,6 +106,15 @@ gate's verdict for every branch ("Ready for review: git fetch <staging> gastown/
 provider limits and agent switches, and the final result. Point `--notify-cmd` at
 `notify-send`, `ntfy`, a Telegram bot script or anything else that takes a message.
 
+Worker contract: every agent starts with a short read-only worker contract mounted
+into its home (`~/.codex/AGENTS.md`, `~/.claude/CLAUDE.md`,
+`~/.config/opencode/AGENTS.md`). It is the ODD discipline for a polecat: work the
+hooked bead inline, never orchestrate, test first when a runnable test exists, change
+only what the bead needs, ask with `gt escalate` instead of guessing, and finish with
+`gt done` listing the checks run and their real results. Other roles ignore it. Your
+own gentle-ai files are never copied in, so no second orchestrator runs inside a
+worker. The text lives in `pkgs/nixos-scripts/internal/gastown/polecat-odd.md`.
+
 Token usage: the supervisor records every agent session's tokens (Codex rollouts,
 Claude transcripts, OpenCode's session store) in `ledger.jsonl` inside the swarm
 directory. `gastown-run swarm usage [--since goal|all] <project>` prints totals by

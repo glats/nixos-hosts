@@ -158,6 +158,10 @@ func AgentPreset(c Config, self, town, spec string, agentEnv []string) (string, 
 	kind, rest, _ := strings.Cut(spec, ":")
 	confine := []string{"confine", "--root", town, "--home", filepath.Join(town, ".agent-home"), "--bwrap", c.Bwrap,
 		"--path", c.ToolPath + ":" + filepath.Dir(c.GT) + ":" + filepath.Dir(c.BD), "--real-home", c.NativeHome}
+	contractFile := map[string]string{"codex": ".codex/AGENTS.md", "claude": ".claude/CLAUDE.md", "opencode": ".config/opencode/AGENTS.md"}[kind]
+	if c.PolecatContract != "" && contractFile != "" {
+		confine = append(confine, "--ro-file", c.PolecatContract+"="+contractFile)
+	}
 	switch kind {
 	case "codex":
 		model, effort, ok := strings.Cut(rest, ":")

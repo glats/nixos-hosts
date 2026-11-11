@@ -171,3 +171,23 @@ func TestPrepareClaudePreAnswersFirstRunDialogsAndKeepsExistingSettings(t *testi
 		t.Fatal("a relative project path must be refused")
 	}
 }
+
+func TestConfineMountsReadOnlyFilesIntoTheAgentHome(t *testing.T) {
+	s := confineSpec()
+	s.RoFiles = []string{"/nix/store/x-gastown-run/share/gastown/polecat-odd.md=.codex/AGENTS.md"}
+	argv, err := ConfineArgv(s, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := strings.Join(argv, "\x00")
+	want := "--ro-bind\x00/nix/store/x-gastown-run/share/gastown/polecat-odd.md\x00" + filepath.Join(s.Home, ".codex/AGENTS.md")
+	if !strings.Contains(text, want) {
+		t.Fatalf("missing read-only file mount in %q", strings.ReplaceAll(text, "\x00", " "))
+	}
+	for _, bad := range []string{"x=../escape", "x=/abs/path", "=.codex/AGENTS.md", "no-separator", "/etc/passwd=.codex/AGENTS.md", "/nix/store/x=."} {
+		s.RoFiles = []string{bad}
+		if _, err := ConfineArgv(s, nil); err == nil {
+			t.Errorf("%q must be refused", bad)
+		}
+	}
+}

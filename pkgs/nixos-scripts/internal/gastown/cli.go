@@ -25,7 +25,7 @@ func ConfigFromEnv(getenv func(string) string) (Config, error) {
 		Codex: getenv("GASTOWN_CODEX"), Bwrap: getenv("GASTOWN_BWRAP"), Bash: getenv("GASTOWN_BASH"),
 		ToolPath: getenv("GASTOWN_TOOL_PATH"), SystemPath: getenv("GASTOWN_SYSTEM_PATH"),
 		NativeHome: getenv("HOME"), State: getenv("GASTOWN_STATE"), DoltPort: 45678,
-		Model: "gpt-5.6-luna", Effort: "low", OpenCode: getenv("GASTOWN_OPENCODE"), Claude: getenv("GASTOWN_CLAUDE"), Sqlite: getenv("GASTOWN_SQLITE"),
+		Model: "gpt-5.6-luna", Effort: "low", OpenCode: getenv("GASTOWN_OPENCODE"), Claude: getenv("GASTOWN_CLAUDE"), Sqlite: getenv("GASTOWN_SQLITE"), PolecatContract: getenv("GASTOWN_POLECAT_CONTRACT"),
 	}
 	if c.State == "" {
 		base := getenv("XDG_STATE_HOME")

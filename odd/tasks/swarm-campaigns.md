@@ -18,7 +18,7 @@ Branch: `feat/bot` | Delivery: work-unit commits on the branch; push only when t
 - [x] T1 | S4 | Claude Code agent preset `claude:<model>` (subscription token only), confined | Route: inline | Status: done except the live gate check (needs the user token, L4) | Commit: see L4
 - [x] T2 | S4 | Ollama Cloud worker through OpenCode `opencode:ollama-cloud/<model>`, verified auth | Route: inline | Status: done | Commit: see L5
 - [x] T3 | S5 | Token ledger per run, role, agent and model; `swarm usage`; totals in the final notification | Route: inline | Status: done | Commit: see L6
-- [ ] T4 | S6 | Polecat ODD worker contract installed read-only in every agent home | Route: inline | Status: pending | Commit: -
+- [x] T4 | S6 | Polecat ODD worker contract installed read-only in every agent home | Route: inline | Status: done (with/without comparison belongs to T5) | Commit: see L7
 - [ ] T5 | S5 | Model-fit benchmark for Mayor and workers; set measured defaults | Route: inline runs, user reviews the table | Status: pending (after T1-T4) | Commit: -
 - [ ] T6 | S1, S2 | Campaign layer: intent -> needs -> selection -> execution -> persisted ledger, resumable | Route: inline | Status: pending (after T3) | Commit: -
 - [ ] T7 | S3 | Phone channel (notifications out, replies in) | Route: inline | Status: BLOCKED on user decision D-PHONE | Commit: -
@@ -137,3 +137,10 @@ Operational facts (avoid these traps):
 - `ledger.jsonl` (swarm dir): one line per agent, session and model; running sessions are updated in place, vanished sessions are kept; `cache_write` added to the spec's fields; `input` excludes cached tokens. Written every supervisor tick and before "Swarm finished", whose body now carries the totals. `swarm usage [--since goal|all]` prints totals by role and model.
 - Observed on the real Ollama Cloud run (L5), `swarm usage --since all`: mayor glm-5.3 in 67k cached 1.7M out 17k; polecat glm-5.3-flash in 45k cached 863k out 10k; refinery minimax-m3.1-flash in 46k cached 1.1M out 16k; witness minimax-m3.1-flash in 84k cached 4.2M out 40k. Finding for T5: the witness role consumed the most tokens of all, more than the Mayor and the worker; role agents deserve the cheapest model.
 - Tests: 120 in internal/gastown. Risk: none (read-only parsing of agent session files; a new swarm-owned ledger file).
+
+### L7 — 2026-11-10: T4 executed
+
+- The contract text is `pkgs/nixos-scripts/internal/gastown/polecat-odd.md` (kept inside the Go module so the package test can read it in the Nix sandbox); `pkgs/gastown-run/default.nix` installs it to `$out/share/gastown/polecat-odd.md` and sets `GASTOWN_POLECAT_CONTRACT`. The agent home is shared by every role, so the text is conditional: it applies only when `gt prime` says the role is polecat; other roles ignore it.
+- New `confine --ro-file /nix/store/...=<relative path in home>` (validated: store path, relative non-escaping destination). Each agent preset mounts the contract at `.codex/AGENTS.md`, `.claude/CLAUDE.md` or `.config/opencode/AGENTS.md`.
+- Observed: in a real bwrap confinement all three paths show the contract and any write fails with Permission denied (read-only).
+- Tests: 124 in internal/gastown (argv mounts, bad destinations refused, per-agent destination, contract rules asserted as strings). Risk: item 2 (sandbox mounts; read-only store files only).
