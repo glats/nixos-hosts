@@ -68,7 +68,9 @@ real XRDP path on `rog` only after the user explicitly approves the session rest
   Linked: S4, S5. Status: done. Evidence: Log L5.
 - T5 (inline, requires explicit user approval): apply on `rog` and reconnect a real
   XRDP session to confirm hardware GL in the live session. Linked: S1, S6. Status:
-  pending, NOT authorized yet.
+  in progress, owned by the user. The branch was published as `origin/feat/ghostty-opt`
+  so that thinkcentre can fetch it; the user deploys to thinkcentre FIRST (no active
+  session to cut) and promotes to rog afterwards. See Log L8.
 - T6 (delegated, optional, after T5): soak the live session with a real RDP client
   attached to measure the xrdp transport layer, which is the layer issue #1228
   implicates and which the scratch measurement could not exercise. Linked: S6.
@@ -404,3 +406,34 @@ real XRDP path on `rog` only after the user explicitly approves the session rest
   and S3 (no NVIDIA proprietary driver) are unaffected and still stand; S3 is
   additionally honoured by construction, since the scratch Xorg loaded `iris` on
   `/dev/dri/renderD128` and never touched the NVIDIA card.
+- L8 (2026-11-11): deployment started, user-driven. The user decided to test on
+  `thinkcentre` first and promote to `rog` afterwards: "bien voy a probarlo en
+  thinkcentre luego promuevo a rog". The branch `feat/ghostty-opt` was published to
+  `origin` so that the thinkcentre clone can fetch it.
+  Operational detail verified before handing over: the overlay changes the `xrdp`
+  derivation, so the `ExecStart` of BOTH `xrdp` and `xrdp-sesman` changes (new store
+  path `66ryfpgvf1g22kv968wscpg2vd4aqzkp-xrdp-0.10.6.1`, previously
+  `cfa821iqq1fzlk03k1n6pz84v4jgilcc-xrdp-0.10.6.1`). `xrdp-sesman` reads its
+  `sesman.ini` ONCE at startup and keeps the xorgxrdp module path from it, so the
+  sesman MUST be restarted for the glamor build to be used at all. Because the unit
+  definition changes, NixOS restarts it during the switch, and that kills the running
+  session Xorg (same cgroup). Expected sequence on thinkcentre: the RDP transport
+  drops, the session dies, one reconnect produces a session on the glamor build.
+  Verification in the new session:
+      grep -E "glamor|DRI2 GL provider|DRISWRAST" ~/.xorgxrdp.*.log | tail -20
+  Expected `rdpPreInit: drm device looks ok, use glamor set`, `glamor init ok` and
+  `GLX: Initialized DRI2 GL provider for screen 0`, and NOT `DRISWRAST`.
+  Two failure signatures to watch for: `GLX: Initialized DRISWRAST GL provider` means
+  the sesman did not restart and the old xorgxrdp is still in use;
+  `rdpPreInit: unsupported render node` means the kernel DRM driver name did not match
+  `DRMAllowList`, which on a newer Intel stack means the `xe` driver instead of
+  `i915` and would require adding `xe` to the allowlist (upstream devel already has it).
+  thinkcentre specifics: it imports NO nvidia module, so it is Intel-only, its
+  `renderD128` should be the iGPU with no DRM-ordering hazard, and its XRDP session
+  runs Plasma/sonicde rather than MATE.
+  Both features ship in the same switch: the Ghostty XRDP profile (opaque window,
+  10 MB scrollback) and the glamor build.
+  Regression safety: the change is not persistent state; reverting the commits and
+  re-switching restores the previous `sesman.ini` and `xorg.conf` byte for byte, and
+  neither kmscon nor SSH depends on the session Xorg, so a failure cannot lock the
+  user out of the host.
