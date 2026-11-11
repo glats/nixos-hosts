@@ -32,6 +32,8 @@ type Swarm struct {
 	Cfg  SwarmConfig
 	Self string
 	Out  io.Writer
+
+	mailHook func(mailItem) bool
 }
 
 // ClaudeTokenEnv is the only credential a claude agent receives: the

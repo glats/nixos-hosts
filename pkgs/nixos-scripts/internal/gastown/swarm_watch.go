@@ -171,6 +171,9 @@ func (s *Swarm) tickMail(st *WatchState) {
 	for _, id := range NewItems(st.Seen, prefixed("mail:", ids)) {
 		st.LastActivity = time.Now()
 		m := byID[strings.TrimPrefix(id, "mail:")]
+		if s.mailHook != nil && s.mailHook(m) {
+			continue
+		}
 		s.notify("medium", "Mayor (unverified): "+m.Subject, "claim, not verified by the gate: "+clip(m.Body, 650))
 	}
 }

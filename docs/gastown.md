@@ -106,6 +106,20 @@ gate's verdict for every branch ("Ready for review: git fetch <staging> gastown/
 provider limits and agent switches, and the final result. Point `--notify-cmd` at
 `notify-send`, `ntfy`, a Telegram bot script or anything else that takes a message.
 
+Campaigns: `gastown-run campaign start <project> "<intent>"` asks the Mayor which
+capabilities the intent needs and notifies you the numbered list. Pick with
+`campaign reply <project> "a c"` (ids, `all`, or free text the Mayor interprets);
+items marked as needing your decision wait for a `campaign reply`. Selected items run
+one at a time in dependency order through the same gate; an item is done only with a
+verified branch, and an item that shows no progress for 30 minutes becomes blocked until
+you reply. Everything is kept in `campaign.json` (decisions, learnings, results) and
+published as `CAMPAIGN.md` on branch `gastown/campaign` of the staging repository;
+`campaign start` on an existing campaign resumes it. `campaign status` and
+`campaign stop` do what they say, and a digest notification arrives every four hours.
+Items do not yet build on each other's code: each starts from the project's main branch
+(merge accepted branches into it between items), and what earlier items learned reaches
+later ones through the goal text.
+
 Worker contract: every agent starts with a short read-only worker contract mounted
 into its home (`~/.codex/AGENTS.md`, `~/.claude/CLAUDE.md`,
 `~/.config/opencode/AGENTS.md`). It is the ODD discipline for a polecat: work the

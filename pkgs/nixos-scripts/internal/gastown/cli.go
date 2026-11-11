@@ -349,6 +349,14 @@ func Main(args []string, stdout, stderr io.Writer) int {
 		}
 		return SwarmMain(c, args[1:], stdout, stderr)
 	}
+	if args[0] == "campaign" {
+		c, err := ConfigFromEnv(os.Getenv)
+		if err != nil {
+			fmt.Fprintln(stderr, "gastown-run:", err)
+			return 2
+		}
+		return CampaignMain(c, args[1:], stdout, stderr)
+	}
 	if args[0] == "guard" {
 		cwd, _ := os.Getwd()
 		return Guard(args[1:], cwd, OSExec{})
@@ -424,6 +432,7 @@ const usage = `gastown-run - run project tasks through Gas Town with a sandboxed
   gastown-run doctor [--crew NAME] <project>
                                             prove the executor sandbox boundary (no model)
   gastown-run swarm ...                     goal-driven swarm with notifications (gastown-run swarm for help)
+  gastown-run campaign ...                  an intent becomes needs, you pick, the swarm executes and remembers (gastown-run campaign for help)
   gastown-run abandon [--crew NAME] <project>
                                             release the task a failed run left hooked
                                             (partial work is kept in a git stash)
