@@ -144,3 +144,23 @@ and an A/B measurement of idle CPU and RSS on the live XRDP display `:10`.
   Recommended follow-up, NOT implemented here because it changes the XRDP X server
   rather than Ghostty: expose NVIDIA to the XRDP session so Ghostty stops falling
   back to llvmpipe. That is where the remaining idle CPU lives.
+- L8 (2026-11-11): work-unit commit `69adaf5e` on `feat/ghostty-opt` (4 files, 187
+  insertions, 3 deletions). Risk line: none. The change only ADDS an optional field
+  (`home.ghostty.xrdp-optimized`, default `false`) to a shared module and preserves the
+  previous behaviour byte for byte for every host that does not enable it, which the
+  differential against the base commit proved for t14, samsung and macm5; no item of the
+  high-risk list fires.
+  Native risk assessment: `gentle-ai review assess --cwd <repo> --agent opencode
+  --base-ref HEAD~1 --committed-only --json` returned `risk = medium`
+  (`executable_change` on `hosts/rog/home/default.nix`), `review_due = false`,
+  `review_due_reason = under_budget`. The commit therefore stays pending in this slice
+  until a later commit reaches the review budget; no native review was started.
+  Parent spot check after the writer returned: `nix eval --json
+  .#homeConfigurations.rog.config.programs.ghostty.settings` returns scrollback-limit
+  10000000, background-opacity 1, background-blur false, cursor-style-blink false,
+  link-url false; the same evaluation for t14 returns scrollback-limit 4294967295 and
+  background-opacity 0.8; `ghostty +validate-config --config-file=/nix/store/6rbmnf6y2mwn790rq05bdp5x84l2xhf3-ghostty-config`
+  exits 0; `nix fmt` reports 0 files changed.
+  NOT done, left to the user: push, pull request, and `home-manager switch` /
+  `nixos-rebuild` on rog and thinkcentre. The change is inert until it is activated on
+  those two hosts.
