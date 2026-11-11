@@ -107,7 +107,13 @@ provider limits and agent switches, and the final result. Point `--notify-cmd` a
 `notify-send`, `ntfy`, a Telegram bot script or anything else that takes a message.
 
 Campaigns: `gastown-run campaign start <project> "<intent>"` asks the Mayor which
-capabilities the intent needs and notifies you the numbered list. Pick with
+capabilities the intent needs. The plan always includes the delivery process (how the
+result is tested, built and shipped) and the questions the Mayor needs answered, such as
+which build machines, accounts or sites exist; it is told what workers cannot do (root,
+VMs, devices, downloads, publishing) so it asks instead of assuming. You get the process,
+the questions and the numbered items in one notification. Answer with
+`campaign answer <project> --question <id> "..."` (no id answers the only open
+question); answers are saved and travel with every later goal. Pick with
 `campaign reply <project> "a c"` (ids, `all`, or free text the Mayor interprets);
 items marked as needing your decision wait for a `campaign reply`. Selected items run
 one at a time in dependency order through the same gate; an item is done only with a

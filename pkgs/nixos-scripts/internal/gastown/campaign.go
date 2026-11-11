@@ -35,10 +35,31 @@ type CampaignLearning struct {
 	Text string    `json:"text"`
 }
 
+// CampaignProcess is the delivery process the Mayor proposes for an intent:
+// how the result is tested, built and shipped. The user confirms or changes it
+// through answers; every item goal carries it.
+type CampaignProcess struct {
+	Test  string `json:"test"`
+	Build string `json:"build"`
+	Ship  string `json:"ship"`
+}
+
+// CampaignQuestion is something the Mayor needs to know from the user, for
+// example which build resources exist.
+type CampaignQuestion struct {
+	ID         string    `json:"id"`
+	Text       string    `json:"text"`
+	Options    []string  `json:"options,omitempty"`
+	Answer     string    `json:"answer,omitempty"`
+	AnsweredAt time.Time `json:"answered_at,omitempty"`
+}
+
 // Campaign is the supervisor-owned memory of one intent. Models never write it.
 type Campaign struct {
 	Intent      string             `json:"intent"`
 	Phase       string             `json:"phase"`
+	Process     CampaignProcess    `json:"process"`
+	Questions   []CampaignQuestion `json:"questions"`
 	Items       []CampaignItem     `json:"items"`
 	Decisions   []CampaignDecision `json:"decisions"`
 	Learnings   []CampaignLearning `json:"learnings"`
@@ -104,38 +125,60 @@ func fencedBlocks(body string) []string {
 	return out
 }
 
-// ParsePlan extracts and validates the item list a Mayor proposed: unique ids,
-// known dependencies, no cycles.
-func ParsePlan(body string) ([]CampaignItem, error) {
-	var plan struct {
-		Items []CampaignItem `json:"items"`
-	}
+// CampaignPlan is what the Mayor proposes: the delivery process, the questions
+// it needs answered and the items.
+type CampaignPlan struct {
+	Process   CampaignProcess    `json:"process"`
+	Questions []CampaignQuestion `json:"questions"`
+	Items     []CampaignItem     `json:"items"`
+}
+
+// ParsePlan extracts and validates a plan: a complete delivery process, unique
+// question and item ids, known dependencies, no cycles.
+func ParsePlan(body string) (CampaignPlan, error) {
+	var plan CampaignPlan
 	found := false
 	for _, block := range fencedBlocks(body) {
-		var candidate struct {
-			Items []CampaignItem `json:"items"`
-		}
+		var candidate CampaignPlan
 		if json.Unmarshal([]byte(block), &candidate) == nil && candidate.Items != nil {
 			plan, found = candidate, true
 			break
 		}
 	}
 	if !found {
-		return nil, errors.New("no fenced ```json block with an \"items\" array")
+		return plan, errors.New("no fenced ```json block with an \"items\" array")
 	}
+	return plan, validatePlan(&plan)
+}
+
+func validatePlan(plan *CampaignPlan) error {
 	if len(plan.Items) == 0 {
-		return nil, errors.New("the plan has no items")
+		return errors.New("the plan has no items")
+	}
+	for name, v := range map[string]string{"test": plan.Process.Test, "build": plan.Process.Build, "ship": plan.Process.Ship} {
+		if strings.TrimSpace(v) == "" {
+			return fmt.Errorf("process.%s is required: say how the result will be %s", name, map[string]string{"test": "tested", "build": "built", "ship": "shipped"}[name])
+		}
+	}
+	qids := map[string]bool{}
+	for i := range plan.Questions {
+		q := &plan.Questions[i]
+		if !itemIDPattern.MatchString(q.ID) || strings.TrimSpace(q.Text) == "" || qids[q.ID] {
+			return fmt.Errorf("question %q needs a unique lowercase id and a text", q.ID)
+		}
+		qids[q.ID] = true
+		q.Answer, q.AnsweredAt = "", time.Time{}
 	}
 	ids := map[string]bool{}
 	for _, it := range plan.Items {
 		if !itemIDPattern.MatchString(it.ID) {
-			return nil, fmt.Errorf("item id %q must match %s", it.ID, itemIDPattern)
+			return fmt.Errorf("item id %q must match %s", it.ID, itemIDPattern)
 		}
 		if ids[it.ID] {
-			return nil, fmt.Errorf("duplicate item id %q", it.ID)
+			return fmt.Errorf("duplicate item id %q", it.ID)
 		}
 		if strings.TrimSpace(it.Title) == "" {
-			return nil, fmt.Errorf("item %q has no title", it.ID)
+			return fmt.Errorf("item %q has no title", it.ID)
 		}
 		ids[it.ID] = true
 	}
@@ -144,10 +187,10 @@ func ParsePlan(body string) ([]CampaignItem, error) {
 		it := &plan.Items[i]
 		for _, d := range it.DependsOn {
 			if !ids[d] {
-				return nil, fmt.Errorf("item %q depends on unknown item %q", it.ID, d)
+				return fmt.Errorf("item %q depends on unknown item %q", it.ID, d)
 			}
 			if d == it.ID {
-				return nil, fmt.Errorf("item %q depends on itself", it.ID)
+				return fmt.Errorf("item %q depends on itself", it.ID)
 			}
 		}
 		deps[it.ID] = it.DependsOn
@@ -174,10 +217,10 @@ func ParsePlan(body string) ([]CampaignItem, error) {
 	}
 	for _, it := range plan.Items {
 		if !visit(it.ID) {
-			return nil, errors.New("the dependencies contain a cycle")
+			return errors.New("the dependencies contain a cycle")
 		}
 	}
-	return plan.Items, nil
+	return nil
 }
 
 // ParseSelection reads {"select": [...]} and keeps only ids that exist and are
@@ -271,7 +314,15 @@ func (c *Campaign) counts() map[string]int {
 // project's own odd/ directory.
 func RenderCampaign(c *Campaign) string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "# Campaign\n\nIntent: %s\n\nPhase: %s\n\n## Items\n\n", c.Intent, c.Phase)
+	fmt.Fprintf(&b, "# Campaign\n\nIntent: %s\n\nPhase: %s\n\n## Delivery process\n\n- test: %s\n- build: %s\n- ship: %s\n\n## Questions\n\n", c.Intent, c.Phase, c.Process.Test, c.Process.Build, c.Process.Ship)
+	for _, q := range c.Questions {
+		answer := "(unanswered)"
+		if q.Answer != "" {
+			answer = q.Answer
+		}
+		fmt.Fprintf(&b, "- %s: %s -> %s\n", q.ID, q.Text, answer)
+	}
+	b.WriteString("\n## Items\n\n")
 	for _, it := range c.Items {
 		fmt.Fprintf(&b, "- [%s] **%s** (%s) %s\n", map[bool]string{true: "x", false: " "}[it.Status == "done"], it.ID, it.Status, it.Title)
 		if it.Why != "" {

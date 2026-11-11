@@ -15,7 +15,8 @@ const codexRollout = `{"timestamp":"2026-11-10T23:35:42.100Z","type":"session_me
 {"timestamp":"2026-11-10T23:36:51.000Z","type":"event_msg","payload":{"type":"token_count","info":null,"rate_limits":{}}}
 `
 
-const claudeTranscript = `{"type":"user","sessionId":"cl-1","cwd":"/state/town/toy/polecats/nux/toy","timestamp":"2026-11-10T21:00:00.000Z","message":{"role":"user"}}
+const claudeTranscript = `{"type":"queue-operation","sessionId":"cl-1","timestamp":"2026-11-10T20:59:59.000Z"}
+{"type":"user","sessionId":"cl-1","cwd":"/state/town/toy/polecats/nux/toy","timestamp":"2026-11-10T21:00:00.000Z","message":{"role":"user"}}
 {"type":"assistant","sessionId":"cl-1","message":{"id":"m1","model":"claude-sonnet-5-5","usage":{"input_tokens":10,"output_tokens":5,"cache_creation_input_tokens":100,"cache_read_input_tokens":200}}}
 {"type":"assistant","sessionId":"cl-1","message":{"id":"m1","model":"claude-sonnet-5-5","usage":{"input_tokens":10,"output_tokens":7,"cache_creation_input_tokens":100,"cache_read_input_tokens":200}}}
 {"type":"assistant","sessionId":"cl-1","message":{"id":"m2","model":"claude-sonnet-5-5","usage":{"input_tokens":20,"output_tokens":30,"cache_creation_input_tokens":0,"cache_read_input_tokens":300}}}

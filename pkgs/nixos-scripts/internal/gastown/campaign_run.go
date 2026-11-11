@@ -2,6 +2,7 @@ package gastown
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -18,20 +19,37 @@ const (
 
 func (s *Swarm) repliesDir() string { return filepath.Join(s.Dir(), "campaign-replies") }
 
-// QueueCampaignReply stores a user reply for the running supervisor, which
-// consumes it on its next round. It also works while no supervisor runs.
-func (s *Swarm) QueueCampaignReply(text string) error {
-	if strings.TrimSpace(text) == "" {
-		return fmt.Errorf("empty reply")
+type queuedInput struct {
+	Kind     string `json:"kind"`
+	Question string `json:"question,omitempty"`
+	Text     string `json:"text"`
+}
+
+func (s *Swarm) queue(in queuedInput) error {
+	if strings.TrimSpace(in.Text) == "" {
+		return fmt.Errorf("empty text")
 	}
 	if err := os.MkdirAll(s.repliesDir(), 0o700); err != nil {
 		return err
 	}
-	name := strconv.FormatInt(time.Now().UnixNano(), 10) + ".txt"
-	return os.WriteFile(filepath.Join(s.repliesDir(), name), []byte(text), 0o600)
+	data, _ := json.Marshal(in)
+	name := strconv.FormatInt(time.Now().UnixNano(), 10) + ".json"
+	return os.WriteFile(filepath.Join(s.repliesDir(), name), data, 0o600)
 }
 
-func (s *Swarm) drainReplies() []string {
+// QueueCampaignReply stores a selection or steering reply for the running
+// supervisor, which consumes it on its next round. It also works while no
+// supervisor runs.
+func (s *Swarm) QueueCampaignReply(text string) error {
+	return s.queue(queuedInput{Kind: "reply", Text: text})
+}
+
+// QueueCampaignAnswer stores the answer to one of the Mayor's questions.
+func (s *Swarm) QueueCampaignAnswer(question, text string) error {
+	return s.queue(queuedInput{Kind: "answer", Question: question, Text: text})
+}
+
+func (s *Swarm) drainReplies() []queuedInput {
 	entries, err := os.ReadDir(s.repliesDir())
 	if err != nil {
 		return nil
@@ -41,11 +59,12 @@ func (s *Swarm) drainReplies() []string {
 		names = append(names, e.Name())
 	}
 	sort.Strings(names)
-	var out []string
+	var out []queuedInput
 	for _, name := range names {
 		path := filepath.Join(s.repliesDir(), name)
-		if data, err := os.ReadFile(path); err == nil {
-			out = append(out, string(data))
+		var in queuedInput
+		if data, err := os.ReadFile(path); err == nil && json.Unmarshal(data, &in) == nil {
+			out = append(out, in)
 		}
 		_ = os.Remove(path)
 	}
@@ -65,14 +84,20 @@ func (s *Swarm) CampaignStart(intent string, now time.Time) (*Campaign, bool, er
 	return c, false, SaveCampaign(s.campaignPath(), c)
 }
 
+const stationLimits = `STATION LIMITS you must plan around. Workers are confined: no root, no devices, no virtual machines, writable only inside their own worktree, and they cannot reach the user's files or credentials. The trusted gate runs only these offline checks: %s
+Anything that needs root, a disk, a VM, network downloads, signing keys or a publishing account is NOT something a worker can run: name it as a resource you need, say what you would do with it, and ask the user what exists.`
+
 func (s *Swarm) planPrompt(c *Campaign, problem string) string {
 	state, _ := os.ReadFile(s.campaignPath())
 	text := "CAMPAIGN PLANNING. Do not start any work, create no bead and sling nothing yet.\nThe human's intent: " + c.Intent +
-		"\n\nWhat this campaign already knows (campaign.json):\n" + string(state) +
-		"\n\nPropose the capabilities this intent needs, as small items another worker could finish and the checks can verify. " +
-		"Mark needs_decision true on any item that cannot proceed without a product or security decision from the human. " +
+		"\n\nWhat this campaign already knows (campaign.json):\n" + string(state) + "\n\n" +
+		fmt.Sprintf(stationLimits, strings.Join(s.Cfg.Checks, " ; ")) +
+		"\n\nPropose, in this order: (1) the delivery process: how the result is tested, how it is built, how it is shipped; " +
+		"(2) the questions you need the user to answer, for example which resources exist (machines, VMs, accounts, domains, existing projects or sites) and which option they prefer, with the options you see; " +
+		"(3) the capabilities the intent needs as small items another worker could finish and the checks can verify. " +
+		"Mark needs_decision true on any item that cannot proceed without an answer or a decision from the human. " +
 		"Reply with gt mail reply to this message, with a short explanation and then exactly one fenced json block:\n" +
-		"```json\n{\"items\":[{\"id\":\"short-lowercase-id\",\"title\":\"...\",\"why\":\"...\",\"depends_on\":[],\"needs_decision\":false}]}\n```\n"
+		"```json\n{\"process\":{\"test\":\"...\",\"build\":\"...\",\"ship\":\"...\"},\"questions\":[{\"id\":\"short-id\",\"text\":\"...\",\"options\":[\"...\"]}],\"items\":[{\"id\":\"short-lowercase-id\",\"title\":\"...\",\"why\":\"...\",\"depends_on\":[],\"needs_decision\":false}]}\n```\n"
 	if problem != "" {
 		text += "\nYour previous plan was rejected: " + problem + ". Send a corrected plan.\n"
 	}
@@ -93,6 +118,12 @@ func (s *Swarm) selectPrompt(c *Campaign, reply string) string {
 func (s *Swarm) itemGoal(c *Campaign, it *CampaignItem) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "Campaign intent: %s\n\nYour item now: [%s] %s\nWhy: %s\nComplete only this item.\nDispatch beads for this item only. The other campaign items are started later by the supervisor, in dependency order; do not create beads for them, even if you know the plan, and send the goal complete escalation when this item alone is done.\n", c.Intent, it.ID, it.Title, it.Why)
+	fmt.Fprintf(&b, "\nAgreed delivery process: test: %s | build: %s | ship: %s\n", c.Process.Test, c.Process.Build, c.Process.Ship)
+	for _, q := range c.Questions {
+		if q.Answer != "" {
+			b.WriteString("Answer to \"" + q.Text + "\": " + q.Answer + "\n")
+		}
+	}
 	var done []string
 	for _, d := range c.Items {
 		if d.Status == "done" {
@@ -146,7 +177,18 @@ func (s *Swarm) planNotice(c *Campaign) {
 		}
 		lines = append(lines, line)
 	}
-	s.notify("medium", "Campaign plan ready", strings.Join(lines, "\n")+"\nchoose with: gastown-run campaign reply "+s.Cfg.Project+" \"a c\" (item ids, or all)")
+	text := "Process: test: " + c.Process.Test + " | build: " + c.Process.Build + " | ship: " + c.Process.Ship + "\n"
+	for _, q := range c.Questions {
+		text += "Question " + q.ID + ": " + q.Text
+		if len(q.Options) > 0 {
+			text += " (" + strings.Join(q.Options, " / ") + ")"
+		}
+		text += "\n"
+	}
+	if len(c.Questions) > 0 {
+		text += "answer with: gastown-run campaign answer " + s.Cfg.Project + " --question <id> \"...\"\n"
+	}
+	s.notify("medium", "Campaign plan ready", text+strings.Join(lines, "\n")+"\nchoose with: gastown-run campaign reply "+s.Cfg.Project+" \"a c\" (item ids, or all)")
 }
 
 // campaignMail consumes Mayor mail that carries the plan or the selection, and
@@ -157,7 +199,7 @@ func (s *Swarm) campaignMail(c *Campaign, m mailItem, now time.Time) bool {
 		if c.PlanAsks == 0 || len(fencedBlocks(m.Body)) == 0 {
 			return false
 		}
-		items, err := ParsePlan(m.Body)
+		plan, err := ParsePlan(m.Body)
 		if err != nil {
 			c.PlanAsks++
 			c.dirty = true
@@ -168,7 +210,7 @@ func (s *Swarm) campaignMail(c *Campaign, m mailItem, now time.Time) bool {
 			}
 			return true
 		}
-		c.Items, c.Phase = items, phaseSelecting
+		c.Process, c.Questions, c.Items, c.Phase = plan.Process, plan.Questions, plan.Items, phaseSelecting
 		c.dirty = true
 		s.planNotice(c)
 		return true
@@ -184,6 +226,47 @@ func (s *Swarm) campaignMail(c *Campaign, m mailItem, now time.Time) bool {
 		return true
 	}
 	return false
+}
+
+func (s *Swarm) handleInput(c *Campaign, in queuedInput, now time.Time) {
+	if in.Kind == "answer" {
+		s.handleAnswer(c, in.Question, in.Text, now)
+		return
+	}
+	s.handleReply(c, in.Text, now)
+}
+
+// handleAnswer records the user's answer to a question. Without a question id
+// it answers the only open question; otherwise it is kept as a general note.
+func (s *Swarm) handleAnswer(c *Campaign, id, text string, now time.Time) {
+	var target *CampaignQuestion
+	var open []*CampaignQuestion
+	for i := range c.Questions {
+		q := &c.Questions[i]
+		if id != "" && q.ID == id {
+			target = q
+		}
+		if q.Answer == "" {
+			open = append(open, q)
+		}
+	}
+	if target == nil && id == "" && len(open) == 1 {
+		target = open[0]
+	}
+	question := "note"
+	if target != nil {
+		target.Answer, target.AnsweredAt = text, now
+		question = target.Text
+	} else {
+		s.notify("medium", "Answer kept as a note", "no single open question matched ("+firstNonEmpty(id, "no id")+"); it is part of every later goal")
+	}
+	c.Decisions = append(c.Decisions, CampaignDecision{At: now, Question: question, Answer: text})
+	c.dirty = true
+	for i := range c.Items {
+		if c.Items[i].Status == "blocked" && c.Items[i].NeedsDecision {
+			c.Items[i].Status = "selected"
+		}
+	}
 }
 
 func (s *Swarm) handleReply(c *Campaign, text string, now time.Time) {
@@ -300,8 +383,8 @@ func (s *Swarm) finishPhase(c *Campaign) {
 // CampaignStep runs one round of the campaign: user replies, the plan, the
 // items and the periodic digest. It saves and publishes when anything changed.
 func (s *Swarm) CampaignStep(c *Campaign, now time.Time) {
-	for _, reply := range s.drainReplies() {
-		s.handleReply(c, reply, now)
+	for _, in := range s.drainReplies() {
+		s.handleInput(c, in, now)
 	}
 	switch c.Phase {
 	case phasePlanning:

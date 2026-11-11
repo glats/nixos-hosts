@@ -16,6 +16,7 @@ const campaignUsage = `gastown-run campaign - an intent becomes needs, you pick,
 
   campaign start [--timeout 24h] <project> "<intent>"   plan with the Mayor, then execute what you select (resumes a saved campaign)
   campaign reply <project> TEXT                         pick items ("a c" or "all"), answer a question or steer the work
+  campaign answer [--question ID] <project> TEXT        answer one of the Mayor's questions (no id: the only open one)
   campaign status <project>                             phase, items, decisions and learnings
   campaign stop <project>                               stop the supervisor; the campaign resumes with campaign start
 
@@ -32,6 +33,7 @@ func CampaignMain(c Config, args []string, stdout, stderr io.Writer) int {
 	fs := flag.NewFlagSet("campaign "+args[0], flag.ContinueOnError)
 	fs.SetOutput(stderr)
 	timeout := fs.Duration("timeout", 24*time.Hour, "overall limit")
+	question := fs.String("question", "", "question id for campaign answer")
 	if fs.Parse(args[1:]) != nil || fs.NArg() < 1 {
 		fmt.Fprint(stderr, campaignUsage)
 		return 2
@@ -92,12 +94,21 @@ func CampaignMain(c Config, args []string, stdout, stderr io.Writer) int {
 			return fail(err)
 		}
 		fmt.Fprintln(stdout, "queued; the supervisor reads it on its next round")
+	case "answer":
+		if err := s.QueueCampaignAnswer(*question, text); err != nil {
+			return fail(err)
+		}
+		fmt.Fprintln(stdout, "queued; the supervisor reads it on its next round")
 	case "status":
 		camp, err := LoadCampaign(s.campaignPath())
 		if err != nil {
 			return fail(fmt.Errorf("no campaign for %s: %w", s.Cfg.Project, err))
 		}
 		fmt.Fprintf(stdout, "intent: %s\nphase: %s | decisions: %d | learnings: %d\n", camp.Intent, camp.Phase, len(camp.Decisions), len(camp.Learnings))
+		fmt.Fprintf(stdout, "process: test: %s | build: %s | ship: %s\n", camp.Process.Test, camp.Process.Build, camp.Process.Ship)
+		for _, q := range camp.Questions {
+			fmt.Fprintf(stdout, "  question %-8s %s -> %s\n", q.ID, q.Text, firstNonEmpty(q.Answer, "(open)"))
+		}
 		for _, it := range camp.Items {
 			fmt.Fprintf(stdout, "  %-10s %-9s %s\n", it.ID, it.Status, it.Title)
 		}

@@ -8,10 +8,15 @@ import (
 	"time"
 )
 
-const goodPlan = "Here is the plan.\n```json\n" + `{"items":[
+const goodPlan = "Here is the plan.\n```json\n" + `{"process":{"test":"offline unit checks","build":"in a VM","ship":"publish the ISO"},"questions":[{"id":"vm","text":"Is a VM available?","options":["yes","no"]},{"id":"site","text":"Which site hosts it?"}],"items":[
  {"id":"spec","title":"Write the spec","why":"base","depends_on":[],"needs_decision":false},
  {"id":"build","title":"Build the thing","why":"needs spec","depends_on":["spec"],"needs_decision":false},
  {"id":"iso","title":"Pick the ISO layout","why":"user choice","depends_on":[],"needs_decision":true}]}` + "\n```\n"
+
+func planned() []CampaignItem {
+	p, _ := ParsePlan(goodPlan)
+	return p.Items
+}
 
 var t0 = time.Date(2026, 11, 10, 12, 0, 0, 0, time.UTC)
 
@@ -59,11 +64,13 @@ func titles(t *testing.T, s *Swarm) []string {
 }
 
 func TestParsePlanAcceptsAValidPlanAndRejectsBrokenOnes(t *testing.T) {
-	items, err := ParsePlan(goodPlan)
-	if err != nil || len(items) != 3 || items[1].DependsOn[0] != "spec" || items[0].Status != "proposed" || !items[2].NeedsDecision {
+	plan, err := ParsePlan(goodPlan)
+	items := plan.Items
+	if err != nil || plan.Process.Ship != "publish the ISO" || len(plan.Questions) != 2 || len(items) != 3 || items[1].DependsOn[0] != "spec" || items[0].Status != "proposed" || !items[2].NeedsDecision {
 		t.Fatalf("items=%+v err=%v", items, err)
 	}
-	wrap := func(items string) string { return "```json\n{\"items\":[" + items + "]}\n```" }
+	proc := `"process":{"test":"t","build":"b","ship":"s"},`
+	wrap := func(items string) string { return "```json\n{" + proc + "\"items\":[" + items + "]}\n```" }
 	for name, body := range map[string]string{
 		"no block":      "just words",
 		"no items":      "```json\n{\"select\":[\"a\"]}\n```",
@@ -74,6 +81,9 @@ func TestParsePlanAcceptsAValidPlanAndRejectsBrokenOnes(t *testing.T) {
 		"cycle":         wrap(`{"id":"a","title":"x","depends_on":["b"]},{"id":"b","title":"y","depends_on":["a"]}`),
 		"bad id":        wrap(`{"id":"Bad Id","title":"x"}`),
 		"missing title": wrap(`{"id":"a","title":" "}`),
+		"no process":    "```json\n{\"items\":[{\"id\":\"a\",\"title\":\"x\"}]}\n```",
+		"half process":  "```json\n{\"process\":{\"test\":\"t\",\"build\":\"\",\"ship\":\"s\"},\"items\":[{\"id\":\"a\",\"title\":\"x\"}]}\n```",
+		"bad question":  "```json\n{\"process\":{\"test\":\"t\",\"build\":\"b\",\"ship\":\"s\"},\"questions\":[{\"id\":\"\",\"text\":\"q\"}],\"items\":[{\"id\":\"a\",\"title\":\"x\"}]}\n```",
 	} {
 		if _, err := ParsePlan(body); err == nil {
 			t.Errorf("%s must be rejected", name)
@@ -82,7 +92,7 @@ func TestParsePlanAcceptsAValidPlanAndRejectsBrokenOnes(t *testing.T) {
 }
 
 func TestSelectionAppliesOnlyKnownProposedIDs(t *testing.T) {
-	items, _ := ParsePlan(goodPlan)
+	items := planned()
 	c := &Campaign{Items: items}
 	ids, ok := ParseSelection("```json\n{\"select\":[\"spec\",\"ghost\",\"spec\"]}\n```", c)
 	if !ok || len(ids) != 1 || ids[0] != "spec" {
@@ -104,7 +114,7 @@ func TestSelectionAppliesOnlyKnownProposedIDs(t *testing.T) {
 }
 
 func TestNextRunnableFollowsDependencies(t *testing.T) {
-	items, _ := ParsePlan(goodPlan)
+	items := planned()
 	c := &Campaign{Items: items}
 	c.item("build").Status, c.item("spec").Status = "selected", "selected"
 	if got := NextRunnable(c); got == nil || got.ID != "spec" {
@@ -126,7 +136,7 @@ func TestCampaignSurvivesARestart(t *testing.T) {
 	if err != nil || resumed || c.Phase != phasePlanning {
 		t.Fatalf("c=%+v resumed=%v err=%v", c, resumed, err)
 	}
-	c.Items, _ = ParsePlan(goodPlan)
+	c.Items = planned()
 	c.Phase = phaseSelecting
 	c.Decisions = append(c.Decisions, CampaignDecision{At: t0, Question: "q", Answer: "a"})
 	if err := SaveCampaign(s.campaignPath(), c); err != nil {
@@ -142,7 +152,7 @@ func TestCampaignSurvivesARestart(t *testing.T) {
 }
 
 func TestRenderCampaignListsItemsDecisionsAndLearnings(t *testing.T) {
-	items, _ := ParsePlan(goodPlan)
+	items := planned()
 	items[0].Status, items[0].Summary, items[0].Branches = "done", "verified 1 branch(es)", []string{"gastown/x-1"}
 	c := &Campaign{Intent: "ship distros", Phase: phaseExecuting, Items: items,
 		Decisions: []CampaignDecision{{At: t0, Question: "which items", Answer: "spec"}}, Learnings: []CampaignLearning{{At: t0, Item: "spec", Text: "needs rpm"}}}
@@ -199,7 +209,7 @@ func TestInvalidPlansAreRetriedOnceThenEscalatedToTheUser(t *testing.T) {
 	s, f := newCampaignSwarm(t)
 	c, _, _ := s.CampaignStart("x", t0)
 	s.CampaignStep(c, t0)
-	bad := "```json\n{\"items\":[{\"id\":\"a\",\"title\":\"x\",\"depends_on\":[\"zz\"]}]}\n```"
+	bad := "```json\n{\"process\":{\"test\":\"t\",\"build\":\"b\",\"ship\":\"s\"},\"items\":[{\"id\":\"a\",\"title\":\"x\",\"depends_on\":[\"zz\"]}]}\n```"
 	s.campaignMail(c, mailItem{Body: bad}, t0)
 	if len(mailSent(f)) != 2 || !strings.Contains(strings.Join(mailSent(f), " "), "rejected") {
 		t.Fatalf("the Mayor gets one more try: %v", mailSent(f))
@@ -216,7 +226,7 @@ func TestInvalidPlansAreRetriedOnceThenEscalatedToTheUser(t *testing.T) {
 func TestReplySelectsItemsBlocksDecisionsAndNeverRunsUnselectedOnes(t *testing.T) {
 	s, f := newCampaignSwarm(t)
 	c, _, _ := s.CampaignStart("x", t0)
-	c.Items, _ = ParsePlan(goodPlan)
+	c.Items = planned()
 	c.Phase = phaseSelecting
 	if err := s.QueueCampaignReply("spec iso"); err != nil {
 		t.Fatal(err)
@@ -246,7 +256,7 @@ func TestReplySelectsItemsBlocksDecisionsAndNeverRunsUnselectedOnes(t *testing.T
 func TestFreeTextSelectionGoesToTheMayorAndItsJSONAnswerIsApplied(t *testing.T) {
 	s, f := newCampaignSwarm(t)
 	c, _, _ := s.CampaignStart("x", t0)
-	c.Items, _ = ParsePlan(goodPlan)
+	c.Items = planned()
 	c.Phase = phaseSelecting
 	s.handleReply(c, "the first and the second please", t0)
 	if !c.AskedSelect || !strings.Contains(strings.Join(mailSent(f), " "), "CAMPAIGN SELECTION") {
@@ -271,7 +281,7 @@ func completeGoal(t *testing.T, s *Swarm, goalAt time.Time) {
 func TestAnItemIsDoneOnlyWithAVerifiedBranchAndFeedsTheNextOne(t *testing.T) {
 	s, f := newCampaignSwarm(t)
 	c, _, _ := s.CampaignStart("ship", t0)
-	c.Items, _ = ParsePlan(goodPlan)
+	c.Items = planned()
 	c.Phase = phaseExecuting
 	c.item("spec").Status, c.item("build").Status = "selected", "selected"
 	s.CampaignStep(c, t0)
@@ -304,7 +314,7 @@ func TestAnItemIsDoneOnlyWithAVerifiedBranchAndFeedsTheNextOne(t *testing.T) {
 func TestAnItemWithNothingVerifiedBecomesBlockedAndAReplyUnblocksIt(t *testing.T) {
 	s, f := newCampaignSwarm(t)
 	c, _, _ := s.CampaignStart("ship", t0)
-	c.Items, _ = ParsePlan(goodPlan)
+	c.Items = planned()
 	c.Phase = phaseExecuting
 	c.item("spec").Status = "selected"
 	s.CampaignStep(c, t0)
@@ -326,7 +336,7 @@ func TestAnItemWithNothingVerifiedBecomesBlockedAndAReplyUnblocksIt(t *testing.T
 func TestCampaignFinishesWhenNothingIsLeftAndOffersRemainingProposals(t *testing.T) {
 	s, _ := newCampaignSwarm(t)
 	c, _, _ := s.CampaignStart("ship", t0)
-	c.Items, _ = ParsePlan(goodPlan)
+	c.Items = planned()
 	c.Phase = phaseExecuting
 	c.item("spec").Status, c.item("build").Status, c.item("iso").Status = "done", "done", "proposed"
 	s.CampaignStep(c, t0)
@@ -362,7 +372,7 @@ func TestQueuedRepliesAreConsumedInOrderOnce(t *testing.T) {
 		}
 		time.Sleep(2 * time.Millisecond)
 	}
-	if got := s.drainReplies(); len(got) != 2 || got[0] != "first" || got[1] != "second" {
+	if got := s.drainReplies(); len(got) != 2 || got[0].Text != "first" || got[1].Text != "second" || got[0].Kind != "reply" {
 		t.Fatalf("replies = %v", got)
 	}
 	if got := s.drainReplies(); len(got) != 0 {
@@ -388,7 +398,7 @@ func TestCampaignCommandsReplyStatusAndStop(t *testing.T) {
 		t.Fatal(err)
 	}
 	camp, _, _ := s.CampaignStart("ship distros", t0)
-	camp.Items, _ = ParsePlan(goodPlan)
+	camp.Items = planned()
 	camp.Phase = phaseSelecting
 	if err := SaveCampaign(s.campaignPath(), camp); err != nil {
 		t.Fatal(err)
@@ -401,7 +411,7 @@ func TestCampaignCommandsReplyStatusAndStop(t *testing.T) {
 	if code := CampaignMain(s.R.Config, []string{"reply", "toy", "spec", "iso"}, &out, &errOut); code != 0 {
 		t.Fatalf("reply code=%d err=%q", code, errOut.String())
 	}
-	if got := s.drainReplies(); len(got) != 1 || got[0] != "spec iso" {
+	if got := s.drainReplies(); len(got) != 1 || got[0].Text != "spec iso" {
 		t.Fatalf("queued replies = %v", got)
 	}
 	if code := CampaignMain(s.R.Config, []string{"stop", "toy"}, &out, &errOut); code != 0 {
@@ -415,5 +425,82 @@ func TestCampaignCommandsReplyStatusAndStop(t *testing.T) {
 	}
 	if code := CampaignMain(s.R.Config, nil, &out, &errOut); code != 2 {
 		t.Fatalf("no arguments prints usage, got %d", code)
+	}
+}
+
+func TestThePlanCarriesTheDeliveryProcessAndQuestionsIntoNotificationsFilesAndGoals(t *testing.T) {
+	s, f := newCampaignSwarm(t)
+	c, _, _ := s.CampaignStart("quiero una distro", t0)
+	s.CampaignStep(c, t0)
+	prompt := strings.Join(mailSent(f), " ")
+	for _, want := range []string{"how the result is tested", "which resources exist", "NOT something a worker can run", "\"process\"", "\"questions\""} {
+		if !strings.Contains(prompt, want) {
+			t.Errorf("plan request must ask for %q", want)
+		}
+	}
+	if !s.campaignMail(c, mailItem{Body: goodPlan}, t0) || c.Process.Build != "in a VM" || len(c.Questions) != 2 {
+		t.Fatalf("plan not stored: %+v", c)
+	}
+	notice := ""
+	s.CampaignStep(c, t0)
+	for _, n := range notifications(t, s) {
+		if n["title"] == "Campaign plan ready" {
+			notice = n["body"]
+		}
+	}
+	for _, want := range []string{"Process: test: offline unit checks", "Question vm: Is a VM available? (yes / no)", "campaign answer toy --question"} {
+		if !strings.Contains(notice, want) {
+			t.Errorf("notice missing %q: %s", want, notice)
+		}
+	}
+	if md, _ := runGit("", "-C", s.Staging(), "show", "gastown/campaign:CAMPAIGN.md"); !strings.Contains(md, "- build: in a VM") || !strings.Contains(md, "vm: Is a VM available? -> (unanswered)") {
+		t.Fatalf("CAMPAIGN.md lacks the process or the open question: %s", md)
+	}
+	s.handleAnswer(c, "vm", "yes, a libvirt VM on rog", t0)
+	s.handleAnswer(c, "", "the site is maquilinux.org", t0)
+	if c.Questions[0].Answer != "yes, a libvirt VM on rog" || c.Questions[1].Answer != "the site is maquilinux.org" {
+		t.Fatalf("answers = %+v", c.Questions)
+	}
+	c.Phase = phaseExecuting
+	c.item("spec").Status = "selected"
+	s.CampaignStep(c, t0)
+	goal := mailSent(f)[len(mailSent(f))-1]
+	for _, want := range []string{"Agreed delivery process: test: offline unit checks | build: in a VM | ship: publish the ISO", "Answer to \"Is a VM available?\": yes, a libvirt VM on rog", "maquilinux.org"} {
+		if !strings.Contains(goal, want) {
+			t.Errorf("goal missing %q", want)
+		}
+	}
+}
+
+func TestAnAnswerWithoutAnIDNeedsASingleOpenQuestionAndUnblocksDecisionItems(t *testing.T) {
+	s, _ := newCampaignSwarm(t)
+	c, _, _ := s.CampaignStart("x", t0)
+	plan, _ := ParsePlan(goodPlan)
+	c.Questions, c.Items, c.Phase = plan.Questions, plan.Items, phaseExecuting
+	c.item("iso").Status = "blocked"
+	s.handleAnswer(c, "", "ambiguous", t0)
+	if c.Questions[0].Answer != "" || c.Questions[1].Answer != "" {
+		t.Fatalf("two open questions and no id must not guess: %+v", c.Questions)
+	}
+	if !strings.Contains(strings.Join(titles(t, s), "|"), "Answer kept as a note") {
+		t.Fatal("the user must be told the answer was kept as a note")
+	}
+	if c.item("iso").Status != "selected" || c.Decisions[0].Question != "note" {
+		t.Fatalf("a decision unblocks decision items: %+v %+v", c.item("iso"), c.Decisions)
+	}
+}
+
+func TestCampaignAnswerCommandQueuesTheAnswerForTheSupervisor(t *testing.T) {
+	s, _ := newCampaignSwarm(t)
+	if err := s.save(); err != nil {
+		t.Fatal(err)
+	}
+	var out, errOut strings.Builder
+	if code := CampaignMain(s.R.Config, []string{"answer", "--question", "vm", "toy", "yes", "a", "VM"}, &out, &errOut); code != 0 {
+		t.Fatalf("code=%d err=%s", code, errOut.String())
+	}
+	got := s.drainReplies()
+	if len(got) != 1 || got[0].Kind != "answer" || got[0].Question != "vm" || got[0].Text != "yes a VM" {
+		t.Fatalf("queued = %+v", got)
 	}
 }

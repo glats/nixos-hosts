@@ -136,7 +136,10 @@ func ParseClaudeTranscript(r io.Reader, town, source string) []UsageRecord {
 			continue
 		}
 		if session == "" && line.SessionID != "" {
-			session, dir, at = line.SessionID, line.Cwd, parseTime(line.Timestamp)
+			session, at = line.SessionID, parseTime(line.Timestamp)
+		}
+		if dir == "" && line.Cwd != "" {
+			dir = line.Cwd
 		}
 		u := line.Message.Usage
 		if u == nil || line.Message.ID == "" || line.Message.Model == "" || line.Message.Model == "<synthetic>" {
