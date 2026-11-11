@@ -142,8 +142,13 @@ and an A/B measurement of idle CPU and RSS on the live XRDP display `:10`.
   and it is what produces the -66% peak RSS, but it is not free: anything the user
   relied on for deep scrollback history on rog/thinkcentre is now capped.
   Recommended follow-up, NOT implemented here because it changes the XRDP X server
-  rather than Ghostty: expose NVIDIA to the XRDP session so Ghostty stops falling
-  back to llvmpipe. That is where the remaining idle CPU lives.
+  rather than Ghostty: give the XRDP session hardware GL. SUPERSEDED (2026-11-11): this
+  recommendation was WRONG about the mechanism. The GPU to use is the Intel i915 iGPU,
+  not NVIDIA (upstream xorgxrdp does not support the proprietary driver with a virtual
+  monitor, and kmscon already holds the NVIDIA DRM device), and the blocker was not the
+  `xrdpdev` configuration but the fact that nixpkgs compiles xorgxrdp without
+  `--enable-glamor`, which makes every DRMDevice/DRI3 option dead code. See
+  `odd/tasks/xrdp-dri3-acceleration.md` for the root cause, the proof and the fix.
 - L8 (2026-11-11): work-unit commit `69adaf5e` on `feat/ghostty-opt` (4 files, 187
   insertions, 3 deletions). Risk line: none. The change only ADDS an optional field
   (`home.ghostty.xrdp-optimized`, default `false`) to a shared module and preserves the
