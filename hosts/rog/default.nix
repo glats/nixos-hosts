@@ -97,6 +97,7 @@
       python3
       bats
       shellcheck
+      bc
     ];
   };
 
