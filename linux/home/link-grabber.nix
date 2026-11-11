@@ -1,7 +1,7 @@
 { config, lib, ... }:
 
 {
-  home.activation.donBotEnv = lib.hm.dag.entryAfter [ "writeBoundary" "sops-nix" ] ''
+  home.activation.linkGrabberEnv = lib.hm.dag.entryAfter [ "writeBoundary" "sops-nix" ] ''
     env_file="$HOME/.config/link-grabber/env"
     secret_path=${config.sops.secrets."opencode/groq_api_key".path}
 
