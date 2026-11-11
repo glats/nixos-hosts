@@ -294,6 +294,7 @@ func (s *Swarm) Tick(now time.Time) *WatchState {
 	s.tickMail(st)
 	s.tickGate(st)
 	s.tickProviders(st, now)
+	s.UpdateLedger(st.GoalAt)
 	active := s.workersActive()
 	if active {
 		st.LastActivity = now
@@ -318,7 +319,7 @@ func (s *Swarm) Watch(ctx context.Context, interval, maxRuntime time.Duration, u
 		}
 		if untilComplete && ShouldFinish(st, time.Now(), s.idleAfter(), s.allGated(st), s.workersActive()) {
 			s.integrate(st)
-			s.notify("low", "Swarm finished", "goal verified and nothing left to do; shutting the swarm down")
+			s.finishNotice(st)
 			return
 		}
 		if time.Now().After(deadline) {
@@ -331,6 +332,11 @@ func (s *Swarm) Watch(ctx context.Context, interval, maxRuntime time.Duration, u
 		case <-time.After(interval):
 		}
 	}
+}
+
+func (s *Swarm) finishNotice(st *WatchState) {
+	recs := s.UpdateLedger(st.GoalAt)
+	s.notify("low", "Swarm finished", "goal verified and nothing left to do; shutting the swarm down\ntokens:\n"+FormatUsage(recs, st.GoalAt))
 }
 
 func (s *Swarm) allGated(st *WatchState) bool {

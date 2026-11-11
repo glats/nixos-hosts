@@ -106,6 +106,12 @@ gate's verdict for every branch ("Ready for review: git fetch <staging> gastown/
 provider limits and agent switches, and the final result. Point `--notify-cmd` at
 `notify-send`, `ntfy`, a Telegram bot script or anything else that takes a message.
 
+Token usage: the supervisor records every agent session's tokens (Codex rollouts,
+Claude transcripts, OpenCode's session store) in `ledger.jsonl` inside the swarm
+directory. `gastown-run swarm usage [--since goal|all] <project>` prints totals by
+role and model (input excludes cached tokens), and the "Swarm finished" notification
+carries the same totals. Subscriptions are shown as tokens only, never as money.
+
 Agents and providers:
 
 - `codex:<model>:<effort>` uses your ChatGPT login (only `auth.json` is exposed to

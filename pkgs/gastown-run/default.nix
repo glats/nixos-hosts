@@ -17,6 +17,7 @@
   diffutils,
   gnumake,
   gawk,
+  sqlite,
   opencode ? null,
   claude-code ? null,
   toolPackages ? [ ],
@@ -62,6 +63,7 @@ runCommand "gastown-run"
       --set GASTOWN_BWRAP ${bubblewrap}/bin/bwrap \
       --set GASTOWN_CODEX ${codex}/bin/codex \
       --set GASTOWN_BASH ${bash}/bin/bash \
+      --set GASTOWN_SQLITE ${sqlite}/bin/sqlite3 \
       --set GASTOWN_SYSTEM_PATH ${systemPath} \
       --set GASTOWN_TOOL_PATH ${toolPath} \
       ${lib.optionalString (opencode != null) "--set GASTOWN_OPENCODE ${opencode}/bin/opencode"} \

@@ -17,7 +17,7 @@ Branch: `feat/bot` | Delivery: work-unit commits on the branch; push only when t
 
 - [x] T1 | S4 | Claude Code agent preset `claude:<model>` (subscription token only), confined | Route: inline | Status: done except the live gate check (needs the user token, L4) | Commit: see L4
 - [x] T2 | S4 | Ollama Cloud worker through OpenCode `opencode:ollama-cloud/<model>`, verified auth | Route: inline | Status: done | Commit: see L5
-- [ ] T3 | S5 | Token ledger per run, role, agent and model; `swarm usage`; totals in the final notification | Route: inline | Status: pending | Commit: -
+- [x] T3 | S5 | Token ledger per run, role, agent and model; `swarm usage`; totals in the final notification | Route: inline | Status: done | Commit: see L6
 - [ ] T4 | S6 | Polecat ODD worker contract installed read-only in every agent home | Route: inline | Status: pending | Commit: -
 - [ ] T5 | S5 | Model-fit benchmark for Mayor and workers; set measured defaults | Route: inline runs, user reviews the table | Status: pending (after T1-T4) | Commit: -
 - [ ] T6 | S1, S2 | Campaign layer: intent -> needs -> selection -> execution -> persisted ledger, resumable | Route: inline | Status: pending (after T3) | Commit: -
@@ -130,3 +130,10 @@ Operational facts (avoid these traps):
 - `swarm check` reported `ok` for `glm-5.3-flash`, `minimax-m3.1-flash`, `deepseek-v4-pro` and `kimi-k3`.
 - Observed toy goal (G1) with Mayor `opencode:ollama-cloud/glm-5.3` and workers `glm-5.3-flash` then `minimax-m3.1-flash`: the Mayor dispatched bead ocl-t6o, the worker produced `Sub` plus a two-case test, the gate published `gastown/ocl-t6o`, goal verified, swarm finished, no leftovers. An OpenCode Mayor therefore works, which matters because the Codex Mayor is out of quota until Nov 11 12:46.
 - Tests: 113 in internal/gastown. Risk: item 2 (real subscription key under confinement, env only).
+
+### L6 — 2026-11-10: T3 executed
+
+- Formats verified on real files. Codex: rollout `event_msg` `token_count` with `info.total_token_usage` {input_tokens (includes cached), cached_input_tokens, output_tokens, reasoning_output_tokens}, cumulative, so the last one is the session total; `info` is null when the session hit its limit; role comes from `session_meta.payload.cwd`, model from `turn_context.payload.model`. Claude: `message.usage` per assistant line, repeated once per content block, so counted once per `message.id`; skip `<synthetic>`. OpenCode: sqlite `opencode.db` table `session_v2` has `tokens_input/output/reasoning/cache_read/cache_write`, `model` as JSON `{id, providerID}`, `directory`, `time_created` (ms); read through the `sqlite3` CLI (`GASTOWN_SQLITE`, `-readonly -json`), since the Go module has no sqlite driver.
+- `ledger.jsonl` (swarm dir): one line per agent, session and model; running sessions are updated in place, vanished sessions are kept; `cache_write` added to the spec's fields; `input` excludes cached tokens. Written every supervisor tick and before "Swarm finished", whose body now carries the totals. `swarm usage [--since goal|all]` prints totals by role and model.
+- Observed on the real Ollama Cloud run (L5), `swarm usage --since all`: mayor glm-5.3 in 67k cached 1.7M out 17k; polecat glm-5.3-flash in 45k cached 863k out 10k; refinery minimax-m3.1-flash in 46k cached 1.1M out 16k; witness minimax-m3.1-flash in 84k cached 4.2M out 40k. Finding for T5: the witness role consumed the most tokens of all, more than the Mayor and the worker; role agents deserve the cheapest model.
+- Tests: 120 in internal/gastown. Risk: none (read-only parsing of agent session files; a new swarm-owned ledger file).
