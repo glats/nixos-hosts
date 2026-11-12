@@ -18,13 +18,14 @@ type ConfineSpec struct {
 	RO, RW                    []string
 	HomeBinds, AllowEnv       []string
 	RoFiles                   []string
+	Passwd, Group             string
 	Command                   []string
 }
 
 var (
 	envPrefixes   = []string{"GT_", "BD_", "BEADS_", "GIT_"}
 	envNames      = map[string]bool{"TERM": true, "LANG": true, "TZ": true, "COLORTERM": true}
-	etcEntries    = []string{"/etc/ssl", "/etc/static", "/etc/resolv.conf", "/etc/hosts", "/etc/nsswitch.conf", "/etc/passwd", "/etc/group", "/etc/localtime"}
+	etcEntries    = []string{"/etc/ssl", "/etc/static", "/etc/resolv.conf", "/etc/hosts", "/etc/nsswitch.conf", "/etc/localtime"}
 	secretHomeDir = []string{".ssh", ".gnupg", ".aws", ".kube", ".docker", ".netrc", ".config/sops", ".config/gh", ".config/git", ".password-store", ".local/share/keyrings"}
 	broadHomeDir  = map[string]bool{".": true, "": true, ".config": true, ".local": true, ".local/share": true, ".local/state": true, ".cache": true}
 )
@@ -91,6 +92,15 @@ func ConfineArgv(s ConfineSpec, environ []string) ([]string, error) {
 		"--dev", "/dev", "--proc", "/proc", "--tmpfs", "/tmp", "--ro-bind-try", "/run/systemd/resolve", "/run/systemd/resolve"}
 	for _, entry := range etcEntries {
 		argv = append(argv, "--ro-bind-try", entry, entry)
+	}
+	for _, identity := range []struct{ path, target string }{{s.Passwd, "/etc/passwd"}, {s.Group, "/etc/group"}} {
+		if identity.path == "" {
+			continue
+		}
+		if !within(root, filepath.Clean(identity.path)) {
+			return nil, errors.New("identity files must live inside the town root: " + identity.path)
+		}
+		argv = append(argv, "--ro-bind-try", identity.path, identity.target)
 	}
 	argv = append(argv, "--bind", root, root)
 	for _, name := range s.HomeBinds {
@@ -175,7 +185,12 @@ func Confine(args []string, stderr io.Writer) int {
 		fmt.Fprintln(stderr, "gastown-run confine: cannot resolve home or working directory")
 		return 1
 	}
-	spec := ConfineSpec{Root: *root, Cwd: cwd, Home: *home, RealHome: realHome, Bwrap: *bwrap, Path: *path,
+	passwdFile, groupFile, identityErr := WriteIdentityFiles(filepath.Join(*home, ".confine"), os.Getuid(), os.Getgid(), *home)
+	if identityErr != nil {
+		fmt.Fprintln(stderr, "gastown-run confine:", identityErr)
+		return 1
+	}
+	spec := ConfineSpec{Passwd: passwdFile, Group: groupFile, Root: *root, Cwd: cwd, Home: *home, RealHome: realHome, Bwrap: *bwrap, Path: *path,
 		RO: ro, RW: rw, HomeBinds: homeBinds, AllowEnv: allowEnv, RoFiles: roFiles, Command: fs.Args()}
 	argv, err := ConfineArgv(spec, os.Environ())
 	if err != nil {
@@ -213,6 +228,30 @@ func Confine(args []string, stderr io.Writer) int {
 		return 1
 	}
 	return 0
+}
+
+// WriteIdentityFiles writes the passwd and group files a sandbox mounts over
+// /etc/passwd and /etc/group. The host's own files are replaced by atomic
+// renames whenever NixOS activates a generation, so a sandbox that outlives a
+// rebuild would keep a deleted inode and every sandbox started inside it would
+// fail to mount. These files live inside the town and keep their inode when
+// rewritten.
+func WriteIdentityFiles(dir string, uid, gid int, home string) (string, string, error) {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return "", "", err
+	}
+	passwd := filepath.Join(dir, "passwd")
+	group := filepath.Join(dir, "group")
+	files := map[string]string{
+		passwd: fmt.Sprintf("agent:x:%d:%d:agent:%s:/bin/sh\nnobody:x:65534:65534:nobody:/var/empty:/bin/false\n", uid, gid, home),
+		group:  fmt.Sprintf("agent:x:%d:\nnobody:x:65534:\n", gid),
+	}
+	for path, content := range files {
+		if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+			return "", "", err
+		}
+	}
+	return passwd, group, nil
 }
 
 // GitRoot returns the nearest ancestor of dir that holds a .git entry, or dir itself.

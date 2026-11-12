@@ -191,3 +191,54 @@ func TestConfineMountsReadOnlyFilesIntoTheAgentHome(t *testing.T) {
 		}
 	}
 }
+
+func TestConfineDoesNotBindTheHostPasswdAndGroupInodes(t *testing.T) {
+	s := confineSpec()
+	s.Passwd, s.Group = filepath.Join(s.Home, ".confine", "passwd"), filepath.Join(s.Home, ".confine", "group")
+	argv, err := ConfineArgv(s, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := strings.Join(argv, "\x00")
+	for _, host := range []string{"/etc/passwd\x00/etc/passwd", "/etc/group\x00/etc/group"} {
+		if strings.Contains(text, host) {
+			t.Errorf("the host file %q must not be bound: a NixOS rebuild replaces it and long-lived sandboxes keep a deleted inode", strings.Split(host, "\x00")[0])
+		}
+	}
+	for _, own := range []string{"--ro-bind-try\x00" + s.Passwd + "\x00/etc/passwd", "--ro-bind-try\x00" + s.Group + "\x00/etc/group"} {
+		if !strings.Contains(text, own) {
+			t.Errorf("missing own identity file mount %q", strings.ReplaceAll(own, "\x00", " "))
+		}
+	}
+}
+
+func TestIdentityFilesDescribeTheRunningUserInsideTheSandbox(t *testing.T) {
+	dir := t.TempDir()
+	passwd, group, err := WriteIdentityFiles(dir, 1000, 100, "/work/home")
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, _ := os.ReadFile(passwd)
+	g, _ := os.ReadFile(group)
+	for _, want := range []string{"agent:x:1000:100:agent:/work/home:/bin/sh\n", "nobody:x:65534:65534:nobody:/var/empty:/bin/false\n"} {
+		if !strings.Contains(string(p), want) {
+			t.Errorf("passwd lacks %q: %q", want, p)
+		}
+	}
+	for _, want := range []string{"agent:x:100:\n", "nobody:x:65534:\n"} {
+		if !strings.Contains(string(g), want) {
+			t.Errorf("group lacks %q: %q", want, g)
+		}
+	}
+	first, _ := os.Stat(passwd)
+	if _, _, err := WriteIdentityFiles(dir, 1000, 100, "/work/home"); err != nil {
+		t.Fatal(err)
+	}
+	again, _ := os.Stat(passwd)
+	if !os.SameFile(first, again) {
+		t.Fatal("rewriting must keep the same inode so running sandboxes keep a live file")
+	}
+	if info, _ := os.Stat(passwd); info.Mode().Perm() != 0o644 {
+		t.Fatalf("mode = %v", info.Mode().Perm())
+	}
+}
