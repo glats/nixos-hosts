@@ -474,3 +474,36 @@ real XRDP path on `rog` only after the user explicitly approves the session rest
       grep -E "glamor|DRI2 GL provider|DRISWRAST" ~/.xorgxrdp.*.log | tail -20
   And the rog promotion, which ends the agent session because it runs inside the XRDP
   session on display `:10`.
+- L10 (2026-11-11): CORRECTION of the trigger mechanism, found by deploying it. The
+  `restartTriggers` approach added in L9 is INERT on this nixpkgs. `services.xrdp` sets
+  `restartIfChanged = false` on xrdp-sesman, which materialises as
+  `X-RestartIfChanged=false` in the unit, and `switch-to-configuration-ng` skips any
+  unit carrying that flag BEFORE it evaluates the triggers
+  (`pkgs/by-name/sw/switch-to-configuration-ng/src/main.rs`: the
+  `!parse_systemd_bool(new_unit_info, "Service", "X-RestartIfChanged", true)` branch
+  inserts the unit into `units_to_skip`). The unit did carry the expected
+  `X-Restart-Triggers`, and it still did not restart: observed on rog, where the
+  sesman kept the old binary for the whole deploy.
+  The mechanism that DOES work is `restartIfChanged = true` on the unit, forced with
+  `lib.mkForce` because nixpkgs sets the opposite. The unit embeds the xrdp package
+  path in `ExecStart`, so it only differs when that package changes, which is exactly
+  when the sesman must be replaced; an ordinary switch leaves the unit byte-identical
+  and the running RDP sessions alone. Verified by evaluation for rog, thinkcentre and
+  samsung.
+  DEPLOYED ON ROG with the corrected mechanism: `nixos-build switch` returned rc=0 and
+  the running `xrdp-sesman` is now
+  `/nix/store/66ryfpgvf1g22kv968wscpg2vd4aqzkp-xrdp-0.10.6.1/bin/xrdp-sesman` with
+  `/nix/store/9sqr6hlqkgl8r3bicv6rr4y53sfq4i4d-xrdp.conf/sesman.ini`, whose [Xorg]
+  section points at the glamor-enabled
+  `/nix/store/c3dm88pgz9j1bfbif4nx16b757g95c7n-xorgxrdp-0.10.5/lib/xorg/modules`
+  (20 glamor strings, versus 0 in the old build).
+  IMPORTANT: the PRE-EXISTING session on display `:10` survived the deploy and still
+  runs the OLD module path (`iwicljkngxlr206zxqxmzcnwqjmpqsny-xorgxrdp-0.10.5`, zero
+  glamor strings), because a running Xorg keeps its already-started module path. That
+  is the correct behaviour, and it means the OLD session keeps software GL until it
+  is ended. The FIRST watcher reported `SWRast` because it judged that pre-existing
+  log; the watcher was rewritten to judge ONLY sessions whose Xorg process started
+  after the deploy epoch, and it now watches for the next login.
+  The deploy was launched over `ssh localhost` with `setsid nohup` so that it survived
+  the session restart it caused, and so that the agent session inside the dying XRDP
+  session could not abort it.
