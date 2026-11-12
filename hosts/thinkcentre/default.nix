@@ -76,6 +76,15 @@
     joypixels.acceptLicense = true;
   };
 
+  nixpkgs.overlays = [
+    (final: _prev: {
+      # The sonic-de input still reads the deprecated pkgs.system alias, which
+      # warns the first time it is forced. Point the alias at its modern
+      # replacement so the warning does not reach the flake check output.
+      system = final.stdenv.hostPlatform.system;
+    })
+  ];
+
   networking = {
     hostName = "thinkcentre";
     networkmanager.enable = true;
