@@ -18,7 +18,7 @@
 - `flake.nix` pins `github:glats/omarchy-nix` at commit `5fc93f4c86f4766e477b7e94776e4a7c25ed3579`.
 - Only `t14` receives `inputs.omarchy-nix.nixosModules.default` and `inputs.nixos-hardware.nixosModules.lenovo-thinkpad-t14-amd-gen4` through `extraModules`.
 - `hosts/t14/home/omarchy.nix` imports `inputs.omarchy-nix.homeManagerModules.default`; `hosts/t14/home/default.nix` imports that entry point.
-- The Linux shared module list includes the `btop` Home Manager module. The t14 Quattro overlay exposes `omarchy-runtime` and `quickshell` only to `t14`.
+- The Linux shared module list includes the `btop` Home Manager module. `omarchy-runtime` and `quickshell` reach `t14` through the `omarchy-nix` and `t14-quickshell` inputs: the omarchy modules read them from the flake inputs directly, so no local overlay is involved.
 
 ## Commands and Verification
 

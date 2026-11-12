@@ -47,7 +47,14 @@ let
         leaf = pkgs.callPackage ../pkgs/leaf { };
         herdr = pkgs.callPackage ../pkgs/herdr { };
         claude-code = pkgs.callPackage ../pkgs/claude-code {
-          claude-code-unwrapped = inputs.claude-code-nix.packages.${pkgs.stdenv.hostPlatform.system}.default;
+          # claude-code-nix exports no x86_64-darwin package: its
+          # nix-systems/default input lists only aarch64-darwin,
+          # aarch64-linux and x86_64-linux, even though its package.nix
+          # supports the darwin-x64 binary. Build that package directly for
+          # the systems the flake does not export.
+          claude-code-unwrapped =
+            inputs.claude-code-nix.packages.${pkgs.stdenv.hostPlatform.system}.default
+              or (pkgs.callPackage "${inputs.claude-code-nix}/package.nix" { });
         };
         rtk = pkgs.rtk;
       };
