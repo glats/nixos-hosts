@@ -126,7 +126,6 @@ let
               args[n++] = "/dynamic-resolution";
             }
             args[n++] = "/network:auto";
-            args[n++] = "/bpp:32";
             args[n++] = "/sound:sys:mac";
             args[n++] = "/clipboard";
             args[n++] = "/drive:mac-public,/Users/juan/Public";
