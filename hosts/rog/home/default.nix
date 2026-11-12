@@ -14,7 +14,7 @@ baseModules
   ../../../linux/home/webcam.nix
 
   {
-    home.opencode.activeProviderName = "anthropic-ollama";
+    home.opencode.activeProviderName = "openai-ollama";
     home.ghostty.xrdp-optimized = true;
   }
 
