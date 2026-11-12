@@ -12,23 +12,22 @@ import (
 	"github.com/glats/nixos-scripts/internal/sshtunnel"
 )
 
-const usageText = `adguard-tunnel — Operator UI access to AdGuard Home on the OnePlus 5 over SSH
+const usageText = `adguard-tunnel — Operator UI access to AdGuard Home on Samsung over SSH
 
 Opens an SSH local port-forward from this machine to the AdGuard Home web UI
-(default 172.16.0.12:3000 on the phone) and prints the local URL to open.
+(127.0.0.1:3000 on Samsung) and prints the local URL to open.
 
-Why a tunnel: the phone's nftables firewall intentionally blocks :3000 from
-the LAN (SSH and DNS only are allowlisted). SSH key auth is the access
-control for this UI — the dedicated key (default ~/.ssh/oneplus5) must have
-passwordless access to the phone (see docs/oneplus5-adguard-dns.md).
+Why a tunnel: the panel listens only on remote loopback. SSH authentication
+controls access. By default, SSH uses your normal configuration and agent;
+use -key to override the identity (see docs/samsung-adguard-dns.md).
 
 Flags:
-  -host string   destination host (the phone)          (default "172.16.0.12")
+  -host string   destination SSH host                  (default "samsung.lan")
   -port int      remote port of the AdGuard Home UI   (default 3000)
   -local int     preferred local listen port          (default 3000)
                  busy → auto-fallback to +10000 (3000 → 13000), announced on stdout
-  -user string   SSH user on the phone                (default "glats")
-  -key string    SSH identity key path (~ expanded)   (default "~/.ssh/oneplus5")
+  -user string   SSH user                             (default "glats")
+  -key string    optional SSH identity (~ expanded)   (default: SSH configuration)
   -open          open the printed URL with xdg-open once the tunnel is up
 
 Press Ctrl+C to stop; the forward is torn down cleanly.
@@ -52,11 +51,11 @@ func main() {
 	cfg := new(config)
 	fs := flag.NewFlagSet("adguard-tunnel", flag.ExitOnError)
 	fs.Usage = func() { fmt.Fprint(flag.CommandLine.Output(), usageText) }
-	fs.StringVar(&cfg.host, "host", "172.16.0.12", "destination host (the phone)")
+	fs.StringVar(&cfg.host, "host", "samsung.lan", "destination SSH host")
 	fs.IntVar(&cfg.remotePort, "port", 3000, "remote port of the AdGuard Home UI")
 	fs.IntVar(&cfg.localPort, "local", 3000, "preferred local listen port")
-	fs.StringVar(&cfg.user, "user", "glats", "SSH user on the phone")
-	fs.StringVar(&cfg.key, "key", "~/.ssh/oneplus5", "SSH identity key path (~ expanded)")
+	fs.StringVar(&cfg.user, "user", "glats", "SSH user")
+	fs.StringVar(&cfg.key, "key", "", "optional SSH identity key path (~ expanded)")
 	fs.BoolVar(&cfg.open, "open", false, "open the printed URL with xdg-open")
 
 	if err := fs.Parse(os.Args[1:]); err != nil {
@@ -73,12 +72,15 @@ func run(cfg *config) error {
 		return fmt.Errorf("'ssh' binary not found in PATH — install openssh")
 	}
 
-	keyPath, err := sshtunnel.ExpandHome(cfg.key)
-	if err != nil {
-		return err
-	}
-	if _, err := os.Stat(keyPath); err != nil {
-		return fmt.Errorf("SSH key %s not found — generate/distribute it per docs/oneplus5-adguard-dns.md (prerequisites)", cfg.key)
+	var keyPath string
+	if cfg.key != "" {
+		keyPath, err = sshtunnel.ExpandHome(cfg.key)
+		if err != nil {
+			return err
+		}
+		if _, err := os.Stat(keyPath); err != nil {
+			return fmt.Errorf("SSH key %s not found — see docs/samsung-adguard-dns.md", cfg.key)
+		}
 	}
 
 	chosen, fellBack, err := sshtunnel.PickFreePort(cfg.localPort)
@@ -98,7 +100,11 @@ func run(cfg *config) error {
 	}
 
 	url := sshtunnel.LocalURL(chosen)
-	fmt.Printf("tunnel up: %s -> %s:%d (ssh -i %s %s@%s)\n", url, cfg.host, cfg.remotePort, keyPath, cfg.user, cfg.host)
+	identity := ""
+	if keyPath != "" {
+		identity = fmt.Sprintf("-i %s ", keyPath)
+	}
+	fmt.Printf("tunnel up: %s -> 127.0.0.1:%d (ssh %s%s@%s)\n", url, cfg.remotePort, identity, cfg.user, cfg.host)
 	fmt.Printf("Press Ctrl+C to stop.\n")
 	if cfg.open {
 		if xdg, lookErr := exec.LookPath("xdg-open"); lookErr == nil {
@@ -120,7 +126,7 @@ func run(cfg *config) error {
 
 			return nil
 		default:
-			return fmt.Errorf("ssh exited with error — phone unreachable or key not authorized? see docs/oneplus5-adguard-dns.md")
+			return fmt.Errorf("ssh exited with error — host unreachable or key not authorized? see docs/samsung-adguard-dns.md")
 		}
 	}
 	fmt.Println("tunnel stopped.")
