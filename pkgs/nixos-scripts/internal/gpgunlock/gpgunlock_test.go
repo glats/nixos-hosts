@@ -24,8 +24,8 @@ func TestParseKeysFile(t *testing.T) {
 		},
 		{
 			name:    "comments and blank lines are skipped",
-			content: "# nix-generated key list\n\n  CFD6C7FED46F6870BE13CE87D39580F75062BEFC  \n\nB658D64F6FDBCFD1EBA53509A1D4ECB0118566C8\n# end\n",
-			want:    []string{"CFD6C7FED46F6870BE13CE87D39580F75062BEFC", "B658D64F6FDBCFD1EBA53509A1D4ECB0118566C8"},
+			content: "# nix-generated key list\n\n  0123456789ABCDEF0123456789ABCDEF01234567  \n\n89ABCDEF0123456789ABCDEF0123456789ABCDEF\n# end\n",
+			want:    []string{"0123456789ABCDEF0123456789ABCDEF01234567", "89ABCDEF0123456789ABCDEF0123456789ABCDEF"},
 		},
 		{
 			name:    "hex prefix is stripped",
@@ -53,8 +53,8 @@ func TestNormalizeSigningKey(t *testing.T) {
 		{name: "trims whitespace", raw: "  ABCD1234  ", want: "ABCD1234"},
 		{name: "strips 0x prefix", raw: "0xABCD1234", want: "ABCD1234"},
 		{name: "strips bare keyid exclamation", raw: "ABCD1234!", want: "ABCD1234"},
-		{name: "keeps fingerprint", raw: "CFD6C7FED46F6870BE13CE87D39580F75062BEFC", want: "CFD6C7FED46F6870BE13CE87D39580F75062BEFC"},
-		{name: "keeps long keyid", raw: "CFD6C7FED46F6870BE13CE87D39580F75062BEFC", want: "CFD6C7FED46F6870BE13CE87D39580F75062BEFC"},
+		{name: "keeps fingerprint", raw: "0123456789ABCDEF0123456789ABCDEF01234567", want: "0123456789ABCDEF0123456789ABCDEF01234567"},
+		{name: "keeps long keyid", raw: "0123456789ABCDEF0123456789ABCDEF01234567", want: "0123456789ABCDEF0123456789ABCDEF01234567"},
 	}
 
 	for _, tc := range cases {
@@ -111,27 +111,27 @@ func TestSigningCapable(t *testing.T) {
 	}{
 		{
 			name:   "primary secret key with sign capability",
-			output: "sec:-:4096:1:D39580F75062BEFC:1783349514:1941029514::-:::scESC:::+:::23::0:\nfpr:::::::::CFD6C7FED46F6870BE13CE87D39580F75062BEFC:\n",
+			output: "sec:-:4096:1:89ABCDEF01234567:1783349514:1941029514::-:::scESC:::+:::23::0:\nfpr:::::::::0123456789ABCDEF0123456789ABCDEF01234567:\n",
 			want:   true,
 		},
 		{
 			name:   "sign-capable subkey",
-			output: "sec:-:4096:1:D39580F75062BEFC:1783349514:1941029514::-:::scESC:::+:::23::0:\nssb:-:4096:1:1234ABCD5678EF90:1783349514:1941029514:::::s:::+:::23:\n",
+			output: "sec:-:4096:1:89ABCDEF01234567:1783349514:1941029514::-:::scESC:::+:::23::0:\nssb:-:4096:1:1234ABCD5678EF90:1783349514:1941029514:::::s:::+:::23:\n",
 			want:   true,
 		},
 		{
 			name:   "encryption-only subkey still reports the sign-capable primary",
-			output: "sec:-:4096:1:D39580F75062BEFC:1783349514:1941029514::-:::scESC:::+:::23::0:\nssb:-:4096:1:E317BFF449149554:1783349514:1941029514:::::e:::+:::23:\n",
+			output: "sec:-:4096:1:89ABCDEF01234567:1783349514:1941029514::-:::scESC:::+:::23::0:\nssb:-:4096:1:FEDCBA9876543210:1783349514:1941029514:::::e:::+:::23:\n",
 			want:   true,
 		},
 		{
 			name:   "encryption-only secret key is rejected",
-			output: "sec:-:4096:1:D39580F75062BEFC:1783349514:1941029514:::::::::e:::+:::23::0:\n",
+			output: "sec:-:4096:1:89ABCDEF01234567:1783349514:1941029514:::::::::e:::+:::23::0:\n",
 			want:   false,
 		},
 		{
 			name:   "public key listing without secret rows is rejected",
-			output: "pub:-:4096:1:D39580F75062BEFC:1783349514:1941029514::-:::scESC:::+:::23:\nfpr:::::::::CFD6C7FED46F6870BE13CE87D39580F75062BEFC:\n",
+			output: "pub:-:4096:1:89ABCDEF01234567:1783349514:1941029514::-:::scESC:::+:::23:\nfpr:::::::::0123456789ABCDEF0123456789ABCDEF01234567:\n",
 			want:   false,
 		},
 		{

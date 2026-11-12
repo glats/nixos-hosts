@@ -45,7 +45,7 @@ same fallback           │    final → urltest auto)                          
 
 ```nix
 # Domains that must NOT ride the link (they go direct, corporate path):
-link.directDomains = [ "dominio-interno.falabella.cl" ];
+link.directDomains = [ "internal.company.example" ];
 
 # IP ranges that must NOT ride the link (already configured):
 link.directCidrs = [ "163.116.0.0/16" ];   # security-agent cloud
@@ -253,7 +253,7 @@ sudo bin/device-link phone                   # new link → re-import on the pho
 | Symptom | Cause | Action |
 |---------|-------|--------|
 | All browsing dies | Daemon ON + rog down, not yet degraded (≤30 s) | Wait for the urltest probe (30 s interval + teardown of existing connections) |
-| Falabella "Application Not Allowed" page in the browser | You are on the corporate path for that domain (link down, or browser without proxy) | Raise the link / use a browser with proxy |
+| Corporate "Application Not Allowed" page in the browser | You are on the corporate path for that domain (link down, or browser without proxy) | Raise the link / use a browser with proxy |
 | `issuer:` of the corporate CA in a test | The flow did NOT go through the loopback proxy | Check `--proxy-server` / profile |
 | You changed the link config and it does not apply | launchd does not restart if the plist did not change | `linkctl restart` (or raw: `kickstart -k` if loaded, `bootstrap` if unloaded) |
 | `WARN icmp is not supported by outbound` in old logs | Config older than the ICMP→direct rule | Already resolved; if it reappears post-rebuild, kickstart |

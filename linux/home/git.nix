@@ -23,14 +23,13 @@ in
 
     signing = {
       format = "openpgp";
-    }
-    // lib.optionalAttrs (identities.personal.signingKey != "") {
-      key = identities.personal.signingKey;
+      key = identities.signingKeyFallback;
       signByDefault = true;
     };
 
     includes = [
       { path = "~/.config/git/identity-personal"; }
+      { path = "~/.config/git/signing-personal"; }
       { contents.credential = identities.mkCredential pkgs.gh "glats"; }
       {
         condition = "gitdir:~/Work/**";
@@ -39,10 +38,14 @@ in
       {
         condition = "gitdir:~/Work/**";
         contents = {
-          user.signingKey = identities.work.signingKey;
+          user.signingKey = identities.signingKeyFallback;
           commit.gpgsign = true;
-          credential = identities.mkCredential pkgs.gh "jcuzmar-Falabella_FTC";
+          credential = identities.mkCredentialFromFile pkgs.gh config.sops.secrets."github/work_account".path;
         };
+      }
+      {
+        condition = "gitdir:~/Work/**";
+        path = "~/.config/git/signing-work";
       }
     ];
   };
@@ -76,6 +79,20 @@ in
     _write_identity "work" \
       "${config.sops.secrets."identities/work_name".path}" \
       "${config.sops.secrets."identities/work_email".path}"
+    ${identities.mkSigningIdentity {
+      gpgProgram = "${pkgs.gnupg}/bin/gpg";
+      guardProgram = "${pkgs.coreutils}/bin/false";
+      entries = [
+        {
+          scope = "personal";
+          fingerprint = config.sops.secrets."github/personal_gpg_fingerprint".path;
+        }
+        {
+          scope = "work";
+          fingerprint = config.sops.secrets."github/work_gpg_fingerprint".path;
+        }
+      ];
+    }}
   '';
 
   home.file.".config/git/hooks/commit-msg" = {

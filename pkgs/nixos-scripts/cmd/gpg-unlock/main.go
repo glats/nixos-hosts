@@ -1,7 +1,9 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -10,19 +12,52 @@ import (
 	"github.com/glats/nixos-scripts/internal/gpgunlock"
 )
 
-const keysFileEnv = "NIXOS_SCRIPTS_GPG_KEYS_FILE"
+const (
+	keysFileEnv         = "NIXOS_SCRIPTS_GPG_KEYS_FILE"
+	defaultKeysFileName = "gpg-unlock-keys"
+)
 
 func usage() {
 	fmt.Fprintln(os.Stderr, "Usage: gpg-unlock")
 	fmt.Fprintln(os.Stderr, "Caches the passphrase of each git signing key by signing a scratch")
 	fmt.Fprintln(os.Stderr, "file, so later signed commits stop prompting until the agent cache")
 	fmt.Fprintln(os.Stderr, "expires. Keys come from `git config user.signingkey` plus the key list")
-	fmt.Fprintln(os.Stderr, "installed by Nix ("+keysFileEnv+"). The passphrase prompt appears in your")
+	fmt.Fprintln(os.Stderr, "given by "+keysFileEnv+", or by the sops-nix rendered "+defaultKeysFileName)
+	fmt.Fprintln(os.Stderr, "list. The passphrase prompt appears in your")
 	fmt.Fprintln(os.Stderr, "current terminal, or as a pinentry dialog when a display exists; from")
 	fmt.Fprintln(os.Stderr, "OpenCode it never opens, because the OpenCode pinentry refuses curses and")
 	fmt.Fprintln(os.Stderr, "fails immediately there.")
 	fmt.Fprintln(os.Stderr, "Run this once after each gpg-agent restart; never in OpenCode itself.")
 	os.Exit(1)
+}
+
+func defaultKeysFile() string {
+	base := os.Getenv("XDG_CONFIG_HOME")
+	if base == "" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return ""
+		}
+		base = filepath.Join(home, ".config")
+	}
+	return filepath.Join(base, "sops-nix", "secrets", "rendered", defaultKeysFileName)
+}
+
+func keysFile() (string, error) {
+	if file := os.Getenv(keysFileEnv); file != "" {
+		return file, nil
+	}
+	file := defaultKeysFile()
+	if file == "" {
+		return "", nil
+	}
+	if _, err := os.Stat(file); err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return "", nil
+		}
+		return "", err
+	}
+	return file, nil
 }
 
 func gitSigningKey() string {
@@ -96,8 +131,13 @@ func main() {
 	}
 
 	var listed []string
-	if f := os.Getenv(keysFileEnv); f != "" {
-		content, err := os.ReadFile(f)
+	file, err := keysFile()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "gpg-unlock: reading key list: %v\n", err)
+		os.Exit(1)
+	}
+	if file != "" {
+		content, err := os.ReadFile(file)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "gpg-unlock: reading key list: %v\n", err)
 			os.Exit(1)

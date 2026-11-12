@@ -18,7 +18,7 @@ func TestResolveTarget(t *testing.T) {
 		{"macm5", "juan@macm5"},
 		{"t14", "glats@t14.local"},
 		{"thinkcentre", "glats@thinkcentre.local"},
-		{"jcuzmar@mact2.local", "jcuzmar@mact2.local"},
+		{"user@host.local", "user@host.local"},
 		{"weird@host.example", "weird@host.example"},
 	}
 	for _, tc := range cases {
@@ -36,7 +36,7 @@ func TestTargetLabel(t *testing.T) {
 		{"macm5", "macm5"},
 		{"t14", "t14"},
 		{"thinkcentre", "thinkcentre"},
-		{"jcuzmar@mact2.local", "jcuzmar-mact2-local"},
+		{"user@host.local", "user-host-local"},
 		{"a/b@c.d", "a-b-c-d"},
 		{"plain", "plain"},
 	}
@@ -669,7 +669,7 @@ func TestPreRestoreMovesAsideStateDirs(t *testing.T) {
 	if err := os.MkdirAll(projects, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	transcript := filepath.Join(projects, "-Users-jcuzmar-proj/session.jsonl")
+	transcript := filepath.Join(projects, "-Users-developer-proj/session.jsonl")
 	if err := os.MkdirAll(filepath.Dir(transcript), 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -699,7 +699,7 @@ func TestPreRestoreMovesAsideStateDirs(t *testing.T) {
 	if err != nil || len(kept) != 1 {
 		t.Fatalf("moved-aside projects missing (glob %v err %v)", kept, err)
 	}
-	if old, err := os.ReadFile(filepath.Join(kept[0], "-Users-jcuzmar-proj/session.jsonl")); err != nil || string(old) != "old-transcript" {
+	if old, err := os.ReadFile(filepath.Join(kept[0], "-Users-developer-proj/session.jsonl")); err != nil || string(old) != "old-transcript" {
 		t.Fatalf("moved-aside tree content: got %q err=%v", old, err)
 	}
 	if _, err := os.Stat(storage); !os.IsNotExist(err) {

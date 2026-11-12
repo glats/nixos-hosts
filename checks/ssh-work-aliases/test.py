@@ -30,8 +30,19 @@ for source, config in zip(sources, sys.argv[1:], strict=True):
     }
     expected = {f"{target}-auth" for target in sources if target != source}
     assert {name for name in blocks if name.endswith("-auth")} == expected, source
-    assert not any(name.endswith("-work") for name in blocks), source
+    assert not any(name.endswith("-work") for name in blocks - {"github-work"}), source
     home = "/Users/juan" if source == "macm5" else "/home/glats"
+    if source == "macm5":
+        assert {"github-work", "github-enterprise"} <= blocks, source
+        github = effective(config, "github-work")
+        legacy = effective(config, "github-enterprise")
+        assert {key: value for key, value in github.items() if key != "host"} == {
+            key: value for key, value in legacy.items() if key != "host"
+        }, source
+        assert github["hostname"] == ["github.com"], source
+        assert github["user"] == ["git"], source
+        assert github["identityfile"] == ["~/.ssh/id_ed25519_github"], source
+        assert github["identitiesonly"] == ["yes"], source
     for target in members:
         if target == source:
             continue

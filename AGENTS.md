@@ -3,7 +3,7 @@
 ## Repository Facts
 
 - Hosts: `rog` (MATE, XRDP, NVIDIA, home server), `thinkcentre` (headless, XRDP), `t14` (ThinkPad, Omarchy/Hyprland), `samsung` (Samsung tablet PC, GNOME), and `macm5` (Apple Silicon, nix-darwin).
-- Users: `glats` on Linux; `juan` on `macm5` (GitHub identity `jcuzmar`).
+- Users: `glats` on Linux; `juan` on `macm5` (work GitHub identity is SOPS-managed).
 - Stack: NixOS flakes, Home Manager (integrated and standalone), sops-nix, and nix-darwin.
 - `/etc/nixos` is a symlink to this repository (`~/.nixos`).
 - `hosts/<host>/default.nix` is each host entry point; host imports are flat and explicit, one per line.
