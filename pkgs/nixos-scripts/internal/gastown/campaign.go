@@ -383,3 +383,50 @@ func PublishCampaign(staging, workDir, markdown string) error {
 	_, err := runGit(workDir, "push", "-q", "origin", "campaign:refs/heads/gastown/campaign")
 	return err
 }
+
+// ResumeCampaign returns interrupted items to selected so their goals are sent
+// again to a fresh Mayor. Items that already ended (done, blocked) are kept.
+// It reports how many items it reset.
+func ResumeCampaign(c *Campaign) int {
+	n := 0
+	for i := range c.Items {
+		if c.Items[i].Status == "running" {
+			c.Items[i].Status, c.Items[i].GoalAt = "selected", ""
+			n++
+		}
+	}
+	if n > 0 {
+		c.dirty = true
+	}
+	return n
+}
+
+// hoistFlags moves the named flags (with their value) in front of the first
+// positional argument, so they work before or after the project name. The
+// remaining free text is never parsed as flags.
+func hoistFlags(args []string, names ...string) []string {
+	var flags, rest []string
+	match := func(a string) (name string, inline, ok bool) {
+		for _, n := range names {
+			if a == "--"+n {
+				return n, false, true
+			}
+			if strings.HasPrefix(a, "--"+n+"=") {
+				return n, true, true
+			}
+		}
+		return "", false, false
+	}
+	for i := 0; i < len(args); i++ {
+		if _, inline, ok := match(args[i]); ok {
+			flags = append(flags, args[i])
+			if !inline && i+1 < len(args) {
+				i++
+				flags = append(flags, args[i])
+			}
+			continue
+		}
+		rest = append(rest, args[i])
+	}
+	return append(flags, rest...)
+}

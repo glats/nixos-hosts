@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -34,7 +35,7 @@ func CampaignMain(c Config, args []string, stdout, stderr io.Writer) int {
 	fs.SetOutput(stderr)
 	timeout := fs.Duration("timeout", 24*time.Hour, "overall limit")
 	question := fs.String("question", "", "question id for campaign answer")
-	if fs.Parse(args[1:]) != nil || fs.NArg() < 1 {
+	if fs.Parse(hoistFlags(args[1:], "question", "timeout")) != nil || fs.NArg() < 1 {
 		fmt.Fprint(stderr, campaignUsage)
 		return 2
 	}
@@ -72,6 +73,7 @@ func CampaignMain(c Config, args []string, stdout, stderr io.Writer) int {
 			}
 		}
 		argv = append(argv, self, "campaign", "exec", "--timeout", timeout.String(), s.Cfg.Project)
+		fmt.Fprintln(stdout, "starting the supervisor in the background; follow it with: gastown-run campaign status "+s.Cfg.Project)
 		if err := syscallExec(argv); err != nil {
 			return fail(err)
 		}
@@ -79,6 +81,10 @@ func CampaignMain(c Config, args []string, stdout, stderr io.Writer) int {
 		camp, _, err := s.CampaignStart("", time.Now())
 		if err != nil {
 			return fail(err)
+		}
+		if n := ResumeCampaign(camp); n > 0 {
+			_ = SaveCampaign(s.campaignPath(), camp)
+			s.notify("medium", "Campaign resumed", strconv.Itoa(n)+" interrupted item(s) will be sent again to a fresh Mayor")
 		}
 		ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
 		defer cancel()
