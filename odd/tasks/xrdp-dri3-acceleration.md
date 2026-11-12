@@ -68,7 +68,7 @@ real XRDP path on `rog` only after the user explicitly approves the session rest
   Linked: S4, S5. Status: done. Evidence: Log L5.
 - T5 (inline, requires explicit user approval): apply on `rog` and reconnect a real
   XRDP session to confirm hardware GL in the live session. Linked: S1, S6. Status:
-  in progress, owned by the user. The branch was published as `origin/feat/ghostty-opt`
+  done. Evidence: see Log L11. The branch was published as `origin/feat/ghostty-opt`
   so that thinkcentre can fetch it; the user deploys to thinkcentre FIRST (no active
   session to cut) and promotes to rog afterwards. See Log L8.
 - T6 (delegated, optional, after T5): soak the live session with a real RDP client
@@ -507,3 +507,32 @@ real XRDP path on `rog` only after the user explicitly approves the session rest
   The deploy was launched over `ssh localhost` with `setsid nohup` so that it survived
   the session restart it caused, and so that the agent session inside the dying XRDP
   session could not abort it.
+- L11 (2026-11-11): LIVE PROOF, both hosts, from a real RDP login.
+  ROG: the user reconnected over RDP and the new session came up as display `:11`.
+  The watcher, corrected to judge only sessions whose Xorg process started after the
+  deploy epoch, recorded:
+      GL_VERDICT=GLAMOR_OK display=:11 log=/home/glats/.xorgxrdp.11.log
+  and the session log confirms the hardware path end to end:
+      rdpPreInit: drm device looks ok, use glamor set
+      (II) XRDPDEV(0): glamor X acceleration enabled on Mesa Intel(R) HD Graphics 630 (KBL GT2)
+      rdpPreInit: glamor init ok
+      (II) XRDPDEV(0): [DRI2]   DRI driver: iris
+      (II) GLX: Initialized DRI2 GL provider for screen 0
+  The running `Xorg :11` process was verified to have the glamor module path
+  (`c3dm88pgz9j1bfbif4nx16b757g95c7n`), while the pre-existing `Xorg :10` still has
+  the old one, exactly as expected for an already-running Xorg.
+  MEASURED BENEFIT, the two sessions side by side on the same host, same X server
+  build, sampled over 20 s:
+      Xorg :11  (with glamor)     7% of one core
+      Xorg :10  (software GL)    28% of one core
+  A fourfold reduction in the X server's own CPU, with the client-side terminal cost
+  unchanged. This is the result the whole feature was for: the CPU that the software
+  OpenGL fallback was burning on the same cores that encode the RDP frames is now
+  done by the Intel iGPU.
+  THINKCENTRE: deployed and effective (new sesman binary, new sesman.ini, glamor
+  module path), but no RDP login has happened there yet, so its watcher recorded
+  `NO_SESSION_SEEN`. The proof on rog covers the same code path on the same hardware
+  class, so thinkcentre only needs the login to confirm.
+  The Ghostty XRDP profile is live on both hosts as well: the terminal renders
+  opaque and its scrollback is bounded at 10 MB per surface, which is the change
+  that produced the measured -66% peak RSS.
