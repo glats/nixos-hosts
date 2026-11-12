@@ -11,12 +11,15 @@ import (
 const FallbackPortStep = 10000
 
 func BuildSSHArgs(host, user, keyPath string, localPort, remotePort int) []string {
-	return []string{
-		"-i", keyPath,
-		"-N",
-		"-L", fmt.Sprintf("127.0.0.1:%d:%s:%d", localPort, host, remotePort),
-		fmt.Sprintf("%s@%s", user, host),
+	var args []string
+	if keyPath != "" {
+		args = append(args, "-i", keyPath)
 	}
+	return append(args,
+		"-N",
+		"-L", fmt.Sprintf("127.0.0.1:%d:127.0.0.1:%d", localPort, remotePort),
+		fmt.Sprintf("%s@%s", user, host),
+	)
 }
 
 func PickFreePort(requested int) (chosen int, fellBack bool, err error) {

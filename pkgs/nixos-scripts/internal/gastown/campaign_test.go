@@ -279,7 +279,7 @@ func completeGoal(t *testing.T, s *Swarm, goalAt time.Time) {
 }
 
 func TestAnItemIsDoneOnlyWithAVerifiedBranchAndFeedsTheNextOne(t *testing.T) {
-	s, f := newCampaignSwarm(t)
+	s, f := chainReposWithFake(t)
 	c, _, _ := s.CampaignStart("ship", t0)
 	c.Items = planned()
 	c.Phase = phaseExecuting
@@ -502,5 +502,57 @@ func TestCampaignAnswerCommandQueuesTheAnswerForTheSupervisor(t *testing.T) {
 	got := s.drainReplies()
 	if len(got) != 1 || got[0].Kind != "answer" || got[0].Question != "vm" || got[0].Text != "yes a VM" {
 		t.Fatalf("queued = %+v", got)
+	}
+}
+
+func TestUnitFlagsDoNotTieTheSupervisorToTheLaunchingTerminal(t *testing.T) {
+	flags := strings.Join(swarmUnitFlags(time.Hour, "toy", "/work"), " ")
+	for _, bad := range []string{"--wait", "--pipe"} {
+		if strings.Contains(flags, bad) {
+			t.Errorf("%s ties the supervisor's output to the terminal: closing it kills the swarm with SIGPIPE", bad)
+		}
+	}
+	for _, want := range []string{"StandardOutput=journal", "StandardError=journal", "--collect", "KillMode=control-group"} {
+		if !strings.Contains(flags, want) {
+			t.Errorf("unit flags lack %q: %s", want, flags)
+		}
+	}
+}
+
+func TestCampaignFlagsWorkBeforeOrAfterTheProject(t *testing.T) {
+	for _, args := range [][]string{
+		{"answer", "--question", "vm", "toy", "yes", "a", "VM"},
+		{"answer", "toy", "--question", "vm", "yes", "a", "VM"},
+		{"answer", "toy", "--question=vm", "yes", "a", "VM"},
+	} {
+		s, _ := newCampaignSwarm(t)
+		if err := s.save(); err != nil {
+			t.Fatal(err)
+		}
+		var out, errOut strings.Builder
+		if code := CampaignMain(s.R.Config, args, &out, &errOut); code != 0 {
+			t.Fatalf("%v: code=%d err=%s", args, code, errOut.String())
+		}
+		got := s.drainReplies()
+		if len(got) != 1 || got[0].Question != "vm" || got[0].Text != "yes a VM" {
+			t.Fatalf("%v: queued = %+v", args, got)
+		}
+	}
+}
+
+func TestResumeSendsInterruptedItemsAgainAndKeepsFinishedOnes(t *testing.T) {
+	s, _ := newCampaignSwarm(t)
+	c, _, _ := s.CampaignStart("ship", t0)
+	c.Items = planned()
+	c.Phase = phaseExecuting
+	c.item("spec").Status, c.item("build").Status, c.item("iso").Status = "running", "done", "blocked"
+	if n := ResumeCampaign(c); n != 1 {
+		t.Fatalf("one interrupted item expected, got %d", n)
+	}
+	if c.item("spec").Status != "selected" || c.item("build").Status != "done" || c.item("iso").Status != "blocked" {
+		t.Fatalf("items = %+v", c.Items)
+	}
+	if n := ResumeCampaign(c); n != 0 {
+		t.Fatalf("resume must be idempotent, got %d", n)
 	}
 }

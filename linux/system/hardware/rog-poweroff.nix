@@ -67,6 +67,15 @@ in
       module, registered below the ACPI prepare path. Requires
       diagnostics.enable; enable only after Gate 2/3 evidence.
     '';
+
+    campaign.enable = lib.mkEnableOption ''
+      the automatic poweroff A/B campaign: each poweroff is randomly a
+      normal one or one that unloads the NVIDIA modules first, arms the RTC
+      wake alarm, and the next boot records whether the machine really
+      powered off. After an alarm wake with nobody logged in the machine
+      powers off again, at most twice. Inspect with test-shutdown status;
+      stop with test-shutdown campaign pause
+    '';
   };
 
   config = {
@@ -116,6 +125,52 @@ in
             -remote-mac ${netconsoleCfg.remoteMAC} \
             -remote-port ${toString netconsoleCfg.remotePort}
         '';
+      };
+    };
+
+    systemd.services.shutdown-campaign = lib.mkIf cfg.campaign.enable {
+      description = "Poweroff A/B campaign: arm the shutdown and the RTC alarm";
+      wantedBy = [ "multi-user.target" ];
+      before = [
+        "docker.service"
+        "ollama.service"
+        "kmsconvt@tty1.service"
+        "xrdp.service"
+        "xrdp-sesman.service"
+      ];
+      path = [
+        pkgs.kmod
+        pkgs.systemd
+      ];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        ExecStart = "${pkgs.coreutils}/bin/true";
+        ExecStop = "${pkgs.nixos-scripts}/bin/test-shutdown campaign shutdown";
+        TimeoutStopSec = 60;
+      };
+    };
+
+    systemd.services.shutdown-campaign-boot = lib.mkIf cfg.campaign.enable {
+      description = "Poweroff A/B campaign: record how the previous shutdown ended";
+      wantedBy = [ "multi-user.target" ];
+      after = [ "local-fs.target" ];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        ExecStart = "${pkgs.nixos-scripts}/bin/test-shutdown campaign boot";
+      };
+    };
+
+    systemd.services.shutdown-campaign-cycle = lib.mkIf cfg.campaign.enable {
+      description = "Poweroff A/B campaign: power off again after an unattended alarm wake";
+      wantedBy = [ "multi-user.target" ];
+      after = [ "shutdown-campaign-boot.service" ];
+      requires = [ "shutdown-campaign-boot.service" ];
+      path = [ pkgs.systemd ];
+      serviceConfig = {
+        Type = "simple";
+        ExecStart = "${pkgs.nixos-scripts}/bin/test-shutdown campaign cycle";
       };
     };
 

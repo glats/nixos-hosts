@@ -24,7 +24,7 @@ const swarmUsage = `gastown-run swarm - a goal-driven swarm: a Mayor plans, conf
       --notify-cmd CMD       command run for every notification; it receives GASTOWN_NOTIFY_SEVERITY, _TITLE and _BODY
       --agent-env NAME       environment variable passed to opencode agents (repeatable)
       --protect PATH         file or dir/ the gate never lets a worker change, e.g. main.go or cmd/ (repeatable)
-  swarm run --goal TEXT [--timeout 6h] <project>   start everything in one limited systemd unit, work until done
+  swarm run --goal TEXT [--timeout 6h] <project>   start everything in one limited, detached systemd unit and work until done
   swarm reply <project> TEXT                        answer the Mayor when it asked you something
   swarm status <project>                            workers, scheduler, gated branches
   swarm check <project>                             probe each opencode agent (model alive, key valid) before spending a goal
@@ -129,8 +129,8 @@ func SwarmMain(c Config, args []string, stdout, stderr io.Writer) int {
 }
 
 func swarmUnitFlags(timeout time.Duration, project, workdir string) []string {
-	return []string{"--user", "--unit=gts-" + project + "-" + strconv.FormatInt(time.Now().Unix(), 10), "--wait", "--pipe", "--collect",
-		"--working-directory=" + workdir, "-p", "RuntimeMaxSec=" + strconv.Itoa(int(timeout.Seconds())), "-p", "TimeoutStopSec=30",
+	return []string{"--user", "--unit=gts-" + project + "-" + strconv.FormatInt(time.Now().Unix(), 10), "--collect",
+		"--working-directory=" + workdir, "-p", "StandardOutput=journal", "-p", "StandardError=journal", "-p", "RuntimeMaxSec=" + strconv.Itoa(int(timeout.Seconds())), "-p", "TimeoutStopSec=30",
 		"-p", "KillMode=control-group", "-p", "MemoryMax=8G", "-p", "CPUQuota=400%", "-p", "TasksMax=2048"}
 }
 

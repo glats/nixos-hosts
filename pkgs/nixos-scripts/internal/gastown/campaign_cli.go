@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -17,6 +18,7 @@ const campaignUsage = `gastown-run campaign - an intent becomes needs, you pick,
   campaign start [--timeout 24h] <project> "<intent>"   plan with the Mayor, then execute what you select (resumes a saved campaign)
   campaign reply <project> TEXT                         pick items ("a c" or "all"), answer a question or steer the work
   campaign answer [--question ID] <project> TEXT        answer one of the Mayor's questions (no id: the only open one)
+  campaign advance <project> BRANCH...                  add gate-accepted branches (gastown/<bead>) to the swarm's base by hand
   campaign status <project>                             phase, items, decisions and learnings
   campaign stop <project>                               stop the supervisor; the campaign resumes with campaign start
 
@@ -34,7 +36,7 @@ func CampaignMain(c Config, args []string, stdout, stderr io.Writer) int {
 	fs.SetOutput(stderr)
 	timeout := fs.Duration("timeout", 24*time.Hour, "overall limit")
 	question := fs.String("question", "", "question id for campaign answer")
-	if fs.Parse(args[1:]) != nil || fs.NArg() < 1 {
+	if fs.Parse(hoistFlags(args[1:], "question", "timeout")) != nil || fs.NArg() < 1 {
 		fmt.Fprint(stderr, campaignUsage)
 		return 2
 	}
@@ -72,6 +74,7 @@ func CampaignMain(c Config, args []string, stdout, stderr io.Writer) int {
 			}
 		}
 		argv = append(argv, self, "campaign", "exec", "--timeout", timeout.String(), s.Cfg.Project)
+		fmt.Fprintln(stdout, "starting the supervisor in the background; follow it with: gastown-run campaign status "+s.Cfg.Project)
 		if err := syscallExec(argv); err != nil {
 			return fail(err)
 		}
@@ -79,6 +82,10 @@ func CampaignMain(c Config, args []string, stdout, stderr io.Writer) int {
 		camp, _, err := s.CampaignStart("", time.Now())
 		if err != nil {
 			return fail(err)
+		}
+		if n := ResumeCampaign(camp); n > 0 {
+			_ = SaveCampaign(s.campaignPath(), camp)
+			s.notify("medium", "Campaign resumed", strconv.Itoa(n)+" interrupted item(s) will be sent again to a fresh Mayor")
 		}
 		ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
 		defer cancel()
@@ -94,6 +101,10 @@ func CampaignMain(c Config, args []string, stdout, stderr io.Writer) int {
 			return fail(err)
 		}
 		fmt.Fprintln(stdout, "queued; the supervisor reads it on its next round")
+	case "advance":
+		if err := s.CampaignAdvance(fs.Args()[1:]); err != nil {
+			return fail(err)
+		}
 	case "answer":
 		if err := s.QueueCampaignAnswer(*question, text); err != nil {
 			return fail(err)
