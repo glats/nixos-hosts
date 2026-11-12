@@ -9,7 +9,11 @@ root = pathlib.Path(__file__).resolve().parents[2]
 source = (root / "linux/home/link-grabber.nix").read_text()
 script = source.split(" ] ''", 1)[1].rsplit("'';", 1)[0]
 
-with tempfile.TemporaryDirectory(prefix="link-grabber-", dir="/tmp/opencode") as tmp:
+# The preferred scratch directory is not present in every environment, for
+# example inside a Nix build sandbox, so fall back to the temporary directory.
+scratch_root = "/tmp/opencode" if os.path.isdir("/tmp/opencode") else None
+
+with tempfile.TemporaryDirectory(prefix="link-grabber-", dir=scratch_root) as tmp:
     home = pathlib.Path(tmp)
     env_file = home / ".config/link-grabber/env"
     env_file.parent.mkdir(parents=True)

@@ -368,6 +368,14 @@
         homeManager = home-manager;
       };
 
+      checks.x86_64-linux.link-grabber-env = import ./checks/link-grabber-env {
+        pkgs = nixpkgs.legacyPackages.x86_64-linux;
+      };
+
+      checks.x86_64-linux.work-identity = import ./checks/work-identity {
+        pkgs = nixpkgs.legacyPackages.x86_64-linux;
+      };
+
       nixosConfigurations = {
         rog = mkNixosHost { hostname = "rog"; };
         thinkcentre = mkNixosHost { hostname = "thinkcentre"; };
