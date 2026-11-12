@@ -19,6 +19,7 @@
     devices = [
       "/dev/dri/card1:/dev/dri/card1"
       "/dev/dri/renderD128:/dev/dri/renderD128"
+      "nvidia.com/gpu=all"
     ];
 
     environment = {
