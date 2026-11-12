@@ -45,6 +45,17 @@
                 rm -rf "resources/app/node_modules.asar.unpacked"
                 ln -rs "$unpacked" "resources/app/node_modules.asar.unpacked"''
             )
+          else if lib.versionAtLeast pkgs.vscode.version "1.144.0" && pkgs.stdenv.hostPlatform.isDarwin then
+            let
+              ripgrepSystem = if pkgs.stdenv.hostPlatform.isAarch64 then "darwin-arm64" else "darwin-x64";
+            in
+            old:
+            builtins.replaceStrings
+              [ "Contents/Resources/app/node_modules/@vscode/ripgrep/bin/rg" ]
+              [
+                "Contents/Resources/app/node_modules.asar.unpacked/@vscode/ripgrep-universal/bin/${ripgrepSystem}/rg"
+              ]
+              old.postPatch
           else
             old: old.postPatch;
       in
