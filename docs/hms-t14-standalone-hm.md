@@ -1,5 +1,12 @@
 # `hms` en t14 — Home Manager standalone con omarchy-nix
 
+> **Status: historical.** The `_module.args.osConfig` injection this runbook
+> prescribes is no longer present in `flake.nix` and is no longer required: the
+> pinned `omarchy-nix` fork reads `osConfig` null-safely (`null ? omarchy`
+> evaluates to false, and `osConfig.services.xserver.videoDrivers or [ ]`
+> falls back), so the standalone `t14` Home Manager configuration evaluates and
+> builds without it. The fork contract documented below still applies.
+
 ## Problema
 
 `hms` (alias `home-manager switch --flake .#t14`) fallaba con:

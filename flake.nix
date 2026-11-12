@@ -163,11 +163,6 @@
 
       pkgsFor = mkPkgsFor nixpkgs [ ];
 
-      t14QuattroOverlay = final: _prev: {
-        omarchy-runtime = inputs.omarchy-nix.packages.${final.system}.omarchy-runtime;
-        quickshell = inputs.omarchy-nix.packages.${final.system}.quickshell;
-      };
-
       packages = import ./lib/packages.nix {
         inherit inputs;
         pkgsFor = pkgsFor;
