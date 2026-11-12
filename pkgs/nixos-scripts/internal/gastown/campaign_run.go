@@ -325,6 +325,12 @@ func (s *Swarm) stepItems(c *Campaign, now time.Time) {
 			}
 			sort.Strings(branches)
 			sort.Strings(files)
+			if adv := s.AdvanceBase(branches); adv.Status != "pass" && adv.Status != "none" {
+				running.Status = "blocked"
+				c.dirty = true
+				s.notify("high", "Item blocked: "+running.Title, "its verified branches ("+strings.Join(branches, ", ")+") cannot be added to the base: "+adv.problem()+"\nreply: gastown-run campaign reply "+s.Cfg.Project+" \"...\"")
+				return
+			}
 			running.Status, running.Branches = "done", branches
 			running.Summary = "verified " + strconv.Itoa(len(branches)) + " branch(es); files: " + strings.Join(dedupe(files), ", ")
 			c.Learnings = append(c.Learnings, CampaignLearning{At: now, Item: running.ID, Text: running.Summary})

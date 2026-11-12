@@ -122,9 +122,12 @@ you reply. Everything is kept in `campaign.json` (decisions, learnings, results)
 published as `CAMPAIGN.md` on branch `gastown/campaign` of the staging repository;
 `campaign start` on an existing campaign resumes it: interrupted items are sent again to a fresh Mayor. The supervisor runs detached in a systemd user unit and writes to the journal, so closing the terminal does not stop it. Flags such as `--question` work before or after the project name. `campaign status` and
 `campaign stop` do what they say, and a digest notification arrives every four hours.
-Items do not yet build on each other's code: each starts from the project's main branch
-(merge accepted branches into it between items), and what earlier items learned reaches
-later ones through the goal text.
+Items build on each other: when an item is verified, its accepted branches are merged
+into the swarm's own base, the trusted checks run on the combined result, and only then
+does the base move (staging `main` and the rig's `main`), so the next item starts from the
+work already accepted. If branches conflict or the combined checks fail, the item is
+blocked instead of done. Your own repository is never touched. `campaign advance <project>
+gastown/<bead>...` adds accepted branches to the base by hand.
 
 Worker contract: every agent starts with a short read-only worker contract mounted
 into its home (`~/.codex/AGENTS.md`, `~/.claude/CLAUDE.md`,

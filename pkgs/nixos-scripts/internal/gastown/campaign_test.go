@@ -279,7 +279,7 @@ func completeGoal(t *testing.T, s *Swarm, goalAt time.Time) {
 }
 
 func TestAnItemIsDoneOnlyWithAVerifiedBranchAndFeedsTheNextOne(t *testing.T) {
-	s, f := newCampaignSwarm(t)
+	s, f := chainReposWithFake(t)
 	c, _, _ := s.CampaignStart("ship", t0)
 	c.Items = planned()
 	c.Phase = phaseExecuting
