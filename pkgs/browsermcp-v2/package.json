@@ -3,6 +3,6 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
-    "@browsermcp/mcp": "2.1.0"
+    "@browsermcp/mcp": "2.4.0"
   }
 }

@@ -13,6 +13,9 @@
   sops.secrets."opencode/groq_api_key" = {
     mode = "0400";
   };
+  sops.secrets."link_grabber/telegram_token" = {
+    mode = "0400";
+  };
   sops.secrets."opencode/cerebras_api_key" = {
     mode = "0400";
   };

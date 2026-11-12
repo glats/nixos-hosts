@@ -1,8 +1,8 @@
 --- a/client/SDL/SDL3/CMakeLists.txt
 +++ b/client/SDL/SDL3/CMakeLists.txt
-@@ -49,6 +49,14 @@
-     sdl_context.cpp
- )
+@@ -119,6 +119,14 @@
+   endif()
+ endif()
  
 +# Native macOS display helpers (AppKit screen geometry for window-free monitor queries).
 +# Compile the Objective-C++ file with the CXX toolchain: enable_language(OBJCXX)
@@ -15,7 +15,7 @@
  add_win_console_manifest(SRCS)
  
  list(
-@@ -64,6 +72,12 @@
+@@ -133,6 +141,12 @@
    sdl-common-prefs
  )
  

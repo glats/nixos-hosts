@@ -46,6 +46,7 @@
     ../../linux/system/networking/wol.nix
 
     ../../linux/system/features/boot.nix
+    ../../linux/system/features/gastown.nix
     ../../linux/system/features/conky/options.nix
 
     ../../linux/system/services/xrdp.nix
@@ -89,6 +90,19 @@
     includeDiagLogging = true;
   };
 
+  users.users.glats.linger = true;
+
+  gastown = {
+    enable = true;
+    toolPackages = with pkgs; [
+      go
+      python3
+      bats
+      shellcheck
+      bc
+    ];
+  };
+
   my.shutdownDebug.enable = true;
 
   my.shutdownDebug.efiPstore = true;
@@ -97,6 +111,7 @@
   hardware.rog.s5-recovery.s5Write.enable = false;
 
   hardware.rog.s5-recovery.efiFallback.enable = true;
+  hardware.rog.s5-recovery.campaign.enable = true;
 
   boot.blacklistedKernelModules = [
     "asus_nb_wmi"

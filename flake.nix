@@ -61,7 +61,7 @@
     };
 
     gentle-ai-src = {
-      url = "github:Gentleman-Programming/gentle-ai/2dba7784114fff57864519c4c0d067e952a8c98b";
+      url = "github:Gentleman-Programming/gentle-ai/55240afb100ad6d2ef5fbe16f7be33a7693f77ad";
       flake = false;
     };
 
@@ -81,7 +81,7 @@
     };
 
     engram-src = {
-      url = "github:Gentleman-Programming/engram/98912f811c90428e83a6aac99fa439bedb4b268f";
+      url = "github:Gentleman-Programming/engram/f96b613952bf7b4fd2d51f30286a68bd5ffdebf2";
       flake = false;
     };
 
@@ -325,6 +325,35 @@
           PY
           touch $out
         '';
+
+      checks.x86_64-linux.xrdp-sesman-no-restart =
+        let
+          pkgs = nixpkgs.legacyPackages.x86_64-linux;
+          protectedHosts =
+            builtins.map
+              (
+                host:
+                let
+                  config = self.nixosConfigurations.${host}.config;
+                in
+                assert nixpkgs.lib.assertMsg (
+                  config.services.xrdp.enable
+                  && !config.systemd.services.xrdp-sesman.restartIfChanged
+                  && nixpkgs.lib.hasInfix "X-RestartIfChanged=false" config.systemd.units."xrdp-sesman.service".text
+                ) "${host}: xrdp-sesman must not restart automatically during activation";
+                true
+              )
+              [
+                "rog"
+                "thinkcentre"
+                "samsung"
+              ];
+        in
+        builtins.deepSeq protectedHosts (
+          pkgs.runCommand "xrdp-sesman-no-restart" { } ''
+            touch $out
+          ''
+        );
 
       checks.x86_64-linux.gh-default-account = import ./checks/gh-default-account {
         pkgs = nixpkgs.legacyPackages.x86_64-linux;

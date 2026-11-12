@@ -2,6 +2,7 @@
 [
   ./base.nix
   ./shell.nix
+  ../../shared/starship.nix
   ./theme.nix
   inputs.omarchy-nix.homeManagerModules.btop
   ./tmux.nix
@@ -19,6 +20,7 @@
   ../../shared/leaf.nix
   ../../shared/leaf-theme.nix
   ./groq-dictation.nix
+  ./link-grabber.nix
   ../../shared/opencode.nix
   ../../shared/opencode-profile.nix
   ./opencode-mcps-extra.nix

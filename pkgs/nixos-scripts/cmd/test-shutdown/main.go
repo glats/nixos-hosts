@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"math/rand/v2"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/glats/nixos-scripts/internal/kmsg"
+	"github.com/glats/nixos-scripts/internal/shutdowncampaign"
 	"github.com/glats/nixos-scripts/internal/shutdowntrial"
 )
 
@@ -24,6 +26,13 @@ func (osSystem) Run(name string, args ...string) error {
 	return cmd.Run()
 }
 
+func (osSystem) Output(name string, args ...string) (string, error) {
+	out, err := exec.Command(name, args...).Output()
+	return string(out), err
+}
+
+func (osSystem) Sleep(d time.Duration) { time.Sleep(d) }
+
 func usage() {
 	fmt.Fprint(os.Stderr, `Usage:
   test-shutdown                      list trials and the recorded history
@@ -31,6 +40,9 @@ func usage() {
   sudo test-shutdown -n <trial>      dry run: show the steps, change nothing
   sudo test-shutdown result off|hung [note...]
                                      record what you saw after the last trial
+  test-shutdown status               A/B campaign summary (normal vs unload)
+  sudo test-shutdown campaign pause|resume
+                                     stop or restart the automatic campaign
 `)
 }
 
@@ -52,6 +64,15 @@ func main() {
 	switch {
 	case len(args) == 0:
 		list(log)
+	case args[0] == "status":
+		status(log)
+	case args[0] == "campaign":
+		if len(args) < 2 {
+			usage()
+			os.Exit(2)
+		}
+		requireRoot()
+		campaign(log, ctx, args[1])
 	case args[0] == "result":
 		if len(args) < 2 {
 			usage()
@@ -175,4 +196,68 @@ func readTrim(p string) string {
 func fail(err error) {
 	fmt.Fprintln(os.Stderr, "test-shutdown:", err)
 	os.Exit(1)
+}
+
+func campaign(log *shutdowntrial.Log, ctx shutdowntrial.Context, sub string) {
+	env := osSystem{}
+	c := shutdowncampaign.Ctx{
+		BootID: ctx.BootID,
+		Kernel: ctx.Kernel,
+		Now:    ctx.Now,
+		Rand:   rand.IntN,
+	}
+	km := kmsg.New()
+	crumb := func(m string) { _ = km.Write(kmsg.UserNotice, m) }
+	var err error
+	switch sub {
+	case "begin":
+		err = shutdowncampaign.Begin(env, log, c, crumb)
+	case "shutdown":
+		err = shutdowncampaign.Shutdown(env, log, c, crumb)
+	case "boot":
+		var e shutdowntrial.Entry
+		if e, err = shutdowncampaign.Boot(env, log, c); err == nil && e.Kind != "" {
+			crumb(fmt.Sprintf("test-shutdown: campaign boot reason=%s outcome=%s arm=%s", e.Reason, e.Outcome, e.Arm))
+		}
+	case "cycle":
+		err = shutdowncampaign.AutoCycle(env, log, c, crumb)
+	case "pause":
+		err = os.MkdirAll(filepath.Dir(shutdowncampaign.PausePath), 0o755)
+		if err == nil {
+			err = os.WriteFile(shutdowncampaign.PausePath, nil, 0o644)
+		}
+		if err == nil {
+			fmt.Println("campaign paused: no arm, no alarm, no auto-cycle")
+		}
+	case "resume":
+		if err = os.Remove(shutdowncampaign.PausePath); err != nil && os.IsNotExist(err) {
+			err = nil
+		}
+		if err == nil {
+			fmt.Println("campaign resumed")
+		}
+	default:
+		usage()
+		os.Exit(2)
+	}
+	if err != nil {
+		fail(err)
+	}
+}
+
+func status(log *shutdowntrial.Log) {
+	entries, err := log.Read()
+	if err != nil {
+		fail(err)
+	}
+	r := shutdowncampaign.Summarize(entries)
+	paused := "running"
+	if _, err := os.Stat(shutdowncampaign.PausePath); err == nil {
+		paused = "paused"
+	}
+	fmt.Printf("campaign: %s\n", paused)
+	fmt.Printf("  normal  measured=%d off=%d hung_or_unwoken=%d\n", r.Normal.N, r.Normal.Off, r.Normal.N-r.Normal.Off)
+	fmt.Printf("  unload  measured=%d off=%d hung_or_unwoken=%d\n", r.Unload.N, r.Unload.Off, r.Unload.N-r.Unload.Off)
+	fmt.Printf("  alarm wakes=%d unload-failed=%d unmeasured=%d hung-before-arm=%d\n", r.AlarmWakes, r.Invalid, r.Unmeasured, r.Early)
+	fmt.Printf("  verdict: %s\n", r.Verdict)
 }

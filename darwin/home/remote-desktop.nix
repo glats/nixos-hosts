@@ -44,19 +44,30 @@ let
               return layout;
             }
 
-            static void rdpWindowSize(int *width, int *height) {
+            static void rdpWindowSize(int *width, int *height, int *hidpi, int *monitor) {
               *width = 1680;
               *height = 1050;
+              *hidpi = 0;
+              *monitor = 0;
               @autoreleasepool {
                 NSScreen *screen = [NSScreen mainScreen];
                 if (!screen) {
                   return;
+                }
+                NSArray<NSScreen *> *screens = [NSScreen screens];
+                for (NSUInteger i = 1; i < screens.count; i++) {
+                  NSSize size = screens[i].frame.size;
+                  if (size.width >= size.height) {
+                    *monitor = (int)i + 1;
+                    break;
+                  }
                 }
                 NSRect content = [NSWindow contentRectForFrameRect:screen.visibleFrame
                   styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskClosable
                     | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable];
                 *width = (int)content.size.width;
                 *height = (int)content.size.height;
+                *hidpi = [[NSScreen screens] count] == 1 && screen.backingScaleFactor > 1.0;
               }
             }
           ''
@@ -90,34 +101,39 @@ let
             const char *rdpbin = "${pkgs.freerdp}/bin/sdl-freerdp";
             char kbdArg[sizeof("/kbd:layout:0x0000040A,lang:0x040A")];
             snprintf(kbdArg, sizeof(kbdArg), "/kbd:layout:%s,lang:0x040A", rdpKeyboardLayout());
-            int winW, winH;
-            rdpWindowSize(&winW, &winH);
-            char wArg[32], hArg[32];
+            int winW, winH, hidpi, monitor;
+            rdpWindowSize(&winW, &winH, &hidpi, &monitor);
+            char wArg[32], hArg[32], monitorArg[32];
             snprintf(wArg, sizeof(wArg), "/w:%d", winW);
             snprintf(hArg, sizeof(hArg), "/h:%d", winH);
-            const char *args[] = {
-              rdpbin,
-              "/v:${host}",
-              "/u:${username}",
-              "/p:",
-              "/cert:ignore",
-              "/workarea",
-              wArg,
-              hArg,
-              "/smart-sizing",
-              "/network:auto",
-              "/gfx:progressive",
-              "/bpp:32",
-              "/sound:sys:mac",
-              "/clipboard",
-              "/drive:mac-public,/Users/juan/Public",
-              "/rfx-mode:video",
-              "-wallpaper",
-              "-themes",
-              "-fonts",
-              kbdArg,
-              NULL
-            };
+            snprintf(monitorArg, sizeof(monitorArg), "/monitors:%d", monitor);
+            const char *args[20];
+            int n = 0;
+            args[n++] = rdpbin;
+            args[n++] = "/v:${host}";
+            args[n++] = "/u:${username}";
+            args[n++] = "/p:";
+            args[n++] = "/cert:ignore";
+            args[n++] = "/workarea";
+            if (hidpi) {
+              args[n++] = wArg;
+              args[n++] = hArg;
+              args[n++] = "/smart-sizing";
+            } else {
+              if (monitor > 0) {
+                args[n++] = monitorArg;
+              }
+              args[n++] = "/dynamic-resolution";
+            }
+            args[n++] = "/network:auto";
+            args[n++] = "/sound:sys:mac";
+            args[n++] = "/clipboard";
+            args[n++] = "/drive:mac-public,/Users/juan/Public";
+            args[n++] = "-wallpaper";
+            args[n++] = "-themes";
+            args[n++] = "-fonts";
+            args[n++] = kbdArg;
+            args[n] = NULL;
             execv(rdpbin, (char *const *)args);
           '';
     in

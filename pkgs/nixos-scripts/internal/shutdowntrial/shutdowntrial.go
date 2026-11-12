@@ -229,6 +229,13 @@ type Entry struct {
 	TrialBootID string       `json:"trial_boot_id,omitempty"`
 	Outcome     string       `json:"outcome,omitempty"`
 	Note        string       `json:"note,omitempty"`
+
+	Arm       string            `json:"arm,omitempty"`
+	AlarmUnix int64             `json:"alarm_unix,omitempty"`
+	State     map[string]string `json:"state,omitempty"`
+	Reason    string            `json:"reason,omitempty"`
+	Resolves  string            `json:"resolves,omitempty"`
+	Error     string            `json:"error,omitempty"`
 }
 
 type Log struct {

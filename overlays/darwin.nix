@@ -26,14 +26,9 @@ in
       "-DWITH_VIDEOTOOLBOX=ON"
     ];
     patches = (old.patches or [ ]) ++ [
-      (prev.fetchpatch {
-        name = "freerdp-sdl-macos-window-free-display-query.patch";
-        url = "https://github.com/FreeRDP/FreeRDP/commit/dc5c7eeef2bb92f1b8cd767d278ec1c99a6534d2.patch?full_index=1";
-        excludes = [ "client/SDL/SDL3/CMakeLists.txt" ];
-        hash = "sha256-DQtyqMWp9LqPX3ZamArPHCxRBdXdk9zBwyIUxTNwgNE=";
-      })
+      ../patches/freerdp/sdl-macos-window-free-display-query.patch
       ../patches/freerdp/sdl-macos-cmake.patch
-      ../patches/freerdp/channel-reassembly-total-length.patch
+      ../patches/freerdp/core-update-accept-wider-bitmap.patch
     ];
   });
 

@@ -11,10 +11,12 @@ baseModules
   ../../../linux/home/suites/mate-rog/default.nix
   ../../../linux/home/conky-rog.nix
   ../../../linux/home/openfang.nix
+  ../../../linux/home/gastown-campaigns.nix
   ../../../linux/home/webcam.nix
 
   {
-    home.opencode.activeProviderName = "anthropic-openai";
+    home.opencode.activeProviderName = "openai-ollama";
+    home.gastown.campaigns.maquilinux = { };
   }
 
   ({ config, ... }: {

@@ -33,9 +33,7 @@
         "git"
         "fasd"
         "autosuggestions"
-        "prompt"
       ];
-      prompt.theme = "suse";
     };
 
     shellAliases = {

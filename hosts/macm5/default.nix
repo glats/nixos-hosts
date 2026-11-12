@@ -39,6 +39,7 @@ in
     ../../darwin/services/wsdd.nix
     ../../darwin/services/sunshine.nix
     ../../darwin/system/sing-box-link.nix
+    ../../darwin/system/sops.nix
     ../../darwin/system/ssh-relay.nix
     ../../darwin/system/lan-resolver.nix
 
