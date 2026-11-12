@@ -151,6 +151,28 @@ in
       };
     };
 
+    systemd.services.shutdown-campaign-begin = lib.mkIf cfg.campaign.enable {
+      description = "Poweroff A/B campaign: mark the start of a poweroff";
+      wantedBy = [ "multi-user.target" ];
+      after = [
+        "docker.service"
+        "ollama.service"
+        "kmsconvt@tty1.service"
+        "xrdp.service"
+        "xrdp-sesman.service"
+        "shutdown-campaign.service"
+        "shutdown-campaign-boot.service"
+      ];
+      path = [ pkgs.systemd ];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        ExecStart = "${pkgs.coreutils}/bin/true";
+        ExecStop = "${pkgs.nixos-scripts}/bin/test-shutdown campaign begin";
+        TimeoutStopSec = 30;
+      };
+    };
+
     systemd.services.shutdown-campaign-boot = lib.mkIf cfg.campaign.enable {
       description = "Poweroff A/B campaign: record how the previous shutdown ended";
       wantedBy = [ "multi-user.target" ];

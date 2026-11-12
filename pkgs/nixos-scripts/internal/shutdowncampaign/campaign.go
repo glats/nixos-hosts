@@ -103,11 +103,24 @@ func Sessions(env Env) int {
 	}
 	n := 0
 	for _, p := range paths {
-		if !strings.HasSuffix(p, ".ref") {
-			n++
+		if strings.HasSuffix(p, ".ref") {
+			continue
 		}
+		if data, err := env.ReadFile(p); err == nil && !countsAsLogin(string(data)) {
+			continue
+		}
+		n++
 	}
 	return n
+}
+
+func countsAsLogin(session string) bool {
+	for _, line := range strings.Split(session, "\n") {
+		if class, ok := strings.CutPrefix(line, "CLASS="); ok {
+			return !strings.HasPrefix(class, "manager") && !strings.HasPrefix(class, "background")
+		}
+	}
+	return true
 }
 
 func nvidiaLoaded(modules string) string {
@@ -190,6 +203,22 @@ func Snapshot(env Env) map[string]string {
 	return m
 }
 
+func Begin(env Env, log *shutdowntrial.Log, c Ctx, breadcrumb func(string)) error {
+	if exists(env, PausePath) {
+		return nil
+	}
+	jobs, err := env.Output("systemctl", "list-jobs", "--no-legend")
+	if err != nil || !IsPowerOff(jobs) {
+		return nil
+	}
+	e := shutdowntrial.Entry{Kind: "begin", Time: c.Now, BootID: c.BootID, Kernel: c.Kernel, Trial: "campaign", State: Snapshot(env)}
+	if err := log.Append(e); err != nil {
+		return fmt.Errorf("record begin: %w", err)
+	}
+	breadcrumb(fmt.Sprintf("test-shutdown: campaign begin boot=%s", c.BootID))
+	return nil
+}
+
 func Shutdown(env Env, log *shutdowntrial.Log, c Ctx, breadcrumb func(string)) error {
 	if exists(env, PausePath) {
 		return nil
@@ -232,7 +261,7 @@ func Shutdown(env Env, log *shutdowntrial.Log, c Ctx, breadcrumb func(string)) e
 
 func lastUnresolvedArm(entries []shutdowntrial.Entry) *shutdowntrial.Entry {
 	for i := len(entries) - 1; i >= 0; i-- {
-		if entries[i].Kind != "arm" {
+		if entries[i].Kind != "arm" && entries[i].Kind != "begin" {
 			continue
 		}
 		for _, later := range entries[i+1:] {
@@ -257,6 +286,8 @@ func Boot(env Env, log *shutdowntrial.Log, c Ctx) (shutdowntrial.Entry, error) {
 	if p := lastUnresolvedArm(entries); p != nil {
 		e.Resolves, e.Arm = p.BootID, p.Arm
 		switch {
+		case p.Kind == "begin":
+			e.Outcome = "hung_early"
 		case p.AlarmUnix == 0:
 			e.Outcome = "unmeasured"
 		case inWindow(env, c.Now, p.AlarmUnix):
@@ -325,6 +356,7 @@ type Result struct {
 	AlarmWakes int
 	Invalid    int
 	Unmeasured int
+	Early      int
 	P          float64
 	Verdict    string
 }
@@ -339,6 +371,10 @@ func Summarize(entries []shutdowntrial.Entry) Result {
 			r.AlarmWakes++
 		}
 		if e.Resolves == "" {
+			continue
+		}
+		if e.Outcome == "hung_early" {
+			r.Early++
 			continue
 		}
 		var st *ArmStats

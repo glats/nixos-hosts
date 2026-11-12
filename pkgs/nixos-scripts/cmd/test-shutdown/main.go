@@ -210,6 +210,8 @@ func campaign(log *shutdowntrial.Log, ctx shutdowntrial.Context, sub string) {
 	crumb := func(m string) { _ = km.Write(kmsg.UserNotice, m) }
 	var err error
 	switch sub {
+	case "begin":
+		err = shutdowncampaign.Begin(env, log, c, crumb)
 	case "shutdown":
 		err = shutdowncampaign.Shutdown(env, log, c, crumb)
 	case "boot":
@@ -256,6 +258,6 @@ func status(log *shutdowntrial.Log) {
 	fmt.Printf("campaign: %s\n", paused)
 	fmt.Printf("  normal  measured=%d off=%d hung_or_unwoken=%d\n", r.Normal.N, r.Normal.Off, r.Normal.N-r.Normal.Off)
 	fmt.Printf("  unload  measured=%d off=%d hung_or_unwoken=%d\n", r.Unload.N, r.Unload.Off, r.Unload.N-r.Unload.Off)
-	fmt.Printf("  alarm wakes=%d unload-failed=%d unmeasured=%d\n", r.AlarmWakes, r.Invalid, r.Unmeasured)
+	fmt.Printf("  alarm wakes=%d unload-failed=%d unmeasured=%d hung-before-arm=%d\n", r.AlarmWakes, r.Invalid, r.Unmeasured, r.Early)
 	fmt.Printf("  verdict: %s\n", r.Verdict)
 }

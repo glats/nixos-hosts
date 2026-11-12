@@ -364,6 +364,7 @@ func TestAutoCyclePowersOffWhenNobodyLogsIn(t *testing.T) {
 
 func TestAutoCycleStopsWhenASessionAppears(t *testing.T) {
 	env := newEnv()
+	env.files["/run/systemd/sessions/3"] = "USER=glats\nCLASS=user\n"
 	env.globSeq[SessionsGlob] = [][]string{{}, {}, {"/run/systemd/sessions/3"}}
 	if err := AutoCycle(env, seed(t, alarmBoot()), ctx("b1", 0), func(string) {}); err != nil {
 		t.Fatal(err)
@@ -410,9 +411,42 @@ func TestAutoCycleSkipsWhenPaused(t *testing.T) {
 
 func TestSessionCountSkipsRefFiles(t *testing.T) {
 	env := newEnv()
+	env.files["/run/systemd/sessions/1"] = "CLASS=user\n"
+	env.files["/run/systemd/sessions/c2"] = "CLASS=greeter\n"
 	env.globs[SessionsGlob] = []string{"/run/systemd/sessions/1", "/run/systemd/sessions/1.ref", "/run/systemd/sessions/c2"}
 	if got := Sessions(env); got != 2 {
 		t.Fatalf("got %d", got)
+	}
+}
+
+func TestSessionCountIgnoresLingerManagerAndBackgroundSessions(t *testing.T) {
+	env := newEnv()
+	env.files["/run/systemd/sessions/1"] = "USER=glats\nTYPE=unspecified\nCLASS=manager\n"
+	env.files["/run/systemd/sessions/2"] = "CLASS=manager-early\n"
+	env.files["/run/systemd/sessions/3"] = "CLASS=background\n"
+	env.globs[SessionsGlob] = []string{"/run/systemd/sessions/1", "/run/systemd/sessions/2", "/run/systemd/sessions/3"}
+	if got := Sessions(env); got != 0 {
+		t.Fatalf("got %d, want 0", got)
+	}
+}
+
+func TestSessionCountTreatsUnreadableSessionAsPresent(t *testing.T) {
+	env := newEnv()
+	env.globs[SessionsGlob] = []string{"/run/systemd/sessions/9"}
+	if got := Sessions(env); got != 1 {
+		t.Fatalf("got %d, want 1", got)
+	}
+}
+
+func TestAutoCycleIgnoresTheLingerManagerSession(t *testing.T) {
+	env := newEnv()
+	env.files["/run/systemd/sessions/1"] = "CLASS=manager\n"
+	env.globs[SessionsGlob] = []string{"/run/systemd/sessions/1"}
+	if err := AutoCycle(env, seed(t, alarmBoot()), ctx("b1", 0), func(string) {}); err != nil {
+		t.Fatal(err)
+	}
+	if env.ops[len(env.ops)-1] != "run systemctl poweroff" {
+		t.Fatalf("manager session blocked the cycle: %v", env.ops)
 	}
 }
 
@@ -454,5 +488,64 @@ func TestSummarizeNeedsMoreSamples(t *testing.T) {
 	es := []shutdowntrial.Entry{bootEntry("n", "alarm", "x", ArmNormal, "off")}
 	if v := Summarize(es).Verdict; !strings.Contains(v, "need") {
 		t.Fatalf("verdict %q", v)
+	}
+}
+
+func TestBeginRecordsTheStartOfAPowerOff(t *testing.T) {
+	env := newEnv()
+	log := newLog(t)
+	var crumbs []string
+	if err := Begin(env, log, ctx("b1", 0), func(m string) { crumbs = append(crumbs, m) }); err != nil {
+		t.Fatal(err)
+	}
+	if len(env.ops) != 0 {
+		t.Fatalf("begin changed the system: %v", env.ops)
+	}
+	entries, _ := log.Read()
+	if len(entries) != 1 || entries[0].Kind != "begin" || entries[0].BootID != "b1" || entries[0].State["uptime_s"] == "" {
+		t.Fatalf("entries %+v", entries)
+	}
+	if len(crumbs) != 1 || !strings.Contains(crumbs[0], "campaign begin") {
+		t.Fatalf("crumbs %v", crumbs)
+	}
+}
+
+func TestBeginIgnoresRebootAndPause(t *testing.T) {
+	env := newEnv()
+	env.outputs["systemctl list-jobs --no-legend"] = "1 reboot.target start waiting\n"
+	log := newLog(t)
+	_ = Begin(env, log, ctx("b1", 0), func(string) {})
+	env2 := newEnv()
+	env2.files[PausePath] = ""
+	_ = Begin(env2, log, ctx("b1", 0), func(string) {})
+	if e, _ := log.Read(); len(e) != 0 {
+		t.Fatalf("logged: %+v", e)
+	}
+}
+
+func TestBootAfterBeginWithoutArmIsAnEarlyHang(t *testing.T) {
+	log := seed(t, []shutdowntrial.Entry{{Kind: "begin", BootID: "b0"}})
+	e, err := Boot(newEnv(), log, ctx("b1", 0))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if e.Outcome != "hung_early" || e.Resolves != "b0" || e.Reason != "cold" || e.Arm != "" {
+		t.Fatalf("entry %+v", e)
+	}
+}
+
+func TestBootAfterBeginAndArmUsesTheArm(t *testing.T) {
+	alarm := t0.Add(-70 * time.Second).Unix()
+	log := seed(t, []shutdowntrial.Entry{{Kind: "begin", BootID: "b0"}, armEntry("b0", ArmNormal, alarm)})
+	e, _ := Boot(newEnv(), log, ctx("b1", 0))
+	if e.Outcome != "off" || e.Arm != ArmNormal {
+		t.Fatalf("entry %+v", e)
+	}
+}
+
+func TestSummarizeCountsEarlyHangs(t *testing.T) {
+	es := []shutdowntrial.Entry{{Kind: "boot", BootID: "b1", Reason: "cold", Resolves: "b0", Outcome: "hung_early"}}
+	if r := Summarize(es); r.Early != 1 || r.Normal.N != 0 || r.Unload.N != 0 {
+		t.Fatalf("summary %+v", r)
 	}
 }
