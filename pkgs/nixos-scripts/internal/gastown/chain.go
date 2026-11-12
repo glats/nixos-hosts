@@ -66,8 +66,14 @@ func (s *Swarm) AdvanceBase(branches []string) AdvanceResult {
 	if err != nil {
 		return fail(err)
 	}
-	if _, err := runGit("", "-C", s.RigRepo(), "update-ref", "refs/heads/"+base, strings.TrimSpace(tip)); err != nil {
-		return fail(err)
+	tip = strings.TrimSpace(tip)
+	for _, wt := range s.worktreesOn(base) {
+		_, _ = runGit(wt, "merge", "--ff-only", "-q", tip)
+	}
+	if current, err := runGit("", "-C", s.RigRepo(), "rev-parse", "refs/heads/"+base); err != nil || strings.TrimSpace(current) != tip {
+		if _, err := runGit("", "-C", s.RigRepo(), "update-ref", "refs/heads/"+base, tip); err != nil {
+			return fail(err)
+		}
 	}
 	res.Status = "pass"
 	return res
@@ -93,4 +99,29 @@ func (s *Swarm) CampaignAdvance(branches []string) error {
 	}
 	fmt.Fprintf(s.Out, "base advanced with %d branch(es); the next goals start from it\n", len(branches))
 	return nil
+}
+
+// worktreesOn lists the rig's worktrees that have the base branch checked out.
+// They are advanced with a fast-forward, which refuses to touch local changes.
+func (s *Swarm) worktreesOn(branch string) []string {
+	out, err := runGit("", "-C", s.RigRepo(), "worktree", "list", "--porcelain")
+	if err != nil {
+		return nil
+	}
+	var found []string
+	for _, block := range strings.Split(out, "\n\n") {
+		var path, ref string
+		for _, line := range strings.Split(block, "\n") {
+			if p, ok := strings.CutPrefix(line, "worktree "); ok {
+				path = p
+			}
+			if r, ok := strings.CutPrefix(line, "branch "); ok {
+				ref = r
+			}
+		}
+		if path != "" && ref == "refs/heads/"+branch && path != s.RigRepo() {
+			found = append(found, path)
+		}
+	}
+	return found
 }

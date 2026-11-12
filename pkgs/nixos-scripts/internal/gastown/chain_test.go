@@ -172,3 +172,20 @@ func TestAnItemIsDoneAndTheBaseAdvancesWhenItsBranchesMerge(t *testing.T) {
 		t.Fatal("the next item must start from a base that contains this item's work")
 	}
 }
+
+func TestAdvanceBaseKeepsWorktreesOnMainInSyncSoNobodySeesPhantomChanges(t *testing.T) {
+	s := chainRepos(t)
+	wt := filepath.Join(t.TempDir(), "refinery")
+	if _, err := runGit("", "-C", s.RigRepo(), "worktree", "add", "-q", wt, "main"); err != nil {
+		t.Fatal(err)
+	}
+	if res := s.AdvanceBase([]string{"gastown/x-1"}); res.Status != "pass" {
+		t.Fatalf("result = %+v", res)
+	}
+	if out, _ := runGit(wt, "status", "--porcelain"); strings.TrimSpace(out) != "" {
+		t.Fatalf("a worktree on main must follow the new base, got phantom changes: %s", out)
+	}
+	if _, err := os.Stat(filepath.Join(wt, "one.txt")); err != nil {
+		t.Fatal("the worktree must contain the accepted work")
+	}
+}
