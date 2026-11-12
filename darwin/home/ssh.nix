@@ -9,6 +9,14 @@ let
   sshDir = "${config.home.homeDirectory}/.ssh";
   meshHost = if host != null then host else hostName;
   mesh = import ../../shared/ssh/lan-mesh.nix { inherit lib; };
+  workGithub = {
+    HostName = "github.com";
+    User = "git";
+    IdentityFile = "~/.ssh/id_ed25519_github";
+    AddKeysToAgent = "yes";
+    UseKeychain = "yes";
+    IdentitiesOnly = "yes";
+  };
 in
 {
   programs.ssh = {
@@ -40,14 +48,8 @@ in
         IdentitiesOnly = "yes";
       };
 
-      "github-enterprise" = {
-        HostName = "github.com";
-        User = "git";
-        IdentityFile = "~/.ssh/id_ed25519_github";
-        AddKeysToAgent = "yes";
-        UseKeychain = "yes";
-        IdentitiesOnly = "yes";
-      };
+      "github-work" = workGithub;
+      "github-enterprise" = workGithub;
     }
     // lib.optionalAttrs (meshHost == "macm5") (
       mesh.sshSettingsFor {

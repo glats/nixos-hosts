@@ -129,6 +129,12 @@ work already accepted. If branches conflict or the combined checks fail, the ite
 blocked instead of done. Your own repository is never touched. `campaign advance <project>
 gastown/<bead>...` adds accepted branches to the base by hand.
 
+Reviewing and growing the plan: `campaign approve <project> <item> gastown/<bead>...` records
+that you reviewed an item's branches and marks it done, but only when the trusted gate accepted
+every branch (the supervisor re-checks it and adds the branches to the base). `campaign extend
+<project> "<direction>"` records a new direction and has the Mayor propose additional items
+(new ids, dependencies on existing ones); they wait as proposed until you select them.
+
 Starting at boot: with `home.gastown.campaigns.<project> = { }` (enabled for `maquilinux` on
 `rog`) a systemd user service `gastown-campaign-<project>` starts the supervisor when the
 machine boots (`users.users.glats.linger` makes user services start without a login),

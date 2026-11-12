@@ -91,6 +91,16 @@ creation_rules:
           - *host_macm5
           - *host_samsung
 
+  - path_regex: secrets/user/github\.yaml
+    key_groups:
+      - age:
+          - *admin_glats
+          - *host_rog
+          - *host_thinkcentre
+          - *host_t14
+          - *host_macm5
+          - *host_samsung
+
   - path_regex: secrets/user/.+
     key_groups:
       - age:

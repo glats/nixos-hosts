@@ -186,7 +186,7 @@
           hostname,
           system,
           username,
-          githubUser ? "jcuzmar",
+          githubUser ? null,
           extraModules,
           nixpkgsInput ? nixpkgs,
           homeManagerInput ? home-manager,
@@ -354,6 +354,15 @@
         pkgs = nixpkgs.legacyPackages.x86_64-linux;
       };
 
+      checks.x86_64-linux.work-package-boundary =
+        let
+          pkgs = nixpkgs.legacyPackages.x86_64-linux;
+        in
+        import ./checks/work-package-boundary {
+          inherit pkgs;
+          provider = import ./darwin/home/opencode/provider.nix { inherit pkgs; };
+        };
+
       checks.x86_64-linux.ssh-work-aliases = import ./checks/ssh-work-aliases {
         pkgs = nixpkgs.legacyPackages.x86_64-linux;
         homeManager = home-manager;
@@ -377,7 +386,6 @@
           configName = "macm5";
           system = "aarch64-darwin";
           primaryUser = "juan";
-          githubUser = "jcuzmar";
         };
       };
 
@@ -388,7 +396,7 @@
               hostname,
               system,
               username,
-              githubUser ? "jcuzmar",
+              githubUser ? null,
               extraModules,
               nixpkgsInput ? nixpkgs,
               homeManagerInput ? home-manager,
@@ -451,7 +459,6 @@
             hostname = "macm5";
             system = "aarch64-darwin";
             username = "juan";
-            githubUser = "jcuzmar";
             extraModules = [ ./darwin/home ];
           };
         };

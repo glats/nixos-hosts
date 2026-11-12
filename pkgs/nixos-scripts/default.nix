@@ -8,16 +8,6 @@
   pkgs,
 }:
 
-let
-  gitIdent = import ../../shared/git-identity.nix;
-  gpgKeys = lib.concatStringsSep "\n" (
-    lib.filter (k: k != "") [
-      gitIdent.personal.signingKey
-      gitIdent.work.signingKey
-    ]
-  );
-in
-
 buildGoModule {
   pname = "nixos-scripts";
   version = "1.0.0";
@@ -74,10 +64,7 @@ buildGoModule {
     # qrencode is a runtime dep of device-link (terminal QR output).
     wrapProgram $out/bin/device-link \
       --prefix PATH : ${lib.makeBinPath [ qrencode ]}
-    mkdir -p $out/share/nixos-scripts
-    printf '%s\n' ${lib.escapeShellArg gpgKeys} > $out/share/nixos-scripts/gpg-unlock-keys
     wrapProgram $out/bin/gpg-unlock \
-      --set NIXOS_SCRIPTS_GPG_KEYS_FILE $out/share/nixos-scripts/gpg-unlock-keys \
       --prefix PATH : ${lib.makeBinPath [ git ]}
     mkdir -p $out/libexec/nixos-scripts
     mv $out/bin/gastown-run $out/libexec/nixos-scripts/gastown-run

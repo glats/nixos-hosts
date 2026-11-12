@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-OUT_FILE="$REPO_ROOT/certs/netskope-falabella.crt"
+OUT_FILE="$REPO_ROOT/certs/corporate-ca.crt"
 
 mkdir -p "$REPO_ROOT/certs"
 

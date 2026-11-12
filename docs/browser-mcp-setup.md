@@ -33,7 +33,7 @@ configure. The pairing lives entirely in the browser profile.
 | rog | glats | Chromium-family browser in an **active desktop (XRDP)** session | The server stays dormant until an active desktop session has a browser open and paired |
 | thinkcentre | glats | Chromium-family browser in an **active desktop (XRDP)** session | Same dormant-until-paired behavior as rog |
 | t14 | glats | Chromium-family browser under Hyprland (Omarchy) | Browser window must be open and paired during agent use |
-| macm5 | jcuzmar | macOS Chrome | Chrome running with the profile paired during agent use |
+| macm5 | work account | macOS Chrome | Chrome running with the profile paired during agent use |
 
 Setup is **per browser profile**. Each profile where you want Browser MCP
 needs the extension installed and its own **Connect** pairing. Pairing does

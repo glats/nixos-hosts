@@ -5,8 +5,8 @@ let
     {
       configName,
       system ? "x86_64-darwin",
-      primaryUser ? "jcuzmar",
-      githubUser ? "jcuzmar",
+      primaryUser,
+      githubUser ? null,
       extraModules ? [ ],
     }:
     inputs.nix-darwin.lib.darwinSystem {

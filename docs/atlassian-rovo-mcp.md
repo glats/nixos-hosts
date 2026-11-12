@@ -25,7 +25,7 @@ inert ciphertext — reusable if a future API-token setup is needed (see below).
 
 - macm5 rebuilt after the Nix change: `nixos-build` (on macm5).
 - A browser on macm5 for the OAuth consent screen.
-- Your Falabella Atlassian Cloud account with access to `falabella.atlassian.net`.
+- Your organization's Atlassian Cloud account (for example, `company.atlassian.net`).
   The official server does not take a site URL anywhere — the account you authorize decides
   which sites (Jira/Confluence spaces) the MCP can reach.
 
@@ -34,7 +34,7 @@ inert ciphertext — reusable if a future API-token setup is needed (see below).
 1. Open OpenCode (new session).
 2. On first use of an Atlassian tool (or via `/mcp` → `atlassian` → authenticate), OpenCode
    opens the browser for the OAuth 2.1 consent flow.
-3. Sign in with the **Falabella Atlassian account** and approve the requested scopes.
+3. Sign in with your **work Atlassian account** and approve the requested scopes.
 4. The session connects to `mcp.atlassian.com/v2/mcp` from then on; tokens refresh
    automatically.
 
@@ -68,7 +68,7 @@ email, token type), run yourself:
 sops -d secrets/user/atlassian.yaml
 ```
 
-Expected: `atlassian_jira_url` = `https://falabella.atlassian.net`, `atlassian_username` =
+Example: `atlassian_jira_url` = `https://company.atlassian.net`, `atlassian_username` =
 corporate email, `atlassian_api_token` = Atlassian Cloud API token (id.atlassian.com).
 That pair is the **same credential type** the official server accepts in API-token mode —
 keep the file if JSM is ever needed.
@@ -76,7 +76,7 @@ keep the file if JSM is ever needed.
 ## JSM / API-Token Future
 
 Jira Service Management tools work **only** with API-token auth, and that mode requires a
-Falabella org admin to enable it (Atlassian Administration → Rovo → Rovo MCP server →
+organization administrator to enable it (Atlassian Administration → Rovo → Rovo MCP server →
 Authentication) plus a scoped token. With OAuth you get Jira/Confluence/Bitbucket/Loom/platform
 tools but no JSM. If JSM becomes necessary, revisit
 `openspec/changes/archive/2026-09-08-atlassian-rovo-mcp-mact2/exploration.md` (Approach notes) — OpenCode remote
@@ -86,7 +86,7 @@ hook; the retained `secrets/user/atlassian.yaml` holds a valid token pair.
 ## Troubleshooting
 
 - **TLS/certificate errors or blocked OAuth**: macm5 sits behind Netskope corporate TLS
-  interception (issuer `ca.grupofalabella.goskope.com`). The CA is trust-pinned on the Mac and
+  interception (for example, `ca.company.example`). The CA is trust-pinned on the Mac and
   the same remote+OAuth pattern already works for `drawio`; if `mcp.atlassian.com` is blocked by
   policy, contact IT to allowlist it.
 - **"You don't have permission to connect from this IP address"**: your org uses IP

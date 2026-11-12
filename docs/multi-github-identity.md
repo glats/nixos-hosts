@@ -7,10 +7,16 @@ Dos identidades GitHub con sus respectivos tokens, GPG keys, y MCP servers:
 | Identidad | Cuenta | Hosts | GPG |
 |-----------|--------|-------|-----|
 | **personal** | github.com/glats | rog, thinkcentre, t14 (default) | key propia (generar) |
-| **work** (trabajo) | github.com/jcuzmar | macm5 (default), ~/Work/** en Linux | key propia (B658D64...) |
+| **work** (trabajo) | SOPS-managed work account | macm5 (default), ~/Work/** en Linux | work signing key |
 
 > **Note**: Real identity values (name, email) are stored in `secrets/user/identities.yaml` (sops-encrypted).
 > They are decrypted at Home Manager activation time and written as git include files.
+
+Work GitHub identifiers are stored separately in `secrets/user/github.yaml`:
+`github/work_user` supplies Git's `github.user` through a rendered SOPS template,
+and `github/work_account` supplies the existing GitHub CLI login to Git credential
+helpers, the work MCP wrapper and Darwin's default account switch. Values are read
+at runtime, not decrypted during Nix evaluation. Secret key names remain public.
 
 ## Prerequisitos
 
@@ -52,8 +58,8 @@ cat /tmp/glats-gpg-key.asc
 ## Paso 2: Exportar GPG key de work
 
 ```bash
-gpg --armor --export-secret-keys B658D64F6FDBCFD1EBA53509A1D4ECB0118566C8 > /tmp/jcuzmar-gpg-key.asc
-cat /tmp/jcuzmar-gpg-key.asc
+gpg --armor --export-secret-keys WORK_GPG_FINGERPRINT > /tmp/work-gpg-key.asc
+cat /tmp/work-gpg-key.asc
 # Copia todo el output
 ```
 
@@ -71,15 +77,15 @@ Bajo `github:`, DEBERIA verse asi (agrega lo que falte):
 ```yaml
 github:
     pat: ENC[...]                                      # personal PAT (ya existe)
-    pat_jcuzmar: ENC[...]                              # work PAT (ya deberia estar)
+    work_pat: ENC[...]                                # example only; gh manages runtime tokens
     gpg_key_fingerprint: ENC[...]                      # OBSOLETO — se reemplaza abajo
-    gpg_jcuzmar_fingerprint: B658D64F6FDBCFD1EBA53509A1D4ECB0118566C8   # AGREGAR
-    gpg_jcuzmar_key: |                                 # AGREGAR (pegar del paso 2)
+    work_gpg_fingerprint: WORK_GPG_FINGERPRINT          # AGREGAR
+    work_gpg_key: |                                    # AGREGAR (pegar del paso 2)
         -----BEGIN PGP PRIVATE KEY BLOCK-----
         ...
         -----END PGP PRIVATE KEY BLOCK-----
-    gpg_glats_fingerprint: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX     # AGREGAR (del paso 1)
-    gpg_glats_key: |                                   # AGREGAR (pegar del paso 1)
+    personal_gpg_fingerprint: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX # AGREGAR (del paso 1)
+    personal_gpg_key: |                                # AGREGAR (pegar del paso 1)
         -----BEGIN PGP PRIVATE KEY BLOCK-----
         ...
         -----END PGP PRIVATE KEY BLOCK-----
@@ -90,7 +96,7 @@ github:
 
 Verifica que quedo bien:
 ```bash
-sops -d secrets/shared/passwords.yaml | grep -E "gpg_(jcuzmar|glats)_"
+sops -d secrets/shared/passwords.yaml | grep -E '(work|personal)_gpg_'
 # Deberias ver los 4 keys
 ```
 
@@ -175,7 +181,7 @@ gh auth login --hostname github.com
 # elegir: glats
 
 gh auth login --hostname github.com
-# elegir: jcuzmar-Falabella_FTC
+# choose the existing login stored in github/work_account
 ```
 
 Verifica que ambas cuentas esten disponibles y que OpenCode vea los servidores:
@@ -186,7 +192,7 @@ opencode mcp list
 ```
 
 `github-personal` siempre usa `glats` y `github-work` siempre usa
-`jcuzmar-Falabella_FTC`, independientemente de la cuenta activa de `gh`.
+the runtime value of `github/work_account`, independientemente de la cuenta activa de `gh`.
 Para dejar la cuenta personal activa para los comandos normales de GitHub CLI:
 
 ```bash
@@ -210,7 +216,7 @@ gpg --list-secret-keys
 ```
 Si la llave no aparece, puedes forzar la importacion:
 ```bash
-gpg --batch --import $(cat ~/.config/sops-nix/secrets/github/gpg_jcuzmar_key)
+gpg --batch --import ~/.config/sops-nix/secrets/github/work_gpg_key
 ```
 
 ### "gitdir:~/Work/**" no funciona
