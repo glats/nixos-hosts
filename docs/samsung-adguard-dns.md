@@ -16,7 +16,13 @@ instance (`docs/oneplus5-adguard-dns.md`, historical). The configuration is decl
   accepted trade-off for never losing resolution.
 - The web panel binds `127.0.0.1:3000` only, with no login (a declarative password
   hash would be world-readable in `/nix/store`). Reach it through a tunnel:
-  `ssh -L 3000:127.0.0.1:3000 glats@samsung.lan`, then open `http://127.0.0.1:3000`.
+  From rog, run `adguard-tunnel -open`, which uses `samsung.lan` and the normal SSH
+  configuration. Keep the terminal open; press Ctrl+C to close the tunnel. Without
+  `-open`, open the printed URL manually (normally `http://127.0.0.1:3000`; if port
+  3000 is busy, the command uses 13000). Use `-key ~/.ssh/id_ed25519_lan` for an
+  explicit identity, or `-host`, `-user`, `-port`, and `-local` to override defaults.
+  The forward always targets remote loopback. Without the installed command, run
+  `ssh -N -L 3000:127.0.0.1:3000 glats@samsung.lan` and open `http://127.0.0.1:3000`.
 - Parity with the OnePlus config: schema 34, AdGuard 0.107.79, 90 rules, 4 persistent
   clients, HaGeZi Multi LIGHT and HaGeZi Threat Intelligence Feeds MINI, same upstreams,
   fallback, cache and DNSSEC settings. Rules are scoped by `$client=<name>`; the lists

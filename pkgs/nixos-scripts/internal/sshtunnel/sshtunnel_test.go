@@ -14,7 +14,7 @@ func TestBuildSSHArgs(t *testing.T) {
 	want := []string{
 		"-i", "/home/glats/.ssh/oneplus5",
 		"-N",
-		"-L", "127.0.0.1:3000:172.16.0.12:3000",
+		"-L", "127.0.0.1:3000:127.0.0.1:3000",
 		"glats@172.16.0.12",
 	}
 	if len(args) != len(want) {
@@ -30,7 +30,7 @@ func TestBuildSSHArgs(t *testing.T) {
 func TestBuildSSHArgsPortsDiffer(t *testing.T) {
 
 	args := BuildSSHArgs("10.0.0.5", "root", "k", 13001, 8443)
-	wantForward := "127.0.0.1:13001:10.0.0.5:8443"
+	wantForward := "127.0.0.1:13001:127.0.0.1:8443"
 	found := false
 	for _, a := range args {
 		if a == wantForward {
@@ -39,6 +39,14 @@ func TestBuildSSHArgsPortsDiffer(t *testing.T) {
 	}
 	if !found {
 		t.Fatalf("forward arg %q missing from args: %v", wantForward, args)
+	}
+}
+
+func TestBuildSSHArgsConfigIdentity(t *testing.T) {
+	args := BuildSSHArgs("samsung.lan", "glats", "", 3000, 3000)
+	want := "-N -L 127.0.0.1:3000:127.0.0.1:3000 glats@samsung.lan"
+	if got := strings.Join(args, " "); got != want {
+		t.Fatalf("args = %q, want %q", got, want)
 	}
 }
 
