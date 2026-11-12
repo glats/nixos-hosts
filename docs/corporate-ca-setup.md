@@ -1,6 +1,6 @@
 # Corporate CA Setup — New Machine
 
-Fabella's corporate network uses a Netskope MITM proxy that intercepts all
+The corporate network uses a Netskope MITM proxy that intercepts all
 HTTPS traffic. Nix-built programs (curl, git, nvim-treesitter) don't trust
 the proxy's CA by default because they use the Nix-bundled Mozilla CA store
 rather than macOS Keychain.
@@ -12,7 +12,7 @@ programs on a new macOS machine.
 
 ```bash
 # 1. Extract corporate CA from the proxy
-docs/scripts/extract-corporate-ca.sh > certs/netskope-falabella.crt
+docs/scripts/extract-corporate-ca.sh > certs/corporate-ca.crt
 
 # 2. The CA is already wired in hosts/macm5/default.nix via corporateCaBundle
 #    Just deploy:
@@ -59,18 +59,18 @@ Or manually with openssl:
 openssl s_client -connect www.google.com:443 -showcerts 2>/dev/null | \
   awk '/BEGIN CERTIFICATE/,/END CERTIFICATE/{ print }' | \
   awk 'BEGIN{n=0} /BEGIN CERTIFICATE/{n++} n==2{print}' \
-  > certs/netskope-falabella.crt
+  > certs/corporate-ca.crt
 ```
 
 The script extracts the **second** certificate in the chain (the intermediate
-CA that signs the leaf certificate). This is the Netskope/Falabella MITM CA.
+CA that signs the leaf certificate). This is the corporate MITM CA.
 
 Verify the extracted cert:
 
 ```bash
-openssl x509 -in certs/netskope-falabella.crt -noout -subject -issuer
-# Expected:
-#   subject=CN = ca.grupofalabella.goskope.com
+openssl x509 -in certs/corporate-ca.crt -noout -subject -issuer
+# Example only; the actual subject depends on your organization:
+#   subject=CN = ca.company.example
 #   issuer=CN = certadmin, O = Netskope Inc.
 ```
 
@@ -84,7 +84,7 @@ nix eval --raw .#darwinConfigurations.macm5.config.environment.variables.NIX_SSL
 
 # Or manually combine for a quick test
 cat $(nix-build -A cacert '<nixpkgs>')/etc/ssl/certs/ca-bundle.crt \
-    certs/netskope-falabella.crt > /tmp/combined-ca.crt
+    certs/corporate-ca.crt > /tmp/combined-ca.crt
 
 # Test TLS verification
 curl --cacert /tmp/combined-ca.crt -s -o /dev/null -w "%{http_code}" https://github.com
@@ -146,14 +146,15 @@ The Netskope proxy rotates its CA certificate periodically (~90 days). When
 this happens:
 
 1. Extract the new CA on any corporate-connected machine
-2. Replace `certs/netskope-falabella.crt` with the new cert
-3. Commit and deploy (`nixos-build`)
+2. Replace the local `certs/corporate-ca.crt` with the new cert
+3. Deploy separately when authorized (`nixos-build`)
 
-The file is committed to the repo because it's a configuration artifact
-(public CA cert), not a secret.
+The certificate remains local and is ignored by Git. The previous filename
+also remains ignored to protect existing local copies. Renaming the output
+does not move or delete an existing certificate.
 
 ## Files
 
-- `certs/netskope-falabella.crt` — The corporate MITM CA certificate
+- `certs/corporate-ca.crt` — The local corporate MITM CA certificate
 - `hosts/macm5/default.nix` — Contains `corporateCaBundle` + `NIX_SSL_CERT_FILE`
 - `docs/scripts/extract-corporate-ca.sh` — Automated extraction script

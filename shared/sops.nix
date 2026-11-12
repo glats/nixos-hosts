@@ -61,6 +61,15 @@
     mode = "0400";
   };
 
+  sops.secrets."github/work_user" = {
+    sopsFile = ../secrets/user/github.yaml;
+    mode = "0400";
+  };
+  sops.secrets."github/work_account" = {
+    sopsFile = ../secrets/user/github.yaml;
+    mode = "0400";
+  };
+
   sops.secrets."github/personal_gpg_fingerprint" = {
     sopsFile = ../secrets/shared/passwords.yaml;
     mode = "0400";
@@ -75,6 +84,14 @@
   };
   sops.secrets."github/work_gpg_key" = {
     sopsFile = ../secrets/shared/passwords.yaml;
+    mode = "0400";
+  };
+
+  sops.templates."gpg-unlock-keys" = {
+    content = ''
+      ${config.sops.placeholder."github/personal_gpg_fingerprint"}
+      ${config.sops.placeholder."github/work_gpg_fingerprint"}
+    '';
     mode = "0400";
   };
 }

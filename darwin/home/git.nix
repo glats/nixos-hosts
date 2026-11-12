@@ -21,20 +21,25 @@ in
         email = "placeholder";
       };
 
-      github.user = githubUser;
+      github = lib.optionalAttrs (githubUser != null) { user = githubUser; };
       init.defaultBranch = "main";
       core.editor = "nvim -u NONE";
       gpg.program = "${pkgs.gnupg}/bin/gpg";
     };
 
     signing = {
-      key = identities.work.signingKey;
+      key = identities.signingKeyFallback;
       signByDefault = true;
     };
 
     includes = [
       { path = "~/.config/git/identity-work"; }
-      { contents.credential = identities.mkCredential pkgs.gh "jcuzmar-Falabella_FTC"; }
+      { path = "~/.config/git/signing-work"; }
+      {
+        contents.credential =
+          identities.mkCredentialFromFile pkgs.gh
+            config.sops.secrets."github/work_account".path;
+      }
       {
         condition = "gitdir:~/Projects/**";
         path = "~/.config/git/identity-personal";
@@ -52,14 +57,28 @@ in
         contents.credential = identities.mkCredential pkgs.gh "glats";
       }
     ]
-    ++ lib.optional (identities.personal.signingKey != "") {
-      condition = "gitdir:~/Projects/**";
-      contents = {
-        user.signingKey = identities.personal.signingKey;
-        commit.gpgsign = true;
-      };
-    };
+    ++ lib.optional (githubUser == null) {
+      path = config.sops.templates."git-work-user".path;
+    }
+    ++ [
+      {
+        condition = "gitdir:~/Projects/**";
+        contents = {
+          user.signingKey = identities.signingKeyFallback;
+          commit.gpgsign = true;
+        };
+      }
+      {
+        condition = "gitdir:~/Projects/**";
+        path = "~/.config/git/signing-personal";
+      }
+    ];
   };
+
+  sops.templates."git-work-user".content = ''
+    [github]
+        user = ${config.sops.placeholder."github/work_user"}
+  '';
 
   home.activation.writeGitIdentity = lib.hm.dag.entryAfter [ "writeBoundary" "sops-nix" ] ''
     _write_identity() {
@@ -90,5 +109,19 @@ in
     _write_identity "personal" \
       "${config.sops.secrets."identities/personal_name".path}" \
       "${config.sops.secrets."identities/personal_email".path}"
+    ${identities.mkSigningIdentity {
+      gpgProgram = "${pkgs.gnupg}/bin/gpg";
+      guardProgram = "${pkgs.coreutils}/bin/false";
+      entries = [
+        {
+          scope = "work";
+          fingerprint = config.sops.secrets."github/work_gpg_fingerprint".path;
+        }
+        {
+          scope = "personal";
+          fingerprint = config.sops.secrets."github/personal_gpg_fingerprint".path;
+        }
+      ];
+    }}
   '';
 }

@@ -16,7 +16,8 @@ result-*
 credentials.json
 
 # Corporate CA cert (extracted from Apple SecTrust, never committed)
-certs/netskope-falabella.crt
+certs/corporate-ca.crt
+certs/netskope-*.crt
 
 # Git worktrees
 .worktrees/
@@ -43,6 +44,7 @@ backup/
 
 # SDD artifacts (external workflow)
 sdd/
+odd/tasks/work-identity-privacy.md
 
 # Local omarchy-nix checkout (used for in-repo flake input while the
 # boundary-fix commit is still unpushed; safe to remove after push).

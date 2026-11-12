@@ -8,13 +8,13 @@
 {
   options.home.github.defaultAccount = lib.mkOption {
     type = lib.types.str;
-    default = if pkgs.stdenv.hostPlatform.isDarwin then "jcuzmar-Falabella_FTC" else "glats";
+    default = if pkgs.stdenv.hostPlatform.isDarwin then "" else "glats";
     description = ''
       Existing github.com `gh` login selected as the active account
       after Home Manager activation. The default is the work account
       on Darwin hosts and the personal account on Linux hosts, so
-      rog/t14/thinkcentre activate as `glats` and macm5 activates as
-      `jcuzmar-Falabella_FTC`.
+      rog/t14/thinkcentre activate as `glats`. An empty account on Darwin
+      selects the work account from `home.github.defaultAccountFile`.
 
       This option is a host policy, not an authentication option. It
       only changes the active marker via `gh auth switch`; the
@@ -34,17 +34,41 @@
     '';
   };
 
+  options.home.github.defaultAccountFile = lib.mkOption {
+    type = lib.types.nullOr lib.types.str;
+    default =
+      if pkgs.stdenv.hostPlatform.isDarwin && config.home.github.defaultAccount == "" then
+        config.sops.secrets."github/work_account".path
+      else
+        null;
+    description = ''
+      Runtime file containing an existing GitHub CLI login. When set, this
+      takes precedence over defaultAccount. Missing or empty files follow
+      the same warning and retry policy as an unavailable account switch.
+    '';
+  };
+
   config =
     let
       account = config.home.github.defaultAccount;
+      accountFile = config.home.github.defaultAccountFile;
       isLinux = pkgs.stdenv.hostPlatform.isLinux;
       switchAccount = onFailure: ''
+        if ${
+          if accountFile == null then
+            "account=${lib.escapeShellArg account}"
+          else
+            ''account=$(${pkgs.coreutils}/bin/cat ${lib.escapeShellArg accountFile} 2>/dev/null) && [ -n "$account" ]''
+        }; then
         if [ -f "$HOME/.config/gh/hosts.yml" ] \
-           && grep -qE "^[[:space:]]+${account}:" "$HOME/.config/gh/hosts.yml"; then
+           && grep -qE "^[[:space:]]+$account:" "$HOME/.config/gh/hosts.yml"; then
           if ! ${pkgs.coreutils}/bin/timeout --signal=TERM --kill-after=2s 5s \
-            ${pkgs.gh}/bin/gh auth switch --hostname github.com --user "${account}" >/dev/null 2>&1; then
+            ${pkgs.gh}/bin/gh auth switch --hostname github.com --user "$account" >/dev/null 2>&1; then
             ${onFailure}
           fi
+        fi
+        else
+          ${onFailure}
         fi
       '';
       warn = ''echo "Warning: GitHub default account selection failed or timed out; continuing activation. Select the account manually after unlocking the keyring." >&2'';
@@ -53,7 +77,7 @@
       '';
     in
     {
-      home.activation.ghDefaultAccount = lib.hm.dag.entryAfter [ "writeBoundary" ] (
+      home.activation.ghDefaultAccount = lib.hm.dag.entryAfter [ "writeBoundary" "sops-nix" ] (
         if isLinux then sessionGuard + switchAccount warn + "fi\n" else switchAccount warn
       );
     }

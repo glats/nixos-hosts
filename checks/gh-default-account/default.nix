@@ -11,6 +11,7 @@ let
   activation =
     (import ../../shared/gh-default-account.nix {
       config.home.github.defaultAccount = "glats";
+      config.home.github.defaultAccountFile = null;
       pkgs = pkgs // {
         gh = fakeGh;
       };
