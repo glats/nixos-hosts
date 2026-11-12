@@ -129,6 +129,18 @@ work already accepted. If branches conflict or the combined checks fail, the ite
 blocked instead of done. Your own repository is never touched. `campaign advance <project>
 gastown/<bead>...` adds accepted branches to the base by hand.
 
+Starting at boot: with `home.gastown.campaigns.<project> = { }` (enabled for `maquilinux` on
+`rog`) a systemd user service `gastown-campaign-<project>` starts the supervisor when the
+machine boots (`users.users.glats.linger` makes user services start without a login),
+resumes interrupted items and stops the swarm cleanly at shutdown. It does nothing until the
+swarm exists (`swarm init`), does not start after `campaign stop` (the STOP file) and
+refuses to start while a manually launched supervisor runs. Only one supervisor can hold a
+project: a lock the kernel releases on any exit, including power loss. Provider keys come
+from your sops secrets; the Claude token comes from `claudeTokenFile` when set, otherwise
+from the OpenCode credential store, and a campaign with a claude agent and no token refuses
+to start (exit 78, not retried). Check it without starting anything:
+`GASTOWN_CAMPAIGN_DRYRUN=1 gastown-campaign-start <project> 720h`.
+
 Worker contract: every agent starts with a short read-only worker contract mounted
 into its home (`~/.codex/AGENTS.md`, `~/.claude/CLAUDE.md`,
 `~/.config/opencode/AGENTS.md`). It is the ODD discipline for a polecat: work the

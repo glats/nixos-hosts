@@ -2,6 +2,7 @@ package gastown
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -47,6 +48,12 @@ func CampaignMain(c Config, args []string, stdout, stderr io.Writer) int {
 	text := strings.Join(fs.Args()[1:], " ")
 	switch args[0] {
 	case "start":
+		if release, lockErr := s.AcquireSupervisor(); errors.Is(lockErr, ErrSupervisorRunning) {
+			fmt.Fprintln(stdout, "a supervisor is already running for "+s.Cfg.Project+"; nothing to start (see: gastown-run campaign status "+s.Cfg.Project+")")
+			return 0
+		} else if lockErr == nil {
+			release()
+		}
 		camp, resumed, err := s.CampaignStart(text, time.Now())
 		if err != nil {
 			return fail(err)
@@ -79,6 +86,15 @@ func CampaignMain(c Config, args []string, stdout, stderr io.Writer) int {
 			return fail(err)
 		}
 	case "exec":
+		release, lockErr := s.AcquireSupervisor()
+		if lockErr != nil {
+			fmt.Fprintln(stderr, "gastown-run campaign:", lockErr)
+			if errors.Is(lockErr, ErrSupervisorRunning) {
+				return 75
+			}
+			return 1
+		}
+		defer release()
 		camp, _, err := s.CampaignStart("", time.Now())
 		if err != nil {
 			return fail(err)

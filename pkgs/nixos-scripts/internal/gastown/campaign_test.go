@@ -1,6 +1,7 @@
 package gastown
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -554,5 +555,49 @@ func TestResumeSendsInterruptedItemsAgainAndKeepsFinishedOnes(t *testing.T) {
 	}
 	if n := ResumeCampaign(c); n != 0 {
 		t.Fatalf("resume must be idempotent, got %d", n)
+	}
+}
+
+func TestOnlyOneSupervisorMayRunPerProject(t *testing.T) {
+	s, _ := newCampaignSwarm(t)
+	release, err := s.AcquireSupervisor()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.AcquireSupervisor(); !errors.Is(err, ErrSupervisorRunning) {
+		t.Fatalf("a second supervisor must be refused, got %v", err)
+	}
+	other, _ := newCampaignSwarm(t)
+	if rel, err := other.AcquireSupervisor(); err != nil {
+		t.Fatalf("another project is independent: %v", err)
+	} else {
+		rel()
+	}
+	release()
+	again, err := s.AcquireSupervisor()
+	if err != nil {
+		t.Fatalf("the lock must be free after release: %v", err)
+	}
+	again()
+}
+
+func TestCampaignExecRefusesToRunTwiceAndStartSaysSo(t *testing.T) {
+	s, _ := newCampaignSwarm(t)
+	if err := s.save(); err != nil {
+		t.Fatal(err)
+	}
+	release, err := s.AcquireSupervisor()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer release()
+	var out, errOut strings.Builder
+	if code := CampaignMain(s.R.Config, []string{"exec", "toy"}, &out, &errOut); code != 75 || !strings.Contains(errOut.String(), "already running") {
+		t.Fatalf("exec must exit 75 when a supervisor runs: code=%d err=%q", code, errOut.String())
+	}
+	out.Reset()
+	errOut.Reset()
+	if code := CampaignMain(s.R.Config, []string{"start", "toy"}, &out, &errOut); code != 0 || !strings.Contains(out.String(), "already running") {
+		t.Fatalf("start must report it and succeed without launching another: code=%d out=%q", code, out.String())
 	}
 }

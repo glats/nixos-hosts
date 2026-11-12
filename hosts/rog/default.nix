@@ -90,6 +90,8 @@
     includeDiagLogging = true;
   };
 
+  users.users.glats.linger = true;
+
   gastown = {
     enable = true;
     toolPackages = with pkgs; [
