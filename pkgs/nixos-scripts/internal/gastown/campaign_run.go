@@ -44,6 +44,20 @@ func (s *Swarm) QueueCampaignReply(text string) error {
 	return s.queue(queuedInput{Kind: "reply", Text: text})
 }
 
+// QueueCampaignExtend asks the supervisor to have the Mayor propose more items.
+func (s *Swarm) QueueCampaignExtend(direction string) error {
+	return s.queue(queuedInput{Kind: "extend", Text: direction})
+}
+
+// QueueCampaignApprove records the user's approval of an item whose branches
+// the trusted gate accepted. The supervisor re-checks that before acting.
+func (s *Swarm) QueueCampaignApprove(item string, branches []string) error {
+	if len(branches) == 0 {
+		return fmt.Errorf("approve needs the gate-accepted branch(es), for example gastown/ma-dms")
+	}
+	return s.queue(queuedInput{Kind: "approve", Question: item, Text: strings.Join(branches, " ")})
+}
+
 // QueueCampaignAnswer stores the answer to one of the Mayor's questions.
 func (s *Swarm) QueueCampaignAnswer(question, text string) error {
 	return s.queue(queuedInput{Kind: "answer", Question: question, Text: text})
@@ -194,6 +208,9 @@ func (s *Swarm) planNotice(c *Campaign) {
 // campaignMail consumes Mayor mail that carries the plan or the selection, and
 // reports whether it did.
 func (s *Swarm) campaignMail(c *Campaign, m mailItem, now time.Time) bool {
+	if s.campaignExtensionMail(c, m) {
+		return true
+	}
 	switch c.Phase {
 	case phasePlanning:
 		if c.PlanAsks == 0 || len(fencedBlocks(m.Body)) == 0 {
@@ -229,8 +246,15 @@ func (s *Swarm) campaignMail(c *Campaign, m mailItem, now time.Time) bool {
 }
 
 func (s *Swarm) handleInput(c *Campaign, in queuedInput, now time.Time) {
-	if in.Kind == "answer" {
+	switch in.Kind {
+	case "answer":
 		s.handleAnswer(c, in.Question, in.Text, now)
+		return
+	case "extend":
+		s.handleExtend(c, in.Text, now)
+		return
+	case "approve":
+		s.handleApprove(c, in.Question, strings.Fields(in.Text), now)
 		return
 	}
 	s.handleReply(c, in.Text, now)
@@ -443,4 +467,89 @@ func (s *Swarm) CampaignWatch(ctx context.Context, c *Campaign, interval, maxRun
 		case <-time.After(interval):
 		}
 	}
+}
+
+func (s *Swarm) extendPrompt(c *Campaign, direction string) string {
+	state, _ := os.ReadFile(s.campaignPath())
+	return "CAMPAIGN EXTENSION. Do not start any work, create no bead and sling nothing.\nNew direction from the human: " + direction +
+		"\n\nThe campaign as it stands (campaign.json):\n" + string(state) + "\n\n" +
+		fmt.Sprintf(stationLimits, strings.Join(s.Cfg.Checks, " ; ")) +
+		"\n\nPropose ONLY additional items that this direction needs, small enough for a worker to finish and the checks to verify. " +
+		"Use new ids; depends_on may name existing items. Mark needs_decision true when the human must choose. " +
+		"Reply with gt mail reply and exactly one fenced json block:\n```json\n{\"items\":[{\"id\":\"short-lowercase-id\",\"title\":\"...\",\"why\":\"...\",\"depends_on\":[],\"needs_decision\":false}]}\n```\n"
+}
+
+func (s *Swarm) handleExtend(c *Campaign, direction string, now time.Time) {
+	c.Decisions = append(c.Decisions, CampaignDecision{At: now, Question: "new direction", Answer: direction})
+	c.ExtendAsked, c.dirty = true, true
+	if err := s.mail("Campaign extension request", s.extendPrompt(c, direction)); err != nil {
+		c.ExtendAsked = false
+		s.notify("high", "Cannot ask the Mayor to extend the plan", err.Error())
+	}
+}
+
+func (s *Swarm) campaignExtensionMail(c *Campaign, m mailItem) bool {
+	if !c.ExtendAsked || len(fencedBlocks(m.Body)) == 0 {
+		return false
+	}
+	items, err := ParseExtension(m.Body, c)
+	if err != nil {
+		c.ExtendAsked, c.dirty = false, true
+		s.notify("high", "Plan extension rejected", err.Error()+"\nask again with: gastown-run campaign extend "+s.Cfg.Project+" \"...\"")
+		return true
+	}
+	c.Items = append(c.Items, items...)
+	c.ExtendAsked, c.dirty = false, true
+	var lines []string
+	for _, it := range items {
+		line := it.ID + ": " + it.Title
+		if len(it.DependsOn) > 0 {
+			line += " (after " + strings.Join(it.DependsOn, ", ") + ")"
+		}
+		if it.NeedsDecision {
+			line += " [needs your decision]"
+		}
+		lines = append(lines, line)
+	}
+	s.notify("medium", "Plan extended: "+strconv.Itoa(len(items))+" new item(s)", strings.Join(lines, "\n")+"\nchoose with: gastown-run campaign reply "+s.Cfg.Project+" \"<ids>\"")
+	return true
+}
+
+func (s *Swarm) handleApprove(c *Campaign, id string, branches []string, now time.Time) {
+	refuse := func(why string) {
+		s.notify("high", "Cannot approve "+id, why)
+	}
+	it := c.item(id)
+	if it == nil {
+		refuse("no such item")
+		return
+	}
+	st := s.loadState()
+	verified := map[string]bool{}
+	for _, res := range st.Gated {
+		if res.Status == "pass" && res.Published != "" {
+			verified[res.Published] = true
+		}
+	}
+	for _, b := range branches {
+		if !verified[b] {
+			refuse(b + " was never accepted by the trusted gate; an item is only done with gate-verified branches")
+			return
+		}
+	}
+	if len(branches) == 0 {
+		refuse("no branches given")
+		return
+	}
+	if adv := s.AdvanceBase(branches); adv.Status != "pass" && adv.Status != "none" {
+		refuse("the branches cannot be added to the base: " + adv.problem())
+		return
+	}
+	sort.Strings(branches)
+	it.Status, it.Branches = "done", branches
+	it.Summary = "approved by the user on " + now.Format("2006-01-02") + "; gate-verified branches: " + strings.Join(branches, ", ")
+	c.Decisions = append(c.Decisions, CampaignDecision{At: now, Question: "approve " + id, Answer: "approved by the user with " + strings.Join(branches, ", ")})
+	c.Learnings = append(c.Learnings, CampaignLearning{At: now, Item: id, Text: it.Summary})
+	c.dirty = true
+	s.notify("low", "Item approved: "+it.Title, it.Summary)
 }

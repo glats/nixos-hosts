@@ -20,6 +20,8 @@ const campaignUsage = `gastown-run campaign - an intent becomes needs, you pick,
   campaign reply <project> TEXT                         pick items ("a c" or "all"), answer a question or steer the work
   campaign answer [--question ID] <project> TEXT        answer one of the Mayor's questions (no id: the only open one)
   campaign advance <project> BRANCH...                  add gate-accepted branches (gastown/<bead>) to the swarm's base by hand
+  campaign approve <project> <item> BRANCH...           approve an item whose branches the gate accepted (you reviewed them)
+  campaign extend <project> "<direction>"               have the Mayor propose more items for a new direction
   campaign status <project>                             phase, items, decisions and learnings
   campaign stop <project>                               stop the supervisor; the campaign resumes with campaign start
 
@@ -117,6 +119,20 @@ func CampaignMain(c Config, args []string, stdout, stderr io.Writer) int {
 			return fail(err)
 		}
 		fmt.Fprintln(stdout, "queued; the supervisor reads it on its next round")
+	case "approve":
+		args := fs.Args()[1:]
+		if len(args) < 2 {
+			return fail(errors.New("approve needs an item and at least one gate-accepted branch"))
+		}
+		if err := s.QueueCampaignApprove(args[0], args[1:]); err != nil {
+			return fail(err)
+		}
+		fmt.Fprintln(stdout, "queued; the supervisor checks the branches against the gate before marking the item done")
+	case "extend":
+		if err := s.QueueCampaignExtend(text); err != nil {
+			return fail(err)
+		}
+		fmt.Fprintln(stdout, "queued; the Mayor will propose items and you choose among them")
 	case "advance":
 		if err := s.CampaignAdvance(fs.Args()[1:]); err != nil {
 			return fail(err)

@@ -67,6 +67,7 @@ type Campaign struct {
 	LastDigest  time.Time          `json:"last_digest"`
 	StartedAt   time.Time          `json:"started_at"`
 	AskedSelect bool               `json:"asked_select,omitempty"`
+	ExtendAsked bool               `json:"extend_asked,omitempty"`
 	dirty       bool
 }
 
@@ -169,58 +170,7 @@ func validatePlan(plan *CampaignPlan) error {
 		qids[q.ID] = true
 		q.Answer, q.AnsweredAt = "", time.Time{}
 	}
-	ids := map[string]bool{}
-	for _, it := range plan.Items {
-		if !itemIDPattern.MatchString(it.ID) {
-			return fmt.Errorf("item id %q must match %s", it.ID, itemIDPattern)
-		}
-		if ids[it.ID] {
-			return fmt.Errorf("duplicate item id %q", it.ID)
-		}
-		if strings.TrimSpace(it.Title) == "" {
-			return fmt.Errorf("item %q has no title", it.ID)
-		}
-		ids[it.ID] = true
-	}
-	deps := map[string][]string{}
-	for i := range plan.Items {
-		it := &plan.Items[i]
-		for _, d := range it.DependsOn {
-			if !ids[d] {
-				return fmt.Errorf("item %q depends on unknown item %q", it.ID, d)
-			}
-			if d == it.ID {
-				return fmt.Errorf("item %q depends on itself", it.ID)
-			}
-		}
-		deps[it.ID] = it.DependsOn
-		it.Status = "proposed"
-		it.GoalAt, it.Branches, it.Summary = "", nil, ""
-	}
-	state := map[string]int{}
-	var visit func(id string) bool
-	visit = func(id string) bool {
-		switch state[id] {
-		case 1:
-			return false
-		case 2:
-			return true
-		}
-		state[id] = 1
-		for _, d := range deps[id] {
-			if !visit(d) {
-				return false
-			}
-		}
-		state[id] = 2
-		return true
-	}
-	for _, it := range plan.Items {
-		if !visit(it.ID) {
-			return errors.New("the dependencies contain a cycle")
-		}
-	}
-	return nil
+	return checkItems(nil, plan.Items)
 }
 
 // ParseSelection reads {"select": [...]} and keeps only ids that exist and are
@@ -429,4 +379,85 @@ func hoistFlags(args []string, names ...string) []string {
 		rest = append(rest, args[i])
 	}
 	return append(flags, rest...)
+}
+
+// checkItems validates new items against the existing ones: unique ids, known
+// dependencies and no cycles over the whole set. It marks the new items proposed.
+func checkItems(existing, items []CampaignItem) error {
+	if len(items) == 0 {
+		return errors.New("the plan has no items")
+	}
+	ids := map[string]bool{}
+	deps := map[string][]string{}
+	for _, it := range existing {
+		ids[it.ID] = true
+		deps[it.ID] = it.DependsOn
+	}
+	for _, it := range items {
+		if !itemIDPattern.MatchString(it.ID) {
+			return fmt.Errorf("item id %q must match %s", it.ID, itemIDPattern)
+		}
+		if ids[it.ID] {
+			return fmt.Errorf("duplicate item id %q", it.ID)
+		}
+		if strings.TrimSpace(it.Title) == "" {
+			return fmt.Errorf("item %q has no title", it.ID)
+		}
+		ids[it.ID] = true
+	}
+	for i := range items {
+		it := &items[i]
+		for _, d := range it.DependsOn {
+			if !ids[d] {
+				return fmt.Errorf("item %q depends on unknown item %q", it.ID, d)
+			}
+			if d == it.ID {
+				return fmt.Errorf("item %q depends on itself", it.ID)
+			}
+		}
+		deps[it.ID] = it.DependsOn
+		it.Status = "proposed"
+		it.GoalAt, it.Branches, it.Summary = "", nil, ""
+	}
+	state := map[string]int{}
+	var visit func(id string) bool
+	visit = func(id string) bool {
+		switch state[id] {
+		case 1:
+			return false
+		case 2:
+			return true
+		}
+		state[id] = 1
+		for _, d := range deps[id] {
+			if !visit(d) {
+				return false
+			}
+		}
+		state[id] = 2
+		return true
+	}
+	for id := range deps {
+		if !visit(id) {
+			return errors.New("the dependencies contain a cycle")
+		}
+	}
+	return nil
+}
+
+// ParseExtension extracts additional items the Mayor proposed for a running
+// campaign. They may depend on existing items.
+func ParseExtension(body string, c *Campaign) ([]CampaignItem, error) {
+	for _, block := range fencedBlocks(body) {
+		var candidate struct {
+			Items []CampaignItem `json:"items"`
+		}
+		if json.Unmarshal([]byte(block), &candidate) == nil && candidate.Items != nil {
+			if err := checkItems(c.Items, candidate.Items); err != nil {
+				return nil, err
+			}
+			return candidate.Items, nil
+		}
+	}
+	return nil, errors.New("no fenced ```json block with an \"items\" array")
 }
