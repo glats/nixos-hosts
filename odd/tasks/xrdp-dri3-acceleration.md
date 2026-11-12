@@ -437,3 +437,40 @@ real XRDP path on `rog` only after the user explicitly approves the session rest
   re-switching restores the previous `sesman.ini` and `xorg.conf` byte for byte, and
   neither kmscon nor SSH depends on the session Xorg, so a failure cannot lock the
   user out of the host.
+- L9 (2026-11-11): DEPLOYED ON thinkcentre, executed over SSH at the user's request.
+  `nixos-build safe` completed successfully ("Safe build completed successfully!"), the
+  diff reported `xorgxrdp +27.6 KiB` (the glamor build), and the generated `sesman.ini`
+  `[Xorg]` section points at the glamor store path
+  `/nix/store/c3dm88pgz9j1bfbif4nx16b757g95c7n-xorgxrdp-0.10.5`, whose
+  `xrdpdev_drv.so` carries the 20 glamor strings.
+  TRAP FOUND AND FIXED. The switch restarted the `xrdp` daemon (new binary
+  `66ryfpgv...`) but NOT `xrdp-sesman`: the running sesman kept the OLD binary
+  `cfa821...` and the OLD `sesman.ini` for 12 hours, because `services.xrdp` sets
+  `restartIfChanged = false` and that suppresses the restart even when the unit
+  definition itself changes. This CORRECTS the expectation recorded in L3/L8: a changed
+  ExecStart does NOT restart the sesman. A new session would still have used swrast.
+  Fixed with `systemd.services.xrdp-sesman.restartTriggers = [ config.services.xrdp.package ]`,
+  whose semantics are documented in `nixos/lib/systemd-unit-options.nix` ("An arbitrary
+  list of items such as derivations. If any item in the list changes between
+  reconfigurations, the service will be restarted"). The trigger was first placed in
+  `linux/system/services/xrdp.nix`, which applies to rog and samsung only, because
+  thinkcentre configures `services.xrdp` INLINE and never imports that module; it was
+  therefore moved to the shared `linux/system/base/options.nix` guarded by
+  `lib.mkIf config.services.xrdp.enable`, and verified to evaluate for rog, thinkcentre
+  AND samsung.
+  Verified on thinkcentre after the redeploy: the unit now carries
+  `X-Restart-Triggers=/nix/store/5zpn9ymq...-X-Restart-Triggers-xrdp-sesman` whose
+  content is the xrdp package path, next to the untouched
+  `X-RestartIfChanged=false`; the running sesman is the new binary with the new
+  configuration. Future switches that change the xrdp package will now restart it
+  automatically, while ordinary switches keep leaving RDP sessions alone.
+  thinkcentre GPU: a single DRM device, `renderD128` with driver `i915`, and
+  `/dev/dri/by-path/pci-0000:00:02.0-render`; no NVIDIA anywhere, so the shipped
+  `DRMAllowList` matches and there is no render-node ordering hazard.
+  samsung also serves XRDP sessions (it imports the shared xrdp module) and also has an
+  Intel i915 (`renderD128`, `card1`), so it will benefit from the same overlay.
+  STILL PENDING: the live-session proof, which needs a real RDP client to log in.
+  Expected in the new session log:
+      grep -E "glamor|DRI2 GL provider|DRISWRAST" ~/.xorgxrdp.*.log | tail -20
+  And the rog promotion, which ends the agent session because it runs inside the XRDP
+  session on display `:10`.
