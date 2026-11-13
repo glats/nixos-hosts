@@ -48,6 +48,7 @@ buildGoModule {
     "cmd/sops-rotate-keys"
     "cmd/sync-opencode-remote"
     "cmd/test-shutdown"
+    "cmd/wol-relay"
     "cmd/wg-peer"
   ];
 

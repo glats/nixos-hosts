@@ -15,6 +15,7 @@ const (
 	ArmUnload  = "unload"
 	ArmNone    = "none"
 	ArmInvalid = "unload-failed"
+	ArmWol     = "wol"
 
 	AlarmPath    = "/sys/class/rtc/rtc0/wakealarm"
 	PausePath    = "/var/lib/test-shutdown/campaign-paused"
@@ -30,6 +31,7 @@ const (
 	MaxChain   = 2
 	MinSamples = 5
 
+	RelayTimeout = 3 * time.Second
 	unloadSettle = 2 * time.Second
 	gpuPCI       = "/sys/bus/pci/devices/0000:01:00.0"
 )
@@ -38,13 +40,15 @@ type Env interface {
 	shutdowntrial.System
 	Output(name string, args ...string) (string, error)
 	Sleep(d time.Duration)
+	Exchange(addr, msg string, timeout time.Duration) (string, error)
 }
 
 type Ctx struct {
-	BootID string
-	Kernel string
-	Now    time.Time
-	Rand   func(n int) int
+	BootID    string
+	Kernel    string
+	Now       time.Time
+	Rand      func(n int) int
+	RelayAddr string
 }
 
 func exists(env Env, path string) bool {
@@ -88,7 +92,7 @@ func chainLength(entries []shutdowntrial.Entry) int {
 		if e.Kind != "boot" {
 			continue
 		}
-		if e.Reason != "alarm" {
+		if e.Reason != "alarm" && e.Reason != "wol" {
 			break
 		}
 		n++
@@ -233,7 +237,15 @@ func Shutdown(env Env, log *shutdowntrial.Log, c Ctx, breadcrumb func(string)) e
 	}
 	entry := shutdowntrial.Entry{Kind: "arm", Time: c.Now, BootID: c.BootID, Kernel: c.Kernel, Trial: "campaign", Arm: ArmNone}
 	var errs []string
-	withAlarm := chainLength(entries) < MaxChain
+	chain := chainLength(entries)
+	withAlarm := chain < MaxChain
+	if chain == MaxChain && c.RelayAddr != "" {
+		if wake, err := requestWake(env, c); err != nil {
+			errs = append(errs, "relay: "+err.Error())
+		} else {
+			entry.Arm, entry.AlarmUnix = ArmWol, wake
+		}
+	}
 	if withAlarm {
 		entry.Arm = ChooseArm(entries, c.Rand)
 		if entry.Arm == ArmUnload {
@@ -259,6 +271,19 @@ func Shutdown(env Env, log *shutdowntrial.Log, c Ctx, breadcrumb func(string)) e
 	return nil
 }
 
+func requestWake(env Env, c Ctx) (int64, error) {
+	msg := fmt.Sprintf("ARM %s %d", c.BootID, int(AlarmDelay.Seconds()))
+	reply, err := env.Exchange(c.RelayAddr, msg, RelayTimeout)
+	if err != nil {
+		return 0, err
+	}
+	f := strings.Fields(reply)
+	if len(f) != 3 || f[0] != "ACK" || f[1] != c.BootID {
+		return 0, fmt.Errorf("unexpected reply %q", reply)
+	}
+	return strconv.ParseInt(f[2], 10, 64)
+}
+
 func lastUnresolvedArm(entries []shutdowntrial.Entry) *shutdowntrial.Entry {
 	for i := len(entries) - 1; i >= 0; i-- {
 		if entries[i].Kind != "arm" && entries[i].Kind != "begin" {
@@ -282,6 +307,11 @@ func Boot(env Env, log *shutdowntrial.Log, c Ctx) (shutdowntrial.Entry, error) {
 	if err != nil {
 		return shutdowntrial.Entry{}, fmt.Errorf("read history: %w", err)
 	}
+	for _, prev := range entries {
+		if prev.Kind == "boot" && prev.BootID == c.BootID {
+			return shutdowntrial.Entry{}, nil
+		}
+	}
 	e := shutdowntrial.Entry{Kind: "boot", Time: c.Now, BootID: c.BootID, Kernel: c.Kernel, Trial: "campaign", Reason: "cold"}
 	if p := lastUnresolvedArm(entries); p != nil {
 		e.Resolves, e.Arm = p.BootID, p.Arm
@@ -292,6 +322,9 @@ func Boot(env Env, log *shutdowntrial.Log, c Ctx) (shutdowntrial.Entry, error) {
 			e.Outcome = "unmeasured"
 		case inWindow(env, c.Now, p.AlarmUnix):
 			e.Reason, e.Outcome = "alarm", "off"
+			if p.Arm == ArmWol {
+				e.Reason = "wol"
+			}
 		default:
 			e.Outcome = "hung_or_unwoken"
 		}
@@ -329,7 +362,7 @@ func AutoCycle(env Env, log *shutdowntrial.Log, c Ctx, breadcrumb func(string)) 
 		return nil
 	}
 	last := entries[len(entries)-1]
-	if last.Kind != "boot" || last.BootID != c.BootID || last.Reason != "alarm" {
+	if last.Kind != "boot" || last.BootID != c.BootID || (last.Reason != "alarm" && last.Reason != "wol") {
 		return nil
 	}
 	for waited := time.Duration(0); waited < CycleGrace; waited += CyclePoll {
@@ -351,14 +384,18 @@ type ArmStats struct {
 }
 
 type Result struct {
-	Normal     ArmStats
-	Unload     ArmStats
-	AlarmWakes int
-	Invalid    int
-	Unmeasured int
-	Early      int
-	P          float64
-	Verdict    string
+	Normal      ArmStats
+	Unload      ArmStats
+	Wol         ArmStats
+	AlarmWakes  int
+	WolWakes    int
+	Invalid     int
+	Unmeasured  int
+	Early       int
+	P           float64
+	Verdict     string
+	PWake       float64
+	WakeVerdict string
 }
 
 func Summarize(entries []shutdowntrial.Entry) Result {
@@ -367,8 +404,11 @@ func Summarize(entries []shutdowntrial.Entry) Result {
 		if e.Kind != "boot" {
 			continue
 		}
-		if e.Reason == "alarm" {
+		switch e.Reason {
+		case "alarm":
 			r.AlarmWakes++
+		case "wol":
+			r.WolWakes++
 		}
 		if e.Resolves == "" {
 			continue
@@ -383,6 +423,8 @@ func Summarize(entries []shutdowntrial.Entry) Result {
 			st = &r.Normal
 		case ArmUnload:
 			st = &r.Unload
+		case ArmWol:
+			st = &r.Wol
 		case ArmInvalid:
 			r.Invalid++
 			continue
@@ -405,6 +447,19 @@ func Summarize(entries []shutdowntrial.Entry) Result {
 		r.Verdict = fmt.Sprintf("unload differs from normal (p=%.3f)", r.P)
 	default:
 		r.Verdict = fmt.Sprintf("no significant difference yet (p=%.3f)", r.P)
+	}
+	r.PWake = fisher(r.Normal.Off, r.Normal.N-r.Normal.Off, r.Wol.Off, r.Wol.N-r.Wol.Off)
+	switch {
+	case r.Wol.N == 0:
+		r.WakeVerdict = "no shutdown measured with Wake-on-LAN yet"
+	case r.WolWakes == 0:
+		r.WakeVerdict = "Wake-on-LAN never woke rog: the no-alarm results are unreliable (WoL from S5 may not work, or the relay is down)"
+	case r.Normal.N < MinSamples || r.Wol.N < MinSamples:
+		r.WakeVerdict = fmt.Sprintf("need at least %d measured shutdowns per group to compare alarm and no-alarm (alarm %d, no-alarm %d)", MinSamples, r.Normal.N, r.Wol.N)
+	case r.PWake < 0.05:
+		r.WakeVerdict = fmt.Sprintf("no-alarm shutdowns differ from alarm-armed ones (p=%.3f)", r.PWake)
+	default:
+		r.WakeVerdict = fmt.Sprintf("no-alarm shutdowns do not differ from alarm-armed ones yet (p=%.3f)", r.PWake)
 	}
 	return r
 }

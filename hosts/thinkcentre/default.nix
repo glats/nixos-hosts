@@ -127,6 +127,28 @@
     };
   };
 
+  systemd.services.wol-relay = {
+    description = "Wake-on-LAN relay for the rog poweroff campaign";
+    wantedBy = [ "multi-user.target" ];
+    wants = [ "network-online.target" ];
+    after = [ "network-online.target" ];
+    serviceConfig = {
+      ExecStart = ''
+        ${pkgs.nixos-scripts}/bin/wol-relay \
+          -listen :6667 \
+          -allow 172.16.0.5 \
+          -mac 88:d7:f6:22:10:fe \
+          -broadcast 172.16.0.255:9
+      '';
+      DynamicUser = true;
+      Restart = "always";
+      RestartSec = "2s";
+      NoNewPrivileges = true;
+      ProtectSystem = "strict";
+      ProtectHome = true;
+    };
+  };
+
   services.logrotate.settings.netconsole = {
     files = [ "/var/log/netconsole/*.log" ];
     frequency = "weekly";

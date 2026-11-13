@@ -68,6 +68,18 @@ in
       diagnostics.enable; enable only after Gate 2/3 evidence.
     '';
 
+    campaign.wolRelay = lib.mkOption {
+      type = lib.types.str;
+      default = "";
+      example = "172.16.0.11:6667";
+      description = ''
+        host:port of the wol-relay that wakes this machine with a Wake-on-LAN
+        packet. When set, the last poweroff of each campaign chain is measured
+        with Wake-on-LAN instead of the RTC alarm, so an outcome that does
+        not depend on the alarm exists. Empty leaves that poweroff unmeasured.
+      '';
+    };
+
     campaign.enable = lib.mkEnableOption ''
       the automatic poweroff A/B campaign: each poweroff is randomly a
       normal one or one that unloads the NVIDIA modules first, arms the RTC
@@ -146,7 +158,10 @@ in
         Type = "oneshot";
         RemainAfterExit = true;
         ExecStart = "${pkgs.coreutils}/bin/true";
-        ExecStop = "${pkgs.nixos-scripts}/bin/test-shutdown campaign shutdown";
+        ExecStop =
+          "${pkgs.nixos-scripts}/bin/test-shutdown"
+          + lib.optionalString (cfg.campaign.wolRelay != "") " -wol-relay ${cfg.campaign.wolRelay}"
+          + " campaign shutdown";
         TimeoutStopSec = 60;
       };
     };

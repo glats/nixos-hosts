@@ -112,6 +112,7 @@
 
   hardware.rog.s5-recovery.efiFallback.enable = true;
   hardware.rog.s5-recovery.campaign.enable = true;
+  hardware.rog.s5-recovery.campaign.wolRelay = "172.16.0.11:6667";
 
   boot.blacklistedKernelModules = [
     "asus_nb_wmi"

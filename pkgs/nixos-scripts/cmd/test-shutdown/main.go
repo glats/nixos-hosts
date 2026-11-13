@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"math/rand/v2"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -33,6 +34,21 @@ func (osSystem) Output(name string, args ...string) (string, error) {
 
 func (osSystem) Sleep(d time.Duration) { time.Sleep(d) }
 
+func (osSystem) Exchange(addr, msg string, timeout time.Duration) (string, error) {
+	conn, err := net.DialTimeout("udp", addr, timeout)
+	if err != nil {
+		return "", err
+	}
+	defer conn.Close()
+	_ = conn.SetDeadline(time.Now().Add(timeout))
+	if _, err := conn.Write([]byte(msg)); err != nil {
+		return "", err
+	}
+	buf := make([]byte, 256)
+	n, err := conn.Read(buf)
+	return string(buf[:n]), err
+}
+
 func usage() {
 	fmt.Fprint(os.Stderr, `Usage:
   test-shutdown                      list trials and the recorded history
@@ -49,6 +65,7 @@ func usage() {
 func main() {
 	dryRun := flag.Bool("n", false, "dry run: show the steps without applying them")
 	logPath := flag.String("log", shutdowntrial.DefaultLogPath, "trial history file")
+	relay := flag.String("wol-relay", "", "host:port of the Wake-on-LAN relay used to measure the last shutdown of a campaign chain")
 	flag.Usage = usage
 	flag.Parse()
 
@@ -72,7 +89,7 @@ func main() {
 			os.Exit(2)
 		}
 		requireRoot()
-		campaign(log, ctx, args[1])
+		campaign(log, ctx, args[1], *relay)
 	case args[0] == "result":
 		if len(args) < 2 {
 			usage()
@@ -198,13 +215,15 @@ func fail(err error) {
 	os.Exit(1)
 }
 
-func campaign(log *shutdowntrial.Log, ctx shutdowntrial.Context, sub string) {
+func campaign(log *shutdowntrial.Log, ctx shutdowntrial.Context, sub, relay string) {
 	env := osSystem{}
 	c := shutdowncampaign.Ctx{
 		BootID: ctx.BootID,
 		Kernel: ctx.Kernel,
 		Now:    ctx.Now,
 		Rand:   rand.IntN,
+
+		RelayAddr: relay,
 	}
 	km := kmsg.New()
 	crumb := func(m string) { _ = km.Write(kmsg.UserNotice, m) }
@@ -260,4 +279,6 @@ func status(log *shutdowntrial.Log) {
 	fmt.Printf("  unload  measured=%d off=%d hung_or_unwoken=%d\n", r.Unload.N, r.Unload.Off, r.Unload.N-r.Unload.Off)
 	fmt.Printf("  alarm wakes=%d unload-failed=%d unmeasured=%d hung-before-arm=%d\n", r.AlarmWakes, r.Invalid, r.Unmeasured, r.Early)
 	fmt.Printf("  verdict: %s\n", r.Verdict)
+	fmt.Printf("  no-alarm (wol) measured=%d off=%d hung_or_unwoken=%d wol wakes=%d\n", r.Wol.N, r.Wol.Off, r.Wol.N-r.Wol.Off, r.WolWakes)
+	fmt.Printf("  wake verdict: %s\n", r.WakeVerdict)
 }

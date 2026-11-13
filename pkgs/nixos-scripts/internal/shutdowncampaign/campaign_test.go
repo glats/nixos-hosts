@@ -24,6 +24,8 @@ type fakeEnv struct {
 	ops      []string
 	failRun  map[string]error
 	sleeps   []time.Duration
+	reply    string
+	exchErr  error
 }
 
 func newEnv() *fakeEnv {
@@ -76,6 +78,11 @@ func (f *fakeEnv) Output(name string, args ...string) (string, error) {
 }
 
 func (f *fakeEnv) Sleep(d time.Duration) { f.sleeps = append(f.sleeps, d) }
+
+func (f *fakeEnv) Exchange(addr, msg string, timeout time.Duration) (string, error) {
+	f.ops = append(f.ops, "exchange "+addr+" "+msg)
+	return f.reply, f.exchErr
+}
 
 const unloadCmd = "run modprobe -r nvidia_drm nvidia_uvm nvidia_modeset nvidia"
 
@@ -547,5 +554,161 @@ func TestSummarizeCountsEarlyHangs(t *testing.T) {
 	es := []shutdowntrial.Entry{{Kind: "boot", BootID: "b1", Reason: "cold", Resolves: "b0", Outcome: "hung_early"}}
 	if r := Summarize(es); r.Early != 1 || r.Normal.N != 0 || r.Unload.N != 0 {
 		t.Fatalf("summary %+v", r)
+	}
+}
+
+const relayAddr = "172.16.0.11:6667"
+
+func relayCtx(boot string) Ctx {
+	c := ctx(boot, 0)
+	c.RelayAddr = relayAddr
+	return c
+}
+
+func twoAlarmWakes() []shutdowntrial.Entry {
+	return []shutdowntrial.Entry{
+		bootEntry("b0", "cold", "", "", ""),
+		armEntry("b0", ArmNormal, 1),
+		bootEntry("b1", "alarm", "b0", ArmNormal, "off"),
+		armEntry("b1", ArmUnload, 2),
+		bootEntry("b2", "alarm", "b1", ArmUnload, "off"),
+	}
+}
+
+func TestShutdownAtTheChainEndMeasuresWithWakeOnLan(t *testing.T) {
+	env := newEnv()
+	wake := t0.Add(AlarmDelay).Unix()
+	env.reply = "ACK b2 " + strconv.FormatInt(wake, 10)
+	log := seed(t, twoAlarmWakes())
+	if err := Shutdown(env, log, relayCtx("b2"), func(string) {}); err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"exchange " + relayAddr + " ARM b2 " + strconv.Itoa(int(AlarmDelay.Seconds()))}
+	if !reflect.DeepEqual(env.ops, want) {
+		t.Fatalf("ops %v, want %v", env.ops, want)
+	}
+	entries, _ := log.Read()
+	last := entries[len(entries)-1]
+	if last.Arm != ArmWol || last.AlarmUnix != wake || last.Error != "" {
+		t.Fatalf("last %+v", last)
+	}
+}
+
+func TestShutdownWolRelayDownIsUnmeasured(t *testing.T) {
+	env := newEnv()
+	env.exchErr = errors.New("timeout")
+	log := seed(t, twoAlarmWakes())
+	if err := Shutdown(env, log, relayCtx("b2"), func(string) {}); err != nil {
+		t.Fatal(err)
+	}
+	entries, _ := log.Read()
+	last := entries[len(entries)-1]
+	if last.Arm != ArmNone || last.AlarmUnix != 0 || !strings.Contains(last.Error, "relay") {
+		t.Fatalf("last %+v", last)
+	}
+}
+
+func TestShutdownWolRejectsAnUnexpectedReply(t *testing.T) {
+	env := newEnv()
+	env.reply = "NOPE"
+	log := seed(t, twoAlarmWakes())
+	_ = Shutdown(env, log, relayCtx("b2"), func(string) {})
+	entries, _ := log.Read()
+	if last := entries[len(entries)-1]; last.Arm != ArmNone || last.Error == "" {
+		t.Fatalf("last %+v", last)
+	}
+}
+
+func TestShutdownEarlyInTheChainNeverUsesWol(t *testing.T) {
+	env := newEnv()
+	log := newLog(t)
+	if err := Shutdown(env, log, relayCtx("b1"), func(string) {}); err != nil {
+		t.Fatal(err)
+	}
+	for _, op := range env.ops {
+		if strings.HasPrefix(op, "exchange") {
+			t.Fatalf("early shutdown used wol: %v", env.ops)
+		}
+	}
+}
+
+func TestShutdownAfterAWolWakeIsPlain(t *testing.T) {
+	env := newEnv()
+	es := append(twoAlarmWakes(), shutdowntrial.Entry{Kind: "arm", BootID: "b2", Arm: ArmWol, AlarmUnix: 3},
+		bootEntry("b3", "wol", "b2", ArmWol, "off"))
+	log := seed(t, es)
+	if err := Shutdown(env, log, relayCtx("b3"), func(string) {}); err != nil {
+		t.Fatal(err)
+	}
+	if len(env.ops) != 0 {
+		t.Fatalf("acted: %v", env.ops)
+	}
+	entries, _ := log.Read()
+	if last := entries[len(entries)-1]; last.Arm != ArmNone || last.AlarmUnix != 0 {
+		t.Fatalf("last %+v", last)
+	}
+}
+
+func TestBootInsideTheWolWindowIsAWolWake(t *testing.T) {
+	wake := t0.Add(-70 * time.Second).Unix()
+	log := seed(t, []shutdowntrial.Entry{armEntry("b0", ArmWol, wake)})
+	e, err := Boot(newEnv(), log, ctx("b1", 0))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if e.Reason != "wol" || e.Outcome != "off" || e.Arm != ArmWol {
+		t.Fatalf("entry %+v", e)
+	}
+}
+
+func TestAutoCyclePowersOffAfterAWolWake(t *testing.T) {
+	env := newEnv()
+	log := seed(t, []shutdowntrial.Entry{armEntry("b0", ArmWol, 1), bootEntry("b1", "wol", "b0", ArmWol, "off")})
+	if err := AutoCycle(env, log, ctx("b1", 0), func(string) {}); err != nil {
+		t.Fatal(err)
+	}
+	if env.ops[len(env.ops)-1] != "run systemctl poweroff" {
+		t.Fatalf("ops %v", env.ops)
+	}
+}
+
+func TestSummarizeSeparatesWolMeasuredShutdownsAndWarnsWhenWolNeverWoke(t *testing.T) {
+	es := []shutdowntrial.Entry{
+		bootEntry("a", "alarm", "x", ArmNormal, "off"),
+		bootEntry("b", "cold", "y", ArmWol, "hung_or_unwoken"),
+	}
+	r := Summarize(es)
+	if r.Wol.N != 1 || r.Wol.Off != 0 || r.WolWakes != 0 {
+		t.Fatalf("summary %+v", r)
+	}
+	if !strings.Contains(r.WakeVerdict, "never woke") {
+		t.Fatalf("wake verdict %q", r.WakeVerdict)
+	}
+}
+
+func TestSummarizeComparesAlarmAndWolWhenEnoughSamples(t *testing.T) {
+	var es []shutdowntrial.Entry
+	for i := 0; i < 5; i++ {
+		es = append(es, bootEntry("n"+strconv.Itoa(i), "alarm", "x", ArmNormal, "off"))
+		es = append(es, bootEntry("w"+strconv.Itoa(i), "cold", "y", ArmWol, "hung_or_unwoken"))
+	}
+	es = append(es, bootEntry("w9", "wol", "y", ArmWol, "off"))
+	r := Summarize(es)
+	if r.WolWakes != 1 || !strings.Contains(r.WakeVerdict, "differ") {
+		t.Fatalf("summary %+v", r)
+	}
+}
+
+func TestBootIsIdempotentWithinTheSameBoot(t *testing.T) {
+	log := seed(t, []shutdowntrial.Entry{bootEntry("b1", "cold", "", "", "")})
+	e, err := Boot(newEnv(), log, ctx("b1", 0))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if e.Kind != "" {
+		t.Fatalf("recorded again: %+v", e)
+	}
+	if got, _ := log.Read(); len(got) != 1 {
+		t.Fatalf("log %+v", got)
 	}
 }
