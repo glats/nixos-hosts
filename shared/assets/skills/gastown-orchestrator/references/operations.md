@@ -11,6 +11,10 @@ Swarm state lives in `~/.local/state/gastown/swarm/<project>/`: `campaign.json` 
 | Answer a Mayor question | `gastown-run campaign answer --question <id> <p> "<text>"` |
 | Steer running work | `gastown-run campaign reply <p> "<instruction>"` |
 | Status, tokens | `gastown-run campaign status <p>`, `gastown-run swarm usage <p>` |
+| Approve an item you reviewed | `gastown-run campaign approve <p> <item> gastown/<bead>...` (refused unless the gate accepted every branch) |
+| Add items for a new direction | `gastown-run campaign extend <p> "<direction>"` |
+| Let it pick items that need no decision | `gastown-run campaign autopilot <p> on` (at most 3 active; `off` to stop) |
+| Add accepted branches to the base by hand | `gastown-run campaign advance <p> gastown/<bead>...` |
 | Stop (state kept) | `gastown-run campaign stop <p>` |
 | One-off goal without a campaign | `gastown-run swarm run --goal "<text>" <p>` |
 | Models alive before spending | `gastown-run swarm check <p>` |

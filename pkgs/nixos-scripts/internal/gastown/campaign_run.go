@@ -12,6 +12,8 @@ import (
 	"time"
 )
 
+const autopilotMaxActive = 3
+
 const (
 	campaignBlockedAfter = 30 * time.Minute
 	campaignDigestEvery  = 4 * time.Hour
@@ -42,6 +44,15 @@ func (s *Swarm) queue(in queuedInput) error {
 // supervisor runs.
 func (s *Swarm) QueueCampaignReply(text string) error {
 	return s.queue(queuedInput{Kind: "reply", Text: text})
+}
+
+// QueueCampaignAutopilot turns the autopilot on or off.
+func (s *Swarm) QueueCampaignAutopilot(on bool) error {
+	text := "off"
+	if on {
+		text = "on"
+	}
+	return s.queue(queuedInput{Kind: "autopilot", Text: text})
 }
 
 // QueueCampaignExtend asks the supervisor to have the Mayor propose more items.
@@ -253,6 +264,15 @@ func (s *Swarm) handleInput(c *Campaign, in queuedInput, now time.Time) {
 	case "extend":
 		s.handleExtend(c, in.Text, now)
 		return
+	case "autopilot":
+		c.Autopilot = in.Text == "on"
+		c.dirty = true
+		c.Decisions = append(c.Decisions, CampaignDecision{At: now, Question: "autopilot", Answer: in.Text})
+		s.notify("medium", "Autopilot "+in.Text, map[bool]string{
+			true:  "the supervisor now selects items that need no decision from you and whose dependencies are resolved, at most " + strconv.Itoa(autopilotMaxActive) + " active at a time",
+			false: "items are selected only when you reply with their ids",
+		}[c.Autopilot])
+		return
 	case "approve":
 		s.handleApprove(c, in.Question, strings.Fields(in.Text), now)
 		return
@@ -293,7 +313,58 @@ func (s *Swarm) handleAnswer(c *Campaign, id, text string, now time.Time) {
 	}
 }
 
+// autoSelect picks, in plan order, the proposed items that need no decision
+// from the user and whose dependencies are done or already queued.
+func (s *Swarm) autoSelect(c *Campaign, now time.Time) {
+	if !c.Autopilot || (c.Phase != phaseExecuting && c.Phase != phaseSelecting) {
+		return
+	}
+	active := 0
+	for _, it := range c.Items {
+		if it.Status == "selected" || it.Status == "running" {
+			active++
+		}
+	}
+	var picked []string
+	for i := range c.Items {
+		it := &c.Items[i]
+		if active >= autopilotMaxActive {
+			break
+		}
+		if it.Status != "proposed" || it.NeedsDecision {
+			continue
+		}
+		ready := true
+		for _, d := range it.DependsOn {
+			if dep := c.item(d); dep == nil || (dep.Status != "done" && dep.Status != "selected" && dep.Status != "running") {
+				ready = false
+			}
+		}
+		if ready {
+			it.Status = "selected"
+			picked = append(picked, it.ID)
+			active++
+		}
+	}
+	if len(picked) == 0 {
+		return
+	}
+	c.Phase, c.dirty = phaseExecuting, true
+	s.notify("low", "Autopilot selected "+strconv.Itoa(len(picked))+" item(s)", strings.Join(picked, ", "))
+}
+
 func (s *Swarm) handleReply(c *Campaign, text string, now time.Time) {
+	if c.Phase != phaseSelecting {
+		switch strings.ToLower(strings.TrimSpace(text)) {
+		case "all", "todo", "todos":
+		default:
+			if ids, ok := LiteralSelection(text, c); ok {
+				c.Decisions = append(c.Decisions, CampaignDecision{At: now, Question: "which items to pursue", Answer: text})
+				s.applySelection(c, ids, now)
+				return
+			}
+		}
+	}
 	switch {
 	case c.Phase == phasePlanning && c.PlanAsks >= 3:
 		c.Decisions = append(c.Decisions, CampaignDecision{At: now, Question: "guidance after invalid plans", Answer: text})
@@ -416,6 +487,7 @@ func (s *Swarm) CampaignStep(c *Campaign, now time.Time) {
 	for _, in := range s.drainReplies() {
 		s.handleInput(c, in, now)
 	}
+	s.autoSelect(c, now)
 	switch c.Phase {
 	case phasePlanning:
 		if c.PlanAsks == 0 {

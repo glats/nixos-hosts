@@ -22,6 +22,7 @@ const campaignUsage = `gastown-run campaign - an intent becomes needs, you pick,
   campaign advance <project> BRANCH...                  add gate-accepted branches (gastown/<bead>) to the swarm's base by hand
   campaign approve <project> <item> BRANCH...           approve an item whose branches the gate accepted (you reviewed them)
   campaign extend <project> "<direction>"               have the Mayor propose more items for a new direction
+  campaign autopilot <project> on|off                   select items that need no decision from you automatically (at most 3 active)
   campaign status <project>                             phase, items, decisions and learnings
   campaign stop <project>                               stop the supervisor; the campaign resumes with campaign start
 
@@ -133,6 +134,15 @@ func CampaignMain(c Config, args []string, stdout, stderr io.Writer) int {
 			return fail(err)
 		}
 		fmt.Fprintln(stdout, "queued; the Mayor will propose items and you choose among them")
+	case "autopilot":
+		args := fs.Args()[1:]
+		if len(args) != 1 || (args[0] != "on" && args[0] != "off") {
+			return fail(errors.New("autopilot takes on or off"))
+		}
+		if err := s.QueueCampaignAutopilot(args[0] == "on"); err != nil {
+			return fail(err)
+		}
+		fmt.Fprintln(stdout, "queued; autopilot "+args[0])
 	case "advance":
 		if err := s.CampaignAdvance(fs.Args()[1:]); err != nil {
 			return fail(err)

@@ -68,6 +68,7 @@ type Campaign struct {
 	StartedAt   time.Time          `json:"started_at"`
 	AskedSelect bool               `json:"asked_select,omitempty"`
 	ExtendAsked bool               `json:"extend_asked,omitempty"`
+	Autopilot   bool               `json:"autopilot,omitempty"`
 	dirty       bool
 }
 

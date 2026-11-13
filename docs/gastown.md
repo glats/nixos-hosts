@@ -135,6 +135,12 @@ every branch (the supervisor re-checks it and adds the branches to the base). `c
 <project> "<direction>"` records a new direction and has the Mayor propose additional items
 (new ids, dependencies on existing ones); they wait as proposed until you select them.
 
+Autopilot: `campaign autopilot <project> on` makes the supervisor select, by itself, every
+proposed item that needs no decision from you and whose dependencies are done or already
+queued, keeping at most 3 items active so spending stays bounded. Items that need your
+decision are never picked; they wait for you, and `off` returns to selecting by hand. A reply
+that is just a list of item ids selects them in any phase.
+
 Starting at boot: with `home.gastown.campaigns.<project> = { }` (enabled for `maquilinux` on
 `rog`) a systemd user service `gastown-campaign-<project>` starts the supervisor when the
 machine boots (`users.users.glats.linger` makes user services start without a login),
