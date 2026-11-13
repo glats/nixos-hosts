@@ -368,6 +368,11 @@
         homeManager = home-manager;
       };
 
+      checks.x86_64-linux.git-signing = import ./checks/git-signing {
+        pkgs = nixpkgs.legacyPackages.x86_64-linux;
+        inherit inputs;
+      };
+
       checks.x86_64-linux.link-grabber-env = import ./checks/link-grabber-env {
         pkgs = nixpkgs.legacyPackages.x86_64-linux;
       };

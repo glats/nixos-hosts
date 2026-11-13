@@ -77,6 +77,16 @@ in
 
 
 def evaluate(platform, home):
+    payload_path = os.environ.get("GIT_SIGNING_PAYLOAD")
+    if payload_path:
+        # The check evaluated the configuration with a placeholder home before
+        # the test ran, because a build cannot evaluate Nix itself. Rewrite
+        # the placeholder to the home this test uses.
+        payload = json.loads(Path(payload_path).read_text())
+        rendered = json.dumps(payload[platform]).replace(
+            payload["syntheticHome"], str(home)
+        )
+        return json.loads(rendered)
     env = os.environ | {
         "REPO_ROOT": str(ROOT),
         "SYNTHETIC_PLATFORM": platform,
@@ -84,8 +94,10 @@ def evaluate(platform, home):
     }
     result = subprocess.run(
         ["nix", "eval", "--impure", "--json", "--expr", EVAL_EXPRESSION],
-        check=True, capture_output=True, text=True, env=env,
+        check=False, capture_output=True, text=True, env=env,
     )
+    if result.returncode != 0:
+        raise RuntimeError(f"nix eval failed: {result.stderr.strip()}")
     return json.loads(result.stdout)
 
 
