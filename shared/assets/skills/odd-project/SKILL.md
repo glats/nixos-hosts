@@ -4,7 +4,7 @@ description: "Trigger: project-wide ODD, guiar proyecto, desarrollar con Gas Tow
 license: MIT
 metadata:
   author: "glats"
-  version: "1.1"
+  version: "1.2"
 ---
 
 ## Activation Contract
@@ -40,6 +40,7 @@ the product as the scope, not its first delivery. Skip isolated small changes.
 | Existing plan covers the product | Extend it; retain stable IDs and links. |
 | Only a first slice is documented | Add a parent map linking that slice without rewriting its history. |
 | Scope or acceptance needs a product choice | Ask one focused question and wait. |
+| Finished work leaves decisions for the user | Read them, brief, and close them one by one with the native question tool: `references/decision-review.md`. |
 | Evidence is missing or contradictory | Mark affected work pending; preserve both accounts. |
 | Gas Town is unavailable or its checks fail | Report the blocker; do not silently replace it or weaken checks. |
 | Memory is unavailable | Keep local continuity and mark the mirror pending. |
@@ -66,7 +67,8 @@ the product as the scope, not its first delivery. Skip isolated small changes.
    evidence, answer technical questions from established decisions, and bring
    only unresolved product or consent decisions to the user. Present a usable
    delivery with a concrete review walkthrough; gate acceptance is not user
-   acceptance. Record feedback and carry it into the next selected work.
+   acceptance. Close the open decisions interactively, one question at a time
+   (`references/decision-review.md`). Record feedback and carry it into the next selected work.
 6. Maintain a named current checkpoint: completed work and evidence, active
    selection, pending decisions, exact next safe step, retained scope,
    authorization limits, Git branch/commit, campaign/item IDs and recovery locations.
