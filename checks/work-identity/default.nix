@@ -1,7 +1,7 @@
-{ pkgs }:
+{ pkgs, self }:
 
 let
-  repo = builtins.path { path = ../..; };
+  repo = self.outPath;
 in
 pkgs.runCommand "work-identity-check"
   {

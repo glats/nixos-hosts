@@ -370,15 +370,17 @@
 
       checks.x86_64-linux.git-signing = import ./checks/git-signing {
         pkgs = nixpkgs.legacyPackages.x86_64-linux;
-        inherit inputs;
+        inherit inputs self;
       };
 
       checks.x86_64-linux.link-grabber-env = import ./checks/link-grabber-env {
         pkgs = nixpkgs.legacyPackages.x86_64-linux;
+        inherit self;
       };
 
       checks.x86_64-linux.work-identity = import ./checks/work-identity {
         pkgs = nixpkgs.legacyPackages.x86_64-linux;
+        inherit self;
       };
 
       nixosConfigurations = {

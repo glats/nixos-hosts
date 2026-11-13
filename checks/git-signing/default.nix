@@ -1,7 +1,11 @@
-{ pkgs, inputs }:
+{
+  pkgs,
+  inputs,
+  self,
+}:
 
 let
-  repo = builtins.path { path = ../..; };
+  repo = self.outPath;
 
   # The test used to evaluate this configuration with nix eval at run time.
   # A check runs inside a Nix build, where the store is read-only and the
@@ -60,18 +64,25 @@ let
     };
 
   payload = pkgs.writeText "git-signing-payload.json" (
-    builtins.toJSON {
-      inherit syntheticHome;
-      linux = evaluate "linux";
-      darwin = evaluate "darwin";
-    }
+    # The payload is data, not a store dependency: dropping the string context
+    # keeps the evaluation free of store paths that the flake's pure
+    # evaluation mode would refuse to realise.
+    builtins.unsafeDiscardStringContext (
+      builtins.toJSON {
+        inherit syntheticHome;
+        linux = evaluate "linux";
+        darwin = evaluate "darwin";
+      }
+    )
   );
 in
 pkgs.runCommand "git-signing-check"
   {
     nativeBuildInputs = [
-      pkgs.python3
+      pkgs.coreutils
       pkgs.git
+      pkgs.gnupg
+      pkgs.python3
     ];
   }
   ''
