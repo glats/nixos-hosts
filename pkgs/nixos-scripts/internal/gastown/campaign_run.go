@@ -46,6 +46,15 @@ func (s *Swarm) QueueCampaignReply(text string) error {
 	return s.queue(queuedInput{Kind: "reply", Text: text})
 }
 
+// QueueCampaignRetry asks the supervisor to re-run the base advance for a
+// blocked item whose branches the gate already accepted.
+func (s *Swarm) QueueCampaignRetry(item string) error {
+	if strings.TrimSpace(item) == "" {
+		return fmt.Errorf("retry needs an item")
+	}
+	return s.queue(queuedInput{Kind: "retry", Question: item, Text: "retry"})
+}
+
 // QueueCampaignAutopilot turns the autopilot on or off.
 func (s *Swarm) QueueCampaignAutopilot(on bool) error {
 	text := "off"
@@ -276,6 +285,9 @@ func (s *Swarm) handleInput(c *Campaign, in queuedInput, now time.Time) {
 	case "approve":
 		s.handleApprove(c, in.Question, strings.Fields(in.Text), now)
 		return
+	case "retry":
+		s.handleRetry(c, in.Question, now)
+		return
 	}
 	s.handleReply(c, in.Text, now)
 }
@@ -420,8 +432,12 @@ func (s *Swarm) stepItems(c *Campaign, now time.Time) {
 			}
 			sort.Strings(branches)
 			sort.Strings(files)
-			if adv := s.AdvanceBase(branches); adv.Status != "pass" && adv.Status != "none" {
-				running.Status = "blocked"
+			adv := s.AdvanceBase(branches)
+			if adv.Status == "fail" || adv.Status == "error" {
+				adv = s.AdvanceBase(branches)
+			}
+			if adv.Status != "pass" && adv.Status != "none" {
+				running.Status, running.Branches = "blocked", branches
 				c.dirty = true
 				s.notify("high", "Item blocked: "+running.Title, "its verified branches ("+strings.Join(branches, ", ")+") cannot be added to the base: "+adv.problem()+"\nreply: gastown-run campaign reply "+s.Cfg.Project+" \"...\"")
 				return
@@ -624,4 +640,52 @@ func (s *Swarm) handleApprove(c *Campaign, id string, branches []string, now tim
 	c.Learnings = append(c.Learnings, CampaignLearning{At: now, Item: id, Text: it.Summary})
 	c.dirty = true
 	s.notify("low", "Item approved: "+it.Title, it.Summary)
+}
+
+// gateVerified reports whether the trusted gate accepted every branch.
+func (s *Swarm) gateVerified(branches []string) (string, bool) {
+	verified := map[string]bool{}
+	for _, res := range s.loadState().Gated {
+		if res.Status == "pass" && res.Published != "" {
+			verified[res.Published] = true
+		}
+	}
+	for _, b := range branches {
+		if !verified[b] {
+			return b, false
+		}
+	}
+	return "", true
+}
+
+// handleRetry finishes a blocked item mechanically: its branches were accepted
+// by the gate, only adding them to the base failed. It claims no user review.
+func (s *Swarm) handleRetry(c *Campaign, id string, now time.Time) {
+	refuse := func(why string) { s.notify("high", "Cannot retry "+id, why) }
+	it := c.item(id)
+	switch {
+	case it == nil:
+		refuse("no such item")
+		return
+	case it.Status != "blocked":
+		refuse("the item is " + it.Status + ", only blocked items are retried")
+		return
+	case len(it.Branches) == 0:
+		refuse("the item has no recorded gate-verified branches; reply to it instead")
+		return
+	}
+	if bad, ok := s.gateVerified(it.Branches); !ok {
+		refuse(bad + " was never accepted by the trusted gate")
+		return
+	}
+	adv := s.AdvanceBase(it.Branches)
+	if adv.Status != "pass" && adv.Status != "none" {
+		refuse("the branches still cannot be added to the base: " + adv.problem())
+		return
+	}
+	it.Status = "done"
+	it.Summary = "retried the base advance after a failure; gate-verified branches: " + strings.Join(it.Branches, ", ")
+	c.Learnings = append(c.Learnings, CampaignLearning{At: now, Item: id, Text: it.Summary})
+	c.dirty = true
+	s.notify("low", "Item verified after retry: "+it.Title, it.Summary)
 }

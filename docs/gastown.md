@@ -135,6 +135,11 @@ every branch (the supervisor re-checks it and adds the branches to the base). `c
 <project> "<direction>"` records a new direction and has the Mayor propose additional items
 (new ids, dependencies on existing ones); they wait as proposed until you select them.
 
+Recovery: a failed base advance is retried once before the item is blocked, the failing run's
+logs are kept under `gate-logs/advance-failed-*`, and a blocked item remembers the branches the
+gate accepted. `campaign retry <project> <item>` re-runs the advance for such an item and, if it
+passes, marks it done (it records a mechanical retry, never a user review).
+
 Autopilot: `campaign autopilot <project> on` makes the supervisor select, by itself, every
 proposed item that needs no decision from you and whose dependencies are done or already
 queued, keeping at most 3 items active so spending stays bounded. Items that need your

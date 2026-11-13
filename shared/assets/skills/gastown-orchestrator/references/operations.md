@@ -14,6 +14,7 @@ Swarm state lives in `~/.local/state/gastown/swarm/<project>/`: `campaign.json` 
 | Approve an item you reviewed | `gastown-run campaign approve <p> <item> gastown/<bead>...` (refused unless the gate accepted every branch) |
 | Add items for a new direction | `gastown-run campaign extend <p> "<direction>"` |
 | Let it pick items that need no decision | `gastown-run campaign autopilot <p> on` (at most 3 active; `off` to stop) |
+| Finish a blocked item whose branches the gate accepted | `gastown-run campaign retry <p> <item>` (mechanical; says so in the record) |
 | Add accepted branches to the base by hand | `gastown-run campaign advance <p> gastown/<bead>...` |
 | Stop (state kept) | `gastown-run campaign stop <p>` |
 | One-off goal without a campaign | `gastown-run swarm run --goal "<text>" <p>` |
@@ -42,5 +43,6 @@ Replies are queued as files and read by the supervisor on its next round (20 s p
 
 - Boot dog and refinery escalations are Gas Town infrastructure noise.
 - `swarm check` does not probe codex or claude agents (subscription quota).
+- An older `gastown-run` rewrites `campaign.json` without fields it does not know (for example `autopilot`); run the supervisor with the newest binary and check the flag after a handoff.
 - `swarm init` cannot be repeated on an existing project; changing the Mayor means removing its state directory, only when nothing ran.
 - A power loss mid-item leaves it `running` until it is marked blocked; resume with `campaign start`, then reply to re-send it.

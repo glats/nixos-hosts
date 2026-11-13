@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"time"
 )
 
 // AdvanceResult reports whether accepted branches could become the new base.
@@ -49,10 +51,12 @@ func (s *Swarm) AdvanceBase(branches []string) AdvanceResult {
 			return res
 		}
 	}
-	res.Checks = s.R.RunChecks(work, s.Cfg.Checks, filepath.Join(s.Dir(), "gate-logs", "advance"))
+	logs := filepath.Join(s.Dir(), "gate-logs", "advance")
+	res.Checks = s.R.RunChecks(work, s.Cfg.Checks, logs)
 	for _, c := range res.Checks {
 		if c.Exit != 0 {
 			res.Status = "fail"
+			_ = os.Rename(logs, logs+"-failed-"+strconv.FormatInt(time.Now().UnixNano(), 10))
 			return res
 		}
 	}
