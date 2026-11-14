@@ -17,11 +17,11 @@ S4. Existing behavior is preserved: network interface name, IP, SSID, up/down sp
 
 | ID | Specs | Route | Status | Commit |
 |----|-------|-------|--------|--------|
-| T1 | S3 | inline | done | 4c347cf8 |
-| T2 | S1 | inline | done | 4c347cf8 |
-| T3 | S2 | inline | done | 4c347cf8 |
-| T4 | S3, S4 | inline | done | 4c347cf8 |
-| T5 | S1-S4 | inline | done | 4c347cf8 |
+| T1 | S3 | inline | done | 163d70fa |
+| T2 | S1 | inline | done | 163d70fa |
+| T3 | S2 | inline | done | 163d70fa |
+| T4 | S3, S4 | inline | done | 163d70fa |
+| T5 | S1-S4 | inline | done | 163d70fa |
 
 ## Log
 
