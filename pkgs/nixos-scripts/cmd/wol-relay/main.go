@@ -76,6 +76,8 @@ func main() {
 		n, src, err := conn.ReadFromUDP(buf)
 		if err != nil {
 			if ctx.Err() != nil {
+				log.Printf("wol-relay: stopping, waiting for a pending wake before exiting")
+				relay.Wait()
 				log.Printf("wol-relay: shut down cleanly")
 				return
 			}

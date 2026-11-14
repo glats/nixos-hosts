@@ -238,15 +238,18 @@ func Shutdown(env Env, log *shutdowntrial.Log, c Ctx, breadcrumb func(string)) e
 	entry := shutdowntrial.Entry{Kind: "arm", Time: c.Now, BootID: c.BootID, Kernel: c.Kernel, Trial: "campaign", Arm: ArmNone}
 	var errs []string
 	chain := chainLength(entries)
-	withAlarm := chain < MaxChain
-	if chain == MaxChain && c.RelayAddr != "" {
+	armed := false
+	if chain == 0 && c.RelayAddr != "" && wolDue(entries) {
 		if wake, err := requestWake(env, c); err != nil {
 			errs = append(errs, "relay: "+err.Error())
 		} else {
-			entry.Arm, entry.AlarmUnix = ArmWol, wake
+			entry.Arm, entry.AlarmUnix, armed = ArmWol, wake, true
+			if err := env.WriteFile(AlarmPath, []byte("0")); err != nil {
+				errs = append(errs, "alarm: "+err.Error())
+			}
 		}
 	}
-	if withAlarm {
+	if !armed && chain < MaxChain {
 		entry.Arm = ChooseArm(entries, c.Rand)
 		if entry.Arm == ArmUnload {
 			if err := unload(env); err != nil {
@@ -254,21 +257,35 @@ func Shutdown(env Env, log *shutdowntrial.Log, c Ctx, breadcrumb func(string)) e
 				errs = append(errs, err.Error())
 			}
 		}
+		if unix, err := armAlarm(env, c.Now.Add(AlarmDelay)); err != nil {
+			errs = append(errs, "alarm: "+err.Error())
+		} else {
+			entry.AlarmUnix = unix
+		}
 	}
 	entry.State = Snapshot(env)
-	if withAlarm {
-		unix, err := armAlarm(env, c.Now.Add(AlarmDelay))
-		if err != nil {
-			errs = append(errs, "alarm: "+err.Error())
-		}
-		entry.AlarmUnix = unix
-	}
 	entry.Error = strings.Join(errs, "; ")
 	if err := log.Append(entry); err != nil {
 		return fmt.Errorf("record arm: %w", err)
 	}
 	breadcrumb(fmt.Sprintf("test-shutdown: campaign arm=%s alarm=%d boot=%s", entry.Arm, entry.AlarmUnix, c.BootID))
 	return nil
+}
+
+func wolDue(entries []shutdowntrial.Entry) bool {
+	var wol, normal int
+	for _, e := range entries {
+		if e.Kind != "boot" || e.Resolves == "" {
+			continue
+		}
+		switch e.Arm {
+		case ArmWol:
+			wol++
+		case ArmNormal:
+			normal++
+		}
+	}
+	return wol <= normal
 }
 
 func requestWake(env Env, c Ctx) (int64, error) {

@@ -133,3 +133,48 @@ func TestRelayIgnoresInvalidPackets(t *testing.T) {
 		t.Fatal("scheduled from an invalid packet")
 	}
 }
+
+func TestWaitReturnsImmediatelyWhenNothingIsPending(t *testing.T) {
+	r := &Relay{Config: cfg(), Net: &fakeNet{}}
+	done := make(chan struct{})
+	go func() { r.Wait(); close(done) }()
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("Wait blocked with nothing pending")
+	}
+}
+
+func TestWaitBlocksUntilThePendingWakeIsSent(t *testing.T) {
+	n := &fakeNet{}
+	r := &Relay{Config: cfg(), Net: n}
+	r.OnPacket("172.16.0.5", "ARM b1 300", now)
+	done := make(chan struct{})
+	go func() { r.Wait(); close(done) }()
+	select {
+	case <-done:
+		t.Fatal("Wait returned before the wake was sent")
+	case <-time.After(50 * time.Millisecond):
+	}
+	n.scheduled[0]()
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("Wait did not return after the wake was sent")
+	}
+}
+
+func TestWaitDoesNotHangOnAReplacedWake(t *testing.T) {
+	n := &fakeNet{}
+	r := &Relay{Config: cfg(), Net: n}
+	r.OnPacket("172.16.0.5", "ARM b1 300", now)
+	r.OnPacket("172.16.0.5", "ARM b2 300", now)
+	done := make(chan struct{})
+	go func() { r.Wait(); close(done) }()
+	n.scheduled[1]()
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("Wait hung after a replaced wake")
+	}
+}

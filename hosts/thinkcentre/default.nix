@@ -143,6 +143,7 @@
       DynamicUser = true;
       Restart = "always";
       RestartSec = "2s";
+      TimeoutStopSec = "20min";
       NoNewPrivileges = true;
       ProtectSystem = "strict";
       ProtectHome = true;

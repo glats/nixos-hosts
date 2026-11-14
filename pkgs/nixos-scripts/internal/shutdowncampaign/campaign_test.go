@@ -575,80 +575,6 @@ func twoAlarmWakes() []shutdowntrial.Entry {
 	}
 }
 
-func TestShutdownAtTheChainEndMeasuresWithWakeOnLan(t *testing.T) {
-	env := newEnv()
-	wake := t0.Add(AlarmDelay).Unix()
-	env.reply = "ACK b2 " + strconv.FormatInt(wake, 10)
-	log := seed(t, twoAlarmWakes())
-	if err := Shutdown(env, log, relayCtx("b2"), func(string) {}); err != nil {
-		t.Fatal(err)
-	}
-	want := []string{"exchange " + relayAddr + " ARM b2 " + strconv.Itoa(int(AlarmDelay.Seconds()))}
-	if !reflect.DeepEqual(env.ops, want) {
-		t.Fatalf("ops %v, want %v", env.ops, want)
-	}
-	entries, _ := log.Read()
-	last := entries[len(entries)-1]
-	if last.Arm != ArmWol || last.AlarmUnix != wake || last.Error != "" {
-		t.Fatalf("last %+v", last)
-	}
-}
-
-func TestShutdownWolRelayDownIsUnmeasured(t *testing.T) {
-	env := newEnv()
-	env.exchErr = errors.New("timeout")
-	log := seed(t, twoAlarmWakes())
-	if err := Shutdown(env, log, relayCtx("b2"), func(string) {}); err != nil {
-		t.Fatal(err)
-	}
-	entries, _ := log.Read()
-	last := entries[len(entries)-1]
-	if last.Arm != ArmNone || last.AlarmUnix != 0 || !strings.Contains(last.Error, "relay") {
-		t.Fatalf("last %+v", last)
-	}
-}
-
-func TestShutdownWolRejectsAnUnexpectedReply(t *testing.T) {
-	env := newEnv()
-	env.reply = "NOPE"
-	log := seed(t, twoAlarmWakes())
-	_ = Shutdown(env, log, relayCtx("b2"), func(string) {})
-	entries, _ := log.Read()
-	if last := entries[len(entries)-1]; last.Arm != ArmNone || last.Error == "" {
-		t.Fatalf("last %+v", last)
-	}
-}
-
-func TestShutdownEarlyInTheChainNeverUsesWol(t *testing.T) {
-	env := newEnv()
-	log := newLog(t)
-	if err := Shutdown(env, log, relayCtx("b1"), func(string) {}); err != nil {
-		t.Fatal(err)
-	}
-	for _, op := range env.ops {
-		if strings.HasPrefix(op, "exchange") {
-			t.Fatalf("early shutdown used wol: %v", env.ops)
-		}
-	}
-}
-
-func TestShutdownAfterAWolWakeIsPlain(t *testing.T) {
-	env := newEnv()
-	es := append(twoAlarmWakes(), shutdowntrial.Entry{Kind: "arm", BootID: "b2", Arm: ArmWol, AlarmUnix: 3},
-		bootEntry("b3", "wol", "b2", ArmWol, "off"))
-	log := seed(t, es)
-	if err := Shutdown(env, log, relayCtx("b3"), func(string) {}); err != nil {
-		t.Fatal(err)
-	}
-	if len(env.ops) != 0 {
-		t.Fatalf("acted: %v", env.ops)
-	}
-	entries, _ := log.Read()
-	if last := entries[len(entries)-1]; last.Arm != ArmNone || last.AlarmUnix != 0 {
-		t.Fatalf("last %+v", last)
-	}
-}
-
 func TestBootInsideTheWolWindowIsAWolWake(t *testing.T) {
 	wake := t0.Add(-70 * time.Second).Unix()
 	log := seed(t, []shutdowntrial.Entry{armEntry("b0", ArmWol, wake)})
@@ -710,5 +636,114 @@ func TestBootIsIdempotentWithinTheSameBoot(t *testing.T) {
 	}
 	if got, _ := log.Read(); len(got) != 1 {
 		t.Fatalf("log %+v", got)
+	}
+}
+
+func humanShutdownEntries() []shutdowntrial.Entry {
+	return []shutdowntrial.Entry{bootEntry("b0", "cold", "", "", "")}
+}
+
+func TestFirstShutdownOfAChainIsMeasuredWithWakeOnLan(t *testing.T) {
+	env := newEnv()
+	wake := t0.Add(AlarmDelay).Unix()
+	env.reply = "ACK b0 " + strconv.FormatInt(wake, 10)
+	log := seed(t, humanShutdownEntries())
+	if err := Shutdown(env, log, relayCtx("b0"), func(string) {}); err != nil {
+		t.Fatal(err)
+	}
+	want := []string{
+		"exchange " + relayAddr + " ARM b0 " + strconv.Itoa(int(AlarmDelay.Seconds())),
+		"write " + AlarmPath + "=0",
+	}
+	if !reflect.DeepEqual(env.ops, want) {
+		t.Fatalf("ops %v, want %v", env.ops, want)
+	}
+	entries, _ := log.Read()
+	last := entries[len(entries)-1]
+	if last.Arm != ArmWol || last.AlarmUnix != wake || last.Error != "" {
+		t.Fatalf("last %+v", last)
+	}
+}
+
+func TestFirstShutdownFallsBackToTheAlarmWhenTheRelayIsDown(t *testing.T) {
+	env := newEnv()
+	env.exchErr = errors.New("timeout")
+	log := seed(t, humanShutdownEntries())
+	if err := Shutdown(env, log, relayCtx("b0"), func(string) {}); err != nil {
+		t.Fatal(err)
+	}
+	entries, _ := log.Read()
+	last := entries[len(entries)-1]
+	if (last.Arm != ArmNormal && last.Arm != ArmUnload) || last.AlarmUnix == 0 || !strings.Contains(last.Error, "relay") {
+		t.Fatalf("last %+v", last)
+	}
+}
+
+func TestFirstShutdownFallsBackToTheAlarmOnAnUnexpectedReply(t *testing.T) {
+	env := newEnv()
+	env.reply = "NOPE"
+	log := seed(t, humanShutdownEntries())
+	_ = Shutdown(env, log, relayCtx("b0"), func(string) {})
+	entries, _ := log.Read()
+	if last := entries[len(entries)-1]; last.AlarmUnix == 0 || last.Error == "" || last.Arm == ArmWol {
+		t.Fatalf("last %+v", last)
+	}
+}
+
+func TestFirstShutdownUsesTheAlarmWhenWolIsAheadOfTheAlarmGroup(t *testing.T) {
+	env := newEnv()
+	log := seed(t, []shutdowntrial.Entry{
+		bootEntry("w1", "wol", "x", ArmWol, "off"),
+		bootEntry("w2", "wol", "y", ArmWol, "off"),
+		bootEntry("n1", "alarm", "z", ArmNormal, "off"),
+		bootEntry("b0", "cold", "", "", ""),
+	})
+	if err := Shutdown(env, log, relayCtx("b0"), func(string) {}); err != nil {
+		t.Fatal(err)
+	}
+	for _, op := range env.ops {
+		if strings.HasPrefix(op, "exchange") {
+			t.Fatalf("wol used while ahead: %v", env.ops)
+		}
+	}
+}
+
+func TestLaterShutdownsOfAChainNeverUseWol(t *testing.T) {
+	for name, es := range map[string][]shutdowntrial.Entry{
+		"after one wake": {armEntry("b0", ArmWol, 1), bootEntry("b1", "wol", "b0", ArmWol, "off")},
+		"after two wakes": append(twoAlarmWakes(),
+			shutdowntrial.Entry{Kind: "arm", BootID: "b2", Arm: ArmNormal, AlarmUnix: 3}),
+	} {
+		env := newEnv()
+		log := seed(t, es)
+		_ = Shutdown(env, log, relayCtx("b9"), func(string) {})
+		for _, op := range env.ops {
+			if strings.HasPrefix(op, "exchange") {
+				t.Fatalf("%s: wol used: %v", name, env.ops)
+			}
+		}
+	}
+}
+
+func TestShutdownAfterAWolWakeContinuesWithTheAlarm(t *testing.T) {
+	env := newEnv()
+	log := seed(t, []shutdowntrial.Entry{armEntry("b0", ArmWol, 1), bootEntry("b1", "wol", "b0", ArmWol, "off")})
+	if err := Shutdown(env, log, relayCtx("b1"), func(string) {}); err != nil {
+		t.Fatal(err)
+	}
+	entries, _ := log.Read()
+	if last := entries[len(entries)-1]; last.AlarmUnix == 0 || last.Arm == ArmNone {
+		t.Fatalf("last %+v", last)
+	}
+}
+
+func TestChainEndStaysPlainEvenWithARelay(t *testing.T) {
+	env := newEnv()
+	log := seed(t, twoAlarmWakes())
+	if err := Shutdown(env, log, relayCtx("b2"), func(string) {}); err != nil {
+		t.Fatal(err)
+	}
+	if len(env.ops) != 0 {
+		t.Fatalf("acted: %v", env.ops)
 	}
 }

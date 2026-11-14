@@ -69,8 +69,9 @@ type Relay struct {
 	Config Config
 	Net    Net
 
-	mu     sync.Mutex
-	cancel func()
+	mu      sync.Mutex
+	cancel  func()
+	pending chan struct{}
 }
 
 func (r *Relay) OnPacket(src, msg string, now time.Time) string {
@@ -82,12 +83,25 @@ func (r *Relay) OnPacket(src, msg string, now time.Time) string {
 	defer r.mu.Unlock()
 	if r.cancel != nil {
 		r.cancel()
+		close(r.pending)
 	}
-	r.cancel = r.Net.Schedule(d.WakeAt.Sub(now), r.wake)
+	done := make(chan struct{})
+	r.pending = done
+	r.cancel = r.Net.Schedule(d.WakeAt.Sub(now), func() { r.wake(done) })
 	return d.Reply
 }
 
-func (r *Relay) wake() {
+func (r *Relay) Wait() {
+	r.mu.Lock()
+	done := r.pending
+	r.mu.Unlock()
+	if done != nil {
+		<-done
+	}
+}
+
+func (r *Relay) wake(done chan struct{}) {
+	defer close(done)
 	packet := MagicPacket(r.Config.MAC)
 	for i := 0; i < Burst; i++ {
 		if i > 0 {
