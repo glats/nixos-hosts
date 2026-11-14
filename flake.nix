@@ -197,12 +197,23 @@
             nixpkgs = nixpkgsInput;
             home-manager = homeManagerInput;
           };
+          conkyConfigFile = ./hosts + "/${hostname}/conky-config.nix";
+          conkyConfig =
+            if builtins.pathExists conkyConfigFile then
+              (import conkyConfigFile { lib = nixpkgsInput.lib; }).conky-config
+            else
+              {
+                enable = false;
+                networkInterface = "eth0";
+                additionalInterfaces = [ ];
+                mountPoints = [ ];
+              };
         in
         homeManagerInput.lib.homeManagerConfiguration {
           pkgs = mkPkgsFor nixpkgsInput extraOverlays system;
           modules = extraModules;
           extraSpecialArgs = {
-            inherit username;
+            inherit username conkyConfig;
             inputs = hostInputs;
             host = hostname;
             hostName = hostname;

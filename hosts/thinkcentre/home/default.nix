@@ -7,7 +7,7 @@ baseModules
 ++ [
   ../../../linux/home/remote-desktop.nix
 
-  ../../../linux/home/conky-thinkcentre.nix
+  ../../../linux/home/conky.nix
   ../../../linux/home/suites/sonicde
   { home.opencode.activeProviderName = "anthropic-openai-ollama"; }
   ({ lib, ... }: {
