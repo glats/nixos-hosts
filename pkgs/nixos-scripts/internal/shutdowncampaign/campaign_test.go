@@ -747,3 +747,130 @@ func TestChainEndStaysPlainEvenWithARelay(t *testing.T) {
 		t.Fatalf("acted: %v", env.ops)
 	}
 }
+
+func group(n, off int) ArmStats { return ArmStats{N: n, Off: off} }
+
+func TestDiagnoseNeedsMoreDataBelowTheThreshold(t *testing.T) {
+	d := Diagnose(Result{Normal: group(3, 3), Unload: group(3, 3), AlarmWakes: 6})
+	if d.Conclusive {
+		t.Fatalf("concluded early: %+v", d)
+	}
+}
+
+func TestDiagnoseBlamesTheDriverWhenUnloadFixesTheHang(t *testing.T) {
+	r := Summarize(boots(ArmNormal, 5, 0, ArmUnload, 5, 5))
+	d := Diagnose(r)
+	if !d.Conclusive || d.Code != CodeDriver || !strings.Contains(d.Text, "unload") {
+		t.Fatalf("diagnosis %+v", d)
+	}
+}
+
+func TestDiagnoseFlagsUnloadMakingThingsWorse(t *testing.T) {
+	d := Diagnose(Summarize(boots(ArmNormal, 5, 5, ArmUnload, 5, 0)))
+	if !d.Conclusive || d.Code != CodeUnloadWorse {
+		t.Fatalf("diagnosis %+v", d)
+	}
+}
+
+func TestDiagnoseBlamesTheAlarmWhenOnlyAlarmArmedShutdownsPowerOff(t *testing.T) {
+	r := Summarize(boots(ArmNormal, 5, 5, ArmWol, 5, 1))
+	d := Diagnose(r)
+	if !d.Conclusive || d.Code != CodeAlarmMasks {
+		t.Fatalf("diagnosis %+v (summary %+v)", d, r)
+	}
+}
+
+func TestDiagnoseReportsWhenNoFactorSeparatesTheOutcome(t *testing.T) {
+	d := Diagnose(Summarize(boots(ArmNormal, 5, 4, ArmUnload, 5, 4, ArmWol, 5, 4)))
+	if !d.Conclusive || d.Code != CodeNotSeparated {
+		t.Fatalf("diagnosis %+v", d)
+	}
+}
+
+func TestDiagnoseSaysTheAlarmCannotBeTrustedWhenItNeverWoke(t *testing.T) {
+	d := Diagnose(Result{Normal: group(2, 0), Unload: group(2, 0), AlarmWakes: 0})
+	if !d.Conclusive || d.Code != CodeAlarmUnreliable {
+		t.Fatalf("diagnosis %+v", d)
+	}
+}
+
+func TestDiagnoseSaysWolCannotBeTrustedWhenItNeverWoke(t *testing.T) {
+	d := Diagnose(Result{Normal: group(3, 3), Wol: group(3, 0), AlarmWakes: 3, WolWakes: 0})
+	if !d.Conclusive || d.Code != CodeWolUnreliable {
+		t.Fatalf("diagnosis %+v", d)
+	}
+}
+
+func boots(spec ...any) []shutdowntrial.Entry {
+	var es []shutdowntrial.Entry
+	for i := 0; i+2 < len(spec)+0 && i < len(spec); i += 3 {
+		arm := spec[i].(string)
+		n, off := spec[i+1].(int), spec[i+2].(int)
+		for j := 0; j < n; j++ {
+			reason, outcome := "cold", "hung_or_unwoken"
+			if j < off {
+				reason, outcome = "alarm", "off"
+				if arm == ArmWol {
+					reason = "wol"
+				}
+			}
+			es = append(es, bootEntry(arm+strconv.Itoa(j), reason, "r", arm, outcome))
+		}
+	}
+	return es
+}
+
+func TestReportWritesTheDiagnosisPausesAndIsIdempotent(t *testing.T) {
+	env := newEnv()
+	log := seed(t, boots(ArmNormal, 5, 0, ArmUnload, 5, 5))
+	text, err := Report(env, log, ctx("b1", 0), func(string) {})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(text, "unload") {
+		t.Fatalf("text %q", text)
+	}
+	var wrote []string
+	for _, op := range env.ops {
+		wrote = append(wrote, op)
+	}
+	joined := strings.Join(wrote, "\n")
+	if !strings.Contains(joined, "write "+ReportPath+"=") || !strings.Contains(joined, "write "+PausePath+"=") {
+		t.Fatalf("ops %v", env.ops)
+	}
+	env.files[ReportedPath] = CodeDriver
+	env.ops = nil
+	again, err := Report(env, log, ctx("b2", 0), func(string) {})
+	if err != nil || again != "" || len(env.ops) != 0 {
+		t.Fatalf("not idempotent: %q %v %v", again, err, env.ops)
+	}
+}
+
+func TestReportStaysSilentWhenInconclusive(t *testing.T) {
+	env := newEnv()
+	log := seed(t, boots(ArmNormal, 2, 2))
+	text, err := Report(env, log, ctx("b1", 0), func(string) {})
+	if err != nil || text != "" || len(env.ops) != 0 {
+		t.Fatalf("got %q %v %v", text, err, env.ops)
+	}
+}
+
+func TestBriefIsOneShortLine(t *testing.T) {
+	log := boots(ArmNormal, 4, 4, ArmUnload, 3, 3, ArmWol, 1, 1)
+	line := Brief(log, false, "")
+	if strings.Contains(line, "\n") || !strings.Contains(line, "4/4") || !strings.Contains(line, "3/3") || !strings.Contains(line, "1/1") {
+		t.Fatalf("brief %q", line)
+	}
+	if len(line) > 60 {
+		t.Fatalf("too long (%d): %q", len(line), line)
+	}
+}
+
+func TestBriefShowsTheConclusionOrPause(t *testing.T) {
+	if got := Brief(nil, true, ""); !strings.Contains(got, "paused") {
+		t.Fatalf("paused brief %q", got)
+	}
+	if got := Brief(nil, false, CodeDriver); !strings.Contains(got, CodeDriver) {
+		t.Fatalf("conclusion brief %q", got)
+	}
+}

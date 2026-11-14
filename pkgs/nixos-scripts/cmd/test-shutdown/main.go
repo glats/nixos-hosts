@@ -57,6 +57,7 @@ func usage() {
   sudo test-shutdown result off|hung [note...]
                                      record what you saw after the last trial
   test-shutdown status               A/B campaign summary (normal vs unload)
+  test-shutdown brief                one-line campaign state (used by the desktop widget)
   sudo test-shutdown campaign pause|resume
                                      stop or restart the automatic campaign
 `)
@@ -83,6 +84,8 @@ func main() {
 		list(log)
 	case args[0] == "status":
 		status(log)
+	case args[0] == "brief":
+		brief(log)
 	case args[0] == "campaign":
 		if len(args) < 2 {
 			usage()
@@ -229,6 +232,11 @@ func campaign(log *shutdowntrial.Log, ctx shutdowntrial.Context, sub, relay stri
 	crumb := func(m string) { _ = km.Write(kmsg.UserNotice, m) }
 	var err error
 	switch sub {
+	case "report":
+		var text string
+		if text, err = shutdowncampaign.Report(env, log, c, crumb); err == nil && text != "" {
+			fmt.Print(text)
+		}
 	case "begin":
 		err = shutdowncampaign.Begin(env, log, c, crumb)
 	case "shutdown":
@@ -262,6 +270,20 @@ func campaign(log *shutdowntrial.Log, ctx shutdowntrial.Context, sub, relay stri
 	if err != nil {
 		fail(err)
 	}
+}
+
+func brief(log *shutdowntrial.Log) {
+	entries, err := log.Read()
+	if err != nil {
+		fmt.Println("campaign: history unreadable")
+		return
+	}
+	_, pausedErr := os.Stat(shutdowncampaign.PausePath)
+	conclusion := ""
+	if b, err := os.ReadFile(shutdowncampaign.ReportedPath); err == nil {
+		conclusion = strings.TrimSpace(string(b))
+	}
+	fmt.Println(shutdowncampaign.Brief(entries, pausedErr == nil, conclusion))
 }
 
 func status(log *shutdowntrial.Log) {

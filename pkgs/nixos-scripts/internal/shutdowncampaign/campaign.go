@@ -20,6 +20,8 @@ const (
 	AlarmPath    = "/sys/class/rtc/rtc0/wakealarm"
 	PausePath    = "/var/lib/test-shutdown/campaign-paused"
 	SessionsGlob = "/run/systemd/sessions/*"
+	ReportPath   = "/var/lib/test-shutdown/REPORT.txt"
+	ReportedPath = "/var/lib/test-shutdown/reported"
 	ModulesPath  = "/proc/modules"
 	UptimePath   = "/proc/uptime"
 
@@ -505,4 +507,104 @@ func fisher(a, b, c, d int) float64 {
 		}
 	}
 	return math.Min(p, 1)
+}
+
+const (
+	CodeDriver          = "driver-loaded"
+	CodeUnloadWorse     = "unload-worse"
+	CodeAlarmMasks      = "alarm-masks-hang"
+	CodeWolBetter       = "no-alarm-better"
+	CodeNotSeparated    = "not-separated"
+	CodeAlarmUnreliable = "alarm-unreliable"
+	CodeWolUnreliable   = "wol-unreliable"
+)
+
+type Diagnosis struct {
+	Conclusive bool
+	Code       string
+	Text       string
+}
+
+func rate(g ArmStats) float64 {
+	if g.N == 0 {
+		return 0
+	}
+	return float64(g.Off) / float64(g.N)
+}
+
+func counts(r Result) string {
+	return fmt.Sprintf("normal %d/%d off, unload %d/%d off, no-alarm wol %d/%d off, alarm wakes %d, wol wakes %d",
+		r.Normal.Off, r.Normal.N, r.Unload.Off, r.Unload.N, r.Wol.Off, r.Wol.N, r.AlarmWakes, r.WolWakes)
+}
+
+func Diagnose(r Result) Diagnosis {
+	switch {
+	case r.AlarmWakes == 0 && r.Normal.N+r.Unload.N >= 3:
+		return Diagnosis{true, CodeAlarmUnreliable, "The RTC alarm never woke the machine, so no shutdown can be classified. " +
+			"Next: check the BIOS RTC wake setting or use another wake source."}
+	case r.Wol.N >= 3 && r.WolWakes == 0:
+		return Diagnosis{true, CodeWolUnreliable, "Wake-on-LAN never woke the machine, so no-alarm shutdowns cannot be classified. " +
+			"Next: check that the relay host was up and the BIOS allows power-on by LAN, or run the relay on another host."}
+	}
+	if r.Normal.N >= MinSamples && r.Unload.N >= MinSamples {
+		if p := fisher(r.Normal.Off, r.Normal.N-r.Normal.Off, r.Unload.Off, r.Unload.N-r.Unload.Off); p < 0.05 {
+			if rate(r.Unload) > rate(r.Normal) {
+				return Diagnosis{true, CodeDriver, fmt.Sprintf("The NVIDIA driver being loaded at poweroff causes the hang: "+
+					"unloading the nvidia modules first powers off more often (p=%.3f; %s). "+
+					"Next: unload the driver in a declarative shutdown unit (stop GPU consumers, modprobe -r) and confirm with consecutive powered-off shutdowns.", p, counts(r))}
+			}
+			return Diagnosis{true, CodeUnloadWorse, fmt.Sprintf("Unloading the nvidia modules before poweroff makes shutdowns worse (p=%.3f; %s). "+
+				"Next: stop unloading and look at the firmware side.", p, counts(r))}
+		}
+	}
+	if r.Normal.N >= MinSamples && r.Wol.N >= MinSamples && r.WolWakes >= 1 {
+		if p := fisher(r.Normal.Off, r.Normal.N-r.Normal.Off, r.Wol.Off, r.Wol.N-r.Wol.Off); p < 0.05 {
+			if rate(r.Wol) < rate(r.Normal) {
+				return Diagnosis{true, CodeAlarmMasks, fmt.Sprintf("An armed RTC alarm changes the outcome: shutdowns without it hang while alarm-armed ones power off (p=%.3f; %s). "+
+					"Next: arm a wake alarm before every poweroff as a workaround, and investigate the firmware S5 path without a wake source.", p, counts(r))}
+			}
+			return Diagnosis{true, CodeWolBetter, fmt.Sprintf("Shutdowns without an alarm power off more often than alarm-armed ones (p=%.3f; %s). "+
+				"Next: treat the alarm as a risk factor and drop it from the procedure.", p, counts(r))}
+		}
+	}
+	if r.Normal.N >= MinSamples && r.Unload.N >= MinSamples && r.Wol.N >= MinSamples {
+		return Diagnosis{true, CodeNotSeparated, fmt.Sprintf("Neither unloading NVIDIA nor the RTC alarm separates the outcome (%s). "+
+			"Next: look at the firmware or embedded controller side.", counts(r))}
+	}
+	return Diagnosis{}
+}
+
+func Report(env Env, log *shutdowntrial.Log, c Ctx, breadcrumb func(string)) (string, error) {
+	entries, err := log.Read()
+	if err != nil {
+		return "", err
+	}
+	d := Diagnose(Summarize(entries))
+	if !d.Conclusive {
+		return "", nil
+	}
+	if prev, err := env.ReadFile(ReportedPath); err == nil && strings.TrimSpace(string(prev)) == d.Code {
+		return "", nil
+	}
+	text := fmt.Sprintf("Poweroff campaign result (%s)\nCode: %s\n\n%s\n\nThe campaign was paused. Resume with: sudo test-shutdown campaign resume\n",
+		c.Now.Format("2006-01-02 15:04"), d.Code, d.Text)
+	for _, w := range []struct{ path, data string }{{ReportPath, text}, {PausePath, ""}, {ReportedPath, d.Code}} {
+		if err := env.WriteFile(w.path, []byte(w.data)); err != nil {
+			return "", fmt.Errorf("write %s: %w", w.path, err)
+		}
+	}
+	breadcrumb("test-shutdown: campaign conclusive code=" + d.Code)
+	return text, nil
+}
+
+func Brief(entries []shutdowntrial.Entry, paused bool, conclusion string) string {
+	if conclusion != "" {
+		return "RESULT: " + conclusion + " (see REPORT.txt)"
+	}
+	r := Summarize(entries)
+	line := fmt.Sprintf("normal %d/%d · unload %d/%d · wol %d/%d off", r.Normal.Off, r.Normal.N, r.Unload.Off, r.Unload.N, r.Wol.Off, r.Wol.N)
+	if paused {
+		return "campaign paused · " + line
+	}
+	return line
 }

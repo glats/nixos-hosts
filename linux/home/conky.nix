@@ -396,6 +396,7 @@ let
     ''${goto 40}''${color #${colors.light}}Desktop:''${goto 160}''${color} ''${execi 30 ${desktopScript}/bin/conky-desktop}''${goto 440}''${color #${colors.dark}}''${swapbar 5,200}''${color}
     ''${goto 40}''${color #${colors.light}}Install Days:''${goto 160}''${color} ''${execi 3600 ${installDaysScript}/bin/conky-install-days}
     ''${goto 40}''${color #${colors.light}}Uptime:''${goto 160}''${color} $uptime
+    ''${goto 40}''${color #${colors.light}}Poweroff test:''${goto 160}''${color} ''${execi 300 ${pkgs.nixos-scripts}/bin/test-shutdown brief}
     ''${goto 40}''${color #${colors.light}}CPU:''${goto 160}''${color} $cpu% ''${color #${colors.secondary}}''${cpubar 5,170}''${color}
 
     ''${voffset 60}

@@ -195,7 +195,10 @@ in
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
-        ExecStart = "${pkgs.nixos-scripts}/bin/test-shutdown campaign boot";
+        ExecStart = [
+          "${pkgs.nixos-scripts}/bin/test-shutdown campaign boot"
+          "${pkgs.nixos-scripts}/bin/test-shutdown campaign report"
+        ];
       };
     };
 
