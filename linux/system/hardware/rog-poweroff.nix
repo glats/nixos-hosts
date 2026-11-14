@@ -71,7 +71,7 @@ in
     campaign.wolRelay = lib.mkOption {
       type = lib.types.str;
       default = "";
-      example = "172.16.0.11:6667";
+      example = "samsung.lan:6667";
       description = ''
         host:port of the wol-relay that wakes this machine with a Wake-on-LAN
         packet. When set, the last poweroff of each campaign chain is measured
@@ -196,7 +196,11 @@ in
         Type = "oneshot";
         RemainAfterExit = true;
         ExecStart = [
-          "${pkgs.nixos-scripts}/bin/test-shutdown campaign boot"
+          (
+            "${pkgs.nixos-scripts}/bin/test-shutdown"
+            + lib.optionalString (cfg.campaign.wolRelay != "") " -wol-relay ${cfg.campaign.wolRelay}"
+            + " campaign boot"
+          )
           "${pkgs.nixos-scripts}/bin/test-shutdown campaign report"
         ];
       };

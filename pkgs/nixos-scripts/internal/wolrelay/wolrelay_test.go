@@ -178,3 +178,50 @@ func TestWaitDoesNotHangOnAReplacedWake(t *testing.T) {
 		t.Fatal("Wait hung after a replaced wake")
 	}
 }
+
+func newRelay(t *testing.T) (*Relay, *fakeNet) {
+	n := &fakeNet{}
+	return &Relay{Config: cfg(), Net: n, StatePath: t.TempDir() + "/sent"}, n
+}
+
+func TestStatusReportsPendingSentAndUnknown(t *testing.T) {
+	r, n := newRelay(t)
+	if got := r.OnPacket("172.16.0.5", "STATUS b1", now); got != "UNKNOWN b1" {
+		t.Fatalf("before arm: %q", got)
+	}
+	r.OnPacket("172.16.0.5", "ARM b1 300", now)
+	if got := r.OnPacket("172.16.0.5", "STATUS b1", now); !strings.HasPrefix(got, "PENDING b1 ") {
+		t.Fatalf("pending: %q", got)
+	}
+	n.scheduled[0]()
+	if got := r.OnPacket("172.16.0.5", "STATUS b1", now); !strings.HasPrefix(got, "SENT b1 ") {
+		t.Fatalf("sent: %q", got)
+	}
+}
+
+func TestStatusSurvivesARestart(t *testing.T) {
+	r, n := newRelay(t)
+	r.OnPacket("172.16.0.5", "ARM b1 300", now)
+	n.scheduled[0]()
+	again := &Relay{Config: cfg(), Net: &fakeNet{}, StatePath: r.StatePath}
+	if got := again.OnPacket("172.16.0.5", "STATUS b1", now); !strings.HasPrefix(got, "SENT b1 ") {
+		t.Fatalf("after restart: %q", got)
+	}
+}
+
+func TestStatusIgnoresForeignSources(t *testing.T) {
+	r, _ := newRelay(t)
+	if got := r.OnPacket("172.16.0.99", "STATUS b1", now); got != "" {
+		t.Fatalf("answered a foreign source: %q", got)
+	}
+}
+
+func TestAReplacedWakeIsNotReportedAsSent(t *testing.T) {
+	r, n := newRelay(t)
+	r.OnPacket("172.16.0.5", "ARM b1 300", now)
+	r.OnPacket("172.16.0.5", "ARM b2 300", now)
+	n.scheduled[1]()
+	if got := r.OnPacket("172.16.0.5", "STATUS b1", now); got != "UNKNOWN b1" {
+		t.Fatalf("replaced wake: %q", got)
+	}
+}

@@ -38,12 +38,19 @@ in
 
     ../../linux/system/services/xrdp.nix
     ../../linux/system/services/network/adguardhome.nix
+    ../../linux/system/services/network/wol-relay.nix
 
     ../../linux/system/features/boot.nix
     ../../linux/system/features/conky/options.nix
 
     ../../linux/system/virtualisation/docker.nix
   ];
+
+  services.wol-relay = {
+    enable = true;
+    allow = "172.16.0.5";
+    mac = "88:d7:f6:22:10:fe";
+  };
 
   networking = {
     hostName = "samsung";

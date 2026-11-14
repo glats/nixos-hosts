@@ -874,3 +874,141 @@ func TestBriefShowsTheConclusionOrPause(t *testing.T) {
 		t.Fatalf("conclusion brief %q", got)
 	}
 }
+
+func wolArmPending(wake int64) []shutdowntrial.Entry {
+	return []shutdowntrial.Entry{armEntry("b0", ArmWol, wake)}
+}
+
+func TestBootConfirmsAWolHangWithTheRelay(t *testing.T) {
+	env := newEnv()
+	env.reply = "SENT b0 123"
+	log := seed(t, wolArmPending(t0.Add(-3*time.Hour).Unix()))
+	e, _ := Boot(env, log, relayCtx("b1"))
+	if e.Outcome != "hung_or_unwoken" {
+		t.Fatalf("entry %+v", e)
+	}
+	if len(env.ops) != 1 || env.ops[0] != "exchange "+relayAddr+" STATUS b0" {
+		t.Fatalf("ops %v", env.ops)
+	}
+}
+
+func TestBootDoesNotCallItAHangWhenTheRelayNeverSentTheWake(t *testing.T) {
+	for name, setup := range map[string]func(*fakeEnv){
+		"unknown":     func(e *fakeEnv) { e.reply = "UNKNOWN b0" },
+		"pending":     func(e *fakeEnv) { e.reply = "PENDING b0 5" },
+		"unreachable": func(e *fakeEnv) { e.exchErr = errors.New("timeout") },
+	} {
+		env := newEnv()
+		setup(env)
+		log := seed(t, wolArmPending(t0.Add(-3*time.Hour).Unix()))
+		e, _ := Boot(env, log, relayCtx("b1"))
+		if e.Outcome != "unmeasured" {
+			t.Fatalf("%s: entry %+v", name, e)
+		}
+	}
+}
+
+func TestBootWithoutARelayLeavesAWolArmUnmeasured(t *testing.T) {
+	log := seed(t, wolArmPending(t0.Add(-3*time.Hour).Unix()))
+	e, _ := Boot(newEnv(), log, ctx("b1", 0))
+	if e.Outcome != "unmeasured" {
+		t.Fatalf("entry %+v", e)
+	}
+}
+
+func TestAlarmArmsDoNotAskTheRelayWhenItIsNotConfigured(t *testing.T) {
+	env := newEnv()
+	log := seed(t, []shutdowntrial.Entry{armEntry("b0", ArmNormal, 1), bootEntry("b1", "alarm", "b0", ArmNormal, "off")})
+	if err := Shutdown(env, log, ctx("b1", 0), func(string) {}); err != nil {
+		t.Fatal(err)
+	}
+	for _, op := range env.ops {
+		if strings.HasPrefix(op, "exchange") {
+			t.Fatalf("asked a relay that is not configured: %v", env.ops)
+		}
+	}
+}
+
+func TestFirstAutoCycleCalibratesWolBeforeTheAlarm(t *testing.T) {
+	env := newEnv()
+	wake := t0.Add(CalDelay).Unix()
+	env.reply = "ACK b1 " + strconv.FormatInt(wake, 10)
+	log := seed(t, []shutdowntrial.Entry{armEntry("b0", ArmNormal, 1), bootEntry("b1", "alarm", "b0", ArmNormal, "off")})
+	if err := Shutdown(env, log, relayCtx("b1"), func(string) {}); err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, op := range env.ops {
+		if op == "exchange "+relayAddr+" ARM b1 "+strconv.Itoa(int(CalDelay.Seconds())) {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("no calibration request: %v", env.ops)
+	}
+	entries, _ := log.Read()
+	last := entries[len(entries)-1]
+	if last.WolUnix != wake || last.AlarmUnix != t0.Add(AlarmDelay).Unix() || (last.Arm != ArmNormal && last.Arm != ArmUnload) {
+		t.Fatalf("last %+v", last)
+	}
+}
+
+func TestCalibrationStopsOnceWolIsProven(t *testing.T) {
+	env := newEnv()
+	log := seed(t, []shutdowntrial.Entry{
+		armEntry("b0", ArmNormal, 1),
+		bootEntry("b1", "wol-cal", "b0", ArmNormal, "off"),
+	})
+	if err := Shutdown(env, log, relayCtx("b1"), func(string) {}); err != nil {
+		t.Fatal(err)
+	}
+	for _, op := range env.ops {
+		if strings.HasPrefix(op, "exchange") {
+			t.Fatalf("calibrated again after WoL was proven: %v", env.ops)
+		}
+	}
+}
+
+func TestCalibrationFailureStillArmsTheAlarm(t *testing.T) {
+	env := newEnv()
+	env.exchErr = errors.New("timeout")
+	log := seed(t, []shutdowntrial.Entry{armEntry("b0", ArmNormal, 1), bootEntry("b1", "alarm", "b0", ArmNormal, "off")})
+	_ = Shutdown(env, log, relayCtx("b1"), func(string) {})
+	entries, _ := log.Read()
+	if last := entries[len(entries)-1]; last.AlarmUnix == 0 || last.WolUnix != 0 {
+		t.Fatalf("last %+v", last)
+	}
+}
+
+func TestBootInsideTheCalibrationWindowIsAWolCalWake(t *testing.T) {
+	wake := t0.Add(-70 * time.Second).Unix()
+	e0 := armEntry("b0", ArmNormal, t0.Add(4*time.Minute).Unix())
+	e0.WolUnix = wake
+	log := seed(t, []shutdowntrial.Entry{e0})
+	e, _ := Boot(newEnv(), log, ctx("b1", 0))
+	if e.Reason != "wol-cal" || e.Outcome != "off" || e.Arm != ArmNormal {
+		t.Fatalf("entry %+v", e)
+	}
+}
+
+func TestAutoCycleContinuesAfterACalibrationWake(t *testing.T) {
+	env := newEnv()
+	log := seed(t, []shutdowntrial.Entry{armEntry("b0", ArmNormal, 1), bootEntry("b1", "wol-cal", "b0", ArmNormal, "off")})
+	if err := AutoCycle(env, log, ctx("b1", 0), func(string) {}); err != nil {
+		t.Fatal(err)
+	}
+	if env.ops[len(env.ops)-1] != "run systemctl poweroff" {
+		t.Fatalf("ops %v", env.ops)
+	}
+}
+
+func TestCalibrationWakesProveWolWithoutCountingAsAlarmWakes(t *testing.T) {
+	es := []shutdowntrial.Entry{bootEntry("a", "wol-cal", "x", ArmNormal, "off")}
+	r := Summarize(es)
+	if r.WolWakes != 1 || r.AlarmWakes != 0 || r.CalWakes != 1 || r.Normal.N != 1 {
+		t.Fatalf("summary %+v", r)
+	}
+	if d := Diagnose(Result{Normal: group(2, 2), Unload: group(2, 2), CalWakes: 1}); d.Code == CodeAlarmUnreliable {
+		t.Fatalf("flagged the alarm as unreliable although only calibration woke the machine: %+v", d)
+	}
+}

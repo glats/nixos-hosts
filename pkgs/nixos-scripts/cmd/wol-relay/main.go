@@ -39,6 +39,7 @@ func main() {
 	allow := flag.String("allow", "", "only accept requests from this source IP")
 	macStr := flag.String("mac", "", "MAC address to wake")
 	broadcast := flag.String("broadcast", "172.16.0.255:9", "broadcast address for the magic packet")
+	state := flag.String("state", "", "file that remembers which wakes were sent (survives restarts)")
 	flag.Parse()
 
 	mac, err := net.ParseMAC(*macStr)
@@ -66,8 +67,9 @@ func main() {
 	}()
 
 	relay := &wolrelay.Relay{
-		Config: wolrelay.Config{Allow: *allow, MAC: mac, MinDelay: time.Minute, MaxDelay: 15 * time.Minute},
-		Net:    udpNet{dest: dest},
+		Config:    wolrelay.Config{Allow: *allow, MAC: mac, MinDelay: time.Minute, MaxDelay: 15 * time.Minute},
+		Net:       udpNet{dest: dest},
+		StatePath: *state,
 	}
 	log.Printf("wol-relay: listening on %s, waking %s via %s for requests from %s", *listen, mac, dest, *allow)
 

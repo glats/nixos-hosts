@@ -232,6 +232,7 @@ type Entry struct {
 
 	Arm       string            `json:"arm,omitempty"`
 	AlarmUnix int64             `json:"alarm_unix,omitempty"`
+	WolUnix   int64             `json:"wol_unix,omitempty"`
 	State     map[string]string `json:"state,omitempty"`
 	Reason    string            `json:"reason,omitempty"`
 	Resolves  string            `json:"resolves,omitempty"`

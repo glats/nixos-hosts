@@ -34,6 +34,7 @@ const (
 	MinSamples = 5
 
 	RelayTimeout = 3 * time.Second
+	CalDelay     = 150 * time.Second
 	unloadSettle = 2 * time.Second
 	gpuPCI       = "/sys/bus/pci/devices/0000:01:00.0"
 )
@@ -94,7 +95,7 @@ func chainLength(entries []shutdowntrial.Entry) int {
 		if e.Kind != "boot" {
 			continue
 		}
-		if e.Reason != "alarm" && e.Reason != "wol" {
+		if e.Reason != "alarm" && e.Reason != "wol" && e.Reason != "wol-cal" {
 			break
 		}
 		n++
@@ -242,7 +243,7 @@ func Shutdown(env Env, log *shutdowntrial.Log, c Ctx, breadcrumb func(string)) e
 	chain := chainLength(entries)
 	armed := false
 	if chain == 0 && c.RelayAddr != "" && wolDue(entries) {
-		if wake, err := requestWake(env, c); err != nil {
+		if wake, err := requestWake(env, c, AlarmDelay); err != nil {
 			errs = append(errs, "relay: "+err.Error())
 		} else {
 			entry.Arm, entry.AlarmUnix, armed = ArmWol, wake, true
@@ -263,6 +264,13 @@ func Shutdown(env Env, log *shutdowntrial.Log, c Ctx, breadcrumb func(string)) e
 			errs = append(errs, "alarm: "+err.Error())
 		} else {
 			entry.AlarmUnix = unix
+		}
+		if chain >= 1 && c.RelayAddr != "" && !wolProven(entries) {
+			if wake, err := requestWake(env, c, CalDelay); err != nil {
+				errs = append(errs, "calibration: "+err.Error())
+			} else {
+				entry.WolUnix = wake
+			}
 		}
 	}
 	entry.State = Snapshot(env)
@@ -290,8 +298,29 @@ func wolDue(entries []shutdowntrial.Entry) bool {
 	return wol <= normal
 }
 
-func requestWake(env Env, c Ctx) (int64, error) {
-	msg := fmt.Sprintf("ARM %s %d", c.BootID, int(AlarmDelay.Seconds()))
+func wolProven(entries []shutdowntrial.Entry) bool {
+	for _, e := range entries {
+		if e.Kind == "boot" && (e.Reason == "wol" || e.Reason == "wol-cal") {
+			return true
+		}
+	}
+	return false
+}
+
+func relayConfirmedWake(env Env, c Ctx, armBoot string) bool {
+	if c.RelayAddr == "" {
+		return false
+	}
+	reply, err := env.Exchange(c.RelayAddr, "STATUS "+armBoot, RelayTimeout)
+	if err != nil {
+		return false
+	}
+	f := strings.Fields(reply)
+	return len(f) >= 2 && f[0] == "SENT" && f[1] == armBoot
+}
+
+func requestWake(env Env, c Ctx, delay time.Duration) (int64, error) {
+	msg := fmt.Sprintf("ARM %s %d", c.BootID, int(delay.Seconds()))
 	reply, err := env.Exchange(c.RelayAddr, msg, RelayTimeout)
 	if err != nil {
 		return 0, err
@@ -339,11 +368,15 @@ func Boot(env Env, log *shutdowntrial.Log, c Ctx) (shutdowntrial.Entry, error) {
 			e.Outcome = "hung_early"
 		case p.AlarmUnix == 0:
 			e.Outcome = "unmeasured"
+		case p.WolUnix != 0 && inWindow(env, c.Now, p.WolUnix):
+			e.Reason, e.Outcome = "wol-cal", "off"
 		case inWindow(env, c.Now, p.AlarmUnix):
 			e.Reason, e.Outcome = "alarm", "off"
 			if p.Arm == ArmWol {
 				e.Reason = "wol"
 			}
+		case p.Arm == ArmWol && !relayConfirmedWake(env, c, p.BootID):
+			e.Outcome = "unmeasured"
 		default:
 			e.Outcome = "hung_or_unwoken"
 		}
@@ -381,7 +414,7 @@ func AutoCycle(env Env, log *shutdowntrial.Log, c Ctx, breadcrumb func(string)) 
 		return nil
 	}
 	last := entries[len(entries)-1]
-	if last.Kind != "boot" || last.BootID != c.BootID || (last.Reason != "alarm" && last.Reason != "wol") {
+	if last.Kind != "boot" || last.BootID != c.BootID || (last.Reason != "alarm" && last.Reason != "wol" && last.Reason != "wol-cal") {
 		return nil
 	}
 	for waited := time.Duration(0); waited < CycleGrace; waited += CyclePoll {
@@ -408,6 +441,7 @@ type Result struct {
 	Wol         ArmStats
 	AlarmWakes  int
 	WolWakes    int
+	CalWakes    int
 	Invalid     int
 	Unmeasured  int
 	Early       int
@@ -428,6 +462,9 @@ func Summarize(entries []shutdowntrial.Entry) Result {
 			r.AlarmWakes++
 		case "wol":
 			r.WolWakes++
+		case "wol-cal":
+			r.WolWakes++
+			r.CalWakes++
 		}
 		if e.Resolves == "" {
 			continue
@@ -460,7 +497,7 @@ func Summarize(entries []shutdowntrial.Entry) Result {
 	switch {
 	case r.Normal.N < MinSamples || r.Unload.N < MinSamples:
 		r.Verdict = fmt.Sprintf("need at least %d measured shutdowns per arm (normal %d, unload %d)", MinSamples, r.Normal.N, r.Unload.N)
-	case r.AlarmWakes == 0:
+	case r.AlarmWakes == 0 && r.CalWakes == 0:
 		r.Verdict = "the RTC alarm never woke the machine: a cold boot may also mean it powered off, so these results are unreliable"
 	case r.P < 0.05:
 		r.Verdict = fmt.Sprintf("unload differs from normal (p=%.3f)", r.P)
@@ -539,7 +576,7 @@ func counts(r Result) string {
 
 func Diagnose(r Result) Diagnosis {
 	switch {
-	case r.AlarmWakes == 0 && r.Normal.N+r.Unload.N >= 3:
+	case r.AlarmWakes == 0 && r.CalWakes == 0 && r.Normal.N+r.Unload.N >= 3:
 		return Diagnosis{true, CodeAlarmUnreliable, "The RTC alarm never woke the machine, so no shutdown can be classified. " +
 			"Next: check the BIOS RTC wake setting or use another wake source."}
 	case r.Wol.N >= 3 && r.WolWakes == 0:
