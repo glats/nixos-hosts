@@ -20,6 +20,11 @@ in
       default = [ ];
       description = "Additional network interfaces for failover";
     };
+    poweroffCampaign = mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Show the one-line state of the poweroff A/B campaign (test-shutdown brief)";
+    };
     mountPoints = mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ ];
