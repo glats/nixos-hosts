@@ -18,6 +18,13 @@ Load when the user asks to start, steer, monitor, stop or resume a `gastown-run`
 - Never print, copy or commit credentials; pass them by environment only.
 - One swarm at a time per machine (about 5 GB peak). Never `pkill -f` a pattern that appears in your own command line.
 - Never push, deploy, sign, spend or pick hardware: those decisions belong to the user.
+- "Running" is not "progressing". Never say the autopilot or the swarm is taking items without evidence of progress: new `ledger.jsonl` entries, a changed item count, a new accepted branch. A live service with identical digests is idle.
+
+## Provider Health (check on every observation)
+
+Compare the last two `Campaign digest` token totals and the newest `ledger.jsonl` time. If nothing moved while items are `running` or `selected`, or a notification says workers "die right after launch", run `gastown-run swarm check <p>` before anything else. A line `UNAVAILABLE ... usage limit` is a provider quota, not a scheduler fault: tell the user at once, in the first sentence, with the exact agent and message. A `Provider limit on <agent>`, `Agent unavailable` or `All providers are limited` notification is the same alert. Do not wait for the user to notice, and do not accept a Mayor's explanation that blames the scheduler until `swarm check` is clean.
+
+When a provider is out, offer the choices and let the user pick the models: wait for the renewal (`campaign stop`), or switch workers to a provider with quota. The model catalog is whatever `tools.opencode.models` lists; confirm a candidate answers (`swarm check`, or a one-word `opencode run -m <provider/model>`) before proposing it. `opencode:openai/<model>[:<effort>]` needs the swarm's own login (see `references/operations.md`).
 
 ## Decision Gates
 

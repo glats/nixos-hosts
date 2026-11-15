@@ -43,6 +43,7 @@ the product as the scope, not its first delivery. Skip isolated small changes.
 | Finished work leaves decisions for the user | Read them, brief, and close them one by one with the native question tool: `references/decision-review.md`. |
 | Evidence is missing or contradictory | Mark affected work pending; preserve both accounts. |
 | Gas Town is unavailable or its checks fail | Report the blocker; do not silently replace it or weaken checks. |
+| Campaign shows no progress, workers die at launch, or a provider limit appears | Run the provider check (`gastown-orchestrator`, Provider Health), tell the user first, then offer waiting or other models; never report an idle swarm as running. |
 | Memory is unavailable | Keep local continuity and mark the mirror pending. |
 
 ## Execution Steps

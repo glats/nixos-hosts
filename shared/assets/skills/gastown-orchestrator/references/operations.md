@@ -34,6 +34,10 @@ Replies are queued as files and read by the supervisor on its next round (20 s p
 | Mayor (unverified) | A model claim, not a fact. |
 | Accepted branches conflict | Parallel branches touch the same lines; merge by hand from staging. |
 | Answer kept as a note | The answer matched no single question; resend with `--question`. |
+| Provider limit on `<agent>` | The agent (or its one-word probe, every 30 min) hit a usage limit; it cools for 30 minutes. High severity: tell the user. |
+| Agent unavailable: `<agent>` | The probe failed for another reason (end of life, 404, no login). |
+| All providers are limited | Every worker agent is out; dispatch is paused. Critical: tell the user now. |
+| Provider recovered on `<agent>` | The probe answers again; dispatch resumes when any agent is healthy. |
 
 ## Known traps
 
@@ -43,6 +47,9 @@ Replies are queued as files and read by the supervisor on its next round (20 s p
 
 - Boot dog and refinery escalations are Gas Town infrastructure noise.
 - `swarm check` does not probe codex or claude agents (subscription quota).
+- A monthly provider limit makes workers die right after launch with nothing in the pane, so the pane check never sees it. Only the probe does; the Mayor will blame the scheduler.
+- `opencode:openai/<model>[:<effort>]` reads its login from the swarm's own agent home, never from the user's. Sign in once with `HOME=<state>/swarm/<p>/town/.agent-home opencode auth login openai` (a browser step that belongs to the user), then `swarm check <p>`. Copying the user's credential would let two clients rotate one refresh token.
+- Changing agent chains means editing `chains` in `swarm.json` with the supervisor stopped, then restarting it so `settings/agents.json` is regenerated; use a binary that knows the provider first, or the supervisor refuses the spec.
 - An older `gastown-run` rewrites `campaign.json` without fields it does not know (for example `autopilot`); run the supervisor with the newest binary and check the flag after a handoff.
 - `swarm init` cannot be repeated on an existing project; changing the Mayor means removing its state directory, only when nothing ran.
 - A power loss mid-item leaves it `running` until it is marked blocked; resume with `campaign start`, then reply to re-send it.
