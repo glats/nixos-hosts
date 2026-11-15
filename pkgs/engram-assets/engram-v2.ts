@@ -15,7 +15,7 @@ Before the first project-scoped memory call, call mem_current_project to discove
 
 Call mem_save immediately after bug fixes, decisions, discoveries, configuration changes, established patterns, or learned preferences. Include What, Why, Where, and Learned in the content. Use project scope by default and a stable topic_key for evolving topics.
 
-When asked to recall prior work, discover the project first. After project discovery, call mem_context first, then mem_search if needed. Use mem_session_summary before ending a session and after compaction. Save important observations immediately; this memory survives future sessions.`
+When asked to recall prior work, discover the project first. After project discovery, call mem_context first, then mem_search if needed. Use mem_session_summary before ending a session; compaction summaries are saved automatically. Save important observations immediately; this memory survives future sessions.`
 
 function stripPrivateTags(value: string): string {
   return value.replace(/<private>[\s\S]*?<\/private>/gi, "[REDACTED]").trim()
@@ -166,7 +166,32 @@ export default Plugin.define({
       if (root) await ensureSession(root)
       const data = await request(`/context?project=${encodeURIComponent(project)}`)
       if (data?.context) addSystem(event.system, String(data.context))
-      addSystem(event.system, `CRITICAL INSTRUCTION FOR COMPACTED SUMMARY:\nThe agent has access to Engram persistent memory via MCP tools.\n\nFIRST ACTION REQUIRED: Call mem_session_summary with the content of this compacted summary. Use project: '${project}'. Do this BEFORE any other work.`)
     })
+
+    const abort = new AbortController()
+    void (async () => {
+      try {
+        for await (const event of ctx.event.subscribe({ types: ["session.compaction.ended"], signal: abort.signal })) {
+          if (event.location?.directory !== directory || (event.location?.workspaceID ?? "") !== (ctx.location.workspaceID ?? "")) continue
+          const summary = stripPrivateTags(String(event.data.text ?? ""))
+          if (!summary) continue
+          const root = await resolveRoot(event.data.sessionID)
+          if (!root || !(await ensureSession(root))) continue
+          await request("/observations", {
+            method: "POST",
+            body: JSON.stringify({
+              session_id: root,
+              type: "session_summary",
+              title: `Session summary: ${project}`,
+              content: summary,
+              project,
+              scope: "project",
+              operation_id: `compaction:${event.id}`,
+            }),
+          })
+        }
+      } catch {}
+    })()
+    return () => abort.abort()
   },
 })
