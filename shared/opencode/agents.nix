@@ -33,6 +33,20 @@ let
     "review-validator"
   ];
 
+  lensReviewers = [
+    "review-risk"
+    "review-resilience"
+    "review-readability"
+    "review-reliability"
+  ];
+
+  lensInspectPermission = {
+    bash = {
+      "*" = "deny";
+      "gentle-ai review inspect-candidate *" = "allow";
+    };
+  };
+
   agentModels =
     let
       active = providersConfig.activeProvider;
@@ -75,7 +89,9 @@ let
     name: upstream:
     let
       localModel = models.${name} or null;
-      namedOverlay = localOverlays.permissionOverlays.named.${name} or { };
+      namedOverlay =
+        (localOverlays.permissionOverlays.named.${name} or { })
+        // lib.optionalAttrs (builtins.elem name lensReviewers) lensInspectPermission;
       localInstructions =
         if builtins.hasAttr name localOverlays.instructionOverlays then
           localOverlays.instructionOverlays.${name}
