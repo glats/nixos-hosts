@@ -47,6 +47,7 @@ type openCodeProvider struct{ Name, Env, Package, BaseURL string }
 var openCodeProviders = map[string]openCodeProvider{
 	"nvidia":       {Name: "NVIDIA NIM", Env: "NVIDIA_API_KEY", Package: "@opencode/ai/providers/openai-compatible", BaseURL: "https://integrate.api.nvidia.com/v1"},
 	"ollama-cloud": {Name: "Ollama Cloud", Env: "OLLAMA_API_KEY", Package: "@opencode/ai/providers/openai-compatible", BaseURL: "https://ollama.com/v1"},
+	"openai":       {Name: "OpenAI"},
 }
 
 // AgentEnvNames lists the environment variables the agents need from the
@@ -189,17 +190,34 @@ func AgentPreset(c Config, self, town, spec string, agentEnv []string) (string, 
 		provider, model, ok := strings.Cut(rest, "/")
 		known, found := openCodeProviders[provider]
 		if c.OpenCode == "" || !ok || model == "" || !found {
-			return "", nil, errors.New("opencode spec needs GASTOWN_OPENCODE and a known provider: opencode:nvidia/<model> or opencode:ollama-cloud/<model> (" + spec + ")")
+			return "", nil, errors.New("opencode spec needs GASTOWN_OPENCODE and a known provider: opencode:nvidia/<model>, opencode:ollama-cloud/<model> or opencode:openai/<model>[:<effort>] (" + spec + ")")
 		}
 		name := "opencode-" + strings.Trim(specCleaner.ReplaceAllString(strings.ToLower(rest), "-"), "-")
+		effort := ""
+		if known.Env == "" {
+			model, effort, _ = strings.Cut(model, ":")
+			rest = provider + "/" + model
+		}
+		providerConfig := map[string]any{"name": known.Name, "env": []string{known.Env}, "package": known.Package,
+			"models": map[string]any{model: map[string]string{"name": model}}, "settings": map[string]string{"baseURL": known.BaseURL, "apiKey": "{env:" + known.Env + "}"}}
+		if known.Env == "" {
+			modelConfig := map[string]any{}
+			if effort != "" {
+				modelConfig["settings"] = map[string]string{"reasoningEffort": effort}
+			}
+			providerConfig = map[string]any{"models": map[string]any{model: modelConfig}}
+		}
 		inline, _ := json.Marshal(map[string]any{
 			"update": "disable", "model": rest,
-			"providers": map[string]any{provider: map[string]any{"name": known.Name, "env": []string{known.Env}, "package": known.Package,
-				"models": map[string]any{model: map[string]string{"name": model}}, "settings": map[string]string{"baseURL": known.BaseURL, "apiKey": "{env:" + known.Env + "}"}}},
+			"providers": map[string]any{provider: providerConfig},
 			"experimental": map[string]any{"policies": []map[string]string{
 				{"effect": "deny", "action": "provider.use", "resource": "*"}, {"effect": "allow", "action": "provider.use", "resource": provider}}},
 		})
-		args := append(confine, "--env", known.Env, "--env", "OPENCODE_PERMISSION", "--env", "OPENCODE_CONFIG_CONTENT")
+		args := confine
+		if known.Env != "" {
+			args = append(args, "--env", known.Env)
+		}
+		args = append(args, "--env", "OPENCODE_PERMISSION", "--env", "OPENCODE_CONFIG_CONTENT")
 		for _, e := range agentEnv {
 			args = append(args, "--env", e)
 		}
@@ -456,6 +474,27 @@ func ProbeVerdict(output string) (bool, string) {
 	return true, ""
 }
 
+// probe asks one opencode agent for a one-word answer. probeable is false for
+// agents that run on subscription quota.
+func (s *Swarm) probe(raw any) (probeable, healthy bool, why string) {
+	preset, _ := raw.(map[string]any)
+	cmd, extra, ok := ProbeCommand(preset)
+	if !ok {
+		return false, false, ""
+	}
+	cmd.Dir = s.Town()
+	cmd.Env = os.Environ()
+	for k, v := range extra {
+		cmd.Env = append(cmd.Env, k+"="+v)
+	}
+	res, runErr := s.R.Exec.Run(cmd)
+	healthy, why = ProbeVerdict(string(res.Stdout) + "\n" + string(res.Stderr))
+	if runErr != nil && why == "" {
+		healthy, why = false, runErr.Error()
+	}
+	return true, healthy, why
+}
+
 // Check probes every opencode agent of the swarm and reports each verdict.
 func (s *Swarm) Check() error {
 	agents, _, err := s.presets()
@@ -464,21 +503,10 @@ func (s *Swarm) Check() error {
 	}
 	bad := 0
 	for name, raw := range agents {
-		preset := raw.(map[string]any)
-		cmd, extra, ok := ProbeCommand(preset)
-		if !ok {
+		probeable, healthy, why := s.probe(raw)
+		if !probeable {
 			fmt.Fprintf(s.Out, "%s: not probed (uses subscription quota; it is checked on first use)\n", name)
 			continue
-		}
-		cmd.Dir = s.Town()
-		cmd.Env = os.Environ()
-		for k, v := range extra {
-			cmd.Env = append(cmd.Env, k+"="+v)
-		}
-		res, runErr := s.R.Exec.Run(cmd)
-		healthy, why := ProbeVerdict(string(res.Stdout) + "\n" + string(res.Stderr))
-		if runErr != nil && why == "" {
-			healthy, why = false, runErr.Error()
 		}
 		if healthy {
 			fmt.Fprintf(s.Out, "%s: ok\n", name)

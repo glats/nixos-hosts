@@ -17,6 +17,8 @@ type WatchState struct {
 	Seen         map[string]bool       `json:"seen"`
 	Gated        map[string]GateResult `json:"gated"`
 	Cooldowns    map[string]time.Time  `json:"cooldowns"`
+	Probed       map[string]time.Time  `json:"probed"`
+	Unhealthy    map[string]string     `json:"unhealthy"`
 	Active       map[string]string     `json:"active"`
 	Complete     bool                  `json:"complete"`
 	Paused       bool                  `json:"paused"`
@@ -67,6 +69,12 @@ func (s *Swarm) loadState() *WatchState {
 	}
 	if st.Active == nil {
 		st.Active = map[string]string{}
+	}
+	if st.Probed == nil {
+		st.Probed = map[string]time.Time{}
+	}
+	if st.Unhealthy == nil {
+		st.Unhealthy = map[string]string{}
 	}
 	return st
 }
@@ -245,12 +253,51 @@ func (s *Swarm) beadClosed(bead string) bool {
 	return one[0].Status == "closed"
 }
 
+const probeEvery = 30 * time.Minute
+
+// probeChain pings each opencode agent that is not cooling down, at most once
+// per probeEvery. A worker whose session dies at launch never shows a limit in
+// its pane, so this is how a provider limit reaches the human.
+func (s *Swarm) probeChain(st *WatchState, agents map[string]any, chain []string, now time.Time) {
+	for _, name := range chain {
+		if until, cooling := st.Cooldowns[name]; cooling && now.Before(until) {
+			continue
+		}
+		if last, ok := st.Probed[name]; ok && now.Sub(last) < probeEvery {
+			continue
+		}
+		probeable, healthy, why := s.probe(agents[name])
+		if !probeable {
+			continue
+		}
+		st.Probed[name] = now
+		if healthy {
+			if _, was := st.Unhealthy[name]; was {
+				delete(st.Unhealthy, name)
+				s.notify("medium", "Provider recovered on "+name, "the agent answers again")
+			}
+			continue
+		}
+		st.Cooldowns[name] = now.Add(probeEvery)
+		if st.Unhealthy[name] == why {
+			continue
+		}
+		st.Unhealthy[name] = why
+		if LimitHit(why) {
+			s.notify("high", "Provider limit on "+name, why)
+		} else {
+			s.notify("high", "Agent unavailable: "+name, why)
+		}
+	}
+}
+
 func (s *Swarm) tickProviders(st *WatchState, now time.Time) {
-	_, chains, err := s.presets()
-	if err != nil || len(chains["polecat"]) < 2 {
+	agents, chains, err := s.presets()
+	if err != nil || len(chains["polecat"]) == 0 {
 		return
 	}
 	chain := chains["polecat"]
+	s.probeChain(st, agents, chain, now)
 	if st.Active["polecat"] == "" {
 		st.Active["polecat"] = chain[0]
 	}

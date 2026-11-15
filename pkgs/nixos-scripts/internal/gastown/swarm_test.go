@@ -13,6 +13,7 @@ func TestLimitHitDetectsRealLimitsButNotTheCodexBanner(t *testing.T) {
 		"You've hit your usage limit. Upgrade to Pro or try again at 3:04 PM.",
 		"Error: rate limit exceeded for model", "429 Too Many Requests", "quota exhausted for this key",
 		"Please try again later.",
+		"Error: you (glatswalker) have reached your monthly usage limit, upgrade for higher limits: https://ollama.com/upgrade",
 	} {
 		if !LimitHit(hit) {
 			t.Errorf("missed limit: %q", hit)

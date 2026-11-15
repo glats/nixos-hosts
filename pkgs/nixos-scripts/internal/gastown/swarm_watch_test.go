@@ -16,8 +16,8 @@ type fnExec func(Command) (Result, error)
 func (f fnExec) Run(c Command) (Result, error) { return f(c) }
 
 type swarmFake struct {
-	esc, mail, polecats, peek string
-	calls                     []string
+	esc, mail, polecats, peek, probe string
+	calls                            []string
 }
 
 func (f *swarmFake) exec(c Command) (Result, error) {
@@ -25,6 +25,8 @@ func (f *swarmFake) exec(c Command) (Result, error) {
 	f.calls = append(f.calls, key)
 	out := func(s string) (Result, error) { return Result{Stdout: []byte(s)}, nil }
 	switch {
+	case strings.Contains(key, " run --standalone --auto Reply"):
+		return out(f.probe)
 	case strings.HasPrefix(key, "gt escalate list"):
 		return out(f.esc)
 	case strings.HasPrefix(key, "gt mail inbox"):
@@ -137,6 +139,76 @@ func TestTickPausesDispatchWhenEveryProviderIsLimitedAndResumes(t *testing.T) {
 	st = s.Tick(now.Add(45 * time.Minute))
 	if st.Paused || !strings.Contains(strings.Join(f.calls, "\n"), "gt scheduler resume") {
 		t.Fatalf("dispatch must resume once an agent recovers: paused=%v", st.Paused)
+	}
+}
+
+const monthlyLimit = "Error: you (glatswalker) have reached your monthly usage limit, upgrade for higher limits: https://ollama.com/upgrade"
+
+func probingSwarm(t *testing.T, f *swarmFake, chain ...string) *Swarm {
+	t.Helper()
+	s := newSwarm(t, f, chain...)
+	s.R.Config.OpenCode, s.R.Config.NativeHome = "/nix/opencode", "/home/u"
+	return s
+}
+
+func titlesOf(t *testing.T, s *Swarm) string {
+	t.Helper()
+	titles := ""
+	for _, n := range notifications(t, s) {
+		titles += n["severity"] + ":" + n["title"] + "|"
+	}
+	return titles
+}
+
+func TestTickProbesAnOpenCodeAgentWhoseWorkersDieAndWarnsOnAMonthlyLimit(t *testing.T) {
+	f := &swarmFake{esc: `[]`, mail: `[]`, polecats: `[{"name":"obsidian","session_running":false}]`, probe: monthlyLimit}
+	s := probingSwarm(t, f, "opencode:ollama-cloud/m1", "opencode:ollama-cloud/m2")
+	now := time.Date(2026, 11, 5, 12, 0, 0, 0, time.UTC)
+	st := s.Tick(now)
+	if !st.Paused || !strings.Contains(strings.Join(f.calls, "\n"), "gt scheduler pause") {
+		t.Fatalf("dispatch must pause when every probed agent is limited: paused=%v", st.Paused)
+	}
+	got := titlesOf(t, s)
+	for _, want := range []string{"high:Provider limit on opencode-ollama-cloud-m1", "high:Provider limit on opencode-ollama-cloud-m2", "critical:All providers are limited"} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("missing %q in %s", want, got)
+		}
+	}
+	if body := notifications(t, s)[0]["body"]; !strings.Contains(body, "monthly usage limit") {
+		t.Fatalf("the warning must carry the provider's words, got %q", body)
+	}
+}
+
+func TestTickProbeWarnsOncePerChangeAndAnnouncesRecovery(t *testing.T) {
+	f := &swarmFake{esc: `[]`, mail: `[]`, polecats: `[]`, probe: monthlyLimit}
+	s := probingSwarm(t, f, "opencode:ollama-cloud/m1")
+	now := time.Date(2026, 11, 5, 12, 0, 0, 0, time.UTC)
+	s.Tick(now)
+	s.Tick(now.Add(31 * time.Minute))
+	s.Tick(now.Add(62 * time.Minute))
+	limits := strings.Count(titlesOf(t, s), "Provider limit on")
+	if limits != 1 {
+		t.Fatalf("a standing limit must be announced once, got %d: %s", limits, titlesOf(t, s))
+	}
+	f.probe = "> build\nok\n"
+	st := s.Tick(now.Add(93 * time.Minute))
+	if st.Paused || !strings.Contains(titlesOf(t, s), "Provider recovered on opencode-ollama-cloud-m1") {
+		t.Fatalf("recovery must be announced and dispatch resumed: paused=%v %s", st.Paused, titlesOf(t, s))
+	}
+}
+
+func TestTickProbeDoesNotPingMoreOftenThanEveryThirtyMinutes(t *testing.T) {
+	f := &swarmFake{esc: `[]`, mail: `[]`, polecats: `[]`, probe: "ok"}
+	s := probingSwarm(t, f, "opencode:ollama-cloud/m1")
+	now := time.Date(2026, 11, 5, 12, 0, 0, 0, time.UTC)
+	s.Tick(now)
+	s.Tick(now.Add(5 * time.Minute))
+	if n := strings.Count(strings.Join(f.calls, "\n"), "Reply with exactly"); n != 1 {
+		t.Fatalf("expected one probe in 5 minutes, got %d", n)
+	}
+	s.Tick(now.Add(31 * time.Minute))
+	if n := strings.Count(strings.Join(f.calls, "\n"), "Reply with exactly"); n != 2 {
+		t.Fatalf("expected a second probe after 30 minutes, got %d", n)
 	}
 }
 
@@ -346,6 +418,55 @@ func TestOpenCodePresetRejectsUnknownProvidersAndMissingBinary(t *testing.T) {
 	c.OpenCode = ""
 	if _, _, err := AgentPreset(c, "/x", "/state/town", "opencode:nvidia/m", nil); err == nil {
 		t.Error("a missing opencode binary must be an error")
+	}
+}
+
+func TestOpenAIPresetUsesTheAgentsOwnLoginAndSetsTheEffort(t *testing.T) {
+	c := testConfig()
+	c.OpenCode, c.NativeHome = "/nix/opencode", "/home/u"
+	name, preset, err := AgentPreset(c, "/nix/gastown-run", "/state/town", "opencode:openai/gpt-6.1-sol:high", nil)
+	if err != nil || name != "opencode-openai-gpt-6-1-sol-high" {
+		t.Fatalf("name=%q err=%v", name, err)
+	}
+	args := strings.Join(preset["args"].([]string), "\x00")
+	for _, want := range []string{"confine", "--env\x00OPENCODE_PERMISSION", "--env\x00OPENCODE_CONFIG_CONTENT", "--\x00/nix/opencode\x00--standalone\x00--auto"} {
+		if !strings.Contains(args, want) {
+			t.Errorf("args missing %q", strings.ReplaceAll(want, "\x00", " "))
+		}
+	}
+	for _, banned := range []string{"--home-bind", "API_KEY", "--env\x00\x00"} {
+		if strings.Contains(args, banned) {
+			t.Errorf("a login-based provider must not expose %q: %s", banned, strings.ReplaceAll(args, "\x00", " "))
+		}
+	}
+	cfg := preset["env"].(map[string]string)["OPENCODE_CONFIG_CONTENT"]
+	for _, want := range []string{`"model":"openai/gpt-6.1-sol"`, `"reasoningEffort":"high"`, `"resource":"openai"`} {
+		if !strings.Contains(cfg, want) {
+			t.Errorf("inline config missing %q: %s", want, cfg)
+		}
+	}
+	for _, banned := range []string{"apiKey", "baseURL", "package"} {
+		if strings.Contains(cfg, banned) {
+			t.Errorf("the built-in provider must not be redefined (%q): %s", banned, cfg)
+		}
+	}
+	if _, _, ok := ProbeCommand(preset); !ok {
+		t.Fatal("an openai agent must be probed like any opencode agent")
+	}
+}
+
+func TestOpenAIPresetWithoutEffortLeavesTheModelDefault(t *testing.T) {
+	c := testConfig()
+	c.OpenCode = "/nix/opencode"
+	name, preset, err := AgentPreset(c, "/x", "/state/town", "opencode:openai/gpt-6-luna", nil)
+	if err != nil || name != "opencode-openai-gpt-6-luna" {
+		t.Fatalf("name=%q err=%v", name, err)
+	}
+	if cfg := preset["env"].(map[string]string)["OPENCODE_CONFIG_CONTENT"]; strings.Contains(cfg, "reasoningEffort") || !strings.Contains(cfg, `"model":"openai/gpt-6-luna"`) {
+		t.Fatalf("unexpected config: %s", cfg)
+	}
+	if got := AgentEnvNames([]string{"opencode:openai/gpt-6-luna", "opencode:openai/gpt-6.1-sol:high"}, nil); len(got) != 0 {
+		t.Fatalf("a login-based provider needs no environment variable, got %v", got)
 	}
 }
 

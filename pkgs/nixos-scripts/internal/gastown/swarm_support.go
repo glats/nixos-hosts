@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-var limitPattern = regexp.MustCompile(`(?i)hit your usage limit|usage limit (reached|exceeded)|rate.?limit(ed| exceeded| reached)|too many requests|\b429 |\b429\b[^.\d]|quota (exceeded|exhausted)|try again (in|at|later)`)
+var limitPattern = regexp.MustCompile(`(?i)hit your usage limit|usage limit (reached|exceeded)|rate.?limit(ed| exceeded| reached)|too many requests|\b429 |\b429\b[^.\d]|quota (exceeded|exhausted)|reached your [a-z ]*limit|upgrade for higher limits|try again (in|at|later)`)
 
 // LimitHit reports whether agent output shows a provider usage or rate limit.
 func LimitHit(text string) bool { return limitPattern.MatchString(text) }

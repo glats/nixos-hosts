@@ -186,6 +186,12 @@ Agents and providers:
   with the `OLLAMA_API_KEY` from your environment (base URL `https://ollama.com/v1`;
   e.g. `opencode:ollama-cloud/glm-5.3-flash`). It works as worker and as Mayor
   (`--mayor-agent opencode:ollama-cloud/glm-5.3`).
+- `opencode:openai/<model>[:<effort>]` (for example `opencode:openai/gpt-6.1-sol:high`)
+  uses your ChatGPT subscription through OpenCode. The agent reads its login from its
+  own home (`<state>/swarm/<project>/town/.agent-home`), never from your OpenCode
+  database. Sign in once with
+  `HOME=<state>/swarm/<project>/town/.agent-home opencode auth login openai`; this
+  keeps a separate grant, so the agent refreshing its token cannot log you out.
 - `opencode:nvidia/<model id>` uses NVIDIA NIM through OpenCode with a minimal
   inline configuration and the `NVIDIA_API_KEY` from your environment. Your own
   OpenCode configuration, sessions and database are never mounted. The model id
@@ -196,6 +202,11 @@ Agents and providers:
 - Workers use the first agent in the order given. When a worker pane shows a usage
   or rate limit, that agent cools down for 30 minutes and new workers use the next
   one; if every agent is limited, dispatch pauses until one recovers.
+- OpenCode agents are also probed with a one-word request at most every 30 minutes,
+  because a monthly limit kills workers at launch and never shows in a pane. A
+  limit, an unavailable agent, a recovery and a full pause each raise one
+  notification (`Provider limit on`, `Agent unavailable`, `Provider recovered on`,
+  `All providers are limited`), once per change.
 - The Mayor defaults to the Codex model at medium effort. Cheap workers confabulate
   less when the coordinator is stronger.
 
