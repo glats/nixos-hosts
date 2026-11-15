@@ -297,6 +297,11 @@ func (s *Swarm) tickProviders(st *WatchState, now time.Time) {
 		return
 	}
 	chain := chains["polecat"]
+	if changed, err := s.syncAgentRegistry(); err != nil {
+		s.notify("high", "Agent registry not updated", err.Error())
+	} else if changed {
+		s.notify("medium", "Agent registry updated", "town/settings/agents.json now matches the configured agents")
+	}
 	s.probeChain(st, agents, chain, now)
 	if st.Active["polecat"] == "" {
 		st.Active["polecat"] = chain[0]

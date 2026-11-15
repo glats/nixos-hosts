@@ -246,15 +246,31 @@ func (s *Swarm) presets() (map[string]any, map[string][]string, error) {
 }
 
 func (s *Swarm) writeSettings(roleAgents map[string]string) error {
-	agents, _, err := s.presets()
-	if err != nil {
-		return err
-	}
-	registry, _ := json.MarshalIndent(map[string]any{"version": 1, "agents": agents}, "", "  ")
-	if err := os.WriteFile(filepath.Join(s.Town(), "settings", "agents.json"), registry, 0o600); err != nil {
+	if _, err := s.syncAgentRegistry(); err != nil {
 		return err
 	}
 	return s.writeRoleAgents(roleAgents)
+}
+
+// syncAgentRegistry makes town/settings/agents.json match the configured
+// chains. Gas Town resolves role_agents against that file, and a missing preset
+// makes every dispatch fall back to a default agent that may not exist.
+func (s *Swarm) syncAgentRegistry() (bool, error) {
+	agents, _, err := s.presets()
+	if err != nil {
+		return false, err
+	}
+	registry, _ := json.MarshalIndent(map[string]any{"version": 1, "agents": agents}, "", "  ")
+	path := filepath.Join(s.Town(), "settings", "agents.json")
+	current, readErr := os.ReadFile(path)
+	if readErr == nil && string(current) == string(registry) {
+		return false, nil
+	}
+	tmp := path + ".tmp"
+	if err := os.WriteFile(tmp, registry, 0o600); err != nil {
+		return false, err
+	}
+	return readErr == nil, os.Rename(tmp, path)
 }
 
 func (s *Swarm) writeRoleAgents(roleAgents map[string]string) error {

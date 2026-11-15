@@ -197,6 +197,31 @@ func TestTickProbeWarnsOncePerChangeAndAnnouncesRecovery(t *testing.T) {
 	}
 }
 
+func TestTickKeepsTheAgentRegistryInSyncWithTheChains(t *testing.T) {
+	f := &swarmFake{esc: `[]`, mail: `[]`, polecats: `[]`}
+	s := probingSwarm(t, f, "opencode:openai/gpt-6.1-sol:medium", "opencode:openai/gpt-6-luna:medium")
+	registry := filepath.Join(s.Town(), "settings", "agents.json")
+	if err := os.WriteFile(registry, []byte(`{"version":1,"agents":{"stale":{"name":"stale"}}}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	s.Tick(time.Date(2026, 11, 5, 12, 0, 0, 0, time.UTC))
+	got := readFile(t, registry)
+	for _, want := range []string{`"opencode-openai-gpt-6-1-sol-medium"`, `"opencode-openai-gpt-6-luna-medium"`} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("registry missing %s:\n%s", want, got)
+		}
+	}
+	if strings.Contains(got, "stale") {
+		t.Fatalf("a stale preset must not survive:\n%s", got)
+	}
+	info, _ := os.Stat(registry)
+	first := info.ModTime()
+	s.Tick(time.Date(2026, 11, 5, 12, 1, 0, 0, time.UTC))
+	if again, _ := os.Stat(registry); !again.ModTime().Equal(first) {
+		t.Fatal("an unchanged registry must not be rewritten")
+	}
+}
+
 func TestTickProbeDoesNotPingMoreOftenThanEveryThirtyMinutes(t *testing.T) {
 	f := &swarmFake{esc: `[]`, mail: `[]`, polecats: `[]`, probe: "ok"}
 	s := probingSwarm(t, f, "opencode:ollama-cloud/m1")
