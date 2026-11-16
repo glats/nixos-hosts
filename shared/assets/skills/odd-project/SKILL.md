@@ -4,7 +4,7 @@ description: "Trigger: project-wide ODD, guiar proyecto, desarrollar con Gas Tow
 license: MIT
 metadata:
   author: "glats"
-  version: "1.2"
+  version: "1.3"
 ---
 
 ## Activation Contract
@@ -32,6 +32,10 @@ the product as the scope, not its first delivery. Skip isolated small changes.
   operations. Verify current capabilities; do not copy stale CLI recipes.
 - Plans, checkpoints, memory and passing tests grant no permissions. Preserve
   repository rules and separate user acceptance from technical verification.
+- Quality lives in deterministic checks, not prose. Every project, in any
+  language, has one stable `check` entry point and protected rule files before
+  Gas Town writes features. Prose instructions are the last resort for what no
+  check can express.
 
 ## Decision Gates
 
@@ -45,6 +49,8 @@ the product as the scope, not its first delivery. Skip isolated small changes.
 | Gas Town is unavailable or its checks fail | Report the blocker; do not silently replace it or weaken checks. |
 | Campaign shows no progress, workers die at launch, or a provider limit appears | Run the provider check (`gastown-orchestrator`, Provider Health), tell the user first, then offer waiting or other models; never report an idle swarm as running. |
 | Memory is unavailable | Keep local continuity and mark the mirror pending. |
+| No harness yet, or it cannot express "done" for the next delivery | Make or extend the harness first (step 3); do not start feature campaigns on it. |
+| User corrects a delivery, or the gate rejects the same mistake twice | Turn it into a rule: `references/correction-to-rule.md`. |
 
 ## Execution Steps
 
@@ -56,29 +62,39 @@ the product as the scope, not its first delivery. Skip isolated small changes.
 2. Map product → delivery → feature → next task/decision. Use `odd/roadmap.md`
    and `odd/tasks/<feature>.md` only when no authoritative equivalent exists.
    Define delivery acceptance as an observable user outcome.
-3. Record selected requirements, dependencies, checks and task IDs using the
+3. Discover the harness as Delivery 0, whatever the language. Once the stack is
+   chosen, research its strict tooling with documentation tools (formatter,
+   linter, type or evaluation check, test runner, architecture and import
+   boundaries) and ask the user only the real choices: patterns to forbid,
+   module boundaries, strictness that costs speed. Deliver one stable `check`
+   entry point that runs all of it offline, dependencies already committed,
+   plus the list of rule and entry-point files to protect. Acceptance: `check`
+   passes on the base inside the gate's isolation and fails on a deliberate
+   violation of each rule with a message that names the root-cause fix.
+4. Record selected requirements, dependencies, checks and task IDs using the
    active ODD feature format. Guide the user toward the smallest useful delivery,
    explaining tradeoffs and acceptance. Keep future work named but unexpanded.
-4. Load `gastown-kickoff` for a new campaign and `gastown-orchestrator` for an
+5. Load `gastown-kickoff` for a new campaign and `gastown-orchestrator` for an
    existing one. Check existing state before initialization. Prepare the intent
    from agreed workflows, non-goals, protected paths, dependencies and acceptance;
    verify checks in the actual gate environment. Preserve model/cost choices
    and obtain missing execution consent before starting.
-5. Operate authorized work continuously: inspect campaign state and gate
+6. Operate authorized work continuously: inspect campaign state and gate
    evidence, answer technical questions from established decisions, and bring
    only unresolved product or consent decisions to the user. Present a usable
    delivery with a concrete review walkthrough; gate acceptance is not user
    acceptance. Close the open decisions interactively, one question at a time
-   (`references/decision-review.md`). Record feedback and carry it into the next selected work.
-6. Maintain a named current checkpoint: completed work and evidence, active
+   (`references/decision-review.md`). Record feedback and carry it into the next selected work, as a rule
+   whenever it can be one (`references/correction-to-rule.md`).
+7. Maintain a named current checkpoint: completed work and evidence, active
    selection, pending decisions, exact next safe step, retained scope,
    authorization limits, Git branch/commit, campaign/item IDs and recovery locations.
-7. Log scope corrections verbatim; change only affected requirements and reopen
+8. Log scope corrections verbatim; change only affected requirements and reopen
    their tasks. Resolve incidents without losing the original objective.
-8. Mirror canonical documents when project memory is available. Discover its
+9. Mirror canonical documents when project memory is available. Discover its
    project identity, store full content and locator, then read back both copies
    before claiming synchronization. Never overwrite a conflicting mirror.
-9. Resume by reconciling checkpoint, documents, memory, Git and campaign state.
+10. Resume by reconciling checkpoint, documents, memory, Git and campaign state.
    Reuse valid evidence; do not redo finished work or infer acceptance from tests.
 
 ## Output Contract

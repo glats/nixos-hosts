@@ -16,7 +16,8 @@ Use this when finished work leaves decisions that belong to the user: a document
    allowed; a question about the decision is a request for information, not an answer.
 5. Record every answer at once, in the user's own words: `campaign answer --question <id>` for a
    campaign question, otherwise a note through `campaign answer` and the project's logbook.
-   Silence, momentum or a passing test never counts as a decision.
+   Silence, momentum or a passing test never counts as a decision. An answer that corrects
+   delivered work also goes through `correction-to-rule.md`.
 6. After each answer say what it unblocks. When your own earlier advice has a catch the documents
    reveal, say so before asking.
 7. Finish with the decisions taken, the ones still open, and the next safe step. Items that

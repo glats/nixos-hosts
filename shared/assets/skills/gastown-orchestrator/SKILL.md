@@ -4,7 +4,7 @@ description: "Trigger: gastown, gastown-run, swarm, campaign, Mayor, polecat, or
 license: Apache-2.0
 metadata:
   author: "glats"
-  version: "1.0"
+  version: "1.1"
 ---
 
 ## Activation Contract
@@ -36,7 +36,8 @@ When a provider is out, offer the choices and let the user pick the models: wait
 | `Needs you:` escalation | Separate infrastructure noise from a real decision; only real ones reach the user. |
 | Item `blocked` | Reply with the missing decision using `campaign reply`; do not reselect. |
 | Items that depend on earlier code | Warn: every item starts from the rig's main; accepted branches are not chained. |
-| Repeated `Rejected <bead>` | Read the gate logs; suggest a steering reply or a stronger Mayor. |
+| Repeated `Rejected <bead>` | Read the gate logs. The same mistake twice becomes a proposed rule (`odd-project` `references/correction-to-rule.md`), not a steering reply; a stronger Mayor only for planning failures. |
+| Branch edits a check, rule or tool configuration | Reject it and report it; never accept relaxed rules. Add the path to the protected list on the next project. |
 
 ## Execution Steps
 
