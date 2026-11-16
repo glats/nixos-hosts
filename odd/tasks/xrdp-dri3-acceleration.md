@@ -536,3 +536,25 @@ real XRDP path on `rog` only after the user explicitly approves the session rest
   The Ghostty XRDP profile is live on both hosts as well: the terminal renders
   opaque and its scrollback is bounded at 10 MB per surface, which is the change
   that produced the measured -66% peak RSS.
+- L12 (2026-11-12): Supersedes the automatic sesman restart recommendation in L10.
+  The user reported that `switch-to-configuration test` at 21:31:26 and 23:24:13
+  on 2026-11-11 stopped XRDP/sesman while the prior MATE desktop survived; a new
+  login then failed to acquire `org.gnome.SessionManager`. The user compared
+  generation 1101 (`X-RestartIfChanged=false`) with 1102 (protection removed and
+  XRDP package/configuration changed). These are user-supplied incident observations,
+  not a new live reproduction. Commit `9b7d9196` forced sesman restarts and removed
+  the pinned nixpkgs protection for interactive children. Remove that override;
+  retain Ghostty and glamor. Stale sesman executable/configuration paths after an
+  update are now deliberate maintenance debt, not a reason to disrupt live desktops.
+  See `docs/xrdp-session-maintenance.md` for warnings and the explicit maintenance
+  procedure. The separate XRDP transport may still restart. Verification must remain
+  evaluation-only: no activation, service restarts, application shutdown, commits or
+  publication are authorized. The regression check first failed on the original
+  policy with `rog: xrdp-sesman must not restart automatically during activation`.
+  After removal, the same check evaluates successfully. All three hosts evaluate
+  `restartIfChanged=false` and render `X-RestartIfChanged=false`.
+  `nix flake check --offline --no-build` passes, with an existing Home Manager
+  26.11/nixpkgs 26.05 mismatch warning and Darwin omitted. Independent scratch
+  evaluation reproduced RED/GREEN and confirmed that the rendered sesman flag is
+  the only unit change versus the immediate pre-fix policy; XRDP transport units
+  and package paths are identical. No live reconnection proof was attempted.

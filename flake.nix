@@ -326,6 +326,35 @@
           touch $out
         '';
 
+      checks.x86_64-linux.xrdp-sesman-no-restart =
+        let
+          pkgs = nixpkgs.legacyPackages.x86_64-linux;
+          protectedHosts =
+            builtins.map
+              (
+                host:
+                let
+                  config = self.nixosConfigurations.${host}.config;
+                in
+                assert nixpkgs.lib.assertMsg (
+                  config.services.xrdp.enable
+                  && !config.systemd.services.xrdp-sesman.restartIfChanged
+                  && nixpkgs.lib.hasInfix "X-RestartIfChanged=false" config.systemd.units."xrdp-sesman.service".text
+                ) "${host}: xrdp-sesman must not restart automatically during activation";
+                true
+              )
+              [
+                "rog"
+                "thinkcentre"
+                "samsung"
+              ];
+        in
+        builtins.deepSeq protectedHosts (
+          pkgs.runCommand "xrdp-sesman-no-restart" { } ''
+            touch $out
+          ''
+        );
+
       checks.x86_64-linux.gh-default-account = import ./checks/gh-default-account {
         pkgs = nixpkgs.legacyPackages.x86_64-linux;
       };
