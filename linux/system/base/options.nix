@@ -1,4 +1,4 @@
-{ config, lib, ... }:
+{ lib, ... }:
 {
   options.my.desktop.suite = lib.mkOption {
     type = lib.types.enum [

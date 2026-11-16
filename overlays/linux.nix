@@ -2,7 +2,27 @@
   self,
   inputs,
 }:
-final: prev: {
+final: prev:
+let
+  # The XRDP session X server needs glamor to expose hardware GL over DRI3.
+  # nixpkgs builds xorgxrdp without it, and upstream compiles out every
+  # DRMDevice/DRI3 code path in xrdpdev unless XORGXRDP_GLAMOR is defined,
+  # which silently forces the session onto swrast.
+  xorgxrdpGlamor = prev.xrdp.passthru.xorgxrdp.overrideAttrs (old: {
+    nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [
+      final.libepoxy
+      final.libglvnd
+      final.libgbm
+    ];
+    buildInputs = (old.buildInputs or [ ]) ++ [
+      final.libepoxy
+      final.libglvnd
+      final.libgbm
+    ];
+    configureFlags = (old.configureFlags or [ ]) ++ [ "--enable-glamor" ];
+  });
+in
+{
   inherit (self.packages.${prev.stdenv.hostPlatform.system})
     nixos-scripts
     gentle-ai
@@ -52,6 +72,20 @@ final: prev: {
 
   rtk = prev.rtk.overrideAttrs (old: {
     patches = (old.patches or [ ]) ++ [ ../patches/rtk/sigpipe-default.patch ];
+  });
+
+  xrdp = prev.xrdp.overrideAttrs (old: {
+    # xrdp bakes the xorgxrdp store path into the generated sesman.ini, so the
+    # module path and the session config have to be repointed at the
+    # glamor-enabled build.
+    postInstall = (old.postInstall or "") + ''
+      substituteInPlace $out/etc/xrdp/sesman.ini \
+        --replace-fail ${prev.xrdp.passthru.xorgxrdp}/lib/xorg/modules ${xorgxrdpGlamor}/lib/xorg/modules \
+        --replace-fail ${prev.xrdp.passthru.xorgxrdp}/etc/X11/xrdp/xorg.conf ${xorgxrdpGlamor}/etc/X11/xrdp/xorg.conf
+    '';
+    passthru = (old.passthru or { }) // {
+      xorgxrdp = xorgxrdpGlamor;
+    };
   });
 
   teams-for-linux =
