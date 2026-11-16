@@ -58,6 +58,8 @@ func usage() {
                                      record what you saw after the last trial
   test-shutdown status               A/B campaign summary (normal vs unload)
   test-shutdown brief                one-line campaign state (used by the desktop widget)
+  sudo test-shutdown campaign mark off|hung [note...]
+                                     correct the last measured shutdown with what you saw
   sudo test-shutdown campaign pause|resume
                                      stop or restart the automatic campaign
 `)
@@ -92,7 +94,7 @@ func main() {
 			os.Exit(2)
 		}
 		requireRoot()
-		campaign(log, ctx, args[1], *relay)
+		campaign(log, ctx, args[1], *relay, args[2:])
 	case args[0] == "result":
 		if len(args) < 2 {
 			usage()
@@ -218,7 +220,7 @@ func fail(err error) {
 	os.Exit(1)
 }
 
-func campaign(log *shutdowntrial.Log, ctx shutdowntrial.Context, sub, relay string) {
+func campaign(log *shutdowntrial.Log, ctx shutdowntrial.Context, sub, relay string, rest []string) {
 	env := osSystem{}
 	c := shutdowncampaign.Ctx{
 		BootID: ctx.BootID,
@@ -232,6 +234,15 @@ func campaign(log *shutdowntrial.Log, ctx shutdowntrial.Context, sub, relay stri
 	crumb := func(m string) { _ = km.Write(kmsg.UserNotice, m) }
 	var err error
 	switch sub {
+	case "mark":
+		if len(rest) < 1 {
+			usage()
+			os.Exit(2)
+		}
+		var e shutdowntrial.Entry
+		if e, err = shutdowncampaign.Mark(log, rest[0], strings.Join(rest[1:], " "), c); err == nil {
+			fmt.Printf("marked the last measured shutdown (%s) as %s\n", e.Resolves, e.Outcome)
+		}
 	case "report":
 		var text string
 		if text, err = shutdowncampaign.Report(env, log, c, crumb); err == nil && text != "" {

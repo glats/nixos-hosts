@@ -1,6 +1,7 @@
 package shutdowncampaign
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"strconv"
@@ -35,8 +36,11 @@ const (
 
 	RelayTimeout = 3 * time.Second
 	CalDelay     = 150 * time.Second
-	unloadSettle = 2 * time.Second
-	gpuPCI       = "/sys/bus/pci/devices/0000:01:00.0"
+
+	RelayTries     = 6
+	RelayRetryWait = 5 * time.Second
+	unloadSettle   = 2 * time.Second
+	gpuPCI         = "/sys/bus/pci/devices/0000:01:00.0"
 )
 
 type Env interface {
@@ -311,7 +315,16 @@ func relayConfirmedWake(env Env, c Ctx, armBoot string) bool {
 	if c.RelayAddr == "" {
 		return false
 	}
-	reply, err := env.Exchange(c.RelayAddr, "STATUS "+armBoot, RelayTimeout)
+	var reply string
+	var err error
+	for try := 0; try < RelayTries; try++ {
+		if try > 0 {
+			env.Sleep(RelayRetryWait)
+		}
+		if reply, err = env.Exchange(c.RelayAddr, "STATUS "+armBoot, RelayTimeout); err == nil {
+			break
+		}
+	}
 	if err != nil {
 		return false
 	}
@@ -451,11 +464,42 @@ type Result struct {
 	WakeVerdict string
 }
 
+func Mark(log *shutdowntrial.Log, outcome, note string, c Ctx) (shutdowntrial.Entry, error) {
+	switch outcome {
+	case "hung":
+		outcome = "hung_or_unwoken"
+	case "off":
+	default:
+		return shutdowntrial.Entry{}, fmt.Errorf("outcome must be off or hung, got %q", outcome)
+	}
+	entries, err := log.Read()
+	if err != nil {
+		return shutdowntrial.Entry{}, err
+	}
+	for i := len(entries) - 1; i >= 0; i-- {
+		if entries[i].Kind == "boot" && entries[i].Resolves != "" {
+			e := shutdowntrial.Entry{Kind: "mark", Time: c.Now, BootID: c.BootID, Kernel: c.Kernel, Trial: "campaign",
+				Resolves: entries[i].Resolves, Outcome: outcome, Note: note}
+			return e, log.Append(e)
+		}
+	}
+	return shutdowntrial.Entry{}, errors.New("no measured shutdown to mark yet")
+}
+
 func Summarize(entries []shutdowntrial.Entry) Result {
 	var r Result
+	marks := map[string]string{}
+	for _, e := range entries {
+		if e.Kind == "mark" {
+			marks[e.Resolves] = e.Outcome
+		}
+	}
 	for _, e := range entries {
 		if e.Kind != "boot" {
 			continue
+		}
+		if m, ok := marks[e.Resolves]; ok && e.Resolves != "" {
+			e.Outcome = m
 		}
 		switch e.Reason {
 		case "alarm":
@@ -485,6 +529,10 @@ func Summarize(entries []shutdowntrial.Entry) Result {
 			r.Invalid++
 			continue
 		default:
+			r.Unmeasured++
+			continue
+		}
+		if e.Outcome == "unmeasured" {
 			r.Unmeasured++
 			continue
 		}

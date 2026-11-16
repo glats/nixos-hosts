@@ -191,7 +191,11 @@ in
     systemd.services.shutdown-campaign-boot = lib.mkIf cfg.campaign.enable {
       description = "Poweroff A/B campaign: record how the previous shutdown ended";
       wantedBy = [ "multi-user.target" ];
-      after = [ "local-fs.target" ];
+      wants = [ "network-online.target" ];
+      after = [
+        "local-fs.target"
+        "network-online.target"
+      ];
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;

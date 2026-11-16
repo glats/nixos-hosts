@@ -26,6 +26,7 @@ type fakeEnv struct {
 	sleeps   []time.Duration
 	reply    string
 	exchErr  error
+	exchErrs []error
 }
 
 func newEnv() *fakeEnv {
@@ -81,6 +82,14 @@ func (f *fakeEnv) Sleep(d time.Duration) { f.sleeps = append(f.sleeps, d) }
 
 func (f *fakeEnv) Exchange(addr, msg string, timeout time.Duration) (string, error) {
 	f.ops = append(f.ops, "exchange "+addr+" "+msg)
+	if len(f.exchErrs) > 0 {
+		e := f.exchErrs[0]
+		f.exchErrs = f.exchErrs[1:]
+		if e != nil {
+			return "", e
+		}
+		return f.reply, nil
+	}
 	return f.reply, f.exchErr
 }
 
@@ -1010,5 +1019,86 @@ func TestCalibrationWakesProveWolWithoutCountingAsAlarmWakes(t *testing.T) {
 	}
 	if d := Diagnose(Result{Normal: group(2, 2), Unload: group(2, 2), CalWakes: 1}); d.Code == CodeAlarmUnreliable {
 		t.Fatalf("flagged the alarm as unreliable although only calibration woke the machine: %+v", d)
+	}
+}
+
+func TestBootRetriesTheRelayWhileTheNetworkComesUp(t *testing.T) {
+	env := newEnv()
+	env.reply = "SENT b0 123"
+	env.exchErrs = []error{errors.New("no route"), errors.New("no route"), nil}
+	log := seed(t, wolArmPending(t0.Add(-3*time.Hour).Unix()))
+	e, _ := Boot(env, log, relayCtx("b1"))
+	if e.Outcome != "hung_or_unwoken" {
+		t.Fatalf("entry %+v", e)
+	}
+	if len(env.sleeps) != 2 {
+		t.Fatalf("sleeps %v", env.sleeps)
+	}
+}
+
+func TestBootGivesUpOnTheRelayAfterBoundedRetries(t *testing.T) {
+	env := newEnv()
+	env.exchErr = errors.New("no route")
+	log := seed(t, wolArmPending(t0.Add(-3*time.Hour).Unix()))
+	e, _ := Boot(env, log, relayCtx("b1"))
+	if e.Outcome != "unmeasured" || len(env.sleeps) > 10 {
+		t.Fatalf("entry %+v sleeps %v", e, env.sleeps)
+	}
+}
+
+func TestSummarizeDoesNotCountUnmeasuredSamplesAsHangs(t *testing.T) {
+	es := []shutdowntrial.Entry{
+		bootEntry("a", "cold", "x", ArmWol, "unmeasured"),
+		bootEntry("b", "cold", "y", ArmNormal, "unmeasured"),
+		bootEntry("c", "wol", "z", ArmWol, "off"),
+	}
+	r := Summarize(es)
+	if r.Wol.N != 1 || r.Normal.N != 0 || r.Unmeasured != 2 {
+		t.Fatalf("summary %+v", r)
+	}
+}
+
+func markEntry(resolves, outcome string) shutdowntrial.Entry {
+	return shutdowntrial.Entry{Kind: "mark", Resolves: resolves, Outcome: outcome}
+}
+
+func TestMarkOverridesAnUnmeasuredSampleWithWhatTheUserSaw(t *testing.T) {
+	es := []shutdowntrial.Entry{bootEntry("b1", "cold", "arm1", ArmWol, "unmeasured"), markEntry("arm1", "hung_or_unwoken")}
+	r := Summarize(es)
+	if r.Wol.N != 1 || r.Wol.Off != 0 || r.Unmeasured != 0 {
+		t.Fatalf("summary %+v", r)
+	}
+}
+
+func TestMarkCanTurnAHangIntoOff(t *testing.T) {
+	es := []shutdowntrial.Entry{bootEntry("b1", "cold", "arm1", ArmNormal, "hung_or_unwoken"), markEntry("arm1", "off")}
+	if r := Summarize(es); r.Normal.Off != 1 {
+		t.Fatalf("summary %+v", r)
+	}
+}
+
+func TestMarkRecordsTheLatestResolvedShutdown(t *testing.T) {
+	log := seed(t, []shutdowntrial.Entry{
+		bootEntry("b1", "cold", "armA", ArmWol, "unmeasured"),
+		bootEntry("b2", "cold", "", "", ""),
+	})
+	e, err := Mark(log, "hung", "forced after a black screen", ctx("b3", 0))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if e.Kind != "mark" || e.Resolves != "armA" || e.Outcome != "hung_or_unwoken" || e.Note == "" {
+		t.Fatalf("entry %+v", e)
+	}
+	if got, _ := log.Read(); len(got) != 3 {
+		t.Fatalf("log %+v", got)
+	}
+}
+
+func TestMarkRejectsABadOutcomeAndAnEmptyHistory(t *testing.T) {
+	if _, err := Mark(seed(t, []shutdowntrial.Entry{bootEntry("b1", "cold", "armA", ArmWol, "unmeasured")}), "maybe", "", ctx("b2", 0)); err == nil {
+		t.Fatal("accepted a bad outcome")
+	}
+	if _, err := Mark(newLog(t), "off", "", ctx("b2", 0)); err == nil {
+		t.Fatal("marked an empty history")
 	}
 }
