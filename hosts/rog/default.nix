@@ -57,6 +57,7 @@
     ../../linux/system/services/media/qbittorrent.nix
     ../../linux/system/services/media/flaresolverr.nix
     ../../linux/system/services/media/romm.nix
+    ../../linux/system/services/media/romharbor.nix
 
     ../../linux/system/services/web/nginx.nix
     ../../linux/system/services/web/authelia.nix

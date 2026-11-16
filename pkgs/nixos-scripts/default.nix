@@ -45,6 +45,7 @@ buildGoModule {
     "cmd/opencode-harness-init"
     "cmd/opencode-login-bridge"
     "cmd/opencode-layout-migrate"
+    "cmd/romcatalog"
     "cmd/sops-rotate-keys"
     "cmd/sync-opencode-remote"
     "cmd/test-shutdown"
@@ -67,6 +68,9 @@ buildGoModule {
       --prefix PATH : ${lib.makeBinPath [ qrencode ]}
     wrapProgram $out/bin/gpg-unlock \
       --prefix PATH : ${lib.makeBinPath [ git ]}
+    # romcatalog extracts 7z archives with the 7z binary.
+    wrapProgram $out/bin/romcatalog \
+      --prefix PATH : ${lib.makeBinPath [ pkgs.p7zip ]}
     mkdir -p $out/libexec/nixos-scripts
     mv $out/bin/gastown-run $out/libexec/nixos-scripts/gastown-run
     ${lib.optionalString pkgs.stdenv.hostPlatform.isLinux ''

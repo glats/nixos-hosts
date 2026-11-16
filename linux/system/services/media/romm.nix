@@ -2,6 +2,59 @@
 
 let
   rommPort = 8081;
+
+  rommConfig = pkgs.writeText "romm-config.yml" ''
+    scan:
+      priority:
+        metadata:
+          - "igdb"
+          - "ss"
+          - "moby"
+          - "launchbox"
+          - "hasheous"
+          - "ra"
+          - "gamelist"
+          - "tgdb"
+          - "flashpoint"
+          - "hltb"
+        artwork:
+          - "ss"
+          - "igdb"
+          - "moby"
+          - "sgdb"
+          - "libretro"
+          - "launchbox"
+          - "hasheous"
+          - "ra"
+          - "tgdb"
+          - "flashpoint"
+        cover:
+          - "ss"
+          - "igdb"
+          - "libretro"
+          - "hasheous"
+        screenshot:
+          - "ss"
+          - "igdb"
+          - "moby"
+        region:
+          - "us"
+          - "wor"
+          - "ss"
+          - "eu"
+          - "jp"
+        language:
+          - "en"
+          - "es"
+          - "fr"
+      media:
+        - "box2d"
+        - "box3d"
+        - "miximage"
+        - "screenshot"
+        - "title_screen"
+        - "marquee"
+  '';
 in
 {
 
@@ -70,6 +123,27 @@ in
     };
   };
 
+  systemd.services.romm-config = {
+    description = "Render RomM config.yml";
+    after = [ "docker-network-romm.service" ];
+    before = [ "docker-romm.service" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStart = pkgs.writeShellScript "render-romm-config" ''
+        mkdir -p /srv/glats/romm/config
+        target=/srv/glats/romm/config/config.yml
+        if [ -f "$target" ] && ${pkgs.coreutils}/bin/cmp -s ${rommConfig} "$target"; then
+          echo "RomM config unchanged"
+        else
+          ${pkgs.coreutils}/bin/install -m 0644 ${rommConfig} "$target"
+          echo "RomM config updated"
+        fi
+      '';
+    };
+  };
+
   virtualisation.oci-containers.containers.romm-db = {
     image = "mariadb:11";
     autoStart = true;
@@ -111,6 +185,20 @@ in
       DB_PORT = "3306";
       DB_USER = "romm";
       DB_NAME = "romm";
+
+      ROMM_BASE_URL = "https://roms.glats.org";
+
+      # Zero-key metadata providers.
+      HASHEOUS_API_ENABLED = "true";
+      LAUNCHBOX_API_ENABLED = "true";
+      ENABLE_SCHEDULED_UPDATE_LAUNCHBOX_METADATA = "true";
+
+      # Keep the catalog in sync with the library disk.
+      ENABLE_RESCAN_ON_FILESYSTEM_CHANGE = "true";
+      RESCAN_ON_FILESYSTEM_CHANGE_DELAY = "5";
+      ENABLE_SCHEDULED_RESCAN = "true";
+      SCHEDULED_RESCAN_CRON = "0 3 * * *";
+      SCAN_TIMEOUT = "28800";
     };
 
     environmentFiles = [

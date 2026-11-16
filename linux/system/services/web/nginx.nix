@@ -575,6 +575,23 @@ in
         locExtra = arrLocExtra;
       };
 
+      "rom.${domain}" =
+        lib.recursiveUpdate
+          (mkAutheliaVhost {
+            port = 8082;
+            domain = "rom.${domain}";
+          })
+          {
+            locations."/internal/authelia/authz".extraConfig = ''
+              internal;
+              proxy_pass_request_body off;
+              proxy_set_header Content-Length "";
+              proxy_set_header X-Original-URL $scheme://$http_host$request_uri;
+              proxy_set_header X-Real-IP $remote_addr;
+              proxy_set_header X-Forwarded-For $remote_addr;
+            '';
+          };
+
       "auth.${domain}" = {
         useACMEHost = "glats.org";
         forceSSL = true;

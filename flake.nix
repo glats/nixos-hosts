@@ -21,6 +21,11 @@
 
     nix-colors.url = "github:misterio77/nix-colors";
 
+    romharbor = {
+      url = "github:glats/romharbor/248fedc63764e54fe0a727a78180261412a79716";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     omarchy-nix = {
       url = "github:glats/omarchy-nix/5fc93f4c86f4766e477b7e94776e4a7c25ed3579";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -395,7 +400,10 @@
       };
 
       nixosConfigurations = {
-        rog = mkNixosHost { hostname = "rog"; };
+        rog = mkNixosHost {
+          hostname = "rog";
+          extraModules = [ inputs.romharbor.nixosModules.default ];
+        };
         thinkcentre = mkNixosHost { hostname = "thinkcentre"; };
         samsung = mkNixosHost { hostname = "samsung"; };
         t14 = mkNixosHost {

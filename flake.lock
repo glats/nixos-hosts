@@ -1647,6 +1647,27 @@
         "type": "github"
       }
     },
+    "romharbor": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1794801030,
+        "narHash": "sha256-pKTaM3qORluNTNNYKlNsFaqJCHaHqKOnz7grSAJu2jM=",
+        "owner": "glats",
+        "repo": "romharbor",
+        "rev": "248fedc63764e54fe0a727a78180261412a79716",
+        "type": "github"
+      },
+      "original": {
+        "owner": "glats",
+        "repo": "romharbor",
+        "rev": "248fedc63764e54fe0a727a78180261412a79716",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "asus-fan-control-src": "asus-fan-control-src",
@@ -1669,6 +1690,7 @@
         "openlogi": "openlogi",
         "pipewire-module-xrdp-src": "pipewire-module-xrdp-src",
         "ponytail-src": "ponytail-src",
+        "romharbor": "romharbor",
         "sonic-de": "sonic-de",
         "sops-nix": "sops-nix",
         "t14-home-manager": "t14-home-manager",
