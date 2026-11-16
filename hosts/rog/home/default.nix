@@ -15,7 +15,7 @@ baseModules
   ../../../linux/home/webcam.nix
 
   {
-    home.opencode.activeProviderName = "openai-anthropic";
+    home.opencode.activeProviderName = "anthropic-medium";
     home.gastown.campaigns.maquilinux = { };
   }
 
