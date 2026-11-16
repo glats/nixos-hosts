@@ -12,6 +12,7 @@
 
 let
   mesh = import ../../shared/ssh/lan-mesh.nix { inherit lib; };
+  snes9xCore = pkgs.callPackage ../../pkgs/retroarch-snes9x { };
 
   corporateCaBundle = pkgs.runCommand "corporate-ca-bundle" { } ''
     mkdir -p $out/etc/ssl/certs
@@ -71,6 +72,8 @@ in
         ../../darwin/home
       ];
       home.stateVersion = "25.05";
+      home.file."Library/Application Support/RetroArch/cores/snes9x_libretro.dylib".source =
+        "${snes9xCore}/lib/retroarch/cores/snes9x_libretro.dylib";
     };
     extraSpecialArgs = {
       inherit
@@ -129,4 +132,8 @@ in
       ];
   };
   homebrew.brews = [ "displayplacer" ];
+  homebrew.casks = [
+    "retroarch-metal"
+    "dolphin"
+  ];
 }
