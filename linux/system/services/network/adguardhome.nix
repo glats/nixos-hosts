@@ -144,6 +144,12 @@ in
           name = "HaGeZi Threat Intelligence Feeds MINI";
           id = 1792291650;
         }
+        {
+          enabled = true;
+          url = "https://small.oisd.nl";
+          name = "OISD small";
+          id = 1792291651;
+        }
       ];
       whitelist_filters = [ ];
       user_rules = userRules;
