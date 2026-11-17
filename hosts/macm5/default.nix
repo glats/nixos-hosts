@@ -70,6 +70,9 @@ in
     users.${primaryUser} = {
       imports = [
         ../../darwin/home
+        {
+          home.opencode.activeProviderName = "github-copilot-medium";
+        }
       ];
       home.stateVersion = "25.05";
       home.file."Library/Application Support/RetroArch/cores/snes9x_libretro.dylib".source =
