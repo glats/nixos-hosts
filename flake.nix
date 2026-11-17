@@ -493,7 +493,7 @@
             hostname = "macm5";
             system = "aarch64-darwin";
             username = "juan";
-            extraModules = [ ./darwin/home ];
+            extraModules = import ./hosts/macm5/home/default.nix;
           };
         };
 

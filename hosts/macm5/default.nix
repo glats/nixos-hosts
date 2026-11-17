@@ -68,12 +68,7 @@ in
     useUserPackages = true;
     backupFileExtension = "backup";
     users.${primaryUser} = {
-      imports = [
-        ../../darwin/home
-        {
-          home.opencode.activeProviderName = lib.mkForce "github-copilot-medium";
-        }
-      ];
+      imports = import ./home/default.nix;
       home.stateVersion = "25.05";
       home.file."Library/Application Support/RetroArch/cores/snes9x_libretro.dylib".source =
         "${snes9xCore}/lib/retroarch/cores/snes9x_libretro.dylib";
