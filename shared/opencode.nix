@@ -170,6 +170,9 @@ in
               if [ -f "${config.sops.secrets."opencode/nvidia_api_key".path}" ]; then
                 export NVIDIA_API_KEY="$(cat ${config.sops.secrets."opencode/nvidia_api_key".path})"
               fi
+          if [ -f "${config.sops.secrets."opencode/context7_api_key".path}" ]; then
+            export CONTEXT7_API_KEY="$(cat ${config.sops.secrets."opencode/context7_api_key".path})"
+          fi
           if [ -f "${config.sops.secrets."opencode/ollama_api_key".path}" ]; then
             export OLLAMA_API_KEY="$(cat ${config.sops.secrets."opencode/ollama_api_key".path})"
           fi

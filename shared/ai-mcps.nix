@@ -43,6 +43,10 @@ let
       type = "remote";
       url = "https://mcp.context7.com/mcp";
       enabled = true;
+      oauth = false;
+      headers = {
+        "CONTEXT7_API_KEY" = "{env:CONTEXT7_API_KEY}";
+      };
     };
 
     engram = {

@@ -46,6 +46,9 @@
   sops.secrets."opencode/aihubmix_api_key" = {
     mode = "0400";
   };
+  sops.secrets."opencode/context7_api_key" = {
+    mode = "0400";
+  };
 
   sops.secrets."identities/personal_name" = {
     sopsFile = ../secrets/user/identities.yaml;
