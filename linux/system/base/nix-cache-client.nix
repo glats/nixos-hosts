@@ -15,7 +15,8 @@ in
 {
   sops.secrets."nix-cache/netrc" = {
     sopsFile = ../../../secrets/host/${config.networking.hostName}/nix-cache.yaml;
-    mode = "0400";
+    mode = "0440";
+    group = "keys";
   };
 
   nix.settings = {

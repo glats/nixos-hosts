@@ -67,7 +67,7 @@ All secrets are sops-encrypted; never decrypt them (`sops` encrypt/edit only thr
 | `secrets/host/thinkcentre/nix-cache.yaml` | `nix-cache/harmonia_signing_key` | Harmonia `signKeyPaths` (NAR signing) |
 | | `nix-cache/ncps_signing_key` | ncps `cache.secretKeyPath` (proxy signature) |
 | `secrets/host/rog/nix-cache.yaml` | `nix-cache/htpasswd` | bcrypt htpasswd for `nix-cache.glats.org` (user `nix-cache`), deployed owned by nginx `0400` |
-| | `nix-cache/netrc` | rog's own netrc so it can use the remote substituter |
+| | `nix-cache/netrc` | rog's own netrc so it can use the remote substituter; deployed `0440 root:keys` so client-side nix runs as `glats` (in `keys`) can read it, not just the root daemon |
 | `secrets/host/t14/nix-cache.yaml` | `nix-cache/netrc` | `machine nix-cache.glats.org login nix-cache` |
 | `secrets/host/macm5/nix-cache.yaml` | `nix-cache/netrc` | same netrc for macm5 |
 
@@ -94,7 +94,7 @@ Basic-auth rotation (rog + clients):
 |---|---|
 | No cache hits on LAN | `curl http://172.16.0.11:8501/nix-cache-info` on a LAN host |
 | Remote cache unreachable | `curl -n https://nix-cache.glats.org/nix-cache-info` (uses the netrc); confirms ACME cert, basic auth, and the rog → Harmonia proxy. Without `-n` expect `401` — that proves auth is on |
-| Auth failures with basic auth | the htpasswd blob was regenerated without updating the netrc files, or vice versa |
+| Auth failures with basic auth | the htpasswd blob was regenerated without updating the netrc files, or vice versa; also, a `401` only in user-run nix commands (daemon works) means the client user cannot read the netrc — it must be group-readable by the invoking user's group (`keys`) |
 | Untrusted key warnings | compare the nix error's key with `shared/nix-cache.nix`; a key rotation without a client rebuild is the usual cause |
 | Prewarm not running | `systemctl status nix-cache-prewarm.timer` (next trigger), `journalctl -u nix-cache-prewarm -n 100` |
 | Prewarm skipped | the log line `prewarm skipped: load average ... > ...` means the idle guard tripped; wait for the next timer activation |
