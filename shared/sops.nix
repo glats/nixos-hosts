@@ -3,6 +3,7 @@
 {
   sops.defaultSopsFile = ../secrets/user/opencode.yaml;
   sops.age.keyFile = "${config.home.homeDirectory}/.config/sops/age/keys.txt";
+  home.sessionVariables.SOPS_EDITOR = "nvim";
 
   sops.secrets."opencode/nvidia_api_key" = {
     mode = "0400";
