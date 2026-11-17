@@ -11,4 +11,5 @@ baseModules
   ./wallpaper.nix
 
   { home.opencode.activeProviderName = "anthropic-openai-ollama"; }
+  { home.ghostty.xrdp-optimized = true; }
 ]
