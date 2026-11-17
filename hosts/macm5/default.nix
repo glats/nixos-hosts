@@ -71,7 +71,7 @@ in
       imports = [
         ../../darwin/home
         {
-          home.opencode.activeProviderName = "github-copilot-medium";
+          home.opencode.activeProviderName = lib.mkForce "github-copilot-medium";
         }
       ];
       home.stateVersion = "25.05";
