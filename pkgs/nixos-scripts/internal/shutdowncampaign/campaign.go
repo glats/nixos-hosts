@@ -464,26 +464,46 @@ type Result struct {
 	WakeVerdict string
 }
 
-func Mark(log *shutdowntrial.Log, outcome, note string, c Ctx) (shutdowntrial.Entry, error) {
+func Mark(log *shutdowntrial.Log, outcome, note, target string, c Ctx) (shutdowntrial.Entry, error) {
 	switch outcome {
 	case "hung":
 		outcome = "hung_or_unwoken"
+	case "unknown":
+		outcome = "unmeasured"
 	case "off":
 	default:
-		return shutdowntrial.Entry{}, fmt.Errorf("outcome must be off or hung, got %q", outcome)
+		return shutdowntrial.Entry{}, fmt.Errorf("outcome must be off, hung or unknown, got %q", outcome)
+	}
+	if target != "" && len(target) < 4 {
+		return shutdowntrial.Entry{}, fmt.Errorf("target %q is too short to identify a shutdown", target)
 	}
 	entries, err := log.Read()
 	if err != nil {
 		return shutdowntrial.Entry{}, err
 	}
+	var found string
 	for i := len(entries) - 1; i >= 0; i-- {
-		if entries[i].Kind == "boot" && entries[i].Resolves != "" {
-			e := shutdowntrial.Entry{Kind: "mark", Time: c.Now, BootID: c.BootID, Kernel: c.Kernel, Trial: "campaign",
-				Resolves: entries[i].Resolves, Outcome: outcome, Note: note}
-			return e, log.Append(e)
+		e := entries[i]
+		if e.Kind != "boot" || e.Resolves == "" {
+			continue
+		}
+		if target == "" {
+			found = e.Resolves
+			break
+		}
+		if strings.HasPrefix(e.Resolves, target) {
+			if found != "" && found != e.Resolves {
+				return shutdowntrial.Entry{}, fmt.Errorf("target %q matches more than one shutdown", target)
+			}
+			found = e.Resolves
 		}
 	}
-	return shutdowntrial.Entry{}, errors.New("no measured shutdown to mark yet")
+	if found == "" {
+		return shutdowntrial.Entry{}, errors.New("no matching measured shutdown to mark")
+	}
+	m := shutdowntrial.Entry{Kind: "mark", Time: c.Now, BootID: c.BootID, Kernel: c.Kernel, Trial: "campaign",
+		Resolves: found, Outcome: outcome, Note: note}
+	return m, log.Append(m)
 }
 
 func Summarize(entries []shutdowntrial.Entry) Result {

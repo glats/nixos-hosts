@@ -58,8 +58,9 @@ func usage() {
                                      record what you saw after the last trial
   test-shutdown status               A/B campaign summary (normal vs unload)
   test-shutdown brief                one-line campaign state (used by the desktop widget)
-  sudo test-shutdown campaign mark off|hung [note...]
-                                     correct the last measured shutdown with what you saw
+  sudo test-shutdown campaign mark off|hung|unknown [id=<boot-id-prefix>] [note...]
+                                     correct a measured shutdown with what you saw;
+                                     unknown removes it from the statistics
   sudo test-shutdown campaign pause|resume
                                      stop or restart the automatic campaign
 `)
@@ -240,7 +241,11 @@ func campaign(log *shutdowntrial.Log, ctx shutdowntrial.Context, sub, relay stri
 			os.Exit(2)
 		}
 		var e shutdowntrial.Entry
-		if e, err = shutdowncampaign.Mark(log, rest[0], strings.Join(rest[1:], " "), c); err == nil {
+		words, target := rest[1:], ""
+		if len(words) > 0 && strings.HasPrefix(words[0], "id=") {
+			target, words = strings.TrimPrefix(words[0], "id="), words[1:]
+		}
+		if e, err = shutdowncampaign.Mark(log, rest[0], strings.Join(words, " "), target, c); err == nil {
 			fmt.Printf("marked the last measured shutdown (%s) as %s\n", e.Resolves, e.Outcome)
 		}
 	case "report":

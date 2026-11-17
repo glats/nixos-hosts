@@ -1082,7 +1082,7 @@ func TestMarkRecordsTheLatestResolvedShutdown(t *testing.T) {
 		bootEntry("b1", "cold", "armA", ArmWol, "unmeasured"),
 		bootEntry("b2", "cold", "", "", ""),
 	})
-	e, err := Mark(log, "hung", "forced after a black screen", ctx("b3", 0))
+	e, err := Mark(log, "hung", "forced after a black screen", "", ctx("b3", 0))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1095,10 +1095,53 @@ func TestMarkRecordsTheLatestResolvedShutdown(t *testing.T) {
 }
 
 func TestMarkRejectsABadOutcomeAndAnEmptyHistory(t *testing.T) {
-	if _, err := Mark(seed(t, []shutdowntrial.Entry{bootEntry("b1", "cold", "armA", ArmWol, "unmeasured")}), "maybe", "", ctx("b2", 0)); err == nil {
+	if _, err := Mark(seed(t, []shutdowntrial.Entry{bootEntry("b1", "cold", "armA", ArmWol, "unmeasured")}), "maybe", "", "", ctx("b2", 0)); err == nil {
 		t.Fatal("accepted a bad outcome")
 	}
-	if _, err := Mark(newLog(t), "off", "", ctx("b2", 0)); err == nil {
+	if _, err := Mark(newLog(t), "off", "", "", ctx("b2", 0)); err == nil {
 		t.Fatal("marked an empty history")
+	}
+}
+
+func TestMarkUnknownTurnsASampleIntoUnmeasured(t *testing.T) {
+	es := []shutdowntrial.Entry{bootEntry("b1", "cold", "arm1", ArmNormal, "hung_or_unwoken"), markEntry("arm1", "unmeasured")}
+	r := Summarize(es)
+	if r.Normal.N != 0 || r.Unmeasured != 1 {
+		t.Fatalf("summary %+v", r)
+	}
+}
+
+func TestMarkUnknownIsAcceptedAndStoredAsUnmeasured(t *testing.T) {
+	log := seed(t, []shutdowntrial.Entry{bootEntry("b1", "cold", "arm1", ArmNormal, "hung_or_unwoken")})
+	e, err := Mark(log, "unknown", "not sure what I saw", "", ctx("b2", 0))
+	if err != nil || e.Outcome != "unmeasured" || e.Resolves != "arm1" {
+		t.Fatalf("entry %+v err %v", e, err)
+	}
+}
+
+func TestMarkTargetsAnOlderShutdownByBootIdPrefix(t *testing.T) {
+	log := seed(t, []shutdowntrial.Entry{
+		bootEntry("b1", "cold", "e0c8a5fe-7083", ArmNormal, "hung_or_unwoken"),
+		bootEntry("b2", "alarm", "27121c69-7e43", ArmUnload, "off"),
+	})
+	e, err := Mark(log, "unknown", "", "e0c8a5fe", ctx("b3", 0))
+	if err != nil || e.Resolves != "e0c8a5fe-7083" {
+		t.Fatalf("entry %+v err %v", e, err)
+	}
+}
+
+func TestMarkTargetThatMatchesNothingOrTooMuchIsRejected(t *testing.T) {
+	log := seed(t, []shutdowntrial.Entry{
+		bootEntry("b1", "cold", "aaaa1111", ArmNormal, "off"),
+		bootEntry("b2", "cold", "aaaa2222", ArmNormal, "off"),
+	})
+	if _, err := Mark(log, "off", "", "zzzz", ctx("b3", 0)); err == nil {
+		t.Fatal("accepted an unknown target")
+	}
+	if _, err := Mark(log, "off", "", "aaaa", ctx("b3", 0)); err == nil {
+		t.Fatal("accepted an ambiguous target")
+	}
+	if _, err := Mark(log, "off", "", "ab", ctx("b3", 0)); err == nil {
+		t.Fatal("accepted a target shorter than 4 characters")
 	}
 }
