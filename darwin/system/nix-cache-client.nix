@@ -16,7 +16,8 @@ in
 {
   sops.secrets."nix-cache/netrc" = {
     sopsFile = ../../secrets/host/macm5/nix-cache.yaml;
-    mode = "0400";
+    mode = "0440";
+    owner = primaryUser;
   };
 
   determinateNix.customSettings = {
