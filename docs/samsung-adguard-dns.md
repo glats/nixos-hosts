@@ -12,8 +12,9 @@ instance (`docs/oneplus5-adguard-dns.md`, historical). The configuration is decl
   not persist. Change the Nix files instead.
 - DNS binds `172.16.0.12:53`. The router DHCP keeps advertising
   `6,172.16.0.12,172.16.0.1,9.9.9.9`, so clients fall back to the router and Quad9 when
-  samsung is down. The fallback can also let some clients skip the filter; this is the
-  accepted trade-off for never losing resolution.
+  samsung is down. Since 2026-11-16 the router intercepts all other port-53 LAN
+  queries into its own dnsmasq (which forwards to samsung first), so those
+  fallback entries are no longer a bypass; see `docs/lan-dns-enforcement.md`.
 - The web panel binds `127.0.0.1:3000` only, with no login (a declarative password
   hash would be world-readable in `/nix/store`). Reach it through a tunnel:
   From rog, run `adguard-tunnel -open`, which uses `samsung.lan` and the normal SSH

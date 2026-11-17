@@ -77,6 +77,20 @@ ssh -o BatchMode=yes macm5 true
 Compare the authorized lines and alias blocks with the registry during every
 drift review. The phone remains manually managed even when they match.
 
+## Router enrollment
+
+The router (`root@router.lan`, OpenWrt/dropbear) is the only mesh member that
+authenticates as root; the "do not authorize root" rule above applies to the
+Linux peers, not to the router. Its `/etc/dropbear/authorized_keys` must contain
+every member key in `shared/ssh/lan-mesh.nix`. Whenever a new host is enrolled
+in the mesh, append its key to the router too — the key list is verified
+manually there, not deployed from the flake.
+
+Drift found on 2026-11-16: the router had macm5, oneplus5, rog, t14 and
+thinkcentre keys but was missing samsung (enrolled after the router's last
+verification); samsung's key was appended and the state is documented in
+`docs/lan-dns-enforcement.md`.
+
 ## Emergency revocation
 
 1. Remove the compromised source record from `shared/ssh/lan-mesh.nix` and
