@@ -54,45 +54,39 @@ tool-call behavior.
 | User reports a blocked/degraded role or asks "why is X slow/broken" | `re-fit` (diagnose first, then swap) |
 | User asks to add a whole new profile or rebalance a whole provider family | `full` |
 
-## Provider Route Fitting Rule (user-owned, 2026-10-30)
+## Environment Profile Rule (user-owned, 2026-11-18)
 
-The routing lists follow a category-per-provider rule that is deliberately
-OPEN: no provider family (openai, anthropic, github-copilot, ollama-cloud,
-opencode-go, nvidia, or a future one) is privileged by the structure — the rule only orders
-categories inside a profile name.
+`shared/opencode/providers-base.nix` holds one profile per environment, named
+by what that environment can reach, not by provider order. It replaces the
+2026-10-30 provider-order rule and its permutation profiles.
 
-- Multi-provider profile names encode ordered providers `p1-p2-p3`:
-  - `p1` = the provider's best orchestrator fit → `gentle-orchestrator` and
-    `neutral`.
-  - `p2` = the provider's thinking fit → `gentle-ai-verify`, `jd-judge-a/b`,
-    and every `review-*` role.
-  - `p3` = the provider's workforce fit → `gentle-ai-explore`,
-    `gentle-ai-worker`, `jd-fix-agent`.
-- Two-provider profiles `p1-p2`: `p1` keeps orchestrator + neutral AND
-  thinking; `p2` carries the whole workforce.
-- Goal: quota/rate-limit balancing. Weigh role placement by observed call
-  frequency, never by role count: orchestrator turns dominate, worker loops
-  next, verify runs per implementation task, review sources are bounded
-  bursts (~0-1 per session, ≤4 lenses + 1 refuter + 1 validator), and jd
-  judges only run on explicit judgment-day. This concentration was verified
-  against `odd/tasks/*.md` history on 2026-10-30 and kept.
-- Single-provider tier profiles `provider-light|medium|full`: one provider,
-  best per-role fit at that tier; the frontier climbs from light (volume
-  model everywhere) through medium (best orchestrator + thinking, volume
-  workforce) to full (best orchestrator + thinking, strongest workforce).
-- Current fit mapping (fresh 2026-10-30; re-verify before every assignment):
-  orchestrator/neutral: `gpt-6-astra` / `claude-opus-5-5` / `glm-5.3`;
-  thinking: `gpt-6.1-sol` / `claude-sonnet-5-5` / `deepseek-v4-pro`;
-  workforce volume: `claude-haiku-5-5` / `minimax-m3.1-flash`;
-  explore: `claude-sonnet-5-5` / `deepseek-v4-pro`, `claude-haiku-5-5` as
-  fallback. `gpt-6-luna` is unfit for worker and explore (Terminal-Bench 4.0
-  16.4 vs haiku 39.2, re-checked 2026-11-18; see
-  `odd/tasks/provider-quota-balance.md` L20).
-- Adding ANY future provider: verify Gates 1-2 fresh, derive its
-  orchestrator/thinking/explore/volume fits with citations, and extend the
-  profile matrix under the same rule. The rule never hardcodes providers;
-  legacy hand-written profiles (copilot/nvidia families) are documented gaps
-  until they pass gates and fold into the rule.
+| Profile | Providers | Hosts |
+| --- | --- | --- |
+| `personal` | anthropic, openai, ollama-cloud | t14, samsung, thinkcentre (rog when all three have quota) |
+| `personal-claude` | anthropic only | rog while OpenAI and Ollama quotas are exhausted |
+| `work` | anthropic, github-copilot | macm5 and the Darwin default |
+
+Every profile fills its 14 role keys with the same role rule:
+
+| Role | Rule |
+| --- | --- |
+| `gentle-orchestrator`, `neutral` | Big tier: builds the base and inspects |
+| `gentle-ai-explore` | Mid tier or below with strong long-context retrieval |
+| `gentle-ai-worker`, `jd-fix-agent` | Cheapest competent coder |
+| `gentle-ai-verify`, `jd-judge-a/b`, every `review-*` | Mid tier from another family than the worker |
+
+- Current fit (2026-11-18; re-verify before every assignment, see
+  `odd/tasks/provider-quota-balance.md` L20): orchestrator
+  `claude-opus-5-5`; explore `deepseek-v4-pro` or `claude-sonnet-5-5`; worker
+  `minimax-m3.1-flash` or `claude-haiku-5-5`; verify `gpt-6.1-sol`, or
+  `claude-sonnet-5-5` where no other family is reachable (record the gap).
+  `gpt-6-luna` is unfit for worker and explore (Terminal-Bench 4.0 16.4 vs
+  haiku 39.2). Copilot is slower than direct APIs, so the work orchestrator
+  uses Anthropic directly.
+- Adding a provider or environment: verify Gates 1-2 fresh, derive each role
+  with citations, and add or extend the environment profile under the same
+  role rule. Hosts switch profiles only when an environment's reachable
+  providers change.
 
 ## Tier Rule (user-owned, 2026-11-18)
 
@@ -109,9 +103,6 @@ executes, and the user switches the session model.
 - Verify uses a different model family than the profile's writer roles when
   the profile has more than one provider; single-provider profiles record the
   gap instead.
-- This rule refines the Provider Route Fitting Rule: provider ordering still
-  decides which provider fills each category, but never places a big-tier
-  model outside the orchestrator.
 
 ## Auth Method Recognition
 
@@ -191,7 +182,7 @@ patterns (#40343). A provider that silently burns quota is not stable.
 
 ### Ollama Cloud verification protocol
 
-For the `ollama-cloud` provider (profiles `ollama-*`), verify fresh each time:
+For the `ollama-cloud` provider (the `personal` profile), verify fresh each time:
 
 - **Live catalog**: `GET https://ollama.com/api/tags` and the `ollama-cloud`
   entry of `https://models.dev/api.json`. Model ids use the API names (for
@@ -202,15 +193,15 @@ For the `ollama-cloud` provider (profiles `ollama-*`), verify fresh each time:
 - **Auth**: Method A. The key comes from ollama.com Settings > Keys and is
   exported as `OLLAMA_API_KEY` from sops secret `opencode/ollama_api_key`;
   there is no `/connect` step in this repo.
-- **Plan**: Pro is a monthly credit pool at list per-token prices with no 5-hour
-  or weekly windows; usage past the pool draws from purchased credits. Check
+- **Plan**: Pro is a $60 monthly credit pool at list per-token prices, renewed
+  on the subscription day, with no 5-hour or weekly windows; usage past the pool draws from purchased credits. Check
   the account usage page for the real burn before judging quota.
 - **Output caps**: the API limit can be lower than models.dev. `deepseek-v4-pro`
   rejects OpenCode's default 256000 `max_tokens` (API maximum 65536), so
   `runtime-config.nix` caps its `limit.output`; re-check caps when adding models.
-- **Gate 1 on Ollama Cloud (2026-11-06)**: `glm-5.3-flash` is excluded from
-  `ollama-*` profiles; `glm-5.3` stays only as orchestrator/neutral by explicit
-  user decision (2026-11-06) despite the open issues below. Open ollama/ollama issues: #18193 (glm-5.3
+- **Gate 1 on Ollama Cloud (2026-11-06)**: `glm-5.3-flash` is excluded;
+  `glm-5.3` is not assigned: on the $60 monthly pool it cost about $0.035 per
+  request as orchestrator (2026-11-18), on top of the open issues below. Open ollama/ollama issues: #18193 (glm-5.3
   endless reasoning, aborts long agentic tasks; official Z.AI unaffected),
   #18506 (glm-5.3-flash emits malformed string-encoded tool calls), #18926
   (glm-5.3/glm-5.3-flash streams never terminate). `deepseek-v4.1-flash` is also
@@ -275,7 +266,7 @@ these 14 role keys, with no remap layer: `gentle-orchestrator`,
 `jd-judge-b`, `jd-fix-agent`, `review-readability`, `review-refuter`,
 `review-reliability`, `review-resilience`, `review-risk`, `review-validator`,
 `neutral`. Editing a profile means editing those keys directly. Conform
-every assignment to the Provider Route Fitting Rule (above) — provider order
+every assignment to the Environment Profile Rule (above) — environment
 naming, category placement, and open-provider extension. Preserve every
 unrelated fit and last-wins user override. Role names never grant delegation
 or delivery permission. The `neutral` slot is a title-provider filler that is

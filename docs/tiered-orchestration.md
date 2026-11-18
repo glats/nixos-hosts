@@ -73,11 +73,15 @@ as a routine check that nothing drifted.
 
 ## Role models
 
-| Role | Model | Rule |
-| --- | --- | --- |
-| Worker | `minimax-m3.1-flash` (Ollama); `claude-haiku-5-5` while Ollama credits are out | Cheapest competent coder |
-| Verify | Different model family than the writer | A model judges its own family too kindly |
-| Explore | `deepseek-v4-pro`; `claude-haiku-5-5` as fallback | Long-context retrieval |
+One profile per environment, all built with the same rule: big-tier
+orchestrator, mid-tier-or-below subagents, verify from another family than the
+worker.
+
+| Profile | Orchestrator | Explore | Worker | Verify, review, judges |
+| --- | --- | --- | --- | --- |
+| `personal` | `claude-opus-5-5` | `deepseek-v4-pro` | `minimax-m3.1-flash` | `gpt-6.1-sol` |
+| `personal-claude` | `claude-opus-5-5` | `claude-sonnet-5-5` | `claude-haiku-5-5` | `claude-sonnet-5-5` (same family: no other provider) |
+| `work` | `claude-opus-5-5` (Anthropic) | Copilot `claude-sonnet-5.5` | Copilot `claude-haiku-5.5` | Copilot `gpt-6.1-sol` |
 
 `gpt-6-luna` is not used for worker or explore.
 
@@ -96,9 +100,11 @@ Active on `rog` after `nixos-build switch`:
 | Orchestrator rule: hand-off announcements, log before switching | `shared/rules/tiered-orchestration.md` |
 | New sessions start on the profile orchestrator | root `model` in `shared/opencode/runtime-config.nix` |
 | Compaction near 200k on 1M-window models | `home.opencode.compactionBuffer = "80%"` in `hosts/rog/home/default.nix` |
-| Haiku worker and fix agent | `anthropic-medium` in `shared/opencode/providers-base.nix` |
+| Haiku worker and fix agent | `personal-claude` in `shared/opencode/providers-base.nix` |
 | Gas Town chains from the profile | `linux/home/gastown-campaigns.nix` |
 
-Other hosts get the rule and the root `model`, keep the OpenCode default
-compaction, and keep their current profile models. The role table above is the
-target; each profile follows it as it is re-fitted.
+Profiles are per environment: `personal` (Anthropic, OpenAI, Ollama) on t14,
+samsung and thinkcentre; `personal-claude` (Anthropic only) on rog while the
+other quotas are exhausted; `work` (Anthropic orchestrator, Copilot subagents)
+on macm5. Every host gets the rule and the root `model`; only rog sets the
+compaction buffer.

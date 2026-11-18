@@ -10,7 +10,7 @@
   home.opencode = {
     enable = true;
 
-    activeProviderName = lib.mkDefault "ollama-full";
+    activeProviderName = lib.mkDefault "personal";
 
   };
 }

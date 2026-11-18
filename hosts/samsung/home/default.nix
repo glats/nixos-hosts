@@ -10,6 +10,6 @@ baseModules
 
   ./wallpaper.nix
 
-  { home.opencode.activeProviderName = "anthropic-openai-ollama"; }
+  { home.opencode.activeProviderName = "personal"; }
   { home.ghostty.xrdp-optimized = true; }
 ]

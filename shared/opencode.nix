@@ -109,10 +109,11 @@ in
 
     activeProviderName = mkOption {
       type = types.str;
-      default = lib.mkDefault "ollama-full";
+      default = lib.mkDefault "personal";
       description = ''
-        Name of the active OpenCode provider tier (e.g. "ollama-full",
-        "github-copilot"). Per-host plain assignments override this default
+        Name of the active OpenCode profile in
+        shared/opencode/providers-base.nix: "personal", "personal-claude" or
+        "work". Per-host plain assignments override this default
         without needing `mkForce`.
       '';
     };
