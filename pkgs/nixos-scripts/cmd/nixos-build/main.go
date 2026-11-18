@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"time"
 
 	"github.com/glats/nixos-scripts/internal/nixbuild"
 	"github.com/glats/nixos-scripts/internal/nixcache"
@@ -26,9 +28,14 @@ Options:
   --no-nom   Disable nix-output-monitor
 
 Environment:
-  NIX_CACHE_PUSH=0   Skip the best-effort push of /run/current-system to
-                     thinkcentre that runs after a successful darwin
-                     switch (macm5 only)
+  NIX_CACHE_PUSH=0     Skip the best-effort push of /run/current-system to
+                       thinkcentre that runs after a successful darwin
+                       switch (macm5 only)
+  NIX_CACHE_PUSH_TO=X  Push to X verbatim, skipping LAN detection and relay
+                       orchestration (macm5 only). Without an override the
+                       push probes thinkcentre.lan:22 and uses the direct
+                       destination on LAN, or brings the SSH relay tunnel
+                       up, pushes through it, and stops it afterwards.
 
 Flake: NIXOS_REPO, or the current git worktree when it belongs to the
 same repository (for example a herdr worktree).
@@ -84,12 +91,69 @@ func main() {
 	}
 
 	code := nixbuild.Run(nixbuild.Steps(env, command), env.NomPath)
-	maybePush(env, command, code, os.Getenv, nixcache.ExecRunner{}, warnHook)
+	maybePush(env, command, code, os.Getenv, nixcache.ExecRunner{}, warnHook,
+		nixcache.Reachable, newRelayTunnel(nixcache.ExecRunner{}))
 	os.Exit(code)
 }
 
 func warnHook(msg string) {
 	fmt.Fprintln(os.Stderr, "WARNING: "+msg)
+}
+
+// relayController manages the macm5 SSH relay tunnel used for off-LAN pushes.
+type relayController interface {
+	up() bool
+	ensureUp() bool
+	stop()
+}
+
+// relayTunnel drives the user-level launchd relay agent through the sibling
+// relayctl binary. Readiness is the local wstunnel forward listener, not a
+// status parse.
+type relayTunnel struct {
+	ctlPath string
+	run     nixcache.Runner
+	dial    func(string, time.Duration) bool
+	sleep   func(time.Duration)
+}
+
+func newRelayTunnel(run nixcache.Runner) relayController {
+	exe, err := os.Executable()
+	if err != nil {
+		return nil
+	}
+	ctlPath := filepath.Join(filepath.Dir(exe), "relayctl")
+	if info, err := os.Stat(ctlPath); err != nil || info.IsDir() {
+		return nil
+	}
+	return relayTunnel{
+		ctlPath: ctlPath,
+		run:     run,
+		dial:    nixcache.Reachable,
+		sleep:   time.Sleep,
+	}
+}
+
+func (t relayTunnel) up() bool {
+	return t.dial(nixcache.RelayListenerAddr, time.Second)
+}
+
+func (t relayTunnel) ensureUp() bool {
+	if err := t.run.Run([]string{t.ctlPath, "on"}); err != nil {
+		return false
+	}
+	deadline := time.Now().Add(20 * time.Second)
+	for time.Now().Before(deadline) {
+		if t.up() {
+			return true
+		}
+		t.sleep(500 * time.Millisecond)
+	}
+	return false
+}
+
+func (t relayTunnel) stop() {
+	_ = t.run.Run([]string{t.ctlPath, "off"})
 }
 
 func applyingCommand(command string) bool {
@@ -100,14 +164,32 @@ func applyingCommand(command string) bool {
 	return false
 }
 
-func maybePush(env nixbuild.Env, command string, code int, getenv func(string) string, runner nixcache.Runner, warn func(string)) {
+func maybePush(env nixbuild.Env, command string, code int, getenv func(string) string, runner nixcache.Runner, warn func(string), probe func(string, time.Duration) bool, relay relayController) {
 	if code != 0 || !env.Darwin || !applyingCommand(command) {
 		return
 	}
 	if getenv(nixcache.PushOptOutEnv) == "0" {
 		return
 	}
-	if err := nixcache.Push(nixcache.DefaultPushTo, nil, false, runner, warn); err != nil {
+	dest := nixcache.DefaultPushTo
+	if override := getenv(nixcache.PushToEnv); override != "" {
+		dest = override
+	} else if !probe(nixcache.LanProbeAddr, nixcache.LanProbeTimeout) {
+		if relay == nil {
+			warn("push skipped: thinkcentre unreachable and no relay tunnel available")
+			return
+		}
+		wasUp := relay.up()
+		if !wasUp {
+			if !relay.ensureUp() {
+				warn("push skipped: relay tunnel did not come up")
+				return
+			}
+			defer relay.stop()
+		}
+		dest = nixcache.RelayPushTo
+	}
+	if err := nixcache.Push(dest, nil, false, runner, warn); err != nil {
 		warn(err.Error())
 	}
 }

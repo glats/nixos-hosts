@@ -5,11 +5,13 @@ package nixcache
 import (
 	"errors"
 	"fmt"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // EnvFlake is the environment variable prewarm reads when --flake is unset.
@@ -22,6 +24,39 @@ const (
 	DefaultPath     = "/run/current-system"
 	darwinHost      = "macm5"
 )
+
+// RelayPushTo reaches thinkcentre through the macm5 SSH relay when the LAN
+// is unreachable: ssh hops rog-relay (wstunnel forward listener) then jumps
+// to thinkcentre.
+const RelayPushTo = "ssh-ng://glats@thinkcentre-relay"
+
+// PushToEnv overrides the nixos-build push destination verbatim, skipping
+// LAN detection and any relay orchestration.
+const PushToEnv = "NIX_CACHE_PUSH_TO"
+
+const (
+	LanProbeAddr      = "thinkcentre.lan:22"
+	LanProbeTimeout   = 2 * time.Second
+	RelayListenerAddr = "127.0.0.1:22221"
+)
+
+// noCheckSigsDestinations are the only destinations allowed to upload
+// unsigned locally built darwin paths.
+var noCheckSigsDestinations = map[string]bool{
+	DefaultPushTo: true,
+	RelayPushTo:   true,
+}
+
+// Reachable reports whether a TCP address accepts a connection within the
+// timeout. Any dial error means unreachable.
+func Reachable(addr string, timeout time.Duration) bool {
+	conn, err := net.DialTimeout("tcp", addr, timeout)
+	if err != nil {
+		return false
+	}
+	_ = conn.Close()
+	return true
+}
 
 var linuxHosts = []string{"rog", "t14", "thinkcentre", "samsung"}
 
@@ -300,7 +335,7 @@ func Push(dest string, paths []string, strict bool, run Runner, warn func(string
 		paths = []string{DefaultPath}
 	}
 	argv := []string{"nix", "copy"}
-	if dest == DefaultPushTo {
+	if noCheckSigsDestinations[dest] {
 		argv = append(argv, "--no-check-sigs")
 	}
 	argv = append(argv, "--to", dest)

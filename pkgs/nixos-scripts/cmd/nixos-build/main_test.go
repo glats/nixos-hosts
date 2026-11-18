@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/glats/nixos-scripts/internal/nixbuild"
 	"github.com/glats/nixos-scripts/internal/nixcache"
@@ -20,7 +21,29 @@ func (r *recordingRunner) Run(argv []string) error {
 	return r.err
 }
 
+type fakeRelay struct {
+	upNow       bool
+	ensureOK    bool
+	ensureCalls int
+	stops       int
+}
+
+func (f *fakeRelay) up() bool { return f.upNow }
+
+func (f *fakeRelay) ensureUp() bool {
+	f.ensureCalls++
+	return f.ensureOK
+}
+
+func (f *fakeRelay) stop() { f.stops++ }
+
+func probeAlways(ok bool) func(string, time.Duration) bool {
+	return func(string, time.Duration) bool { return ok }
+}
+
 var pushArgv = []string{"nix", "copy", "--no-check-sigs", "--to", "ssh-ng://glats@thinkcentre", "/run/current-system"}
+
+var relayPushArgv = []string{"nix", "copy", "--no-check-sigs", "--to", nixcache.RelayPushTo, "/run/current-system"}
 
 func TestMaybePush(t *testing.T) {
 	cases := []struct {
@@ -101,7 +124,8 @@ func TestMaybePush(t *testing.T) {
 				return ""
 			}
 			maybePush(tc.env, tc.command, tc.code, getenv, runner,
-				func(msg string) { warns = append(warns, msg) })
+				func(msg string) { warns = append(warns, msg) },
+				probeAlways(true), &fakeRelay{ensureOK: true})
 			if !reflect.DeepEqual(runner.argvs, tc.want) {
 				t.Fatalf("push argvs = %v, want %v", runner.argvs, tc.want)
 			}
@@ -118,7 +142,8 @@ func TestMaybePushFailureWarnsAndKeepsExitCode(t *testing.T) {
 	getenv := func(string) string { return "" }
 
 	maybePush(nixbuild.Env{Darwin: true}, "switch", 0, getenv, runner,
-		func(msg string) { warns = append(warns, msg) })
+		func(msg string) { warns = append(warns, msg) },
+		probeAlways(true), &fakeRelay{ensureOK: true})
 
 	if len(runner.argvs) != 1 || !reflect.DeepEqual(runner.argvs[0], pushArgv) {
 		t.Fatalf("push argvs = %v, want exactly one %v", runner.argvs, pushArgv)
@@ -128,6 +153,79 @@ func TestMaybePushFailureWarnsAndKeepsExitCode(t *testing.T) {
 	}
 	if !strings.Contains(warns[0], "push failed (best-effort") {
 		t.Errorf("warning %q should report the failure as best-effort", warns[0])
+	}
+}
+
+func TestMaybePushOffLanUsesRelayAndStopsIt(t *testing.T) {
+	runner := &recordingRunner{}
+	relay := &fakeRelay{ensureOK: true}
+
+	maybePush(nixbuild.Env{Darwin: true}, "switch", 0, func(string) string { return "" }, runner,
+		func(string) {}, probeAlways(false), relay)
+
+	if !reflect.DeepEqual(runner.argvs, [][]string{relayPushArgv}) {
+		t.Fatalf("push argvs = %v, want %v", runner.argvs, relayPushArgv)
+	}
+	if relay.ensureCalls != 1 {
+		t.Fatalf("relay ensureUp calls = %d, want 1", relay.ensureCalls)
+	}
+	if relay.stops != 1 {
+		t.Fatalf("relay stops = %d, want 1: a tunnel the hook started must not stay running", relay.stops)
+	}
+}
+
+func TestMaybePushOffLanKeepsAlreadyRunningRelay(t *testing.T) {
+	runner := &recordingRunner{}
+	relay := &fakeRelay{upNow: true, ensureOK: true}
+
+	maybePush(nixbuild.Env{Darwin: true}, "switch", 0, func(string) string { return "" }, runner,
+		func(string) {}, probeAlways(false), relay)
+
+	if !reflect.DeepEqual(runner.argvs, [][]string{relayPushArgv}) {
+		t.Fatalf("push argvs = %v, want %v", runner.argvs, relayPushArgv)
+	}
+	if relay.ensureCalls != 0 {
+		t.Fatalf("relay ensureUp calls = %d, want 0: tunnel was already running", relay.ensureCalls)
+	}
+	if relay.stops != 0 {
+		t.Fatalf("relay stops = %d, want 0: never stop a tunnel the user started", relay.stops)
+	}
+}
+
+func TestMaybePushOffLanRelayFailsSkipsPushWithWarning(t *testing.T) {
+	runner := &recordingRunner{}
+	var warns []string
+	relay := &fakeRelay{ensureOK: false}
+
+	maybePush(nixbuild.Env{Darwin: true}, "switch", 0, func(string) string { return "" }, runner,
+		func(msg string) { warns = append(warns, msg) }, probeAlways(false), relay)
+
+	if len(runner.argvs) != 0 {
+		t.Fatalf("push argvs = %v, want none", runner.argvs)
+	}
+	if len(warns) != 1 || !strings.Contains(warns[0], "relay") {
+		t.Fatalf("warnings = %v, want one relay failure warning", warns)
+	}
+}
+
+func TestMaybePushDestinationOverrideWins(t *testing.T) {
+	runner := &recordingRunner{}
+	relay := &fakeRelay{ensureOK: true}
+	getenv := func(key string) string {
+		if key == nixcache.PushToEnv {
+			return nixcache.RelayPushTo
+		}
+		return ""
+	}
+
+	maybePush(nixbuild.Env{Darwin: true}, "switch", 0, getenv, runner,
+		func(string) {}, probeAlways(false), relay)
+
+	if !reflect.DeepEqual(runner.argvs, [][]string{relayPushArgv}) {
+		t.Fatalf("push argvs = %v, want %v", runner.argvs, relayPushArgv)
+	}
+	if relay.ensureCalls != 0 || relay.stops != 0 {
+		t.Fatalf("relay touched with an explicit override: ensure=%d stops=%d", relay.ensureCalls, relay.stops)
 	}
 }
 

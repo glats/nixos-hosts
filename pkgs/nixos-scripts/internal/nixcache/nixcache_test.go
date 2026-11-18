@@ -2,11 +2,13 @@ package nixcache
 
 import (
 	"errors"
+	"net"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 )
 
 type fakeRunner struct {
@@ -480,6 +482,26 @@ func TestPrewarmNextVariantFailuresWarnOnly(t *testing.T) {
 	})
 }
 
+func TestReachable(t *testing.T) {
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ln.Close()
+	if !Reachable(ln.Addr().String(), time.Second) {
+		t.Error("a listening address must be reachable")
+	}
+	closed, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	addr := closed.Addr().String()
+	closed.Close()
+	if Reachable(addr, time.Second) {
+		t.Error("a closed address must not be reachable")
+	}
+}
+
 func TestPush(t *testing.T) {
 	dest := "ssh-ng://glats@thinkcentre"
 
@@ -501,6 +523,16 @@ func TestPush(t *testing.T) {
 		want := []string{"nix", "copy", "--no-check-sigs", "--to", dest, "/nix/store/a", "/nix/store/b"}
 		if !reflect.DeepEqual(run.argvs[0], want) {
 			t.Errorf("push argv mismatch:\n got %v\nwant %v", run.argvs[0], want)
+		}
+	})
+	t.Run("relay destination keeps no-check-sigs for unsigned darwin builds", func(t *testing.T) {
+		run := &fakeRunner{}
+		if err := Push(RelayPushTo, nil, false, run, func(string) {}); err != nil {
+			t.Fatalf("push: %v", err)
+		}
+		want := []string{"nix", "copy", "--no-check-sigs", "--to", RelayPushTo, "/run/current-system"}
+		if !reflect.DeepEqual(run.argvs[0], want) {
+			t.Errorf("relay push argv mismatch:\n got %v\nwant %v", run.argvs[0], want)
 		}
 	})
 	t.Run("other destinations retain signature checks", func(t *testing.T) {
