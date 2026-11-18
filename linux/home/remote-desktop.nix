@@ -191,13 +191,6 @@ in
         server = "rog.lan";
       };
     };
-    ".local/share/remmina/rdp-oneplus5.remmina" = {
-      force = true;
-      text = mkRemminaProfile rdpDefaults {
-        name = "oneplus5";
-        server = "oneplus5.lan";
-      };
-    };
     ".local/share/remmina/rdp-thinkcentre.remmina" = {
       force = true;
       text = mkRemminaProfile rdpDefaults {
@@ -233,14 +226,6 @@ in
         name = "rog";
         comment = "RDP connection to rog";
         exec = "${pkgs.remmina}/bin/remmina -c /home/glats/.local/share/remmina/rdp-rog.remmina";
-      };
-    };
-    ".local/share/applications/remote-oneplus5.desktop" = {
-      force = true;
-      text = mkDesktop {
-        name = "oneplus5";
-        comment = "RDP connection to oneplus5";
-        exec = "${pkgs.remmina}/bin/remmina -c /home/glats/.local/share/remmina/rdp-oneplus5.remmina";
       };
     };
     ".local/share/applications/remote-thinkcentre.desktop" = {

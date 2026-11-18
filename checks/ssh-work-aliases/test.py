@@ -4,7 +4,7 @@ import sys
 
 
 sources = ("rog", "t14", "thinkcentre", "samsung", "macm5")
-members = (*sources, "oneplus5")
+members = sources
 
 
 def effective(config, alias):
