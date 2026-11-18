@@ -65,9 +65,13 @@ in
     after = [ "docker-guacamoledb.service" ];
     requires = [ "docker-guacamoledb.service" ];
     wantedBy = [ "multi-user.target" ];
+    startLimitIntervalSec = 300;
+    startLimitBurst = 5;
     serviceConfig = {
       Type = "oneshot";
       User = "root";
+      Restart = "on-failure";
+      RestartSec = "10s";
       ExecStart = pkgs.writeScript "guacamole-admin-setup" ''
         #!${pkgs.python3}/bin/python3
         import sys
@@ -79,21 +83,26 @@ in
 
         docker = "${pkgs.docker}/bin/docker"
 
-        # Retry loop: PostgreSQL may not be ready on first boot.
-        # Try up to 10 times with 2-second intervals.
-        max_attempts = 10
-        for attempt in range(1, max_attempts + 1):
-            check_cmd = [docker, "exec", "guacamoledb",
-                         "pg_isready", "-U", "guacamole"]
-            result = subprocess.run(check_cmd, capture_output=True, text=True, timeout=10)
-            if result.returncode == 0:
+        # Wait for the container healthcheck instead of exec-ing into a container
+        # that may still be starting; docker inspect only talks to the daemon.
+        ready_timeout = 180
+        health_format = "{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}"
+        deadline = time.monotonic() + ready_timeout
+        while True:
+            try:
+                status = subprocess.run(
+                    [docker, "inspect", "--format", health_format, "guacamoledb"],
+                    capture_output=True, text=True, timeout=10
+                ).stdout.strip() or "missing"
+            except subprocess.TimeoutExpired:
+                status = "unreachable"
+            if status == "healthy":
                 break
-            if attempt < max_attempts:
-                sys.stdout.write("PostgreSQL not ready (attempt " + str(attempt) + "/" + str(max_attempts) + "), retrying in 2s...\n")
-                time.sleep(2)
-            else:
-                sys.stderr.write("PostgreSQL not ready after " + str(max_attempts) + " attempts\n")
+            if time.monotonic() >= deadline:
+                sys.stderr.write("guacamoledb not healthy after " + str(ready_timeout) + "s (last status: " + status + ")\n")
                 sys.exit(1)
+            sys.stdout.write("guacamoledb not healthy yet (" + status + "), retrying in 2s...\n")
+            time.sleep(2)
 
         # Phase 1: Parse env file to get GUACAMOLE_DATABASE_PASSWORD
         env_path = "${config.sops.secrets."guacamole/env".path}"
