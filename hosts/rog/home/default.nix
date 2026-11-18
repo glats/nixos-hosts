@@ -16,6 +16,7 @@ baseModules
 
   {
     home.opencode.activeProviderName = "anthropic-medium";
+    home.opencode.compactionBuffer = "80%";
     home.gastown.campaigns.maquilinux = { };
     home.ghostty.xrdp-optimized = true;
   }

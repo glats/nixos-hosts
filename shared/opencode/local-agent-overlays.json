@@ -46,6 +46,7 @@
   "instructionOverlays": {
     "gentle-orchestrator": [
       "../rules/authorization.md",
+      "../rules/tiered-orchestration.md",
       "../rules/explore-mcp.md",
       "../rules/output-format.md",
       "../rules/code-comments.md"

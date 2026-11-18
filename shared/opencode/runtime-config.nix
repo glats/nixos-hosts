@@ -148,6 +148,7 @@ let
         (if cfg.quotaPlugin == null then "@slkiser/opencode-quota@5.0.3" else "${cfg.quotaPlugin}")
       ];
       default_agent = "gentle-orchestrator";
+      compaction = lib.optionalAttrs (cfg.compactionBuffer != null) { buffer = cfg.compactionBuffer; };
       agents = v2Agents;
       providers.openai.settings.transport = "http";
       providers.ollama-cloud.models.deepseek-v4-pro.limit.output = 65536;

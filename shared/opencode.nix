@@ -117,6 +117,17 @@ in
       '';
     };
 
+    compactionBuffer = mkOption {
+      type = types.nullOr types.str;
+      default = null;
+      example = "80%";
+      description = ''
+        OpenCode `compaction.buffer`: share of each model's context window kept
+        free before automatic compaction. "80%" compacts a 1M-token window near
+        200k tokens. null keeps the OpenCode default.
+      '';
+    };
+
     extraAllowedProviders = mkOption {
       type = types.listOf types.str;
       default = [ ];
