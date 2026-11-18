@@ -254,14 +254,6 @@ let
       username = "glats";
     }
     {
-      id = "oneplus5";
-      bundleName = "Remote OnePlus5";
-      legacyBundleName = "remote-oneplus5.app";
-      protocol = "rdp";
-      host = "oneplus5.lan";
-      username = "glats";
-    }
-    {
       id = "rog";
       bundleName = "Remote ROG";
       legacyBundleName = "remote-rog.app";

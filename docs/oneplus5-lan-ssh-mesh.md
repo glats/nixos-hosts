@@ -1,5 +1,11 @@
 # oneplus5 LAN SSH mesh runbook
 
+> **Historical.** The OnePlus 5 is dead and was removed from the mesh; the
+> enrollment, alias and verification steps below describe that retired host and
+> must not be replayed. `shared/ssh/lan-mesh.nix` now carries five members:
+> `rog`, `t14`, `thinkcentre`, `samsung` and `macm5`. The "Router enrollment" and
+> "Emergency revocation" sections still apply to the current membership.
+
 `oneplus5` is a non-Nix host. This procedure is manual: the Nix flake does
 not deploy, activate, or modify the phone. Perform it from a local console or
 an already trusted session and record only redacted results.

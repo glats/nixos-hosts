@@ -1,5 +1,8 @@
 # OnePlus 5 Power Monitor
 
+> **Historical.** The OnePlus 5 is dead. The units below are no longer installed
+> and nothing in the repository deploys them; keep this page only as a record.
+
 This monitor is a versioned, phone-local alerting tool for the OnePlus 5. It reads battery and charger sysfs state, persists its own state file, writes its own journal entries, and sends Telegram alerts. It performs no power actions and does not modify AdGuard Home, the Wi-Fi watchdog, NetworkManager, link-grabber-bot, or any other service.
 
 Canonical artifacts live in `docs/oneplus5-power-monitor/`: `power-monitor.sh`, `oneplus5-power-monitor.service`, `oneplus5-power-monitor.timer`. Repository copies are the source of truth; the phone must match them byte-for-byte.

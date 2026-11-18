@@ -70,8 +70,8 @@ Then `fw4 reload`. The `dhcp.lan.dhcp_option` value was left untouched.
   (rog `.5`, android-tv-2 `.7`, etc.), so identity is preserved.
 - samsung can now SSH to the router directly: samsung's mesh key was missing
   from the router dropbear `authorized_keys` (enrolled 2026-11-06, after the
-  router's 2026-10-17 verification) and was appended; see
-  `docs/oneplus5-lan-ssh-mesh.md`.
+  router's 2026-10-17 verification) and was appended; see the router-enrollment
+  section of `docs/oneplus5-lan-ssh-mesh.md`.
 
 ## Known gaps (accepted)
 

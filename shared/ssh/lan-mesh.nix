@@ -13,17 +13,6 @@ let
       hostPublicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIK77Gn36BBUcfxW5TBs2txvZv7UWgRXSDXaWIc7MGw//";
       hostKeyFingerprint = "SHA256:nR0C5OZn/sUiNGl6ozzCDAjmR8ygNf449uUXD9p7sWQ";
     };
-    oneplus5 = {
-      user = "glats";
-      publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAg7nR2ugN5GproFRCXSC2LcoLfn00e1vFUYbBXj/zvD glats@oneplus5-lan";
-      comment = "glats@oneplus5-lan";
-      fingerprint = "SHA256:hZLmKIISKxNV4jaHR1yhKuUQ/Zknq7AvT6SZ7xCjVGc";
-      verifiedOn = "2026-09-16";
-      hostName = "oneplus5.lan";
-      identityFile = "id_ed25519_lan";
-      hostPublicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGs1GXmartmM039fxPo+SCCB7A9YM0YK5Ub2nIgjc104";
-      hostKeyFingerprint = "SHA256:r1+/bkfm8rb8ygeMipmFX4K5yTgJuqHrK61S1hXuwHg";
-    };
     rog = {
       user = "glats";
       publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAID47wBmPxBXhRq8uxOABpd+G72Gyizn+hDU/B5Z6xAkT glats@rog-lan";
@@ -86,9 +75,9 @@ let
     && member.fingerprint != ""
     && member.verifiedOn != "";
 in
-assert lib.assertMsg (builtins.length names == 6) "LAN SSH mesh must contain exactly six members";
+assert lib.assertMsg (builtins.length names == 5) "LAN SSH mesh must contain exactly five members";
 assert lib.assertMsg (
-  builtins.length (lib.unique (map (member: member.publicKey) records)) == 6
+  builtins.length (lib.unique (map (member: member.publicKey) records)) == 5
 ) "LAN SSH mesh public keys must be unique";
 assert lib.assertMsg (lib.all validRecord records)
   "LAN SSH mesh records must be verified public identities";
