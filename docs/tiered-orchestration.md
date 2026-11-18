@@ -89,13 +89,16 @@ profile instead of being picked by hand per campaign.
 
 ## Status
 
-This manual describes the target workflow from
-`odd/tasks/provider-quota-balance.md`. Until its tasks land, these parts are
-manual or not yet active:
+Active on `rog` after `nixos-build switch`:
 
-| Part | Task | Until then |
-| --- | --- | --- |
-| Agent proposes the hand-off | T6 | Decide the hand-off yourself when the document is complete |
-| Compaction near 200k | T7 | Compact manually before the context passes about 200k |
-| Role models in profiles | T2 | Profiles keep their current models |
-| Gas Town chains from the profile | T4 | Chains stay in each `swarm.json` |
+| Part | Where |
+| --- | --- |
+| Orchestrator rule: hand-off announcements, log before switching | `shared/rules/tiered-orchestration.md` |
+| New sessions start on the profile orchestrator | root `model` in `shared/opencode/runtime-config.nix` |
+| Compaction near 200k on 1M-window models | `home.opencode.compactionBuffer = "80%"` in `hosts/rog/home/default.nix` |
+| Haiku worker and fix agent | `anthropic-medium` in `shared/opencode/providers-base.nix` |
+| Gas Town chains from the profile | `linux/home/gastown-campaigns.nix` |
+
+Other hosts get the rule and the root `model`, keep the OpenCode default
+compaction, and keep their current profile models. The role table above is the
+target; each profile follows it as it is re-fitted.

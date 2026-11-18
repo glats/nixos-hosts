@@ -104,7 +104,7 @@ let
 
       if [ -n "''${GASTOWN_CHAINS_FILE:-}" ] && [ -z "''${GASTOWN_CAMPAIGN_DRYRUN:-}" ]; then
         if ! /run/current-system/sw/bin/gastown-run swarm chains "$project" "$GASTOWN_CHAINS_FILE"; then
-          echo "gastown-campaign: $project chains from the OpenCode profile were rejected; swarm.json is unchanged" >&2
+          echo "gastown-campaign: $project could not apply the chains from the OpenCode profile (see the error above); not starting" >&2
           exit 78
         fi
       fi

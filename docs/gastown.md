@@ -162,9 +162,10 @@ from `gentle-orchestrator`, the polecats from `gentle-ai-verify` then `gentle-ai
 `codex:<model>:medium` for the Mayor and `:low` for polecats, Ollama and NVIDIA models become
 `opencode:<provider>/<model>`). It runs `gastown-run swarm chains <project> <file>`, which
 keeps every other setting, saves the previous file as `swarm.json.before-profile` and refuses
-an invalid chain (exit 78, swarm.json unchanged). Manual chain edits are overwritten at the
-next start; change the profile, or set `chainsFromProfile = false` for that campaign. Check it
-without starting or changing anything:
+an invalid chain without touching swarm.json. Any failure of this step stops the start with
+exit 78, which is not retried: fix the cause, then start the service again. Manual chain edits
+are overwritten at the next start; change the profile, or set `chainsFromProfile = false` for
+that campaign. Check it without starting or changing anything:
 `GASTOWN_CAMPAIGN_DRYRUN=1 gastown-campaign-start <project> 720h`.
 
 Worker contract: every agent starts with a short read-only worker contract mounted
