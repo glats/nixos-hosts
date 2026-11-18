@@ -360,11 +360,11 @@ let
       roles = {
         gentle-orchestrator = "anthropic/claude-opus-5-5";
         gentle-ai-explore = "anthropic/claude-sonnet-5-5";
-        gentle-ai-worker = "anthropic/claude-sonnet-5-5";
+        gentle-ai-worker = "anthropic/claude-haiku-5-5";
         gentle-ai-verify = "anthropic/claude-sonnet-5-5";
         jd-judge-a = "anthropic/claude-sonnet-5-5";
         jd-judge-b = "anthropic/claude-sonnet-5-5";
-        jd-fix-agent = "anthropic/claude-sonnet-5-5";
+        jd-fix-agent = "anthropic/claude-haiku-5-5";
         review-readability = "anthropic/claude-sonnet-5-5";
         review-refuter = "anthropic/claude-sonnet-5-5";
         review-reliability = "anthropic/claude-sonnet-5-5";

@@ -147,6 +147,7 @@ let
         "opencode-claude-subscription@0.1.4"
         (if cfg.quotaPlugin == null then "@slkiser/opencode-quota@5.0.3" else "${cfg.quotaPlugin}")
       ];
+      model = providers.getModelForRole "gentle-orchestrator" providers.activeProvider;
       default_agent = "gentle-orchestrator";
       compaction = lib.optionalAttrs (cfg.compactionBuffer != null) { buffer = cfg.compactionBuffer; };
       agents = v2Agents;
