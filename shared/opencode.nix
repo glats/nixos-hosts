@@ -112,7 +112,7 @@ in
       default = lib.mkDefault "personal";
       description = ''
         Name of the active OpenCode profile in
-        shared/opencode/providers-base.nix: "personal", "personal-claude" or
+        shared/opencode/providers-base.nix: "personal", "personal-degraded" or
         "work". Per-host plain assignments override this default
         without needing `mkForce`.
       '';

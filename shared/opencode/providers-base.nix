@@ -90,7 +90,7 @@ let
       };
     }
     {
-      name = "personal-claude";
+      name = "personal-degraded";
       roles = {
         gentle-orchestrator = "anthropic/claude-opus-5-5";
         gentle-ai-explore = "anthropic/claude-sonnet-5-5";

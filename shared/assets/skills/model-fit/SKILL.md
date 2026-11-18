@@ -63,7 +63,7 @@ by what that environment can reach, not by provider order. It replaces the
 | Profile | Providers | Hosts |
 | --- | --- | --- |
 | `personal` | anthropic, openai, ollama-cloud | t14, samsung, thinkcentre (rog when all three have quota) |
-| `personal-claude` | anthropic only | rog while OpenAI and Ollama quotas are exhausted |
+| `personal-degraded` | anthropic only | rog while OpenAI and Ollama quotas are exhausted |
 | `work` | anthropic, github-copilot | macm5 and the Darwin default |
 
 Every profile fills its 14 role keys with the same role rule:
@@ -83,6 +83,13 @@ Every profile fills its 14 role keys with the same role rule:
   `gpt-6-luna` is unfit for worker and explore (Terminal-Bench 4.0 16.4 vs
   haiku 39.2). Copilot is slower than direct APIs, so the work orchestrator
   uses Anthropic directly.
+- One profile per environment, plus at most one degraded mode. The degraded
+  mode exists only for a provider that can fill every role well on its own
+  (today Anthropic: opus, sonnet, haiku); OpenAI alone (astra limited on Plus,
+  luna unfit as worker) and Ollama alone (glm-5.3 too costly as orchestrator)
+  do not qualify. Never add per-provider or permutation profiles; when a single
+  provider outage only breaks some roles, prefer a per-role fallback over a new
+  profile.
 - Adding a provider or environment: verify Gates 1-2 fresh, derive each role
   with citations, and add or extend the environment profile under the same
   role rule. Hosts switch profiles only when an environment's reachable

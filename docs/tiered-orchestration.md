@@ -80,10 +80,15 @@ worker.
 | Profile | Orchestrator | Explore | Worker | Verify, review, judges |
 | --- | --- | --- | --- | --- |
 | `personal` | `claude-opus-5-5` | `deepseek-v4-pro` | `minimax-m3.1-flash` | `gpt-6.1-sol` |
-| `personal-claude` | `claude-opus-5-5` | `claude-sonnet-5-5` | `claude-haiku-5-5` | `claude-sonnet-5-5` (same family: no other provider) |
+| `personal-degraded` | `claude-opus-5-5` | `claude-sonnet-5-5` | `claude-haiku-5-5` | `claude-sonnet-5-5` (same family: no other provider) |
 | `work` | `claude-opus-5-5` (Anthropic) | Copilot `claude-sonnet-5.5` | Copilot `claude-haiku-5.5` | Copilot `gpt-6.1-sol` |
 
 `gpt-6-luna` is not used for worker or explore.
+
+`personal-degraded` is the only fallback profile: switch a personal host to it
+when OpenAI and Ollama are both out of quota, and back to `personal` when they
+return. There are no per-provider profiles; Anthropic is the only provider that
+covers every role on its own.
 
 ## Gas Town
 
@@ -100,11 +105,11 @@ Active on `rog` after `nixos-build switch`:
 | Orchestrator rule: hand-off announcements, log before switching | `shared/rules/tiered-orchestration.md` |
 | New sessions start on the profile orchestrator | root `model` in `shared/opencode/runtime-config.nix` |
 | Compaction near 200k on 1M-window models | `home.opencode.compactionBuffer = "80%"` in `hosts/rog/home/default.nix` |
-| Haiku worker and fix agent | `personal-claude` in `shared/opencode/providers-base.nix` |
+| Haiku worker and fix agent | `personal-degraded` in `shared/opencode/providers-base.nix` |
 | Gas Town chains from the profile | `linux/home/gastown-campaigns.nix` |
 
 Profiles are per environment: `personal` (Anthropic, OpenAI, Ollama) on t14,
-samsung and thinkcentre; `personal-claude` (Anthropic only) on rog while the
+samsung and thinkcentre; `personal-degraded` (Anthropic only) on rog while the
 other quotas are exhausted; `work` (Anthropic orchestrator, Copilot subagents)
 on macm5. Every host gets the rule and the root `model`; only rog sets the
 compaction buffer.
