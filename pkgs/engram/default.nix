@@ -1,10 +1,11 @@
 {
   lib,
   buildGoModule,
+  go_1_27,
   engram-src,
 }:
 
-buildGoModule {
+(buildGoModule.override { go = go_1_27; }) {
   pname = "engram";
   version = engram-src.rev or "unstable";
 

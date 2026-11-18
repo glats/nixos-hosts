@@ -66,7 +66,7 @@
     };
 
     gentle-ai-src = {
-      url = "github:Gentleman-Programming/gentle-ai/55240afb100ad6d2ef5fbe16f7be33a7693f77ad";
+      url = "github:Gentleman-Programming/gentle-ai/08317b9589598f99ebcc00498c39a60f352f05e4";
       flake = false;
     };
 
@@ -86,7 +86,7 @@
     };
 
     engram-src = {
-      url = "github:Gentleman-Programming/engram/f96b613952bf7b4fd2d51f30286a68bd5ffdebf2";
+      url = "github:Gentleman-Programming/engram/c6ba9e3c0e98ffa0d5591481d8670a575e7b70b0";
       flake = false;
     };
 

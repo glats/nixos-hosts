@@ -8,7 +8,7 @@
 
 buildGoModule {
   pname = "gentle-ai-rendered-prompts";
-  version = "4.4.0";
+  version = "4.6.0";
   src = gentle-ai-src;
   inherit vendorHash;
 
