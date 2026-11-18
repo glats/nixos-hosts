@@ -11,7 +11,7 @@ with pkgs;
   libtool
   pkg-config
 
-  go
+  go_1_27
   nodejs
   nodejs_22
   bun
