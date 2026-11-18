@@ -25,7 +25,7 @@ Load when the user wants to point `gastown-run` at a repository. After kickoff, 
 |---|---|
 | Planning quality | Strong Mayor (`claude:opus` or `claude:sonnet`); it only plans and dispatches. |
 | Volume | Workers `opencode:ollama-cloud/<model>`, fallback list in order. |
-| Cheap roles | Witness, refinery and deacon use the first worker model: keep it cheap. |
+| Cheap roles | Witness, refinery and deacon use the last worker model: keep it cheap. |
 | Files the user is editing | `--protect <path>`; the gate rejects branches that touch them. |
 | Resources unknown | The intent must tell the Mayor to ask the user before assuming any. |
 

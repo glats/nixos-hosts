@@ -83,13 +83,35 @@ categories inside a profile name.
 - Current fit mapping (fresh 2026-10-30; re-verify before every assignment):
   orchestrator/neutral: `gpt-6-astra` / `claude-opus-5-5` / `glm-5.3`;
   thinking: `gpt-6.1-sol` / `claude-sonnet-5-5` / `deepseek-v4-pro`;
-  workforce volume: `gpt-6-luna` / `claude-haiku-5-5` / `minimax-m3.1-flash`;
-  explore: `gpt-6-luna` / `claude-sonnet-5-5` / `deepseek-v4-pro`.
+  workforce volume: `claude-haiku-5-5` / `minimax-m3.1-flash`;
+  explore: `claude-sonnet-5-5` / `deepseek-v4-pro`, `claude-haiku-5-5` as
+  fallback. `gpt-6-luna` is unfit for worker and explore (Terminal-Bench 4.0
+  16.4 vs haiku 39.2, re-checked 2026-11-18; see
+  `odd/tasks/provider-quota-balance.md` L20).
 - Adding ANY future provider: verify Gates 1-2 fresh, derive its
   orchestrator/thinking/explore/volume fits with citations, and extend the
   profile matrix under the same rule. The rule never hardcodes providers;
   legacy hand-written profiles (copilot/nvidia families) are documented gaps
   until they pass gates and fold into the rule.
+
+## Tier Rule (user-owned, 2026-11-18)
+
+The orchestrator works in two tiers inside one session, following
+`docs/tiered-orchestration.md`: a big tier (`claude-opus-5-5`, `gpt-6-astra`)
+builds the base and inspects, a mid tier (`claude-sonnet-5-5`, `gpt-6.1-sol`)
+executes, and the user switches the session model.
+
+- Big-tier models go only in `gentle-orchestrator` (and the inert `neutral`).
+  Every subagent role (explore, worker, verify, `jd-*`, `review-*`) gets a
+  mid-tier model or below.
+- The rendered root `model` follows the profile's `gentle-orchestrator`, so new
+  sessions start on the big tier.
+- Verify uses a different model family than the profile's writer roles when
+  the profile has more than one provider; single-provider profiles record the
+  gap instead.
+- This rule refines the Provider Route Fitting Rule: provider ordering still
+  decides which provider fills each category, but never places a big-tier
+  model outside the orchestrator.
 
 ## Auth Method Recognition
 
@@ -335,8 +357,10 @@ This skill biases the agent's decisions as follows:
 2. **No citation, no change.** Assignments without a current data point are
    reverted, not debated. Vendor benchmarks are cross-checked against
    independent data and watched for thrashing.
-3. **Cheap volume, scarce judgment.** Tool-loop and worker and verification roles take the
-   cheapest tier that passes the gates; quota reserved for review roles.
+3. **Cheap volume, scarce judgment.** Tool-loop and worker roles take the
+   cheapest tier that passes the gates; verification takes the cheapest
+   mid-tier-or-below model from another family than the writer; quota is
+   reserved for the orchestrator and review roles.
    Moving a volume phase onto scarce quota needs explicit cost justification.
 4. **Minimal, reversible changes.** One role per re-fit; dated evidence;
    never delete a working annotation without replacing it with fresh evidence.

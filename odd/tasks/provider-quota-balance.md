@@ -25,7 +25,7 @@ S7. "a menos que la base de opsu y astra hace que sonnet y sol no se desbien" â€
 | T5 | S6, S7 | â€” | superseded | Architect subagent and `/opus` replaced by same-session hand-off (L29, L30) |
 | T6 | S6, S7 | inline | done (C1) | Agent workflow rule `shared/rules/tiered-orchestration.md` wired in `shared/opencode/local-agent-overlays.json` `instructionOverlays.gentle-orchestrator`: announce base-ready hand-off, log corrections before a switch, compact then switch |
 | T7 | S6, S7 | inline | done (C1) | Context hygiene: `compaction` block (`buffer`, `keep.tokens`) in `shared/opencode/runtime-config.nix` so sessions compact near 200k (L31) |
-| T8 | S6 | inline | design | Skills in `shared/assets/skills/`: model-fit (tier split, verify policy, role schema), gastown-kickoff (cheap roles take LAST polecat entry; tier chains), gastown-orchestrator if chain operations change |
+| T8 | S6, S8 | inline | done (C3; gastown chain text in C4) | Skills in `shared/assets/skills/`: model-fit (tier split, verify policy, role schema), gastown-kickoff (cheap roles take LAST polecat entry; tier chains), gastown-orchestrator if chain operations change |
 | T9 | S6, S7 | inline | done (C1) | User manual `docs/tiered-orchestration.md`: the workflow, when to switch, how to compact, Gas Town mapping |
 
 ## Log
@@ -105,3 +105,5 @@ L35 (2026-11-18, user, verbatim): "bien. por favor tu como orquestador limitate 
 L36 (2026-11-18, C1 evidence): RED rog opencode.json `{"model":null,"compaction":null,"rule":false}`; GREEN after C1 `{"compaction":{"buffer":"80%"},"rule":true}`. Compaction is a new `home.opencode.compactionBuffer` option (default null, emits an empty `compaction` object that the OpenCode schema accepts); only rog sets "80%". The orchestrator rule `shared/rules/tiered-orchestration.md` is shared through the overlay.
 
 L37 (2026-11-18, C2 evidence): rog opencode.json GREEN `{"model":"anthropic/claude-opus-5-5","orch":"anthropic/claude-opus-5-5","worker":"anthropic/claude-haiku-5-5","fix":"anthropic/claude-haiku-5-5","explore":"anthropic/claude-sonnet-5-5","verify":"anthropic/claude-sonnet-5-5"}`. Root `model` is rendered from the active profile orchestrator for every host; rog subagent roles all mid tier or below (S8).
+
+L38 (2026-11-18, C3 evidence): model-fit gains a "Tier Rule" section (big tier only on the orchestrator, root model follows it, cross-family verify) and drops `gpt-6-luna` from the volume/explore fit mapping; Bias 3 now routes verify to another family. gastown-kickoff "Cheap roles" corrected to the LAST polecat entry, confirmed at pkgs/nixos-scripts/internal/gastown/swarm.go:295-306.
