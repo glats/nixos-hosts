@@ -239,6 +239,9 @@ func TestPolicyApplyStopsBeforePromotionAndRestartsOnlyEnabledService(t *testing
 	if !strings.Contains(text, "!ReverseTunnel") || !strings.Contains(text, "127.0.0.1/32") {
 		t.Fatalf("policy does not contain the fixed reverse-tunnel allowance: %q", text)
 	}
+	if !strings.Contains(text, "!Tunnel") || !strings.Contains(text, "port:\n          - 22") {
+		t.Fatalf("policy does not contain the fixed forward-tunnel allowance to rog sshd: %q", text)
+	}
 	if mode := contentsMode(t, live); mode != 0o600 {
 		t.Fatalf("live policy mode = %o, want 600", mode)
 	}

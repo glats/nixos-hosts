@@ -17,7 +17,7 @@ func main() {
 		fmt.Fprintln(os.Stderr, "relay-client:", err)
 		os.Exit(1)
 	}
-	args, err := sshrelay.ClientArgs(os.Args[2], os.Args[1], 22220)
+	args, err := sshrelay.ClientArgs(os.Args[2], os.Args[1], 22220, sshrelay.DefaultForwardListenerPort)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "relay-client:", err)
 		os.Exit(1)

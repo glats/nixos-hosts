@@ -11,10 +11,18 @@ source preparation is not end-to-end readiness. It does not change routes, TUN,
 rendered by nix-darwin under `~/Library/LaunchAgents`. The agent
 starts the pinned official precompiled Rust wstunnel 11.0.0 client, which makes verified WSS TCP443
 connections to exactly `wss://relay.glats.org:443` and publishes only
-`127.0.0.1:22` as `tcp://127.0.0.1:22220:127.0.0.1:22`. nginx terminates TLS and
+`127.0.0.1:22` as `tcp://127.0.0.1:22220:127.0.0.1:22`. It also binds the
+forward listener `tcp://127.0.0.1:22221:127.0.0.1:22` so the Mac can reach
+rog's sshd through the relay. nginx terminates TLS and
 proxies the isolated `relay.glats.org` WebSocket to rog's loopback port 4012.
 The rog-only SSH alias is `macm5-relay` and uses the existing `macm5` host-key
-record through `HostKeyAlias`; it does not disable host-key checking.
+record through `HostKeyAlias`; it does not disable host-key checking. The
+macm5-only aliases are symmetric: `rog-relay` (loopback 22221, `HostKeyAlias
+rog`) and `thinkcentre-relay` (ProxyJump through `rog-relay`, `HostKeyAlias
+thinkcentre`), both reusing the LAN identity. The macm5 relay policy allows the
+reverse tunnel to loopback 22220 and a forward tunnel to loopback port 22
+only; the final hop to thinkcentre happens over SSH on rog, not through the
+tunnel.
 
 ## Initial deployment and promotion
 

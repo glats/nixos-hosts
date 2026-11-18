@@ -181,6 +181,38 @@ assert lib.assertMsg (lib.all validRecord records)
             BatchMode = true;
           };
         }
+        ++ lib.optional (source == "macm5") {
+          name = "rog-relay";
+          value = {
+            HostName = "127.0.0.1";
+            Port = 22221;
+            User = members.rog.user;
+            IdentityFile = "${sshDir}/${members.${source}.identityFile}";
+            IdentitiesOnly = true;
+            HostKeyAlias = "rog";
+            StrictHostKeyChecking = "yes";
+            PreferredAuthentications = "publickey";
+            PasswordAuthentication = false;
+            KbdInteractiveAuthentication = false;
+            BatchMode = true;
+          };
+        }
+        ++ lib.optional (source == "macm5") {
+          name = "thinkcentre-relay";
+          value = {
+            HostName = "thinkcentre";
+            User = members.thinkcentre.user;
+            IdentityFile = "${sshDir}/${members.${source}.identityFile}";
+            IdentitiesOnly = true;
+            ProxyJump = "rog-relay";
+            HostKeyAlias = "thinkcentre";
+            StrictHostKeyChecking = "yes";
+            PreferredAuthentications = "publickey";
+            PasswordAuthentication = false;
+            KbdInteractiveAuthentication = false;
+            BatchMode = true;
+          };
+        }
         ++
           lib.concatMap
             (alias: [

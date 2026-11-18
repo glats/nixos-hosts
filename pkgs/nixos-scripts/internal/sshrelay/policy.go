@@ -469,6 +469,13 @@ func policyForToken(token string) string {
           - 22220
         cidr:
           - 127.0.0.1/32
+      - !Tunnel
+        protocol:
+          - Tcp
+        port:
+          - 22
+        cidr:
+          - 127.0.0.1/32
 `, token)
 }
 

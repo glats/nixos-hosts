@@ -265,13 +265,16 @@ func TestLaunchdPIDParsing(t *testing.T) {
 }
 
 func TestClientArgsFixDestinationAndKeepCredentialOutOfArgv(t *testing.T) {
-	args, err := ClientArgs("/nix/store/wstunnel/bin/wstunnel", "/run/secrets/ssh-relay-headers", 22220)
+	args, err := ClientArgs("/nix/store/wstunnel/bin/wstunnel", "/run/secrets/ssh-relay-headers", 22220, 22221)
 	if err != nil {
 		t.Fatal(err)
 	}
 	joined := strings.Join(args, " ")
 	if !contains(joined, "tcp://127.0.0.1:22220:127.0.0.1:22") {
 		t.Fatalf("args do not fix the trusted Mac destination: %v", args)
+	}
+	if !contains(joined, "-L tcp://127.0.0.1:22221:127.0.0.1:22") {
+		t.Fatalf("args do not open the rog forward listener: %v", args)
 	}
 	for _, want := range []string{
 		"--tls-verify-certificate",
@@ -288,8 +291,11 @@ func TestClientArgsFixDestinationAndKeepCredentialOutOfArgv(t *testing.T) {
 	if contains(joined, "AUTH") || contains(joined, "password") {
 		t.Fatalf("credential-like value leaked into argv: %v", args)
 	}
-	if _, err := ClientArgs("wstunnel", "/run/secrets/headers", 22220); err == nil {
+	if _, err := ClientArgs("wstunnel", "/run/secrets/headers", 22220, 22221); err == nil {
 		t.Fatal("relative wstunnel path accepted")
+	}
+	if _, err := ClientArgs("/nix/store/wstunnel/bin/wstunnel", "/run/secrets/ssh-relay-headers", 22220, 0); err == nil {
+		t.Fatal("zero forward listener port accepted")
 	}
 }
 
