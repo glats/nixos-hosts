@@ -23,7 +23,7 @@ The shared SSH configuration generates `rog-auth`, `t14-auth`,
 `thinkcentre-auth`, `samsung-auth`, and `macm5-auth` for each managed client's peers, excluding
 itself. For example, macm5 can connect to `rog-auth`, and rog can connect to
 `macm5-auth`. The destination account is `glats` on Linux and `juan` on macm5.
-The phone remains in the existing mesh but gets no new authentication alias.
+The phone is no longer part of the mesh; it was removed together with its aliases.
 
 These aliases require password authentication and do not reuse an existing SSH
 control connection. The password prompt happens before the remote shell and

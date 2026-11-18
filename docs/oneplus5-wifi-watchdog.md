@@ -1,5 +1,8 @@
 # OnePlus 5 Wi-Fi Watchdog
 
+> **Historical.** The OnePlus 5 is dead. The units below are no longer installed
+> and nothing in the repository deploys them; keep this page only as a record.
+
 This watchdog is a versioned, phone-local recovery tool for the OnePlus 5. It changes only `wlan0`, its own state, and its own journal messages. It does not modify AdGuard Home, `ath10k-crash-watch`, nftables, router settings, crash dumps, or Nix configuration.
 
 ## Prerequisites
