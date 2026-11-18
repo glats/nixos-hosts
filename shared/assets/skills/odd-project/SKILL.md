@@ -47,7 +47,7 @@ the product as the scope, not its first delivery. Skip isolated small changes.
 | Finished work leaves decisions for the user | Read them, brief, and close them one by one with the native question tool: `references/decision-review.md`. |
 | Evidence is missing or contradictory | Mark affected work pending; preserve both accounts. |
 | Gas Town is unavailable or its checks fail | Report the blocker; do not silently replace it or weaken checks. |
-| Campaign shows no progress, workers die at launch, or a provider limit appears | Run the provider check (`gastown-orchestrator`, Provider Health), tell the user first, then offer waiting or other models; never report an idle swarm as running. |
+| Campaign shows no progress, workers die at launch, or a provider limit appears | Run the provider check (`gastown-orchestrator`, Provider Health), tell the user first, then offer waiting or other models (`gastown-orchestrator` `references/operations.md` has the provider switch, including Claude); never report an idle swarm as running. |
 | Memory is unavailable | Keep local continuity and mark the mirror pending. |
 | No harness yet, or it cannot express "done" for the next delivery | Make or extend the harness first (step 3); do not start feature campaigns on it. |
 | User corrects a delivery, or the gate rejects the same mistake twice | Turn it into a rule: `references/correction-to-rule.md`. |
