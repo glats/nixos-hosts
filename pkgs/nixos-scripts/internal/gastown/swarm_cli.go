@@ -29,6 +29,7 @@ const swarmUsage = `gastown-run swarm - a goal-driven swarm: a Mayor plans, conf
   swarm status <project>                            workers, scheduler, gated branches
   swarm check <project>                             probe each opencode agent (model alive, key valid) before spending a goal
   swarm usage [--since goal|all] <project>          token totals by role and model (ledger.jsonl in the swarm directory)
+  swarm chains <project> <file>                     replace the agent chains from a JSON file {"mayor":[SPEC],"polecat":[SPEC,...]} while the supervisor is stopped
   swarm stop <project>                              ask a running swarm to shut down
   swarm up|down|goal|watch                          lower-level steps (watch: --interval, --once, --until-complete)
 
@@ -108,6 +109,12 @@ func SwarmMain(c Config, args []string, stdout, stderr io.Writer) int {
 		err = s.Check()
 	case "usage":
 		err = s.Usage(*since)
+	case "chains":
+		if fs.NArg() != 2 {
+			fmt.Fprint(stderr, swarmUsage)
+			return 2
+		}
+		err = s.SetChains(fs.Arg(1))
 	case "stop":
 		err = os.WriteFile(s.StopFile(), []byte("stop\n"), 0o600)
 	case "watch":

@@ -10,6 +10,45 @@ with lib;
 let
   cfg = config.home.gastown;
 
+  profile = import ../../shared/opencode/providers-base.nix {
+    inherit lib;
+    activeProviderName = config.home.opencode.activeProviderName;
+  };
+
+  agentSpec =
+    effort: id:
+    let
+      provider = head (splitString "/" id);
+      model = removePrefix "${provider}/" id;
+    in
+    if provider == "anthropic" then
+      "claude:${elemAt (splitString "-" model) 1}"
+    else if provider == "openai" then
+      "codex:${model}:${effort}"
+    else if
+      elem provider [
+        "ollama-cloud"
+        "nvidia"
+      ]
+    then
+      "opencode:${id}"
+    else
+      throw "gastown-campaigns: no Gas Town agent spec for ${id}";
+
+  roleModel = role: profile.getModelForRole role profile.activeProvider;
+
+  profileChains = pkgs.writeText "gastown-chains.json" (
+    builtins.toJSON {
+      mayor = [ (agentSpec "medium" (roleModel "gentle-orchestrator")) ];
+      polecat = unique (
+        map (agentSpec "low") [
+          (roleModel "gentle-ai-verify")
+          (roleModel "gentle-ai-worker")
+        ]
+      );
+    }
+  );
+
   secretPath = name: optionalString (config.sops.secrets ? ${name}) config.sops.secrets.${name}.path;
 
   claudeTokenLookup = pkgs.writeText "opencode-claude-token.py" ''
@@ -63,6 +102,13 @@ let
         fi
       }
 
+      if [ -n "''${GASTOWN_CHAINS_FILE:-}" ] && [ -z "''${GASTOWN_CAMPAIGN_DRYRUN:-}" ]; then
+        if ! /run/current-system/sw/bin/gastown-run swarm chains "$project" "$GASTOWN_CHAINS_FILE"; then
+          echo "gastown-campaign: $project chains from the OpenCode profile were rejected; swarm.json is unchanged" >&2
+          exit 78
+        fi
+      fi
+
       load OLLAMA_API_KEY "''${OLLAMA_KEY_FILE:-}"
       load NVIDIA_API_KEY "''${NVIDIA_KEY_FILE:-}"
 
@@ -87,7 +133,7 @@ let
       fi
 
       if [ -n "''${GASTOWN_CAMPAIGN_DRYRUN:-}" ]; then
-        echo "dry run: project=$project claude=$source ollama=''${OLLAMA_API_KEY:+set} nvidia=''${NVIDIA_API_KEY:+set}"
+        echo "dry run: project=$project claude=$source ollama=''${OLLAMA_API_KEY:+set} nvidia=''${NVIDIA_API_KEY:+set} chains=''${GASTOWN_CHAINS_FILE:-swarm.json}"
         exit 0
       fi
 
@@ -113,6 +159,11 @@ let
         type = types.str;
         default = "120s";
         description = "Time the supervisor gets to shut the swarm down before it is killed.";
+      };
+      chainsFromProfile = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Before each start, set the Mayor and polecat chains from the active OpenCode profile: Mayor from the orchestrator, polecats from verify then worker.";
       };
       claudeTokenFile = mkOption {
         type = types.nullOr types.str;
@@ -142,6 +193,7 @@ let
           "OLLAMA_KEY_FILE=${secretPath "opencode/ollama_api_key"}"
           "NVIDIA_KEY_FILE=${secretPath "opencode/nvidia_api_key"}"
           "CLAUDE_TOKEN_FILE=${optionalString (c.claudeTokenFile != null) c.claudeTokenFile}"
+          "GASTOWN_CHAINS_FILE=${optionalString c.chainsFromProfile "${profileChains}"}"
         ];
         Restart = "on-failure";
         RestartSec = "60s";

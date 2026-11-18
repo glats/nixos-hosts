@@ -155,7 +155,16 @@ refuses to start while a manually launched supervisor runs. Only one supervisor 
 project: a lock the kernel releases on any exit, including power loss. Provider keys come
 from your sops secrets; the Claude token comes from `claudeTokenFile` when set, otherwise
 from the OpenCode credential store, and a campaign with a claude agent and no token refuses
-to start (exit 78, not retried). Check it without starting anything:
+to start (exit 78, not retried). Before each start the service sets the Mayor and polecat
+chains from the active OpenCode profile (`chainsFromProfile`, on by default): the Mayor comes
+from `gentle-orchestrator`, the polecats from `gentle-ai-verify` then `gentle-ai-worker`
+(`anthropic/claude-<family>-*` becomes `claude:<family>`, OpenAI models become
+`codex:<model>:medium` for the Mayor and `:low` for polecats, Ollama and NVIDIA models become
+`opencode:<provider>/<model>`). It runs `gastown-run swarm chains <project> <file>`, which
+keeps every other setting, saves the previous file as `swarm.json.before-profile` and refuses
+an invalid chain (exit 78, swarm.json unchanged). Manual chain edits are overwritten at the
+next start; change the profile, or set `chainsFromProfile = false` for that campaign. Check it
+without starting or changing anything:
 `GASTOWN_CAMPAIGN_DRYRUN=1 gastown-campaign-start <project> 720h`.
 
 Worker contract: every agent starts with a short read-only worker contract mounted
