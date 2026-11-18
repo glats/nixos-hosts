@@ -194,8 +194,8 @@ Agents and providers:
   mounted, so nothing inside the sandbox can rotate your own login away.
 - `opencode:ollama-cloud/<model>` uses your Ollama Cloud subscription through OpenCode
   with the `OLLAMA_API_KEY` from your environment (base URL `https://ollama.com/v1`;
-  e.g. `opencode:ollama-cloud/glm-5.3-flash`). It works as worker and as Mayor
-  (`--mayor-agent opencode:ollama-cloud/glm-5.3`).
+  e.g. `opencode:ollama-cloud/minimax-m3.1-flash`). It works as worker and as Mayor
+  (`--mayor-agent opencode:ollama-cloud/deepseek-v4-pro`).
 - `opencode:openai/<model>[:<effort>]` (for example `opencode:openai/gpt-6.1-sol:high`)
   uses your ChatGPT subscription through OpenCode. The agent reads its login from its
   own home (`<state>/swarm/<project>/town/.agent-home`), never from your OpenCode

@@ -9,7 +9,7 @@ description: >
   providers base, check models, model audit, actualiza modelos, moldear listas,
   swap model, routing fit.
 metadata:
-  version: "4.5"
+  version: "4.6"
 ---
 
 ## Activation Contract
@@ -41,8 +41,8 @@ tool-call behavior.
   `nix fmt -- <paths>` and run `nix flake check --no-build`, plus the repository's
   separate affected Home Manager and Darwin evaluations. Record any explicit
   user waiver; never activate hosts as part of validation.
-- One re-fit changes one role at a time. Lists evolve; they are not redesigned
-  wholesale.
+- One re-fit changes one role in one profile at a time. Profiles evolve; they
+  are not redesigned wholesale.
 - Secrets rule: agents must NEVER decrypt sops secrets — read ciphertext only.
 
 ## Mode Selection
@@ -52,7 +52,7 @@ tool-call behavior.
 | New provider, new model family, or periodic review of all profiles | `full` |
 | One role misbehaved in observed use, or a single role needs a better fit | `re-fit` |
 | User reports a blocked/degraded role or asks "why is X slow/broken" | `re-fit` (diagnose first, then swap) |
-| User asks to add a whole new profile or rebalance a whole provider family | `full` |
+| User asks to add an environment profile or rebalance a whole provider family | `full` (Environment Profile Rule) |
 
 ## Environment Profile Rule (user-owned, 2026-11-18)
 
@@ -218,9 +218,9 @@ For the `ollama-cloud` provider (the `personal` profile), verify fresh each time
   hung requests plus 5 min queue waits ending in 429 since 2026-10-16; keep
   parallel subagent fan-out at or below 2 plus the orchestrator.
 - **Peak pricing**: `deepseek-*` rates double 12:00-18:00 UTC on weekdays.
-- **Fit**: thinking and full workforce `deepseek-v4-pro`; orchestrator `glm-5.3` (user-owned) (Terminal-Bench
-  2.1 87.9 vs glm-5.3 88.2, DeepSWE 62.7 vs 66.9, at about half the price);
-  volume tier `minimax-m3.1-flash` (no open defect found; clean stream exit per
+- **Fit**: explore `deepseek-v4-pro` (Terminal-Bench 2.1 87.9, DeepSWE 62.7,
+  at about half the price of `glm-5.3`); no orchestrator on Ollama Cloud (the
+  `personal` orchestrator is Anthropic); worker `minimax-m3.1-flash` (no open defect found; clean stream exit per
   #18926; no independent benchmark yet).
 - **Reliability**: observed 2026-11-05 with a paid Pro key and a real subagent
   graph (glm-5.3 orchestrator, deepseek-v4-pro, minimax-m3.1-flash and
@@ -326,14 +326,18 @@ thrashing signals (a cheap tier that burns 2-3x tokens to fail is not cheap).
 
 1. Collect the trigger evidence: what failed, which role, which model, which
    host (user report, engram observation, or session log).
-2. Re-verify ONLY that role: current status of the incumbent + research 2-4
+2. Rule out quota first: if the role fails because its provider is out of
+   quota (usage limit, 429 with a reset date), do not swap models. Switch the
+   host to the degraded profile (`personal-degraded`) until the reset, then
+   back; record the reset date.
+3. Re-verify ONLY that role: current status of the incumbent + research 2-4
    candidate replacements against the Step-B metrics for that role. Gates 1-2
     apply; no live model calls are required or requested.
-3. Swap one authorized role assignment; report dated evidence explaining what
+4. Swap one authorized role assignment; report dated evidence explaining what
    failed and why the replacement. Add code comments only when requested.
    The repo ships without strategy comments by user decision (2026-10-23);
    do not reintroduce them.
-4. Validate as in mode `full`; report the one-line delta.
+5. Validate as in mode `full`; report the one-line delta.
 
 ## Feedback Loop
 
