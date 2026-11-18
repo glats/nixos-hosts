@@ -105,3 +105,25 @@ func TestSwarmChainsRejectsInvalidChainsWithoutWriting(t *testing.T) {
 		})
 	}
 }
+
+func TestSwarmChainsIgnoresRoleKeyOrder(t *testing.T) {
+	c, dir, file := chainsFixture(t, `{"polecat":["claude:sonnet"],"mayor":["claude:sonnet"]}`)
+	code, out, errOut := runChains(c, file)
+	if code != 0 || !strings.Contains(out, "chains unchanged") {
+		t.Fatalf("exit %d out %q err %q", code, out, errOut)
+	}
+	if readFile(t, filepath.Join(dir, "swarm.json")) != chainsSwarmJSON {
+		t.Fatal("equal chains in another key order must not rewrite swarm.json")
+	}
+}
+
+func TestSwarmChainsTreatsPolecatOrderAsAChange(t *testing.T) {
+	c, dir, file := chainsFixture(t, `{"mayor":["claude:sonnet"],"polecat":["claude:haiku","claude:sonnet"]}`)
+	if err := os.WriteFile(filepath.Join(dir, "swarm.json"), []byte(strings.Replace(chainsSwarmJSON, `"polecat": ["claude:sonnet"]`, `"polecat": ["claude:sonnet", "claude:haiku"]`, 1)), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	code, out, errOut := runChains(c, file)
+	if code != 0 || !strings.Contains(out, "chains updated") {
+		t.Fatalf("polecat order is the fallback order and must count as a change: exit %d out %q err %q", code, out, errOut)
+	}
+}
