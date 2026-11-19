@@ -2,9 +2,12 @@ package gastown
 
 import (
 	"encoding/json"
+	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"syscall"
 	"testing"
 )
 
@@ -240,5 +243,31 @@ func TestIdentityFilesDescribeTheRunningUserInsideTheSandbox(t *testing.T) {
 	}
 	if info, _ := os.Stat(passwd); info.Mode().Perm() != 0o644 {
 		t.Fatalf("mode = %v", info.Mode().Perm())
+	}
+}
+
+func TestBwrapArgsViaPipeKeepSecretsOffTheCommandLine(t *testing.T) {
+	argv := []string{"/nix/bwrap", "--setenv", "CLAUDE_CODE_OAUTH_TOKEN", "sk-ant-oat-secret", "--chdir", "/town", "--", "claude"}
+	launch, file, err := bwrapViaArgsFd(argv)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+	if want := []string{"/nix/bwrap", "--args", strconv.Itoa(int(file.Fd())), "--", "claude"}; strings.Join(launch, " ") != strings.Join(want, " ") {
+		t.Fatalf("launch = %v, want %v", launch, want)
+	}
+	if strings.Contains(strings.Join(launch, " "), "secret") {
+		t.Fatalf("the secret reached the command line: %v", launch)
+	}
+	data, err := io.ReadAll(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := string(data), strings.Join(argv[1:6], "\x00")+"\x00"; got != want {
+		t.Fatalf("pipe content = %q, want %q", got, want)
+	}
+	flags, _, errno := syscall.Syscall(syscall.SYS_FCNTL, file.Fd(), syscall.F_GETFD, 0)
+	if errno != 0 || flags&syscall.FD_CLOEXEC != 0 {
+		t.Fatalf("the descriptor must survive exec: flags=%d errno=%v", flags, errno)
 	}
 }

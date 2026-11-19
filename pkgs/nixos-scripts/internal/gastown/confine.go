@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
 )
@@ -223,11 +224,48 @@ func Confine(args []string, stderr io.Writer) int {
 	if _, statErr := os.Stat(gitconfig); statErr != nil {
 		_ = os.WriteFile(gitconfig, []byte("[user]\n\tname = gastown-agent\n\temail = agent@localhost\n[init]\n\tdefaultBranch = main\n[safe]\n\tdirectory = *\n"), 0o600)
 	}
-	if err := syscall.Exec(argv[0], argv, []string{}); err != nil {
+	launch, argsFile, err := bwrapViaArgsFd(argv)
+	if err != nil {
+		fmt.Fprintln(stderr, "gastown-run confine:", err)
+		return 1
+	}
+	defer argsFile.Close()
+	if err := syscall.Exec(launch[0], launch, []string{}); err != nil {
 		fmt.Fprintln(stderr, "gastown-run confine:", err)
 		return 1
 	}
 	return 0
+}
+
+// bwrapViaArgsFd hands every bubblewrap option, including the --setenv values
+// that carry credentials, through an inherited pipe so none of them shows in
+// the process list; only the command after "--" stays on the command line,
+// because bubblewrap takes the command from its own arguments. The returned
+// file is the read end and must stay open until exec.
+func bwrapViaArgsFd(argv []string) ([]string, *os.File, error) {
+	split := len(argv)
+	for i, arg := range argv {
+		if arg == "--" {
+			split = i
+			break
+		}
+	}
+	read, write, err := os.Pipe()
+	if err != nil {
+		return nil, nil, err
+	}
+	if _, err := write.Write([]byte(strings.Join(argv[1:split], "\x00") + "\x00")); err != nil {
+		read.Close()
+		write.Close()
+		return nil, nil, err
+	}
+	write.Close()
+	fd := read.Fd()
+	if _, _, errno := syscall.Syscall(syscall.SYS_FCNTL, fd, syscall.F_SETFD, 0); errno != 0 {
+		read.Close()
+		return nil, nil, errno
+	}
+	return append([]string{argv[0], "--args", strconv.Itoa(int(fd))}, argv[split:]...), read, nil
 }
 
 // WriteIdentityFiles writes the passwd and group files a sandbox mounts over
