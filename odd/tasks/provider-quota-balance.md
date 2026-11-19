@@ -1,7 +1,7 @@
 # provider-quota-balance
 
 Objective: route OpenCode roles and Gas Town chains across anthropic, openai and ollama-cloud so each provider's quota depletes in step with its billing window and none runs out mid-month, without manual profile switching.
-Branch: `feat/model` (fast-forwarded to master fbee5aab on 2026-11-19). Delivery strategy: `ask-on-risk`; balance phase (T10-T16) forecast about 900 authored lines, work-unit commits on the branch; push, PR and activation left to the user. Scope: rog only (L35). Test runner: `nix fmt -- <paths>`, `nix flake check --no-build`, host `nix eval` of affected Home Manager targets.
+Branch: `feat/model` (fast-forwarded to master fbee5aab on 2026-11-19). Delivery strategy: `ask-on-risk`; balance phase reduced to T10, T14-T17 (L54), forecast about 400 authored lines, work-unit commits on the branch; push, PR and activation left to the user. Scope: rog only (L35). Test runner: `nix fmt -- <paths>`, `nix flake check --no-build`, host `nix eval` of affected Home Manager targets.
 
 ## Specs
 
@@ -16,17 +16,19 @@ S7. "a menos que la base de opsu y astra hace que sonnet y sol no se desbien" �
 
 S9. Tier equivalents (L46: "opencode opus hastra. base ready: gastwon sonnet, sol y abajo haiku o luna (para ollama el simili)"; ": Luna no sirve como worker.  bueno el que sea"). The `personal` profile lists one model per provider and tier: big `anthropic/claude-opus-5-5`, `openai/gpt-6-astra` (no Ollama big tier); mid `anthropic/claude-sonnet-5-5`, `openai/gpt-6.1-sol`, `ollama-cloud/deepseek-v4-pro`; low `anthropic/claude-haiku-5-5`, `openai/gpt-6.1-terra` (candidate from L48, must pass model-fit; `gpt-6-luna` stays rejected), `ollama-cloud/minimax-m3.1-flash`. Existing per-role assignments stay as they are.
 
-S10. Quota source (L49: "opencode quota no es tan bueno en verdad no me ha gusado."): a Go reader in `pkgs/nixos-scripts` reads, per provider, percent remaining and reset time of each window directly: anthropic `GET https://api.anthropic.com/api/oauth/usage` (`anthropic-beta: oauth-2025-04-20`, OAuth token from the OpenCode credential store already used by `gastown-campaign-start`), openai `GET https://chatgpt.com/backend-api/wham/usage` (OpenCode OAuth token plus `ChatGPT-Account-Id`), ollama-cloud `GET https://ollama.com/api/balance` (`OLLAMA_API_KEY`). It never depends on `opencode-quota`, never prints, logs, copies or persists tokens, polls each provider at most once per minute, keeps the last good value with its age on errors, and exposes a command printing a JSON snapshot. For a provider with several windows the binding window is the one with the least headroom.
+S10. Dropped 2026-11-19 (L53, L54): no quota reader; synchronized depletion is a nice-to-have, not built now. Kept for history: "opencode quota no es tan bueno en verdad no me ha gusado." (L49).
 
-S11. Gas Town polecat balance (S3): the polecat agent choice replaces ordered fallback with headroom = percent remaining / hours to reset; among entries not cooling down it picks the highest headroom, with hysteresis so the active agent does not flap between ticks; a provider at 0% remaining is skipped until its reset; unknown quota ranks below known quota; chain order only breaks ties. A limit seen in a polecat pane cools that polecat's agent, not the active one. The "Switched worker agent" notification states the headroom reason. Existing behavior kept: cooldowns, pause when every entry is limited, resume on recovery, return to an entry after its reset.
+S11. Dropped 2026-11-19 (L53, L54): no headroom picker; Gas Town keeps its ordered fallback with cooldowns (see S16).
 
-S12. Gas Town Mayor balance: when the Mayor chain has several entries, the Mayor is picked at campaign start by the same headroom rule; a running Mayor is never restarted for balance.
+S12. Dropped 2026-11-19 (L53, L54): the Mayor stays the first entry of its chain.
 
 S13. Chains from the profile: for a Nix-declared campaign with `chainsFromProfile`, polecats get the low tier of every provider in the active profile, and the Mayor gets the mid tier (`mayorTier = "mid"`) or the big tier (`"big"`) of every provider that has one. Profiles without tier lists keep today's rendering (orchestrator or verify for the Mayor, verify then worker for polecats).
 
 S14. OpenCode recommendation (S3; session models are chosen by the user, so OpenCode cannot rotate them): when the big tier announces "Base ready", it runs the quota command and names the mid model with the most headroom (Sonnet or Sol); when starting new work it can name Opus or Astra the same way. Subagent role models stay static per profile (assumption: no per-call routing without a plugin).
 
-S15. `codex:gpt-6.1-terra` requires Codex CLI 0.159 or newer (L48); rog has 0.146.0 from nixpkgs, so the Gas Town low tier on OpenAI needs a newer Codex before it is used.
+S15. Gas Town runs every agent through OpenCode (L54: "para t15 creo que vamos full opencode . ni claude code ni codex. yo creoigual pienso en pi. pero opencode se ha portado muy bine a mi parecer."): chains rendered from the profile use `opencode:anthropic/<model>`, `opencode:openai/<model>[:<effort>]` and `opencode:ollama-cloud/<model>`; no `claude:` or `codex:` agents in Nix-declared campaigns, so no Codex upgrade is needed. `gastown-run` must accept `opencode:anthropic/<model>` (today it documents nvidia, ollama-cloud and openai), and the swarm's own agent home needs an OpenCode login per provider (user action). Pi is not adopted now.
+
+S16. "algun modo de que el limite no sea impediemento. no quiero pagar 100 dolares. estoy pagando 60 creo que esta bien entre estas tres vuenas providers" (L53): when one provider hits its limit, Gas Town work continues on the same tier of another provider in the chain (existing cooldown fallback, now probed for every entry because all are OpenCode agents); no paid upgrade, no new subscription. In OpenCode the manual switch to `personal-degraded` stays; a per-role fallback plugin remains deferred (T3).
 
 ## Tasks
 
@@ -42,12 +44,12 @@ S15. `codex:gpt-6.1-terra` requires Codex CLI 0.159 or newer (L48); rog has 0.14
 | T8 | S6, S8 | inline | done (C3; gastown chain text in C4) | Skills in `shared/assets/skills/`: model-fit (tier split, verify policy, role schema), gastown-kickoff (cheap roles take LAST polecat entry; tier chains), gastown-orchestrator if chain operations change |
 | T9 | S6, S7 | inline | done (C1) | User manual `docs/tiered-orchestration.md`: the workflow, when to switch, how to compact, Gas Town mapping |
 | T10 | S9 | inline | open | model-fit: verify `gpt-6.1-terra` (low) and the astra version (`gpt-6-astra` vs `gpt-6.2-astra`, both listed by `opencode models`) under Gates 1-2; add tier lists to `personal` in `shared/opencode/providers-base.nix` without changing role models. Risk: none expected |
-| T11 | S10 | inline | open | Quota reader package and command under `pkgs/nixos-scripts` (Go, tests with an HTTP fake; no live calls in tests). Risk: item 2 (reads OAuth tokens) → independent verifier |
-| T12 | S11 | inline | open | Replace `PickAgent` selection at `swarm_watch.go:323` with the headroom picker fed by T11; per-polecat limit attribution (`swarm_watch.go:315-320`); keep pinned tests green (`TestTickSwitchesWorkerAgentWhenTheCurrentOneHitsALimit`, `TestTickPausesDispatchWhenEveryProviderIsLimitedAndResumes`, return-after-cooldown at `swarm_watch_test.go:123-125`). Risk: item 4 (tick state) |
-| T13 | S12 | inline | open | Mayor pick at start in `roleAgents` (`swarm.go:292`) / `Up()` (`swarm.go:413`) by headroom |
-| T14 | S13 | inline | open | Chain rendering from tier lists in `linux/home/gastown-campaigns.nix`; `swarm chains` accepts multi-entry Mayor; docs/gastown.md and gastown-kickoff |
-| T15 | S15 | inline | open | Codex CLI >= 0.159 for rog (overlay or package bump). Risk: item 5 (dependency) |
-| T16 | S14 | inline | open | `shared/rules/tiered-orchestration.md`, `docs/tiered-orchestration.md`, gastown-orchestrator and model-fit skills describe the recommendation and balance |
+| T11 | S10 | — | dropped | Dropped by scope reduction (L53, L54) |
+| T12 | S11 | — | dropped | Dropped by scope reduction (L53, L54) |
+| T13 | S12 | — | dropped | Dropped by scope reduction (L53, L54) |
+| T14 | S13, S16 | inline | open | Chain rendering from tier lists in `linux/home/gastown-campaigns.nix`: polecats = low tier of every provider (haiku, terra, minimax), Mayor = mid or big tier per `mayorTier`; `swarm chains` accepts a multi-entry Mayor chain (only the first runs); docs/gastown.md and gastown-kickoff |
+| T15 | S15 | inline | open | `gastown-run`: accept `opencode:anthropic/<model>` (preset, probe, confinement same as other opencode agents), and `agentSpec` in `linux/home/gastown-campaigns.nix` maps every provider to `opencode:`; tests for the new spec; document the per-swarm OpenCode login. Risk: item 2 (agent credentials inside the sandbox) → independent verifier |
+| T16 | S9, S13, S15, S16 | inline | open | `shared/rules/tiered-orchestration.md`, `docs/tiered-orchestration.md`, gastown-orchestrator, gastown-kickoff and model-fit skills: tiers, all-OpenCode swarm agents, limit fallback |
 | T17 | — | inline | open | Security: `gastown-campaign-start` / supervisor pass `CLAUDE_CODE_OAUTH_TOKEN` to bwrap with `--setenv`, so the token is visible in `ps` to any process of the user; pass it without argv (for example an fd or a 0600 env file read inside the sandbox). User should rotate the token (`claude setup-token`). Risk: item 2 → independent verifier |
 
 ## Log
@@ -157,3 +159,7 @@ L50 (2026-11-19, user, verbatim): "1. Ejecuta /compact en esta sesión. 2. Cambi
 L51 (2026-11-19, evidence): a gate-isolation dry run of `gofmt`/`go vet`/`go test` over `pkgs/nixos-scripts` (replicating `Isolated` + `CheckEnv`) fails about 10 existing tests (TMPDIR inside the repository breaks git-root tests; no `tar` in the tool PATH), so T11-T13 do not go to Gas Town without first fixing that harness; the run was stopped and its scratch removed. While listing processes, the maquilinux Mayor's bwrap argv showed the full `CLAUDE_CODE_OAUTH_TOKEN` (it appeared in this session's transcript; not copied elsewhere) — recorded as T17.
 
 L52 (2026-11-19, user, verbatim): "a ver que queda pendiente para que me preguntes. faltana cosas que eimplenetar pense que estabamos listos"
+
+L53 (2026-11-19, user, verbatim): "ya. si faltan tareas y hay dudas deberias lanzar las preguntas o no? o hay que implentarla. igual creo que e smuy idealista que todos temrinen al mismo tiempo y se renuevnen al mismo tiempo. por eos hay que hacer algo acabod yo me conformo con high tier lo macro. luego sonnet y sol hasta que se vuevla locos y volver a ghith tier. la fuerza de obra efectivas pero baratta. me conformo. ahora si logramos que ademas temirnen al mismo yiempo o quiozas algun modo de que el limite no sea impediemento. no quiero pagar 100 dolares. estoy pagando 60 creo que esta bien entre estas tres vuenas providers" — synchronized depletion (S3 as defined in L46) is now a nice-to-have; the must-have is the tiered flow (done) plus "algun modo de que el limite no sea impediemento" within the current ~$60 spend. Scope reduction proposed to the user, pending answer.
+
+L54 (2026-11-19, user, verbatim): "para t15 creo que vamos full opencode . ni claude code ni codex. yo creoigual pienso en pi. pero opencode se ha portado muy bine a mi parecer.  todo lo demas se ve bien. vamos" — reduced plan accepted: T11-T13 dropped (S10-S12), S15 rewritten to all-OpenCode swarm agents, S16 added (limit fallback across providers within the current spend). Remaining: T10, T14, T15, T16, T17. T17 stays: claude agents may still be used in hand-started campaigns.
