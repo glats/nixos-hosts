@@ -248,7 +248,7 @@ func TestIdentityFilesDescribeTheRunningUserInsideTheSandbox(t *testing.T) {
 
 func TestBwrapArgsViaPipeKeepSecretsOffTheCommandLine(t *testing.T) {
 	argv := []string{"/nix/bwrap", "--setenv", "CLAUDE_CODE_OAUTH_TOKEN", "sk-ant-oat-secret", "--chdir", "/town", "--", "claude"}
-	launch, file, err := bwrapViaArgsFd(argv)
+	launch, file, err := bwrapViaArgsFd(argv, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -269,5 +269,24 @@ func TestBwrapArgsViaPipeKeepSecretsOffTheCommandLine(t *testing.T) {
 	flags, _, errno := syscall.Syscall(syscall.SYS_FCNTL, file.Fd(), syscall.F_GETFD, 0)
 	if errno != 0 || flags&syscall.FD_CLOEXEC != 0 {
 		t.Fatalf("the descriptor must survive exec: flags=%d errno=%v", flags, errno)
+	}
+}
+
+func TestBwrapArgsViaPipeSplitsOnTheRealSeparator(t *testing.T) {
+	argv := []string{"/b", "--setenv", "FOO", "--", "--chdir", "/t", "--", "cmd", "--", "x"}
+	launch, file, err := bwrapViaArgsFd(argv, 3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+	if got := strings.Join(launch[2:], " "); got != strconv.Itoa(int(file.Fd()))+" -- cmd -- x" {
+		t.Fatalf("launch = %v", launch)
+	}
+}
+
+func TestBwrapArgsViaPipeRefusesAPayloadThatCouldBlock(t *testing.T) {
+	argv := []string{"/b", "--setenv", "BIG", strings.Repeat("x", 70000), "--", "cmd"}
+	if _, _, err := bwrapViaArgsFd(argv, 1); err == nil {
+		t.Fatal("an oversized option list must be refused instead of blocking on the pipe")
 	}
 }

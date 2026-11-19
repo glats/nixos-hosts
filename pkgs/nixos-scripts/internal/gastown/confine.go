@@ -224,7 +224,7 @@ func Confine(args []string, stderr io.Writer) int {
 	if _, statErr := os.Stat(gitconfig); statErr != nil {
 		_ = os.WriteFile(gitconfig, []byte("[user]\n\tname = gastown-agent\n\temail = agent@localhost\n[init]\n\tdefaultBranch = main\n[safe]\n\tdirectory = *\n"), 0o600)
 	}
-	launch, argsFile, err := bwrapViaArgsFd(argv)
+	launch, argsFile, err := bwrapViaArgsFd(argv, len(fs.Args()))
 	if err != nil {
 		fmt.Fprintln(stderr, "gastown-run confine:", err)
 		return 1
@@ -237,24 +237,27 @@ func Confine(args []string, stderr io.Writer) int {
 	return 0
 }
 
+const maxArgsPipe = 60000
+
 // bwrapViaArgsFd hands every bubblewrap option, including the --setenv values
 // that carry credentials, through an inherited pipe so none of them shows in
 // the process list; only the command after "--" stays on the command line,
 // because bubblewrap takes the command from its own arguments. The returned
 // file is the read end and must stay open until exec.
-func bwrapViaArgsFd(argv []string) ([]string, *os.File, error) {
-	split := len(argv)
-	for i, arg := range argv {
-		if arg == "--" {
-			split = i
-			break
-		}
+func bwrapViaArgsFd(argv []string, commandLen int) ([]string, *os.File, error) {
+	split := len(argv) - commandLen - 1
+	if split < 1 || argv[split] != "--" {
+		return nil, nil, errors.New("bubblewrap argument list has no command separator")
+	}
+	payload := []byte(strings.Join(argv[1:split], "\x00") + "\x00")
+	if len(payload) > maxArgsPipe {
+		return nil, nil, errors.New("bubblewrap options exceed the pipe capacity")
 	}
 	read, write, err := os.Pipe()
 	if err != nil {
 		return nil, nil, err
 	}
-	if _, err := write.Write([]byte(strings.Join(argv[1:split], "\x00") + "\x00")); err != nil {
+	if _, err := write.Write(payload); err != nil {
 		read.Close()
 		write.Close()
 		return nil, nil, err

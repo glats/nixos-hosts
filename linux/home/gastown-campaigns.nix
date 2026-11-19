@@ -178,7 +178,7 @@ let
       chainsFromProfile = mkOption {
         type = types.bool;
         default = true;
-        description = "Before each start, set the Mayor and polecat chains from the active OpenCode profile: Mayor per mayorTier, polecats from verify then worker.";
+        description = "Before each start, set the Mayor and polecat chains from the active OpenCode profile: Mayor per mayorTier, polecats from the low tier of every provider when the profile has tiers, otherwise from verify then worker.";
       };
       mayorTier = mkOption {
         type = types.enum [
@@ -186,7 +186,7 @@ let
           "mid"
         ];
         default = "big";
-        description = "Profile tier for the Mayor when chainsFromProfile is on: \"big\" uses gentle-orchestrator; \"mid\" uses gentle-ai-verify, for campaigns whose plan was already built by the big tier.";
+        description = "Profile tier for the Mayor when chainsFromProfile is on: \"big\" uses the big tier (gentle-orchestrator without tiers); \"mid\" uses the mid tier (gentle-ai-verify without tiers), for campaigns whose plan was already built by the big tier.";
       };
       claudeTokenFile = mkOption {
         type = types.nullOr types.str;
