@@ -48,6 +48,7 @@ S15. `codex:gpt-6.1-terra` requires Codex CLI 0.159 or newer (L48); rog has 0.14
 | T14 | S13 | inline | open | Chain rendering from tier lists in `linux/home/gastown-campaigns.nix`; `swarm chains` accepts multi-entry Mayor; docs/gastown.md and gastown-kickoff |
 | T15 | S15 | inline | open | Codex CLI >= 0.159 for rog (overlay or package bump). Risk: item 5 (dependency) |
 | T16 | S14 | inline | open | `shared/rules/tiered-orchestration.md`, `docs/tiered-orchestration.md`, gastown-orchestrator and model-fit skills describe the recommendation and balance |
+| T17 | — | inline | open | Security: `gastown-campaign-start` / supervisor pass `CLAUDE_CODE_OAUTH_TOKEN` to bwrap with `--setenv`, so the token is visible in `ps` to any process of the user; pass it without argv (for example an fd or a 0600 env file read inside the sandbox). User should rotate the token (`claude setup-token`). Risk: item 2 → independent verifier |
 
 ## Log
 
@@ -150,3 +151,9 @@ L47 (2026-11-19, evidence): `mayorTier` (big|mid) added to `home.gastown.campaig
 L48 (2026-11-19, evidence, explorers): Gas Town picks the polecat agent campaign-wide each 20 s tick in `tickProviders` via `PickAgent` (`swarm_support.go:18`, call at `swarm_watch.go:323`): first non-cooling entry, 30 min fixed cooldown, no reset dates parsed, limits seen in any pane cool the active agent; the Mayor takes `chains["mayor"][0]` once at start (`swarm.go:292`, `:413`); the switch reaches gt through `settings/config.json` `role_agents` for new spawns only. Ledger rows carry agent kind and model, no cost. Quota sources: anthropic `api/oauth/usage` (5h, 7d utilization and resets_at), openai `backend-api/wham/usage` (Plus reports only a weekly window), ollama `api/balance` (included balance/allowance and period). Observed now: OpenAI weekly 0% until 2026-11-22T02:09:37Z; Ollama $0 of $60 until 2026-12-05T19:19:50Z. OpenAI low-tier candidate `gpt-6.1-terra`: Terminal-Bench 4.0 49.49 (Vals) vs haiku 39.2 and luna 16.4, half Sol's credits; `opencode models` lists `openai/gpt-6.1-terra` and `openai/gpt-6.2-astra`; Codex CLI on rog is 0.146.0 and Terra needs 0.159.
 
 L49 (2026-11-19, user, verbatim): "opencode quota no es tan bueno en verdad no me ha gusado." — answer to the source question: Gas Town reads quota directly from the providers (S10), not from `opencode-quota`. Removing the `opencode-quota` plugin is not requested; left as a possible follow-up.
+
+L50 (2026-11-19, user, verbatim): "1. Ejecuta /compact en esta sesión. 2. Cambia el modelo a Sonnet (ctrl+x m). 3. Escríbele: \"sigue con odd/tasks/provider-quota-balance.md, desde T10\"  esto esta demas. que queda pendiente?" — the hand-off needs only the one-line announcement, not step-by-step instructions.
+
+L51 (2026-11-19, evidence): a gate-isolation dry run of `gofmt`/`go vet`/`go test` over `pkgs/nixos-scripts` (replicating `Isolated` + `CheckEnv`) fails about 10 existing tests (TMPDIR inside the repository breaks git-root tests; no `tar` in the tool PATH), so T11-T13 do not go to Gas Town without first fixing that harness; the run was stopped and its scratch removed. While listing processes, the maquilinux Mayor's bwrap argv showed the full `CLAUDE_CODE_OAUTH_TOKEN` (it appeared in this session's transcript; not copied elsewhere) — recorded as T17.
+
+L52 (2026-11-19, user, verbatim): "a ver que queda pendiente para que me preguntes. faltana cosas que eimplenetar pense que estabamos listos"
