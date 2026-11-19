@@ -34,3 +34,20 @@ func TestLoginCommandUsesTheAgentHomeAndOnlyForSubscriptionProviders(t *testing.
 		t.Error("a missing opencode binary must be an error")
 	}
 }
+
+func TestLoginGivesTheAgentHomeItsOwnServicePort(t *testing.T) {
+	login, err := loginCommand("/nix/opencode", t.TempDir(), "anthropic")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cmd := loginPortCommand(login, 49701)
+	if strings.Join(cmd.Args, " ") != "/nix/opencode service set port 49701" {
+		t.Fatalf("args = %v", cmd.Args)
+	}
+	if strings.Join(cmd.Env, "\x00") != strings.Join(login.Env, "\x00") {
+		t.Fatal("the port must be set in the same agent home the login uses")
+	}
+	if port, err := freePort(); err != nil || port == 0 {
+		t.Fatalf("freePort = %d, %v", port, err)
+	}
+}
