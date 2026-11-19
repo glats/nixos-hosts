@@ -203,13 +203,13 @@ Agents and providers:
   (`--mayor-agent opencode:ollama-cloud/deepseek-v4-pro`).
 - `opencode:anthropic/<model>` (for example `opencode:anthropic/claude-haiku-5-5`) uses your
   Claude subscription through OpenCode, with the same separate agent-home login as OpenAI:
-  `HOME=<state>/swarm/<project>/town/.agent-home opencode auth login anthropic`. It needs no
+  `gastown-run swarm login <project> anthropic`. It needs no
   `CLAUDE_CODE_OAUTH_TOKEN`, and `swarm check` probes it like any OpenCode agent.
 - `opencode:openai/<model>[:<effort>]` (for example `opencode:openai/gpt-6.1-sol:high`)
   uses your ChatGPT subscription through OpenCode. The agent reads its login from its
   own home (`<state>/swarm/<project>/town/.agent-home`), never from your OpenCode
   database. Sign in once with
-  `HOME=<state>/swarm/<project>/town/.agent-home opencode auth login openai`; this
+  `gastown-run swarm login <project> openai`; this
   keeps a separate grant, so the agent refreshing its token cannot log you out.
 - `opencode:nvidia/<model id>` uses NVIDIA NIM through OpenCode with a minimal
   inline configuration and the `NVIDIA_API_KEY` from your environment. Your own
