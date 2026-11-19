@@ -48,6 +48,7 @@ var openCodeProviders = map[string]openCodeProvider{
 	"nvidia":       {Name: "NVIDIA NIM", Env: "NVIDIA_API_KEY", Package: "@opencode/ai/providers/openai-compatible", BaseURL: "https://integrate.api.nvidia.com/v1"},
 	"ollama-cloud": {Name: "Ollama Cloud", Env: "OLLAMA_API_KEY", Package: "@opencode/ai/providers/openai-compatible", BaseURL: "https://ollama.com/v1"},
 	"openai":       {Name: "OpenAI"},
+	"anthropic":    {Name: "Anthropic"},
 }
 
 // AgentEnvNames lists the environment variables the agents need from the
@@ -190,7 +191,7 @@ func AgentPreset(c Config, self, town, spec string, agentEnv []string) (string, 
 		provider, model, ok := strings.Cut(rest, "/")
 		known, found := openCodeProviders[provider]
 		if c.OpenCode == "" || !ok || model == "" || !found {
-			return "", nil, errors.New("opencode spec needs GASTOWN_OPENCODE and a known provider: opencode:nvidia/<model>, opencode:ollama-cloud/<model> or opencode:openai/<model>[:<effort>] (" + spec + ")")
+			return "", nil, errors.New("opencode spec needs GASTOWN_OPENCODE and a known provider: opencode:nvidia/<model>, opencode:ollama-cloud/<model>, opencode:openai/<model>[:<effort>] or opencode:anthropic/<model> (" + spec + ")")
 		}
 		name := "opencode-" + strings.Trim(specCleaner.ReplaceAllString(strings.ToLower(rest), "-"), "-")
 		effort := ""

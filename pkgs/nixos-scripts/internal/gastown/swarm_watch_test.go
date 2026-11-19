@@ -495,6 +495,38 @@ func TestOpenAIPresetWithoutEffortLeavesTheModelDefault(t *testing.T) {
 	}
 }
 
+func TestAnthropicPresetUsesTheAgentsOwnLogin(t *testing.T) {
+	c := testConfig()
+	c.OpenCode, c.NativeHome = "/nix/opencode", "/home/u"
+	name, preset, err := AgentPreset(c, "/nix/gastown-run", "/state/town", "opencode:anthropic/claude-haiku-5-5", nil)
+	if err != nil || name != "opencode-anthropic-claude-haiku-5-5" {
+		t.Fatalf("name=%q err=%v", name, err)
+	}
+	args := strings.Join(preset["args"].([]string), "\x00")
+	for _, banned := range []string{"--home-bind", "API_KEY", "CLAUDE_CODE_OAUTH_TOKEN", "--env\x00\x00"} {
+		if strings.Contains(args, banned) {
+			t.Errorf("a login-based provider must not expose %q: %s", banned, strings.ReplaceAll(args, "\x00", " "))
+		}
+	}
+	cfg := preset["env"].(map[string]string)["OPENCODE_CONFIG_CONTENT"]
+	for _, want := range []string{`"model":"anthropic/claude-haiku-5-5"`, `"resource":"anthropic"`} {
+		if !strings.Contains(cfg, want) {
+			t.Errorf("inline config missing %q: %s", want, cfg)
+		}
+	}
+	for _, banned := range []string{"apiKey", "baseURL", "package", "reasoningEffort"} {
+		if strings.Contains(cfg, banned) {
+			t.Errorf("the built-in provider must not be redefined (%q): %s", banned, cfg)
+		}
+	}
+	if _, _, ok := ProbeCommand(preset); !ok {
+		t.Fatal("an anthropic agent must be probed like any opencode agent")
+	}
+	if got := AgentEnvNames([]string{"opencode:anthropic/claude-sonnet-5-5"}, nil); len(got) != 0 {
+		t.Fatalf("a login-based provider needs no environment variable, got %v", got)
+	}
+}
+
 func TestAgentEnvNamesCoverEveryProviderAKeyIsNeededFor(t *testing.T) {
 	got := AgentEnvNames([]string{"codex:m:low", "opencode:nvidia/m"}, []string{"EXTRA_KEY"})
 	if strings.Join(got, ",") != "EXTRA_KEY,NVIDIA_API_KEY" {
