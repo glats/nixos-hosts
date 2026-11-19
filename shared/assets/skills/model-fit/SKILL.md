@@ -107,6 +107,10 @@ executes, and the user switches the session model.
   mid-tier model or below.
 - The rendered root `model` follows the profile's `gentle-orchestrator`, so new
   sessions start on the big tier.
+- A profile may carry `tiers` (`big`, `mid`, `low`), one model per provider and tier, in
+  fallback order. Gas Town renders its Mayor and polecat chains from them through
+  `linux/home/gastown-campaigns.nix`; role assignments are unaffected. A model enters
+  `low` only after it passes the same gates as a worker (`gpt-6-luna` stays rejected).
 - Verify uses a different model family than the profile's writer roles when
   the profile has more than one provider; single-provider profiles record the
   gap instead.

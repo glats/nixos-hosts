@@ -92,9 +92,17 @@ covers every role on its own.
 
 ## Gas Town
 
-Campaigns follow the same split: the Mayor runs on the big tier, polecats on the
-mid tier or the worker model. Their chains come from the active OpenCode
-profile instead of being picked by hand per campaign.
+Campaigns follow the same split: the Mayor runs on the big tier (or the mid tier with
+`mayorTier = "mid"`), polecats on the low tier. Their chains come from the active
+OpenCode profile instead of being picked by hand per campaign.
+
+A profile with `tiers` (`personal`) lists one model per provider and tier, and every
+Gas Town agent runs through OpenCode (`opencode:anthropic/...`, `opencode:openai/...`,
+`opencode:ollama-cloud/...`). The polecat chain is the low tier of every provider, so
+when one provider hits its limit the work continues on the same tier of the next one
+without a paid upgrade. Balance across providers is a fallback, not a quota-aware
+split: providers do not run out together. Profiles without `tiers` keep the old
+rendering (Mayor from the orchestrator or verify role, polecats from verify then worker).
 
 ## Status
 

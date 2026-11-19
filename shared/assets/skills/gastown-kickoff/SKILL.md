@@ -23,8 +23,8 @@ Load when the user wants to point `gastown-run` at a repository. After kickoff, 
 
 | Need | Choice |
 |---|---|
-| Planning quality | Strong Mayor (`claude:opus` or `claude:sonnet`); it only plans and dispatches. |
-| Volume | Workers `opencode:ollama-cloud/<model>`, fallback list in order. |
+| Planning quality | Strong Mayor (`opencode:anthropic/claude-opus-5-5`, `claude:opus` or `claude:sonnet`); it only plans and dispatches. |
+| Volume | Workers `opencode:ollama-cloud/<model>`, fallback list in order; one low-tier agent per provider (`opencode:anthropic/...`, `opencode:openai/...`, `opencode:ollama-cloud/...`) keeps work moving when one limit is hit. |
 | Cheap roles | Witness, refinery and deacon use the last worker model: keep it cheap. |
 | Campaign declared in Nix | Chains come from the active OpenCode profile at each start (`chainsFromProfile`): Mayor from the orchestrator, or from verify with `mayorTier = "mid"` when the big tier already built the plan; polecats from verify then worker. |
 | Files the user is editing | `--protect <path>`; the gate rejects branches that touch them. |

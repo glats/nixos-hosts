@@ -127,3 +127,17 @@ func TestSwarmChainsTreatsPolecatOrderAsAChange(t *testing.T) {
 		t.Fatalf("polecat order is the fallback order and must count as a change: exit %d out %q err %q", code, out, errOut)
 	}
 }
+
+func TestSwarmChainsAcceptsTheThreeProviderTiersThroughOpenCode(t *testing.T) {
+	c, dir, file := chainsFixture(t, `{"mayor":["opencode:anthropic/claude-sonnet-5-5","opencode:openai/gpt-6.1-sol:medium","opencode:ollama-cloud/deepseek-v4-pro"],"polecat":["opencode:anthropic/claude-haiku-5-5","opencode:openai/gpt-6.1-terra:low","opencode:ollama-cloud/minimax-m3.1-flash"]}`)
+	if code, _, errOut := runChains(c, file); code != 0 {
+		t.Fatalf("exit %d: %s", code, errOut)
+	}
+	var got SwarmConfig
+	if err := json.Unmarshal([]byte(readFile(t, filepath.Join(dir, "swarm.json"))), &got); err != nil {
+		t.Fatal(err)
+	}
+	if len(got.Chains["mayor"]) != 3 || len(got.Chains["polecat"]) != 3 {
+		t.Fatalf("every provider must stay in its chain: %v", got.Chains)
+	}
+}

@@ -156,12 +156,16 @@ project: a lock the kernel releases on any exit, including power loss. Provider 
 from your sops secrets; the Claude token comes from `claudeTokenFile` when set, otherwise
 from the OpenCode credential store, and a campaign with a claude agent and no token refuses
 to start (exit 78, not retried). Before each start the service sets the Mayor and polecat
-chains from the active OpenCode profile (`chainsFromProfile`, on by default): the Mayor comes
-from `gentle-orchestrator`, or from `gentle-ai-verify` with `mayorTier = "mid"` (use it when the
-plan was already built by the big tier in OpenCode, so the Mayor only dispatches), the polecats from `gentle-ai-verify` then `gentle-ai-worker`
-(`anthropic/claude-<family>-*` becomes `claude:<family>`, OpenAI models become
-`codex:<model>:medium` for the Mayor and `:low` for polecats, Ollama and NVIDIA models become
-`opencode:<provider>/<model>`). It runs `gastown-run swarm chains <project> <file>`, which
+chains from the active OpenCode profile (`chainsFromProfile`, on by default): the profile
+decides. A profile with `tiers` (`personal`) gives the Mayor the big tier, or the mid tier with
+`mayorTier = "mid"` (use it when the plan was already built by the big tier in OpenCode, so the
+Mayor only dispatches), and the polecats the low tier of every provider, in the order of the
+list, so a limit on one provider moves work to the next. A profile without `tiers` takes the
+Mayor from `gentle-orchestrator` (or `gentle-ai-verify` with `mayorTier = "mid"`) and the
+polecats from `gentle-ai-verify` then `gentle-ai-worker`. Every agent runs through OpenCode:
+`opencode:<provider>/<model>`, with `:medium` (Mayor) or `:low` (polecats) as the effort for
+OpenAI models. Anthropic and OpenAI agents read a login from the swarm's own agent home (see
+`opencode:anthropic` and `opencode:openai` above), so no Claude token is involved. It runs `gastown-run swarm chains <project> <file>`, which
 keeps every other setting, saves the previous file as `swarm.json.before-profile` and refuses
 an invalid chain without touching swarm.json. Any failure of this step stops the start with
 exit 78, which is not retried: fix the cause, then start the service again. Manual chain edits
@@ -197,6 +201,10 @@ Agents and providers:
   with the `OLLAMA_API_KEY` from your environment (base URL `https://ollama.com/v1`;
   e.g. `opencode:ollama-cloud/minimax-m3.1-flash`). It works as worker and as Mayor
   (`--mayor-agent opencode:ollama-cloud/deepseek-v4-pro`).
+- `opencode:anthropic/<model>` (for example `opencode:anthropic/claude-haiku-5-5`) uses your
+  Claude subscription through OpenCode, with the same separate agent-home login as OpenAI:
+  `HOME=<state>/swarm/<project>/town/.agent-home opencode auth login anthropic`. It needs no
+  `CLAUDE_CODE_OAUTH_TOKEN`, and `swarm check` probes it like any OpenCode agent.
 - `opencode:openai/<model>[:<effort>]` (for example `opencode:openai/gpt-6.1-sol:high`)
   uses your ChatGPT subscription through OpenCode. The agent reads its login from its
   own home (`<state>/swarm/<project>/town/.agent-home`), never from your OpenCode
