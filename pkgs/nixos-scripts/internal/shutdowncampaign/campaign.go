@@ -287,9 +287,26 @@ func Shutdown(env Env, log *shutdowntrial.Log, c Ctx, breadcrumb func(string)) e
 }
 
 func wolDue(entries []shutdowntrial.Entry) bool {
+	unattended := map[string]bool{}
+	marks := map[string]string{}
+	for _, e := range entries {
+		switch e.Kind {
+		case "boot":
+			unattended[e.BootID] = e.Reason == "alarm" || e.Reason == "wol" || e.Reason == "wol-cal"
+		case "mark":
+			marks[e.Resolves] = e.Outcome
+		}
+	}
 	var wol, normal int
 	for _, e := range entries {
-		if e.Kind != "boot" || e.Resolves == "" {
+		if e.Kind != "boot" || e.Resolves == "" || unattended[e.Resolves] {
+			continue
+		}
+		outcome := e.Outcome
+		if m, ok := marks[e.Resolves]; ok {
+			outcome = m
+		}
+		if outcome != "off" && outcome != "hung_or_unwoken" {
 			continue
 		}
 		switch e.Arm {

@@ -1145,3 +1145,59 @@ func TestMarkTargetThatMatchesNothingOrTooMuchIsRejected(t *testing.T) {
 		t.Fatal("accepted a target shorter than 4 characters")
 	}
 }
+
+func usesWol(t *testing.T, es []shutdowntrial.Entry) bool {
+	t.Helper()
+	env := newEnv()
+	log := seed(t, es)
+	if err := Shutdown(env, log, relayCtx("b0"), func(string) {}); err != nil {
+		t.Fatal(err)
+	}
+	for _, op := range env.ops {
+		if strings.HasPrefix(op, "exchange") {
+			return true
+		}
+	}
+	return false
+}
+
+func TestFirstShutdownIgnoresUnattendedChainSamplesWhenBalancingWol(t *testing.T) {
+	es := []shutdowntrial.Entry{
+		bootEntry("h1", "cold", "", "", ""),
+		bootEntry("c1", "alarm", "h1", ArmNormal, "off"),
+		bootEntry("c2", "alarm", "c1", ArmNormal, "off"),
+		bootEntry("c3", "alarm", "c2", ArmNormal, "off"),
+		bootEntry("h2", "cold", "c3", ArmNone, "unmeasured"),
+		bootEntry("w1", "wol", "x", ArmWol, "off"),
+		bootEntry("w2", "wol", "y", ArmWol, "hung_or_unwoken"),
+		bootEntry("b0", "cold", "", "", ""),
+	}
+	if usesWol(t, es) {
+		t.Fatal("wol used although it is ahead of the human alarm-armed shutdowns")
+	}
+}
+
+func TestFirstShutdownCountsOnlyMeasuredHumanShutdownsForWol(t *testing.T) {
+	es := []shutdowntrial.Entry{
+		bootEntry("h1", "cold", "u1", ArmWol, "unmeasured"),
+		bootEntry("h2", "cold", "u2", ArmWol, "unmeasured"),
+		bootEntry("h3", "cold", "u3", ArmNormal, "off"),
+		bootEntry("b0", "cold", "", "", ""),
+	}
+	if !usesWol(t, es) {
+		t.Fatal("wol not used although no measured wol sample exists")
+	}
+}
+
+func TestFirstShutdownAppliesMarksWhenBalancingWol(t *testing.T) {
+	es := []shutdowntrial.Entry{
+		bootEntry("h1", "cold", "u1", ArmWol, "hung_or_unwoken"),
+		bootEntry("h2", "cold", "u2", ArmWol, "off"),
+		bootEntry("h3", "cold", "u3", ArmNormal, "off"),
+		markEntry("u1", "unmeasured"),
+		bootEntry("b0", "cold", "", "", ""),
+	}
+	if !usesWol(t, es) {
+		t.Fatal("a sample marked unknown still counted")
+	}
+}
