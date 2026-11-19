@@ -19,14 +19,12 @@ let
     effort: id:
     let
       provider = head (splitString "/" id);
-      model = removePrefix "${provider}/" id;
     in
-    if provider == "anthropic" then
-      "claude:${elemAt (splitString "-" model) 1}"
-    else if provider == "openai" then
-      "codex:${model}:${effort}"
+    if provider == "openai" then
+      "opencode:${id}:${effort}"
     else if
       elem provider [
+        "anthropic"
         "ollama-cloud"
         "nvidia"
       ]
@@ -37,6 +35,8 @@ let
 
   roleModel = role: profile.getModelForRole role profile.activeProvider;
 
+  tiers = profile.activeProvider.tiers or null;
+
   mayorRole = {
     big = "gentle-orchestrator";
     mid = "gentle-ai-verify";
@@ -45,15 +45,23 @@ let
   profileChains =
     tier:
     pkgs.writeText "gastown-chains-${tier}.json" (
-      builtins.toJSON {
-        mayor = [ (agentSpec "medium" (roleModel mayorRole.${tier})) ];
-        polecat = unique (
-          map (agentSpec "low") [
-            (roleModel "gentle-ai-verify")
-            (roleModel "gentle-ai-worker")
-          ]
-        );
-      }
+      builtins.toJSON (
+        if tiers != null then
+          {
+            mayor = unique (map (agentSpec "medium") tiers.${tier});
+            polecat = unique (map (agentSpec "low") tiers.low);
+          }
+        else
+          {
+            mayor = [ (agentSpec "medium" (roleModel mayorRole.${tier})) ];
+            polecat = unique (
+              map (agentSpec "low") [
+                (roleModel "gentle-ai-verify")
+                (roleModel "gentle-ai-worker")
+              ]
+            );
+          }
+      )
     );
 
   secretPath = name: optionalString (config.sops.secrets ? ${name}) config.sops.secrets.${name}.path;

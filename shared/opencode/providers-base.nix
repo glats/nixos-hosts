@@ -72,6 +72,22 @@ let
   providers = [
     {
       name = "personal";
+      tiers = {
+        big = [
+          "anthropic/claude-opus-5-5"
+          "openai/gpt-6-astra"
+        ];
+        mid = [
+          "anthropic/claude-sonnet-5-5"
+          "openai/gpt-6.1-sol"
+          "ollama-cloud/deepseek-v4-pro"
+        ];
+        low = [
+          "anthropic/claude-haiku-5-5"
+          "openai/gpt-6.1-terra"
+          "ollama-cloud/minimax-m3.1-flash"
+        ];
+      };
       roles = {
         gentle-orchestrator = "anthropic/claude-opus-5-5";
         gentle-ai-explore = "ollama-cloud/deepseek-v4-pro";
