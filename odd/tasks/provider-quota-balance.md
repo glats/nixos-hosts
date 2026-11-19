@@ -167,3 +167,23 @@ L54 (2026-11-19, user, verbatim): "para t15 creo que vamos full opencode . ni cl
 L55 (2026-11-19, mid tier, evidence): implemented T10, T14-T17 inline. Go: `go test ./internal/gastown` green, gofmt/vet clean. Nix: `nix flake check --no-build` OK. T17 first attempt put the command in the pipe too and bwrap printed usage (it takes the command from its own argv); fixed by keeping only `-- command` on argv. Pending: independent verifier for T15/T17 (risk item 2), switch on rog, `opencode auth login anthropic` in the swarm agent home, rotate the exposed Claude token.
 
 L56 (2026-11-19, verifier ses_e0ae10e91ffe1Q82VbU2s4ffde, evidence): T15, T17, T10, T14 PASS, no blockers. Advisories fixed: the separator split now uses the command length (an env value of `--` no longer misroutes), and a payload over 60000 bytes is refused instead of blocking on the pipe; probes added as regression tests. Real-bwrap recheck: `FOO=--` reaches the sandbox. Option text of `chainsFromProfile` and `mayorTier` updated. Verifier scratch `/tmp/opencode/verify-psEy` to remove.
+
+L57 (2026-11-19, user, verbatim): "hice cuentas neuvas y relogins. asi que puede habe data bieja. pero si ves con browser mcp. https://claude.ai/chats#settings/usage, https://chatgpt.com/settings/usage?tab=analytics#usage, https://ollama.com/settings todas de cero. excepto anthropic que es esta sesion"
+
+L58 (2026-11-19, user, verbatim): "porque la idea es que todas terminen al msimo tiempo o si pasan un par de dias par que ollama se recarga si openai y anthropic siguen con tokens se puede esperar un poco para ir al mismo tiempo entinedeS? quizas ni se pueda pero quiero tartar de que sea vea reflajado asi" — balance goal restated: no provider hits its limit before its own reset while another has margin; waiting a few days for Ollama's reset is acceptable when the other two still have quota.
+
+## Quota baseline (measured by hand from the usage pages)
+
+Accounts are new as of 2026-11-19; `~/.claude` and `~/.codex` still hold the old accounts, so API reads from them (anthropic 94% weekly, openai 100%) are stale and must be ignored. Anthropic's opencode credential (`sk-ant-oat`, setup-token) returns 403 on `api/oauth/usage`; the opencode OpenAI token returns 401 without an account id. Only the browser pages and `ollama.com/api/balance` are valid sources until Claude Code and Codex are logged in again, or the opencode-quota plugin is fixed (it shows only Claude 5h, OpenAI "unavailable", Ollama OK, plus an OpenCode Go 401).
+
+Comparable scale: Ollama $60 per 30 days is about $14 per week against the weekly windows of the other two.
+
+| At (UTC) | Provider | Window | Used | Resets |
+| --- | --- | --- | --- | --- |
+| 2026-11-19 22:09 | anthropic Pro | weekly | 1% | Thu 2026-11-26 09:00 local |
+| 2026-11-19 22:09 | anthropic Pro | session | 7% | Fri 2026-11-20 00:00 local |
+| 2026-11-19 22:09 | openai Plus | weekly | 0% | in 6d 23h |
+| 2026-11-19 22:09 | openai Plus | 5 hours | 0% | in 4h 43m |
+| 2026-11-19 22:09 | ollama cloud | monthly | $0 of $60 | 2026-12-19 21:52 |
+
+Plan: on request ("mide") read the three pages with the browser, append a row group here, and compute burn rate per provider (used per hour against time to its reset). After three or four readings decide between an automatic reader and a plugin fix. No code is written for this yet.
