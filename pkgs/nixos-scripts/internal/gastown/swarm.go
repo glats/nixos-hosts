@@ -412,6 +412,9 @@ func (s *Swarm) rules() string {
 }
 
 func (s *Swarm) Up() error {
+	if err := s.writeSettings(s.roleAgents(nil)); err != nil {
+		return err
+	}
 	if err := portFree(s.Cfg.DoltPort); err != nil {
 		if _, e := s.gt("dolt", "status"); e != nil {
 			return err

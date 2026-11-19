@@ -796,3 +796,31 @@ func TestPolecatContractStatesTheWorkerRules(t *testing.T) {
 		}
 	}
 }
+
+func TestUpWritesTheMayorOfTheCurrentChainsBeforeStartingIt(t *testing.T) {
+	f := &swarmFake{esc: `[]`, mail: `[]`, polecats: `[]`}
+	s := probingSwarm(t, f, "opencode:anthropic/claude-sonnet-5-5", "opencode:anthropic/claude-haiku-5-5")
+	s.Cfg.DoltPort = 45999
+	s.Cfg.Chains["mayor"] = []string{"opencode:anthropic/claude-opus-5-5"}
+	stale := `{"type":"town-settings","version":1,"role_agents":{"mayor":"claude-opus","polecat":"claude-sonnet"}}`
+	path := filepath.Join(s.Town(), "settings", "config.json")
+	if err := os.WriteFile(path, []byte(stale), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Up(); err != nil {
+		t.Fatal(err)
+	}
+	var settings struct {
+		RoleAgents map[string]string `json:"role_agents"`
+	}
+	if err := json.Unmarshal([]byte(readFile(t, path)), &settings); err != nil {
+		t.Fatal(err)
+	}
+	if settings.RoleAgents["mayor"] != "opencode-anthropic-claude-opus-5-5" || settings.RoleAgents["polecat"] != "opencode-anthropic-claude-sonnet-5-5" {
+		t.Fatalf("the mayor must start with the configured chains, got %v", settings.RoleAgents)
+	}
+	registry := readFile(t, filepath.Join(s.Town(), "settings", "agents.json"))
+	if !strings.Contains(registry, `"opencode-anthropic-claude-opus-5-5"`) {
+		t.Fatalf("the registry must hold the mayor agent before it starts: %s", registry)
+	}
+}
