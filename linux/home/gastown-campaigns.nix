@@ -37,17 +37,24 @@ let
 
   roleModel = role: profile.getModelForRole role profile.activeProvider;
 
-  profileChains = pkgs.writeText "gastown-chains.json" (
-    builtins.toJSON {
-      mayor = [ (agentSpec "medium" (roleModel "gentle-orchestrator")) ];
-      polecat = unique (
-        map (agentSpec "low") [
-          (roleModel "gentle-ai-verify")
-          (roleModel "gentle-ai-worker")
-        ]
-      );
-    }
-  );
+  mayorRole = {
+    big = "gentle-orchestrator";
+    mid = "gentle-ai-verify";
+  };
+
+  profileChains =
+    tier:
+    pkgs.writeText "gastown-chains-${tier}.json" (
+      builtins.toJSON {
+        mayor = [ (agentSpec "medium" (roleModel mayorRole.${tier})) ];
+        polecat = unique (
+          map (agentSpec "low") [
+            (roleModel "gentle-ai-verify")
+            (roleModel "gentle-ai-worker")
+          ]
+        );
+      }
+    );
 
   secretPath = name: optionalString (config.sops.secrets ? ${name}) config.sops.secrets.${name}.path;
 
@@ -163,7 +170,15 @@ let
       chainsFromProfile = mkOption {
         type = types.bool;
         default = true;
-        description = "Before each start, set the Mayor and polecat chains from the active OpenCode profile: Mayor from the orchestrator, polecats from verify then worker.";
+        description = "Before each start, set the Mayor and polecat chains from the active OpenCode profile: Mayor per mayorTier, polecats from verify then worker.";
+      };
+      mayorTier = mkOption {
+        type = types.enum [
+          "big"
+          "mid"
+        ];
+        default = "big";
+        description = "Profile tier for the Mayor when chainsFromProfile is on: \"big\" uses gentle-orchestrator; \"mid\" uses gentle-ai-verify, for campaigns whose plan was already built by the big tier.";
       };
       claudeTokenFile = mkOption {
         type = types.nullOr types.str;
@@ -193,7 +208,7 @@ let
           "OLLAMA_KEY_FILE=${secretPath "opencode/ollama_api_key"}"
           "NVIDIA_KEY_FILE=${secretPath "opencode/nvidia_api_key"}"
           "CLAUDE_TOKEN_FILE=${optionalString (c.claudeTokenFile != null) c.claudeTokenFile}"
-          "GASTOWN_CHAINS_FILE=${optionalString c.chainsFromProfile "${profileChains}"}"
+          "GASTOWN_CHAINS_FILE=${optionalString c.chainsFromProfile "${profileChains c.mayorTier}"}"
         ];
         Restart = "on-failure";
         RestartSec = "60s";

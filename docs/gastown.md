@@ -157,7 +157,8 @@ from your sops secrets; the Claude token comes from `claudeTokenFile` when set, 
 from the OpenCode credential store, and a campaign with a claude agent and no token refuses
 to start (exit 78, not retried). Before each start the service sets the Mayor and polecat
 chains from the active OpenCode profile (`chainsFromProfile`, on by default): the Mayor comes
-from `gentle-orchestrator`, the polecats from `gentle-ai-verify` then `gentle-ai-worker`
+from `gentle-orchestrator`, or from `gentle-ai-verify` with `mayorTier = "mid"` (use it when the
+plan was already built by the big tier in OpenCode, so the Mayor only dispatches), the polecats from `gentle-ai-verify` then `gentle-ai-worker`
 (`anthropic/claude-<family>-*` becomes `claude:<family>`, OpenAI models become
 `codex:<model>:medium` for the Mayor and `:low` for polecats, Ollama and NVIDIA models become
 `opencode:<provider>/<model>`). It runs `gastown-run swarm chains <project> <file>`, which
