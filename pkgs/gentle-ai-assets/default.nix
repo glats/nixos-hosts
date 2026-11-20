@@ -10,7 +10,7 @@
 let
   rendered = callPackage ./render.nix {
     inherit gentle-ai-src;
-    vendorHash = gentle-ai.vendorHash;
+    inherit (gentle-ai) vendorHash;
   };
 in
 stdenvNoCC.mkDerivation {

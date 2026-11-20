@@ -32,11 +32,11 @@
                   "resources/app/node_modules/@vscode/ripgrep/bin/rg"
                 ]
                 [
-                  (''
+                  ''
                     asar extract "$packed" "$unpacked"
                               if [ -d "$packed.unpacked" ]; then
                                 cp -a "$packed.unpacked/." "$unpacked/"
-                              fi'')
+                              fi''
                   "resources/app/node_modules/@vscode/ripgrep-universal/bin/${ripgrepSystem}/rg"
                 ]
                 old.postPatch

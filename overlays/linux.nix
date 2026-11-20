@@ -46,13 +46,13 @@ in
     ;
 
   asus-fan-control = final.callPackage ../pkgs/asus-fan-control {
-    asus-fan-control-src = inputs.asus-fan-control-src;
+    inherit (inputs) asus-fan-control-src;
   };
   pipewire-module-xrdp = final.callPackage ../pkgs/pipewire-module-xrdp {
-    pipewire-module-xrdp-src = inputs.pipewire-module-xrdp-src;
+    inherit (inputs) pipewire-module-xrdp-src;
   };
   thinkfan-ui = final.callPackage ../pkgs/thinkfan-ui {
-    thinkfan-ui-src = inputs.thinkfan-ui-src;
+    inherit (inputs) thinkfan-ui-src;
     wrapQtAppsHook = final.qt6.wrapQtAppsHook;
     qtbase = final.qt6.qtbase;
     qtsvg = final.qt6.qtsvg;

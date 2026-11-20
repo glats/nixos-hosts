@@ -47,7 +47,7 @@ let
 
   mkWireGuardPeers = mapAttrsToList (
     _: p: {
-      publicKey = p.publicKey;
+      inherit (p) publicKey;
       presharedKeyFile = lib.mkIf (p.psk != null) p.psk.path;
       allowedIPs = [ "${p.ip}/32" ];
     }

@@ -7,8 +7,8 @@
 
 let
   colors = import ../../../../lib/colors.nix { inherit lib; };
-  hexToRgb = colors.hexToRgb;
-  doubleHex = colors.doubleHex;
+  inherit (colors) hexToRgb;
+  inherit (colors) doubleHex;
 in
 {
   dconf.settings = {

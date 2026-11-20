@@ -7,7 +7,7 @@
 
 let
   utilLinux = pkgs.util-linux;
-  coreutils = pkgs.coreutils;
+  inherit (pkgs) coreutils;
 
   mountScript = pkgs.writeShellScriptBin "maquilinux-mount" ''
     #!/bin/bash

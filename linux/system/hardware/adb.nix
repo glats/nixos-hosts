@@ -1,5 +1,4 @@
-{ ... }:
-{
+_: {
   services.udev.extraRules = ''
     # Android devices with Google vendor ID
     SUBSYSTEM=="usb", ATTR{idVendor}=="18d1", MODE="0660", GROUP="adbusers"

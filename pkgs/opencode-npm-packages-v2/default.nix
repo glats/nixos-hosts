@@ -12,7 +12,7 @@ buildNpmPackage {
   version = package.dependencies."@opencode/plugin";
   src = ./.;
   npmDeps = importNpmLock { npmRoot = ./.; };
-  npmConfigHook = importNpmLock.npmConfigHook;
+  inherit (importNpmLock) npmConfigHook;
   dontNpmBuild = true;
   installPhase = ''
     runHook preInstall

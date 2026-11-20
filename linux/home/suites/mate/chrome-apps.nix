@@ -1,4 +1,4 @@
-{ ... }:
+_:
 
 let
   iconName = "chrome-lodlkdfmihgonocnmddehnfgiljnadcf-Default.png";

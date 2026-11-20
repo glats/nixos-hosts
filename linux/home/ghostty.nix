@@ -15,7 +15,7 @@ let
   };
 
   ghostty = import ../../shared/ghostty.nix {
-    colorScheme = config.colorScheme;
+    inherit (config) colorScheme;
     extraSettings = lib.optionalAttrs cfg.xrdp-optimized xrdpSettings;
   };
 in

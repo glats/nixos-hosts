@@ -71,7 +71,7 @@ let
     else if mcp.type == "remote" then
       {
         type = "http";
-        url = mcp.url;
+        inherit (mcp) url;
       }
       // (builtins.removeAttrs mcp [
         "type"

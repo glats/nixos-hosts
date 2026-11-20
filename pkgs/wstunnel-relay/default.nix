@@ -32,7 +32,7 @@ stdenvNoCC.mkDerivation {
 
   src = fetchurl {
     url = "https://github.com/erebe/wstunnel/releases/download/v11.1.0/${asset.name}";
-    hash = asset.hash;
+    inherit (asset) hash;
   };
 
   nativeBuildInputs = [

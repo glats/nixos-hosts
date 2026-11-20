@@ -11,7 +11,7 @@ buildNpmPackage {
   version = (lib.importJSON ./package.json).dependencies."@browsermcp/mcp";
   src = ./.;
   npmDeps = importNpmLock { npmRoot = ./.; };
-  npmConfigHook = importNpmLock.npmConfigHook;
+  inherit (importNpmLock) npmConfigHook;
   dontNpmBuild = true;
   nativeBuildInputs = [ makeWrapper ];
   installPhase = ''

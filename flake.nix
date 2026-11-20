@@ -170,7 +170,7 @@
 
       packages = import ./lib/packages.nix {
         inherit inputs;
-        pkgsFor = pkgsFor;
+        inherit pkgsFor;
       };
       inherit (packages)
         linuxPackages
@@ -205,7 +205,7 @@
           conkyConfigFile = ./hosts + "/${hostname}/conky-config.nix";
           conkyConfig =
             if builtins.pathExists conkyConfigFile then
-              (import conkyConfigFile { lib = nixpkgsInput.lib; }).conky-config
+              (import conkyConfigFile { inherit (nixpkgsInput) lib; }).conky-config
             else
               {
                 enable = false;

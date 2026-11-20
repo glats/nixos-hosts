@@ -14,30 +14,30 @@ let
       self = rec {
         nixos-scripts = pkgs.callPackage ../pkgs/nixos-scripts { };
         gentle-ai = pkgs.callPackage ../pkgs/gentle-ai {
-          gentle-ai-src = inputs.gentle-ai-src;
+          inherit (inputs) gentle-ai-src;
         };
         engram = pkgs.callPackage ../pkgs/engram {
-          engram-src = inputs.engram-src;
+          inherit (inputs) engram-src;
         };
         gentle-ai-assets = pkgs.callPackage ../pkgs/gentle-ai-assets/default.nix {
-          gentle-ai-src = inputs.gentle-ai-src;
-          gentle-ai = self.gentle-ai;
+          inherit (inputs) gentle-ai-src;
+          inherit (self) gentle-ai;
         };
         caveman-assets = pkgs.callPackage ../pkgs/caveman-assets/default.nix {
-          caveman-src = inputs.caveman-src;
+          inherit (inputs) caveman-src;
         };
         ponytail-assets = pkgs.callPackage ../pkgs/ponytail-assets/default.nix {
-          ponytail-src = inputs.ponytail-src;
+          inherit (inputs) ponytail-src;
         };
         archify-skill = pkgs.callPackage ../pkgs/archify-skill { };
         local-ai-assets = pkgs.callPackage ../pkgs/local-ai-assets {
           archifySkill = self.archify-skill;
         };
         engram-assets-vanilla = pkgs.callPackage ../pkgs/engram-assets/vanilla.nix {
-          engram-src = inputs.engram-src;
+          inherit (inputs) engram-src;
         };
         engram-assets = pkgs.callPackage ../pkgs/engram-assets/default.nix {
-          engram = self.engram;
+          inherit (self) engram;
           vanilla = self.engram-assets-vanilla;
         };
         opencode-npm-packages-v2 = pkgs.callPackage ../pkgs/opencode-npm-packages-v2 { };
@@ -56,7 +56,7 @@ let
             inputs.claude-code-nix.packages.${pkgs.stdenv.hostPlatform.system}.default
               or (pkgs.callPackage "${inputs.claude-code-nix}/package.nix" { });
         };
-        rtk = pkgs.rtk;
+        inherit (pkgs) rtk;
       };
     in
     self;
@@ -67,16 +67,16 @@ let
     dolt = linuxPkgs.callPackage ../pkgs/dolt { };
     beads = linuxPkgs.callPackage ../pkgs/beads { };
     gastown = linuxPkgs.callPackage ../pkgs/gastown {
-      beads = linuxPackages.beads;
-      dolt = linuxPackages.dolt;
+      inherit (linuxPackages) beads;
+      inherit (linuxPackages) dolt;
     };
     gastown-run = linuxPkgs.callPackage ../pkgs/gastown-run {
-      nixos-scripts = linuxPackages.nixos-scripts;
-      gastown = linuxPackages.gastown;
-      beads = linuxPackages.beads;
+      inherit (linuxPackages) nixos-scripts;
+      inherit (linuxPackages) gastown;
+      inherit (linuxPackages) beads;
     };
     thinkfan-ui = linuxPkgs.callPackage ../pkgs/thinkfan-ui {
-      thinkfan-ui-src = inputs.thinkfan-ui-src;
+      inherit (inputs) thinkfan-ui-src;
       wrapQtAppsHook = linuxPkgs.qt6.wrapQtAppsHook;
       qtbase = linuxPkgs.qt6.qtbase;
       qtsvg = linuxPkgs.qt6.qtsvg;

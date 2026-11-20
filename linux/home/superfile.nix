@@ -1,7 +1,7 @@
 { config, pkgs, ... }:
 let
   themeToml = import ../../shared/superfile.nix {
-    colorScheme = config.colorScheme;
+    inherit (config) colorScheme;
   };
 in
 {

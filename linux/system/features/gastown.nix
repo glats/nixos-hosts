@@ -28,7 +28,7 @@ in
   config = lib.mkIf cfg.enable {
     environment.systemPackages = [
       pkgs.gastown
-      (pkgs.gastown-run.override { toolPackages = cfg.toolPackages; })
+      (pkgs.gastown-run.override { inherit (cfg) toolPackages; })
     ];
   };
 }

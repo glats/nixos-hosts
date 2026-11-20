@@ -55,7 +55,7 @@ let
 
   v2Permissions = import ./v2-permissions.nix {
     inherit lib cfg;
-    disabledTools = cfg.disabledTools;
+    inherit (cfg) disabledTools;
   };
   v2Agents = import ./v2-agents.nix {
     inherit lib cfg runtimeDir;
@@ -64,7 +64,7 @@ let
   v2Mcps = import ./v2-mcps.nix {
     inherit lib withLocalEnvironment;
     mcps = enabledMcps;
-    browserMcp = cfg.browserMcp;
+    inherit (cfg) browserMcp;
   };
   v2AgentsMd = pkgs.writeText "opencode-AGENTS.md" (
     lib.concatMapStringsSep "\n\n" builtins.readFile (
@@ -141,7 +141,7 @@ let
   providerAllowlist = lib.unique (providers.providerAllowlist ++ cfg.extraAllowedProviders);
 
   jsonFile = pkgs.writeText "opencode.json" (
-    builtins.toJSON ({
+    builtins.toJSON {
       update = "disable";
       plugins = [
         "opencode-claude-subscription@0.1.4"
@@ -175,7 +175,7 @@ let
         action = "provider.use";
         resource = provider;
       }) providerAllowlist;
-    })
+    }
   );
 in
 {
