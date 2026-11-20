@@ -191,8 +191,8 @@ let
           "big"
           "mid"
         ];
-        default = "big";
-        description = "Profile tier for the Mayor when chainsFromProfile is on: \"big\" uses the big tier (gentle-orchestrator without tiers); \"mid\" uses the mid tier (gentle-ai-verify without tiers), for campaigns whose plan was already built by the big tier.";
+        default = "mid";
+        description = "Profile tier for the Mayor when chainsFromProfile is on: \"mid\" (default) uses the mid tier (gentle-ai-verify without tiers) because the big tier builds the plan in OpenCode and the Mayor only dispatches; \"big\" uses the big tier (gentle-orchestrator without tiers).";
       };
       claudeTokenFile = mkOption {
         type = types.nullOr types.str;

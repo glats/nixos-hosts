@@ -207,3 +207,7 @@ Decision: profile-rendered OpenAI agents carry no effort suffix (`opencode:opena
 L62 (2026-11-19, user, verbatim): "aplicaste a amnao pero deberia ser manejado por nix cierot?"
 
 Finding: the herdr workspace on `~/Project/reembolso-chile` is an interactive OpenCode session; the swarm it drives is `reimbursement` (see `odd/tasks/document-intake.md`). Only `maquilinux` is running as a Gas Town unit. Only `maquilinux` was declared in Nix, so `reimbursement` and `reembolso` got hand-applied chains. Change: `autostart` option on campaigns (default true); `reimbursement` is declared on `rog` with `mayorTier = "mid"` and `autostart = false`, so its chains come from the profile when started with `systemctl --user start gastown-campaign-reimbursement`. `reembolso` stays undeclared (obsolete).
+
+L63 (2026-11-19, user, verbatim): "claude:sonnet, gpt-6.1-sol y deepseek-v4-pro. yo creo que esta combinacion podria ser perpueta en verdad"
+
+Decision: `mayorTier` defaults to `"mid"` so the Mayor chain (`claude:sonnet`, `opencode:openai/gpt-6.1-sol`, `opencode:ollama-cloud/deepseek-v4-pro`) is permanent for every campaign without per-host overrides; the explicit `mayorTier = "mid"` lines in `hosts/rog/home/default.nix` were removed. `rog` still renders the same `gastown-chains-mid.json` for both campaigns.

@@ -92,8 +92,8 @@ covers every role on its own.
 
 ## Gas Town
 
-Campaigns follow the same split: the Mayor runs on the big tier (or the mid tier with
-`mayorTier = "mid"`), polecats on the low tier. Their chains come from the active
+Campaigns follow the same split: the Mayor runs on the mid tier (or the big tier with
+`mayorTier = "big"`), polecats on the low tier. Their chains come from the active
 OpenCode profile instead of being picked by hand per campaign.
 
 A profile with `tiers` (`personal`) lists one model per provider and tier, and every

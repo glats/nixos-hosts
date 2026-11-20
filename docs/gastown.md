@@ -161,9 +161,9 @@ from your sops secrets; the Claude token comes from `claudeTokenFile` when set, 
 from the OpenCode credential store, and a campaign with a claude agent and no token refuses
 to start (exit 78, not retried). Before each start the service sets the Mayor and polecat
 chains from the active OpenCode profile (`chainsFromProfile`, on by default): the profile
-decides. A profile with `tiers` (`personal`) gives the Mayor the big tier, or the mid tier with
-`mayorTier = "mid"` (use it when the plan was already built by the big tier in OpenCode, so the
-Mayor only dispatches), and the polecats the low tier of every provider, in the order of the
+decides. A profile with `tiers` (`personal`) gives the Mayor the mid tier by default
+(`mayorTier = "mid"`: the big tier builds the plan in OpenCode, so the Mayor only dispatches;
+`mayorTier = "big"` puts it on the big tier), and the polecats the low tier of every provider, in the order of the
 list, so a limit on one provider moves work to the next. A profile without `tiers` takes the
 Mayor from `gentle-orchestrator` (or `gentle-ai-verify` with `mayorTier = "mid"`) and the
 polecats from `gentle-ai-verify` then `gentle-ai-worker`. OpenAI, Ollama and NVIDIA agents run through OpenCode:
