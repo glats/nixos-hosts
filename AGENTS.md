@@ -34,6 +34,7 @@
 - `nixos-build` selects the local platform and host; use `safe`, `dry`, `boot`, `test`, `upgrade`, or `check` for the corresponding operation.
 - Format touched Nix files with `nix fmt -- <path>`.
 - Evaluate host-scoped changes with `nix eval .#nixosConfigurations.<host>.config.system.build.toplevel.drvPath`, `nix eval .#homeConfigurations.<host>.activationPackage.drvPath`, or `nix eval .#darwinConfigurations.<host>.config.system.build.toplevel.drvPath`.
+- Lint: `.#checks.x86_64-linux.lint` runs `statix`, `deadnix`, `gofmt -l` and `go vet` and is part of `nix flake check` and `nixos-build check`. `code-work check ... flake-check` uses `--no-build` and does not run it; use `build` with that target. Existing Nix findings are recorded in `lint/baseline.txt`: fix new findings, never add to the baseline, and remove entries only after a cleanup.
 - Shared changes require `nix flake check --no-build`; it does not evaluate Darwin or standalone Home Manager configurations, so evaluate those targets separately.
 - Test Go operational binaries with `go -C pkgs/nixos-scripts test ./...`; deployment uses the Nix-built `nixos-scripts` derivation.
 - Run supported commands directly; RTK rewrites supported commands automatically. Use `git status -sb` when ahead/behind state matters.

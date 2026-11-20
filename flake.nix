@@ -257,6 +257,90 @@
           touch $out
         '';
 
+      checks.x86_64-linux.lint-summary =
+        let
+          pkgs = nixpkgs.legacyPackages.x86_64-linux;
+        in
+        pkgs.runCommand "nix-lint-summary"
+          {
+            nativeBuildInputs = [
+              pkgs.statix
+              pkgs.deadnix
+              pkgs.jq
+              pkgs.gawk
+            ];
+          }
+          ''
+            cp -r ${self} source
+            chmod -R u+w source
+            cd source
+            mkdir -p $out
+            {
+              statix check . --format errfmt | awk -F'>' '{ split($2, f, ":"); print "statix " $1 " " f[4] }' || true
+              deadnix --output-format json . | jq -r '.file as $f | .results[] | "deadnix \($f) -"'
+            } | LC_ALL=C sort | uniq -c | sed 's/^ *//' > $out/summary.txt
+          '';
+
+      checks.x86_64-linux.lint =
+        let
+          pkgs = nixpkgs.legacyPackages.x86_64-linux;
+          summary = self.checks.x86_64-linux.lint-summary;
+        in
+        pkgs.runCommand "nix-lint"
+          {
+            nativeBuildInputs = [
+              pkgs.gawk
+              pkgs.go
+            ];
+          }
+          ''
+            export HOME=$TMPDIR GOCACHE=$TMPDIR/gocache GOFLAGS=-mod=mod CGO_ENABLED=0
+            status=0
+
+            awk '
+              NR == FNR { base[$2 " " $3 " " $4] = $1; next }
+              {
+                key = $2 " " $3 " " $4
+                if (!(key in base) || $1 > base[key]) {
+                  printf "new lint finding: %s in %s (rule %s): %d now, %d allowed\n", $2, $3, $4, $1, (key in base) ? base[key] : 0
+                  bad = 1
+                }
+              }
+              END { exit bad }
+            ' ${./lint/baseline.txt} ${summary}/summary.txt || {
+              echo "Fix the finding. Run statix check or deadnix on that file for the explanation." >&2
+              echo "Never add a finding to lint/baseline.txt; only remove entries after a cleanup." >&2
+              status=1
+            }
+
+            awk -f ${./lint/host-home-entry.awk} ${self}/flake.nix >&2 || status=1
+            awk -f ${./lint/host-home-entry.awk} ${./lint/fixtures/host-home-valid.txt} >&2 || {
+              echo "host-home-entry rule rejects its valid fixture" >&2
+              status=1
+            }
+            if awk -f ${./lint/host-home-entry.awk} ${./lint/fixtures/host-home-bypass.txt} >/dev/null; then
+              echo "host-home-entry rule accepts its bypass fixture" >&2
+              status=1
+            fi
+
+            cp -r ${self}/pkgs/nixos-scripts go-source
+            chmod -R u+w go-source
+            cd go-source
+            unformatted=$(gofmt -l .)
+            if [ -n "$unformatted" ]; then
+              echo "gofmt: format these files with gofmt -w:" >&2
+              echo "$unformatted" >&2
+              status=1
+            fi
+            go vet ./... || {
+              echo "go vet: fix the reported issue; do not silence it." >&2
+              status=1
+            }
+
+            [ "$status" -eq 0 ] || exit 1
+            touch $out
+          '';
+
       checks.x86_64-linux.opencode-agent-schema =
         let
           pkgs = nixpkgs.legacyPackages.x86_64-linux;
