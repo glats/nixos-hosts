@@ -36,3 +36,15 @@ candidates and host/handheld folders. `rog` remains the source of truth. Selecte
 be copied to playing hosts over SSH/HTTP or to the Powkiddy V90S over a supported network route
 or SD card. This map does not authorize installs, transfers, SD changes or the separate app.
 Runtime emulator inventory, device connectivity and per-game launch proof remain pending.
+
+## Gas Town on rog
+
+Product: direct a new or existing project by conversation. Give OpenCode the intent and any base documentation, answer functional or architectural questions, and ask what was delivered, how to verify it, and what needs a decision. Today the operator dictates with Gboard into a terminal through Windows App, WireGuard and XRDP. The goal is to do the same by voice without opening a remote desktop.
+
+| Delivery | Acceptance | Owner |
+| --- | --- | --- |
+| First: diagnose one delivery (read-only) | Tell the operator what was requested, what was delivered, which checks actually ran, what remains unverified and who needs to decide. Identify what OpenCode, Gas Town, Nix and local Go each contributed. | [Host foundation, T5](tasks/gastown-host-foundation.md) |
+| D0: Go/Nix gate | Run the same offline check locally and before Gas Town accepts changes here. It must reject the historical Darwin host-entry bypass, accept the valid import and explain the fix. A lint pass is not a functional test. | [Host foundation, T1–T2](tasks/gastown-host-foundation.md) |
+| D1: declarative host setup | Nix declares campaign settings. On a clean host, prepare missing state; on a used host, preserve progress, `STOP` and manual start. Verify the host configuration without activating it. | [Host foundation, T3–T4](tasks/gastown-host-foundation.md) |
+
+The diagnosis sets the next improvement; it does not remove lint or Nix from the foundation. First prove the conversation works in text using the [existing campaign loop](tasks/swarm-campaigns.md). Mobile voice is a later interface to that same flow. The phone channel (campaign T7) stays on standby; no app or transport is selected. Provider chains and the [subscription study](tasks/subscription-plan-evaluation.md) stay in their existing ledgers. No campaign launch or host activation is part of this handoff.
