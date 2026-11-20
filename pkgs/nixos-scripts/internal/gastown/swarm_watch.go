@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -335,7 +336,7 @@ func (s *Swarm) tickProviders(st *WatchState, now time.Time) {
 		from := st.Active["polecat"]
 		st.Active["polecat"] = pick
 		roles := s.roleAgents(st.Active)
-		if err := s.writeRoleAgents(roles); err == nil {
+		if err := s.writeRoleAgents(roles); err == nil && slices.Contains(chain, from) {
 			s.notify("medium", "Switched worker agent", from+" -> "+pick)
 		}
 	}

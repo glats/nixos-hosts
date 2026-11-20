@@ -211,3 +211,7 @@ Finding: the herdr workspace on `~/Project/reembolso-chile` is an interactive Op
 L63 (2026-11-19, user, verbatim): "claude:sonnet, gpt-6.1-sol y deepseek-v4-pro. yo creo que esta combinacion podria ser perpueta en verdad"
 
 Decision: `mayorTier` defaults to `"mid"` so the Mayor chain (`claude:sonnet`, `opencode:openai/gpt-6.1-sol`, `opencode:ollama-cloud/deepseek-v4-pro`) is permanent for every campaign without per-host overrides; the explicit `mayorTier = "mid"` lines in `hosts/rog/home/default.nix` were removed. `rog` still renders the same `gastown-chains-mid.json` for both campaigns.
+
+L64 (2026-11-19, user, verbatim): "El aviso \"claude-sonnet → claude-haiku\". Es lo configurado, no una degradación. El Mayor, que planifica, usa sonnet. El trabajador que escribe el código usa haiku primero, y después gpt-6.1-terra y minimax-m3.1-flash. Así corrió T16.  me llama la intencinde este mensaje porque da la impresin que haban dos capas porque no hay que salte una lista a otra sino que fija est perdido"
+
+Finding: the `Switched worker agent: claude-sonnet -> claude-haiku` notice came from `tickProviders`: `watch.json` still held the previous chain's active agent (`claude-sonnet`), which is no longer in the polecat chain (`claude:haiku`, terra, minimax), so the watcher "switched" to chain[0] and reported it as a fallback. Fix: the notice is sent only when the previous active agent is still in the chain; otherwise the active agent is reset silently. Regression test `TestTickResetsAnActiveAgentThatLeftTheChainWithoutReportingASwitch`.

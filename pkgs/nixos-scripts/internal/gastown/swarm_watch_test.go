@@ -824,3 +824,24 @@ func TestUpWritesTheMayorOfTheCurrentChainsBeforeStartingIt(t *testing.T) {
 		t.Fatalf("the registry must hold the mayor agent before it starts: %s", registry)
 	}
 }
+
+func TestTickResetsAnActiveAgentThatLeftTheChainWithoutReportingASwitch(t *testing.T) {
+	f := &swarmFake{esc: `[]`, mail: `[]`, polecats: `[]`}
+	s := probingSwarm(t, f, "claude:haiku", "opencode:openai/gpt-6.1-terra")
+	s.R.Config.Claude = "/nix/claude"
+	state := `{"active":{"polecat":"claude-sonnet"},"cooldowns":{}}`
+	if err := os.WriteFile(filepath.Join(s.Dir(), "watch.json"), []byte(state), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	st := s.Tick(time.Date(2026, 11, 5, 12, 0, 0, 0, time.UTC))
+	if st.Active["polecat"] != "claude-haiku" {
+		t.Fatalf("the active agent must follow the configured chain, got %q", st.Active["polecat"])
+	}
+	if strings.Contains(titlesOf(t, s), "Switched worker agent") {
+		t.Fatalf("an agent that merely left the chain is not a fallback: %s", titlesOf(t, s))
+	}
+	cfg := readFile(t, filepath.Join(s.Town(), "settings", "config.json"))
+	if !strings.Contains(cfg, `"polecat": "claude-haiku"`) {
+		t.Fatalf("settings not rewritten:\n%s", cfg)
+	}
+}
