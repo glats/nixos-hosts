@@ -203,3 +203,7 @@ Decision: Mayor chain is the mid tier (`claude:sonnet`, `opencode:openai/gpt-6.1
 L61 (2026-11-19, user, verbatim): "porque 3 aun no enitendo... y porque :medium y :low? pueden quedar como default mejor?"
 
 Decision: profile-rendered OpenAI agents carry no effort suffix (`opencode:openai/gpt-6.1-sol`, `opencode:openai/gpt-6.1-terra`), so they run at the model default. The three entries per chain are one per provider (Anthropic, OpenAI, Ollama), a fallback order, not three agents running together. Applied to `maquilinux`, `reimbursement`, `reembolso`; `swarm check reimbursement` probes the OpenAI and Ollama agents ok.
+
+L62 (2026-11-19, user, verbatim): "aplicaste a amnao pero deberia ser manejado por nix cierot?"
+
+Finding: the herdr workspace on `~/Project/reembolso-chile` is an interactive OpenCode session; the swarm it drives is `reimbursement` (see `odd/tasks/document-intake.md`). Only `maquilinux` is running as a Gas Town unit. Only `maquilinux` was declared in Nix, so `reimbursement` and `reembolso` got hand-applied chains. Change: `autostart` option on campaigns (default true); `reimbursement` is declared on `rog` with `mayorTier = "mid"` and `autostart = false`, so its chains come from the profile when started with `systemctl --user start gastown-campaign-reimbursement`. `reembolso` stays undeclared (obsolete).

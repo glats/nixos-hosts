@@ -18,6 +18,10 @@ baseModules
     home.opencode.activeProviderName = "personal";
     home.opencode.compactionBuffer = "80%";
     home.gastown.campaigns.maquilinux.mayorTier = "mid";
+    home.gastown.campaigns.reimbursement = {
+      mayorTier = "mid";
+      autostart = false;
+    };
     home.ghostty.xrdp-optimized = true;
   }
 

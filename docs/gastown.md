@@ -146,6 +146,10 @@ queued, keeping at most 3 items active so spending stays bounded. Items that nee
 decision are never picked; they wait for you, and `off` returns to selecting by hand. A reply
 that is just a list of item ids selects them in any phase.
 
+A campaign with `autostart = false` (for example `reimbursement` on `rog`) keeps the service and
+the chains from the OpenCode profile but does not start at boot; start it with
+`systemctl --user start gastown-campaign-<project>` so the chains are applied from Nix.
+
 Starting at boot: with `home.gastown.campaigns.<project> = { }` (enabled for `maquilinux` on
 `rog`) a systemd user service `gastown-campaign-<project>` starts the supervisor when the
 machine boots (`users.users.glats.linger` makes user services start without a login),

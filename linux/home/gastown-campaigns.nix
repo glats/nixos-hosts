@@ -166,6 +166,11 @@ let
         default = true;
         description = "Start this campaign supervisor at boot and stop it cleanly at shutdown.";
       };
+      autostart = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Start this campaign supervisor at boot. When false the unit still exists with the chains from the OpenCode profile, and you start it with systemctl --user start gastown-campaign-<project>.";
+      };
       timeout = mkOption {
         type = types.str;
         default = "720h";
@@ -230,7 +235,7 @@ let
         TasksMax = 2048;
       };
 
-      Install.WantedBy = [ "default.target" ];
+      Install.WantedBy = optional c.autostart "default.target";
     };
 in
 {
