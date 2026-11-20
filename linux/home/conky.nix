@@ -7,6 +7,7 @@
     networkInterface = "eth0";
     additionalInterfaces = [ ];
     mountPoints = [ ];
+    background = "transparent";
   },
   ...
 }:
@@ -250,6 +251,10 @@ let
     end
   '';
 
+  backgroundMode = conkyConfig.background or "transparent";
+  blackPanel = backgroundMode == "black";
+  backgroundAlpha = if blackPanel then 205 else 0;
+
   interfaces = [ conkyConfig.networkInterface ] ++ conkyConfig.additionalInterfaces;
 
   wirelessInterfaces = builtins.filter (name: lib.hasPrefix "wl" name) interfaces;
@@ -374,8 +379,8 @@ let
         own_window_type = 'normal',
         own_window_hints = 'undecorated,sticky,below,skip_taskbar,skip_pager',
         own_window_argb_visual = true,
-        own_window_argb_value = 0,
-        own_window_transparent = true,
+        own_window_argb_value = ${toString backgroundAlpha},${lib.optionalString blackPanel "\n    own_window_colour = '000000',"}
+        own_window_transparent = ${lib.boolToString (!blackPanel)},
         show_graph_range = false,
         show_graph_scale = false,
         stippled_borders = 0,

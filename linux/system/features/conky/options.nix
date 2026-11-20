@@ -30,5 +30,13 @@ in
       default = [ ];
       description = "Additional mount points to display in storage section";
     };
+    background = mkOption {
+      type = lib.types.enum [
+        "transparent"
+        "black"
+      ];
+      default = "transparent";
+      description = "Conky window background: transparent keeps the wallpaper visible, black renders a semi-opaque black panel";
+    };
   };
 }

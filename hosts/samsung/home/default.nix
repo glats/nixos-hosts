@@ -6,6 +6,7 @@ in
 baseModules
 ++ [
   ../../../linux/home/remote-desktop.nix
+  ../../../linux/home/conky.nix
   ../../../linux/home/suites/mate/default.nix
 
   ./wallpaper.nix

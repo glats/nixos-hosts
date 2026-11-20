@@ -204,6 +204,7 @@
                 networkInterface = "eth0";
                 additionalInterfaces = [ ];
                 mountPoints = [ ];
+                background = "transparent";
               };
         in
         homeManagerInput.lib.homeManagerConfiguration {

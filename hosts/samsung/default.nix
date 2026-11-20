@@ -14,6 +14,7 @@ in
     ./hardware-configuration.nix
     ./secrets.nix
     ./desktop.nix
+    ./conky-config.nix
 
     ../../linux/system/base/cachix.nix
     ../../linux/system/base/users.nix
