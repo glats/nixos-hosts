@@ -22,9 +22,10 @@ let
     in
     if provider == "openai" then
       "opencode:${id}:${effort}"
+    else if provider == "anthropic" then
+      "claude:${head (builtins.match "anthropic/claude-([a-z]+)-.*" id)}"
     else if
       elem provider [
-        "anthropic"
         "ollama-cloud"
         "nvidia"
       ]

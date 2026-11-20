@@ -187,3 +187,11 @@ Comparable scale: Ollama $60 per 30 days is about $14 per week against the weekl
 | 2026-11-19 22:09 | ollama cloud | monthly | $0 of $60 | 2026-12-19 21:52 |
 
 Plan: on request ("mide") read the three pages with the browser, append a row group here, and compute burn rate per provider (used per hour against time to its reset). After three or four readings decide between an automatic reader and a plugin fix. No code is written for this yet.
+
+L59 (2026-11-19, user, verbatim): "que todos los sarm queden listos. no se porque esta reembolso y reimbursement. deberina ser solo reimbursement. validar. quiero que para reembolso y maquilinux quede la lista de los 3 providers. ok?"
+
+Validation: `reembolso-chile` is the product workspace (docs and planning); its README says application development belongs in `reimbursement-web`. The `reembolso` swarm is therefore obsolete; `reimbursement` and `maquilinux` are the live swarms and get the three providers. Reading of the request: "reembolso" in the last sentence means `reimbursement`.
+
+Finding (supersedes the Anthropic part of S15/T15 for swarms): the stored Anthropic credential is a `sk-ant-oat` subscription token saved as an API key. OpenCode sends it correctly only with the `opencode-claude-subscription` plugin; swarm agents do not load it (plugins were not reconciled from `OPENCODE_CONFIG_CONTENT` nor from a config file in the agent home), so `swarm check` reports `invalid x-api-key`. Verified: `claude -p --model haiku|sonnet|opus` works with the same token via `CLAUDE_CODE_OAUTH_TOKEN`. Decision: Anthropic agents in profile-rendered chains are `claude:<opus|sonnet|haiku>`; OpenAI and Ollama stay on OpenCode. Chains applied to `reimbursement` and `maquilinux`: mayor `claude:opus`, `opencode:openai/gpt-6-astra:medium`; polecat `claude:haiku`, `opencode:openai/gpt-6.1-terra:low`, `opencode:ollama-cloud/minimax-m3.1-flash`. `rog` moves from `personal-degraded` to `personal`.
+
+Open: the OpenAI logins in the `maquilinux` and `reimbursement` agent homes belong to the previous account ("usage limit has been reached"); they need `swarm login <project> openai` with the new account. A service port was preset in each agent home so the login does not collide with the user's OpenCode service.

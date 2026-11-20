@@ -97,8 +97,10 @@ Campaigns follow the same split: the Mayor runs on the big tier (or the mid tier
 OpenCode profile instead of being picked by hand per campaign.
 
 A profile with `tiers` (`personal`) lists one model per provider and tier, and every
-Gas Town agent runs through OpenCode (`opencode:anthropic/...`, `opencode:openai/...`,
-`opencode:ollama-cloud/...`). The polecat chain is the low tier of every provider, so
+Gas Town agent runs through OpenCode (`opencode:openai/...`, `opencode:ollama-cloud/...`),
+except Anthropic, which runs through Claude Code (`claude:opus`, `claude:sonnet`, `claude:haiku`)
+because the stored subscription token only works as a Bearer token that Claude Code sends and
+the swarm's OpenCode agents do not. The polecat chain is the low tier of every provider, so
 when one provider hits its limit the work continues on the same tier of the next one
 without a paid upgrade. Balance across providers is a fallback, not a quota-aware
 split: providers do not run out together. Profiles without `tiers` keep the old

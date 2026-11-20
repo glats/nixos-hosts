@@ -15,7 +15,7 @@ baseModules
   ../../../linux/home/webcam.nix
 
   {
-    home.opencode.activeProviderName = "personal-degraded";
+    home.opencode.activeProviderName = "personal";
     home.opencode.compactionBuffer = "80%";
     home.gastown.campaigns.maquilinux = { };
     home.ghostty.xrdp-optimized = true;

@@ -162,10 +162,11 @@ decides. A profile with `tiers` (`personal`) gives the Mayor the big tier, or th
 Mayor only dispatches), and the polecats the low tier of every provider, in the order of the
 list, so a limit on one provider moves work to the next. A profile without `tiers` takes the
 Mayor from `gentle-orchestrator` (or `gentle-ai-verify` with `mayorTier = "mid"`) and the
-polecats from `gentle-ai-verify` then `gentle-ai-worker`. Every agent runs through OpenCode:
+polecats from `gentle-ai-verify` then `gentle-ai-worker`. OpenAI, Ollama and NVIDIA agents run through OpenCode:
 `opencode:<provider>/<model>`, with `:medium` (Mayor) or `:low` (polecats) as the effort for
-OpenAI models. Anthropic and OpenAI agents read a login from the swarm's own agent home (see
-`opencode:anthropic` and `opencode:openai` above), so no Claude token is involved. It runs `gastown-run swarm chains <project> <file>`, which
+OpenAI models. OpenAI agents read a login from the swarm's own agent home (see `opencode:openai`
+above). Anthropic models become `claude:<opus|sonnet|haiku>` and use the subscription token the
+campaign launcher reads from your OpenCode store. It runs `gastown-run swarm chains <project> <file>`, which
 keeps every other setting, saves the previous file as `swarm.json.before-profile` and refuses
 an invalid chain without touching swarm.json. Any failure of this step stops the start with
 exit 78, which is not retried: fix the cause, then start the service again. Manual chain edits
@@ -203,8 +204,10 @@ Agents and providers:
   (`--mayor-agent opencode:ollama-cloud/deepseek-v4-pro`).
 - `opencode:anthropic/<model>` (for example `opencode:anthropic/claude-haiku-5-5`) uses your
   Claude subscription through OpenCode, with the same separate agent-home login as OpenAI:
-  `gastown-run swarm login <project> anthropic`. It needs no
-  `CLAUDE_CODE_OAUTH_TOKEN`, and `swarm check` probes it like any OpenCode agent.
+  `gastown-run swarm login <project> anthropic`. The stored subscription token is a Bearer token
+  that OpenCode only sends correctly with the `opencode-claude-subscription` plugin, which the
+  swarm's agents do not load: the probe reports `invalid x-api-key`. Use `claude:<model>` for
+  Anthropic in swarms.
 - `opencode:openai/<model>[:<effort>]` (for example `opencode:openai/gpt-6.1-sol:high`)
   uses your ChatGPT subscription through OpenCode. The agent reads its login from its
   own home (`<state>/swarm/<project>/town/.agent-home`), never from your OpenCode
