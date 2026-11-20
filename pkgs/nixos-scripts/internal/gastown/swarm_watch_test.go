@@ -845,3 +845,58 @@ func TestTickResetsAnActiveAgentThatLeftTheChainWithoutReportingASwitch(t *testi
 		t.Fatalf("settings not rewritten:\n%s", cfg)
 	}
 }
+
+func TestUpTurnsOffTheConfiguredDaemonPatrolsAndKeepsTheRest(t *testing.T) {
+	f := &swarmFake{esc: `[]`, mail: `[]`, polecats: `[]`}
+	s := probingSwarm(t, f, "opencode:anthropic/claude-sonnet-5-5")
+	s.Cfg.DoltPort = 45998
+	s.R.Config.DisabledPatrols = []string{"witness"}
+	path := filepath.Join(s.Town(), "mayor", "daemon.json")
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	original := `{"type":"daemon-patrol-config","version":1,"patrols":{"refinery":{"enabled":true,"interval":"5m"},"witness":{"enabled":true,"interval":"5m","rigs":["toy"]}}}`
+	if err := os.WriteFile(path, []byte(original), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Up(); err != nil {
+		t.Fatal(err)
+	}
+	var cfg struct {
+		Type    string `json:"type"`
+		Patrols map[string]struct {
+			Enabled  bool     `json:"enabled"`
+			Interval string   `json:"interval"`
+			Rigs     []string `json:"rigs"`
+		} `json:"patrols"`
+	}
+	if err := json.Unmarshal([]byte(readFile(t, path)), &cfg); err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Patrols["witness"].Enabled || cfg.Patrols["witness"].Interval != "5m" || len(cfg.Patrols["witness"].Rigs) != 1 {
+		t.Fatalf("the witness patrol must be off with its other fields intact: %+v", cfg.Patrols["witness"])
+	}
+	if !cfg.Patrols["refinery"].Enabled || cfg.Type != "daemon-patrol-config" {
+		t.Fatalf("the other patrols must stay as they were: %+v", cfg)
+	}
+}
+
+func TestUpLeavesTheDaemonConfigAloneWhenNoPatrolIsDisabled(t *testing.T) {
+	f := &swarmFake{esc: `[]`, mail: `[]`, polecats: `[]`}
+	s := probingSwarm(t, f, "opencode:anthropic/claude-sonnet-5-5")
+	s.Cfg.DoltPort = 45997
+	path := filepath.Join(s.Town(), "mayor", "daemon.json")
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	original := `{"patrols":{"witness":{"enabled":true}}}`
+	if err := os.WriteFile(path, []byte(original), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Up(); err != nil {
+		t.Fatal(err)
+	}
+	if got := readFile(t, path); got != original {
+		t.Fatalf("daemon.json must be untouched, got %s", got)
+	}
+}

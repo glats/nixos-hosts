@@ -21,11 +21,13 @@ type Config struct {
 	NativeHome, State          string
 	DoltPort                   int
 	Model, Effort              string
+	DisabledPatrols            []string
 }
 
 var (
-	beadPattern = regexp.MustCompile(`^[a-z][a-z0-9]*-[a-z0-9]+$`)
-	namePattern = regexp.MustCompile(`^[a-z][a-z-]{0,30}$`)
+	beadPattern   = regexp.MustCompile(`^[a-z][a-z0-9]*-[a-z0-9]+$`)
+	namePattern   = regexp.MustCompile(`^[a-z][a-z-]{0,30}$`)
+	patrolPattern = regexp.MustCompile(`^[a-z][a-z_]{0,30}$`)
 )
 
 var disabledFeatures = []string{

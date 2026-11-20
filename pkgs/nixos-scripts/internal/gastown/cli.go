@@ -47,6 +47,15 @@ func ConfigFromEnv(getenv func(string) string) (Config, error) {
 		}
 		c.DoltPort = port
 	}
+	for _, name := range strings.Split(getenv("GASTOWN_DISABLED_PATROLS"), ",") {
+		if name = strings.TrimSpace(name); name == "" {
+			continue
+		} else if !patrolPattern.MatchString(name) {
+			return c, errors.New("invalid GASTOWN_DISABLED_PATROLS entry " + strconv.Quote(name))
+		} else {
+			c.DisabledPatrols = append(c.DisabledPatrols, name)
+		}
+	}
 	for name, value := range map[string]string{"GASTOWN_GT": c.GT, "GASTOWN_BD": c.BD, "GASTOWN_TMUX": c.Tmux,
 		"GASTOWN_CODEX": c.Codex, "GASTOWN_BWRAP": c.Bwrap, "GASTOWN_BASH": c.Bash,
 		"GASTOWN_TOOL_PATH": c.ToolPath, "GASTOWN_SYSTEM_PATH": c.SystemPath, "HOME": c.NativeHome} {

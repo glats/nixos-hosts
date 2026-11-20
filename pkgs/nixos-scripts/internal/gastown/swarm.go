@@ -415,6 +415,9 @@ func (s *Swarm) Up() error {
 	if err := s.writeSettings(s.roleAgents(nil)); err != nil {
 		return err
 	}
+	if err := s.disablePatrols(); err != nil {
+		return err
+	}
 	if err := portFree(s.Cfg.DoltPort); err != nil {
 		if _, e := s.gt("dolt", "status"); e != nil {
 			return err
@@ -427,6 +430,47 @@ func (s *Swarm) Up() error {
 	}
 	fmt.Fprintln(s.Out, "swarm up: dolt, daemon and mayor started")
 	return nil
+}
+
+// disablePatrols turns off the daemon patrols named in the configuration by
+// editing the town's daemon.json before the daemon starts. A town without that
+// file, or a patrol the file does not list, is left alone.
+func (s *Swarm) disablePatrols() error {
+	if len(s.R.Config.DisabledPatrols) == 0 {
+		return nil
+	}
+	path := filepath.Join(s.Town(), "mayor", "daemon.json")
+	data, err := os.ReadFile(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	var cfg map[string]any
+	if err := json.Unmarshal(data, &cfg); err != nil {
+		return fmt.Errorf("%s: %w", path, err)
+	}
+	patrols, _ := cfg["patrols"].(map[string]any)
+	changed := false
+	for _, name := range s.R.Config.DisabledPatrols {
+		if patrol, ok := patrols[name].(map[string]any); ok && patrol["enabled"] != false {
+			patrol["enabled"] = false
+			changed = true
+		}
+	}
+	if !changed {
+		return nil
+	}
+	out, err := json.MarshalIndent(cfg, "", "  ")
+	if err != nil {
+		return err
+	}
+	tmp := path + ".tmp"
+	if err := os.WriteFile(tmp, append(out, '\n'), 0o600); err != nil {
+		return err
+	}
+	return os.Rename(tmp, path)
 }
 
 func (s *Swarm) Down() {

@@ -312,3 +312,22 @@ func readFile(t *testing.T, path string) string {
 }
 
 func mkdirAll(path string) error { return os.MkdirAll(path, 0o700) }
+
+func TestConfigFromEnvReadsDisabledPatrols(t *testing.T) {
+	env := map[string]string{"GASTOWN_GT": "/g", "GASTOWN_BD": "/b", "GASTOWN_TMUX": "/t", "GASTOWN_CODEX": "/c",
+		"GASTOWN_BWRAP": "/w", "GASTOWN_BASH": "/sh", "GASTOWN_TOOL_PATH": "/tp", "GASTOWN_SYSTEM_PATH": "/sp",
+		"HOME": "/home/u", "GASTOWN_DISABLED_PATROLS": "witness, deacon"}
+	getenv := func(k string) string { return env[k] }
+	c, err := ConfigFromEnv(getenv)
+	if err != nil || strings.Join(c.DisabledPatrols, ",") != "witness,deacon" {
+		t.Fatalf("disabled patrols must be parsed, got %+v err=%v", c.DisabledPatrols, err)
+	}
+	env["GASTOWN_DISABLED_PATROLS"] = ""
+	if c, err = ConfigFromEnv(getenv); err != nil || len(c.DisabledPatrols) != 0 {
+		t.Fatalf("an empty value disables nothing, got %+v err=%v", c.DisabledPatrols, err)
+	}
+	env["GASTOWN_DISABLED_PATROLS"] = "witness;rm"
+	if _, err = ConfigFromEnv(getenv); err == nil {
+		t.Fatal("an invalid patrol name must be an error")
+	}
+}

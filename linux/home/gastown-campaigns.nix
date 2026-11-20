@@ -214,6 +214,12 @@ let
         default = [ ];
         description = "Paths the gate never lets a worker change: a file, or a directory with a trailing slash.";
       };
+      disabledPatrols = mkOption {
+        type = types.listOf types.str;
+        default = [ ];
+        example = [ "witness" ];
+        description = "Gas Town daemon patrols turned off in the town's mayor/daemon.json each time the supervisor starts, for example witness. Takes effect when the daemon next starts.";
+      };
       maxPolecats = mkOption {
         type = types.ints.positive;
         default = 2;
@@ -293,6 +299,7 @@ let
           "NVIDIA_KEY_FILE=${secretPath "opencode/nvidia_api_key"}"
           "CLAUDE_TOKEN_FILE=${optionalString (c.claudeTokenFile != null) c.claudeTokenFile}"
           "GASTOWN_CHAINS_FILE=${optionalString c.chainsFromProfile "${profileChains c.mayorTier}"}"
+          "GASTOWN_DISABLED_PATROLS=${concatStringsSep "," c.disabledPatrols}"
         ];
         Restart = "on-failure";
         RestartSec = "60s";
