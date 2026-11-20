@@ -199,3 +199,7 @@ Open: the OpenAI logins in the `maquilinux` and `reimbursement` agent homes belo
 L60 (2026-11-19, user, verbatim): "porque astra? no era opous sol y minimax?" then "si. para maquilinux y reemboslo pues" (answer to option 1: Mayor on the mid tier).
 
 Decision: Mayor chain is the mid tier (`claude:sonnet`, `opencode:openai/gpt-6.1-sol:medium`, `opencode:ollama-cloud/deepseek-v4-pro`), polecats the low tier (`claude:haiku`, `opencode:openai/gpt-6.1-terra:low`, `opencode:ollama-cloud/minimax-m3.1-flash`). `maquilinux` sets `mayorTier = "mid"` in `hosts/rog/home/default.nix`; the chains were applied by hand to `maquilinux`, `reimbursement` and the obsolete `reembolso`. The big tier is for building the base only; defaulting the Mayor to it was a mistake.
+
+L61 (2026-11-19, user, verbatim): "porque 3 aun no enitendo... y porque :medium y :low? pueden quedar como default mejor?"
+
+Decision: profile-rendered OpenAI agents carry no effort suffix (`opencode:openai/gpt-6.1-sol`, `opencode:openai/gpt-6.1-terra`), so they run at the model default. The three entries per chain are one per provider (Anthropic, OpenAI, Ollama), a fallback order, not three agents running together. Applied to `maquilinux`, `reimbursement`, `reembolso`; `swarm check reimbursement` probes the OpenAI and Ollama agents ok.

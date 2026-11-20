@@ -163,8 +163,7 @@ Mayor only dispatches), and the polecats the low tier of every provider, in the 
 list, so a limit on one provider moves work to the next. A profile without `tiers` takes the
 Mayor from `gentle-orchestrator` (or `gentle-ai-verify` with `mayorTier = "mid"`) and the
 polecats from `gentle-ai-verify` then `gentle-ai-worker`. OpenAI, Ollama and NVIDIA agents run through OpenCode:
-`opencode:<provider>/<model>`, with `:medium` (Mayor) or `:low` (polecats) as the effort for
-OpenAI models. OpenAI agents read a login from the swarm's own agent home (see `opencode:openai`
+`opencode:<provider>/<model>`, with no effort suffix, so OpenAI models run at their own default effort. OpenAI agents read a login from the swarm's own agent home (see `opencode:openai`
 above). Anthropic models become `claude:<opus|sonnet|haiku>` and use the subscription token the
 campaign launcher reads from your OpenCode store. It runs `gastown-run swarm chains <project> <file>`, which
 keeps every other setting, saves the previous file as `swarm.json.before-profile` and refuses

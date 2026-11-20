@@ -16,12 +16,12 @@ let
   };
 
   agentSpec =
-    effort: id:
+    id:
     let
       provider = head (splitString "/" id);
     in
     if provider == "openai" then
-      "opencode:${id}:${effort}"
+      "opencode:${id}"
     else if provider == "anthropic" then
       "claude:${head (builtins.match "anthropic/claude-([a-z]+)-.*" id)}"
     else if
@@ -49,14 +49,14 @@ let
       builtins.toJSON (
         if tiers != null then
           {
-            mayor = unique (map (agentSpec "medium") tiers.${tier});
-            polecat = unique (map (agentSpec "low") tiers.low);
+            mayor = unique (map agentSpec tiers.${tier});
+            polecat = unique (map agentSpec tiers.low);
           }
         else
           {
-            mayor = [ (agentSpec "medium" (roleModel mayorRole.${tier})) ];
+            mayor = [ (agentSpec (roleModel mayorRole.${tier})) ];
             polecat = unique (
-              map (agentSpec "low") [
+              map agentSpec [
                 (roleModel "gentle-ai-verify")
                 (roleModel "gentle-ai-worker")
               ]
