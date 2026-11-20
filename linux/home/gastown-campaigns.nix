@@ -199,8 +199,74 @@ let
         default = null;
         description = "File holding the Claude subscription token; when unset the OpenCode credential store is used.";
       };
+      repo = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = "Existing git checkout the campaign works on. When set, a missing swarm is initialised from this declaration; an existing swarm is never touched.";
+      };
+      checks = mkOption {
+        type = types.listOf types.str;
+        default = [ ];
+        description = "Check commands the gate runs before it accepts work. Required when repo is set.";
+      };
+      protect = mkOption {
+        type = types.listOf types.str;
+        default = [ ];
+        description = "Paths the gate never lets a worker change: a file, or a directory with a trailing slash.";
+      };
+      maxPolecats = mkOption {
+        type = types.ints.positive;
+        default = 2;
+        description = "Parallel workers, used only when the swarm is first initialised.";
+      };
+      doltPort = mkOption {
+        type = types.nullOr types.port;
+        default = null;
+        description = "Dolt port, unique per campaign. Required when repo is set.";
+      };
     };
   };
+
+  provisionName = project: "gastown-campaign-${project}-provision";
+
+  provisionScript =
+    project: c:
+    pkgs.writeShellScript "gastown-provision-${project}" ''
+      exec /run/current-system/sw/bin/gastown-run swarm init ${
+        escapeShellArgs (
+          concatMap (check: [
+            "--check"
+            check
+          ]) c.checks
+          ++ concatMap (path: [
+            "--protect"
+            path
+          ]) c.protect
+          ++ [
+            "--max-polecats"
+            (toString c.maxPolecats)
+            "--dolt-port"
+            (toString c.doltPort)
+            project
+            c.repo
+          ]
+        )
+      }
+    '';
+
+  mkProvision =
+    project: c:
+    nameValuePair (provisionName project) {
+      Unit = {
+        Description = "Prepare the Gas Town swarm for ${project} when it does not exist";
+        ConditionPathExists = "!${stateDir project}/swarm.json";
+      };
+      Service = {
+        Type = "oneshot";
+        ExecStart = "${provisionScript project c}";
+      };
+      Install.WantedBy = [ "default.target" ];
+    };
 
   mkService =
     project: c:
@@ -213,6 +279,10 @@ let
         ];
         StartLimitIntervalSec = 1800;
         StartLimitBurst = 5;
+      }
+      // optionalAttrs (c.repo != null) {
+        Wants = [ "${provisionName project}.service" ];
+        After = [ "${provisionName project}.service" ];
       };
 
       Service = {
@@ -242,12 +312,30 @@ in
   options.home.gastown.campaigns = mkOption {
     type = types.attrsOf campaignModule;
     default = { };
-    description = "Gas Town campaign supervisors started at boot. The swarm must already be initialised with gastown-run swarm init.";
+    description = "Gas Town campaign supervisors. Declare repo, checks and doltPort to have a missing swarm initialised from Nix; without repo the swarm must already exist (gastown-run swarm init). Provisioning never starts work and never changes an existing swarm.";
   };
 
   config = mkIf (cfg.campaigns != { }) {
     home.packages = [ start ];
     systemd.user.enable = true;
-    systemd.user.services = mapAttrs' mkService (filterAttrs (_: c: c.enable) cfg.campaigns);
+    systemd.user.services =
+      mapAttrs' mkService (filterAttrs (_: c: c.enable) cfg.campaigns)
+      // mapAttrs' mkProvision (filterAttrs (_: c: c.enable && c.repo != null) cfg.campaigns);
+
+    assertions =
+      let
+        provisioned = filterAttrs (_: c: c.enable && c.repo != null) cfg.campaigns;
+        ports = mapAttrsToList (_: c: c.doltPort) provisioned;
+      in
+      [
+        {
+          assertion = all (c: c.checks != [ ] && c.doltPort != null) (attrValues provisioned);
+          message = "home.gastown.campaigns: repo requires at least one check and a doltPort.";
+        }
+        {
+          assertion = length (unique ports) == length ports;
+          message = "home.gastown.campaigns: doltPort must be unique per campaign.";
+        }
+      ];
   };
 }
