@@ -6,7 +6,7 @@
 }:
 
 let
-  importKey = name: fingerprintPath: keyPath: ''
+  importKey = _name: fingerprintPath: keyPath: ''
     for ((i = 0; i < 50; i++)); do
       [ -f "${fingerprintPath}" ] && [ -f "${keyPath}" ] && break
       sleep 0.2

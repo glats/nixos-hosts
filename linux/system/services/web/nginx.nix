@@ -92,17 +92,6 @@ let
     proxy_read_timeout 90s;
   '';
 
-  autheliaLocExtra = ''
-    auth_request /internal/authelia/authz;
-    auth_request_set $auth_status $upstream_status;
-    proxy_set_header X-Forwarded-Host $host;
-    proxy_set_header X-Forwarded-Proto $scheme;
-    proxy_connect_timeout 90s;
-    proxy_send_timeout 90s;
-    proxy_read_timeout 90s;
-    error_page 401 = @auth_redirect;
-  '';
-
   mkAutheliaVhost =
     { port, domain }:
     let

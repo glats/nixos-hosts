@@ -97,7 +97,7 @@ in
         hash = "sha256-PYRl0Q7vsx7nKz7pkoCg3f3rRIcgCAvGiALQxHEOIjE=";
       };
     in
-    prev.teams-for-linux.overrideAttrs (oldAttrs: {
+    prev.teams-for-linux.overrideAttrs (_oldAttrs: {
       version = "2.15.0";
       src = tfl-src;
       npmDeps = prev.fetchNpmDeps {
@@ -106,7 +106,7 @@ in
       };
     });
 
-  symbola = prev.symbola.overrideAttrs (oldAttrs: {
+  symbola = prev.symbola.overrideAttrs (_oldAttrs: {
     src = prev.fetchzip {
       url = "https://slackware.uk/salix/i486/extra-15.0/source/system/symbola-font-ttf/Symbola.zip";
       stripRoot = false;

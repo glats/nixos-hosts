@@ -53,10 +53,10 @@ let
   );
 
   allMcps = config.home.ai-assets.mcps // config.home.ai-assets.extraMcps;
-  enabledMcps = lib.filterAttrs (name: mcp: mcp.enabled or false) allMcps;
+  enabledMcps = lib.filterAttrs (_name: mcp: mcp.enabled or false) allMcps;
 
   claudeMcpServers = lib.mapAttrs (
-    name: mcp:
+    _name: mcp:
     if mcp.type == "local" then
       {
         type = "stdio";

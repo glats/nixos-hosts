@@ -146,7 +146,7 @@
       ...
     }:
     let
-      inherit (import ./lib/mkHost.nix { inherit inputs self; }) mkNixosHost mkHost;
+      inherit (import ./lib/mkHost.nix { inherit inputs self; }) mkNixosHost;
       inherit (import ./lib/mkDarwinHost.nix { inherit inputs self; }) mkDarwinHost;
 
       linuxOverlay = import ./overlays/linux.nix {
@@ -177,14 +177,6 @@
         darwinPackages
         aarch64DarwinPackages
         ;
-
-      linuxHomeModules = import ./linux/home/shared-modules.nix {
-        inherit inputs;
-      };
-
-      darwinHomeModules = import ./darwin/home/shared-modules.nix {
-        inherit inputs;
-      };
 
       mkHomeConfig =
         {

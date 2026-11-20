@@ -34,7 +34,6 @@ let
   ];
 
   mkRuntimeConfig = import ./opencode/runtime-config.nix;
-  cfg = config.home.opencode;
   openfangEnabled = config.home ? openfang && config.home.openfang.enable;
   nativeDiscovery = pkgs.runCommand "gentle-ai-native-discovery" { } ''
     mkdir -p "$out/bin"

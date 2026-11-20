@@ -3,7 +3,6 @@
   stdenvNoCC,
   gentle-ai-src,
   gentle-ai,
-  git,
   callPackage,
 }:
 

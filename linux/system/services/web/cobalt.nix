@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+_:
 
 {
   virtualisation.oci-containers.containers.cobalt = {

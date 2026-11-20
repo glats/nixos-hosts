@@ -1,5 +1,4 @@
 {
-  lib,
   stdenvNoCC,
   makeBinaryWrapper,
   claude-code-unwrapped,

@@ -19,10 +19,6 @@ let
   hm = import (inputs.home-manager.outPath + "/modules");
   sopsHm = import (inputs.sops-nix.outPath + "/modules/home-manager/sops.nix");
 
-  evaluationPkgs = pkgs // {
-    writeText = name: text: builtins.toFile name text;
-  };
-
   evaluate =
     platform:
     let

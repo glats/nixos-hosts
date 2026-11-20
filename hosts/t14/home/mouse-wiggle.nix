@@ -1,4 +1,4 @@
-{ lib, pkgs, ... }:
+{ pkgs, ... }:
 
 let
   script = pkgs.writeScriptBin "mouse-wiggle" ''
