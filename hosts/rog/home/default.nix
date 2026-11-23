@@ -30,7 +30,10 @@ baseModules
       repo = "/home/glats/Project/reimbursement-web";
       doltPort = 45911;
       maxPolecats = 1;
-      disabledPatrols = [ "witness" ];
+      disabledPatrols = [
+        "witness"
+        "wisp_reaper"
+      ];
       checks = [ "sh scripts/check" ];
       protect = [
         "AGENTS.md"
