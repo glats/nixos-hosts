@@ -20,6 +20,7 @@ baseModules
     home.gastown.campaigns.maquilinux = {
       repo = "/home/glats/Project/maquilinux";
       doltPort = 45900;
+      disabledPatrols = [ "wisp_reaper" ];
       checks = [
         "USER=agent bats tests/*.bats"
         "for f in mql scripts/*.sh lib/*.sh; do [ -f \"$f\" ] && { bash -n \"$f\" || exit 1; }; done"
