@@ -7,6 +7,7 @@ _:
     settings = {
       add_newline = false;
       command_timeout = 1000;
+      scan_timeout = 100;
       format = "$username$hostname:$directory$character";
       right_format = "$status$cmd_duration$jobs$git_branch$git_status$nix_shell$nodejs$golang$python$rust$package";
       status = {
