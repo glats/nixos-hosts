@@ -33,6 +33,7 @@ buildGoModule {
     "cmd/gpg-unlock"
     "cmd/install-opencode-auth-seed"
     "cmd/linkctl"
+    "cmd/lolla-watch"
     "cmd/netconsole-log"
     "cmd/netconsole-setup"
     "cmd/pinentry-auto"

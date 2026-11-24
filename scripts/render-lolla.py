@@ -2,14 +2,24 @@ import re
 import sys
 from html import escape
 from pathlib import Path
+from urllib.parse import parse_qs, quote, urlsplit
 
 
-def inline(text):
+def inline(text, music_artist=""):
     parts = re.split(r"\[((?:\\.|[^\]\\])+)\]\((https://[^()\s]+)\)", text)
     result = [escape(parts[0])]
     for title, url, tail in zip(parts[1::3], parts[2::3], parts[3::3]):
         title = title.replace(r"\[", "[").replace(r"\]", "]")
-        result.extend((f'<a href="{escape(url)}">{escape(title)}</a>', escape(tail)))
+        result.append(f'<a href="{escape(url)}">{escape(title)}</a>')
+        link = urlsplit(url)
+        if music_artist and link.netloc == "music.youtube.com":
+            query = f"{music_artist} {title}"
+            if link.path == "/search":
+                query = parse_qs(link.query).get("q", [music_artist])[0]
+            spotify = f"https://open.spotify.com/search/{quote(query, safe='')}"
+            label = escape(f"Buscar en Spotify: {query}")
+            result.append(f' (<a href="{spotify}" aria-label="{label}">Buscar en Spotify</a>)')
+        result.append(escape(tail))
     return "".join(result)
 
 
@@ -19,10 +29,11 @@ def render(source):
     for line in source.splitlines():
         if line.startswith("- [ ] "):
             artist, links = line[6:].split(" — ", 1)
+            music_artist = links.removeprefix("Top de ").split(":", 1)[0] if links.startswith("Top de ") else artist
             key = escape(f"{day}/{artist}")
             rows.append(
                 f'<li><label><input type="checkbox" value="{key}"> '
-                f'{escape(artist)}</label><div>{inline(links)}</div></li>'
+                f'{escape(artist)}</label><div>{inline(links, music_artist)}</div></li>'
             )
         elif line.startswith("## "):
             if day:
@@ -49,6 +60,7 @@ label { display: inline-flex; align-items: center; min-height: 2rem; gap: .35rem
 a { text-underline-offset: .15em }
 </style>
 <main>
+<p id="schedule-notice" hidden><strong>Horarios publicados.</strong> <a>Ver programación oficial</a></p>
 """ + "\n".join(rows) + """
 </main>
 <script>
@@ -64,6 +76,18 @@ for (const box of document.querySelectorAll('input[type="checkbox"]')) {
     });
   } catch {}
 }
+fetch('/schedule.json', { cache: 'no-store' })
+  .then(response => response.ok ? response.json() : null)
+  .then(schedule => {
+    if (!schedule || typeof schedule.url !== 'string') return;
+    const url = new URL(schedule.url);
+    if (url.origin !== 'https://lollapaloozacl.com' || url.username || url.password ||
+        !url.pathname.startsWith('/wp-content/uploads/')) return;
+    const notice = document.getElementById('schedule-notice');
+    notice.querySelector('a').href = url.href;
+    notice.hidden = false;
+  })
+  .catch(() => {});
 </script>
 </html>
 """

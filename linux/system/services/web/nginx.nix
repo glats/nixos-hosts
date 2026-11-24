@@ -515,6 +515,14 @@ in
         useACMEHost = "glats.org";
         forceSSL = true;
 
+        locations."= /schedule.json" = {
+          alias = "/var/lib/lolla-watch/schedule.json";
+          extraConfig = ''
+            default_type application/json;
+            add_header Cache-Control "no-store" always;
+          '';
+        };
+
         locations."/" = {
           root = "${lollaSite}";
           index = "index.html";

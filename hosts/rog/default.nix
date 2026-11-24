@@ -59,6 +59,7 @@
     ../../linux/system/services/media/romharbor.nix
 
     ../../linux/system/services/web/nginx.nix
+    ../../linux/system/services/web/lolla-watch.nix
     ../../linux/system/services/web/authelia.nix
     ../../linux/system/services/web/seerr.nix
     ../../linux/system/services/web/dozzle.nix
