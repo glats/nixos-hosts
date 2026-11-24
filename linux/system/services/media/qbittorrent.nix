@@ -8,7 +8,7 @@
     enable = true;
     package = pkgs.qbittorrent-nox;
 
-    webuiPort = 8080;
+    webuiPort = 9017;
     torrentingPort = 6881;
     profileDir = "/srv/glats/qbittorrent";
 

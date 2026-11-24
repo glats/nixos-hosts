@@ -87,7 +87,7 @@ location / {
 
 ---
 
-### 4. qbit.glats.org (qBittorrent) -- :8080
+### 4. qbit.glats.org (qBittorrent) -- :9017
 
 | Property | Value |
 |----------|-------|
@@ -95,9 +95,9 @@ location / {
 | Has API? | YES -- `/api/v2/` (auth, app, torrents, sync, transfer, log, rss, search modules) |
 | WebSocket? | NO -- uses polling for UI updates |
 | Mobile apps? | Yes -- many third-party apps connect via `/api/v2/` (e.g., qBittorrent Remote, transmissions) |
-| Integrations | **Sonarr/Radarr** download completed torrents via localhost:8080 (**NOT affected**) |
+| Integrations | **Sonarr/Radarr** download completed torrents via localhost:9017 (**NOT affected**) |
 | **Exemption needed?** | **YES** -- exempt `/api/v2/` for mobile apps |
-| Notes | ARR stack connects via localhost:8080 internally (never goes through nginx). No impact. |
+| Notes | ARR stack connects via localhost:9017 internally (never goes through nginx). No impact. |
 | | But mobile apps connecting from external WAN WILL hit Authelia. Must exempt `/api/v2/`. |
 | | API uses cookie-based auth after POST to `/api/v2/auth/login`. |
 | | **Exempt path**: `/api/v2/` |
@@ -267,7 +267,7 @@ location / {
 | Wetty | tty | 9004 | NO | YES | (none) | No | **NO** | -- |
 | Guacamole | guac | 9003 | YES | YES | `/api/`, streaming endpoint | Yes | MAYBE | `/api/`, streaming endpoint |
 | FileShelter | file | 5091 | NO | NO | (none) | No | **NO** | -- |
-| qBittorrent | qbit | 8080 | YES | NO | `/api/v2/` | Yes | **YES** | `/api/v2/` |
+| qBittorrent | qbit | 9017 | YES | NO | `/api/v2/` | Yes | **YES** | `/api/v2/` |
 | Gonic | gonic | 4747 | YES | NO | `/rest/` | **Yes (DSub, etc.)** | **YES** | `/rest/` |
 | Radarr | radarr | 7878 | YES | NO | `/api/`, `/api/v3/` | Yes | **YES** | `/api/`, `/api/v3/` |
 | Sonarr | sonarr | 8989 | YES | NO | `/api/`, `/api/v3/` | Yes | **YES** | `/api/`, `/api/v3/` |
@@ -288,7 +288,7 @@ location / {
 - If you only use browser for ARR stack management, you DON'T need API exemptions at all
 
 ### qBittorrent
-- ARR stack downloads via localhost:8080 internally -- no impact
+- ARR stack downloads via localhost:9017 internally -- no impact
 - Third-party mobile apps need an `/api/v2/` exemption if they connect externally
 - API uses cookie-based auth (POST to `/api/v2/auth/login`) -- compatible with Authelia? Potentially conflicting
 
@@ -325,13 +325,13 @@ For each service that needs an API exemption, add specific location blocks BEFOR
 
 ```nginx
 # Exempt: no auth_request (API/WebSocket paths)
-location /api/v2/ { proxy_pass http://127.0.0.1:8080; proxy_websockets true; ... }
+location /api/v2/ { proxy_pass http://127.0.0.1:9017; proxy_websockets true; ... }
 location /rest/   { proxy_pass http://127.0.0.1:4747; ... }
 
 # Protected
 location / {
     auth_request /internal/authelia/authz;
-    proxy_pass http://127.0.0.1:8080;
+    proxy_pass http://127.0.0.1:9017;
 }
 ```
 

@@ -550,7 +550,7 @@ in
       };
 
       "qbit.${domain}" = mkProxyVhost {
-        port = 8080;
+        port = 9017;
         locExtra = qbitLocExtra;
       };
 
