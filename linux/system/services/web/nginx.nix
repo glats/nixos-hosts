@@ -9,6 +9,11 @@ let
   domain = "glats.org";
   maquiDomain = "maquilinux.org";
 
+  lollaSite = pkgs.runCommand "lolla-chile-2027" { nativeBuildInputs = [ pkgs.python3 ]; } ''
+    mkdir -p "$out"
+    python3 ${../../../../scripts/render-lolla.py} ${../../../../lolla-chile-2027.md} > "$out/index.html"
+  '';
+
   maquiRepoVhost = acmeHost: {
     useACMEHost = acmeHost;
     forceSSL = true;
@@ -505,6 +510,19 @@ in
       "repo.${domain}" = maquiRepoVhost "glats.org";
 
       "repo.${maquiDomain}" = maquiRepoVhost maquiDomain;
+
+      "lolla.${domain}" = {
+        useACMEHost = "glats.org";
+        forceSSL = true;
+
+        locations."/" = {
+          root = "${lollaSite}";
+          index = "index.html";
+          extraConfig = ''
+            try_files $uri $uri/ =404;
+          '';
+        };
+      };
 
       "tun.${domain}" = {
         useACMEHost = "glats.org";
