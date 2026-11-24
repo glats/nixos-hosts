@@ -22,7 +22,7 @@
     nix-colors.url = "github:misterio77/nix-colors";
 
     romharbor = {
-      url = "github:glats/romharbor/e5d89b6e1a8e59e9aa4dce5f33ed0c0eae369587";
+      url = "github:glats/romharbor/f11709631078fbbcce404e17d97ab43481d85916";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
