@@ -199,6 +199,7 @@ in
       ENABLE_SCHEDULED_RESCAN = "true";
       SCHEDULED_RESCAN_CRON = "0 3 * * *";
       SCAN_TIMEOUT = "28800";
+      TASK_TIMEOUT = "28800";
     };
 
     environmentFiles = [
