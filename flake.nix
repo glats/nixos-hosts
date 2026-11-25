@@ -66,7 +66,7 @@
     };
 
     gentle-ai-src = {
-      url = "github:Gentleman-Programming/gentle-ai/08317b9589598f99ebcc00498c39a60f352f05e4";
+      url = "github:Gentleman-Programming/gentle-ai/4716b3cbca158c35c3b316dbd517f54e5f240f97";
       flake = false;
     };
 

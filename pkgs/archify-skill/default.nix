@@ -6,17 +6,17 @@
 
 buildNpmPackage (finalAttrs: {
   pname = "archify-skill";
-  version = "3.2.0";
+  version = "3.3.1";
 
   src = fetchFromGitHub {
     owner = "tt-a1i";
     repo = "archify";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-pejw78BgKDnttOAGcLvVtWa50azpCjTfESnmdYIjCoI=";
+    hash = "sha256-D8TPxxEmkeFrreN/vbmfvyHGKDef0cTzUIAXUrfBA60=";
   };
 
   sourceRoot = "source/archify";
-  npmDepsHash = "sha256-MubkY+0P5trSwb69/jOQC/TH0L/3tt/boLmXizfAIcE=";
+  npmDepsHash = "sha256-93zNihmjw4OAUPqyFhUJMauraM6VzJgaA71jtvQPr18=";
   dontNpmBuild = true;
 
   installPhase = ''
