@@ -5,7 +5,6 @@ import unittest
 from html import unescape
 from html.parser import HTMLParser
 from pathlib import Path
-from urllib.parse import unquote, urlsplit
 
 
 class Page(HTMLParser):
@@ -45,29 +44,26 @@ class RenderTest(unittest.TestCase):
         self.assertTrue(keys)
         self.assertEqual(page.keys, keys)
         self.assertEqual(len(set(page.keys)), len(keys))
-        originals = [url for url in page.links if urlsplit(url).netloc != "open.spotify.com"]
-        self.assertEqual(originals, re.findall(r"\]\((https://[^\s()]+)\)", source))
+        self.assertEqual(page.links, re.findall(r"\]\((https://[^\s()]+)\)", source))
 
-    def test_spotify_search_follows_each_youtube_music_link(self):
-        html = subprocess.check_output(
-            [sys.executable, Path(__file__).with_name("render-lolla.py")], text=True
-        )
+    def test_spotify_track_follows_each_youtube_music_track(self):
+        scripts = Path(__file__).resolve().parent
+        html = subprocess.check_output([sys.executable, scripts / "render-lolla.py"], text=True)
         page = Page()
         page.feed(html)
-        pairs = [
-            (url, page.links[index + 1])
-            for index, url in enumerate(page.links)
-            if urlsplit(url).netloc == "music.youtube.com"
-        ]
-        self.assertEqual(len(pairs), 256)
-        for _, link in pairs:
-            self.assertTrue(link.startswith("https://open.spotify.com/search/"), link)
-        queries = {unquote(urlsplit(link).path.removeprefix("/search/")) for _, link in pairs}
-        self.assertIn("Charli xcx party 4 u", queries)
-        self.assertIn("Ana Tijoux Eres para Mí", queries)
-        self.assertIn("Gondwana Sentimiento Original", queries)
-        self.assertIn("Alain Johannes Take a Break", queries)
-        self.assertIn("Vibrational Echoes Chile", queries)
+        youtube_track = "https://music.youtube.com/watch?v="
+        tracks = [url.removeprefix(youtube_track) for url in page.links if url.startswith(youtube_track)]
+        self.assertEqual(len(tracks), 255)
+        pairs = re.findall(
+            re.escape(youtube_track) + r'([\w-]+)">[^<]+</a> \('
+            r'(?:<a href="(https://open\.spotify\.com/track/[A-Za-z0-9]{22})">Spotify</a>'
+            r'|grabación no verificada para el dúo chileno)\)',
+            html,
+        )
+        self.assertEqual([video for video, _ in pairs], tracks)
+        self.assertEqual([url for _, url in pairs if url],
+                         [url for url in page.links if url.startswith("https://open.spotify.com/")])
+        self.assertEqual([video for video, url in pairs if not url], ["RMk57fhi85I", "-GFnt0TodV4"])
 
     def test_qualifications_and_escaped_song_title(self):
         html = subprocess.check_output(

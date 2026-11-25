@@ -2,23 +2,14 @@ import re
 import sys
 from html import escape
 from pathlib import Path
-from urllib.parse import parse_qs, quote, urlsplit
 
 
-def inline(text, music_artist=""):
+def inline(text):
     parts = re.split(r"\[((?:\\.|[^\]\\])+)\]\((https://[^()\s]+)\)", text)
     result = [escape(parts[0])]
     for title, url, tail in zip(parts[1::3], parts[2::3], parts[3::3]):
         title = title.replace(r"\[", "[").replace(r"\]", "]")
         result.append(f'<a href="{escape(url)}">{escape(title)}</a>')
-        link = urlsplit(url)
-        if music_artist and link.netloc == "music.youtube.com":
-            query = f"{music_artist} {title}"
-            if link.path == "/search":
-                query = parse_qs(link.query).get("q", [music_artist])[0]
-            spotify = f"https://open.spotify.com/search/{quote(query, safe='')}"
-            label = escape(f"Buscar en Spotify: {query}")
-            result.append(f' (<a href="{spotify}" aria-label="{label}">Buscar en Spotify</a>)')
         result.append(escape(tail))
     return "".join(result)
 
@@ -29,11 +20,10 @@ def render(source):
     for line in source.splitlines():
         if line.startswith("- [ ] "):
             artist, links = line[6:].split(" — ", 1)
-            music_artist = links.removeprefix("Top de ").split(":", 1)[0] if links.startswith("Top de ") else artist
             key = escape(f"{day}/{artist}")
             rows.append(
                 f'<li><label><input type="checkbox" value="{key}"> '
-                f'{escape(artist)}</label><div>{inline(links, music_artist)}</div></li>'
+                f'{escape(artist)}</label><div>{inline(links)}</div></li>'
             )
         elif line.startswith("## "):
             if day:
