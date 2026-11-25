@@ -19,7 +19,7 @@ in
     standalone.enable = lib.mkOption {
       type = lib.types.bool;
       default = cfg.enable;
-      description = "Standalone emulators (PCSX2, Dolphin, PPSSPP)";
+      description = "Standalone emulators (PCSX2, Dolphin, PPSSPP, Azahar)";
     };
     aspirational.enable = lib.mkOption {
       type = lib.types.bool;
@@ -38,15 +38,21 @@ in
       lib.optionals cfg.retroarch.enable [
         (pkgs.retroarch.withCores (
           cores: with cores; [
+            fceumm
             snes9x
             genesis-plus-gx
             mgba
             sameboy
             fbneo
             mupen64plus
+            parallel-n64
+            melonds
             beetle-psx-hw
+            beetle-saturn
             flycast
             ppsspp
+            stella
+            handy
           ]
         ))
         pkgs.retroarch-assets
@@ -56,6 +62,7 @@ in
         pkgs.pcsx2
         pkgs.dolphin-emu
         pkgs.ppsspp
+        pkgs.azahar
       ]
       ++ lib.optionals cfg.aspirational.enable [
         pkgs.rpcs3
