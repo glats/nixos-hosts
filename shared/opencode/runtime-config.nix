@@ -149,6 +149,7 @@ let
       ];
       model = providers.getModelForRole "gentle-orchestrator" providers.activeProvider;
       default_agent = "gentle-orchestrator";
+      shell = "${pkgs.bashInteractive}/bin/bash";
       compaction = lib.optionalAttrs (cfg.compactionBuffer != null) { buffer = cfg.compactionBuffer; };
       agents = v2Agents;
       providers.openai.settings.transport = "http";
