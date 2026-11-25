@@ -18,7 +18,7 @@ Destination compatibility and transfer planning: [ROM destinations](rom-destinat
 ## Download page
 
 ROMHarbor is the separate community application at [glats/romharbor](https://github.com/glats/romharbor).
-The `romharbor` flake input pins v0.1.8's commit `771a8a6efd29a5856b98641973ea3914bfc356c1`;
+The `romharbor` flake input pins v0.1.9's commit `d3452e8a82488b0b492f68c2bde3ddf05c277803`;
 only `rog` imports its NixOS module. Application changes belong in that repository, not in the
 legacy `pkgs/nixos-scripts/internal/romcatalog` source retained here for rollback reference.
 nginx serves it at `https://rom.glats.org`, bound to
@@ -65,8 +65,9 @@ inside the library root.
 | dlpsgame | ps3, ps4, ps5 | Search only | No | The links are base64 hidden and point to one-click hosts with captchas. |
 | nopaystation | ps1, psp, ps3, vita | Yes | Yes | Serves installers (`.pkg`) that need RAP and zRIF licences, not playable dumps. |
 
-`services.romharbor.sources` explicitly selects `archive.org`; supplemental providers remain
-disabled until verified. The legacy CLI's `archive.org,lolroms` default is not used by this service.
+`services.romharbor.sources` explicitly selects `archive.org` and `lolroms`; `lolroms` supplies retail
+PlayStation and the other consoles `archive.org` lacks, verified live for PS1 search and download in v0.1.9.
+Other supplemental providers remain disabled until verified.
 A platform in the table is not a promise that a
 working source supplies games for it.
 

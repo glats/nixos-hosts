@@ -9,7 +9,10 @@
     libraryPath = "/run/media/library/roms";
     cachePath = "/var/lib/romharbor/cache";
     databasePath = "/var/lib/romharbor/app.db";
-    sources = [ "archive.org" ];
+    sources = [
+      "archive.org"
+      "lolroms"
+    ];
   };
 
   systemd.services.romharbor = {

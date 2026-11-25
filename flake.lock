@@ -1654,17 +1654,17 @@
         ]
       },
       "locked": {
-        "lastModified": 1795615273,
-        "narHash": "sha256-4JZMfhjtAKzfp58qhnrMnVgInQByUouYNaB9iHSyHQ8=",
+        "lastModified": 1795619963,
+        "narHash": "sha256-9i4kAI3n1AsTHKAVmD5VsS/TbZkwrkCkpVQHOn9HSCU=",
         "owner": "glats",
         "repo": "romharbor",
-        "rev": "771a8a6efd29a5856b98641973ea3914bfc356c1",
+        "rev": "d3452e8a82488b0b492f68c2bde3ddf05c277803",
         "type": "github"
       },
       "original": {
         "owner": "glats",
         "repo": "romharbor",
-        "rev": "771a8a6efd29a5856b98641973ea3914bfc356c1",
+        "rev": "d3452e8a82488b0b492f68c2bde3ddf05c277803",
         "type": "github"
       }
     },
