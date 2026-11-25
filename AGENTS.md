@@ -26,7 +26,7 @@
 - Keep the orchestration session in the current NixOS worktree. A related application checkout is not a request to move this session; preserve isolated application worktrees and read their own `AGENTS.md` before edits.
 - Keep ongoing application worktrees and their Git metadata in permanent directories anchored to the canonical repository. Temporary directories are for disposable build/test scratch, not the only copy of unfinished work.
 - ROMHarbor owns application code, command/query handlers, tests, its standalone flake/module, and container/release packaging. This repository owns host selection, storage, domains, authentication, version pins and deployment.
-- Integrate the application as a pinned external flake input, like Omarchy-nix, rather than embedding application source in `pkgs/nixos-scripts`. The `romharbor` input pins the verified v0.1.10 application for `rog`; activation and the running-service cutover are user-owned.
+- Integrate the application as a pinned external flake input, like Omarchy-nix, rather than embedding application source in `pkgs/nixos-scripts`. The `romharbor` input pins the verified v0.1.11 application for `rog`; activation and the running-service cutover are user-owned.
 - Keep private configuration out of the community repository. Do not remove the legacy source or change the running service before a verified replacement and coordinated cutover.
 
 ## Commands and Verification

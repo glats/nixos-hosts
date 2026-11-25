@@ -57,7 +57,7 @@ KNULLI folder names are planning candidates until checked against the directorie
 | Dreamcast | `dreamcast` (slug `dc`) | `.chd .gdi .cue .iso .m3u` | Flycast | `dreamcast` | Per-game performance and core verification |
 | Switch | `switch` | `.nsp .xci .nsz` | No maintained candidate verified | `switch` | Not a supported target in this plan |
 | PlayStation Vita | `psvita` | `.vpkg` | Vita3K; catalog format/install flow unverified | `psvita` | Not a supported target in this plan |
-| Arcade | `arcade` | `.zip .7z` | RetroArch: FBNeo / matching MAME core | `fbneo` or `mame`, according to ROM set | ROM-set version and game performance required |
+| Arcade | `fbneo` (slug `arcade`) | `.zip .7z` | RetroArch: FBNeo / matching MAME core | `fbneo` or `mame`, according to ROM set | ROM-set version and game performance required |
 | Atari 2600 | `atari2600` | `.a26 .bin` | RetroArch: Stella | `atari2600` | Classic-system candidate; test |
 | Atari Lynx | `lynx` | `.lnx .lyx` | RetroArch: Handy | `lynx` | Core / BIOS verification required |
 | N-Gage | `ngage` | `.ngage .vpl` | EKA2L1; experimental destination, not baseline | Unverified | Not a supported target in this plan |
