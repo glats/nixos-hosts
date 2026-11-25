@@ -18,7 +18,7 @@ Destination compatibility and transfer planning: [ROM destinations](rom-destinat
 ## Download page
 
 ROMHarbor is the separate community application at [glats/romharbor](https://github.com/glats/romharbor).
-The `romharbor` flake input pins v0.1.9's commit `d3452e8a82488b0b492f68c2bde3ddf05c277803`;
+The `romharbor` flake input pins v0.1.10's commit `eb35b9709ac1852d178e82c1cebf33eb95564a4d`;
 only `rog` imports its NixOS module. Application changes belong in that repository, not in the
 legacy `pkgs/nixos-scripts/internal/romcatalog` source retained here for rollback reference.
 nginx serves it at `https://rom.glats.org`, bound to

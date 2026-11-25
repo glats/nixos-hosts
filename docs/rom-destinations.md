@@ -47,25 +47,26 @@ KNULLI folder names are planning candidates until checked against the directorie
 | Mega Drive / Genesis | `megadrive` (slug `genesis`) | `.md .gen .bin .smd` | RetroArch: Genesis Plus GX | `megadrive` | Classic-system candidate; test |
 | Nintendo 64 | `n64` | `.n64 .z64 .v64 .u1 .ndd` | RetroArch: available N64 core; verify arm64 build | `n64` | Per-game performance and core verification |
 | Nintendo DS | `nds` | `.nds .dsi` | melonDS | `nds` | Per-game performance, controls and core verification |
-| PlayStation | `psx` | `.chd .cue .bin .pbp .img` | DuckStation / compatible RetroArch core | `psx` | Candidate; BIOS and launch test |
-| PlayStation 2 | `ps2` | `.iso .chd .bin` | PCSX2; verify current Apple Silicon / Rosetta requirements | `ps2` | Not a supported target in this plan |
+| PlayStation | `psx` | `.chd .cue .bin .pbp .img .m3u` | DuckStation / compatible RetroArch core | `psx` | Candidate; BIOS and launch test |
+| PlayStation 2 | `ps2` | `.iso .chd .bin .m3u` | PCSX2; verify current Apple Silicon / Rosetta requirements | `ps2` | Not a supported target in this plan |
 | PSP | `psp` | `.iso .cso .pbp .chd` | PPSSPP | `psp` | Per-game performance and format verification |
-| GameCube | `ngc` | `.iso .gcm .rvz .wbfs` | Dolphin | `gamecube` | Not a supported target in this plan |
+| GameCube | `gamecube` (slug `ngc`) | `.iso .gcm .rvz .wbfs` | Dolphin | `gamecube` | Not a supported target in this plan |
 | Wii | `wii` | `.wbfs .iso .rvz` | Dolphin | `wii` | Not a supported target in this plan |
-| Nintendo 3DS | `n3ds` | `.3ds .cia .cci` | Azahar; separate validation required | `3ds` | Not a supported target in this plan |
-| Saturn | `saturn` | `.cue .bin .mds .chd` | Compatible RetroArch Saturn core; arm64 availability unverified | `saturn` | Core availability and performance unverified |
-| Dreamcast | `dc` | `.chd .gdi .cue .iso` | Flycast | `dreamcast` | Per-game performance and core verification |
+| Nintendo 3DS | `3ds` (slug `n3ds`) | `.3ds .cia .cci` | Azahar; separate validation required | `3ds` | Not a supported target in this plan |
+| Saturn | `saturn` | `.cue .bin .mds .chd .m3u` | Compatible RetroArch Saturn core; arm64 availability unverified | `saturn` | Core availability and performance unverified |
+| Dreamcast | `dreamcast` (slug `dc`) | `.chd .gdi .cue .iso .m3u` | Flycast | `dreamcast` | Per-game performance and core verification |
 | Switch | `switch` | `.nsp .xci .nsz` | No maintained candidate verified | `switch` | Not a supported target in this plan |
 | PlayStation Vita | `psvita` | `.vpkg` | Vita3K; catalog format/install flow unverified | `psvita` | Not a supported target in this plan |
 | Arcade | `arcade` | `.zip .7z` | RetroArch: FBNeo / matching MAME core | `fbneo` or `mame`, according to ROM set | ROM-set version and game performance required |
 | Atari 2600 | `atari2600` | `.a26 .bin` | RetroArch: Stella | `atari2600` | Classic-system candidate; test |
-| Atari Lynx | `lynx` | `.lnx .lyx` | RetroArch: Handy | `atarilynx` | Core / BIOS verification required |
+| Atari Lynx | `lynx` | `.lnx .lyx` | RetroArch: Handy | `lynx` | Core / BIOS verification required |
 | N-Gage | `ngage` | `.ngage .vpl` | EKA2L1; experimental destination, not baseline | Unverified | Not a supported target in this plan |
 
 The catalog currently lists **22 platforms**. PS3 is not one of them; emulator discovery alone must not silently expand the download catalog.
 
 ## Files are not interchangeable
 
+- Multi-disc games get a `<title>.m3u` playlist next to the disc folders (since ROMHarbor v0.1.10); load the `.m3u` so the core can swap discs, and copy the playlist with every disc folder it lists.
 - Preserve disc companions: a `.cue` or `.gdi` may reference several tracks. Copy the whole game bundle with relative paths intact, not an isolated `.bin`.
 - Verify each emulator's accepted formats before copying. For example, the catalog accepting `.wbfs` for GameCube does not establish that Dolphin can use it as a GameCube image.
 - Keep arcade ROM sets matched to their emulator version, including required parent and BIOS archives. Do not automatically extract or rename arcade archives.
