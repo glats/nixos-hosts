@@ -7,7 +7,7 @@
 }:
 
 let
-  version = "2.3.2";
+  version = "2.4.1";
   system = stdenvNoCC.hostPlatform.system;
   isLinux = lib.hasSuffix "linux" system;
 
@@ -15,19 +15,19 @@ let
     {
       x86_64-linux = {
         url = "https://registry.npmjs.org/@opencode/cli-linux-x64/-/cli-linux-x64-${version}.tgz";
-        hash = "sha512-E9txUc4fNtvuEQUiEx84h4/bd/LJZcAHdIu0yfZRP8KDVP79WhzhEd7BTckJUyvWUc58ZP/o+nfgcnTQnvfJgw==";
+        hash = "sha512-FYQAnneVlLmqy862674vvRVkj8yHuZAFHJGV3UCGQxo8aKG58IHPKrspbxruVajnIEpb0t8PeO63H/oW4vJG5A==";
       };
       aarch64-linux = {
         url = "https://registry.npmjs.org/@opencode/cli-linux-arm64/-/cli-linux-arm64-${version}.tgz";
-        hash = "sha512-t44ZuW5CKaWiRSp4gWUDurMf4edyXw/SmUty1pRi827zda0T2RatKWj4LnMUewNCL05COLB1Ppg8RWicswhFaQ==";
+        hash = "sha512-olNKfoAuHaDtHrWrlqxh2RPSonSfAZPGJlru7tMNeNTlHyLSrTbDe/+HJ6vdYRp7g4yKLSQ8SG264U/IC7Pgtw==";
       };
       x86_64-darwin = {
         url = "https://registry.npmjs.org/@opencode/cli-darwin-x64/-/cli-darwin-x64-${version}.tgz";
-        hash = "sha512-vNLWgHc2I/hAbW37OOANepj6VNS8mbbLp9TbWgEKY6MMvzZlx0ifsrcwUuLI0Qoso82UEj6RV20xcBWyZdF84w==";
+        hash = "sha512-J/khLpe0pisTGDD5jpddQjqb5e8qUsWYpiRkqIBN3a/P4S5asfP2ErLKSevmpGzhg9fC1TpLJnGVXwgN+JJgKg==";
       };
       aarch64-darwin = {
         url = "https://registry.npmjs.org/@opencode/cli-darwin-arm64/-/cli-darwin-arm64-${version}.tgz";
-        hash = "sha512-cYrIzW8CvYc52INFA/cXmw7U2mk+JNWaV+olH7AflYqa/5srSrA/hbLwF7G1N4QTRMtOFrmeTM0LVN81q396sg==";
+        hash = "sha512-r6PIZl5wqFxVYfVFjm2JK4uf1a3YT7FMEVTODJF/1hKe6wBdK7THzbAM1SSyuRuMnSkDb9+dd8xNOk9zQK6trg==";
       };
     }
     .${system} or (throw "Unsupported system: ${system}");

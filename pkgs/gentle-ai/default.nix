@@ -8,7 +8,7 @@
 assert lib.versionAtLeast go.version "1.25.10";
 (buildGoModule.override { inherit go; }) {
   pname = "gentle-ai";
-  version = "4.6.0";
+  version = "5.0.0";
 
   src = gentle-ai-src;
 
@@ -18,7 +18,7 @@ assert lib.versionAtLeast go.version "1.25.10";
   ldflags = [
     "-s"
     "-w"
-    "-X main.version=4.6.0"
+    "-X main.version=5.0.0"
   ];
 
   meta = with lib; {
