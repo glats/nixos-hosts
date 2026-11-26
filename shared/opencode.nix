@@ -34,6 +34,34 @@ let
   ];
 
   mkRuntimeConfig = import ./opencode/runtime-config.nix;
+
+  profileProviders = lib.unique (
+    map (role: lib.head (lib.splitString "/" role)) (
+      lib.attrValues (if providers.activeProvider == null then { } else providers.activeProvider.roles)
+    )
+  );
+  secretEnvSources = [
+    {
+      env = "NVIDIA_API_KEY";
+      secret = "opencode/nvidia_api_key";
+      provider = null;
+    }
+    {
+      env = "CONTEXT7_API_KEY";
+      secret = "opencode/context7_api_key";
+      provider = null;
+    }
+    {
+      env = "OLLAMA_API_KEY";
+      secret = "opencode/ollama_api_key";
+      provider = "ollama-cloud";
+    }
+  ];
+  secretEnv = listToAttrs (
+    map (source: nameValuePair source.env config.sops.secrets.${source.secret}.path) (
+      filter (source: source.provider == null || elem source.provider profileProviders) secretEnvSources
+    )
+  );
   openfangEnabled = config.home ? openfang && config.home.openfang.enable;
   nativeDiscovery = pkgs.runCommand "gentle-ai-native-discovery" { } ''
     mkdir -p "$out/bin"
@@ -104,6 +132,18 @@ in
       type = types.lines;
       default = "";
       description = "Extra zsh initContent appended after API key exports. Use for platform-specific shell setup.";
+    };
+
+    secretEnv = mkOption {
+      type = types.attrsOf types.str;
+      readOnly = true;
+      default = secretEnv;
+      description = ''
+        Environment variable name to sops secret path for the API keys the
+        active profile can use. A provider-bound key is exported only when the
+        active profile in providers-base.nix routes a role to that provider,
+        so unused providers are never registered by OpenCode.
+      '';
     };
 
     activeProviderName = mkOption {
@@ -178,15 +218,13 @@ in
       home.packages = [ opencodePackage ];
 
       programs.zsh.initContent = lib.mkAfter ''
-              if [ -f "${config.sops.secrets."opencode/nvidia_api_key".path}" ]; then
-                export NVIDIA_API_KEY="$(cat ${config.sops.secrets."opencode/nvidia_api_key".path})"
-              fi
-          if [ -f "${config.sops.secrets."opencode/context7_api_key".path}" ]; then
-            export CONTEXT7_API_KEY="$(cat ${config.sops.secrets."opencode/context7_api_key".path})"
-          fi
-          if [ -f "${config.sops.secrets."opencode/ollama_api_key".path}" ]; then
-            export OLLAMA_API_KEY="$(cat ${config.sops.secrets."opencode/ollama_api_key".path})"
-          fi
+        ${concatStringsSep "\n" (
+          mapAttrsToList (env: path: ''
+            if [ -f "${path}" ]; then
+              export ${env}="$(cat ${path})"
+            fi
+          '') config.home.opencode.secretEnv
+        )}
         ${config.home.opencode.extraInitContent}
       '';
     })
