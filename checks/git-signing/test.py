@@ -17,6 +17,8 @@ WORK_KEY = "89ABCDEF0123456789ABCDEF0123456789ABCDEF"
 
 FINGERPRINT_PATTERN = re.compile(r"[0-9A-F]{16,}")
 
+PAYLOAD_BYTES_PATTERN = re.compile(r"^payload-bytes=(\d+)$", re.MULTILINE)
+
 RUNTIME_SOURCE_FILES = [
     "shared/git-identity.nix",
     "shared/sops.nix",
@@ -148,6 +150,12 @@ class GitSigningTests(unittest.TestCase):
         script.write_text(
             "#!/bin/sh\n"
             f'printf "%s\\n" "$@" >> "{log}"\n'
+            # git writes the payload to the signing program on stdin. A program
+            # that exits without reading it makes that write fail with EPIPE,
+            # and git reports "gpg failed to sign the data" even though the
+            # signature was produced. Read stdin first, the way gpg does.
+            '_payload="$(cat)"\n'
+            f'printf "payload-bytes=%s\\n" "${{#_payload}}" >> "{log}"\n'
             'printf "[GNUPG:] SIG_CREATED 0123456789ABCDEF0123456789ABCDEF01234567 2026-01-01\\n" >&2\n'
             'printf "synthetic-signature\\n"\n'
             "exit 0\n"
@@ -185,7 +193,7 @@ class GitSigningTests(unittest.TestCase):
             "HOME": str(home),
             "XDG_CONFIG_HOME": str(home / ".config"),
             "GIT_CONFIG_NOSYSTEM": "1",
-            "PATH": f"{log.parent}:{os.environ['PATH']}",
+            "PATH": f"{log.parent / 'bin'}:{os.environ['PATH']}",
         }
         if log.exists():
             log.unlink()
@@ -389,6 +397,34 @@ class GitSigningTests(unittest.TestCase):
         code, program = self.git_config(home, repo, "gpg.openpgp.program")
         self.assertEqual(code, 0)
         self.assertNotIn("gnupg", program)
+
+    def test_signing_program_receives_the_payload_git_writes(self):
+        home = self.home
+        self.write_secrets(home, {
+            "personal_gpg_fingerprint": PERSONAL_KEY + "\n",
+            "work_gpg_fingerprint": WORK_KEY + "\n",
+        })
+        self.write_secrets(home, {
+            "personal_name": "Personal\n",
+            "personal_email": "p@example.com\n",
+            "work_name": "Work\n",
+            "work_email": "w@example.com\n",
+        }, folder="identities")
+        fake, log = self.fake_gpg(Path(self.scratch.name) / "payload")
+        self.install_config(home, self.linux, gpg_program=fake)
+        activation = self.activation_with_fake_gpg(self.linux, fake)
+        result = self.run_activation(home, activation)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        repo = self.make_repo(home / "payload")
+        commit, invoked = self.commit_probe(home, repo, log)
+        self.assertEqual(commit.returncode, 0, commit.stderr)
+        self.assertTrue(invoked, "the runtime key must reach gpg")
+        delivered = PAYLOAD_BYTES_PATTERN.search(log.read_text())
+        self.assertIsNotNone(
+            delivered,
+            "the signing program must read the payload git writes on stdin",
+        )
+        self.assertGreater(int(delivered.group(1)), 0)
 
     def test_malformed_fingerprint_cannot_inject_config(self):
         home = self.home
