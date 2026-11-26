@@ -28,7 +28,6 @@ in
     patches = (old.patches or [ ]) ++ [
       ../patches/freerdp/sdl-macos-window-free-display-query.patch
       ../patches/freerdp/sdl-macos-cmake.patch
-      ../patches/freerdp/core-update-accept-wider-bitmap.patch
     ];
   });
 
