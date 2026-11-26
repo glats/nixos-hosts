@@ -125,6 +125,36 @@ let
       };
     }
     {
+      name = "anthropic-ollama";
+      tiers = {
+        big = [ "anthropic/claude-opus-5-5" ];
+        mid = [
+          "anthropic/claude-sonnet-5-5"
+          "ollama-cloud/deepseek-v4-pro"
+        ];
+        low = [
+          "ollama-cloud/minimax-m3.1-flash"
+          "anthropic/claude-haiku-5-5"
+        ];
+      };
+      roles = {
+        gentle-orchestrator = "anthropic/claude-opus-5-5";
+        gentle-ai-explore = "ollama-cloud/deepseek-v4-pro";
+        gentle-ai-worker = "ollama-cloud/minimax-m3.1-flash";
+        gentle-ai-verify = "anthropic/claude-sonnet-5-5";
+        jd-judge-a = "anthropic/claude-sonnet-5-5";
+        jd-judge-b = "anthropic/claude-sonnet-5-5";
+        jd-fix-agent = "ollama-cloud/minimax-m3.1-flash";
+        review-readability = "ollama-cloud/deepseek-v4-pro";
+        review-refuter = "ollama-cloud/deepseek-v4-pro";
+        review-reliability = "ollama-cloud/deepseek-v4-pro";
+        review-resilience = "ollama-cloud/deepseek-v4-pro";
+        review-risk = "ollama-cloud/deepseek-v4-pro";
+        review-validator = "ollama-cloud/deepseek-v4-pro";
+        neutral = "anthropic/claude-opus-5-5";
+      };
+    }
+    {
       name = "work";
       roles = {
         gentle-orchestrator = "anthropic/claude-opus-5-5";
