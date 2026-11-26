@@ -15,7 +15,7 @@ baseModules
   ../../../linux/home/webcam.nix
 
   {
-    home.opencode.activeProviderName = "anthropic-ollama";
+    home.opencode.activeProviderName = "personal";
     home.opencode.compactionBuffer = "80%";
     home.gastown.campaigns.maquilinux = {
       repo = "/home/glats/Project/maquilinux";
