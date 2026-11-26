@@ -22,6 +22,7 @@ let
             home.username = if source == "macm5" then "juan" else "glats";
             home.homeDirectory = if source == "macm5" then "/Users/juan" else "/home/glats";
             home.stateVersion = "25.05";
+            home.enableNixpkgsReleaseCheck = false;
             programs.ssh.settings."*" = {
               BatchMode = true;
               PasswordAuthentication = false;

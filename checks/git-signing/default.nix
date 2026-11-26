@@ -31,6 +31,7 @@ let
         home.username = "tester";
         home.homeDirectory = syntheticHome;
         home.stateVersion = "24.05";
+        home.enableNixpkgsReleaseCheck = false;
         xdg.configHome = syntheticHome + "/.config";
       };
       cfg =
