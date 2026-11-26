@@ -174,7 +174,14 @@ keeps every other setting, saves the previous file as `swarm.json.before-profile
 an invalid chain without touching swarm.json. Any failure of this step stops the start with
 exit 78, which is not retried: fix the cause, then start the service again. Manual chain edits
 are overwritten at the next start; change the profile, or set `chainsFromProfile = false` for
-that campaign. Check it without starting or changing anything:
+that campaign.
+
+When a provider runs out of quota, switch every campaign and your OpenCode roles at once by
+setting `home.opencode.activeProviderName` in `hosts/<host>/home/default.nix` to another
+profile from `shared/opencode/providers-base.nix`: `personal` (Anthropic, OpenAI and Ollama),
+`anthropic-ollama` (OpenAI out) or `openai-ollama` (Anthropic out). Then run the Home Manager
+switch, restart OpenCode and restart each campaign with
+`systemctl --user restart gastown-campaign-<project>`. Check it without starting or changing anything:
 `GASTOWN_CAMPAIGN_DRYRUN=1 gastown-campaign-start <project> 720h`.
 
 Worker contract: every agent starts with a short read-only worker contract mounted

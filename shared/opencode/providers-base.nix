@@ -155,6 +155,36 @@ let
       };
     }
     {
+      name = "openai-ollama";
+      tiers = {
+        big = [ "openai/gpt-6-astra" ];
+        mid = [
+          "openai/gpt-6.1-sol"
+          "ollama-cloud/deepseek-v4-pro"
+        ];
+        low = [
+          "ollama-cloud/minimax-m3.1-flash"
+          "openai/gpt-6.1-terra"
+        ];
+      };
+      roles = {
+        gentle-orchestrator = "openai/gpt-6-astra";
+        gentle-ai-explore = "ollama-cloud/deepseek-v4-pro";
+        gentle-ai-worker = "ollama-cloud/minimax-m3.1-flash";
+        gentle-ai-verify = "openai/gpt-6.1-sol";
+        jd-judge-a = "openai/gpt-6.1-sol";
+        jd-judge-b = "openai/gpt-6.1-sol";
+        jd-fix-agent = "ollama-cloud/minimax-m3.1-flash";
+        review-readability = "ollama-cloud/deepseek-v4-pro";
+        review-refuter = "ollama-cloud/deepseek-v4-pro";
+        review-reliability = "ollama-cloud/deepseek-v4-pro";
+        review-resilience = "ollama-cloud/deepseek-v4-pro";
+        review-risk = "ollama-cloud/deepseek-v4-pro";
+        review-validator = "ollama-cloud/deepseek-v4-pro";
+        neutral = "openai/gpt-6-astra";
+      };
+    }
+    {
       name = "work";
       roles = {
         gentle-orchestrator = "anthropic/claude-opus-5-5";
