@@ -41,6 +41,7 @@
 
     ../../linux/system/features/boot.nix
     ../../linux/system/features/conky/options.nix
+    ../../linux/system/features/gaming.nix
 
     ../../linux/system/services/maquilinux-mounts.nix
     ../../linux/system/services/printing/brother.nix
@@ -57,6 +58,7 @@
   boot.kernelPackages = pkgs.linuxPackages;
 
   my.desktop.suite = null;
+  my.gaming.enable = true;
   services.displayManager.sddm.enable = false;
   services.xserver.displayManager.lightdm.enable = false;
   services.xrdp = {

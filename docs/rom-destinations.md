@@ -6,13 +6,15 @@ Keep original games on `rog` under `/run/media/library/roms`. Copy selected game
 
 | Destination | Repository evidence | Still to verify |
 | --- | --- | --- |
-| `rog` | Central catalog and library; read-only ROM share in `linux/system/services/network/samba.nix` if present in the host import graph | Runtime share access and game availability |
+| `rog` | Central catalog and library; read-only ROM share in `linux/system/services/network/samba.nix` if present in the host import graph. Declares the baseline gaming module. | Emulator installation, runtime share access and game availability |
 | `t14` | `linux/system/features/gaming.nix` declares RetroArch cores, PCSX2, Dolphin and PPSSPP; enabled by `hosts/t14/default.nix` | Installed binaries, controllers, BIOS and a launch test |
 | `macm5` | No emulator declarations found in the host or Homebrew configuration | Installation method and runtime compatibility |
-| `thinkcentre`, `samsung` | No emulator declarations found in the host import graphs | Existing manual installations and hardware suitability |
+| `thinkcentre`, `samsung` | Declare the baseline gaming module | Emulator installation, hardware suitability and playback |
 | Powkiddy V90S / KNULLI | Previous device identification and USB gadget permissions; no live device inspection in this delivery | Firmware release, installed cores, SD layout and network access |
 
 Configured packages are not proof that an emulator is installed or that a game works. A catalog platform entry is not proof that a download source currently supplies it.
+
+The Linux baseline on `rog`, `thinkcentre`, and `samsung` selects RetroArch with the curated cores, PCSX2, Dolphin, PPSSPP, and Azahar. It does not enable Pegasus, RPCS3, Ryubing, or a desktop session on `thinkcentre`.
 
 ### Live inventory, 2026-11-14
 

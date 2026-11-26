@@ -43,6 +43,7 @@ in
 
     ../../linux/system/features/boot.nix
     ../../linux/system/features/conky/options.nix
+    ../../linux/system/features/gaming.nix
 
     ../../linux/system/virtualisation/docker.nix
   ];
@@ -80,6 +81,7 @@ in
   ];
 
   my.desktop.suite = "mate";
+  my.gaming.enable = true;
 
   zramSwap.enable = true;
 

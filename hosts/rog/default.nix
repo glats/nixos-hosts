@@ -47,6 +47,7 @@
     ../../linux/system/features/boot.nix
     ../../linux/system/features/gastown.nix
     ../../linux/system/features/conky/options.nix
+    ../../linux/system/features/gaming.nix
 
     ../../linux/system/services/xrdp.nix
     ../../linux/system/services/printing/brother.nix
@@ -127,6 +128,7 @@
   };
 
   my.desktop.suite = "mate";
+  my.gaming.enable = true;
 
   boot = {
     kernelPackages = pkgs.linuxPackages;
