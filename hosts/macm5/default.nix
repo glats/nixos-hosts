@@ -133,5 +133,7 @@ in
   homebrew.casks = [
     "retroarch-metal"
     "dolphin"
+    "pcsx2"
+    "ppsspp-emulator"
   ];
 }

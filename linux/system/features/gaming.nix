@@ -21,10 +21,15 @@ in
       default = cfg.enable;
       description = "Standalone emulators (PCSX2, Dolphin, PPSSPP, Azahar)";
     };
+    switch.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = cfg.enable;
+      description = "Ryubing, the Nintendo Switch emulator";
+    };
     aspirational.enable = lib.mkOption {
       type = lib.types.bool;
       default = false;
-      description = "Heavy standalone emulators — RPCS3 + Ryubing (slow builds, laptop APU may throttle)";
+      description = "Heavy standalone emulators — RPCS3 (slow builds, laptop APU may throttle)";
     };
     pegasus.enable = lib.mkOption {
       type = lib.types.bool;
@@ -64,10 +69,8 @@ in
         pkgs.ppsspp
         pkgs.azahar
       ]
-      ++ lib.optionals cfg.aspirational.enable [
-        pkgs.rpcs3
-        pkgs.ryubing
-      ]
+      ++ lib.optionals cfg.switch.enable [ pkgs.ryubing ]
+      ++ lib.optionals cfg.aspirational.enable [ pkgs.rpcs3 ]
       ++ lib.optionals cfg.pegasus.enable [
         pkgs.pegasus-frontend
       ];
