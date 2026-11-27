@@ -212,3 +212,34 @@ func TestExpandHome(t *testing.T) {
 		t.Fatalf("ExpandHome rel = %q, want %q", relOut, rel)
 	}
 }
+
+func TestBuildLocalForwardSSHArgs(t *testing.T) {
+	args, err := BuildLocalForwardSSHArgs("rog-relay", 54321, "samsung.lan", 3389)
+	if err != nil {
+		t.Fatalf("BuildLocalForwardSSHArgs: %v", err)
+	}
+	want := "-N -o ExitOnForwardFailure=yes -o BatchMode=yes -o ConnectTimeout=5 -o ServerAliveInterval=15 -o ServerAliveCountMax=4 -L 127.0.0.1:54321:samsung.lan:3389 rog-relay"
+	if got := strings.Join(args, " "); got != want {
+		t.Fatalf("args = %q, want %q", got, want)
+	}
+}
+
+func TestBuildLocalForwardSSHArgsRejectsBadInput(t *testing.T) {
+	cases := []struct {
+		name   string
+		alias  string
+		local  int
+		host   string
+		target int
+	}{
+		{"empty alias", "", 1000, "h", 22},
+		{"empty target host", "a", 1000, "", 22},
+		{"bad local port", "a", 0, "h", 22},
+		{"bad target port", "a", 1000, "h", 70000},
+	}
+	for _, c := range cases {
+		if _, err := BuildLocalForwardSSHArgs(c.alias, c.local, c.host, c.target); err == nil {
+			t.Errorf("%s: want error", c.name)
+		}
+	}
+}

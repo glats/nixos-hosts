@@ -72,6 +72,30 @@ func BuildBridgeSSHArgs(host string, ports []int) ([]string, error) {
 	return append(args, host), nil
 }
 
+func BuildLocalForwardSSHArgs(alias string, localPort int, targetHost string, targetPort int) ([]string, error) {
+	if alias == "" {
+		return nil, fmt.Errorf("forward host is required (use an ssh_config alias, e.g. a LAN-mesh member)")
+	}
+	if targetHost == "" {
+		return nil, fmt.Errorf("forward target host is required")
+	}
+	for _, port := range []int{localPort, targetPort} {
+		if port < 1 || port > 65535 {
+			return nil, fmt.Errorf("forward port %d out of range 1..65535", port)
+		}
+	}
+	return []string{
+		"-N",
+		"-o", "ExitOnForwardFailure=yes",
+		"-o", "BatchMode=yes",
+		"-o", "ConnectTimeout=5",
+		"-o", "ServerAliveInterval=15",
+		"-o", "ServerAliveCountMax=4",
+		"-L", fmt.Sprintf("127.0.0.1:%d:%s:%d", localPort, targetHost, targetPort),
+		alias,
+	}, nil
+}
+
 func ExpandHome(path string) (string, error) {
 	if path == "~" {
 		return os.UserHomeDir()

@@ -28,14 +28,14 @@ type fakeRelay struct {
 	stops       int
 }
 
-func (f *fakeRelay) up() bool { return f.upNow }
+func (f *fakeRelay) Up() bool { return f.upNow }
 
-func (f *fakeRelay) ensureUp() bool {
+func (f *fakeRelay) EnsureUp() bool {
 	f.ensureCalls++
 	return f.ensureOK
 }
 
-func (f *fakeRelay) stop() { f.stops++ }
+func (f *fakeRelay) Stop() { f.stops++ }
 
 func probeAlways(ok bool) func(string, time.Duration) bool {
 	return func(string, time.Duration) bool { return ok }
