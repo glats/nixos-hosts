@@ -38,6 +38,7 @@
     ../../linux/system/hardware/asus-fan-control.nix
     ../../linux/system/hardware/rog-poweroff.nix
     ../../linux/system/hardware/adb.nix
+    ../../linux/system/hardware/rtsx-pci-card-reader.nix
 
     ../../linux/system/networking/openssh.nix
     ../../linux/system/networking/firewall.nix
