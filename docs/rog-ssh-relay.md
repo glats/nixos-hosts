@@ -203,3 +203,14 @@ on rog to stop and revoke live publication. Removing ciphertext or reverting
 source alone does not revoke a live policy. This initial source unit can be
 reverted independently by disabling the two host options and removing only its
 relay secret declarations/ciphertext; preserve unrelated service credentials.
+
+## Remote desktop apps off the LAN
+
+The Remote ROG, ThinkCentre, Samsung and T14 apps start through
+`remote-launch <host> <port> -- <viewer> [args...]`. It probes `<host>:<port>`
+for 2 s. When the LAN answers, the viewer runs as before. Otherwise it runs
+`relayctl on` (only if the relay was down), opens
+`ssh -N -L 127.0.0.1:<free-port>:<host>:<port> rog-relay`, starts the viewer
+against `127.0.0.1:<free-port>`, and on exit kills the forward and runs
+`relayctl off` only when it started the relay. Only TCP 443 is used; WireGuard
+is not involved.
