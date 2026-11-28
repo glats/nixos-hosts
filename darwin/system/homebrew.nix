@@ -15,7 +15,6 @@
     brews = [
       "llmfit"
       "glow"
-      "jiratui"
       "Gentleman-Programming/tap/gga"
       "age"
       "gitleaks"

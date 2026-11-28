@@ -12,12 +12,12 @@ let
 in
 {
   options.services.ssh-relay = {
-    enable = lib.mkEnableOption "the manual macm5 wstunnel SSH relay client";
+    enable = lib.mkEnableOption "the manual macm5 SSH relay client";
 
     headersFile = lib.mkOption {
       type = lib.types.str;
       default = "${defaultCredentialDir}/headers";
-      description = "Runtime-only wstunnel HTTP header file owned by the Mac user.";
+      description = "Runtime-only HTTP header file owned by the Mac user.";
     };
 
     authorizationFile = lib.mkOption {
@@ -63,7 +63,7 @@ in
         ProgramArguments = [
           "${pkgs.nixos-scripts}/bin/relay-client"
           "${cfg.headersFile}"
-          "${pkgs.wstunnel-relay}/bin/wstunnel"
+          "${pkgs.relay-transport}/bin/relay-transport"
         ];
         KeepAlive = false;
         RunAtLoad = false;

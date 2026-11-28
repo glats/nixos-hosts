@@ -35,12 +35,6 @@ let
       enabled = true;
     };
 
-    atlassian = {
-      type = "remote";
-      url = "https://mcp.atlassian.com/v2/mcp";
-      enabled = true;
-    };
-
     chrome-devtools = {
       type = "local";
       command = [

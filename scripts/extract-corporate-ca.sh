@@ -7,7 +7,7 @@ OUT_FILE="$REPO_ROOT/certs/corporate-ca.crt"
 
 mkdir -p "$REPO_ROOT/certs"
 
-echo "Extracting Netskope root CA from Apple SecTrust..."
+echo "Extracting corporate root CA from Apple SecTrust..."
 /usr/bin/security find-certificate -a -c "certadmin" -p /Library/Keychains/System.keychain >"$OUT_FILE"
 
 echo "Saved to $OUT_FILE"

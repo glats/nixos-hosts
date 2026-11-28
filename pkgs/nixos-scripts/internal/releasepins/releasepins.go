@@ -21,7 +21,7 @@ const defaultAPIBase = "https://api.github.com"
 
 var releaseFiles = []string{
 	"pkgs/leaf/default.nix",
-	"pkgs/wstunnel-relay/default.nix",
+	"pkgs/relay-transport/default.nix",
 	"pkgs/findersearch/default.nix",
 }
 

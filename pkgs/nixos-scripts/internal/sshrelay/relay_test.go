@@ -265,7 +265,7 @@ func TestLaunchdPIDParsing(t *testing.T) {
 }
 
 func TestClientArgsFixDestinationAndKeepCredentialOutOfArgv(t *testing.T) {
-	args, err := ClientArgs("/nix/store/wstunnel/bin/wstunnel", "/run/secrets/ssh-relay-headers", 22220, 22221)
+	args, err := ClientArgs("/nix/store/relay-transport/bin/relay-transport", "/run/secrets/ssh-relay-headers", 22220, 22221)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -291,10 +291,10 @@ func TestClientArgsFixDestinationAndKeepCredentialOutOfArgv(t *testing.T) {
 	if contains(joined, "AUTH") || contains(joined, "password") {
 		t.Fatalf("credential-like value leaked into argv: %v", args)
 	}
-	if _, err := ClientArgs("wstunnel", "/run/secrets/headers", 22220, 22221); err == nil {
-		t.Fatal("relative wstunnel path accepted")
+	if _, err := ClientArgs("relay-transport", "/run/secrets/headers", 22220, 22221); err == nil {
+		t.Fatal("relative relay transport path accepted")
 	}
-	if _, err := ClientArgs("/nix/store/wstunnel/bin/wstunnel", "/run/secrets/ssh-relay-headers", 22220, 0); err == nil {
+	if _, err := ClientArgs("/nix/store/relay-transport/bin/relay-transport", "/run/secrets/ssh-relay-headers", 22220, 0); err == nil {
 		t.Fatal("zero forward listener port accepted")
 	}
 }
@@ -309,7 +309,7 @@ func TestSanitizedEnvironmentUsesOnlyManagedPlatformValues(t *testing.T) {
 		"HTTP_PROXY=http://attacker.invalid",
 		"HTTPS_PROXY=http://attacker.invalid",
 		"ALL_PROXY=http://attacker.invalid",
-		"WSTUNNEL_LOG_LVL=debug",
+		"RELAY_TRANSPORT_LOG_LVL=debug",
 		"RUST_LOG=debug",
 		"AUTH=credential",
 		"HOME=/duplicate",

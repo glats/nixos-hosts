@@ -35,7 +35,7 @@ in
     dependencies = builtins.filter (d: d.pname != "litellm") old.dependencies;
   });
 
-  wstunnel-relay = final.callPackage ../pkgs/wstunnel-relay { };
+  relay-transport = final.callPackage ../pkgs/relay-transport { };
 
   rtk = prev.rtk.overrideAttrs (old: {
     patches = (old.patches or [ ]) ++ [ ../patches/rtk/sigpipe-default.patch ];

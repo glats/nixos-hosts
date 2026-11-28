@@ -26,8 +26,8 @@ const (
 )
 
 // RelayPushTo reaches thinkcentre through the macm5 SSH relay when the LAN
-// is unreachable: ssh hops rog-relay (wstunnel forward listener) then jumps
-// to thinkcentre.
+// is unreachable: ssh hops rog-relay (relay transport forward listener) then
+// jumps to thinkcentre.
 const RelayPushTo = "ssh-ng://glats@thinkcentre-relay"
 
 // PushToEnv overrides the nixos-build push destination verbatim, skipping

@@ -118,7 +118,7 @@ Also verify the following behavior:
 - [ ] SSH and Screen Sharing are reachable from the approved network.
 - [ ] wsdd advertises `macm5`.
 - [ ] The physical LocalHostName remains `CLFTCLGV2FHWW0W`.
-- [ ] The rendered sing-box configuration is root-owned and mode `0400`.
+- [ ] The rendered home link client configuration is root-owned and mode `0400`.
 - [ ] Private and corporate CIDRs remain direct.
 - [ ] The private link uses the safe direct default before probe history exists.
 - [ ] Link failure leaves ordinary corporate connectivity usable.

@@ -9,15 +9,15 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/glats/nixos-scripts/internal/sshtunnel"
+	"github.com/glats/nixos-scripts/internal/sshforward"
 )
 
-const usageText = `adguard-tunnel — Operator UI access to AdGuard Home on Samsung over SSH
+const usageText = `adguard-ui — Operator UI access to AdGuard Home on Samsung over SSH
 
 Opens an SSH local port-forward from this machine to the AdGuard Home web UI
 (127.0.0.1:3000 on Samsung) and prints the local URL to open.
 
-Why a tunnel: the panel listens only on remote loopback. SSH authentication
+Why a forward: the panel listens only on remote loopback. SSH authentication
 controls access. By default, SSH uses your normal configuration and agent;
 use -key to override the identity (see docs/samsung-adguard-dns.md).
 
@@ -28,7 +28,7 @@ Flags:
                  busy → auto-fallback to +10000 (3000 → 13000), announced on stdout
   -user string   SSH user                             (default "glats")
   -key string    optional SSH identity (~ expanded)   (default: SSH configuration)
-  -open          open the printed URL with xdg-open once the tunnel is up
+  -open          open the printed URL with xdg-open once the forward is up
 
 Press Ctrl+C to stop; the forward is torn down cleanly.
 `
@@ -49,7 +49,7 @@ func die(format string, args ...any) {
 
 func main() {
 	cfg := new(config)
-	fs := flag.NewFlagSet("adguard-tunnel", flag.ExitOnError)
+	fs := flag.NewFlagSet("adguard-ui", flag.ExitOnError)
 	fs.Usage = func() { fmt.Fprint(flag.CommandLine.Output(), usageText) }
 	fs.StringVar(&cfg.host, "host", "samsung.lan", "destination SSH host")
 	fs.IntVar(&cfg.remotePort, "port", 3000, "remote port of the AdGuard Home UI")
@@ -74,7 +74,7 @@ func run(cfg *config) error {
 
 	var keyPath string
 	if cfg.key != "" {
-		keyPath, err = sshtunnel.ExpandHome(cfg.key)
+		keyPath, err = sshforward.ExpandHome(cfg.key)
 		if err != nil {
 			return err
 		}
@@ -83,7 +83,7 @@ func run(cfg *config) error {
 		}
 	}
 
-	chosen, fellBack, err := sshtunnel.PickFreePort(cfg.localPort)
+	chosen, fellBack, err := sshforward.PickFreePort(cfg.localPort)
 	if err != nil {
 		return err
 	}
@@ -91,7 +91,7 @@ func run(cfg *config) error {
 		fmt.Printf("note: local port %d busy — using fallback port %d instead\n", cfg.localPort, chosen)
 	}
 
-	args := sshtunnel.BuildSSHArgs(cfg.host, cfg.user, keyPath, chosen, cfg.remotePort)
+	args := sshforward.BuildSSHArgs(cfg.host, cfg.user, keyPath, chosen, cfg.remotePort)
 	cmd := exec.CommandContext(context.Background(), sshPath, args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -99,12 +99,12 @@ func run(cfg *config) error {
 		return fmt.Errorf("starting ssh: %w", err)
 	}
 
-	url := sshtunnel.LocalURL(chosen)
+	url := sshforward.LocalURL(chosen)
 	identity := ""
 	if keyPath != "" {
 		identity = fmt.Sprintf("-i %s ", keyPath)
 	}
-	fmt.Printf("tunnel up: %s -> 127.0.0.1:%d (ssh %s%s@%s)\n", url, cfg.remotePort, identity, cfg.user, cfg.host)
+	fmt.Printf("forward up: %s -> 127.0.0.1:%d (ssh %s%s@%s)\n", url, cfg.remotePort, identity, cfg.user, cfg.host)
 	fmt.Printf("Press Ctrl+C to stop.\n")
 	if cfg.open {
 		if xdg, lookErr := exec.LookPath("xdg-open"); lookErr == nil {
@@ -129,6 +129,6 @@ func run(cfg *config) error {
 			return fmt.Errorf("ssh exited with error — host unreachable or key not authorized? see docs/samsung-adguard-dns.md")
 		}
 	}
-	fmt.Println("tunnel stopped.")
+	fmt.Println("forward stopped.")
 	return nil
 }

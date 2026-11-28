@@ -57,7 +57,7 @@ in
     qtbase = final.qt6.qtbase;
     qtsvg = final.qt6.qtsvg;
   };
-  wstunnel-relay = final.callPackage ../pkgs/wstunnel-relay { };
+  relay-transport = final.callPackage ../pkgs/relay-transport { };
 
   pythonPackagesExtensions = (prev.pythonPackagesExtensions or [ ]) ++ [
     (_: pyPrev: {

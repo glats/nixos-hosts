@@ -24,10 +24,10 @@ let
     if builtins.hasAttr system assets then
       assets.${system}
     else
-      throw "wstunnel-relay: unsupported platform ${system}; only x86_64-linux and aarch64-darwin are pinned";
+      throw "relay-transport: unsupported platform ${system}; only x86_64-linux and aarch64-darwin are pinned";
 in
 stdenvNoCC.mkDerivation {
-  pname = "wstunnel-relay";
+  pname = "relay-transport";
   version = "11.1.0";
 
   src = fetchurl {
@@ -49,17 +49,17 @@ stdenvNoCC.mkDerivation {
     runHook preInstall
     mkdir -p unpack
     tar -xzf "$src" -C unpack
-    install -Dm755 unpack/wstunnel "$out/bin/wstunnel"
+    install -Dm755 unpack/wstunnel "$out/bin/relay-transport"
     runHook postInstall
   '';
 
   installCheckPhase = ''
     runHook preInstallCheck
-    file "$out/bin/wstunnel"
-    test -x "$out/bin/wstunnel"
+    file "$out/bin/relay-transport"
+    test -x "$out/bin/relay-transport"
     ${lib.optionalString canExecute ''
-      "$out/bin/wstunnel" --version
-      "$out/bin/wstunnel" --help >/dev/null
+      "$out/bin/relay-transport" --version
+      "$out/bin/relay-transport" --help >/dev/null
     ''}
     runHook postInstallCheck
   '';
@@ -67,10 +67,9 @@ stdenvNoCC.mkDerivation {
   doInstallCheck = true;
 
   meta = {
-    description = "Official precompiled wstunnel relay transport";
-    homepage = "https://github.com/erebe/wstunnel";
+    description = "Pinned precompiled relay transport";
     license = lib.licenses.bsd3;
-    mainProgram = "wstunnel";
+    mainProgram = "relay-transport";
     platforms = builtins.attrNames assets;
   };
 }

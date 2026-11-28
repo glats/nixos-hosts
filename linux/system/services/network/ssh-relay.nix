@@ -10,12 +10,12 @@ let
 in
 {
   options.services.ssh-relay = {
-    enable = lib.mkEnableOption "the loopback-only wstunnel SSH relay";
+    enable = lib.mkEnableOption "the loopback-only SSH relay";
 
     restrictionsFile = lib.mkOption {
       type = lib.types.nullOr lib.types.path;
       default = null;
-      description = "Runtime-only wstunnel restriction file owned by the relay user.";
+      description = "Runtime-only restriction file owned by the relay user.";
     };
 
     listenPort = lib.mkOption {
@@ -26,8 +26,8 @@ in
 
     package = lib.mkOption {
       type = lib.types.package;
-      default = pkgs.wstunnel-relay;
-      description = "Pinned Rust wstunnel package used by the relay server.";
+      default = pkgs.relay-transport;
+      description = "Pinned relay transport package used by the relay server.";
     };
   };
 
@@ -57,7 +57,7 @@ in
       systemd.tmpfiles.rules = [ "d /var/lib/ssh-relay 0755 root root -" ];
 
       systemd.services.ssh-relay = {
-        description = "Loopback-only wstunnel SSH relay";
+        description = "Loopback-only SSH relay";
         wantedBy = [ "multi-user.target" ];
         after = [ "network-online.target" ];
         wants = [ "network-online.target" ];
@@ -65,7 +65,7 @@ in
         serviceConfig = {
           User = "ssh-relay";
           Group = "ssh-relay";
-          ExecStart = "${cfg.package}/bin/wstunnel server --log-lvl off --restrict-config ${cfg.restrictionsFile} ws://127.0.0.1:${toString cfg.listenPort}";
+          ExecStart = "${cfg.package}/bin/relay-transport server --log-lvl off --restrict-config ${cfg.restrictionsFile} ws://127.0.0.1:${toString cfg.listenPort}";
           ExecStartPre = [
             "${pkgs.coreutils}/bin/test ! -L ${cfg.restrictionsFile}"
             "${pkgs.coreutils}/bin/test -O ${cfg.restrictionsFile}"

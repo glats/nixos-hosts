@@ -10,7 +10,7 @@ import (
 
 func main() {
 	if len(os.Args) != 3 {
-		fmt.Fprintln(os.Stderr, "usage: relay-client HEADERS_FILE WSTUNNEL")
+		fmt.Fprintln(os.Stderr, "usage: relay-client HEADERS_FILE TRANSPORT")
 		os.Exit(2)
 	}
 	if err := sshrelay.ValidateHeaderFile(os.Args[1]); err != nil {

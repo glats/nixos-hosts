@@ -11,7 +11,7 @@ import (
 
 func TestCLI(t *testing.T) {
 	dir := t.TempDir()
-	binary := filepath.Join(dir, "adguard-tunnel")
+	binary := filepath.Join(dir, "adguard-ui")
 	build := exec.Command("go", "build", "-o", binary, ".")
 	if output, err := build.CombinedOutput(); err != nil {
 		t.Fatalf("build: %v\n%s", err, output)
@@ -48,7 +48,7 @@ func TestCLI(t *testing.T) {
 			if string(got) != tt.want {
 				t.Fatalf("SSH args = %q, want %q", got, tt.want)
 			}
-			if !strings.Contains(string(output), "tunnel up: http://127.0.0.1:") || !strings.Contains(string(output), "tunnel stopped.") {
+			if !strings.Contains(string(output), "forward up: http://127.0.0.1:") || !strings.Contains(string(output), "forward stopped.") {
 				t.Fatalf("unexpected output: %s", output)
 			}
 		})

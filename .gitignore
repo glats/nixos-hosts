@@ -17,7 +17,7 @@ credentials.json
 
 # Corporate CA cert (extracted from Apple SecTrust, never committed)
 certs/corporate-ca.crt
-certs/netskope-*.crt
+certs/corporate-proxy-*.crt
 
 # Git worktrees
 .worktrees/

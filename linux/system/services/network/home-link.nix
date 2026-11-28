@@ -8,11 +8,11 @@
 let
   wsPath = "/ed59280aa562f4b7eba4519e3c316e24";
 
-  cfg = config.services.sing-box-link;
+  cfg = config.services.home-link;
   pathFor = name: config.sops."secrets".${name}.path;
 in
 {
-  options.services.sing-box-link = {
+  options.services.home-link = {
     enable = lib.mkEnableOption "loopback VLESS+WS server of the macm5↔rog private link";
 
     port = lib.mkOption {
@@ -36,7 +36,7 @@ in
           {
             type = "vless";
             listen = "127.0.0.1";
-            listen_port = config.services.sing-box-link.port;
+            listen_port = config.services.home-link.port;
             users = [
               {
                 name = "macm5";

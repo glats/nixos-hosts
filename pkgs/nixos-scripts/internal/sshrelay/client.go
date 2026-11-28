@@ -204,13 +204,13 @@ func installAuthorizationFile(path, token string, owner uint32) error {
 
 const relayServerURL = "wss://relay.glats.org:443"
 
-// DefaultForwardListenerPort is the local port wstunnel binds on the Mac so
-// the rog-relay ssh alias can reach rog's sshd through the relay.
+// DefaultForwardListenerPort is the local port the relay transport binds on
+// the Mac so the rog-relay ssh alias can reach rog's sshd through the relay.
 const DefaultForwardListenerPort = 22221
 
 func ClientArgs(binary, headersFile string, listenerPort, forwardPort uint16) ([]string, error) {
 	if !filepath.IsAbs(binary) {
-		return nil, errors.New("sshrelay: wstunnel binary path must be absolute")
+		return nil, errors.New("sshrelay: relay transport binary path must be absolute")
 	}
 	if !filepath.IsAbs(headersFile) {
 		return nil, errors.New("sshrelay: header file path must be absolute")

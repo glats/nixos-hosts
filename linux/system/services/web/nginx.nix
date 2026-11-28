@@ -557,8 +557,8 @@ in
         extraConfig = ''
           # G12: nginx-generated 404s (guarded WS path above + stray
           # paths) must present the cover page, never a bare nginx error
-          # page. Upstream (sing-box) responses pass through unchanged —
-          # proxy_intercept_errors stays off — so the tunnel is unaffected.
+          # page. Upstream (home link server) responses pass through unchanged —
+          # proxy_intercept_errors stays off — so the relay is unaffected.
           error_page 404 /index.html;
 
           ${secHeaders "DENY"}

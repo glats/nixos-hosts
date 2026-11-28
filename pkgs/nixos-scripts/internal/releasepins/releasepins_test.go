@@ -44,8 +44,11 @@ stdenvNoCC.mkDerivation {
 }
 `
 
-const wstunnelFixture = `{
+const relayTransportFixture = `{
   fetchurl,
+  file,
+  gnutar,
+  gzip,
   lib,
   stdenvNoCC,
 }:
@@ -53,22 +56,56 @@ const wstunnelFixture = `{
 let
   assets = {
     "x86_64-linux" = {
-      name = "wstunnel_11.0.0_linux_amd64.tar.gz";
-      hash = "sha256-lwiplxe1qVFFPC/3wUwl00GNAsp/y5b9s4Ko8gg7q14=";
+      name = "wstunnel_11.1.0_linux_amd64.tar.gz";
+      hash = "sha256-US7fTnu2T8EzUiIgEjUUho+udbW65BJLU+OWeHJ2qiM=";
     };
     "aarch64-darwin" = {
-      name = "wstunnel_11.0.0_darwin_arm64.tar.gz";
-      hash = "sha256-FQ5DnIuUhZFUkD1xMTtMCzE6ycz5lDevQlcxNOUFHcQ=";
+      name = "wstunnel_11.1.0_darwin_arm64.tar.gz";
+      hash = "sha256-h/wNaFYySHKcjEU1nlp1AQQZkBRYUMQ8I6luUWVsKIA=";
     };
   };
   system = stdenvNoCC.hostPlatform.system;
+  canExecute = stdenvNoCC.buildPlatform.canExecute stdenvNoCC.hostPlatform;
+  asset =
+    if builtins.hasAttr system assets then
+      assets.${system}
+    else
+      throw "relay-transport: unsupported platform ${system}; only x86_64-linux and aarch64-darwin are pinned";
 in
 stdenvNoCC.mkDerivation {
-  pname = "wstunnel-relay";
-  version = "11.0.0";
+  pname = "relay-transport";
+  version = "11.1.0";
+
   src = fetchurl {
-    url = "https://github.com/erebe/wstunnel/releases/download/v11.0.0/${asset.name}";
-    hash = asset.hash;
+    url = "https://github.com/erebe/wstunnel/releases/download/v11.1.0/${asset.name}";
+    inherit (asset) hash;
+  };
+
+  nativeBuildInputs = [
+    file
+    gnutar
+    gzip
+  ];
+
+  dontStrip = true;
+
+  unpackPhase = "true";
+
+  installPhase = ''
+    runHook preInstall
+    mkdir -p unpack
+    tar -xzf "$src" -C unpack
+    install -Dm755 unpack/wstunnel "$out/bin/relay-transport"
+    runHook postInstall
+  '';
+
+  doInstallCheck = true;
+
+  meta = {
+    description = "Pinned precompiled relay transport";
+    license = lib.licenses.bsd3;
+    mainProgram = "relay-transport";
+    platforms = builtins.attrNames assets;
   };
 }
 `
@@ -294,11 +331,11 @@ func TestUpdatesAllPlatformHashesInEachRepresentation(t *testing.T) {
 				_, _ = w.Write([]byte("darwin-tar"))
 			},
 		}
-		root := writeFixture(t, "pkgs/wstunnel-relay/default.nix", wstunnelFixture)
-		if err := Update(root, fakeClient(routes), "pkgs/wstunnel-relay/default.nix"); err != nil {
+		root := writeFixture(t, "pkgs/relay-transport/default.nix", relayTransportFixture)
+		if err := Update(root, fakeClient(routes), "pkgs/relay-transport/default.nix"); err != nil {
 			t.Fatal(err)
 		}
-		got := readFixture(t, root, "pkgs/wstunnel-relay/default.nix")
+		got := readFixture(t, root, "pkgs/relay-transport/default.nix")
 		for _, want := range []string{
 			`version = "12.0.0";`,
 			`wstunnel_12.0.0_linux_amd64.tar.gz`,
@@ -330,11 +367,11 @@ func TestUpdatesVersionLiteralWithoutLeadingV(t *testing.T) {
 			_, _ = w.Write([]byte("darwin-tar"))
 		},
 	}
-	root := writeFixture(t, "pkgs/wstunnel-relay/default.nix", wstunnelFixture)
-	if err := Update(root, fakeClient(routes), "pkgs/wstunnel-relay/default.nix"); err != nil {
+	root := writeFixture(t, "pkgs/relay-transport/default.nix", relayTransportFixture)
+	if err := Update(root, fakeClient(routes), "pkgs/relay-transport/default.nix"); err != nil {
 		t.Fatal(err)
 	}
-	got := readFixture(t, root, "pkgs/wstunnel-relay/default.nix")
+	got := readFixture(t, root, "pkgs/relay-transport/default.nix")
 	if !strings.Contains(got, `version = "12.0.0";`) {
 		t.Fatalf("version literal missing or wrong:\n%s", got)
 	}

@@ -17,14 +17,14 @@ let
   corporateCaBundle = pkgs.runCommand "corporate-ca-bundle" { } ''
     mkdir -p $out/etc/ssl/certs
 
-    # Extract Netskope root CA from macOS system keychain.
+    # Extract corporate root CA from macOS system keychain.
     /usr/bin/security find-certificate -a -c "certadmin" -p \
-      /Library/Keychains/System.keychain > /tmp/netskope-root.crt
+      /Library/Keychains/System.keychain > /tmp/corporate-proxy-root.crt
 
-    cat ${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt /tmp/netskope-root.crt \
+    cat ${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt /tmp/corporate-proxy-root.crt \
       > $out/etc/ssl/certs/ca-bundle.crt
 
-    rm /tmp/netskope-root.crt
+    rm /tmp/corporate-proxy-root.crt
   '';
 in
 {
@@ -39,7 +39,7 @@ in
     ../../darwin/system/zsh.nix
     ../../darwin/services/wsdd.nix
     ../../darwin/services/sunshine.nix
-    ../../darwin/system/sing-box-link.nix
+    ../../darwin/system/home-link.nix
     ../../darwin/system/sops.nix
     ../../darwin/system/ssh-relay.nix
     ../../darwin/system/lan-resolver.nix
@@ -48,8 +48,6 @@ in
     inputs.nix-homebrew.darwinModules.nix-homebrew
     inputs.sops-nix.darwinModules.sops
   ];
-
-  link.directCidrs = [ "163.116.0.0/16" ];
 
   # Distrust for the eMudhra intermediate CA compromise (Oct 2026).
   security.pki.caCertificateBlacklist = [

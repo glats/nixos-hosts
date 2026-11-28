@@ -72,7 +72,7 @@
     ../../linux/system/services/web/droppy.nix
 
     ../../linux/system/services/network/wireguard.nix
-    ../../linux/system/services/network/sing-box-link.nix
+    ../../linux/system/services/network/home-link.nix
     ../../linux/system/services/network/ddclient.nix
     ../../linux/system/networking/cloudflare-cli.nix
     ../../linux/system/services/network/samba.nix
@@ -183,7 +183,7 @@
 
   system.stateVersion = "25.05";
 
-  services.sing-box-link.enable = true;
+  services.home-link.enable = true;
 
   services.ssh-relay = {
     enable = true;

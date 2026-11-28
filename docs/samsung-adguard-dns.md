@@ -16,9 +16,9 @@ instance (`docs/oneplus5-adguard-dns.md`, historical). The configuration is decl
   queries into its own dnsmasq (which forwards to samsung first), so those
   fallback entries are no longer a bypass; see `docs/lan-dns-enforcement.md`.
 - The web panel binds `127.0.0.1:3000` only, with no login (a declarative password
-  hash would be world-readable in `/nix/store`). Reach it through a tunnel:
-  From rog, run `adguard-tunnel -open`, which uses `samsung.lan` and the normal SSH
-  configuration. Keep the terminal open; press Ctrl+C to close the tunnel. Without
+  hash would be world-readable in `/nix/store`). Reach it through an SSH forward:
+  From rog, run `adguard-ui -open`, which uses `samsung.lan` and the normal SSH
+  configuration. Keep the terminal open; press Ctrl+C to close the forward. Without
   `-open`, open the printed URL manually (normally `http://127.0.0.1:3000`; if port
   3000 is busy, the command uses 13000). Use `-key ~/.ssh/id_ed25519_lan` for an
   explicit identity, or `-host`, `-user`, `-port`, and `-local` to override defaults.

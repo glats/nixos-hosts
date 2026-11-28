@@ -7,18 +7,18 @@ This document describes how to merge macOS-specific secrets into the unified Nix
 ## Current State
 
 - **NixOS secrets**: `secrets/user/api_keys.yaml` (encrypted with sops)
-- **macOS secrets**: `/home/glats/Work/nix-macos/.secrets/user.yaml` (encrypted with sops)
+- **macOS secrets**: `~/nix-macos/.secrets/user.yaml` (encrypted with sops)
 
 ## macOS-Specific Secrets to Add
 
 The following secrets exist in the macOS repo but are NOT in the NixOS `secrets/user/api_keys.yaml`:
 
 ```
-opencode/atlassian_jira_url
-opencode/atlassian_username
-opencode/atlassian_api_token
-opencode/confluence_url
-opencode/confluence_pat
+opencode/tracker_url
+opencode/tracker_username
+opencode/tracker_api_token
+opencode/wiki_url
+opencode/wiki_pat
 github/token
 ```
 
@@ -28,7 +28,7 @@ github/token
 
 1. Decrypt the macOS secrets file:
    ```bash
-   cd /home/glats/Work/nix-macos
+   cd ~/nix-macos
    sops -d .secrets/user.yaml
    ```
 
@@ -51,7 +51,7 @@ If both files use the same encryption key (admin_glats), you can use sops merge:
 
 ```bash
 cd /home/glats/.nixos
-sops --merge secrets/user/api_keys.yaml /home/glats/Work/nix-macos/.secrets/user.yaml
+sops --merge secrets/user/api_keys.yaml ~/nix-macos/.secrets/user.yaml
 ```
 
 ## SOPS Configuration
@@ -72,8 +72,8 @@ After merging, verify the secrets are accessible:
 
 ```bash
 # On Linux (rog/thinkcentre)
-sops -d secrets/user/api_keys.yaml | grep atlassian
+sops -d secrets/user/api_keys.yaml | grep tracker
 
 # On macOS (macm5)
-sops -d secrets/user/api_keys.yaml | grep atlassian
+sops -d secrets/user/api_keys.yaml | grep tracker
 ```

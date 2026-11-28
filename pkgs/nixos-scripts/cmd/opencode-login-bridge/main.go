@@ -13,7 +13,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/glats/nixos-scripts/internal/sshtunnel"
+	"github.com/glats/nixos-scripts/internal/sshforward"
 )
 
 const defaultPorts = "1455,1457,53692"
@@ -150,7 +150,7 @@ func run(cfg *config, portsExplicit bool) error {
 		portNumbers = append(portNumbers, cb.port)
 	}
 
-	args, err := sshtunnel.BuildBridgeSSHArgs(cfg.host, portNumbers)
+	args, err := sshforward.BuildBridgeSSHArgs(cfg.host, portNumbers)
 	if err != nil {
 		return err
 	}

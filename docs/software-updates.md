@@ -22,7 +22,7 @@ Upgrade runs, in order:
 1. The OpenCode release update, then `npm install --package-lock-only --save-exact` for OpenCode's closure.
 2. `npm install --package-lock-only --save-exact @browsermcp/mcp@latest` for BrowserMCP.
    The patched quota plugin follows the newest release of its current major (lock and `npmDepsHash` included) and reports a newer major without moving to it.
-3. The GitHub release binary updater (`leaf`, `wstunnel-relay`, `findersearch`).
+3. The GitHub release binary updater (`leaf`, `relay-transport`, `findersearch`).
 4. The Gentle AI and Engram pinning (`gentle-ai-src` and `engram-src` in `flake.nix`, plus the coupled version literals).
 5. `nix flake update --flake <selected-worktree>` for every input.
 6. `nix-update --flake` from the repository root for `archify-skill` and `herdr`, plus `openfang` and `mcp-supermercados-cl` on Linux, and `--version=skip` (vendor hash only) for `gentle-ai` and `engram`.

@@ -121,28 +121,28 @@ Notes:
   return (≤ 3 min), then re-run the verify block above. The service must come
   back active with the phone still holding `172.16.0.12`.
 
-### Operator UI access via SSH tunnel (`adguard-tunnel`)
+### Operator UI access via SSH forward (`adguard-ui`)
 
 The phone firewall intentionally blocks `:3000` from the LAN, so UI access
 from a PC goes through SSH itself, authenticated with the dedicated key
-(`~/.ssh/oneplus5`). The `adguard-tunnel` Go helper (in
-`pkgs/nixos-scripts/cmd/adguard-tunnel/`, repo `pkgs/nixos-scripts`)
+(`~/.ssh/oneplus5`). The `adguard-ui` Go helper (in
+`pkgs/nixos-scripts/cmd/adguard-ui/`, repo `pkgs/nixos-scripts`)
 automates this: it opens the local port-forward, prints the resolved local
 UI URL, and tears the forward down cleanly on Ctrl+C.
 
 ```sh
-adguard-tunnel                      # => tunnel up: http://127.0.0.1:3000/ -> 172.16.0.12:3000
-adguard-tunnel -open                # same, also xdg-open the URL
+adguard-ui                          # => forward up: http://127.0.0.1:3000/ -> 172.16.0.12:3000
+adguard-ui -open                    # same, also xdg-open the URL
 ```
 
 Defaults are `-host 172.16.0.12 -port 3000 -local 3000 -user glats
--key ~/.ssh/oneplus5`; run `adguard-tunnel -h` for the full list. If the
+-key ~/.ssh/oneplus5`; run `adguard-ui -h` for the full list. If the
 preferred local port is busy the helper falls back to `+10000` (3000 →
 13000) automatically and prints the note; if both are busy it refuses with
 a clear error. SSH key auth is the access control for the admin UI — the
 helper works only where `~/.ssh/oneplus5` resolves to the authorized key.
 
-Run it as `adguard-tunnel` — it ships in `pkgs/nixos-scripts` and is on
+Run it as `adguard-ui` — it ships in `pkgs/nixos-scripts` and is on
 PATH (per-user home-manager profile, `/etc/profiles/per-user/<user>/bin/`)
 after a host switch (`nixos-build`).
 
@@ -153,7 +153,7 @@ administratively prohibited`. A scoped drop-in fixes exactly this case
 without loosening the rest:
 
 ```sh
-# /etc/ssh/sshd_config.d/100-adguard-tunnel.conf (on the phone)
+# /etc/ssh/sshd_config.d/100-adguard-ui.conf (on the phone)
 AllowTcpForwarding local
 PermitOpen 172.16.0.12:3000
 ```
@@ -310,8 +310,8 @@ diff <(ssh -i ~/.ssh/oneplus5 glats@172.16.0.12 'sudo cat /etc/systemd/system/ad
 - **Web UI not reachable from a PC on `:3000`** — the phone's curated
   nftables firewall (`/etc/nftables.nft`, input `policy drop`) allowlists
   SSH/DNS/DHCP but not the admin UI, by design. To manage from a PC use the
-  SSH loopback helper: `adguard-tunnel` (see
-  [Operator UI access](#operator-ui-access-via-ssh-tunnel-adguard-tunnel)) —
+  SSH loopback helper: `adguard-ui` (see
+  [Operator UI access](#operator-ui-access-via-ssh-forward-adguard-ui)) —
   SSH key auth is the access control; no firewall change is needed. Do NOT
   bypass the firewall with router or Tailscale port-forwarding, and never
   open it by a firewall rule without an explicit operator decision (drop-in

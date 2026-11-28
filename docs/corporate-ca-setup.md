@@ -1,6 +1,6 @@
 # Corporate CA Setup — New Machine
 
-The corporate network uses a Netskope MITM proxy that intercepts all
+The corporate network uses a corporate TLS-inspection proxy that intercepts all
 HTTPS traffic. Nix-built programs (curl, git, nvim-treesitter) don't trust
 the proxy's CA by default because they use the Nix-bundled Mozilla CA store
 rather than macOS Keychain.
@@ -22,13 +22,13 @@ nixos-build
 ## How It Works
 
 `hosts/macm5/default.nix` defines a `corporateCaBundle` derivation that
-combines the Mozilla CA bundle (`pkgs.cacert`) with the Netskope corporate
+combines the Mozilla CA bundle (`pkgs.cacert`) with the corporate
 CA certificate into a single file. The `NIX_SSL_CERT_FILE` environment
 variable points to this combined bundle.
 
 ```
-Mozilla CA (121 certs) + Netskope CA (1 cert) → 122-cert bundle
-                                                    ↓
+Mozilla CA (121 certs) + corporate CA (1 cert) → 122-cert bundle
+                                                        ↓
                               NIX_SSL_CERT_FILE → /nix/store/.../ca-bundle.crt
 ```
 
@@ -71,7 +71,7 @@ Verify the extracted cert:
 openssl x509 -in certs/corporate-ca.crt -noout -subject -issuer
 # Example only; the actual subject depends on your organization:
 #   subject=CN = ca.company.example
-#   issuer=CN = certadmin, O = Netskope Inc.
+#   issuer=CN = <proxy CA name>, O = <corporate proxy vendor>
 ```
 
 ### 2. Verify the Combined Bundle
@@ -142,7 +142,7 @@ If the new machine needs a different host entry in `flake.nix`:
 
 ## Certificate Rotation
 
-The Netskope proxy rotates its CA certificate periodically (~90 days). When
+The corporate proxy rotates its CA certificate periodically (~90 days). When
 this happens:
 
 1. Extract the new CA on any corporate-connected machine

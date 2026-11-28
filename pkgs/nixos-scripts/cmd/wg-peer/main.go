@@ -361,7 +361,7 @@ PersistentKeepalive = 25
 	fmt.Println("  1. Copy this file to the thinkpad and import:")
 	fmt.Printf("     scp %s thinkpad:/etc/wireguard/wg0.conf\n", outputFile)
 	fmt.Println()
-	fmt.Println("  2. On the thinkpad, start the tunnel:")
+	fmt.Println("  2. On the thinkpad, bring the link up:")
 	fmt.Println("     sudo wg-quick up wg0")
 	fmt.Println()
 	fmt.Println("  3. Rebuild rog with new public key:")

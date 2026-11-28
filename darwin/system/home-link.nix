@@ -41,17 +41,11 @@ let
     domain_suffix = dom;
     outbound = "direct";
   }) cfg.directDomains
+  ++ lib.optional (cfg.directProcessNames != [ ]) {
+    process_name = cfg.directProcessNames;
+    outbound = "direct";
+  }
   ++ [
-    {
-      process_name = [
-        "falcon-sensor"
-        "falconctl"
-        "nsproxy"
-        "Netskope Client"
-        "forticlient"
-      ];
-      outbound = "direct";
-    }
     { outbound = "home-out"; }
   ];
 
@@ -168,10 +162,10 @@ in
       ];
       default = "full";
       description = ''
-        Routing mode for the sing-box TUN client.
+        Routing mode for the home link TUN client.
         `full` sends all traffic through the link except ip_is_private,
-        link.directCidrs, link.directDomains, and known EDR
-        process names — those go direct.
+        link.directCidrs, link.directDomains, and
+        link.directProcessNames — those go direct.
         `scoped` sends only chatgpt.com + auth.openai.com through the
         link and everything else direct.
       '';
@@ -186,8 +180,18 @@ in
       ];
       description = ''
         Domains matched via domain_suffix that must always go direct
-        (corporate, endpoint security / EDR management, etc.). Empty
+        (management endpoints and similar). Empty
         by default — populate as endpoints are confirmed.
+      '';
+    };
+
+    directProcessNames = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      example = [ "example-agent" ];
+      description = ''
+        Process names whose traffic must always go direct (management
+        agents and similar clients). Empty by default.
       '';
     };
 
@@ -199,8 +203,8 @@ in
         "192.168.0.0/16"
       ];
       description = ''
-        CIDRs that must always go direct (corporate subnets, EDR
-        management networks, LAN ranges the user wants to reach
+        CIDRs that must always go direct (managed subnets, device
+        management ranges, LAN ranges the user wants to reach
         without TUN). Empty by default — populate as endpoints are
         confirmed.
       '';

@@ -9,7 +9,7 @@ source preparation is not end-to-end readiness. It does not change routes, TUN,
 
 `macm5` runs the manually controlled `relayctl on` primary-user launch agent
 rendered by nix-darwin under `~/Library/LaunchAgents`. The agent
-starts the pinned official precompiled Rust wstunnel 11.0.0 client, which makes verified WSS TCP443
+starts the pinned official precompiled Rust relay transport 11.0.0 client, which makes verified WSS TCP443
 connections to exactly `wss://relay.glats.org:443` and publishes only
 `127.0.0.1:22` as `tcp://127.0.0.1:22220:127.0.0.1:22`. It also binds the
 forward listener `tcp://127.0.0.1:22221:127.0.0.1:22` so the Mac can reach
@@ -20,9 +20,9 @@ record through `HostKeyAlias`; it does not disable host-key checking. The
 macm5-only aliases are symmetric: `rog-relay` (loopback 22221, `HostKeyAlias
 rog`) and `thinkcentre-relay` (ProxyJump through `rog-relay`, `HostKeyAlias
 thinkcentre`), both reusing the LAN identity. The macm5 relay policy allows the
-reverse tunnel to loopback 22220 and a forward tunnel to loopback port 22
+reverse relay to loopback 22220 and a forward relay to loopback port 22
 only; the final hop to thinkcentre happens over SSH on rog, not through the
-tunnel.
+relay.
 
 ## Initial deployment and promotion
 
@@ -128,8 +128,8 @@ authorized runtime verification.
 ## Runtime credential boundary
 
 The server restriction file
-must contain the native wstunnel YAML `restrictions` list and exactly one
-anchored `!ReverseTunnel` Authorization rule permitting protocol `Tcp`, port
+must contain the native relay transport YAML `restrictions` list and exactly one
+anchored reverse-forward Authorization rule permitting protocol `Tcp`, port
 `22220`, and CIDR `127.0.0.1/32`. The client header file must contain the
 native `Authorization: ...` header line. On macm5, the default system-sops secret remains
 at `/run/secrets/ssh-relay/authorization` with owner `juan` and mode `0600`;
@@ -153,7 +153,7 @@ The safe operator sequence is: stop the dedicated relay service, verify its
 process and active streams are gone, inhibit restart, replace and validate the
 current policy/header files, then start only when validation succeeds. On any
 failure, leave the service stopped. Use `restrictions: []` for the final
-removal. Existing wstunnel hot reload behavior must not be treated as immediate
+removal. Existing relay transport hot reload behavior must not be treated as immediate
 revocation.
 
 For the ROG server, first run `relay-policy stage
@@ -177,12 +177,10 @@ These runtime gates have not been run by this source-preparation work unit.
 
 ## Package provenance
 
-The package downloads only the official GitHub v11.0.0 release assets; it does
-not compile Rust or fall back to a source build. Supported assets are
-`wstunnel_11.0.0_linux_amd64.tar.gz` (SHA256
-`9708a99717b5a951453c2ff7c14c25d3418d02ca7fcb96fdb382a8f2083bab5e`) and
-`wstunnel_11.0.0_darwin_arm64.tar.gz` (SHA256
-`150e439c8b94859154903d71313b4c0b313ac9ccf99437af42573134e5051dc4`). The
+The package downloads only the pinned official upstream release assets listed
+in `pkgs/relay-transport/default.nix`; it does not compile Rust or fall back to
+a source build. Supported assets are the linux amd64 and darwin arm64 archives,
+each pinned by SHA256 in that file. The
 Linux derivation checks `--version` and `--help`; Darwin asset inspection and
 derivation evaluation pass. Bounded native Darwin execution and quiet retries
 against an unavailable disposable endpoint passed; production connectivity,
@@ -191,8 +189,8 @@ installed launchd lifecycle, and long outage/sleep recovery remain pending.
 ## Operational controls
 
 On macOS, run `relayctl on`, `relayctl status`, or `relayctl off` manually.
-The launch agent has `KeepAlive = false` and `RunAtLoad = false`; wstunnel owns
-its capped native reconnect backoff. A fatal wstunnel exit is degraded state,
+The launch agent has `KeepAlive = false` and `RunAtLoad = false`; the relay transport owns
+its capped native reconnect backoff. A fatal relay transport exit is degraded state,
 not an automatic recovery guarantee. `status` reports relay and SSH evidence as
 unknown until a separate authorized end-to-end probe exists.
 

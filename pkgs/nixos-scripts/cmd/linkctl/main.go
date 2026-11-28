@@ -11,6 +11,8 @@ import (
 const (
 	label = "org.nixos.sing-box"
 	plist = "/Library/LaunchDaemons/" + label + ".plist"
+
+	serviceName = "home link client"
 )
 
 func usage() {
@@ -41,7 +43,7 @@ func lc(suppressStderr bool, args ...string) (string, int) {
 func printState() {
 	out, _ := lc(true, "print", "system/"+label)
 	if strings.TrimSpace(out) == "" {
-		fmt.Printf("linkctl: %s stopped (booted out or never loaded since boot)\n", label)
+		fmt.Printf("linkctl: %s stopped (booted out or never loaded since boot)\n", serviceName)
 		return
 	}
 	var lines []string
@@ -58,18 +60,18 @@ func printState() {
 		fmt.Println(strings.Join(lines, "\n"))
 	}
 	if !hasPID {
-		fmt.Printf("linkctl: %s registered, idle — run: linkctl start\n", label)
+		fmt.Printf("linkctl: %s registered, idle — run: linkctl start\n", serviceName)
 	}
 }
 
 func cmdStart() {
 	if _, rc := lc(true, "print", "system/"+label); rc == 0 {
 		if _, rc := lc(true, "kickstart", "system/"+label); rc != 0 {
-			fmt.Fprintf(os.Stderr, "linkctl: kickstart failed for %s (sudo?)\n", label)
+			fmt.Fprintf(os.Stderr, "linkctl: kickstart failed for %s (sudo?)\n", serviceName)
 		}
 	} else if _, rc := lc(true, "bootstrap", "system", plist); rc == 0 {
 		if _, rc := lc(true, "kickstart", "system/"+label); rc != 0 {
-			fmt.Fprintf(os.Stderr, "linkctl: kickstart failed for %s (sudo?)\n", label)
+			fmt.Fprintf(os.Stderr, "linkctl: kickstart failed for %s (sudo?)\n", serviceName)
 		}
 	} else {
 		fmt.Fprintf(os.Stderr, "linkctl: bootstrap failed for %s (sudo?)\n", plist)
@@ -82,9 +84,9 @@ func cmdStop() {
 	combined := strings.ToLower(out)
 	switch {
 	case rc == 0:
-		fmt.Printf("linkctl: %s booted out — TUN down, 100%% corporate path\n", label)
+		fmt.Printf("linkctl: %s booted out — TUN down, 100%% corporate path\n", serviceName)
 	case rc == 3 || strings.Contains(combined, "no such process") || strings.Contains(combined, "could not find service"):
-		fmt.Printf("linkctl: %s already stopped (nothing running — corporate path active)\n", label)
+		fmt.Printf("linkctl: %s already stopped (nothing running — corporate path active)\n", serviceName)
 	default:
 		fmt.Fprintf(os.Stderr, "linkctl: bootout failed (rc=%d): %s\n", rc, strings.TrimSpace(out))
 	}
@@ -95,7 +97,7 @@ func cmdRestart() {
 	lc(true, "bootout", "system/"+label)
 	if _, rc := lc(true, "bootstrap", "system", plist); rc == 0 {
 		if _, rc := lc(true, "kickstart", "system/"+label); rc != 0 {
-			fmt.Fprintf(os.Stderr, "linkctl: kickstart failed for %s (sudo?)\n", label)
+			fmt.Fprintf(os.Stderr, "linkctl: kickstart failed for %s (sudo?)\n", serviceName)
 		}
 	} else {
 		fmt.Fprintf(os.Stderr, "linkctl: bootstrap failed for %s (sudo?)\n", plist)

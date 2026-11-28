@@ -85,8 +85,8 @@ func isTerminal(f *os.File) bool {
 func usage() {
 	fmt.Fprintf(os.Stderr, `Usage: %s <device> [<uuid-file>]
 
-Print a vless:// share link to stdout for importing into sing-box for
-Android (SFA). The phone UUID is read at runtime from the host's
+Print a vless:// share link to stdout for importing into the Android
+home link client (SFA). The phone UUID is read at runtime from the host's
 rendered sops file and never written to disk, the Nix store, or logs.
 
 Arguments:
@@ -164,7 +164,7 @@ func main() {
 	if !isTerminal(os.Stdout) {
 		return
 	}
-	fmt.Fprint(os.Stderr, "\nScan in SFA (sing-box for Android → + → scan/import):\n\n")
+	fmt.Fprint(os.Stderr, "\nScan in the Android home link client (SFA → + → scan/import):\n\n")
 	cmd := exec.Command(qrBin, "-t", "ANSIUTF8", "-m", "2", buildLink(uuid, device))
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
