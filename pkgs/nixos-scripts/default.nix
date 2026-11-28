@@ -26,6 +26,7 @@ buildGoModule {
     "cmd/format-nix"
     "cmd/rtk-init"
     "cmd/relayctl"
+    "cmd/remote-launch"
     "cmd/relay-client"
     "cmd/relay-policy"
     "cmd/gastown-run"

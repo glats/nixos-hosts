@@ -28,14 +28,14 @@ type fakeRelay struct {
 	stops       int
 }
 
-func (f *fakeRelay) up() bool { return f.upNow }
+func (f *fakeRelay) Up() bool { return f.upNow }
 
-func (f *fakeRelay) ensureUp() bool {
+func (f *fakeRelay) EnsureUp() bool {
 	f.ensureCalls++
 	return f.ensureOK
 }
 
-func (f *fakeRelay) stop() { f.stops++ }
+func (f *fakeRelay) Stop() { f.stops++ }
 
 func probeAlways(ok bool) func(string, time.Duration) bool {
 	return func(string, time.Duration) bool { return ok }
@@ -170,7 +170,7 @@ func TestMaybePushOffLanUsesRelayAndStopsIt(t *testing.T) {
 		t.Fatalf("relay ensureUp calls = %d, want 1", relay.ensureCalls)
 	}
 	if relay.stops != 1 {
-		t.Fatalf("relay stops = %d, want 1: a tunnel the hook started must not stay running", relay.stops)
+		t.Fatalf("relay stops = %d, want 1: a link the hook started must not stay running", relay.stops)
 	}
 }
 
@@ -185,10 +185,10 @@ func TestMaybePushOffLanKeepsAlreadyRunningRelay(t *testing.T) {
 		t.Fatalf("push argvs = %v, want %v", runner.argvs, relayPushArgv)
 	}
 	if relay.ensureCalls != 0 {
-		t.Fatalf("relay ensureUp calls = %d, want 0: tunnel was already running", relay.ensureCalls)
+		t.Fatalf("relay ensureUp calls = %d, want 0: link was already running", relay.ensureCalls)
 	}
 	if relay.stops != 0 {
-		t.Fatalf("relay stops = %d, want 0: never stop a tunnel the user started", relay.stops)
+		t.Fatalf("relay stops = %d, want 0: never stop a link the user started", relay.stops)
 	}
 }
 

@@ -3,12 +3,12 @@ package main
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/glats/nixos-scripts/internal/nixbuild"
 	"github.com/glats/nixos-scripts/internal/nixcache"
 	"github.com/glats/nixos-scripts/internal/reporoot"
+	"github.com/glats/nixos-scripts/internal/sshrelay"
 )
 
 const usageText = `Usage: nixos-build [command] [--raw] [--no-nom]
@@ -34,8 +34,8 @@ Environment:
   NIX_CACHE_PUSH_TO=X  Push to X verbatim, skipping LAN detection and relay
                        orchestration (macm5 only). Without an override the
                        push probes thinkcentre.lan:22 and uses the direct
-                       destination on LAN, or brings the SSH relay tunnel
-                       up, pushes through it, and stops it afterwards.
+                       destination on LAN, or brings the SSH relay link up,
+                       pushes through it, and stops it afterwards.
 
 Flake: NIXOS_REPO, or the current git worktree when it belongs to the
 same repository (for example a herdr worktree).
@@ -92,7 +92,7 @@ func main() {
 
 	code := nixbuild.Run(nixbuild.Steps(env, command), env.NomPath)
 	maybePush(env, command, code, os.Getenv, nixcache.ExecRunner{}, warnHook,
-		nixcache.Reachable, newRelayTunnel(nixcache.ExecRunner{}))
+		nixcache.Reachable, newRelayLink(nixcache.ExecRunner{}))
 	os.Exit(code)
 }
 
@@ -100,60 +100,19 @@ func warnHook(msg string) {
 	fmt.Fprintln(os.Stderr, "WARNING: "+msg)
 }
 
-// relayController manages the macm5 SSH relay tunnel used for off-LAN pushes.
+// relayController manages the macm5 SSH relay link used for off-LAN pushes.
 type relayController interface {
-	up() bool
-	ensureUp() bool
-	stop()
+	Up() bool
+	EnsureUp() bool
+	Stop()
 }
 
-// relayTunnel drives the user-level launchd relay agent through the sibling
-// relayctl binary. Readiness is the local wstunnel forward listener, not a
-// status parse.
-type relayTunnel struct {
-	ctlPath string
-	run     nixcache.Runner
-	dial    func(string, time.Duration) bool
-	sleep   func(time.Duration)
-}
-
-func newRelayTunnel(run nixcache.Runner) relayController {
-	exe, err := os.Executable()
-	if err != nil {
+func newRelayLink(run nixcache.Runner) relayController {
+	t := sshrelay.NewCtl(run)
+	if t == nil {
 		return nil
 	}
-	ctlPath := filepath.Join(filepath.Dir(exe), "relayctl")
-	if info, err := os.Stat(ctlPath); err != nil || info.IsDir() {
-		return nil
-	}
-	return relayTunnel{
-		ctlPath: ctlPath,
-		run:     run,
-		dial:    nixcache.Reachable,
-		sleep:   time.Sleep,
-	}
-}
-
-func (t relayTunnel) up() bool {
-	return t.dial(nixcache.RelayListenerAddr, time.Second)
-}
-
-func (t relayTunnel) ensureUp() bool {
-	if err := t.run.Run([]string{t.ctlPath, "on"}); err != nil {
-		return false
-	}
-	deadline := time.Now().Add(20 * time.Second)
-	for time.Now().Before(deadline) {
-		if t.up() {
-			return true
-		}
-		t.sleep(500 * time.Millisecond)
-	}
-	return false
-}
-
-func (t relayTunnel) stop() {
-	_ = t.run.Run([]string{t.ctlPath, "off"})
+	return t
 }
 
 func applyingCommand(command string) bool {
@@ -176,16 +135,16 @@ func maybePush(env nixbuild.Env, command string, code int, getenv func(string) s
 		dest = override
 	} else if !probe(nixcache.LanProbeAddr, nixcache.LanProbeTimeout) {
 		if relay == nil {
-			warn("push skipped: thinkcentre unreachable and no relay tunnel available")
+			warn("push skipped: thinkcentre unreachable and no relay link available")
 			return
 		}
-		wasUp := relay.up()
+		wasUp := relay.Up()
 		if !wasUp {
-			if !relay.ensureUp() {
-				warn("push skipped: relay tunnel did not come up")
+			if !relay.EnsureUp() {
+				warn("push skipped: relay link did not come up")
 				return
 			}
-			defer relay.stop()
+			defer relay.Stop()
 		}
 		dest = nixcache.RelayPushTo
 	}

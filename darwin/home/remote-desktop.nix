@@ -16,7 +16,24 @@ let
       username ? config.home.username,
     }:
     let
-      vncHost = "${host}${if port != "" then ":${port}" else ""}";
+      launchPort = if port != "" then port else "3389";
+      remoteLaunchHelper = "${pkgs.nixos-scripts}/bin/remote-launch";
+      execViaHelper = ''
+        static void execRemoteLaunch(char *const *viewerArgs) {
+          const char *helper = "${remoteLaunchHelper}";
+          const char *wrapped[48];
+          int n = 0;
+          wrapped[n++] = helper;
+          wrapped[n++] = "${host}";
+          wrapped[n++] = "${launchPort}";
+          wrapped[n++] = "--";
+          for (int i = 0; viewerArgs[i] != NULL && n < 47; i++) {
+            wrapped[n++] = viewerArgs[i];
+          }
+          wrapped[n] = NULL;
+          execv(helper, (char *const *)wrapped);
+        }
+      '';
       rdpKeyboardLayoutHelper =
         if protocol == "rdp" then
           ''
@@ -80,10 +97,10 @@ let
             const char *args[] = {
               vncbin,
               "ColorLevel=full",
-              "${vncHost}",
+              "{addr}",
               NULL
             };
-            execv(vncbin, (char *const *)args);
+            execRemoteLaunch((char *const *)args);
           ''
         else if protocol == "vnc" then
           ''
@@ -91,10 +108,10 @@ let
             const char *args[] = {
               vncbin,
               "-RemoteResize",
-              "${vncHost}",
+              "{addr}",
               NULL
             };
-            execv(vncbin, (char *const *)args);
+            execRemoteLaunch((char *const *)args);
           ''
         else
           ''
@@ -110,7 +127,7 @@ let
             const char *args[20];
             int n = 0;
             args[n++] = rdpbin;
-            args[n++] = "/v:${host}";
+            args[n++] = "/v:{addr}";
             args[n++] = "/u:${username}";
             args[n++] = "/p:";
             args[n++] = "/cert:ignore";
@@ -134,7 +151,7 @@ let
             args[n++] = "-fonts";
             args[n++] = kbdArg;
             args[n] = NULL;
-            execv(rdpbin, (char *const *)args);
+            execRemoteLaunch((char *const *)args);
           '';
     in
     ''
@@ -149,6 +166,8 @@ let
       ''}
 
       ${rdpKeyboardLayoutHelper}
+
+      ${execViaHelper}
 
       int main(int argc, char *argv[]) {
           struct passwd *pw = getpwuid(getuid());
